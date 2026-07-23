@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Hechao.Api.Admin;
 using Hechao.Api.Authentication;
 using Hechao.Api.Catalog;
 using Hechao.Api.Database;
@@ -164,6 +165,18 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+    options.AddPolicy("admin", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            context.Connection.RemoteIpAddress?.ToString() ??
+            "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 240,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
 });
 
 var databaseConnectionString = builder.Configuration.GetConnectionString("LauncherDatabase");
@@ -184,6 +197,7 @@ var connectionStringBuilder = new NpgsqlConnectionStringBuilder(databaseConnecti
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionStringBuilder.ConnectionString));
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton<CatalogRepository>();
+builder.Services.AddSingleton<AdminCatalogRepository>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ProfileManifestStore>();
 builder.Services.AddSingleton<OssPresignedUrlFactory>();
@@ -199,7 +213,7 @@ builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.minecraftservices.com/");
     client.Timeout = TimeSpan.FromSeconds(10);
-    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.6.0"));
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.7.0"));
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services
@@ -207,7 +221,14 @@ builder.Services
     .AddScheme<AuthenticationSchemeOptions, LauncherSessionAuthenticationHandler>(
         LauncherSessionAuthenticationHandler.SchemeName,
         _ => { });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        AdminAuthorization.PolicyName,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequireRole(nameof(AccessTier.Administrator)));
+});
 
 var app = builder.Build();
 
@@ -267,6 +288,17 @@ app.MapGet(
         GetProfileObjectAsync)
     .RequireAuthorization()
     .RequireRateLimiting("downloads");
+
+var adminApi = app.MapGroup("/v1/admin")
+    .RequireAuthorization(AdminAuthorization.PolicyName)
+    .RequireRateLimiting("admin");
+adminApi.MapGet("/catalog/servers", GetAdminServersAsync);
+adminApi.MapGet("/catalog/servers/{serverId}", GetAdminServerAsync);
+adminApi.MapGet("/catalog/client-profiles", GetAdminClientProfilesAsync);
+adminApi.MapPost("/catalog/servers", CreateAdminServerAsync);
+adminApi.MapPut("/catalog/servers/{serverId}", UpdateAdminServerAsync);
+adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibilityAsync);
+adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 
 await app.RunAsync();
 
@@ -628,6 +660,195 @@ async Task<IResult> GetProfileObjectAsync(
             title: "下载分发服务尚未就绪",
             statusCode: StatusCodes.Status503ServiceUnavailable)
         : Results.Redirect(downloadUrl);
+}
+
+async Task<IResult> GetAdminServersAsync(
+    AdminCatalogRepository repository,
+    CancellationToken cancellationToken)
+{
+    return Results.Ok(await repository.GetServersAsync(cancellationToken));
+}
+
+async Task<IResult> GetAdminServerAsync(
+    string serverId,
+    AdminCatalogRepository repository,
+    CancellationToken cancellationToken)
+{
+    if (!AdminServerRules.IsValidServerId(serverId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["serverId"] = ["服务器 ID 无效。"]
+        });
+    }
+
+    var server = await repository.GetServerAsync(serverId, cancellationToken);
+    return server is null ? Results.NotFound() : Results.Ok(server);
+}
+
+async Task<IResult> GetAdminClientProfilesAsync(
+    AdminCatalogRepository repository,
+    CancellationToken cancellationToken)
+{
+    return Results.Ok(await repository.GetClientProfilesAsync(cancellationToken));
+}
+
+async Task<IResult> CreateAdminServerAsync(
+    AdminServerCreateRequest request,
+    AdminCatalogRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminServerRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.CreateServerAsync(
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return result.Status switch
+    {
+        AdminCatalogMutationStatus.Success => Results.Created(
+            $"/v1/admin/catalog/servers/{result.Server!.Id}",
+            result.Server),
+        AdminCatalogMutationStatus.DuplicateId => Results.Conflict(new
+        {
+            message = "服务器 ID 已存在。"
+        }),
+        AdminCatalogMutationStatus.ClientProfileNotFound => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["clientProfileId"] = ["客户端档案不存在或未启用。"]
+            }),
+        _ => Results.Problem(
+            title: "服务器目录创建失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
+
+async Task<IResult> UpdateAdminServerAsync(
+    string serverId,
+    AdminServerUpdateRequest request,
+    AdminCatalogRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminServerRules.IsValidServerId(serverId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["serverId"] = ["服务器 ID 无效。"]
+        });
+    }
+
+    var errors = AdminServerRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.UpdateServerAsync(
+        serverId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminMutationResult(result);
+}
+
+async Task<IResult> SetAdminServerVisibilityAsync(
+    string serverId,
+    AdminServerVisibilityRequest request,
+    AdminCatalogRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminServerRules.IsValidServerId(serverId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["serverId"] = ["服务器 ID 无效。"]
+        });
+    }
+
+    var errors = AdminServerRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.SetServerVisibilityAsync(
+        serverId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminMutationResult(result);
+}
+
+async Task<IResult> GetAdminAuditLogsAsync(
+    long? beforeId,
+    int? limit,
+    AdminCatalogRepository repository,
+    CancellationToken cancellationToken)
+{
+    var pageSize = limit ?? 100;
+    if (pageSize is < 1 or > 200 || beforeId is <= 0)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["pagination"] = ["limit 必须在 1 到 200 之间，beforeId 必须为正整数。"]
+        });
+    }
+
+    return Results.Ok(await repository.GetAuditLogsAsync(
+        beforeId,
+        pageSize,
+        cancellationToken));
+}
+
+IResult MapAdminMutationResult(AdminCatalogMutationResult result)
+{
+    return result.Status switch
+    {
+        AdminCatalogMutationStatus.Success => Results.Ok(result.Server),
+        AdminCatalogMutationStatus.NotFound => Results.NotFound(),
+        AdminCatalogMutationStatus.RevisionConflict => Results.Conflict(new
+        {
+            message = "服务器目录已被其他管理员修改，请刷新后重试。",
+            current = result.Server
+        }),
+        AdminCatalogMutationStatus.ClientProfileNotFound => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["clientProfileId"] = ["客户端档案不存在或未启用。"]
+            }),
+        _ => Results.Problem(
+            title: "服务器目录更新失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
 }
 
 IResult? ValidateLuckPermsSnapshot(LuckPermsSnapshotRequest request)

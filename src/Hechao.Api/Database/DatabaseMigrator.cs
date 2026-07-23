@@ -22,7 +22,8 @@ public sealed class DatabaseMigrator(NpgsqlDataSource dataSource, ILogger<Databa
         new(1, "initial_catalog_and_identity", "Hechao.Api.Database.Migrations.001_initial_catalog_and_identity.sql"),
         new(2, "authentication_and_luckperms", "Hechao.Api.Database.Migrations.002_authentication_and_luckperms.sql"),
         new(3, "velocity_authorization", "Hechao.Api.Database.Migrations.003_velocity_authorization.sql"),
-        new(4, "server_heartbeats", "Hechao.Api.Database.Migrations.004_server_heartbeats.sql")
+        new(4, "server_heartbeats", "Hechao.Api.Database.Migrations.004_server_heartbeats.sql"),
+        new(5, "admin_catalog_revision", "Hechao.Api.Database.Migrations.005_admin_catalog_revision.sql")
     ];
 
     public async Task ApplyAsync(CancellationToken cancellationToken = default)

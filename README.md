@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.6.0`，已经完成视觉系统、HTTPS 服务器目录、Microsoft/Minecraft 正版认证链路、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、真实 Minecraft 启动、Velocity 服务端二次授权和只读实时状态采集。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.6.0`，API 源码版本是 `0.7.0`。平台已经完成视觉系统、HTTPS 服务器目录、Microsoft/Minecraft 正版认证链路、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、真实 Minecraft 启动、Velocity 服务端二次授权、只读实时状态采集和管理员目录 API。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
@@ -24,9 +24,10 @@
 - 在 Minecraft 进程启动前申请 10 分钟、一次性 Velocity 启动授权；授权失败时不会创建游戏进程。
 - Velocity 插件异步校验正版 UUID、账号状态、服务器状态、LuckPerms 等级和单服例外规则，支持 `disabled`、`monitor`、`enforce` 三种模式。
 - Windows 只读采集器每分钟通过 Minecraft 状态协议查询各 Velocity 目标；不持有 RCON、进程控制或服务器启停权限。
+- 管理员目录 API 只接受 `Administrator` 等级的现有启动器会话，支持服务器新增、编辑、归档、恢复和维护状态；所有变更使用修订号并在同一事务中写入审计日志。
 - 启动器 API `0.6.0` 已通过 `https://launcher-api.hechao.world` 上线；目录会合并实时在线人数，并在心跳过期或端口关闭时显示关闭。
 
-Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次部署没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，也不包含客户端密码。
+API `0.7.0` 管理目录功能当前只在源码中完成，尚未部署；线上仍为 `0.6.0`。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，也不包含客户端密码。
 
 ## 项目结构
 
@@ -34,7 +35,7 @@ Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java 
 - `src/Hechao.Contracts`：服务器目录、客户端档案、权限等级和 API 接口模型。
 - `src/Hechao.Distribution`：签名清单、路径策略、断点续传、哈希校验、安装与回滚核心。
 - `src/Hechao.Publisher`：管理员离线生成密钥、对象文件和签名清单，并使用 DPAPI 凭据上传不可变 OSS 对象的命令行工具。
-- `src/Hechao.Api`：独立启动器 API；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
+- `src/Hechao.Api`：独立启动器 API、管理员目录 CRUD 与审计；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
 - `src/Hechao.StatusCollector`：游戏 VPS 上的只读 Minecraft 状态采集器，使用机器级 DPAPI 保护内部令牌。
 - `src/Hechao.VelocityAuthorizer`：Velocity 3.4 / Java 21 异步进服授权插件。
 - `tests/Hechao.Distribution.Tests`：签名、路径、续传、跨域令牌隔离、坏哈希、并发锁和原子回滚测试。
@@ -71,4 +72,4 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 
 ## 实施文档
 
-完整的平台架构、HTTPS 迁移、客户端下载、权限、管理后台和分阶段任务见 [`docs/PLATFORM_PLAN.md`](docs/PLATFORM_PLAN.md)。客户端发布与密钥边界见 [`docs/DISTRIBUTION_OPERATIONS.md`](docs/DISTRIBUTION_OPERATIONS.md)。Microsoft/LuckPerms 激活与运维见 [`docs/AUTHENTICATION_OPERATIONS.md`](docs/AUTHENTICATION_OPERATIONS.md)。Velocity 最终授权见 [`docs/VELOCITY_AUTHORIZATION_OPERATIONS.md`](docs/VELOCITY_AUTHORIZATION_OPERATIONS.md)。只读状态采集见 [`docs/SERVER_HEARTBEAT_OPERATIONS.md`](docs/SERVER_HEARTBEAT_OPERATIONS.md)。实时无密码资产基线见 [`docs/ASSET_INVENTORY.md`](docs/ASSET_INVENTORY.md)，API 发布与回滚见 [`docs/API_OPERATIONS.md`](docs/API_OPERATIONS.md)，数据库备份与恢复边界见 [`docs/DATABASE_OPERATIONS.md`](docs/DATABASE_OPERATIONS.md)，版本与 Git 规则见 [`docs/RELEASE_AND_GIT_WORKFLOW.md`](docs/RELEASE_AND_GIT_WORKFLOW.md)。
+完整的平台架构、HTTPS 迁移、客户端下载、权限、管理后台和分阶段任务见 [`docs/PLATFORM_PLAN.md`](docs/PLATFORM_PLAN.md)。管理员目录 API 边界见 [`docs/ADMIN_CATALOG_OPERATIONS.md`](docs/ADMIN_CATALOG_OPERATIONS.md)。客户端发布与密钥边界见 [`docs/DISTRIBUTION_OPERATIONS.md`](docs/DISTRIBUTION_OPERATIONS.md)。Microsoft/LuckPerms 激活与运维见 [`docs/AUTHENTICATION_OPERATIONS.md`](docs/AUTHENTICATION_OPERATIONS.md)。Velocity 最终授权见 [`docs/VELOCITY_AUTHORIZATION_OPERATIONS.md`](docs/VELOCITY_AUTHORIZATION_OPERATIONS.md)。只读状态采集见 [`docs/SERVER_HEARTBEAT_OPERATIONS.md`](docs/SERVER_HEARTBEAT_OPERATIONS.md)。实时无密码资产基线见 [`docs/ASSET_INVENTORY.md`](docs/ASSET_INVENTORY.md)，API 发布与回滚见 [`docs/API_OPERATIONS.md`](docs/API_OPERATIONS.md)，数据库备份与恢复边界见 [`docs/DATABASE_OPERATIONS.md`](docs/DATABASE_OPERATIONS.md)，版本与 Git 规则见 [`docs/RELEASE_AND_GIT_WORKFLOW.md`](docs/RELEASE_AND_GIT_WORKFLOW.md)。

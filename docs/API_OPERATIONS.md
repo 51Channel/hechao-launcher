@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
 > 当前线上版本：`0.6.0`
-> 本地源码版本：`0.6.0`，已部署
-> 当前阶段：Microsoft/Minecraft 会话、LuckPerms 同步、授权目录、OSS 分发、Velocity 二次授权和只读服务器心跳均已部署；正式登录与强制拦截待应用许可和灰度验收
+> 本地源码版本：`0.7.0`，尚未部署
+> 当前阶段：线上 `0.6.0` 的 Microsoft/Minecraft 会话、LuckPerms 同步、授权目录、OSS 分发、Velocity 二次授权和只读服务器心跳保持不变；`0.7.0` 新增管理员目录与审计 API，正式登录与强制拦截仍待应用许可和灰度验收
 
 ## 1. 运行边界
 
@@ -24,6 +24,7 @@
 - Velocity 内部授权：`POST /v1/internal/velocity/authorize`
 - LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`
 - 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
+- 管理员目录与审计端点：`/v1/admin/*`，仅允许 `Administrator` 启动器会话
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -73,6 +74,8 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 `0.5.0` 上线前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T102842Z.dump`，SHA-256 `f6455e523cebc2ca6ca98d3b0c3ab7eebe4e87489141f3ae4dcf954191e12efc`，`sha256sum -c` 与 `pg_restore --list` 均通过。环境配置备份位于 `/var/backups/hechao-launcher/api-configuration/environment-before-velocity-20260723T103150Z`。
 
 `0.6.0` 新增按 Velocity 目标存储的实时心跳。目录配置为 `Maintenance` 或 `Closed` 时后台状态始终优先；配置为 `Online` 时使用三分钟内的心跳，过期或端口关闭则返回 `Closed`。发布 ID 为 `0.6.0-20260723T123346Z`，归档 SHA-256 为 `FA4FAD6CD5287D3C16596C07189FE5E806F0FFE40D3443743E633803F7CE6442`。迁移 4、心跳鉴权、真实采集和旧域名回归均通过。部署后备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T124326Z.dump` 的 SHA-256 为 `508b37c7a695413e2a3d3d5b7ff08212f720077121bb7237c522957ec08d9464`，`sha256sum -c` 与 `pg_restore --list` 均通过。
+
+`0.7.0` 源码新增管理员服务器目录 CRUD、归档/恢复、乐观并发修订号和事务内审计日志。迁移 5 只增加 `servers.revision` 与审计目标索引；回滚到 `0.6.0` 时可以保留这两个兼容字段。详细接口、验证和回滚边界见 [`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。本段只记录源码状态，不表示已部署。
 
 ## 2. 本地构建
 
