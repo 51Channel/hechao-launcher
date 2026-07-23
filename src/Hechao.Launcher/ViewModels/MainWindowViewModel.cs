@@ -36,6 +36,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _keepDownloadsAfterClose;
     private bool _isCatalogLoading;
     private AuthenticatedPlayer? _currentPlayer;
+    private string? _accountStatusHint;
     private bool _isAccountBusy;
     private bool _isAdminConsoleBusy;
 
@@ -99,7 +100,7 @@ public sealed class MainWindowViewModel : ObservableObject
         ? "正在验证 Microsoft 账号"
         : IsAuthenticated
             ? "Microsoft 正版账号"
-            : "尚未登录";
+            : _accountStatusHint ?? "尚未登录";
     public string AccountAccessText => _currentPlayer is null
         ? "LuckPerms 待登录"
         : $"{GetAccessTierText(_currentPlayer.AccessTier)} · {_currentPlayer.LuckPermsPrimaryGroup}";
@@ -704,6 +705,7 @@ public sealed class MainWindowViewModel : ObservableObject
             }
             else
             {
+                SetAccountStatusHint(null);
                 SetCurrentPlayer(await _authenticationService.SignInAsync());
                 ShowToast($"已登录为 {AccountDisplayName}");
             }
@@ -712,27 +714,33 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (MicrosoftAuthenticationNotConfiguredException)
         {
+            SetAccountStatusHint("登录应用未配置");
             ShowToast("Microsoft 登录应用尚未完成注册");
         }
         catch (MicrosoftSignInCanceledException)
         {
+            SetAccountStatusHint(null);
             ShowToast("已取消 Microsoft 登录");
         }
         catch (MicrosoftSignInFailedException)
         {
+            SetAccountStatusHint("Microsoft 登录失败");
             ShowToast("Microsoft 登录失败，请稍后重试");
         }
         catch (MinecraftSignInException exception)
         {
+            SetAccountStatusHint(GetMinecraftSignInStatus(exception.Failure));
             ShowToast(GetMinecraftSignInError(exception.Failure));
         }
         catch (LauncherApiException exception)
         {
+            SetAccountStatusHint("赫朝账号验证失败");
             ShowToast(exception.ApiDetail ?? "账号验证失败");
         }
         catch (Exception exception) when (
             exception is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
         {
+            SetAccountStatusHint("登录服务暂不可用");
             ShowToast("登录服务暂时不可用");
         }
         finally
@@ -790,6 +798,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private void SetCurrentPlayer(AuthenticatedPlayer? player)
     {
         _currentPlayer = player;
+        _accountStatusHint = null;
         OnPropertyChanged(nameof(IsAuthenticated));
         OnPropertyChanged(nameof(IsAdministrator));
         OnPropertyChanged(nameof(AccountDisplayName));
@@ -799,6 +808,17 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(AccountActionTooltip));
         PrimaryActionCommand.RaiseCanExecuteChanged();
         OpenAdminConsoleCommand.RaiseCanExecuteChanged();
+    }
+
+    private void SetAccountStatusHint(string? message)
+    {
+        if (string.Equals(_accountStatusHint, message, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _accountStatusHint = message;
+        OnPropertyChanged(nameof(AccountStatusText));
     }
 
     private static string GetAccessTierText(AccessTier accessTier)
@@ -822,6 +842,18 @@ public sealed class MainWindowViewModel : ObservableObject
             MinecraftSignInFailure.ApplicationNotApproved => "赫朝启动器尚未通过 Minecraft API 审核",
             MinecraftSignInFailure.ServiceUnavailable => "Microsoft 或 Minecraft 登录服务暂时不可用",
             _ => "无法完成 Minecraft 正版身份验证"
+        };
+    }
+
+    private static string GetMinecraftSignInStatus(MinecraftSignInFailure failure)
+    {
+        return failure switch
+        {
+            MinecraftSignInFailure.XboxAccountRequired => "缺少 Xbox 档案",
+            MinecraftSignInFailure.FamilyRestriction => "账号受家庭限制",
+            MinecraftSignInFailure.ApplicationNotApproved => "Minecraft API 待审核",
+            MinecraftSignInFailure.ServiceUnavailable => "登录服务暂不可用",
+            _ => "正版验证未完成"
         };
     }
 

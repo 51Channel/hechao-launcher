@@ -1,6 +1,6 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
-> 当前客户端源码版本：`0.7.0`
+> 当前客户端源码版本：`0.7.1`
 > 当前生产状态：认证 API、LuckPerms 同步和 Velocity 授权链已部署；Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界
@@ -62,6 +62,8 @@ Windows 系统浏览器
 启动器和官网必须持续展示非官方产品声明，赫朝品牌保持主导，不得使用 Minecraft 官方徽标或暗示获得 Mojang/Microsoft 认可。客户端只分发自有模组、配置与资源；Minecraft 本体和官方资源必须通过合法官方服务获取。
 
 当前已完成应用注册、个人 Microsoft 帐户范围和 `http://localhost` 桌面回调校验。Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核；在许可通过前必须保持目录强制登录关闭。
+
+2026-07-24 的本机链路诊断确认 Microsoft OAuth 与 MSAL 缓存正常。启动器 `0.7.0` 曾把 Xbox 请求字段错误序列化为小写驼峰，导致 Xbox User Token 接口返回 HTTP 400 空响应；`0.7.1` 已改为官方要求的字段大小写，并只向 Xbox User Token 与 XSTS 端点发送 `x-xbl-contract-version: 1`。修复后 Xbox User Token 与 XSTS 均返回 200，随后 Minecraft Game Service 明确返回 HTTP 403 `Invalid app registration`，与当前应用许可仍在审核中的状态一致。诊断过程不记录或输出访问令牌。
 
 官方参考：
 

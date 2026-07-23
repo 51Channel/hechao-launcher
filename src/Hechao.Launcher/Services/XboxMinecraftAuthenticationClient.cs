@@ -8,10 +8,13 @@ namespace Hechao.Launcher.Services;
 
 public sealed class XboxMinecraftAuthenticationClient
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions XboxRequestSerializerOptions = new()
+    {
+        PropertyNamingPolicy = null
+    };
     private readonly HttpClient _httpClient;
 
-    private XboxMinecraftAuthenticationClient(HttpClient httpClient)
+    internal XboxMinecraftAuthenticationClient(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
@@ -192,10 +195,22 @@ public sealed class XboxMinecraftAuthenticationClient
         HttpResponseMessage response;
         try
         {
-            response = await _httpClient.PostAsJsonAsync(
-                requestUri,
-                body,
-                SerializerOptions,
+            using var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
+            {
+                Content = JsonContent.Create(
+                    body,
+                    options: XboxRequestSerializerOptions)
+            };
+            if (stage is AuthenticationStage.XboxUser or AuthenticationStage.Xsts)
+            {
+                request.Headers.TryAddWithoutValidation(
+                    "x-xbl-contract-version",
+                    "1");
+            }
+
+            response = await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
                 cancellationToken);
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)

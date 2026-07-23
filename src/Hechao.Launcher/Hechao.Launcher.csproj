@@ -20,7 +20,7 @@
     <AssemblyName>Hechao.Launcher</AssemblyName>
     <RootNamespace>Hechao.Launcher</RootNamespace>
     <Product>赫朝启动器</Product>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
     <ApplicationIcon>Assets\hechao-launcher.ico</ApplicationIcon>
   </PropertyGroup>
 

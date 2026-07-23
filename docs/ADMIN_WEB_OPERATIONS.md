@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.7.0`、API `0.8.0`
+> 源码版本：启动器 `0.7.1`、API `0.8.0`
 > 生产状态：尚未部署，线上仍为 API `0.6.0`
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
@@ -95,7 +95,7 @@ location / {
 
 正式部署前：
 
-1. 生成 API `0.8.0` 与启动器 `0.7.0` 发布物并核对 SHA-256。
+1. 生成 API `0.8.0` 与启动器 `0.7.1` 发布物并核对 SHA-256。
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
