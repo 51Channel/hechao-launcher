@@ -84,6 +84,23 @@ public sealed record LuckPermsSnapshotResponse(
     int UpdatedIdentities,
     DateTimeOffset ReceivedAt);
 
+public sealed record VelocityTargetHeartbeat(
+    string VelocityTarget,
+    bool Online,
+    int OnlinePlayers,
+    int MaxPlayers,
+    string? SoftwareVersion,
+    int? ProtocolVersion);
+
+public sealed record ServerHeartbeatBatchRequest(
+    DateTimeOffset CapturedAt,
+    string CollectorInstance,
+    IReadOnlyList<VelocityTargetHeartbeat> Servers);
+
+public sealed record ServerHeartbeatBatchResponse(
+    int ImportedServers,
+    DateTimeOffset ReceivedAt);
+
 public enum VelocityAuthorizationReason
 {
     Allowed,

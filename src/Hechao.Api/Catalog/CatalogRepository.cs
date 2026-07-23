@@ -1,17 +1,29 @@
+using Hechao.Api.Monitoring;
 using Hechao.Contracts;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Hechao.Api.Catalog;
 
-public sealed class CatalogRepository(NpgsqlDataSource dataSource)
+public sealed class CatalogRepository(
+    NpgsqlDataSource dataSource,
+    IOptions<ServerHeartbeatOptions> heartbeatOptions)
 {
+    private readonly TimeSpan _heartbeatFreshness =
+        TimeSpan.FromSeconds(heartbeatOptions.Value.FreshnessSeconds);
+
     public async Task<LauncherCatalogSnapshot> GetSnapshotAsync(
         Guid? userId,
         AccessTier? accessTier,
         CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var servers = await ReadServersAsync(connection, userId, accessTier, cancellationToken);
+        var servers = await ReadServersAsync(
+            connection,
+            userId,
+            accessTier,
+            _heartbeatFreshness,
+            cancellationToken);
         var profileIds = servers
             .Select(server => server.ClientProfileId)
             .Distinct(StringComparer.Ordinal)
@@ -122,22 +134,31 @@ public sealed class CatalogRepository(NpgsqlDataSource dataSource)
         NpgsqlConnection connection,
         Guid? userId,
         AccessTier? accessTier,
+        TimeSpan heartbeatFreshness,
         CancellationToken cancellationToken)
     {
         const string anonymousSql = """
-            SELECT id, display_name, short_name, icon_glyph, status, online_players,
-                   max_players, minecraft_version, loader, minimum_tier, client_profile_id
-            FROM launcher.servers
-            WHERE is_visible
-            ORDER BY sort_order, id;
+            SELECT server.id, server.display_name, server.short_name, server.icon_glyph,
+                   server.status, server.online_players, server.max_players,
+                   server.minecraft_version, server.loader, server.minimum_tier,
+                   server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
+                   heartbeat.max_players, heartbeat.received_at
+            FROM launcher.servers server
+            LEFT JOIN launcher.velocity_target_heartbeats heartbeat
+                ON heartbeat.velocity_target = server.velocity_target
+            WHERE server.is_visible
+            ORDER BY server.sort_order, server.id;
             """;
 
         const string authenticatedSql = """
             SELECT server.id, server.display_name, server.short_name, server.icon_glyph,
                    server.status, server.online_players, server.max_players,
                    server.minecraft_version, server.loader, server.minimum_tier,
-                   server.client_profile_id
+                   server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
+                   heartbeat.max_players, heartbeat.received_at
             FROM launcher.servers server
+            LEFT JOIN launcher.velocity_target_heartbeats heartbeat
+                ON heartbeat.velocity_target = server.velocity_target
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1
                AND access_override.server_id = server.id
@@ -175,17 +196,36 @@ public sealed class CatalogRepository(NpgsqlDataSource dataSource)
             command.Parameters.AddWithValue(accessTier.Value.ToString());
         }
 
+        var now = DateTimeOffset.UtcNow;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var configuredStatus = Enum.Parse<ServerStatus>(reader.GetString(4), ignoreCase: true);
+            ServerHeartbeatObservation? heartbeat = null;
+            if (!reader.IsDBNull(11))
+            {
+                heartbeat = new ServerHeartbeatObservation(
+                    reader.GetBoolean(11),
+                    reader.GetInt32(12),
+                    reader.GetInt32(13),
+                    new DateTimeOffset(reader.GetDateTime(14)));
+            }
+
+            var runtimeStatus = ServerRuntimeStatusResolver.Resolve(
+                configuredStatus,
+                reader.GetInt32(5),
+                reader.GetInt32(6),
+                heartbeat,
+                now,
+                heartbeatFreshness);
             servers.Add(new ServerSummary(
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
                 reader.GetString(3),
-                Enum.Parse<ServerStatus>(reader.GetString(4), ignoreCase: true),
-                reader.GetInt32(5),
-                reader.GetInt32(6),
+                runtimeStatus.Status,
+                runtimeStatus.OnlinePlayers,
+                runtimeStatus.MaxPlayers,
                 reader.GetString(7),
                 Enum.Parse<ModLoaderKind>(reader.GetString(8), ignoreCase: true),
                 Enum.Parse<AccessTier>(reader.GetString(9), ignoreCase: true),

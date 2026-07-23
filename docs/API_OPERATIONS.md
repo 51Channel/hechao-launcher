@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.5.0`
-> 本地源码版本：`0.5.0`，已部署
-> 当前阶段：Microsoft/Minecraft 会话、LuckPerms 同步、授权目录、OSS 分发和 Velocity 二次授权均已部署；正式登录与强制拦截待应用许可和灰度验收
+> 当前线上版本：`0.6.0`
+> 本地源码版本：`0.6.0`，已部署
+> 当前阶段：Microsoft/Minecraft 会话、LuckPerms 同步、授权目录、OSS 分发、Velocity 二次授权和只读服务器心跳均已部署；正式登录与强制拦截待应用许可和灰度验收
 
 ## 1. 运行边界
 
@@ -23,6 +23,7 @@
 - 启动器进服授权：`POST /v1/velocity/launch-grants`
 - Velocity 内部授权：`POST /v1/internal/velocity/authorize`
 - LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`
+- 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -38,6 +39,8 @@ VelocityAuthorization__InternalTokenSha256
 VelocityAuthorization__LaunchGrantMinutes
 VelocityAuthorization__MaximumLuckPermsAgeMinutes
 VelocityAuthorization__RequireGrantIpMatch
+ServerHeartbeats__InternalTokenSha256
+ServerHeartbeats__FreshnessSeconds
 Distribution__ManifestDirectory
 Distribution__MaximumManifestBytes
 Distribution__OssRegion
@@ -68,6 +71,8 @@ OSS_ACCESS_KEY_SECRET
 Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/configure-velocity-authorization.sh)。脚本从标准输入读取内部凭据的 SHA-256，备份旧环境文件并保持权限 `600`，但不重启 API。完整激活顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)。
 
 `0.5.0` 上线前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T102842Z.dump`，SHA-256 `f6455e523cebc2ca6ca98d3b0c3ab7eebe4e87489141f3ae4dcf954191e12efc`，`sha256sum -c` 与 `pg_restore --list` 均通过。环境配置备份位于 `/var/backups/hechao-launcher/api-configuration/environment-before-velocity-20260723T103150Z`。
+
+`0.6.0` 新增按 Velocity 目标存储的实时心跳。目录配置为 `Maintenance` 或 `Closed` 时后台状态始终优先；配置为 `Online` 时使用三分钟内的心跳，过期或端口关闭则返回 `Closed`。发布 ID 为 `0.6.0-20260723T123346Z`，归档 SHA-256 为 `FA4FAD6CD5287D3C16596C07189FE5E806F0FFE40D3443743E633803F7CE6442`。迁移 4、心跳鉴权、真实采集和旧域名回归均通过。部署后备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T124326Z.dump` 的 SHA-256 为 `508b37c7a695413e2a3d3d5b7ff08212f720077121bb7237c522957ec08d9464`，`sha256sum -c` 与 `pg_restore --list` 均通过。
 
 ## 2. 本地构建
 
@@ -145,5 +150,6 @@ systemctl reload nginx
 | `0.3.0-20260721T171654Z` | `5A1BF5F06F9D7C42337B8D1BF75FA2DBAF1011036BC21FB6ECB83FC4E30FC5BB` | 认证会话、LuckPerms 快照、授权过滤与公网回归通过 |
 | `0.4.0-20260723T051123Z` | `975280C2D026F25AF461F0125C0C19AFF18A1357E5FE091937FCA2BBE0A2771C` | 签名清单、受限对象下载、OSS 配置、原子清单发布与公网回归通过 |
 | `0.5.0-20260723T102749Z` | `95D2FE3B2E160F205B22B457988D8721970DB580DAD6B1A8A412B1798C42332B` | 一次性启动授权、Velocity 内部判定、迁移 3、权限/公网回归与无警告日志通过 |
+| `0.6.0-20260723T123346Z` | `71313BCF82B6B6E1BB095F142E1BA6A06E9ADC7B834FA6F32F9B74914F078780` | 按 Velocity 目标的实时心跳、迁移 4、目录状态合并、任务实测与公网回归通过 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 已于 2026-07-23 完成。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

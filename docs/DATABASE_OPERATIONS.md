@@ -1,7 +1,7 @@
 # 启动器数据库运维
 
 > 当前数据库：PostgreSQL 16
-> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权和审计数据
+> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳和审计数据
 
 ## 1. 运行边界
 
@@ -39,6 +39,7 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `1` | `initial_catalog_and_identity` | 客户端档案、服务器目录、用户、Minecraft 身份、单服授权、审计日志 |
 | `2` | `authentication_and_luckperms` | 令牌哈希会话、LuckPerms 组映射与玩家快照、身份同步状态 |
 | `3` | `velocity_authorization` | 10 分钟一次性启动授权、消费/撤销状态、代理目标与实例审计字段 |
+| `4` | `server_heartbeats` | 按 Velocity 目标保存在线状态、人数、版本和采集/接收时间 |
 
 ## 4. 自动备份
 
@@ -58,7 +59,7 @@ systemctl list-timers hechao-launcher-db-backup.timer --no-pager
 
 每个 `.dump` 都有同名 `.sha256`。校验和与 `pg_restore --list` 均通过，才算有效备份。
 
-API `0.5.0` 上线前生成的备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T102842Z.dump`，SHA-256 `f6455e523cebc2ca6ca98d3b0c3ab7eebe4e87489141f3ae4dcf954191e12efc`，校验和与目录读取均通过。上线后迁移记录 `1`、`2`、`3` 已核对。
+API `0.5.0` 上线前生成的备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T102842Z.dump`，SHA-256 `f6455e523cebc2ca6ca98d3b0c3ab7eebe4e87489141f3ae4dcf954191e12efc`。API `0.6.0` 部署并写入首批心跳后的备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T124326Z.dump`，SHA-256 `508b37c7a695413e2a3d3d5b7ff08212f720077121bb7237c522957ec08d9464`。两份备份的校验和与目录读取均通过，迁移记录 `1` 至 `4` 已由 API 启动校验。
 
 ## 5. 恢复边界
 

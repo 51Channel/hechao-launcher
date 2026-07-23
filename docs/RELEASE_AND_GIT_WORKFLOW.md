@@ -38,9 +38,10 @@
 
 ```text
 launcher-v0.6.0
-api-v0.5.0
+api-v0.6.0
 velocity-authorizer-v0.1.0
 publisher-v0.5.0
+status-collector-v0.1.0
 profile-base-1.21.11-v1.0.5
 ```
 

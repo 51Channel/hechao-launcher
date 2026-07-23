@@ -11,6 +11,7 @@ using Hechao.Api.Catalog;
 using Hechao.Api.Database;
 using Hechao.Api.Distribution;
 using Hechao.Api.LuckPerms;
+using Hechao.Api.Monitoring;
 using Hechao.Api.Velocity;
 using Hechao.Contracts;
 using Microsoft.AspNetCore.Authentication;
@@ -53,6 +54,16 @@ builder.Services.AddOptions<VelocityAuthorizationOptions>()
     .Validate(
         options => options.MaximumLuckPermsAgeMinutes is >= 5 and <= 1440,
         "VelocityAuthorization:MaximumLuckPermsAgeMinutes must be between 5 and 1440.")
+    .ValidateOnStart();
+builder.Services.AddOptions<ServerHeartbeatOptions>()
+    .Bind(builder.Configuration.GetSection(ServerHeartbeatOptions.SectionName))
+    .Validate(
+        options => string.IsNullOrEmpty(options.InternalTokenSha256) ||
+                   Regex.IsMatch(options.InternalTokenSha256, "^[0-9a-fA-F]{64}$"),
+        "ServerHeartbeats:InternalTokenSha256 must be empty or a SHA-256 hex digest.")
+    .Validate(
+        options => options.FreshnessSeconds is >= 60 and <= 900,
+        "ServerHeartbeats:FreshnessSeconds must be between 60 and 900.")
     .ValidateOnStart();
 builder.Services.AddOptions<DistributionOptions>()
     .Bind(builder.Configuration.GetSection(DistributionOptions.SectionName))
@@ -119,6 +130,16 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+    options.AddPolicy("internal-heartbeats", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 120,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
     options.AddPolicy("downloads", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
@@ -172,11 +193,13 @@ builder.Services.AddSingleton<InternalSyncTokenValidator>();
 builder.Services.AddSingleton<LuckPermsSyncRepository>();
 builder.Services.AddSingleton<VelocityAuthorizationTokenValidator>();
 builder.Services.AddSingleton<VelocityAuthorizationRepository>();
+builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
+builder.Services.AddSingleton<ServerHeartbeatRepository>();
 builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.minecraftservices.com/");
     client.Timeout = TimeSpan.FromSeconds(10);
-    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.5.0"));
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.6.0"));
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services
@@ -232,6 +255,8 @@ app.MapPost("/v1/internal/velocity/authorize", AuthorizeVelocityConnectionAsync)
     .RequireRateLimiting("internal-velocity");
 app.MapPost("/v1/internal/luckperms/snapshot", ImportLuckPermsSnapshotAsync)
     .RequireRateLimiting("internal-sync");
+app.MapPost("/v1/internal/server-heartbeats", ImportServerHeartbeatsAsync)
+    .RequireRateLimiting("internal-heartbeats");
 app.MapGet("/v1/catalog", GetCatalogAsync)
     .RequireRateLimiting("catalog");
 app.MapGet("/v1/profiles/{profileId}/manifest", GetProfileManifestAsync)
@@ -450,6 +475,51 @@ async Task<IResult> ImportLuckPermsSnapshotAsync(
 
     var response = await repository.ImportAsync(request, cancellationToken);
     return Results.Ok(response);
+}
+
+async Task<IResult> ImportServerHeartbeatsAsync(
+    ServerHeartbeatBatchRequest request,
+    ServerHeartbeatTokenValidator tokenValidator,
+    ServerHeartbeatRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!tokenValidator.IsConfigured)
+    {
+        return Results.Problem(
+            title: "Server heartbeat ingestion is not configured.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var suppliedToken = context.Request.Headers["X-Hechao-Heartbeat-Token"].ToString();
+    if (!tokenValidator.IsValid(suppliedToken))
+    {
+        return Results.Problem(
+            title: "Server heartbeat authentication failed.",
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    var validationErrors = ServerHeartbeatRules.Validate(request, DateTimeOffset.UtcNow);
+    if (validationErrors.Count > 0)
+    {
+        return Results.ValidationProblem(validationErrors);
+    }
+
+    try
+    {
+        var response = await repository.ImportAsync(request, cancellationToken);
+        return Results.Ok(response);
+    }
+    catch (UnknownVelocityTargetsException exception)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["servers"] =
+            [
+                $"Unknown Velocity targets: {string.Join(", ", exception.Targets)}"
+            ]
+        });
+    }
 }
 
 async Task<IResult> GetCatalogAsync(

@@ -2,7 +2,7 @@
 
 > 启动器源码版本：`0.6.0`
 > 发布器源码版本：`0.5.0`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链、首份正式签名档案、不可变对象上传和 API `0.5.0` 在线激活均已完成。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链、首份正式签名档案、不可变对象上传和 API `0.6.0` 在线激活均已完成。
 
 ## 1. 安全边界
 
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、DPAPI 凭据、对象上传和进服授权规则。`2026-07-23` 使用 .NET SDK `10.0.302` 验证为 `63/63` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、DPAPI 凭据、对象上传、进服授权和状态心跳规则。`2026-07-23` 使用 .NET SDK `10.0.302` 验证为 `80/80` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -151,7 +151,7 @@ Distribution__PresignedUrlSeconds=300
 
 [`configure-distribution.sh`](../deploy/linux/configure-distribution.sh) 从标准输入读取 AccessKey ID 和 Secret，写入权限 `600` 的环境文件，并创建只读清单目录；脚本不会重启 API。
 
-截至 `2026-07-23`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.5.0` 已读取并使用该分发配置。
+截至 `2026-07-23`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.6.0` 已读取并使用该分发配置。
 
 上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。该策略只允许对 `hechaoworld/objects/*` 执行 `oss:PutObject`，不允许读取、列举、覆盖或删除；AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
 
