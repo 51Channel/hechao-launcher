@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "keys": [
+    {
+      "keyId": "release-2026-07-primary",
+      "algorithm": "ECDSA_P256_SHA256",
+      "publicKeyBase64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMclX4RJAJ7/iOirhQIevQOzvOmcyS7Iz4akO0YfuBztWQ9rRRfoz1p2lA7xI54G8NgUnrOCFBhDCzNLC4JJLlA=="
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+name: hechao-launcher-data
+
+services:
+  postgres:
+    image: docker.1panel.live/library/postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    container_name: hechao-launcher-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hechao_db_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?POSTGRES_ADMIN_PASSWORD is required}
+      POSTGRES_DB: postgres
+      HECHAO_APP_PASSWORD: ${HECHAO_APP_PASSWORD:?HECHAO_APP_PASSWORD is required}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init/001-create-app-db.sh:/docker-entrypoint-initdb.d/001-create-app-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 200
+    shm_size: 128m
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    stop_grace_period: 30s
+
+volumes:
+  postgres-data:
+    name: hechao-launcher-postgres-data

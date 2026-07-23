@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Hechao launcher database backup
+
+[Timer]
+OnCalendar=*-*-* 03:35:00 Asia/Shanghai
+Persistent=true
+RandomizedDelaySec=10m
+Unit=hechao-launcher-db-backup.service
+
+[Install]
+WantedBy=timers.target

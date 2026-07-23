@@ -1,0 +1,44 @@
+.vs/
+.idea/
+artifacts/
+TestResults/
+**/bin/
+**/obj/
+**/build/
+.gradle/
+*.user
+*.suo
+*.nupkg
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets/
+*.dpapi
+*credential*.csv
+*credentials*.csv
+
+# Keys and certificates
+*.key
+*.pem
+*.pfx
+*.p12
+*.jks
+*.keystore
+
+# Runtime data and diagnostics
+*.log
+*.dmp
+*.dump
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Local release archives
+*.zip
+*.tar
+*.tar.gz
