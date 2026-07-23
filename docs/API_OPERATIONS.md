@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.6.0`
-> 本地源码版本：`0.9.0`，尚未部署
-> 当前阶段：线上 `0.6.0` 保持不变；源码 `0.9.0` 在 `0.8.0` 管理控制台基础上增加赫朝账号、密码哈希和独立 Minecraft 身份绑定
+> 当前线上版本：`0.9.0-20260723T195253Z`
+> 本地源码版本：`0.9.0`
+> 当前阶段：赫朝账号 API 已生产部署；启动器 `0.8.0` 尚未向玩家分发，管理员 Web 仍显式关闭
 
 ## 1. 运行边界
 
@@ -84,11 +84,15 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 
 `0.6.0` 新增按 Velocity 目标存储的实时心跳。目录配置为 `Maintenance` 或 `Closed` 时后台状态始终优先；配置为 `Online` 时使用三分钟内的心跳，过期或端口关闭则返回 `Closed`。发布 ID 为 `0.6.0-20260723T123346Z`，归档 SHA-256 为 `FA4FAD6CD5287D3C16596C07189FE5E806F0FFE40D3443743E633803F7CE6442`。迁移 4、心跳鉴权、真实采集和旧域名回归均通过。部署后备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T124326Z.dump` 的 SHA-256 为 `508b37c7a695413e2a3d3d5b7ff08212f720077121bb7237c522957ec08d9464`，`sha256sum -c` 与 `pg_restore --list` 均通过。
 
-`0.7.0` 源码新增管理员服务器目录 CRUD、归档/恢复、乐观并发修订号和事务内审计日志。迁移 5 只增加 `servers.revision` 与审计目标索引；回滚到 `0.6.0` 时可以保留这两个兼容字段。详细接口、验证和回滚边界见 [`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。本段只记录源码状态，不表示已部署。
+`0.7.0` 新增管理员服务器目录 CRUD、归档/恢复、乐观并发修订号和事务内审计日志。迁移 5 只增加 `servers.revision` 与审计目标索引；当前表结构已随 `0.9.0` 部署，回滚到 `0.6.0` 时可以保留这些兼容字段。详细接口、验证和回滚边界见 [`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。
 
-`0.8.0` 源码新增启动器管理员入口、90 秒一次性票据、来源 IP 绑定、独立 `HttpOnly` 浏览器会话、TOTP 与恢复码、防 TOTP 重放、CSRF、管理域名锁定和静态 Web 控制台。迁移 6 只新增后台票据、会话和 MFA 表；详细密钥、Nginx、部署与回滚边界见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)。本段只记录源码状态，不表示已部署。
+`0.8.0` 新增启动器管理员入口、90 秒一次性票据、来源 IP 绑定、独立 `HttpOnly` 浏览器会话、TOTP 与恢复码、防 TOTP 重放、CSRF、管理域名锁定和静态 Web 控制台。迁移 6 已随 `0.9.0` 部署，但生产环境未配置 `AdminWeb__*` 且默认关闭；`admin.hechao.world` 继续返回 404。详细启用与回滚边界见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)。
 
-`0.9.0` 源码新增赫朝账号注册与登录、PBKDF2 密码哈希、账号/邮箱唯一索引、独立 Minecraft 正版身份绑定和旧 `legacy_*` 身份安全接管。迁移 7 为 `launcher.users` 增加 `username`、`email` 与 `password_hash`；回滚到旧 API 时可以保留这些兼容字段，但新建赫朝账号无法使用旧客户端登录。部署顺序必须是数据库备份、API `0.9.0` 灰度、注册/登录/绑定验收，最后才分发启动器 `0.8.0`。
+`0.9.0` 新增赫朝账号注册与登录、PBKDF2 密码哈希、账号/邮箱唯一索引、独立 Minecraft 正版身份绑定和旧 `legacy_*` 身份安全接管。迁移 7 为 `launcher.users` 增加 `username`、`email` 与 `password_hash`；回滚到旧 API 时可以保留这些兼容字段，但新建赫朝账号无法使用旧客户端登录。
+
+生产发布 ID 为 `0.9.0-20260723T195253Z`。单文件程序 SHA-256 为 `159DDBA288078E0F2C6DAA4BF3C3A62507EC3A3F99FBEC24D15A78AAB57ADBBA`，上传归档 SHA-256 为 `24B8DBA16BBC8A141C43AB61506EE221E127A457044B9698D7AC06DA017C0241`。发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T195226Z.dump`，大小 `48,720` 字节，SHA-256 为 `621638f3500680e7ad3903cab62ac40a974defe0ecb65a4eb9cfc292cd5547d6`；`sha256sum -c` 与 `pg_restore --list` 均通过。
+
+部署后迁移记录为 `1` 至 `7`，服务、本机 `/healthz`、`/readyz` 与公网检查均通过，journal 无 warning。隔离测试账号完成注册 `201`、本人信息 `200`、目录 `200`、刷新 `200`、刷新令牌重放 `401`、无效 Minecraft 绑定 `401`、退出 `204`、退出后访问 `401`、密码登录 `200`；测试用户、会话与对应审计记录已精确清理，用户总数恢复为 `0`。`hechao.world` 与 `api.hechao.world` 保持 200，`admin.hechao.world` 保持预期的 404。
 
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
@@ -132,7 +136,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 ```text
 https://hechao.world/      -> HTTP 200
 https://api.hechao.world/  -> HTTP 200
-https://admin.hechao.world/ -> 当前生产基线 HTTP 404；部署 0.8.0 后 /admin/ 应为 200
+https://admin.hechao.world/ -> 当前生产基线 HTTP 404；显式启用 AdminWeb 并完成 MFA 灰度后 /admin/ 才应为 200
 ```
 
 部署 `0.9.0` 时还必须确认 `launcher-api.hechao.world/admin/` 继续返回 404、管理域名 Host 锁定生效、Data Protection key ring 可写且已加密备份。随后按 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md) 完成真实管理员 TOTP 和审计验收，并按 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md) 验证赫朝账号与旧身份接管。
@@ -171,5 +175,6 @@ systemctl reload nginx
 | `0.4.0-20260723T051123Z` | `975280C2D026F25AF461F0125C0C19AFF18A1357E5FE091937FCA2BBE0A2771C` | 签名清单、受限对象下载、OSS 配置、原子清单发布与公网回归通过 |
 | `0.5.0-20260723T102749Z` | `95D2FE3B2E160F205B22B457988D8721970DB580DAD6B1A8A412B1798C42332B` | 一次性启动授权、Velocity 内部判定、迁移 3、权限/公网回归与无警告日志通过 |
 | `0.6.0-20260723T123346Z` | `71313BCF82B6B6E1BB095F142E1BA6A06E9ADC7B834FA6F32F9B74914F078780` | 按 Velocity 目标的实时心跳、迁移 4、目录状态合并、任务实测与公网回归通过 |
+| `0.9.0-20260723T195253Z` | `159DDBA288078E0F2C6DAA4BF3C3A62507EC3A3F99FBEC24D15A78AAB57ADBBA` | 迁移 5 至 7、赫朝账号完整会话链、无效正版凭据拒绝、测试数据清理与旧域名回归通过；AdminWeb 保持关闭 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成。`0.7.0`、`0.8.0` 与 `0.9.0` 尚无生产发布 ID。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号 API 已于 2026-07-24 部署。启动器 `0.8.0` 仍是未分发候选；管理员 Web 代码已进入生产二进制但功能保持关闭。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

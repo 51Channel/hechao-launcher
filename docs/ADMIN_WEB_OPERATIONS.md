@@ -1,7 +1,7 @@
 # 管理员 Web 控制台与 MFA
 
 > 源码版本：启动器 `0.8.0`、API `0.9.0`
-> 生产状态：尚未部署，线上仍为 API `0.6.0`
+> 生产状态：API `0.9.0` 与迁移 6 已部署；`AdminWeb` 未配置且默认关闭，入口仍返回 404
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
 

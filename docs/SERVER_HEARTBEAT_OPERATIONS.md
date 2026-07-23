@@ -1,6 +1,6 @@
 # Server heartbeat operations
 
-> Production state: API `0.6.0-20260723T123346Z` and collector `0.1.0` deployed
+> Production state: API `0.9.0-20260723T195253Z` and collector `0.1.0` deployed
 > on 2026-07-23. The first scheduled run completed with result `0`.
 > The pre-hardening collector binary is retained in
 > `C:\ProgramData\Hechao\StatusCollector\backups\redirect-hardening-20260723T125705Z`.

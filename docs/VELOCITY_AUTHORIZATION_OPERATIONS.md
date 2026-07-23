@@ -142,4 +142,4 @@ ORDER BY velocity_target, sort_order, id;
 
 若 `monitor` 产生异常，只需将模式改为 `disabled`，由管理员在合适窗口手动重启 Velocity。若 `enforce` 阻断正常玩家，优先回退到 `monitor`，保留日志和审计记录，再检查目标映射、LuckPerms 新鲜度、账号绑定和 API 可用性。
 
-插件安装脚本会把旧 JAR 和配置备份到 `E:\manual-backups`，但不会执行重启。API `0.6.0` 可以继续在线，即使插件暂时禁用；不要通过关闭数据库、停止大厅或重启全部 Minecraft 服务来处理授权问题。
+插件安装脚本会把旧 JAR 和配置备份到 `E:\manual-backups`，但不会执行重启。API `0.9.0` 可以继续在线，即使插件暂时禁用；不要通过关闭数据库、停止大厅或重启全部 Minecraft 服务来处理授权问题。

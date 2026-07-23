@@ -1,7 +1,7 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
 > 当前客户端源码版本：`0.8.0`，API 源码版本：`0.9.0`
-> 当前生产状态：线上仍为 API `0.6.0`；赫朝账号与新版绑定链路尚未部署，Velocity 仍为 `monitor`，目录强制登录尚未启用
+> 当前生产状态：API `0.9.0` 与赫朝账号链路已部署；启动器 `0.8.0` 尚未分发，Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界
 
@@ -34,8 +34,8 @@
 
 ## 2. 已部署组件
 
-- API 端点：`POST /v1/auth/minecraft/exchange`、`POST /v1/auth/refresh`、`POST /v1/auth/logout`、`GET /v1/me`。
-- API `0.9.0` 源码新增：`POST /v1/auth/register`、`POST /v1/auth/login`、已登录后调用的 `POST /v1/auth/minecraft/link`。
+- API 端点：`POST /v1/auth/register`、`POST /v1/auth/login`、`POST /v1/auth/minecraft/link`、`POST /v1/auth/refresh`、`POST /v1/auth/logout`、`GET /v1/me`。
+- 旧 `POST /v1/auth/minecraft/exchange` 暂时保留迁移兼容。
 - 旧版 `minecraft/exchange` 暂时保留兼容；其临时 `legacy_*` 账户在绑定同一正版身份时可安全转入正式赫朝账号，正式账户之间不能互相接管。
 - 进服端点：`POST /v1/velocity/launch-grants` 和内部 `POST /v1/internal/velocity/authorize`。
 - 访问令牌默认有效 15 分钟；刷新令牌默认有效 30 天并在每次刷新时轮换。
@@ -50,6 +50,8 @@
 
 2026-07-22 的生产验收结果为 114 名玩家：`default=99`、`vip=12`、`admin=1`、`owner=2`。
 
+2026-07-24 已部署 API `0.9.0-20260723T195253Z` 和迁移 7。生产隔离账号验证了注册、本人信息、目录、刷新轮换、刷新令牌重放拒绝、退出撤销、密码登录和无效 Minecraft 凭据拒绝；测试账号、会话与对应审计记录随后已清理。该验证证明赫朝账号链路可用，不替代等待 Minecraft API 许可后的真实正版账号与四级 LuckPerms 验收。
+
 ## 3. Microsoft 应用注册
 
 赫朝自己的 Microsoft 公共客户端应用已于 2026-07-22 注册，不能借用其他启动器的 Client ID。
@@ -60,7 +62,7 @@
 4. 使用明确登记的桌面回调和授权码 + PKCE；不要额外开启设备码或密码回退流，也不创建或打包客户端密码。
 5. 客户端请求 `XboxLive.signin` 与 `XboxLive.offline_access`。
 6. 向 Mojang/Minecraft 申请 Java Game Service API 访问许可；新第三方应用未获许可时会返回 `Invalid app registration`。
-7. Client ID 已写入 `0.6.0` 客户端；环境变量 `HECHAO_MICROSOFT_CLIENT_ID` 仍可用于内部覆盖测试。
+7. Client ID 已写入 `0.8.0` 客户端候选；环境变量 `HECHAO_MICROSOFT_CLIENT_ID` 仍可用于内部覆盖测试。
 
 启动器和官网必须持续展示非官方产品声明，赫朝品牌保持主导，不得使用 Minecraft 官方徽标或暗示获得 Mojang/Microsoft 认可。客户端只分发自有模组、配置与资源；Minecraft 本体和官方资源必须通过合法官方服务获取。
 
