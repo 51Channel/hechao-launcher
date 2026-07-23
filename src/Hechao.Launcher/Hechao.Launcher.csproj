@@ -27,6 +27,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\distribution-trust.json" />
     <Resource Include="Assets\hechao-fortress-banner.png" />
+    <Resource Include="Assets\hechao-launcher-icon.png" />
     <Resource Include="Assets\hechao-launcher.ico" />
   </ItemGroup>
 

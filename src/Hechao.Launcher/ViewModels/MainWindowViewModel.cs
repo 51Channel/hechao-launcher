@@ -127,6 +127,12 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedServerStatusText));
             OnPropertyChanged(nameof(SelectedServerLoaderText));
             OnPropertyChanged(nameof(SelectedServerPlayerText));
+            OnPropertyChanged(nameof(SelectedServerCategoryText));
+            OnPropertyChanged(nameof(SelectedServerDescriptionText));
+            OnPropertyChanged(nameof(SelectedServerVersionText));
+            OnPropertyChanged(nameof(SelectedServerAccessText));
+            OnPropertyChanged(nameof(SelectedProfileDisplayName));
+            OnPropertyChanged(nameof(SelectedProfileMetaText));
             OnPropertyChanged(nameof(IsSelectedServerOnline));
             PrimaryActionCommand.RaiseCanExecuteChanged();
             if (value is not null)
@@ -146,6 +152,39 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public string SelectedServerLoaderText => SelectedServer?.Loader.ToString() ?? string.Empty;
     public string SelectedServerPlayerText => SelectedServer is null ? string.Empty : $"{SelectedServer.OnlinePlayers}/{SelectedServer.MaxPlayers}";
+    public string SelectedServerCategoryText => SelectedServer?.Id switch
+    {
+        "lobby" => "赫朝主大厅",
+        "survival2" => "长期生存世界",
+        "activity" => "限时活动",
+        "dollnight" => "特别企划",
+        _ => "赫朝服务器"
+    };
+    public string SelectedServerDescriptionText => SelectedServer?.Id switch
+    {
+        "lobby" => "从这里进入赫朝世界，并前往不同的服务器。",
+        "survival2" => "长期生存、建设与共同冒险的主世界。",
+        "activity" => "本期活动客户端会自动安装并匹配服务器版本。",
+        "dollnight" => "在夜幕与规则之间，完成这一场特别录制。",
+        _ => "与赫朝的伙伴们一起创造新的 Minecraft 故事。"
+    };
+    public string SelectedServerVersionText => SelectedServer is null
+        ? string.Empty
+        : $"Minecraft {SelectedServer.MinecraftVersion} · {SelectedServer.Loader}";
+    public string SelectedServerAccessText => SelectedServer is null
+        ? string.Empty
+        : $"{GetAccessTierText(SelectedServer.MinimumTier)}可进入";
+    public string SelectedProfileDisplayName => GetSelectedProfile()?.DisplayName ?? "等待客户端档案";
+    public string SelectedProfileMetaText
+    {
+        get
+        {
+            var profile = GetSelectedProfile();
+            return profile is null
+                ? "目录暂未提供版本信息"
+                : $"v{profile.Version} · {FormatDownloadSize(profile.DownloadBytes)}";
+        }
+    }
     public bool IsSelectedServerOnline => SelectedServer?.Status == ServerStatus.Online;
 
     public double UpdateProgress
@@ -720,6 +759,23 @@ public sealed class MainWindowViewModel : ObservableObject
         return int.TryParse(firstPart, out var gibibytes)
             ? checked(gibibytes * 1024)
             : 6 * 1024;
+    }
+
+    private ClientProfileSummary? GetSelectedProfile()
+    {
+        return SelectedServer is not null &&
+               _clientProfiles.TryGetValue(SelectedServer.ClientProfileId, out var profile)
+            ? profile
+            : null;
+    }
+
+    private static string FormatDownloadSize(long bytes)
+    {
+        const double bytesPerMebibyte = 1024d * 1024d;
+        const double bytesPerGibibyte = 1024d * bytesPerMebibyte;
+        return bytes >= bytesPerGibibyte
+            ? $"{bytes / bytesPerGibibyte:0.##} GB"
+            : $"{bytes / bytesPerMebibyte:0.#} MB";
     }
 
     private void ToggleNotifications()
