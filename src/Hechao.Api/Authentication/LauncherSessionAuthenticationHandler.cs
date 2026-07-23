@@ -32,19 +32,32 @@ public sealed class LauncherSessionAuthenticationHandler(
             return AuthenticateResult.Fail("The launcher session is invalid or expired.");
         }
 
-        var player = session.Player;
+        var account = session.Account;
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, player.UserId.ToString("D")),
-            new(ClaimTypes.Name, player.MinecraftName),
-            new(ClaimTypes.Role, player.AccessTier.ToString()),
+            new(ClaimTypes.NameIdentifier, account.UserId.ToString("D")),
+            new(ClaimTypes.Name, account.DisplayName),
+            new(ClaimTypes.Role, account.AccessTier.ToString()),
             new(LauncherClaimTypes.SessionId, session.SessionId.ToString("D")),
-            new(LauncherClaimTypes.MinecraftUuid, player.MinecraftUuid.ToString("D")),
-            new(LauncherClaimTypes.LuckPermsPrimaryGroup, player.LuckPermsPrimaryGroup),
-            new(LauncherClaimTypes.AccessTier, player.AccessTier.ToString())
+            new(LauncherClaimTypes.Username, account.Username),
+            new(LauncherClaimTypes.AccountCreatedAt, account.CreatedAt.ToString("O", CultureInfo.InvariantCulture)),
+            new(LauncherClaimTypes.LuckPermsPrimaryGroup, account.LuckPermsPrimaryGroup),
+            new(LauncherClaimTypes.AccessTier, account.AccessTier.ToString())
         };
 
-        if (player.LuckPermsSyncedAt is { } syncedAt)
+        if (!string.IsNullOrWhiteSpace(account.Email))
+        {
+            claims.Add(new Claim(ClaimTypes.Email, account.Email));
+        }
+
+        if (account.MinecraftUuid is { } minecraftUuid &&
+            !string.IsNullOrWhiteSpace(account.MinecraftName))
+        {
+            claims.Add(new Claim(LauncherClaimTypes.MinecraftUuid, minecraftUuid.ToString("D")));
+            claims.Add(new Claim(LauncherClaimTypes.MinecraftName, account.MinecraftName));
+        }
+
+        if (account.LuckPermsSyncedAt is { } syncedAt)
         {
             claims.Add(new Claim(
                 LauncherClaimTypes.LuckPermsSyncedAt,
@@ -60,7 +73,10 @@ public sealed class LauncherSessionAuthenticationHandler(
 public static class LauncherClaimTypes
 {
     public const string SessionId = "hechao:session_id";
+    public const string Username = "hechao:username";
+    public const string AccountCreatedAt = "hechao:account_created_at";
     public const string MinecraftUuid = "hechao:minecraft_uuid";
+    public const string MinecraftName = "hechao:minecraft_name";
     public const string LuckPermsPrimaryGroup = "hechao:luckperms_primary_group";
     public const string LuckPermsSyncedAt = "hechao:luckperms_synced_at";
     public const string AccessTier = "hechao:access_tier";
@@ -68,11 +84,10 @@ public static class LauncherClaimTypes
 
 public static class LauncherPrincipalExtensions
 {
-    public static AuthenticatedPlayer? GetPlayer(this ClaimsPrincipal principal)
+    public static HechaoAccount? GetAccount(this ClaimsPrincipal principal)
     {
         if (principal.Identity?.IsAuthenticated != true ||
             !Guid.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) ||
-            !Guid.TryParse(principal.FindFirstValue(LauncherClaimTypes.MinecraftUuid), out var minecraftUuid) ||
             !Enum.TryParse<AccessTier>(
                 principal.FindFirstValue(LauncherClaimTypes.AccessTier),
                 ignoreCase: true,
@@ -81,13 +96,33 @@ public static class LauncherPrincipalExtensions
             return null;
         }
 
-        var minecraftName = principal.FindFirstValue(ClaimTypes.Name);
+        var username = principal.FindFirstValue(LauncherClaimTypes.Username);
+        var displayName = principal.FindFirstValue(ClaimTypes.Name);
         var primaryGroup = principal.FindFirstValue(LauncherClaimTypes.LuckPermsPrimaryGroup);
-        if (string.IsNullOrWhiteSpace(minecraftName) || string.IsNullOrWhiteSpace(primaryGroup))
+        if (string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(displayName) ||
+            string.IsNullOrWhiteSpace(primaryGroup))
         {
             return null;
         }
 
+        if (!DateTimeOffset.TryParse(
+                principal.FindFirstValue(LauncherClaimTypes.AccountCreatedAt),
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var createdAt))
+        {
+            return null;
+        }
+
+        Guid? minecraftUuid = null;
+        var rawMinecraftUuid = principal.FindFirstValue(LauncherClaimTypes.MinecraftUuid);
+        if (Guid.TryParse(rawMinecraftUuid, out var parsedMinecraftUuid))
+        {
+            minecraftUuid = parsedMinecraftUuid;
+        }
+
+        var minecraftName = principal.FindFirstValue(LauncherClaimTypes.MinecraftName);
         DateTimeOffset? syncedAt = null;
         var rawSyncedAt = principal.FindFirstValue(LauncherClaimTypes.LuckPermsSyncedAt);
         if (!string.IsNullOrWhiteSpace(rawSyncedAt) &&
@@ -100,13 +135,32 @@ public static class LauncherPrincipalExtensions
             syncedAt = parsedSyncedAt;
         }
 
-        return new AuthenticatedPlayer(
+        return new HechaoAccount(
             userId,
+            username,
+            displayName,
+            principal.FindFirstValue(ClaimTypes.Email),
             minecraftUuid,
             minecraftName,
             primaryGroup,
             accessTier,
-            syncedAt);
+            syncedAt,
+            createdAt);
+    }
+
+    public static AuthenticatedPlayer? GetPlayer(this ClaimsPrincipal principal)
+    {
+        var account = principal.GetAccount();
+        return account?.MinecraftUuid is { } minecraftUuid &&
+               !string.IsNullOrWhiteSpace(account.MinecraftName)
+            ? new AuthenticatedPlayer(
+                account.UserId,
+                minecraftUuid,
+                account.MinecraftName,
+                account.LuckPermsPrimaryGroup,
+                account.AccessTier,
+                account.LuckPermsSyncedAt)
+            : null;
     }
 }
 

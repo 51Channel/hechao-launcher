@@ -1,22 +1,23 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
-> 当前客户端源码版本：`0.7.1`
-> 当前生产状态：认证 API、LuckPerms 同步和 Velocity 授权链已部署；Velocity 仍为 `monitor`，目录强制登录尚未启用
+> 当前客户端源码版本：`0.8.0`，API 源码版本：`0.9.0`
+> 当前生产状态：线上仍为 API `0.6.0`；赫朝账号与新版绑定链路尚未部署，Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界
 
-赫朝启动器只接受 Microsoft 正版 Minecraft: Java Edition 身份，不建立独立密码体系，也不采集 Microsoft 密码。
+赫朝账号是社区身份与权限主体，Microsoft/Minecraft Java 正版身份是可独立绑定的游戏所有权证明。启动器不采集 Microsoft 密码；赫朝账号密码只通过 TLS 发送到赫朝 API，服务端使用 ASP.NET Core Identity PBKDF2 哈希保存，客户端不落盘保存密码。
 
 登录链路：
 
 ```text
-Windows 系统浏览器
+赫朝账号注册或登录
+  -> 赫朝短期访问令牌 + 可轮换刷新令牌
+  -> Windows 系统浏览器
   -> Microsoft OAuth 授权码 + PKCE
   -> Xbox User Token
   -> XSTS Token
   -> Minecraft Access Token
-  -> 赫朝 API 校验 Java 权益与 Minecraft 档案
-  -> 赫朝短期会话
+  -> 赫朝 API 校验 Java 权益与 Minecraft 档案并绑定身份
   -> 按 LuckPerms 主组过滤服务器目录
 ```
 
@@ -34,6 +35,8 @@ Windows 系统浏览器
 ## 2. 已部署组件
 
 - API 端点：`POST /v1/auth/minecraft/exchange`、`POST /v1/auth/refresh`、`POST /v1/auth/logout`、`GET /v1/me`。
+- API `0.9.0` 源码新增：`POST /v1/auth/register`、`POST /v1/auth/login`、已登录后调用的 `POST /v1/auth/minecraft/link`。
+- 旧版 `minecraft/exchange` 暂时保留兼容；其临时 `legacy_*` 账户在绑定同一正版身份时可安全转入正式赫朝账号，正式账户之间不能互相接管。
 - 进服端点：`POST /v1/velocity/launch-grants` 和内部 `POST /v1/internal/velocity/authorize`。
 - 访问令牌默认有效 15 分钟；刷新令牌默认有效 30 天并在每次刷新时轮换。
 - PostgreSQL 只保存访问令牌与刷新令牌的 SHA-256，不保存令牌明文。
@@ -85,8 +88,8 @@ Authentication__EnforceCatalogAuthentication=false
 启用顺序必须是：
 
 1. 完成 Microsoft 应用注册和 Minecraft API 许可。
-2. 用至少一个普通组、VIP、管理员和服主账号完成真实登录测试。
-3. 验证账号 Minecraft UUID 与 LuckPerms 快照一致，目录过滤结果正确。
+2. 用至少一个普通组、VIP、管理员和服主分别完成赫朝账号注册、登录、Microsoft 绑定和会话恢复测试。
+3. 验证新账号与旧 `legacy_*` 身份接管、Minecraft UUID、LuckPerms 快照和目录过滤结果正确。
 4. 由管理员手动重启 Velocity，以 `monitor` 模式加载最终授权插件。
 5. 核对所有 Velocity 目标与平台目录映射，完成首次连接、NPC 转服、`/hub`、断线重连和 API 故障测试。
 6. 在维护窗口把插件改为 `enforce` 并由管理员手动重启 Velocity。

@@ -26,7 +26,18 @@ public sealed class LauncherApiClient
         _sessionStore = sessionStore;
     }
 
-    public AuthenticatedPlayer? CurrentPlayer => _session?.Player;
+    public HechaoAccount? CurrentAccount => _session?.Account;
+    public AuthenticatedPlayer? CurrentPlayer =>
+        CurrentAccount?.MinecraftUuid is { } minecraftUuid &&
+        !string.IsNullOrWhiteSpace(CurrentAccount.MinecraftName)
+            ? new AuthenticatedPlayer(
+                CurrentAccount.UserId,
+                minecraftUuid,
+                CurrentAccount.MinecraftName,
+                CurrentAccount.LuckPermsPrimaryGroup,
+                CurrentAccount.AccessTier,
+                CurrentAccount.LuckPermsSyncedAt)
+            : null;
 
     internal HttpMessageHandler CreateDownloadAuthorizationHandler(HttpMessageHandler innerHandler)
     {
@@ -64,7 +75,7 @@ public sealed class LauncherApiClient
         return new LauncherApiClient(httpClient, sessionStore ?? new DpapiSessionStore());
     }
 
-    public async Task<AuthenticatedPlayer?> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
+    public async Task<HechaoAccount?> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
     {
         var storedSession = await _sessionStore.LoadAsync(cancellationToken);
         if (storedSession is null)
@@ -75,7 +86,7 @@ public sealed class LauncherApiClient
         try
         {
             return await RefreshCoreAsync(storedSession.RefreshToken, cancellationToken)
-                ? _session?.Player
+                ? _session?.Account
                 : null;
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
@@ -88,7 +99,74 @@ public sealed class LauncherApiClient
         }
     }
 
-    public async Task<AuthenticatedPlayer> ExchangeMinecraftSessionAsync(
+    public async Task<HechaoAccount> RegisterAccountAsync(
+        string username,
+        string displayName,
+        string password,
+        string? email,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.PostAsJsonAsync(
+            "v1/auth/register",
+            new HechaoAccountRegisterRequest(username, displayName, password, email),
+            SerializerOptions,
+            cancellationToken);
+        var session = await ReadRequiredAsync<AuthSessionResponse>(response, cancellationToken);
+        await SetSessionAsync(session, cancellationToken);
+        return session.Account;
+    }
+
+    public async Task<HechaoAccount> LoginAccountAsync(
+        string usernameOrEmail,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.PostAsJsonAsync(
+            "v1/auth/login",
+            new HechaoAccountLoginRequest(usernameOrEmail, password),
+            SerializerOptions,
+            cancellationToken);
+        var session = await ReadRequiredAsync<AuthSessionResponse>(response, cancellationToken);
+        await SetSessionAsync(session, cancellationToken);
+        return session.Account;
+    }
+
+    public async Task<HechaoAccount> LinkMinecraftIdentityAsync(
+        string minecraftAccessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendMinecraftIdentityLinkRequestAsync(
+            minecraftAccessToken,
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
+        {
+            var account = await ReadRequiredAsync<HechaoAccount>(
+                firstResponse,
+                cancellationToken);
+            await UpdateSessionAccountAsync(account, cancellationToken);
+            return account;
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendMinecraftIdentityLinkRequestAsync(
+            minecraftAccessToken,
+            accessToken,
+            cancellationToken);
+        var linkedAccount = await ReadRequiredAsync<HechaoAccount>(
+            retryResponse,
+            cancellationToken);
+        await UpdateSessionAccountAsync(linkedAccount, cancellationToken);
+        return linkedAccount;
+    }
+
+    public async Task<HechaoAccount> ExchangeMinecraftSessionAsync(
         string minecraftAccessToken,
         CancellationToken cancellationToken = default)
     {
@@ -99,7 +177,7 @@ public sealed class LauncherApiClient
             cancellationToken);
         var session = await ReadRequiredAsync<AuthSessionResponse>(response, cancellationToken);
         await SetSessionAsync(session, cancellationToken);
-        return session.Player;
+        return session.Account;
     }
 
     public async Task<LauncherCatalogSnapshot> GetCatalogAsync(CancellationToken cancellationToken = default)
@@ -328,6 +406,24 @@ public sealed class LauncherApiClient
             cancellationToken);
     }
 
+    private async Task<HttpResponseMessage> SendMinecraftIdentityLinkRequestAsync(
+        string minecraftAccessToken,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "v1/auth/minecraft/link")
+        {
+            Content = JsonContent.Create(
+                new MinecraftIdentityLinkRequest(minecraftAccessToken),
+                options: SerializerOptions)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+    }
+
     private Task<HttpResponseMessage> SendAdminBrowserTicketRequestAsync(
         string accessToken,
         CancellationToken cancellationToken)
@@ -358,7 +454,22 @@ public sealed class LauncherApiClient
     {
         _session = session;
         await _sessionStore.SaveAsync(
-            new StoredLauncherSession(session.RefreshToken, session.Player),
+            new StoredLauncherSession(session.RefreshToken, session.Account),
+            cancellationToken);
+    }
+
+    private async Task UpdateSessionAccountAsync(
+        HechaoAccount account,
+        CancellationToken cancellationToken)
+    {
+        if (_session is null)
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        _session = _session with { Account = account };
+        await _sessionStore.SaveAsync(
+            new StoredLauncherSession(_session.RefreshToken, account),
             cancellationToken);
     }
 
@@ -441,6 +552,27 @@ public sealed class LauncherApiClient
             if (document.RootElement.TryGetProperty("detail", out var detail))
             {
                 return detail.GetString();
+            }
+
+            if (document.RootElement.TryGetProperty("errors", out var errors) &&
+                errors.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var validationError in errors.EnumerateObject())
+                {
+                    if (validationError.Value.ValueKind != JsonValueKind.Array)
+                    {
+                        continue;
+                    }
+
+                    foreach (var message in validationError.Value.EnumerateArray())
+                    {
+                        if (message.ValueKind == JsonValueKind.String &&
+                            !string.IsNullOrWhiteSpace(message.GetString()))
+                        {
+                            return message.GetString();
+                        }
+                    }
+                }
             }
 
             if (document.RootElement.TryGetProperty("title", out var title))

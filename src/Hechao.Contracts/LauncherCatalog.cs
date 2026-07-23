@@ -58,7 +58,34 @@ public sealed record AuthenticatedPlayer(
     AccessTier AccessTier,
     DateTimeOffset? LuckPermsSyncedAt);
 
+public sealed record HechaoAccount(
+    Guid UserId,
+    string Username,
+    string DisplayName,
+    string? Email,
+    Guid? MinecraftUuid,
+    string? MinecraftName,
+    string LuckPermsPrimaryGroup,
+    AccessTier AccessTier,
+    DateTimeOffset? LuckPermsSyncedAt,
+    DateTimeOffset CreatedAt)
+{
+    public bool IsMinecraftLinked =>
+        MinecraftUuid is not null && !string.IsNullOrWhiteSpace(MinecraftName);
+}
+
+public sealed record HechaoAccountRegisterRequest(
+    string Username,
+    string DisplayName,
+    string Password,
+    string? Email);
+
+public sealed record HechaoAccountLoginRequest(
+    string UsernameOrEmail,
+    string Password);
+
 public sealed record MinecraftSessionExchangeRequest(string MinecraftAccessToken);
+public sealed record MinecraftIdentityLinkRequest(string MinecraftAccessToken);
 
 public sealed record RefreshSessionRequest(string RefreshToken);
 
@@ -67,7 +94,7 @@ public sealed record AuthSessionResponse(
     DateTimeOffset AccessTokenExpiresAt,
     string RefreshToken,
     DateTimeOffset RefreshTokenExpiresAt,
-    AuthenticatedPlayer Player);
+    HechaoAccount Account);
 
 public sealed record LuckPermsPlayerSnapshot(
     Guid MinecraftUuid,

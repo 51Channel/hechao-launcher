@@ -8,7 +8,10 @@ public sealed record LauncherSettings(
     string Memory = "6 GB",
     string ClientDirectory = "%AppData%\\Hechao\\instances",
     bool CheckForUpdates = true,
-    bool KeepDownloadsAfterClose = true);
+    bool KeepDownloadsAfterClose = true,
+    bool CloseLauncherAfterGameStart = false,
+    bool OpenDownloadsWhenInstalling = true,
+    string StartupPage = "服务器");
 
 public interface ILauncherSettingsStore
 {

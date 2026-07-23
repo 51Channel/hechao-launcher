@@ -8,13 +8,17 @@ namespace Hechao.Launcher.Tests;
 
 public sealed class LauncherApiClientAdminTests
 {
-    private static readonly AuthenticatedPlayer Administrator = new(
+    private static readonly HechaoAccount Administrator = new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        "hechaoadmin",
+        "赫朝管理员",
+        "admin@example.com",
         Guid.Parse("22222222-2222-2222-2222-222222222222"),
         "HechaoAdmin",
         "admin",
         AccessTier.Administrator,
-        DateTimeOffset.Parse("2026-07-24T06:00:00Z"));
+        DateTimeOffset.Parse("2026-07-24T06:00:00Z"),
+        DateTimeOffset.Parse("2026-07-01T00:00:00Z"));
 
     [Fact]
     public async Task CreateAdminBrowserTicketAsync_SendsAuthenticatedRequest()

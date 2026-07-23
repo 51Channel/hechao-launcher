@@ -1,21 +1,23 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.7.1`，API 源码版本是 `0.8.0`。平台已经完成视觉系统、HTTPS 服务器目录、Microsoft/Minecraft 正版认证链路、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、真实 Minecraft 启动、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话和双重验证的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.8.0`，API 源码版本是 `0.9.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、真实 Minecraft 启动、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话和双重验证的管理员控制台。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
 ## 当前能力
 
 - 展示大厅、生存服和活动服的状态、在线人数、核心与 Minecraft 版本。
+- 提供服务器、下载、活动、赫朝账户和设置五个真实工作区；短屏与高 DPI 下使用受约束布局和局部滚动，不裁切运行参数。
+- 先注册或登录赫朝账号，再独立绑定 Microsoft/Minecraft Java 正版身份；旧版 Microsoft 临时账户可在验证同一正版身份后安全并入正式赫朝账号。
 - 切换服务器并根据在线/维护状态控制主操作按钮。
 - 读取经 ECDSA P-256 签名的客户端清单；未知公钥、篡改负载、危险路径和远程明文 HTTP 会被拒绝。
 - 使用 HTTP Range 断点续传和 SHA-256 逐文件校验，下载失败时保留 `.part` 供下次继续。
 - 在独立暂存目录构建完整客户端，通过目录重命名切换活动版本，并保留一个 `.previous` 版本供回滚。
 - 修复流程会重新检查本地文件；同档案的并发安装通过跨进程独占锁阻止。
-- 提供通知、客户端修复入口和游戏内存设置。
-- 将所选服务器和内存保存到 `%LocalAppData%\Hechao\Launcher\settings.json`。
+- 提供实时下载任务、持久化历史、取消任务、活动服目录、客户端修复入口和完整设置页。
+- 将所选服务器、内存、客户端目录、默认页面、缓存与启动行为保存到 `%LocalAppData%\Hechao\Launcher\settings.json`。
 - 通过 `IServerCatalogClient` 从 HTTPS API 读取服务器目录，并按“在线 API、上次成功缓存、内置应急目录”顺序降级。
-- 使用系统浏览器执行 Microsoft OAuth 与 PKCE，再通过 Xbox/XSTS/Minecraft 验证 Java 正版权益。
+- 使用赫朝账号建立社区会话；绑定游戏身份时使用系统浏览器执行 Microsoft OAuth 与 PKCE，再通过 Xbox/XSTS/Minecraft 验证 Java 正版权益。
 - 使用 15 分钟访问令牌和可撤销、轮换的刷新令牌；刷新会话由 Windows DPAPI 保护。
 - 从共享 LuckPerms 数据库每 5 分钟同步主组，按 `Member`、`Participant`、`Collaborator`、`Administrator` 过滤目录。
 - 私有 OSS 下载通过启动器 API 鉴权；API 仅为清单内对象签发 5 分钟 V4 URL，Bearer 不会随跳转发送到 OSS。
@@ -28,7 +30,7 @@
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复和维护状态，所有变更使用修订号并在同一事务中写入审计日志。
 - 启动器 API `0.6.0` 已通过 `https://launcher-api.hechao.world` 上线；目录会合并实时在线人数，并在心跳过期或端口关闭时显示关闭。
 
-启动器 `0.7.1` 与 API `0.8.0` 的管理后台当前只在源码中完成，尚未部署；线上仍为 API `0.6.0`。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，也不包含客户端密码。
+启动器 `0.8.0` 与 API `0.9.0` 当前只在源码中完成，尚未部署；线上仍为 API `0.6.0`。API `0.9.0` 包含赫朝账号表结构迁移、密码哈希、登录限流和正版身份绑定，必须先完成数据库备份与 API 灰度，之后才能分发启动器 `0.8.0`。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
@@ -67,7 +69,8 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 3. 由管理员在维护窗口手动重启 Velocity，使 `monitor` 模式插件加载；核对代理目标与平台目录后观察授权日志。
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
-6. 部署 API `0.8.0` 与启动器 `0.7.1`，完成管理员票据、MFA 恢复码、目录变更和审计灰度验收。
+6. 备份数据库并部署 API `0.9.0`，完成赫朝账号、旧身份接管、管理员票据、MFA、目录变更和审计灰度验收。
+7. API 验收通过后发布启动器 `0.8.0`，验证五个工作区、下载历史、设置持久化和短屏响应式布局。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 

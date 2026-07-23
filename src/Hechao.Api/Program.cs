@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Mail;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -17,6 +18,7 @@ using Hechao.Api.Velocity;
 using Hechao.Contracts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
@@ -29,6 +31,11 @@ builder.WebHost
     .ConfigureKestrel(options => options.AddServerHeader = false);
 
 builder.Services.AddProblemDetails();
+builder.Services.Configure<PasswordHasherOptions>(options =>
+    options.IterationCount = 100_000);
+builder.Services.AddSingleton<
+    IPasswordHasher<HechaoAccountPasswordSubject>,
+    PasswordHasher<HechaoAccountPasswordSubject>>();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOptions<AdminWebOptions>()
@@ -278,7 +285,7 @@ builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.minecraftservices.com/");
     client.Timeout = TimeSpan.FromSeconds(10);
-    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.8.0"));
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.9.0"));
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services
@@ -364,13 +371,20 @@ app.MapGet("/healthz", () => Results.Ok(new
 
 app.MapGet("/readyz", CheckReadinessAsync).DisableRateLimiting();
 
+app.MapPost("/v1/auth/register", RegisterHechaoAccountAsync)
+    .RequireRateLimiting("authentication");
+app.MapPost("/v1/auth/login", LoginHechaoAccountAsync)
+    .RequireRateLimiting("authentication");
+app.MapPost("/v1/auth/minecraft/link", LinkMinecraftIdentityAsync)
+    .RequireAuthorization()
+    .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/minecraft/exchange", ExchangeMinecraftSessionAsync)
     .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/refresh", RefreshSessionAsync)
     .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/logout", LogoutAsync)
     .RequireAuthorization();
-app.MapGet("/v1/me", GetCurrentPlayer)
+app.MapGet("/v1/me", GetCurrentAccount)
     .RequireAuthorization();
 app.MapPost("/v1/velocity/launch-grants", CreateVelocityLaunchGrantAsync)
     .RequireAuthorization()
@@ -453,6 +467,142 @@ async Task<IResult> CheckReadinessAsync(
     }, statusCode: StatusCodes.Status503ServiceUnavailable);
 }
 
+async Task<IResult> RegisterHechaoAccountAsync(
+    HechaoAccountRegisterRequest request,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var username = request.Username?.Trim().ToLowerInvariant() ?? string.Empty;
+    var displayName = request.DisplayName?.Trim() ?? string.Empty;
+    var password = request.Password ?? string.Empty;
+    var email = string.IsNullOrWhiteSpace(request.Email)
+        ? null
+        : request.Email.Trim().ToLowerInvariant();
+    var errors = ValidateHechaoAccountRegistration(
+        username,
+        displayName,
+        password,
+        email);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    try
+    {
+        var response = await authenticationRepository.RegisterAccountAsync(
+            username,
+            displayName,
+            password,
+            email,
+            context.Connection.RemoteIpAddress,
+            context.Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        return Results.Created("/v1/me", response);
+    }
+    catch (HechaoAccountConflictException exception)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [exception.Field] =
+            [
+                exception.Field == "email"
+                    ? "该邮箱已绑定其他赫朝账号。"
+                    : "该赫朝账号名已被使用。"
+            ]
+        });
+    }
+}
+
+async Task<IResult> LoginHechaoAccountAsync(
+    HechaoAccountLoginRequest request,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var usernameOrEmail = request.UsernameOrEmail?.Trim().ToLowerInvariant() ?? string.Empty;
+    var password = request.Password ?? string.Empty;
+    if (usernameOrEmail.Length is < 3 or > 254 ||
+        password.Length is < 1 or > 128)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号或密码不正确。");
+    }
+
+    var response = await authenticationRepository.LoginAccountAsync(
+        usernameOrEmail,
+        password,
+        context.Connection.RemoteIpAddress,
+        context.Request.Headers.UserAgent.ToString(),
+        cancellationToken);
+    return response is null
+        ? AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号或密码不正确。")
+        : Results.Ok(response);
+}
+
+async Task<IResult> LinkMinecraftIdentityAsync(
+    MinecraftIdentityLinkRequest request,
+    MinecraftServicesClient minecraftServices,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var account = context.User.GetAccount();
+    if (account is null)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号登录会话无效。");
+    }
+
+    try
+    {
+        var identity = await minecraftServices.VerifyAsync(
+            request.MinecraftAccessToken,
+            cancellationToken);
+        var linkedAccount = await authenticationRepository.LinkMinecraftIdentityAsync(
+            account.UserId,
+            identity,
+            context.Connection.RemoteIpAddress,
+            cancellationToken);
+        return Results.Ok(linkedAccount);
+    }
+    catch (MinecraftIdentityAlreadyLinkedException)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status409Conflict,
+            "该 Minecraft 正版身份已绑定其他赫朝账号。");
+    }
+    catch (HechaoAccountMinecraftLinkConflictException)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status409Conflict,
+            "该赫朝账号已经绑定其他 Minecraft 正版身份。");
+    }
+    catch (MinecraftVerificationException exception)
+    {
+        return exception.Failure switch
+        {
+            MinecraftVerificationFailure.InvalidToken => AuthenticationProblem(
+                StatusCodes.Status401Unauthorized,
+                "Minecraft 登录凭据无效或已过期。"),
+            MinecraftVerificationFailure.NoJavaEntitlement => AuthenticationProblem(
+                StatusCodes.Status403Forbidden,
+                "该 Microsoft 账号没有可用的 Minecraft: Java Edition 权益。"),
+            MinecraftVerificationFailure.NoJavaProfile => AuthenticationProblem(
+                StatusCodes.Status403Forbidden,
+                "该 Microsoft 账号尚未创建 Minecraft: Java Edition 档案。"),
+            _ => AuthenticationProblem(
+                StatusCodes.Status503ServiceUnavailable,
+                "暂时无法向 Minecraft 服务验证账号，请稍后重试。")
+        };
+    }
+}
+
 async Task<IResult> ExchangeMinecraftSessionAsync(
     MinecraftSessionExchangeRequest request,
     MinecraftServicesClient minecraftServices,
@@ -497,7 +647,7 @@ async Task<IResult> RefreshSessionAsync(
 {
     var response = await repository.RefreshSessionAsync(request.RefreshToken, cancellationToken);
     return response is null
-        ? AuthenticationProblem(StatusCodes.Status401Unauthorized, "登录会话已过期，请重新登录 Microsoft 账号。")
+        ? AuthenticationProblem(StatusCodes.Status401Unauthorized, "登录会话已过期，请重新登录赫朝账号。")
         : Results.Ok(response);
 }
 
@@ -514,12 +664,12 @@ async Task<IResult> LogoutAsync(
     return Results.NoContent();
 }
 
-IResult GetCurrentPlayer(HttpContext context)
+IResult GetCurrentAccount(HttpContext context)
 {
-    var player = context.User.GetPlayer();
-    return player is null
+    var account = context.User.GetAccount();
+    return account is null
         ? AuthenticationProblem(StatusCodes.Status401Unauthorized, "登录会话无效。")
-        : Results.Ok(player);
+        : Results.Ok(account);
 }
 
 async Task<IResult> CreateVelocityLaunchGrantAsync(
@@ -671,16 +821,16 @@ async Task<IResult> GetCatalogAsync(
     HttpContext context,
     CancellationToken cancellationToken)
 {
-    var player = context.User.GetPlayer();
+    var account = context.User.GetAccount();
     var hasAuthorizationHeader = context.Request.Headers.ContainsKey("Authorization");
-    if (player is null && (hasAuthorizationHeader || authenticationOptions.Value.EnforceCatalogAuthentication))
+    if (account is null && (hasAuthorizationHeader || authenticationOptions.Value.EnforceCatalogAuthentication))
     {
-        return AuthenticationProblem(StatusCodes.Status401Unauthorized, "请先使用 Microsoft 正版账号登录。 ");
+        return AuthenticationProblem(StatusCodes.Status401Unauthorized, "请先登录赫朝账号。");
     }
 
     var snapshot = await repository.GetSnapshotAsync(
-        player?.UserId,
-        player?.AccessTier,
+        account?.UserId,
+        account?.AccessTier,
         cancellationToken);
     return Results.Ok(snapshot);
 }
@@ -692,15 +842,15 @@ async Task<IResult> GetProfileManifestAsync(
     HttpContext context,
     CancellationToken cancellationToken)
 {
-    var player = context.User.GetPlayer();
-    if (player is null)
+    var account = context.User.GetAccount();
+    if (account is null)
     {
-        return AuthenticationProblem(StatusCodes.Status401Unauthorized, "请先使用 Microsoft 正版账号登录。 ");
+        return AuthenticationProblem(StatusCodes.Status401Unauthorized, "请先登录赫朝账号。");
     }
 
     var profile = await catalogRepository.GetAccessibleProfileAsync(
-        player.UserId,
-        player.AccessTier,
+        account.UserId,
+        account.AccessTier,
         profileId,
         cancellationToken);
     if (profile is null)
@@ -740,15 +890,15 @@ async Task<IResult> GetProfileObjectAsync(
         return Results.NotFound();
     }
 
-    var player = context.User.GetPlayer();
-    if (player is null)
+    var account = context.User.GetAccount();
+    if (account is null)
     {
-        return AuthenticationProblem(StatusCodes.Status401Unauthorized, "请先使用 Microsoft 正版账号登录。");
+        return AuthenticationProblem(StatusCodes.Status401Unauthorized, "请先登录赫朝账号。");
     }
 
     var profile = await catalogRepository.GetAccessibleProfileAsync(
-        player.UserId,
-        player.AccessTier,
+        account.UserId,
+        account.AccessTier,
         profileId,
         cancellationToken);
     if (profile is null || string.IsNullOrWhiteSpace(profile.Sha256))
@@ -1022,6 +1172,52 @@ IResult? ValidateVelocityAuthorizationRequest(
     }
 
     return null;
+}
+
+Dictionary<string, string[]> ValidateHechaoAccountRegistration(
+    string username,
+    string displayName,
+    string password,
+    string? email)
+{
+    var errors = new Dictionary<string, string[]>();
+    if (!Regex.IsMatch(username, "^[a-z0-9_]{3,24}$"))
+    {
+        errors["username"] =
+        [
+            "账号名只能包含 3–24 位小写字母、数字或下划线。"
+        ];
+    }
+
+    if (displayName.Length is < 2 or > 32 ||
+        displayName.Any(char.IsControl))
+    {
+        errors["displayName"] =
+        [
+            "显示名称需要 2–32 个字符，且不能包含控制字符。"
+        ];
+    }
+
+    if (password.Length is < 10 or > 128 ||
+        !password.Any(char.IsLetter) ||
+        !password.Any(char.IsDigit) ||
+        string.Equals(password, username, StringComparison.OrdinalIgnoreCase))
+    {
+        errors["password"] =
+        [
+            "密码需要 10–128 个字符，并同时包含字母和数字，且不能与账号名相同。"
+        ];
+    }
+
+    if (email is not null &&
+        (!MailAddress.TryCreate(email, out var parsedEmail) ||
+         !string.Equals(parsedEmail.Address, email, StringComparison.OrdinalIgnoreCase) ||
+         email.Length > 254))
+    {
+        errors["email"] = ["邮箱格式无效。"];
+    }
+
+    return errors;
 }
 
 IResult AuthenticationProblem(int statusCode, string detail)

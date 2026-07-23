@@ -7,9 +7,20 @@ namespace Hechao.Launcher.Services;
 
 public interface ILauncherAuthenticationService
 {
+    HechaoAccount? CurrentAccount { get; }
     AuthenticatedPlayer? CurrentPlayer { get; }
-    Task<AuthenticatedPlayer?> TryRestoreAsync(CancellationToken cancellationToken = default);
-    Task<AuthenticatedPlayer> SignInAsync(CancellationToken cancellationToken = default);
+    Task<HechaoAccount?> TryRestoreAsync(CancellationToken cancellationToken = default);
+    Task<HechaoAccount> RegisterAsync(
+        string username,
+        string displayName,
+        string password,
+        string? email,
+        CancellationToken cancellationToken = default);
+    Task<HechaoAccount> LoginAsync(
+        string usernameOrEmail,
+        string password,
+        CancellationToken cancellationToken = default);
+    Task<HechaoAccount> LinkMinecraftAsync(CancellationToken cancellationToken = default);
     Task<MinecraftLaunchSession> GetMinecraftLaunchSessionAsync(
         CancellationToken cancellationToken = default);
     Task<VelocityLaunchGrantResponse> PrepareVelocityLaunchAsync(
@@ -42,15 +53,44 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
         _microsoftClientId = microsoftClientId;
     }
 
+    public HechaoAccount? CurrentAccount => _apiClient.CurrentAccount;
     public AuthenticatedPlayer? CurrentPlayer => _apiClient.CurrentPlayer;
 
-    public Task<AuthenticatedPlayer?> TryRestoreAsync(CancellationToken cancellationToken = default)
+    public Task<HechaoAccount?> TryRestoreAsync(CancellationToken cancellationToken = default)
     {
         return _apiClient.TryRestoreSessionAsync(cancellationToken);
     }
 
-    public async Task<AuthenticatedPlayer> SignInAsync(CancellationToken cancellationToken = default)
+    public Task<HechaoAccount> RegisterAsync(
+        string username,
+        string displayName,
+        string password,
+        string? email,
+        CancellationToken cancellationToken = default)
     {
+        return _apiClient.RegisterAccountAsync(
+            username,
+            displayName,
+            password,
+            email,
+            cancellationToken);
+    }
+
+    public Task<HechaoAccount> LoginAsync(
+        string usernameOrEmail,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.LoginAccountAsync(
+            usernameOrEmail,
+            password,
+            cancellationToken);
+    }
+
+    public async Task<HechaoAccount> LinkMinecraftAsync(
+        CancellationToken cancellationToken = default)
+    {
+        _ = CurrentAccount ?? throw new LauncherAuthenticationRequiredException();
         var client = await GetMicrosoftClientAsync(cancellationToken);
         AuthenticationResult microsoftResult;
         try
@@ -73,19 +113,25 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
         var minecraftSession = await _minecraftAuthenticationClient.AuthenticateAsync(
             microsoftResult.AccessToken,
             cancellationToken);
-        var player = await _apiClient.ExchangeMinecraftSessionAsync(
+        var account = await _apiClient.LinkMinecraftIdentityAsync(
             minecraftSession.AccessToken,
             cancellationToken);
-        _cachedMinecraftLaunchSession = CreateLaunchSession(player, minecraftSession);
-        return player;
+        _cachedMinecraftLaunchSession = CreateLaunchSession(account, minecraftSession);
+        return account;
     }
 
     public async Task<MinecraftLaunchSession> GetMinecraftLaunchSessionAsync(
         CancellationToken cancellationToken = default)
     {
-        var currentPlayer = CurrentPlayer ?? throw new LauncherAuthenticationRequiredException();
+        var currentAccount = CurrentAccount ?? throw new LauncherAuthenticationRequiredException();
+        if (currentAccount.MinecraftUuid is not { } linkedMinecraftUuid ||
+            string.IsNullOrWhiteSpace(currentAccount.MinecraftName))
+        {
+            throw new MinecraftIdentityLinkRequiredException();
+        }
+
         if (_cachedMinecraftLaunchSession is { } cached &&
-            cached.MinecraftUuid == currentPlayer.MinecraftUuid &&
+            cached.MinecraftUuid == linkedMinecraftUuid &&
             cached.ExpiresAt > DateTimeOffset.UtcNow.AddMinutes(2))
         {
             return cached;
@@ -120,7 +166,7 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
                 var profile = await _minecraftAuthenticationClient.GetProfileAsync(
                     minecraftSession.AccessToken,
                     cancellationToken);
-                if (profile.MinecraftUuid != currentPlayer.MinecraftUuid)
+                if (profile.MinecraftUuid != linkedMinecraftUuid)
                 {
                     continue;
                 }
@@ -225,12 +271,18 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
     }
 
     private static MinecraftLaunchSession CreateLaunchSession(
-        AuthenticatedPlayer player,
+        HechaoAccount account,
         MinecraftAccessSession minecraftSession)
     {
+        if (account.MinecraftUuid is not { } minecraftUuid ||
+            string.IsNullOrWhiteSpace(account.MinecraftName))
+        {
+            throw new MinecraftIdentityLinkRequiredException();
+        }
+
         return new MinecraftLaunchSession(
-            player.MinecraftName,
-            player.MinecraftUuid,
+            account.MinecraftName,
+            minecraftUuid,
             minecraftSession.AccessToken,
             minecraftSession.ExpiresAt,
             minecraftSession.Xuid);
@@ -248,3 +300,4 @@ public sealed class MicrosoftAuthenticationNotConfiguredException : Exception;
 public sealed class MicrosoftSignInCanceledException : Exception;
 public sealed class MicrosoftSignInFailedException : Exception;
 public sealed class MicrosoftReauthenticationRequiredException : Exception;
+public sealed class MinecraftIdentityLinkRequiredException : Exception;

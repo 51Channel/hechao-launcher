@@ -9,13 +9,17 @@ namespace Hechao.Launcher.Tests;
 
 public sealed class LauncherApiClientVelocityTests
 {
-    private static readonly AuthenticatedPlayer Player = new(
+    private static readonly HechaoAccount Account = new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        "hechaoplayer",
+        "赫朝玩家",
+        null,
         Guid.Parse("22222222-2222-2222-2222-222222222222"),
         "HechaoPlayer",
         "vip",
         AccessTier.Participant,
-        DateTimeOffset.Parse("2026-07-23T10:00:00Z"));
+        DateTimeOffset.Parse("2026-07-23T10:00:00Z"),
+        DateTimeOffset.Parse("2026-07-01T00:00:00Z"));
 
     [Fact]
     public async Task CreateVelocityLaunchGrantAsync_SendsAuthenticatedServerRequest()
@@ -43,13 +47,13 @@ public sealed class LauncherApiClientVelocityTests
                     "activity",
                     expiresAt));
             });
-        var store = new InMemorySessionStore(new StoredLauncherSession("refresh-one", Player));
+        var store = new InMemorySessionStore(new StoredLauncherSession("refresh-one", Account));
         var client = CreateClient(handler, store);
 
         var restored = await client.TryRestoreSessionAsync();
         var grant = await client.CreateVelocityLaunchGrantAsync("activity");
 
-        Assert.Equal(Player, restored);
+        Assert.Equal(Account, restored);
         Assert.Equal("activity", grant.ServerId);
         Assert.Equal(expiresAt, grant.ExpiresAt);
         Assert.Equal(2, handler.RequestCount);
@@ -90,7 +94,7 @@ public sealed class LauncherApiClientVelocityTests
             DateTimeOffset.UtcNow.AddMinutes(15),
             refreshToken,
             DateTimeOffset.UtcNow.AddDays(30),
-            Player);
+            Account);
     }
 
     private static HttpResponseMessage JsonResponse<T>(T value)

@@ -13,7 +13,7 @@ public interface ISecureSessionStore
     Task ClearAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed record StoredLauncherSession(string RefreshToken, AuthenticatedPlayer Player);
+public sealed record StoredLauncherSession(string RefreshToken, HechaoAccount Account);
 
 public sealed class DpapiSessionStore : ISecureSessionStore
 {
@@ -46,7 +46,17 @@ public sealed class DpapiSessionStore : ISecureSessionStore
 
             var encrypted = await File.ReadAllBytesAsync(_sessionPath, cancellationToken);
             var plaintext = Unprotect(encrypted);
-            return JsonSerializer.Deserialize<StoredLauncherSession>(plaintext, SerializerOptions);
+            var session = JsonSerializer.Deserialize<StoredLauncherSession>(
+                plaintext,
+                SerializerOptions);
+            if (session?.Account is null ||
+                string.IsNullOrWhiteSpace(session.RefreshToken))
+            {
+                await ClearAsync(cancellationToken);
+                return null;
+            }
+
+            return session;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or Win32Exception)
         {

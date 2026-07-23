@@ -18,8 +18,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly ILauncherSettingsStore _settingsStore;
     private readonly IClientInstallationService _installationService;
     private readonly IMinecraftGameLauncherService _gameLauncherService;
+    private readonly IDownloadHistoryStore _downloadHistoryStore;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private LauncherSettings _settings;
+    private LauncherPage _activePage = LauncherPage.Servers;
     private ServerSummary? _selectedServer;
     private LocalProfileState _selectedProfileState = LocalProfileState.Missing;
     private double _updateProgress;
@@ -31,27 +33,37 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isToastVisible;
     private string _toastMessage = string.Empty;
     private string _selectedMemory;
-    private readonly string _clientDirectory;
+    private string _clientDirectory;
     private bool _checkForUpdates;
     private bool _keepDownloadsAfterClose;
+    private bool _closeLauncherAfterGameStart;
+    private bool _openDownloadsWhenInstalling;
+    private string _selectedStartupPage;
     private bool _isCatalogLoading;
-    private AuthenticatedPlayer? _currentPlayer;
+    private HechaoAccount? _currentAccount;
     private string? _accountStatusHint;
     private bool _isAccountBusy;
     private bool _isAdminConsoleBusy;
+    private string _accountFormMessage = string.Empty;
+    private bool _isAccountFormError;
+    private DownloadJobViewModel? _activeDownload;
+    private CancellationTokenSource? _activeInstallCancellation;
+    private bool _isInstallingClient;
 
     public MainWindowViewModel(
         IServerCatalogClient catalogClient,
         ILauncherAuthenticationService authenticationService,
         ILauncherSettingsStore settingsStore,
         IClientInstallationService installationService,
-        IMinecraftGameLauncherService gameLauncherService)
+        IMinecraftGameLauncherService gameLauncherService,
+        IDownloadHistoryStore downloadHistoryStore)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
         _settingsStore = settingsStore;
         _installationService = installationService;
         _gameLauncherService = gameLauncherService;
+        _downloadHistoryStore = downloadHistoryStore;
         _settings = settingsStore.Load();
 
         MemoryOptions = ["2 GB", "4 GB", "6 GB", "8 GB", "12 GB", "16 GB"];
@@ -61,6 +73,13 @@ public sealed class MainWindowViewModel : ObservableObject
             : _settings.ClientDirectory;
         _checkForUpdates = _settings.CheckForUpdates;
         _keepDownloadsAfterClose = _settings.KeepDownloadsAfterClose;
+        _closeLauncherAfterGameStart = _settings.CloseLauncherAfterGameStart;
+        _openDownloadsWhenInstalling = _settings.OpenDownloadsWhenInstalling;
+        StartupPageOptions = ["服务器", "下载中心", "活动"];
+        _selectedStartupPage = StartupPageOptions.Contains(_settings.StartupPage)
+            ? _settings.StartupPage
+            : "服务器";
+        _activePage = GetStartupPage(_selectedStartupPage);
 
         SelectServerCommand = new RelayCommand<ServerSummary>(SelectServer);
         PrimaryActionCommand = new RelayCommand(StartPrimaryAction, CanUseSelectedServer);
@@ -70,16 +89,41 @@ public sealed class MainWindowViewModel : ObservableObject
         ToggleNotificationsCommand = new RelayCommand(ToggleNotifications);
         ToggleSettingsCommand = new RelayCommand(ToggleSettings);
         CloseOverlaysCommand = new RelayCommand(CloseOverlays);
-        AccountActionCommand = new RelayCommand(StartAccountAction, () => !IsAccountBusy);
+        AccountActionCommand = new RelayCommand(
+            () => ActivePage = LauncherPage.Account);
+        LogoutAccountCommand = new RelayCommand(
+            StartAccountLogout,
+            () => IsAuthenticated && !IsAccountBusy);
+        LinkMinecraftCommand = new RelayCommand(
+            StartMinecraftLink,
+            () => IsAuthenticated && !IsMinecraftLinked && !IsAccountBusy);
         OpenAdminConsoleCommand = new RelayCommand(
             OpenAdminConsole,
             () => IsAdministrator && !IsAdminConsoleBusy);
+        ShowServersCommand = new RelayCommand(() => ActivePage = LauncherPage.Servers);
+        ShowDownloadsCommand = new RelayCommand(() => ActivePage = LauncherPage.Downloads);
+        ShowActivitiesCommand = new RelayCommand(() => ActivePage = LauncherPage.Activities);
+        ShowAccountCommand = new RelayCommand(() => ActivePage = LauncherPage.Account);
+        ShowSettingsPageCommand = new RelayCommand(() => ActivePage = LauncherPage.Settings);
+        CancelDownloadCommand = new RelayCommand(
+            CancelActiveDownload,
+            () => _isInstallingClient && _activeInstallCancellation is not null);
+        ClearDownloadHistoryCommand = new RelayCommand(
+            ClearDownloadHistory,
+            () => DownloadHistory.Count > 0);
+        ViewActivityServerCommand = new RelayCommand<ServerSummary>(ViewActivityServer);
+        ResetLauncherSettingsCommand = new RelayCommand(ResetLauncherSettings);
+
+        LoadDownloadHistory();
 
         _ = InitializeAsync();
     }
 
     public ObservableCollection<ServerSummary> Servers { get; } = [];
+    public ObservableCollection<ServerSummary> ActivityServers { get; } = [];
+    public ObservableCollection<DownloadJobViewModel> DownloadHistory { get; } = [];
     public IReadOnlyList<string> MemoryOptions { get; }
+    public IReadOnlyList<string> StartupPageOptions { get; }
     public string LauncherVersionText { get; } = $"v{LauncherProductInfo.Version}";
     public RelayCommand<ServerSummary> SelectServerCommand { get; }
     public RelayCommand PrimaryActionCommand { get; }
@@ -90,24 +134,121 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand ToggleSettingsCommand { get; }
     public RelayCommand CloseOverlaysCommand { get; }
     public RelayCommand AccountActionCommand { get; }
+    public RelayCommand LogoutAccountCommand { get; }
+    public RelayCommand LinkMinecraftCommand { get; }
     public RelayCommand OpenAdminConsoleCommand { get; }
+    public RelayCommand ShowServersCommand { get; }
+    public RelayCommand ShowDownloadsCommand { get; }
+    public RelayCommand ShowActivitiesCommand { get; }
+    public RelayCommand ShowAccountCommand { get; }
+    public RelayCommand ShowSettingsPageCommand { get; }
+    public RelayCommand CancelDownloadCommand { get; }
+    public RelayCommand ClearDownloadHistoryCommand { get; }
+    public RelayCommand<ServerSummary> ViewActivityServerCommand { get; }
+    public RelayCommand ResetLauncherSettingsCommand { get; }
+    public event EventHandler? CloseRequested;
 
-    public bool IsAuthenticated => _currentPlayer is not null;
+    public LauncherPage ActivePage
+    {
+        get => _activePage;
+        set
+        {
+            if (!SetProperty(ref _activePage, value))
+            {
+                return;
+            }
+
+            CloseOverlays();
+            OnPropertyChanged(nameof(IsServersPage));
+            OnPropertyChanged(nameof(IsDownloadsPage));
+            OnPropertyChanged(nameof(IsActivitiesPage));
+            OnPropertyChanged(nameof(IsAccountPage));
+            OnPropertyChanged(nameof(IsSettingsPage));
+            OnPropertyChanged(nameof(CurrentPageTitle));
+        }
+    }
+
+    public bool IsServersPage => ActivePage == LauncherPage.Servers;
+    public bool IsDownloadsPage => ActivePage == LauncherPage.Downloads;
+    public bool IsActivitiesPage => ActivePage == LauncherPage.Activities;
+    public bool IsAccountPage => ActivePage == LauncherPage.Account;
+    public bool IsSettingsPage => ActivePage == LauncherPage.Settings;
+    public string CurrentPageTitle => ActivePage switch
+    {
+        LauncherPage.Downloads => "下载中心",
+        LauncherPage.Activities => "活动",
+        LauncherPage.Account => "赫朝账户",
+        LauncherPage.Settings => "设置",
+        _ => SelectedServer?.Name ?? "服务器"
+    };
+
+    public DownloadJobViewModel? ActiveDownload
+    {
+        get => _activeDownload;
+        private set
+        {
+            if (!SetProperty(ref _activeDownload, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(HasActiveDownload));
+            OnPropertyChanged(nameof(HasNoActiveDownload));
+            OnPropertyChanged(nameof(DownloadQueueStatusText));
+        }
+    }
+
+    public bool HasActiveDownload => ActiveDownload is not null;
+    public bool HasNoActiveDownload => !HasActiveDownload;
+    public bool HasDownloadHistory => DownloadHistory.Count > 0;
+    public bool HasNoDownloadHistory => !HasDownloadHistory;
+    public int DownloadHistoryCount => DownloadHistory.Count;
+    public int ActivityServerCount => ActivityServers.Count;
+    public bool HasActivityServers => ActivityServers.Count > 0;
+    public string DownloadQueueStatusText => HasActiveDownload
+        ? "1 个任务正在进行"
+        : DownloadHistory.Count > 0
+            ? $"{DownloadHistory.Count} 条历史记录"
+            : "暂无下载任务";
+
+    public bool IsAuthenticated => _currentAccount is not null;
+    public bool IsMinecraftLinked => _currentAccount?.IsMinecraftLinked == true;
     public bool IsAdministrator =>
-        _currentPlayer?.AccessTier == AccessTier.Administrator;
-    public string AccountDisplayName => _currentPlayer?.MinecraftName ?? "访客";
+        _currentAccount?.AccessTier == AccessTier.Administrator;
+    public string AccountDisplayName => _currentAccount?.DisplayName ?? "访客";
+    public string AccountUsername => _currentAccount is null
+        ? "尚未登录赫朝账号"
+        : $"@{_currentAccount.Username}";
     public string AccountStatusText => IsAccountBusy
-        ? "正在验证 Microsoft 账号"
+        ? "正在处理账号请求"
         : IsAuthenticated
-            ? "Microsoft 正版账号"
+            ? "赫朝账号已登录"
             : _accountStatusHint ?? "尚未登录";
-    public string AccountAccessText => _currentPlayer is null
-        ? "LuckPerms 待登录"
-        : $"{GetAccessTierText(_currentPlayer.AccessTier)} · {_currentPlayer.LuckPermsPrimaryGroup}";
-    public string AccountActionGlyph => IsAuthenticated ? "\uE8AC" : "\uE77B";
-    public string AccountActionTooltip => IsAuthenticated ? "退出 Microsoft 账号" : "Microsoft 正版登录";
+    public string AccountAccessText => _currentAccount is null
+        ? "先注册或登录赫朝账号"
+        : IsMinecraftLinked
+            ? $"{GetAccessTierText(_currentAccount.AccessTier)} · {_currentAccount.LuckPermsPrimaryGroup}"
+            : "尚未绑定 Minecraft 正版身份";
+    public string MinecraftIdentityText => IsMinecraftLinked
+        ? $"{_currentAccount!.MinecraftName} · {_currentAccount.MinecraftUuid:D}"
+        : "未绑定";
+    public string MinecraftLinkStatusText => IsMinecraftLinked
+        ? "Minecraft 正版身份已认证"
+        : "需要完成 Microsoft 正版认证后才能启动游戏";
+    public string AccountActionGlyph => "\uE77B";
+    public string AccountActionTooltip => "打开赫朝账户";
     public string AdminConsoleButtonText =>
         IsAdminConsoleBusy ? "正在打开" : "打开管理后台";
+    public string AccountFormMessage
+    {
+        get => _accountFormMessage;
+        private set => SetProperty(ref _accountFormMessage, value);
+    }
+    public bool IsAccountFormError
+    {
+        get => _isAccountFormError;
+        private set => SetProperty(ref _isAccountFormError, value);
+    }
 
     public bool IsAccountBusy
     {
@@ -121,6 +262,8 @@ public sealed class MainWindowViewModel : ObservableObject
 
             OnPropertyChanged(nameof(AccountStatusText));
             AccountActionCommand.RaiseCanExecuteChanged();
+            LogoutAccountCommand.RaiseCanExecuteChanged();
+            LinkMinecraftCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -159,9 +302,14 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedProfileDisplayName));
             OnPropertyChanged(nameof(SelectedProfileMetaText));
             OnPropertyChanged(nameof(IsSelectedServerOnline));
+            OnPropertyChanged(nameof(CurrentPageTitle));
             PrimaryActionCommand.RaiseCanExecuteChanged();
             if (value is not null)
             {
+                _selectedProfileState = LocalProfileState.Missing;
+                UpdateProgress = 0;
+                ClientStatusText = "正在检查客户端";
+                UpdatePrimaryActionForState();
                 SaveSettings();
                 _ = RefreshClientStateAsync();
             }
@@ -229,6 +377,13 @@ public sealed class MainWindowViewModel : ObservableObject
         get => _primaryActionText;
         private set => SetProperty(ref _primaryActionText, value);
     }
+    public string PrimaryActionGlyph => !IsAuthenticated
+        ? "\uE77B"
+        : _selectedProfileState != LocalProfileState.Ready
+            ? "\uE896"
+            : !IsMinecraftLinked
+                ? "\uE774"
+                : "\uE768";
 
     public bool IsProgressActive
     {
@@ -259,6 +414,43 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     public string ClientDirectory => _clientDirectory;
+
+    public bool CloseLauncherAfterGameStart
+    {
+        get => _closeLauncherAfterGameStart;
+        set
+        {
+            if (SetProperty(ref _closeLauncherAfterGameStart, value))
+            {
+                SaveSettings();
+            }
+        }
+    }
+
+    public bool OpenDownloadsWhenInstalling
+    {
+        get => _openDownloadsWhenInstalling;
+        set
+        {
+            if (SetProperty(ref _openDownloadsWhenInstalling, value))
+            {
+                SaveSettings();
+            }
+        }
+    }
+
+    public string SelectedStartupPage
+    {
+        get => _selectedStartupPage;
+        set
+        {
+            var normalized = StartupPageOptions.Contains(value) ? value : "服务器";
+            if (SetProperty(ref _selectedStartupPage, normalized))
+            {
+                SaveSettings();
+            }
+        }
+    }
 
     public bool CheckForUpdates
     {
@@ -313,11 +505,11 @@ public sealed class MainWindowViewModel : ObservableObject
         IsAccountBusy = true;
         try
         {
-            SetCurrentPlayer(await _authenticationService.TryRestoreAsync());
+            SetCurrentAccount(await _authenticationService.TryRestoreAsync());
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or LauncherApiException)
         {
-            SetCurrentPlayer(null);
+            SetCurrentAccount(null);
         }
         finally
         {
@@ -346,10 +538,17 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             Servers.Clear();
+            ActivityServers.Clear();
             foreach (var server in snapshot.Servers)
             {
                 Servers.Add(server);
+                if (server.Id is not ("lobby" or "survival2"))
+                {
+                    ActivityServers.Add(server);
+                }
             }
+            OnPropertyChanged(nameof(ActivityServerCount));
+            OnPropertyChanged(nameof(HasActivityServers));
 
             SelectedServer = Servers.FirstOrDefault(server => server.Id == _settings.SelectedServerId) ?? Servers.FirstOrDefault();
 
@@ -376,8 +575,11 @@ public sealed class MainWindowViewModel : ObservableObject
         catch (LauncherAuthenticationRequiredException)
         {
             Servers.Clear();
+            ActivityServers.Clear();
+            OnPropertyChanged(nameof(ActivityServerCount));
+            OnPropertyChanged(nameof(HasActivityServers));
             SelectedServer = null;
-            ShowToast("请先使用 Microsoft 正版账号登录");
+            ShowToast("请先登录赫朝账号");
         }
         catch (LauncherApiException exception)
         {
@@ -398,8 +600,20 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         SelectedServer = server;
+        ActivePage = LauncherPage.Servers;
         CloseOverlays();
         SaveSettings();
+    }
+
+    private void ViewActivityServer(ServerSummary? server)
+    {
+        if (server is null)
+        {
+            return;
+        }
+
+        SelectedServer = server;
+        ActivePage = LauncherPage.Servers;
     }
 
     private async void StartPrimaryAction()
@@ -409,12 +623,26 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
+        if (!IsAuthenticated)
+        {
+            ActivePage = LauncherPage.Account;
+            ShowToast("请先注册或登录赫朝账号");
+            return;
+        }
+
         if (_selectedProfileState != LocalProfileState.Ready)
         {
             if (!await InstallSelectedProfileAsync(isRepair: false))
             {
                 return;
             }
+        }
+
+        if (!IsMinecraftLinked)
+        {
+            ActivePage = LauncherPage.Account;
+            ShowToast("客户端已就绪，请绑定 Minecraft 正版身份");
+            return;
         }
 
         await LaunchSelectedServerAsync();
@@ -438,26 +666,34 @@ public sealed class MainWindowViewModel : ObservableObject
         UpdateProgress = 0;
         ClientStatusText = isRepair ? "正在校验客户端" : "正在准备下载";
         PrimaryActionText = isRepair ? "正在修复" : "正在安装";
+        BeginDownload(profile, isRepair);
+        _activeInstallCancellation = new CancellationTokenSource();
+        _isInstallingClient = true;
+        CancelDownloadCommand.RaiseCanExecuteChanged();
         var progress = new Progress<ClientInstallProgress>(ApplyInstallProgress);
         var succeeded = false;
+        var completionStatus = DownloadJobStatus.Failed;
+        string? completionMessage = null;
 
         try
         {
             await _installationService.InstallAsync(
                 profile,
                 new ClientInstallationOptions(ClientDirectory, KeepDownloadsAfterClose),
-                progress);
+                progress,
+                _activeInstallCancellation.Token);
             _selectedProfileState = LocalProfileState.Ready;
             UpdateProgress = 100;
             ClientStatusText = "客户端已就绪";
             PrimaryActionText = "进入服务器";
             ShowToast(isRepair ? "客户端修复完成" : "客户端安装完成");
             succeeded = true;
+            completionStatus = DownloadJobStatus.Completed;
         }
         catch (LauncherAuthenticationRequiredException)
         {
             ClientStatusText = "需要登录后下载";
-            ShowToast("请先使用 Microsoft 正版账号登录");
+            ShowToast("请先登录赫朝账号");
         }
         catch (LauncherApiException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
         {
@@ -489,6 +725,14 @@ public sealed class MainWindowViewModel : ObservableObject
             ClientStatusText = "安装正在进行";
             ShowToast("另一个启动器窗口正在安装这个客户端");
         }
+        catch (OperationCanceledException) when (
+            _activeInstallCancellation?.IsCancellationRequested == true)
+        {
+            completionStatus = DownloadJobStatus.Canceled;
+            completionMessage = "用户取消了下载";
+            ClientStatusText = "下载已取消";
+            ShowToast("下载任务已取消");
+        }
         catch (Exception exception) when (
             exception is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
         {
@@ -497,13 +741,14 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         finally
         {
+            completionMessage ??= succeeded ? null : ClientStatusText;
+            CompleteActiveDownload(completionStatus, completionMessage);
+            _isInstallingClient = false;
+            _activeInstallCancellation?.Dispose();
+            _activeInstallCancellation = null;
+            CancelDownloadCommand.RaiseCanExecuteChanged();
             IsProgressActive = false;
-            if (_selectedProfileState != LocalProfileState.Ready)
-            {
-                PrimaryActionText = _selectedProfileState == LocalProfileState.UpdateRequired
-                    ? "更新并进入"
-                    : "安装客户端";
-            }
+            UpdatePrimaryActionForState();
         }
 
         return succeeded;
@@ -526,7 +771,7 @@ public sealed class MainWindowViewModel : ObservableObject
         try
         {
             var launchSession = await _authenticationService.GetMinecraftLaunchSessionAsync();
-            SetCurrentPlayer(_authenticationService.CurrentPlayer);
+            SetCurrentAccount(_authenticationService.CurrentAccount);
             await _gameLauncherService.LaunchAsync(
                 new MinecraftLaunchRequest(
                     ClientDirectory,
@@ -543,11 +788,22 @@ public sealed class MainWindowViewModel : ObservableObject
             UpdateProgress = 100;
             ClientStatusText = "游戏已启动";
             ShowToast($"正在进入 {selectedServer.Name}");
+            if (CloseLauncherAfterGameStart)
+            {
+                CloseRequested?.Invoke(this, EventArgs.Empty);
+            }
         }
         catch (LauncherAuthenticationRequiredException)
         {
             ClientStatusText = "需要登录后启动";
-            ShowToast("请先使用 Microsoft 正版账号登录");
+            ActivePage = LauncherPage.Account;
+            ShowToast("请先登录赫朝账号");
+        }
+        catch (MinecraftIdentityLinkRequiredException)
+        {
+            ClientStatusText = "需要绑定正版身份";
+            ActivePage = LauncherPage.Account;
+            ShowToast("请先在赫朝账户页绑定 Minecraft 正版身份");
         }
         catch (MicrosoftReauthenticationRequiredException)
         {
@@ -600,13 +856,20 @@ public sealed class MainWindowViewModel : ObservableObject
         finally
         {
             IsProgressActive = false;
-            PrimaryActionText = "进入服务器";
+            UpdatePrimaryActionForState();
         }
     }
 
     private void ApplyInstallProgress(ClientInstallProgress progress)
     {
         UpdateProgress = progress.Percent;
+        ActiveDownload?.Update(
+            progress.Percent,
+            progress.CompletedBytes,
+            progress.TotalBytes,
+            string.IsNullOrWhiteSpace(progress.CurrentPath)
+                ? string.Empty
+                : Path.GetFileName(progress.CurrentPath));
         ClientStatusText = progress.Phase switch
         {
             ClientInstallPhase.Checking => "正在检查本地文件",
@@ -618,6 +881,124 @@ public sealed class MainWindowViewModel : ObservableObject
             ClientInstallPhase.Complete => "客户端已就绪",
             _ => ClientStatusText
         };
+    }
+
+    private void BeginDownload(ClientProfileSummary profile, bool isRepair)
+    {
+        ActiveDownload = new DownloadJobViewModel(
+            Guid.NewGuid(),
+            profile.Id,
+            isRepair ? $"修复 · {profile.DisplayName}" : profile.DisplayName,
+            profile.Version,
+            DateTimeOffset.UtcNow,
+            DownloadJobStatus.Running,
+            0,
+            profile.DownloadBytes,
+            string.Empty);
+        if (OpenDownloadsWhenInstalling)
+        {
+            ActivePage = LauncherPage.Downloads;
+        }
+        PersistDownloadHistory();
+    }
+
+    private void CompleteActiveDownload(
+        DownloadJobStatus status,
+        string? failureMessage)
+    {
+        var download = ActiveDownload;
+        if (download is null)
+        {
+            return;
+        }
+
+        download.Finish(status, failureMessage);
+        DownloadHistory.Insert(0, download);
+        ActiveDownload = null;
+        PersistDownloadHistory();
+        NotifyDownloadHistoryChanged();
+    }
+
+    private void CancelActiveDownload()
+    {
+        _activeInstallCancellation?.Cancel();
+    }
+
+    private void ClearDownloadHistory()
+    {
+        DownloadHistory.Clear();
+        _downloadHistoryStore.Save([]);
+        NotifyDownloadHistoryChanged();
+        ShowToast("下载历史已清空");
+    }
+
+    private void LoadDownloadHistory()
+    {
+        var needsRewrite = false;
+        foreach (var record in _downloadHistoryStore
+                     .Load()
+                     .OrderByDescending(record => record.CompletedAt ?? record.StartedAt))
+        {
+            var status = record.Status;
+            var completedAt = record.CompletedAt;
+            var failureMessage = record.FailureMessage;
+            if (status == DownloadJobStatus.Running)
+            {
+                status = DownloadJobStatus.Failed;
+                completedAt = DateTimeOffset.UtcNow;
+                failureMessage = "启动器在任务完成前退出";
+                needsRewrite = true;
+            }
+
+            DownloadHistory.Add(new DownloadJobViewModel(
+                record.Id,
+                record.ProfileId,
+                record.DisplayName,
+                record.Version,
+                record.StartedAt,
+                status,
+                record.CompletedBytes,
+                record.TotalBytes,
+                record.CurrentFile,
+                completedAt,
+                failureMessage));
+        }
+
+        if (needsRewrite)
+        {
+            PersistDownloadHistory();
+        }
+
+        NotifyDownloadHistoryChanged();
+    }
+
+    private void PersistDownloadHistory()
+    {
+        var downloads = ActiveDownload is null
+            ? DownloadHistory.AsEnumerable()
+            : DownloadHistory.Prepend(ActiveDownload);
+        _downloadHistoryStore.Save(downloads.Select(download =>
+            new DownloadHistoryRecord(
+                download.Id,
+                download.ProfileId,
+                download.DisplayName,
+                download.Version,
+                download.StartedAt,
+                download.CompletedAt,
+                download.Status,
+                download.CompletedBytes,
+                download.TotalBytes,
+                download.CurrentFile,
+                download.FailureMessage)));
+    }
+
+    private void NotifyDownloadHistoryChanged()
+    {
+        OnPropertyChanged(nameof(HasDownloadHistory));
+        OnPropertyChanged(nameof(HasNoDownloadHistory));
+        OnPropertyChanged(nameof(DownloadHistoryCount));
+        OnPropertyChanged(nameof(DownloadQueueStatusText));
+        ClearDownloadHistoryCommand.RaiseCanExecuteChanged();
     }
 
     private void ApplyLaunchProgress(MinecraftLaunchProgress progress)
@@ -655,19 +1036,17 @@ public sealed class MainWindowViewModel : ObservableObject
             case LocalProfileState.Ready:
                 UpdateProgress = 100;
                 ClientStatusText = "客户端已就绪";
-                PrimaryActionText = "进入服务器";
                 break;
             case LocalProfileState.UpdateRequired:
                 UpdateProgress = 0;
                 ClientStatusText = "发现新版本";
-                PrimaryActionText = "更新并进入";
                 break;
             default:
                 UpdateProgress = 0;
                 ClientStatusText = "尚未安装";
-                PrimaryActionText = "安装客户端";
                 break;
         }
+        UpdatePrimaryActionForState();
     }
 
     private void OpenClientDirectory()
@@ -684,12 +1063,203 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    private bool CanUseSelectedServer() =>
-        !IsProgressActive && IsAuthenticated && SelectedServer?.Status == ServerStatus.Online;
+    public void UpdateClientDirectory(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
 
-    private async void StartAccountAction()
+        var normalized = Path.GetFullPath(
+            Environment.ExpandEnvironmentVariables(path.Trim()));
+        if (string.Equals(
+                normalized.TrimEnd(Path.DirectorySeparatorChar),
+                Environment.ExpandEnvironmentVariables(ClientDirectory)
+                    .TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _clientDirectory = normalized;
+        OnPropertyChanged(nameof(ClientDirectory));
+        SaveSettings();
+        _ = RefreshClientStateAsync();
+        ShowToast("客户端目录已更新");
+    }
+
+    private void ResetLauncherSettings()
+    {
+        SelectedMemory = "6 GB";
+        _clientDirectory = "%AppData%\\Hechao\\instances";
+        OnPropertyChanged(nameof(ClientDirectory));
+        CheckForUpdates = true;
+        KeepDownloadsAfterClose = true;
+        CloseLauncherAfterGameStart = false;
+        OpenDownloadsWhenInstalling = true;
+        SelectedStartupPage = "服务器";
+        SaveSettings();
+        _ = RefreshClientStateAsync();
+        ShowToast("启动器设置已恢复默认");
+    }
+
+    private bool CanUseSelectedServer() =>
+        !IsProgressActive && SelectedServer?.Status == ServerStatus.Online;
+
+    public async Task<bool> LoginAccountAsync(
+        string usernameOrEmail,
+        string password)
     {
         if (IsAccountBusy)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(usernameOrEmail) ||
+            string.IsNullOrEmpty(password))
+        {
+            SetAccountFormStatus("请填写赫朝账号和密码。", isError: true);
+            return false;
+        }
+
+        IsAccountBusy = true;
+        SetAccountFormStatus("正在登录赫朝账号…", isError: false);
+        try
+        {
+            var account = await _authenticationService.LoginAsync(
+                usernameOrEmail.Trim(),
+                password);
+            SetCurrentAccount(account);
+            SetAccountFormStatus(string.Empty, isError: false);
+            await LoadCatalogAsync(userInitiated: true);
+            ShowToast($"欢迎回来，{account.DisplayName}");
+            return true;
+        }
+        catch (LauncherApiException exception)
+        {
+            SetAccountFormStatus(
+                exception.ApiDetail ?? "赫朝账号或密码不正确。",
+                isError: true);
+            return false;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            SetAccountFormStatus("暂时无法连接赫朝账号服务。", isError: true);
+            return false;
+        }
+        finally
+        {
+            IsAccountBusy = false;
+        }
+    }
+
+    public async Task<bool> RegisterAccountAsync(
+        string username,
+        string displayName,
+        string password,
+        string? email)
+    {
+        if (IsAccountBusy)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(displayName) ||
+            string.IsNullOrEmpty(password))
+        {
+            SetAccountFormStatus("请完整填写账号名、显示名称和密码。", isError: true);
+            return false;
+        }
+
+        IsAccountBusy = true;
+        SetAccountFormStatus("正在创建赫朝账号…", isError: false);
+        try
+        {
+            var account = await _authenticationService.RegisterAsync(
+                username.Trim(),
+                displayName.Trim(),
+                password,
+                string.IsNullOrWhiteSpace(email) ? null : email.Trim());
+            SetCurrentAccount(account);
+            SetAccountFormStatus(string.Empty, isError: false);
+            await LoadCatalogAsync(userInitiated: true);
+            ShowToast($"赫朝账号 @{account.Username} 已创建");
+            return true;
+        }
+        catch (LauncherApiException exception)
+        {
+            SetAccountFormStatus(
+                exception.ApiDetail ?? "暂时无法创建赫朝账号。",
+                isError: true);
+            return false;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            SetAccountFormStatus("暂时无法连接赫朝账号服务。", isError: true);
+            return false;
+        }
+        finally
+        {
+            IsAccountBusy = false;
+        }
+    }
+
+    private async void StartMinecraftLink()
+    {
+        if (!IsAuthenticated || IsMinecraftLinked || IsAccountBusy)
+        {
+            return;
+        }
+
+        IsAccountBusy = true;
+        SetAccountFormStatus("正在打开 Microsoft 正版认证…", isError: false);
+        try
+        {
+            var account = await _authenticationService.LinkMinecraftAsync();
+            SetCurrentAccount(account);
+            SetAccountFormStatus(string.Empty, isError: false);
+            await LoadCatalogAsync(userInitiated: true);
+            ShowToast($"已绑定 Minecraft 玩家 {account.MinecraftName}");
+        }
+        catch (MicrosoftAuthenticationNotConfiguredException)
+        {
+            SetAccountFormStatus("Microsoft 登录应用尚未完成配置。", isError: true);
+        }
+        catch (MicrosoftSignInCanceledException)
+        {
+            SetAccountFormStatus("已取消 Microsoft 正版认证。", isError: false);
+        }
+        catch (MicrosoftSignInFailedException)
+        {
+            SetAccountFormStatus("Microsoft 登录失败，请稍后重试。", isError: true);
+        }
+        catch (MinecraftSignInException exception)
+        {
+            SetAccountFormStatus(GetMinecraftSignInError(exception.Failure), isError: true);
+        }
+        catch (LauncherApiException exception)
+        {
+            SetAccountFormStatus(
+                exception.ApiDetail ?? "Minecraft 身份绑定失败。",
+                isError: true);
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            SetAccountFormStatus("正版认证服务暂时不可用。", isError: true);
+        }
+        finally
+        {
+            IsAccountBusy = false;
+        }
+    }
+
+    private async void StartAccountLogout()
+    {
+        if (!IsAuthenticated || IsAccountBusy)
         {
             return;
         }
@@ -697,51 +1267,15 @@ public sealed class MainWindowViewModel : ObservableObject
         IsAccountBusy = true;
         try
         {
-            if (IsAuthenticated)
-            {
-                await _authenticationService.LogoutAsync();
-                SetCurrentPlayer(null);
-                ShowToast("已退出 Microsoft 账号");
-            }
-            else
-            {
-                SetAccountStatusHint(null);
-                SetCurrentPlayer(await _authenticationService.SignInAsync());
-                ShowToast($"已登录为 {AccountDisplayName}");
-            }
-
-            await LoadCatalogAsync(userInitiated: true);
-        }
-        catch (MicrosoftAuthenticationNotConfiguredException)
-        {
-            SetAccountStatusHint("登录应用未配置");
-            ShowToast("Microsoft 登录应用尚未完成注册");
-        }
-        catch (MicrosoftSignInCanceledException)
-        {
-            SetAccountStatusHint(null);
-            ShowToast("已取消 Microsoft 登录");
-        }
-        catch (MicrosoftSignInFailedException)
-        {
-            SetAccountStatusHint("Microsoft 登录失败");
-            ShowToast("Microsoft 登录失败，请稍后重试");
-        }
-        catch (MinecraftSignInException exception)
-        {
-            SetAccountStatusHint(GetMinecraftSignInStatus(exception.Failure));
-            ShowToast(GetMinecraftSignInError(exception.Failure));
-        }
-        catch (LauncherApiException exception)
-        {
-            SetAccountStatusHint("赫朝账号验证失败");
-            ShowToast(exception.ApiDetail ?? "账号验证失败");
-        }
-        catch (Exception exception) when (
-            exception is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
-        {
-            SetAccountStatusHint("登录服务暂不可用");
-            ShowToast("登录服务暂时不可用");
+            await _authenticationService.LogoutAsync();
+            SetCurrentAccount(null);
+            Servers.Clear();
+            ActivityServers.Clear();
+            OnPropertyChanged(nameof(ActivityServerCount));
+            OnPropertyChanged(nameof(HasActivityServers));
+            SelectedServer = null;
+            SetAccountFormStatus(string.Empty, isError: false);
+            ShowToast("已退出赫朝账号");
         }
         finally
         {
@@ -776,7 +1310,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (LauncherAuthenticationRequiredException)
         {
-            SetCurrentPlayer(null);
+            SetCurrentAccount(null);
             ShowToast("登录已过期，请重新登录");
         }
         catch (LauncherApiException exception)
@@ -795,30 +1329,51 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void SetCurrentPlayer(AuthenticatedPlayer? player)
+    private void SetCurrentAccount(HechaoAccount? account)
     {
-        _currentPlayer = player;
+        _currentAccount = account;
         _accountStatusHint = null;
         OnPropertyChanged(nameof(IsAuthenticated));
+        OnPropertyChanged(nameof(IsMinecraftLinked));
         OnPropertyChanged(nameof(IsAdministrator));
         OnPropertyChanged(nameof(AccountDisplayName));
+        OnPropertyChanged(nameof(AccountUsername));
         OnPropertyChanged(nameof(AccountStatusText));
         OnPropertyChanged(nameof(AccountAccessText));
+        OnPropertyChanged(nameof(MinecraftIdentityText));
+        OnPropertyChanged(nameof(MinecraftLinkStatusText));
         OnPropertyChanged(nameof(AccountActionGlyph));
         OnPropertyChanged(nameof(AccountActionTooltip));
         PrimaryActionCommand.RaiseCanExecuteChanged();
+        LogoutAccountCommand.RaiseCanExecuteChanged();
+        LinkMinecraftCommand.RaiseCanExecuteChanged();
         OpenAdminConsoleCommand.RaiseCanExecuteChanged();
+        UpdatePrimaryActionForState();
     }
 
-    private void SetAccountStatusHint(string? message)
+    private void UpdatePrimaryActionForState()
     {
-        if (string.Equals(_accountStatusHint, message, StringComparison.Ordinal))
+        if (IsProgressActive)
         {
             return;
         }
 
-        _accountStatusHint = message;
-        OnPropertyChanged(nameof(AccountStatusText));
+        PrimaryActionText = !IsAuthenticated
+            ? "登录赫朝账号"
+            : _selectedProfileState == LocalProfileState.UpdateRequired
+                ? "更新客户端"
+                : _selectedProfileState != LocalProfileState.Ready
+                    ? "安装客户端"
+                    : !IsMinecraftLinked
+                        ? "绑定正版身份"
+                        : "进入服务器";
+        OnPropertyChanged(nameof(PrimaryActionGlyph));
+    }
+
+    private void SetAccountFormStatus(string message, bool isError)
+    {
+        AccountFormMessage = message;
+        IsAccountFormError = isError;
     }
 
     private static string GetAccessTierText(AccessTier accessTier)
@@ -918,7 +1473,20 @@ public sealed class MainWindowViewModel : ObservableObject
             SelectedMemory,
             ClientDirectory,
             CheckForUpdates,
-            KeepDownloadsAfterClose);
+            KeepDownloadsAfterClose,
+            CloseLauncherAfterGameStart,
+            OpenDownloadsWhenInstalling,
+            SelectedStartupPage);
         _settingsStore.Save(_settings);
+    }
+
+    private static LauncherPage GetStartupPage(string startupPage)
+    {
+        return startupPage switch
+        {
+            "下载中心" => LauncherPage.Downloads,
+            "活动" => LauncherPage.Activities,
+            _ => LauncherPage.Servers
+        };
     }
 }
