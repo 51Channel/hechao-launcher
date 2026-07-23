@@ -167,6 +167,34 @@ public sealed class LauncherApiClient
         return await ReadRequiredAsync<VelocityLaunchGrantResponse>(retryResponse, cancellationToken);
     }
 
+    public async Task<AdminBrowserTicketResponse> CreateAdminBrowserTicketAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendAdminBrowserTicketRequestAsync(
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
+        {
+            return await ReadRequiredAsync<AdminBrowserTicketResponse>(
+                firstResponse,
+                cancellationToken);
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendAdminBrowserTicketRequestAsync(
+            accessToken,
+            cancellationToken);
+        return await ReadRequiredAsync<AdminBrowserTicketResponse>(
+            retryResponse,
+            cancellationToken);
+    }
+
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         var accessToken = _session?.AccessToken;
@@ -298,6 +326,32 @@ public sealed class LauncherApiClient
             request,
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
+    }
+
+    private Task<HttpResponseMessage> SendAdminBrowserTicketRequestAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "v1/admin-auth/tickets");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return SendAndDisposeRequestAsync(request, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendAndDisposeRequestAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+        }
+        finally
+        {
+            request.Dispose();
+        }
     }
 
     private async Task SetSessionAsync(AuthSessionResponse session, CancellationToken cancellationToken)

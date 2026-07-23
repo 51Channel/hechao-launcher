@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
 > 当前线上版本：`0.6.0`
-> 本地源码版本：`0.7.0`，尚未部署
-> 当前阶段：线上 `0.6.0` 的 Microsoft/Minecraft 会话、LuckPerms 同步、授权目录、OSS 分发、Velocity 二次授权和只读服务器心跳保持不变；`0.7.0` 新增管理员目录与审计 API，正式登录与强制拦截仍待应用许可和灰度验收
+> 本地源码版本：`0.8.0`，尚未部署
+> 当前阶段：线上 `0.6.0` 保持不变；源码 `0.8.0` 在 `0.7.0` 管理目录与审计底座上增加独立浏览器会话、TOTP MFA、CSRF 和管理控制台
 
 ## 1. 运行边界
 
@@ -24,7 +24,8 @@
 - Velocity 内部授权：`POST /v1/internal/velocity/authorize`
 - LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`
 - 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
-- 管理员目录与审计端点：`/v1/admin/*`，仅允许 `Administrator` 启动器会话
+- 管理员票据端点：`POST /v1/admin-auth/tickets`，仅允许 `Administrator` 启动器会话
+- 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -49,6 +50,13 @@ Distribution__OssBucket
 Distribution__OssEndpoint
 Distribution__OssObjectPrefix
 Distribution__PresignedUrlSeconds
+AdminWeb__Enabled
+AdminWeb__PublicBaseUrl
+AdminWeb__DataProtectionKeyPath
+AdminWeb__TicketSeconds
+AdminWeb__SessionMinutes
+AdminWeb__EnrollmentMinutes
+AdminWeb__TotpIssuer
 OSS_ACCESS_KEY_ID
 OSS_ACCESS_KEY_SECRET
 ```
@@ -76,6 +84,10 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 `0.6.0` 新增按 Velocity 目标存储的实时心跳。目录配置为 `Maintenance` 或 `Closed` 时后台状态始终优先；配置为 `Online` 时使用三分钟内的心跳，过期或端口关闭则返回 `Closed`。发布 ID 为 `0.6.0-20260723T123346Z`，归档 SHA-256 为 `FA4FAD6CD5287D3C16596C07189FE5E806F0FFE40D3443743E633803F7CE6442`。迁移 4、心跳鉴权、真实采集和旧域名回归均通过。部署后备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T124326Z.dump` 的 SHA-256 为 `508b37c7a695413e2a3d3d5b7ff08212f720077121bb7237c522957ec08d9464`，`sha256sum -c` 与 `pg_restore --list` 均通过。
 
 `0.7.0` 源码新增管理员服务器目录 CRUD、归档/恢复、乐观并发修订号和事务内审计日志。迁移 5 只增加 `servers.revision` 与审计目标索引；回滚到 `0.6.0` 时可以保留这两个兼容字段。详细接口、验证和回滚边界见 [`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。本段只记录源码状态，不表示已部署。
+
+`0.8.0` 源码新增启动器管理员入口、90 秒一次性票据、来源 IP 绑定、独立 `HttpOnly` 浏览器会话、TOTP 与恢复码、防 TOTP 重放、CSRF、管理域名锁定和静态 Web 控制台。迁移 6 只新增后台票据、会话和 MFA 表；详细密钥、Nginx、部署与回滚边界见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)。本段只记录源码状态，不表示已部署。
+
+管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
 
@@ -117,8 +129,10 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 ```text
 https://hechao.world/      -> HTTP 200
 https://api.hechao.world/  -> HTTP 200
-https://admin.hechao.world/ -> HTTP 404，响应 admin_console_not_deployed
+https://admin.hechao.world/ -> 当前生产基线 HTTP 404；部署 0.8.0 后 /admin/ 应为 200
 ```
+
+部署 `0.8.0` 时还必须确认 `launcher-api.hechao.world/admin/` 继续返回 404、管理域名 Host 锁定生效、Data Protection key ring 可写且已加密备份。随后按 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md) 完成真实管理员 TOTP 和审计验收。
 
 ## 4. 原子回滚
 
@@ -155,4 +169,4 @@ systemctl reload nginx
 | `0.5.0-20260723T102749Z` | `95D2FE3B2E160F205B22B457988D8721970DB580DAD6B1A8A412B1798C42332B` | 一次性启动授权、Velocity 内部判定、迁移 3、权限/公网回归与无警告日志通过 |
 | `0.6.0-20260723T123346Z` | `71313BCF82B6B6E1BB095F142E1BA6A06E9ADC7B834FA6F32F9B74914F078780` | 按 Velocity 目标的实时心跳、迁移 4、目录状态合并、任务实测与公网回归通过 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成。`0.7.0` 与 `0.8.0` 尚无生产发布 ID。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

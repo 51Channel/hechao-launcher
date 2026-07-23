@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>赫朝管理控制台</title>
+    <link rel="icon" type="image/png" href="/admin/assets/hechao-mark.png">
+    <link rel="stylesheet" href="/admin/admin.css">
+    <script src="/admin/admin.js" defer></script>
+</head>
+<body>
+    <section id="loading-view" class="center-view" aria-live="polite">
+        <img class="brand-mark brand-mark-large" src="/admin/assets/hechao-mark.png" alt="">
+        <div class="loading-line"><span></span></div>
+        <p>正在验证管理会话</p>
+    </section>
+
+    <section id="sign-in-view" class="center-view" hidden>
+        <div class="auth-panel">
+            <div class="auth-brand">
+                <img class="brand-mark brand-mark-large" src="/admin/assets/hechao-mark.png" alt="">
+                <div>
+                    <strong>赫朝</strong>
+                    <span>管理控制台</span>
+                </div>
+            </div>
+            <h1>需要管理员身份</h1>
+            <p>请在赫朝启动器中登录管理员账号，然后打开管理后台。</p>
+            <button id="close-tab-button" class="button button-primary" type="button">
+                <img src="/admin/assets/icons/external-link.svg" alt="">
+                返回启动器
+            </button>
+            <div id="sign-in-error" class="inline-alert" hidden>
+                <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                <span></span>
+            </div>
+        </div>
+    </section>
+
+    <section id="mfa-view" class="center-view" hidden>
+        <div class="mfa-panel">
+            <div class="auth-brand compact">
+                <img class="brand-mark" src="/admin/assets/hechao-mark.png" alt="">
+                <div>
+                    <strong>赫朝管理控制台</strong>
+                    <span id="mfa-account-name"></span>
+                </div>
+            </div>
+
+            <div id="mfa-verify-step" hidden>
+                <div class="section-kicker">
+                    <img src="/admin/assets/icons/shield-check.svg" alt="">
+                    双重验证
+                </div>
+                <h1>确认是你本人</h1>
+                <p>输入验证器中的 6 位动态码，也可以使用一枚恢复码。</p>
+                <form id="mfa-verify-form" autocomplete="off">
+                    <label for="mfa-code">验证码或恢复码</label>
+                    <input id="mfa-code" name="code" inputmode="numeric" autocomplete="one-time-code" required>
+                    <button class="button button-primary button-wide" type="submit">
+                        <img src="/admin/assets/icons/key-round.svg" alt="">
+                        验证并进入
+                    </button>
+                </form>
+            </div>
+
+            <div id="mfa-enroll-step" hidden>
+                <div class="section-kicker">
+                    <img src="/admin/assets/icons/key-round.svg" alt="">
+                    首次设置
+                </div>
+                <h1>绑定双重验证</h1>
+                <p>使用支持 TOTP 的验证器扫描二维码，然后输入当前动态码。</p>
+                <button id="begin-enrollment-button" class="button button-primary button-wide" type="button">
+                    <img src="/admin/assets/icons/shield-check.svg" alt="">
+                    生成验证器设置
+                </button>
+                <div id="enrollment-content" hidden>
+                    <div class="enrollment-layout">
+                        <img id="mfa-qr-code" class="qr-code" alt="双重验证二维码">
+                        <div class="secret-block">
+                            <label for="mfa-secret-key">手动输入密钥</label>
+                            <div class="copy-field">
+                                <input id="mfa-secret-key" readonly>
+                                <button id="copy-secret-button" class="icon-button" type="button" title="复制密钥">
+                                    <img src="/admin/assets/icons/copy.svg" alt="">
+                                </button>
+                            </div>
+                            <span id="enrollment-expiry"></span>
+                        </div>
+                    </div>
+                    <form id="mfa-enroll-form" autocomplete="off">
+                        <label for="mfa-enroll-code">验证器动态码</label>
+                        <input id="mfa-enroll-code" name="code" inputmode="numeric" autocomplete="one-time-code" required>
+                        <button class="button button-primary button-wide" type="submit">
+                            <img src="/admin/assets/icons/check.svg" alt="">
+                            完成绑定
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="mfa-error" class="inline-alert" hidden>
+                <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                <span></span>
+            </div>
+            <button id="mfa-logout-button" class="text-button" type="button">退出管理会话</button>
+        </div>
+    </section>
+
+    <div id="console-view" class="console-shell" hidden>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img class="brand-mark" src="/admin/assets/hechao-mark.png" alt="">
+                <div>
+                    <strong>赫朝</strong>
+                    <span>管理控制台</span>
+                </div>
+            </div>
+
+            <nav class="primary-nav" aria-label="管理模块">
+                <button class="nav-item active" type="button" data-view="servers">
+                    <img src="/admin/assets/icons/server.svg" alt="">
+                    <span>服务器目录</span>
+                </button>
+                <button class="nav-item" type="button" data-view="profiles">
+                    <img src="/admin/assets/icons/package.svg" alt="">
+                    <span>客户端档案</span>
+                </button>
+                <button class="nav-item" type="button" data-view="audit">
+                    <img src="/admin/assets/icons/scroll-text.svg" alt="">
+                    <span>审计记录</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-boundary">
+                <img src="/admin/assets/icons/shield-check.svg" alt="">
+                <div>
+                    <strong>运行控制已隔离</strong>
+                    <span>目录状态不会启停服务端</span>
+                </div>
+            </div>
+
+            <div class="sidebar-account">
+                <div class="account-avatar" id="account-avatar">H</div>
+                <div class="account-copy">
+                    <strong id="account-name">管理员</strong>
+                    <span id="account-group">Administrator</span>
+                </div>
+                <button id="logout-button" class="icon-button" type="button" title="退出管理后台">
+                    <img src="/admin/assets/icons/log-out.svg" alt="">
+                </button>
+            </div>
+        </aside>
+
+        <section class="workspace">
+            <header class="topbar">
+                <div>
+                    <span class="breadcrumb">赫朝 / <span id="breadcrumb-current">服务器目录</span></span>
+                    <h1 id="view-title">服务器目录</h1>
+                </div>
+                <div class="topbar-actions">
+                    <span id="last-refreshed" class="last-refreshed"></span>
+                    <button id="refresh-button" class="button button-secondary" type="button">
+                        <img src="/admin/assets/icons/refresh-cw.svg" alt="">
+                        刷新
+                    </button>
+                </div>
+            </header>
+
+            <main class="content">
+                <section id="servers-section" class="view-section">
+                    <div class="summary-strip" aria-label="服务器目录汇总">
+                        <div>
+                            <span>目录总数</span>
+                            <strong id="server-total-count">0</strong>
+                        </div>
+                        <div>
+                            <span>在线开放</span>
+                            <strong id="server-online-count">0</strong>
+                        </div>
+                        <div>
+                            <span>维护中</span>
+                            <strong id="server-maintenance-count">0</strong>
+                        </div>
+                        <div>
+                            <span>已归档</span>
+                            <strong id="server-archived-count">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="toolbar">
+                        <label class="search-control" for="server-search">
+                            <img src="/admin/assets/icons/search.svg" alt="">
+                            <input id="server-search" type="search" placeholder="搜索名称、ID 或 Velocity 目标">
+                        </label>
+                        <div class="segmented-control" role="group" aria-label="目录显示范围">
+                            <button class="active" type="button" data-server-filter="visible">当前目录</button>
+                            <button type="button" data-server-filter="all">全部</button>
+                            <button type="button" data-server-filter="archived">已归档</button>
+                        </div>
+                        <button id="create-server-button" class="button button-primary" type="button">
+                            <img src="/admin/assets/icons/plus.svg" alt="">
+                            新增服务器
+                        </button>
+                    </div>
+
+                    <div class="table-frame">
+                        <table class="server-table">
+                            <thead>
+                            <tr>
+                                <th>服务器</th>
+                                <th>状态</th>
+                                <th>运行环境</th>
+                                <th>客户端档案</th>
+                                <th>最低等级</th>
+                                <th>排序</th>
+                                <th class="actions-column">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="server-table-body"></tbody>
+                        </table>
+                        <div id="server-empty-state" class="empty-state" hidden>
+                            <img src="/admin/assets/icons/server.svg" alt="">
+                            <strong>没有匹配的服务器</strong>
+                            <span>调整搜索条件或目录范围。</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="profiles-section" class="view-section" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <h2>客户端档案</h2>
+                            <p>当前目录可绑定的已发布档案。</p>
+                        </div>
+                        <span id="profile-count" class="count-label">0 个档案</span>
+                    </div>
+                    <div class="table-frame">
+                        <table class="profile-table">
+                            <thead>
+                            <tr>
+                                <th>档案</th>
+                                <th>版本</th>
+                                <th>下载大小</th>
+                                <th>发布时间</th>
+                                <th>状态</th>
+                                <th>SHA-256</th>
+                            </tr>
+                            </thead>
+                            <tbody id="profile-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="audit-section" class="view-section" hidden>
+                    <div class="section-heading audit-heading">
+                        <div>
+                            <h2>审计记录</h2>
+                            <p>服务器目录与管理员身份变更按时间倒序保存。</p>
+                        </div>
+                        <button id="load-more-audit-button" class="button button-secondary" type="button">
+                            <img src="/admin/assets/icons/clock.svg" alt="">
+                            更早记录
+                        </button>
+                    </div>
+                    <div class="audit-list" id="audit-list"></div>
+                    <div id="audit-empty-state" class="empty-state" hidden>
+                        <img src="/admin/assets/icons/scroll-text.svg" alt="">
+                        <strong>暂无审计记录</strong>
+                    </div>
+                </section>
+            </main>
+        </section>
+    </div>
+
+    <dialog id="server-drawer" class="drawer">
+        <form id="server-form" method="dialog">
+            <header class="drawer-header">
+                <div>
+                    <span id="drawer-kicker">服务器目录</span>
+                    <h2 id="drawer-title">新增服务器</h2>
+                </div>
+                <button id="close-drawer-button" class="icon-button" type="button" title="关闭">
+                    <img src="/admin/assets/icons/x.svg" alt="">
+                </button>
+            </header>
+            <div class="drawer-body">
+                <div id="form-error" class="inline-alert" hidden>
+                    <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                    <span></span>
+                </div>
+                <div class="form-grid">
+                    <label>
+                        服务器 ID
+                        <input id="server-id" name="id" maxlength="64" required>
+                        <span>创建后不可修改</span>
+                    </label>
+                    <label>
+                        显示名
+                        <input id="server-display-name" name="displayName" maxlength="80" required>
+                    </label>
+                    <label>
+                        短名称
+                        <input id="server-short-name" name="shortName" maxlength="12" required>
+                    </label>
+                    <label>
+                        图标字符
+                        <input id="server-icon-glyph" name="iconGlyph" maxlength="12" required>
+                    </label>
+                    <label>
+                        目录状态
+                        <select id="server-status" name="status" required>
+                            <option value="Online">在线开放</option>
+                            <option value="Maintenance">维护中</option>
+                            <option value="Closed">未开放</option>
+                        </select>
+                    </label>
+                    <label>
+                        最大人数
+                        <input id="server-max-players" name="maxPlayers" type="number" min="1" max="10000" required>
+                    </label>
+                    <label>
+                        Minecraft 版本
+                        <input id="server-minecraft-version" name="minecraftVersion" maxlength="40" required>
+                    </label>
+                    <label>
+                        加载器
+                        <select id="server-loader" name="loader" required>
+                            <option value="Vanilla">Vanilla</option>
+                            <option value="Paper">Paper</option>
+                            <option value="Fabric">Fabric</option>
+                            <option value="NeoForge">NeoForge</option>
+                            <option value="Forge">Forge</option>
+                        </select>
+                    </label>
+                    <label>
+                        最低等级
+                        <select id="server-minimum-tier" name="minimumTier" required>
+                            <option value="Member">成员</option>
+                            <option value="Participant">活动成员</option>
+                            <option value="Collaborator">协作者</option>
+                            <option value="Administrator">管理员</option>
+                        </select>
+                    </label>
+                    <label>
+                        排序值
+                        <input id="server-sort-order" name="sortOrder" type="number" min="-100000" max="100000" required>
+                    </label>
+                    <label class="form-span">
+                        客户端档案
+                        <select id="server-client-profile" name="clientProfileId" required></select>
+                    </label>
+                    <label class="form-span">
+                        Velocity 目标
+                        <input id="server-velocity-target" name="velocityTarget" maxlength="64" required>
+                    </label>
+                    <label id="server-visible-field" class="checkbox-field form-span">
+                        <input id="server-is-visible" name="isVisible" type="checkbox" checked>
+                        <span>
+                            <strong>创建后立即显示</strong>
+                            <small>关闭时服务器先以隐藏状态保存。</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <footer class="drawer-footer">
+                <span id="server-revision-label"></span>
+                <div>
+                    <button id="cancel-server-button" class="button button-secondary" type="button">取消</button>
+                    <button id="save-server-button" class="button button-primary" type="submit">
+                        <img src="/admin/assets/icons/save.svg" alt="">
+                        保存
+                    </button>
+                </div>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog id="confirm-dialog" class="confirm-dialog">
+        <div class="confirm-icon">
+            <img id="confirm-icon" src="/admin/assets/icons/archive.svg" alt="">
+        </div>
+        <h2 id="confirm-title">归档服务器</h2>
+        <p id="confirm-message"></p>
+        <div class="confirm-actions">
+            <button id="cancel-confirm-button" class="button button-secondary" type="button">取消</button>
+            <button id="accept-confirm-button" class="button button-danger" type="button">确认归档</button>
+        </div>
+    </dialog>
+
+    <dialog id="recovery-dialog" class="recovery-dialog">
+        <div class="recovery-heading">
+            <img src="/admin/assets/icons/key-round.svg" alt="">
+            <div>
+                <h2>保存恢复码</h2>
+                <p>每枚恢复码只能使用一次，关闭后无法再次查看。</p>
+            </div>
+        </div>
+        <div id="recovery-code-list" class="recovery-code-list"></div>
+        <div class="recovery-actions">
+            <button id="copy-recovery-button" class="button button-secondary" type="button">
+                <img src="/admin/assets/icons/copy.svg" alt="">
+                复制全部
+            </button>
+            <button id="download-recovery-button" class="button button-secondary" type="button">
+                <img src="/admin/assets/icons/save.svg" alt="">
+                下载文本
+            </button>
+            <button id="finish-recovery-button" class="button button-primary" type="button">已安全保存</button>
+        </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+        <img id="toast-icon" src="/admin/assets/icons/check.svg" alt="">
+        <span id="toast-message"></span>
+    </div>
+</body>
+</html>

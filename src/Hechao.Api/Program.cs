@@ -16,6 +16,7 @@ using Hechao.Api.Monitoring;
 using Hechao.Api.Velocity;
 using Hechao.Contracts;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
@@ -30,6 +31,25 @@ builder.WebHost
 builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddOptions<AdminWebOptions>()
+    .Bind(builder.Configuration.GetSection(AdminWebOptions.SectionName))
+    .Validate(
+        options => options.TicketSeconds is >= 30 and <= 300,
+        "AdminWeb:TicketSeconds must be between 30 and 300.")
+    .Validate(
+        options => options.SessionMinutes is >= 10 and <= 120,
+        "AdminWeb:SessionMinutes must be between 10 and 120.")
+    .Validate(
+        options => options.EnrollmentMinutes is >= 5 and <= 30,
+        "AdminWeb:EnrollmentMinutes must be between 5 and 30.")
+    .Validate(
+        options => options.TryGetPublicBaseUri(out _),
+        "AdminWeb:PublicBaseUrl must be an HTTPS origin or loopback origin.")
+    .Validate(
+        options => !options.Enabled ||
+                   Path.IsPathFullyQualified(options.DataProtectionKeyPath),
+        "AdminWeb:DataProtectionKeyPath must be absolute when the admin console is enabled.")
+    .ValidateOnStart();
 builder.Services.AddOptions<LauncherAuthenticationOptions>()
     .Bind(builder.Configuration.GetSection(LauncherAuthenticationOptions.SectionName))
     .Validate(
@@ -177,6 +197,47 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+    options.AddPolicy("admin-auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    options.AddPolicy("admin-mfa", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ??
+            "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(5)
+            }));
+});
+
+var dataProtectionBuilder = builder.Services
+    .AddDataProtection()
+    .SetApplicationName("Hechao.Launcher.AdminWeb");
+var dataProtectionKeyPath = builder.Configuration[
+    $"{AdminWebOptions.SectionName}:DataProtectionKeyPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeyPath))
+{
+    dataProtectionBuilder.PersistKeysToFileSystem(
+        new DirectoryInfo(dataProtectionKeyPath));
+}
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.Name = "__Host-HechaoAdminCsrf";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
 var databaseConnectionString = builder.Configuration.GetConnectionString("LauncherDatabase");
@@ -198,6 +259,10 @@ builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionStringBuilder.Co
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton<CatalogRepository>();
 builder.Services.AddSingleton<AdminCatalogRepository>();
+builder.Services.AddSingleton<AdminWebTokenGenerator>();
+builder.Services.AddSingleton<AdminTotpService>();
+builder.Services.AddSingleton<AdminWebSessionRepository>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ProfileManifestStore>();
 builder.Services.AddSingleton<OssPresignedUrlFactory>();
@@ -213,39 +278,77 @@ builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.minecraftservices.com/");
     client.Timeout = TimeSpan.FromSeconds(10);
-    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.7.0"));
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Hechao.Launcher.Api", "0.8.0"));
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services
     .AddAuthentication(LauncherSessionAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, LauncherSessionAuthenticationHandler>(
         LauncherSessionAuthenticationHandler.SchemeName,
+        _ => { })
+    .AddScheme<AuthenticationSchemeOptions, AdminWebSessionAuthenticationHandler>(
+        AdminWebSessionAuthenticationHandler.SchemeName,
         _ => { });
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(
-        AdminAuthorization.PolicyName,
+        AdminAuthorization.BootstrapPolicyName,
         policy => policy
+            .AddAuthenticationSchemes(LauncherSessionAuthenticationHandler.SchemeName)
             .RequireAuthenticatedUser()
             .RequireRole(nameof(AccessTier.Administrator)));
+    options.AddPolicy(
+        AdminAuthorization.WebSessionPolicyName,
+        policy => policy
+            .AddAuthenticationSchemes(AdminWebSessionAuthenticationHandler.SchemeName)
+            .RequireAuthenticatedUser()
+            .RequireRole(nameof(AccessTier.Administrator)));
+    options.AddPolicy(
+        AdminAuthorization.PolicyName,
+        policy => policy
+            .AddAuthenticationSchemes(AdminWebSessionAuthenticationHandler.SchemeName)
+            .RequireAuthenticatedUser()
+            .RequireRole(nameof(AccessTier.Administrator))
+            .RequireClaim(AdminWebClaimTypes.AuthenticationMethod, "mfa"));
 });
 
 var app = builder.Build();
+var adminWebOptions = app.Services
+    .GetRequiredService<IOptions<AdminWebOptions>>()
+    .Value;
 
 app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.Use(async (context, next) =>
 {
+    if (context.Request.Path.StartsWithSegments("/admin") &&
+        (!adminWebOptions.Enabled ||
+         !adminWebOptions.IsExpectedHost(context.Request.Host)))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
     context.Response.Headers["Cache-Control"] = "no-store";
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["X-Frame-Options"] = "DENY";
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     context.Response.Headers["X-Request-Id"] = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+    if (context.Request.Path.StartsWithSegments("/admin"))
+    {
+        context.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+            "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; " +
+            "form-action 'self'; frame-ancestors 'none'";
+    }
+
     await next();
 });
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+app.UseAntiforgery();
 
 var serviceVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";
 
@@ -290,15 +393,23 @@ app.MapGet(
     .RequireRateLimiting("downloads");
 
 var adminApi = app.MapGroup("/v1/admin")
+    .AddEndpointFilter<AdminWebHostFilter>()
     .RequireAuthorization(AdminAuthorization.PolicyName)
     .RequireRateLimiting("admin");
 adminApi.MapGet("/catalog/servers", GetAdminServersAsync);
 adminApi.MapGet("/catalog/servers/{serverId}", GetAdminServerAsync);
 adminApi.MapGet("/catalog/client-profiles", GetAdminClientProfilesAsync);
-adminApi.MapPost("/catalog/servers", CreateAdminServerAsync);
-adminApi.MapPut("/catalog/servers/{serverId}", UpdateAdminServerAsync);
-adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibilityAsync);
+adminApi.MapPost("/catalog/servers", CreateAdminServerAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPut("/catalog/servers/{serverId}", UpdateAdminServerAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibilityAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
+
+app.MapAdminWebEndpoints();
+app.MapGet("/admin", () => Results.Redirect("/admin/"));
+app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");
 
 await app.RunAsync();
 

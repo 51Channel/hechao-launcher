@@ -1102,6 +1102,23 @@
                                             </StackPanel>
                                         </Button>
                                     </Grid>
+                                    <Button Style="{StaticResource BaseButtonStyle}"
+                                            Height="38"
+                                            Margin="42,8,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding OpenAdminConsoleCommand}"
+                                            Visibility="{Binding IsAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            ToolTip="在浏览器中打开安全管理后台">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE72E;"
+                                                       FontFamily="{StaticResource IconFont}"
+                                                       FontSize="13"
+                                                       Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding AdminConsoleButtonText}"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </ScrollViewer>
 

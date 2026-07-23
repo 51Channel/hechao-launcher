@@ -1,6 +1,6 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
-> 当前客户端源码版本：`0.6.0`
+> 当前客户端源码版本：`0.7.0`
 > 当前生产状态：认证 API、LuckPerms 同步和 Velocity 授权链已部署；Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界

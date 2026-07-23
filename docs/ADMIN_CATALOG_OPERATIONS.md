@@ -1,16 +1,16 @@
 # 管理员服务器目录 API
 
-> 源码版本：API `0.7.0`
+> 源码版本：API `0.8.0`
 > 生产状态：尚未部署，线上仍为 API `0.6.0`
 > 安全边界：只管理目录数据，不包含 Minecraft、Velocity 或 Java 进程的启动、停止、重启和命令执行能力
 
 ## 1. 访问控制
 
-所有端点位于 `/v1/admin`，使用现有启动器 Bearer 会话，并要求当前用户的 LuckPerms 映射等级为 `Administrator`。API 每次请求都从数据库重新读取会话对应用户状态；普通成员、活动成员和协作者不能访问。
+所有端点位于 `/v1/admin`，只接受 `admin.hechao.world` 上完成 MFA 的独立浏览器会话，并要求当前用户的 LuckPerms 映射等级仍为 `Administrator`。API 每次请求都从数据库重新读取用户状态；普通成员、活动成员、协作者以及只持有启动器 Bearer 的请求都不能直接访问。
 
-管理员 Web 登录、MFA 和浏览器会话尚未实现。当前 API 是后续 `admin.hechao.world` 控制台的后端底座，不能把启动器访问令牌写入网页源码、浏览器本地存储、Git、日志或运维文档。
+启动器 Bearer 只用于创建 90 秒一次性后台票据，不进入网页。票据兑换、浏览器 Cookie、TOTP、恢复码、CSRF 和主机锁定详见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)。
 
-管理员限流按已认证用户划分，每分钟最多 `240` 次请求。所有响应继续使用 `Cache-Control: no-store`、`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY` 和请求追踪 ID。
+管理员目录限流按已认证用户划分，每分钟最多 `240` 次请求。所有写请求还必须通过 antiforgery 校验。响应继续使用 `Cache-Control: no-store`、`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY` 和请求追踪 ID。
 
 ## 2. 端点
 
@@ -76,14 +76,14 @@ catalog.server.restored
 
 本功能未部署。正式部署前必须：
 
-1. 生成并校验 API `0.7.0` Linux 发布物与 SHA-256。
+1. 生成并校验 API `0.8.0` Linux 发布物与 SHA-256。
 2. 创建部署前数据库备份，运行 `pg_restore --list` 验证可读。
 3. 确认至少一个真实 `Administrator` 身份可用于授权测试。
-4. 部署 API 后验证迁移 5、`healthz`、`readyz` 和旧目录端点。
-5. 验证普通账号返回 `403`，管理员可读取但不执行测试写入。
+4. 部署 API 后验证迁移 5、迁移 6、`healthz`、`readyz` 和旧目录端点。
+5. 验证普通账号不能创建后台票据，管理员必须完成 MFA 后才能读取目录。
 6. 只在维护窗口创建一条隐藏测试服务器，核对审计后再归档。
 7. 回归 `hechao.world`、`api.hechao.world`、启动器目录、分发和心跳。
 
-回滚应用时可以把 `current` 链接切回 API `0.6.0`。迁移 5 的 `revision` 列和审计索引是加法变更，旧版本会忽略它们，不需要在故障回滚中删除。禁止为回滚执行 `DROP COLUMN` 或删除审计记录。
+回滚应用时可以把 `current` 链接切回 API `0.6.0`。迁移 5 与迁移 6 都是加法变更，旧版本会忽略新增字段和表，不需要在故障回滚中删除。禁止为回滚执行 `DROP COLUMN`、`DROP TABLE` 或删除审计记录。
 
 本功能的部署只需要重启 `hechao-launcher-api.service`，不需要也不允许重启 Minecraft、Velocity、大厅、生存服或活动服。

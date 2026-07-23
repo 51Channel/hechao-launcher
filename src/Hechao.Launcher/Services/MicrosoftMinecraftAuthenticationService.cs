@@ -15,6 +15,8 @@ public interface ILauncherAuthenticationService
     Task<VelocityLaunchGrantResponse> PrepareVelocityLaunchAsync(
         string serverId,
         CancellationToken cancellationToken = default);
+    Task<AdminBrowserTicketResponse> CreateAdminBrowserTicketAsync(
+        CancellationToken cancellationToken = default);
     Task LogoutAsync(CancellationToken cancellationToken = default);
 }
 
@@ -157,6 +159,12 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
         CancellationToken cancellationToken = default)
     {
         return _apiClient.CreateVelocityLaunchGrantAsync(serverId, cancellationToken);
+    }
+
+    public Task<AdminBrowserTicketResponse> CreateAdminBrowserTicketAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.CreateAdminBrowserTicketAsync(cancellationToken);
     }
 
     public async Task LogoutAsync(CancellationToken cancellationToken = default)

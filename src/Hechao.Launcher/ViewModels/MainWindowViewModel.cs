@@ -37,6 +37,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isCatalogLoading;
     private AuthenticatedPlayer? _currentPlayer;
     private bool _isAccountBusy;
+    private bool _isAdminConsoleBusy;
 
     public MainWindowViewModel(
         IServerCatalogClient catalogClient,
@@ -69,6 +70,9 @@ public sealed class MainWindowViewModel : ObservableObject
         ToggleSettingsCommand = new RelayCommand(ToggleSettings);
         CloseOverlaysCommand = new RelayCommand(CloseOverlays);
         AccountActionCommand = new RelayCommand(StartAccountAction, () => !IsAccountBusy);
+        OpenAdminConsoleCommand = new RelayCommand(
+            OpenAdminConsole,
+            () => IsAdministrator && !IsAdminConsoleBusy);
 
         _ = InitializeAsync();
     }
@@ -85,8 +89,11 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand ToggleSettingsCommand { get; }
     public RelayCommand CloseOverlaysCommand { get; }
     public RelayCommand AccountActionCommand { get; }
+    public RelayCommand OpenAdminConsoleCommand { get; }
 
     public bool IsAuthenticated => _currentPlayer is not null;
+    public bool IsAdministrator =>
+        _currentPlayer?.AccessTier == AccessTier.Administrator;
     public string AccountDisplayName => _currentPlayer?.MinecraftName ?? "访客";
     public string AccountStatusText => IsAccountBusy
         ? "正在验证 Microsoft 账号"
@@ -98,6 +105,8 @@ public sealed class MainWindowViewModel : ObservableObject
         : $"{GetAccessTierText(_currentPlayer.AccessTier)} · {_currentPlayer.LuckPermsPrimaryGroup}";
     public string AccountActionGlyph => IsAuthenticated ? "\uE8AC" : "\uE77B";
     public string AccountActionTooltip => IsAuthenticated ? "退出 Microsoft 账号" : "Microsoft 正版登录";
+    public string AdminConsoleButtonText =>
+        IsAdminConsoleBusy ? "正在打开" : "打开管理后台";
 
     public bool IsAccountBusy
     {
@@ -111,6 +120,21 @@ public sealed class MainWindowViewModel : ObservableObject
 
             OnPropertyChanged(nameof(AccountStatusText));
             AccountActionCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool IsAdminConsoleBusy
+    {
+        get => _isAdminConsoleBusy;
+        private set
+        {
+            if (!SetProperty(ref _isAdminConsoleBusy, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(AdminConsoleButtonText));
+            OpenAdminConsoleCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -717,16 +741,64 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    private async void OpenAdminConsole()
+    {
+        if (!IsAdministrator || IsAdminConsoleBusy)
+        {
+            return;
+        }
+
+        IsAdminConsoleBusy = true;
+        try
+        {
+            var ticket = await _authenticationService.CreateAdminBrowserTicketAsync();
+            if (!Uri.TryCreate(ticket.BrowserUrl, UriKind.Absolute, out var browserUri) ||
+                (browserUri.Scheme != Uri.UriSchemeHttps &&
+                 (browserUri.Scheme != Uri.UriSchemeHttp || !browserUri.IsLoopback)) ||
+                !string.IsNullOrEmpty(browserUri.UserInfo))
+            {
+                throw new InvalidDataException("The admin console URL is invalid.");
+            }
+
+            Process.Start(new ProcessStartInfo(browserUri.AbsoluteUri)
+            {
+                UseShellExecute = true
+            });
+            ShowToast("管理后台已在浏览器中打开");
+        }
+        catch (LauncherAuthenticationRequiredException)
+        {
+            SetCurrentPlayer(null);
+            ShowToast("登录已过期，请重新登录");
+        }
+        catch (LauncherApiException exception)
+        {
+            ShowToast(exception.ApiDetail ?? "暂时无法打开管理后台");
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or
+            IOException or System.ComponentModel.Win32Exception)
+        {
+            ShowToast("暂时无法打开管理后台");
+        }
+        finally
+        {
+            IsAdminConsoleBusy = false;
+        }
+    }
+
     private void SetCurrentPlayer(AuthenticatedPlayer? player)
     {
         _currentPlayer = player;
         OnPropertyChanged(nameof(IsAuthenticated));
+        OnPropertyChanged(nameof(IsAdministrator));
         OnPropertyChanged(nameof(AccountDisplayName));
         OnPropertyChanged(nameof(AccountStatusText));
         OnPropertyChanged(nameof(AccountAccessText));
         OnPropertyChanged(nameof(AccountActionGlyph));
         OnPropertyChanged(nameof(AccountActionTooltip));
         PrimaryActionCommand.RaiseCanExecuteChanged();
+        OpenAdminConsoleCommand.RaiseCanExecuteChanged();
     }
 
     private static string GetAccessTierText(AccessTier accessTier)
