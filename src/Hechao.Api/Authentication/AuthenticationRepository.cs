@@ -702,23 +702,32 @@ public sealed class AuthenticationRepository(
             userId,
             now,
             cancellationToken);
-        await using (var unlink = new NpgsqlCommand(
+        await using (var deleteIdentity = new NpgsqlCommand(
             """
             DELETE FROM launcher.minecraft_identities
             WHERE user_id = $1 AND minecraft_uuid = $2;
+            """,
+            connection,
+            transaction))
+        {
+            deleteIdentity.Parameters.AddWithValue(userId);
+            deleteIdentity.Parameters.AddWithValue(minecraftUuid.Value);
+            await deleteIdentity.ExecuteNonQueryAsync(cancellationToken);
+        }
 
+        await using (var resetTier = new NpgsqlCommand(
+            """
             UPDATE launcher.users
             SET access_tier = 'Member',
-                updated_at = $3
+                updated_at = $2
             WHERE id = $1;
             """,
             connection,
             transaction))
         {
-            unlink.Parameters.AddWithValue(userId);
-            unlink.Parameters.AddWithValue(minecraftUuid.Value);
-            unlink.Parameters.AddWithValue(now);
-            await unlink.ExecuteNonQueryAsync(cancellationToken);
+            resetTier.Parameters.AddWithValue(userId);
+            resetTier.Parameters.AddWithValue(now);
+            await resetTier.ExecuteNonQueryAsync(cancellationToken);
         }
 
         await WriteAccountAuditAsync(
@@ -834,27 +843,52 @@ public sealed class AuthenticationRepository(
             return false;
         }
 
-        await using var transfer = new NpgsqlCommand(
+        await using var transferIdentity = new NpgsqlCommand(
             """
             UPDATE launcher.minecraft_identities
             SET user_id = $2, updated_at = $4
             WHERE minecraft_uuid = $1 AND user_id = $3;
-
-            UPDATE launcher.auth_sessions
-            SET revoked_at = $4
-            WHERE user_id = $3 AND revoked_at IS NULL;
-
-            UPDATE launcher.users
-            SET is_disabled = true, updated_at = $4
-            WHERE id = $3;
             """,
             connection,
             transaction);
-        transfer.Parameters.AddWithValue(minecraftUuid);
-        transfer.Parameters.AddWithValue(targetUserId);
-        transfer.Parameters.AddWithValue(legacyUserId);
-        transfer.Parameters.AddWithValue(now);
-        return await transfer.ExecuteNonQueryAsync(cancellationToken) > 0;
+        transferIdentity.Parameters.AddWithValue(minecraftUuid);
+        transferIdentity.Parameters.AddWithValue(targetUserId);
+        transferIdentity.Parameters.AddWithValue(legacyUserId);
+        transferIdentity.Parameters.AddWithValue(now);
+        if (await transferIdentity.ExecuteNonQueryAsync(cancellationToken) != 1)
+        {
+            return false;
+        }
+
+        await using (var revokeLegacySessions = new NpgsqlCommand(
+            """
+            UPDATE launcher.auth_sessions
+            SET revoked_at = $2
+            WHERE user_id = $1 AND revoked_at IS NULL;
+            """,
+            connection,
+            transaction))
+        {
+            revokeLegacySessions.Parameters.AddWithValue(legacyUserId);
+            revokeLegacySessions.Parameters.AddWithValue(now);
+            await revokeLegacySessions.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var disableLegacyUser = new NpgsqlCommand(
+            """
+            UPDATE launcher.users
+            SET is_disabled = true, updated_at = $2
+            WHERE id = $1;
+            """,
+            connection,
+            transaction))
+        {
+            disableLegacyUser.Parameters.AddWithValue(legacyUserId);
+            disableLegacyUser.Parameters.AddWithValue(now);
+            await disableLegacyUser.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        return true;
     }
 
     private static async Task InsertUserAndIdentityAsync(
@@ -910,30 +944,45 @@ public sealed class AuthenticationRepository(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        await using var command = new NpgsqlCommand(
+        await using (var updateUser = new NpgsqlCommand(
             """
             UPDATE launcher.users
             SET display_name = $2, access_tier = $3, updated_at = $4
             WHERE id = $1;
-
-            UPDATE launcher.minecraft_identities
-            SET minecraft_name = $2,
-                verified_at = $4,
-                updated_at = $4,
-                luckperms_primary_group = $5,
-                luckperms_synced_at = $6
-            WHERE minecraft_uuid = $7;
             """,
             connection,
-            transaction);
-        command.Parameters.AddWithValue(userId);
-        command.Parameters.AddWithValue(identity.MinecraftName);
-        command.Parameters.AddWithValue(luckPerms.AccessTier.ToString());
-        command.Parameters.AddWithValue(now);
-        command.Parameters.AddWithValue(luckPerms.PrimaryGroup);
-        command.Parameters.Add(new NpgsqlParameter { Value = luckPerms.SyncedAt ?? (object)DBNull.Value });
-        command.Parameters.AddWithValue(identity.MinecraftUuid);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+            transaction))
+        {
+            updateUser.Parameters.AddWithValue(userId);
+            updateUser.Parameters.AddWithValue(identity.MinecraftName);
+            updateUser.Parameters.AddWithValue(luckPerms.AccessTier.ToString());
+            updateUser.Parameters.AddWithValue(now);
+            await updateUser.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var updateIdentity = new NpgsqlCommand(
+            """
+            UPDATE launcher.minecraft_identities
+            SET minecraft_name = $2,
+                verified_at = $3,
+                updated_at = $3,
+                luckperms_primary_group = $4,
+                luckperms_synced_at = $5
+            WHERE minecraft_uuid = $1;
+            """,
+            connection,
+            transaction))
+        {
+            updateIdentity.Parameters.AddWithValue(identity.MinecraftUuid);
+            updateIdentity.Parameters.AddWithValue(identity.MinecraftName);
+            updateIdentity.Parameters.AddWithValue(now);
+            updateIdentity.Parameters.AddWithValue(luckPerms.PrimaryGroup);
+            updateIdentity.Parameters.Add(new NpgsqlParameter
+            {
+                Value = luckPerms.SyncedAt ?? (object)DBNull.Value
+            });
+            await updateIdentity.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private static async Task InsertSessionAsync(
