@@ -64,15 +64,15 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 .\tools\Prepare-NeoForgeActivityProfile.ps1 `
   -SourceMinecraftRoot "H:\MC\画画躲猫猫\.minecraft" `
   -ServerMecchaJar "C:\Hechao-Inputs\meccha_chameleon-1.21.11-neoforge-1.0.8-hotfix-zh_cn-lobby-compatible-nudge-limit-modes-watch-ui.jar" `
-  -OutputDirectory artifacts\client-sources\activity-neoforge-1.21.11-1.0.0
+  -OutputDirectory artifacts\client-sources\activity-neoforge-1.21.11-1.0.10
 ```
 
 ```powershell
 dotnet run --project src\Hechao.Publisher -c Release -- publish `
-  --source artifacts\client-sources\activity-neoforge-1.21.11-1.0.0 `
-  --output artifacts\distributions\activity-neoforge-1.21.11-1.0.0 `
+  --source artifacts\client-sources\activity-neoforge-1.21.11-1.0.10 `
+  --output artifacts\distributions\activity-neoforge-1.21.11-1.0.10 `
   --profile-id activity-neoforge-1.21.11 `
-  --version 1.0.0 `
+  --version 1.0.10 `
   --minecraft-version 1.21.11 `
   --java-version 21 `
   --loader NeoForge `
@@ -94,7 +94,7 @@ manifests/<profile-id>.json
 
 ```powershell
 dotnet run --project src\Hechao.Publisher -c Release -- verify `
-  --manifest artifacts\distributions\activity-neoforge-1.21.11-1.0.0\manifests\activity-neoforge-1.21.11.json `
+  --manifest artifacts\distributions\activity-neoforge-1.21.11-1.0.10\manifests\activity-neoforge-1.21.11.json `
   --trust-bundle src\Hechao.Launcher\Assets\distribution-trust.json
 ```
 
@@ -133,11 +133,11 @@ https://launcher-api.hechao.world/v1/profiles/<profile-id>/objects/<sha256前两
 
 当前本地待确认候选，尚未上传 OSS、部署 API 清单或启用目录：
 
-- 干净源：`artifacts/client-sources/activity-neoforge-1.21.11-1.0.0`；原 `H:\MC\画画躲猫猫` 未修改。
-- 档案：`activity-neoforge-1.21.11` / `1.0.0` / Minecraft `1.21.11` / NeoForge `21.11.42` / Java `21`。
-- 清单：`artifacts/distributions/activity-neoforge-1.21.11-1.0.0/manifests/activity-neoforge-1.21.11.json`。
-- 清单 SHA-256：`7CC71050A9BAD634D0F461D60F9F78C0CD7EBDC5844E475AAA01B0ABDD9E5242`。
-- 逻辑文件与去重对象均为 `4,754` 个，总大小 `621,732,083` 字节；清单大小 `2,098,056` 字节。
+- 干净源：`artifacts/client-sources/activity-neoforge-1.21.11-1.0.10`；原 `H:\MC\画画躲猫猫` 未修改。
+- 档案：`activity-neoforge-1.21.11` / `1.0.10` / Minecraft `1.21.11` / NeoForge `21.11.42` / Java `21`。线上未发布占位原为 `1.0.9`，候选顺延而不降级。
+- 清单：`artifacts/distributions/activity-neoforge-1.21.11-1.0.10/manifests/activity-neoforge-1.21.11.json`。
+- 清单 SHA-256：`0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F`。
+- 逻辑文件与去重对象均为 `4,754` 个，总大小 `621,732,083` 字节；清单大小 `2,098,066` 字节。
 - Meccha 仅有一份，SHA-256 为 `C72511BEF3B0CC2C1A1C97E1C33709901714460191F9549FD461E71215534E9E`，与活动服 `watch-ui` JAR 一致。
 - 已使用生产信任包验签，从本地对象全新安装后逐文件复验，并成功构建 `net.neoforged.fml.startup.Client`、NeoForge `21.11.42` 与 `mc.hehe11.fun` 参数；没有启动 Minecraft。
 

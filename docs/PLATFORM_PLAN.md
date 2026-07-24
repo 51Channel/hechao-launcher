@@ -452,7 +452,7 @@ POST /v1/internal/luckperms/snapshot
 - [x] 建立私有 OSS 和 `download.hechao.world`，完成 CNAME 与 HTTPS。
 - [x] 完成清单生成、签名、上传、发布和回滚；独立发布身份与 `4,900` 个不可变对象已上线。
 - [x] 启动器完成断点续传、校验、修复和原子切换，生产公钥已内嵌。
-- [ ] 建立基础档案、NeoForge 活动档案和 DollNight 档案；基础 Fabric 档案已上线，NeoForge `1.0.0` 本地签名候选已完成但尚未上传或启用，DollNight 待建立。
+- [ ] 建立基础档案、NeoForge 活动档案和 DollNight 档案；基础 Fabric 档案已上线，NeoForge `1.0.10` 本地签名候选已完成但尚未上传或启用，DollNight 待建立。
 
 完成标准：干净电脑可以安装，断网后可续传，篡改文件会被修复，坏版本可以回滚。
 
