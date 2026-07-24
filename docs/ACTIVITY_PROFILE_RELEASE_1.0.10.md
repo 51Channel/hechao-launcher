@@ -42,6 +42,12 @@
 
 Bucket 已开启版本控制。[阿里云 PutObject 文档](https://help.aliyun.com/en/oss/developer-reference/putobject)说明版本控制已开启或暂停时会忽略 `x-oss-forbid-overwrite`，因此共享键被写成同内容的新版本，而不是返回 `FileAlreadyExists`。内容寻址路径、上传前 SHA-256 和 OSS Content-MD5 均通过，未发生内容损坏；但产生了额外版本存储。下一次档案上传前必须增加版本感知的远端元数据检查，或配置 Bucket 级文件覆盖保护。
 
+## 上传保护补强
+
+`2026-07-24` 将发布 RAM 策略 `HechaoLauncherOssObjectPublish` 升级为 v2，仅在 `hechaoworld/objects/*` 上增加 `oss:GetObject`；仍无列举、删除、其他前缀读取或版本管理权限。发布器 `0.7.0` 会在上传前使用 `HeadObject` 校验 `Content-Length` 与 `x-oss-meta-sha256`，匹配则跳过，不匹配则硬失败，仅远端不存在时上传并在上传后再次校验。
+
+使用本档案对生产 OSS 全量复验：`4,754` 个对象全部校验后跳过，上传 `0` 个对象、`0` 字节，没有创建新对象版本。当前解决方案测试为 `154/154`。
+
 ## 生产验收
 
 - 公网目录：`1.0.10`、`621,732,083` 字节和目标清单 SHA-256 完全一致。

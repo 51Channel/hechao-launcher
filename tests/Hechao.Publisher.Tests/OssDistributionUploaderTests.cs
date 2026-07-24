@@ -56,6 +56,164 @@ public sealed class OssDistributionUploaderTests
                 distribution.Path));
     }
 
+    [Fact]
+    public async Task UploadAsync_SkipsMatchingRemoteObject()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        var store = new FakeObjectStore(
+            new OssRemoteObject(
+                7,
+                new Dictionary<string, string>
+                {
+                    ["SHA256"] = distribution.Digest.ToUpperInvariant()
+                }));
+        var uploader = new OssDistributionUploader(
+            CreateOptions(distribution.Path),
+            store);
+
+        var result = await uploader.UploadAsync(CancellationToken.None);
+
+        Assert.Equal(0, result.Uploaded);
+        Assert.Equal(1, result.AlreadyPresent);
+        Assert.Equal(0, result.UploadedBytes);
+        Assert.Equal(1, store.HeadCalls);
+        Assert.Equal(0, store.PutCalls);
+        Assert.Equal(
+            $"objects/{distribution.Digest[..2]}/{distribution.Digest}",
+            store.LastKey);
+    }
+
+    [Fact]
+    public async Task UploadAsync_UploadsMissingRemoteObject()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        var store = new FakeObjectStore(remoteObject: null);
+        var uploader = new OssDistributionUploader(
+            CreateOptions(distribution.Path),
+            store);
+
+        var result = await uploader.UploadAsync(CancellationToken.None);
+
+        Assert.Equal(1, result.Uploaded);
+        Assert.Equal(0, result.AlreadyPresent);
+        Assert.Equal(7, result.UploadedBytes);
+        Assert.Equal(2, store.HeadCalls);
+        Assert.Equal(1, store.PutCalls);
+        Assert.Equal(distribution.Digest, store.LastSha256);
+        Assert.False(string.IsNullOrWhiteSpace(store.LastContentMd5));
+    }
+
+    [Fact]
+    public async Task UploadAsync_RejectsRemoteLengthMismatchWithoutUploading()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        var store = new FakeObjectStore(
+            new OssRemoteObject(
+                8,
+                new Dictionary<string, string>
+                {
+                    ["sha256"] = distribution.Digest
+                }));
+        var uploader = new OssDistributionUploader(
+            CreateOptions(distribution.Path),
+            store);
+
+        var exception = await Assert.ThrowsAsync<AggregateException>(
+            () => uploader.UploadAsync(CancellationToken.None));
+
+        Assert.Contains("Refusing to overwrite it.", exception.ToString());
+        Assert.Equal(0, store.PutCalls);
+    }
+
+    [Fact]
+    public async Task UploadAsync_RejectsRemoteDigestMismatchWithoutUploading()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        var store = new FakeObjectStore(
+            new OssRemoteObject(
+                7,
+                new Dictionary<string, string>
+                {
+                    ["sha256"] = new string('0', 64)
+                }));
+        var uploader = new OssDistributionUploader(
+            CreateOptions(distribution.Path),
+            store);
+
+        var exception = await Assert.ThrowsAsync<AggregateException>(
+            () => uploader.UploadAsync(CancellationToken.None));
+
+        Assert.Contains("Refusing to overwrite it.", exception.ToString());
+        Assert.Equal(0, store.PutCalls);
+    }
+
+    private static OssUploadOptions CreateOptions(string distributionDirectory)
+    {
+        return new OssUploadOptions(
+            distributionDirectory,
+            "hechaoworld",
+            "cn-shanghai",
+            "https://oss-cn-shanghai.aliyuncs.com",
+            "objects",
+            "unused.dpapi",
+            "unused-entropy",
+            1);
+    }
+
+    private sealed class FakeObjectStore(OssRemoteObject? remoteObject)
+        : IOssObjectStore
+    {
+        private OssRemoteObject? currentRemoteObject = remoteObject;
+
+        public int HeadCalls { get; private set; }
+        public int PutCalls { get; private set; }
+        public string? LastKey { get; private set; }
+        public string? LastContentMd5 { get; private set; }
+        public string? LastSha256 { get; private set; }
+
+        public Task<OssRemoteObject?> HeadAsync(
+            string bucket,
+            string key,
+            CancellationToken cancellationToken)
+        {
+            Assert.Equal("hechaoworld", bucket);
+            cancellationToken.ThrowIfCancellationRequested();
+            HeadCalls++;
+            LastKey = key;
+            return Task.FromResult(currentRemoteObject);
+        }
+
+        public Task PutAsync(
+            string bucket,
+            string key,
+            string path,
+            long length,
+            string contentMd5,
+            string sha256,
+            CancellationToken cancellationToken)
+        {
+            Assert.Equal("hechaoworld", bucket);
+            Assert.True(File.Exists(path));
+            Assert.Equal(7, length);
+            cancellationToken.ThrowIfCancellationRequested();
+            PutCalls++;
+            LastKey = key;
+            LastContentMd5 = contentMd5;
+            LastSha256 = sha256;
+            currentRemoteObject = new OssRemoteObject(
+                length,
+                new Dictionary<string, string>
+                {
+                    ["sha256"] = sha256
+                });
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
     private sealed class TestDistribution(
         string path,
         string objectPath,

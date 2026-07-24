@@ -1,7 +1,7 @@
 # 客户端分发与签名操作手册
 
 > 启动器源码版本：`0.10.0`
-> 发布器源码版本：`0.6.0`
+> 发布器源码版本：`0.7.0`
 > 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础与 NeoForge 活动档案的 API `0.10.1` 在线激活均已完成；启动器 `0.10.0` 仍为未上传、未分发候选。
 
 ## 1. 安全边界
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、发布物闭合验收、对象目录白名单、进服授权、账号安全和状态心跳规则。`2026-07-24` 使用 .NET SDK `10.0.302` 验证为 `150/150` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全和状态心跳规则。`2026-07-24` 使用 .NET SDK `10.0.302` 验证为 `154/154` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -52,7 +52,7 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 
 `0.6.0` 启动器已按 `win-x64` 单文件、自包含发布配置重建，文件版本、产品名、应用图标和内嵌信任包均已验证。发布 ZIP `artifacts/releases/Hechao-Launcher-0.6.0-win-x64.zip` 只包含 `Hechao.Launcher.exe`，SHA-256 为 `9529C175A168EDE850D4A519E50EA71268BB8A809D128FC5076F18D48D90CC0C`；EXE SHA-256 为 `0DF28FD71DA34303C1FAAC11C1D041884C4AF664D192D3D2A719FAF9A602C2E7`。历史管理端发布器 `0.5.0` 的 ZIP SHA-256 为 `176EAF4B50C36A9254E90C8B3EB5F35FAC4089095C594B3A94932B395F46B696`。
 
-当前管理端发布器源码与最终本机候选均为 `0.6.0`，基于提交 `12432fb5772f365d79784eb141e1af104d20022c`。`artifacts/publish/publisher-win-x64-0.6.0-final/Hechao.Publisher.exe` 为 `74,018,082` 字节，SHA-256 为 `54B7BE1AD936D2420F54C7164973321B5C9BC59CA30C8C1CA8B9E5284FBF8303`；`artifacts/releases/Hechao-Publisher-0.6.0-win-x64.zip` 为 `32,088,917` 字节，SHA-256 为 `4B783D51C7F3DA8D71A98DE593042435029AE4F201C48DF3F57CA88F78D31DBF`，仅包含该 EXE。两者均为 `NotSigned`；从 ZIP 重新解压后的 EXE 哈希一致，并已使用生产信任包对活动档案 `1.0.10` 完成签名、对象路径、长度和 SHA-256 全量验收。
+管理端发布器源码为 `0.7.0`。它在上传前对每个内容寻址键执行 `HeadObject`，只有远端对象不存在时才上传；远端存在时必须同时匹配 `Content-Length` 与 `x-oss-meta-sha256`，不匹配立即失败且绝不覆盖。上传成功后会再次读取元数据完成闭环校验。上一份归档候选 `0.6.0` 基于提交 `12432fb5772f365d79784eb141e1af104d20022c`；其 EXE SHA-256 为 `54B7BE1AD936D2420F54C7164973321B5C9BC59CA30C8C1CA8B9E5284FBF8303`，ZIP SHA-256 为 `4B783D51C7F3DA8D71A98DE593042435029AE4F201C48DF3F57CA88F78D31DBF`。`0.7.0` 正式候选必须从版本提交重建并另行记录，不覆盖 `0.6.0`。
 
 启动器程序和游戏档案独立发布。`0.6.0` 只改变登录器与进服授权流程，没有修改 `base-1.21.11` / `1.0.5` 的 874 MB 游戏文件清单，因此玩家不应为本次启动器升级重新下载完整客户端。
 
@@ -188,7 +188,7 @@ Distribution__PresignedUrlSeconds=300
 
 截至 `2026-07-24`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.10.1` 已读取并使用该分发配置。
 
-上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。该策略只允许对 `hechaoworld/objects/*` 执行 `oss:PutObject`，不允许读取、列举或删除；`PutObject` 本身可以在版本控制 Bucket 中创建同名新版本。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
+上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。策略 v2 只允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject` 与 `oss:PutObject`；不允许列举 Bucket、读取其他前缀、删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
 
 ```powershell
 .\Hechao.Publisher.exe upload-oss `
@@ -202,11 +202,13 @@ Distribution__PresignedUrlSeconds=300
   --parallelism 8
 ```
 
-上传器会重新校验所有对象，发送 Content-MD5，保留 SDK CRC64，并设置 `x-oss-forbid-overwrite`。该请求头仅在 Bucket 未开启或暂停版本控制时阻止同名覆盖；[阿里云 PutObject 文档](https://help.aliyun.com/en/oss/developer-reference/putobject)明确说明版本控制开启或暂停时会忽略它。当前 Bucket 会把重复键写成新版本，不能把“Already present”计数当作不可覆盖证据。下一次档案上传前，必须先完成版本感知的远端元数据检查，或配置 Bucket 级文件覆盖保护；不得继续依赖该请求头单独保证不可变性。
+上传器会先重新校验本地 SHA-256，再使用 `HeadObject` 读取当前版本元数据。已有对象只有在长度和 `sha256` 自定义元数据都与本地内容寻址摘要一致时才计入 `Already present`；缺失或不一致的元数据属于硬错误，不会退化为覆盖。仅远端不存在时才发送 Content-MD5、保留 SDK CRC64，并执行 `PutObject`；上传后再次 `HeadObject` 校验。`x-oss-forbid-overwrite` 仍作为未启用版本控制时的附加保护，但[阿里云 PutObject 文档](https://help.aliyun.com/en/oss/developer-reference/putobject)明确说明版本控制开启或暂停时会忽略它，因此不能单独作为当前 Bucket 的不可覆盖保证。
 
 `2026-07-23` 首次生产上传完成：`4,900/4,900` 个对象成功写入，`0` 个既有对象，上传字节数 `874,147,706`。随后部署 API `0.4.0-20260723T051123Z`，将 `base-1.21.11` / `1.0.5` 清单以 `root:hechao-api 0640` 原子发布，并将目录逻辑大小 `874,147,856` 与清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E` 同步到数据库。
 
 `2026-07-24` 活动档案上传提交 `4,754` 个对象和 `621,732,083` 字节。由于 Bucket 版本控制，OSS 报告 `4,754` 个上传、`0` 个已存在；其中与基础档案共享的 `4,551` 个摘要生成了同内容新版本，真正新增摘要为 `203` 个、`152,843,997` 字节。上传后对全部新增对象和共享样本完成真实下载与 SHA-256 复验，随后无重启地原子发布 `activity-neoforge-1.21.11` / `1.0.10`。
+
+同日完成补强：RAM 策略升级为 v2，发布器 `0.7.0` 接入远端元数据校验。使用活动档案对生产 OSS 全量复验，结果为 `4,754` 个校验后跳过、`0` 个上传、`0` 上传字节；所有当前对象均匹配本地长度和 SHA-256 元数据，没有创建新对象版本。
 
 ## 6. 后续生产接入
 
@@ -216,8 +218,8 @@ Distribution__PresignedUrlSeconds=300
 4. [x] 从现有客户端制作干净源，生成并独立校验 `base-1.21.11` / `1.0.5` 正式签名档案。
 5. [ ] 将生产签名密钥制作一份不依赖当前 Windows 用户配置的离机恢复副本。
 6. [x] 明确首版不购买 Authenticode 证书，当前 EXE 保持 `NotSigned`；玩家公告必须提供官方来源、大小和 SHA-256，未来签名作为独立版本处理。它与客户端清单签名不是同一套密钥。
-7. [x] 创建仅具备 `hechaoworld/objects/*` 写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文。
-8. [ ] 为版本控制 Bucket 增加可靠的同名对象检查或 Bucket 级文件覆盖保护；当前 `x-oss-forbid-overwrite` 会被 OSS 忽略。
+7. [x] 创建仅具备 `hechaoworld/objects/*` 元数据读取与写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文；没有列举或删除权限。
+8. [x] 发布器 `0.7.0` 对版本控制 Bucket 执行 `HeadObject` 长度与 SHA-256 元数据校验；匹配则跳过，不匹配则硬失败，不再依赖 `x-oss-forbid-overwrite` 单独保证不可变性。
 9. [x] 部署 API `0.4.0`，将签名清单原子放入受限目录，并在同一发布操作中更新清单 SHA-256、总大小和版本。
 10. [ ] 先发布内部测试档案，验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
 11. [ ] Mojang API 审核、真实账号验收和 Velocity 最终授权完成后，再启用生产目录强制登录。

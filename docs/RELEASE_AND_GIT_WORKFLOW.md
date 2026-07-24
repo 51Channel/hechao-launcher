@@ -41,7 +41,7 @@
 launcher-v0.10.0
 api-v0.10.1
 velocity-authorizer-v0.1.0
-publisher-v0.6.0
+publisher-v0.7.0
 status-collector-v0.1.0
 profile-base-1.21.11-v1.0.5
 ```

@@ -19,22 +19,134 @@ internal sealed record OssUploadResult(
     int AlreadyPresent,
     long UploadedBytes);
 
-internal sealed class OssDistributionUploader(OssUploadOptions options)
+internal sealed record OssRemoteObject(
+    long ContentLength,
+    IReadOnlyDictionary<string, string> Metadata);
+
+internal interface IOssObjectStore : IDisposable
 {
-    public async Task<OssUploadResult> UploadAsync(CancellationToken cancellationToken)
+    Task<OssRemoteObject?> HeadAsync(
+        string bucket,
+        string key,
+        CancellationToken cancellationToken);
+
+    Task PutAsync(
+        string bucket,
+        string key,
+        string path,
+        long length,
+        string contentMd5,
+        string sha256,
+        CancellationToken cancellationToken);
+}
+
+internal sealed class AlibabaOssObjectStore : IOssObjectStore
+{
+    private readonly Client client;
+
+    public AlibabaOssObjectStore(
+        OssCredential credential,
+        string region,
+        string endpoint)
     {
-        var objects = ValidateAndEnumerateObjects(options.DistributionDirectory);
-        var credential = OssCredentialStore.Load(
-            options.CredentialPath,
-            options.CredentialEntropyLabel);
         var configuration = Configuration.LoadDefault();
         configuration.CredentialsProvider = new StaticCredentialsProvider(
             credential.AccessKeyId,
             credential.AccessKeySecret);
-        configuration.Region = ValidateSimpleName(options.Region, "region");
-        configuration.Endpoint = ValidateHttpsEndpoint(options.Endpoint);
+        configuration.Region = region;
+        configuration.Endpoint = endpoint;
         configuration.UserAgent = PublisherProductInfo.UserAgent;
-        using var client = new Client(configuration);
+        client = new Client(configuration);
+    }
+
+    public async Task<OssRemoteObject?> HeadAsync(
+        string bucket,
+        string key,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await client.HeadObjectAsync(
+                new HeadObjectRequest
+                {
+                    Bucket = bucket,
+                    Key = key
+                },
+                cancellationToken: cancellationToken);
+            return new OssRemoteObject(
+                result.ContentLength ?? -1,
+                new Dictionary<string, string>(
+                    result.Metadata ?? new Dictionary<string, string>(),
+                    StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ServiceException exception) when (
+            exception.StatusCode == 404 &&
+            exception.ErrorCode is "NoSuchKey" or "NoSuchObject" or "NotFound")
+        {
+            return null;
+        }
+    }
+
+    public async Task PutAsync(
+        string bucket,
+        string key,
+        string path,
+        long length,
+        string contentMd5,
+        string sha256,
+        CancellationToken cancellationToken)
+    {
+        using var body = File.OpenRead(path);
+        await client.PutObjectAsync(
+            new PutObjectRequest
+            {
+                Bucket = bucket,
+                Key = key,
+                Body = body,
+                ContentLength = length,
+                ContentMd5 = contentMd5,
+                ContentType = "application/octet-stream",
+                CacheControl = "public, max-age=31536000, immutable",
+                ForbidOverwrite = true,
+                Metadata = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["sha256"] = sha256
+                }
+            },
+            cancellationToken: cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        client.Dispose();
+    }
+}
+
+internal sealed class OssDistributionUploader
+{
+    private readonly OssUploadOptions options;
+    private readonly IOssObjectStore? objectStore;
+
+    public OssDistributionUploader(OssUploadOptions options)
+        : this(options, objectStore: null)
+    {
+    }
+
+    internal OssDistributionUploader(
+        OssUploadOptions options,
+        IOssObjectStore? objectStore)
+    {
+        this.options = options;
+        this.objectStore = objectStore;
+    }
+
+    public async Task<OssUploadResult> UploadAsync(CancellationToken cancellationToken)
+    {
+        var objects = ValidateAndEnumerateObjects(options.DistributionDirectory);
+        var bucket = ValidateSimpleName(options.Bucket, "bucket");
+        var region = ValidateSimpleName(options.Region, "region");
+        var endpoint = ValidateHttpsEndpoint(options.Endpoint);
+        using var store = objectStore ?? CreateObjectStore(region, endpoint);
 
         var uploaded = 0;
         var alreadyPresent = 0;
@@ -51,25 +163,41 @@ internal sealed class OssDistributionUploader(OssUploadOptions options)
             {
                 try
                 {
-                    var contentMd5 = await ComputeContentMd5Async(item.Path, token);
-                    var request = new PutObjectRequest
+                    var key = BuildObjectKey(options.ObjectPrefix, item.Digest);
+                    var remoteObject = await store.HeadAsync(bucket, key, token);
+                    if (remoteObject is not null)
                     {
-                        Bucket = ValidateSimpleName(options.Bucket, "bucket"),
-                        Key = BuildObjectKey(options.ObjectPrefix, item.Digest),
-                        Body = File.OpenRead(item.Path),
-                        ContentLength = item.Length,
-                        ContentMd5 = contentMd5,
-                        ContentType = "application/octet-stream",
-                        CacheControl = "public, max-age=31536000, immutable",
-                        ForbidOverwrite = true,
-                        Metadata = new Dictionary<string, string>(StringComparer.Ordinal)
-                        {
-                            ["sha256"] = item.Digest
-                        }
-                    };
+                        ValidateRemoteObject(key, item, remoteObject);
+                        Interlocked.Increment(ref alreadyPresent);
+                        ReportProgress(
+                            objects.Count,
+                            uploaded,
+                            alreadyPresent);
+                        return;
+                    }
+
+                    var contentMd5 = await ComputeContentMd5Async(item.Path, token);
                     try
                     {
-                        await client.PutObjectAsync(request, cancellationToken: token);
+                        await store.PutAsync(
+                            bucket,
+                            key,
+                            item.Path,
+                            item.Length,
+                            contentMd5,
+                            item.Digest,
+                            token);
+                        var uploadedObject = await store.HeadAsync(
+                            bucket,
+                            key,
+                            token);
+                        if (uploadedObject is null)
+                        {
+                            throw new IOException(
+                                $"OSS object {key} was not visible after upload.");
+                        }
+
+                        ValidateRemoteObject(key, item, uploadedObject);
                         Interlocked.Increment(ref uploaded);
                         Interlocked.Add(ref uploadedBytes, item.Length);
                     }
@@ -77,22 +205,25 @@ internal sealed class OssDistributionUploader(OssUploadOptions options)
                         exception.StatusCode == 409 &&
                         exception.ErrorCode is "FileAlreadyExists" or "ObjectAlreadyExists")
                     {
+                        var concurrentObject = await store.HeadAsync(
+                            bucket,
+                            key,
+                            token);
+                        if (concurrentObject is null)
+                        {
+                            throw new IOException(
+                                $"OSS reported that {key} already exists, but its " +
+                                "metadata could not be retrieved.");
+                        }
+
+                        ValidateRemoteObject(key, item, concurrentObject);
                         Interlocked.Increment(ref alreadyPresent);
                     }
-                    finally
-                    {
-                        request.Body?.Dispose();
-                    }
 
-                    var completed = Volatile.Read(ref uploaded) +
-                                    Volatile.Read(ref alreadyPresent);
-                    if (completed % 100 == 0 || completed == objects.Count)
-                    {
-                        Console.WriteLine(
-                            $"OSS progress: {completed}/{objects.Count} " +
-                            $"uploaded={Volatile.Read(ref uploaded)} " +
-                            $"existing={Volatile.Read(ref alreadyPresent)}");
-                    }
+                    ReportProgress(
+                        objects.Count,
+                        uploaded,
+                        alreadyPresent);
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
@@ -110,6 +241,62 @@ internal sealed class OssDistributionUploader(OssUploadOptions options)
         }
 
         return new OssUploadResult(uploaded, alreadyPresent, uploadedBytes);
+    }
+
+    private IOssObjectStore CreateObjectStore(string region, string endpoint)
+    {
+        var credential = OssCredentialStore.Load(
+            options.CredentialPath,
+            options.CredentialEntropyLabel);
+        return new AlibabaOssObjectStore(credential, region, endpoint);
+    }
+
+    private static void ValidateRemoteObject(
+        string key,
+        DistributionObject localObject,
+        OssRemoteObject remoteObject)
+    {
+        if (remoteObject.ContentLength != localObject.Length)
+        {
+            throw new IOException(
+                $"OSS object {key} already exists with length " +
+                $"{remoteObject.ContentLength}, expected {localObject.Length}. " +
+                "Refusing to overwrite it.");
+        }
+
+        var remoteDigest = remoteObject.Metadata
+            .FirstOrDefault(entry =>
+                string.Equals(
+                    entry.Key,
+                    "sha256",
+                    StringComparison.OrdinalIgnoreCase))
+            .Value;
+        if (!string.Equals(
+                remoteDigest,
+                localObject.Digest,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new IOException(
+                $"OSS object {key} already exists with SHA-256 metadata " +
+                $"'{remoteDigest ?? "<missing>"}', expected {localObject.Digest}. " +
+                "Refusing to overwrite it.");
+        }
+    }
+
+    private static void ReportProgress(
+        int total,
+        int uploaded,
+        int alreadyPresent)
+    {
+        var completed = Volatile.Read(ref uploaded) +
+                        Volatile.Read(ref alreadyPresent);
+        if (completed % 100 == 0 || completed == total)
+        {
+            Console.WriteLine(
+                $"OSS progress: {completed}/{total} " +
+                $"uploaded={Volatile.Read(ref uploaded)} " +
+                $"existing={Volatile.Read(ref alreadyPresent)}");
+        }
     }
 
     internal static IReadOnlyList<DistributionObject> ValidateAndEnumerateObjects(
