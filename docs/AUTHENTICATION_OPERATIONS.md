@@ -1,7 +1,7 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
-> 当前客户端源码版本：`0.9.1`，API 源码版本：`0.9.0`
-> 当前生产状态：API `0.9.0` 与赫朝账号链路已部署；启动器 `0.9.1` 尚未分发，Velocity 仍为 `monitor`，目录强制登录尚未启用
+> 当前客户端与 API 源码版本：`0.10.0`
+> 当前生产状态：API `0.9.0` 与赫朝账号链路已部署；`0.10.0` API 候选尚未部署，启动器 `0.10.0` 尚未分发，Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界
 
@@ -32,9 +32,12 @@
 
 未知组按 `Member` 处理。客户端过滤只用于界面，最终进服授权仍必须由 Velocity 或后端插件再次校验。
 
-## 2. 已部署组件
+## 2. 已实现组件与生产状态
 
 - API 端点：`POST /v1/auth/register`、`POST /v1/auth/login`、`POST /v1/auth/minecraft/link`、`POST /v1/auth/refresh`、`POST /v1/auth/logout`、`GET /v1/me`。
+- `0.10.0` 候选新增 `POST /v1/auth/logout-all` 和 `POST /v1/auth/minecraft/unlink`；两者尚未进入生产 API。
+- `logout-all` 在一个数据库事务中撤销该账号的启动器会话、管理员浏览器会话、未使用后台登录票据和未使用 Velocity 进服授权；成功后客户端同时清除本机 DPAPI 会话与 Microsoft 缓存。
+- `minecraft/unlink` 必须再次提交当前赫朝账号密码。校验成功后撤销上述全部认证状态、删除 Minecraft 身份绑定并将启动器等级回退为 `Member`；密码错误、账号不存在或当前未绑定均不会部分执行。
 - 旧 `POST /v1/auth/minecraft/exchange` 暂时保留迁移兼容。
 - 旧版 `minecraft/exchange` 暂时保留兼容；其临时 `legacy_*` 账户在绑定同一正版身份时可安全转入正式赫朝账号，正式账户之间不能互相接管。
 - 进服端点：`POST /v1/velocity/launch-grants` 和内部 `POST /v1/internal/velocity/authorize`。
@@ -52,6 +55,8 @@
 
 2026-07-24 已部署 API `0.9.0-20260723T195253Z` 和迁移 7。生产隔离账号验证了注册、本人信息、目录、刷新轮换、刷新令牌重放拒绝、退出撤销、密码登录和无效 Minecraft 凭据拒绝；测试账号、会话与对应审计记录随后已清理。该验证证明赫朝账号链路可用，不替代等待 Minecraft API 许可后的真实正版账号与四级 LuckPerms 验收。
 
+`0.10.0` 账号安全功能复用迁移 7 的现有表，不增加数据库迁移。源码与候选包已通过退出全部会话、解除绑定成功和错误密码拒绝测试；在生产部署并完成隔离账号回归前，不得把这两个端点标记为线上能力。
+
 ## 3. Microsoft 应用注册
 
 赫朝自己的 Microsoft 公共客户端应用已于 2026-07-22 注册，不能借用其他启动器的 Client ID。
@@ -62,7 +67,7 @@
 4. 使用明确登记的桌面回调和授权码 + PKCE；不要额外开启设备码或密码回退流，也不创建或打包客户端密码。
 5. 客户端请求 `XboxLive.signin` 与 `XboxLive.offline_access`。
 6. 向 Mojang/Minecraft 申请 Java Game Service API 访问许可；新第三方应用未获许可时会返回 `Invalid app registration`。
-7. Client ID 已写入 `0.9.1` 客户端候选；环境变量 `HECHAO_MICROSOFT_CLIENT_ID` 仍可用于内部覆盖测试。
+7. Client ID 已写入 `0.10.0` 客户端候选；环境变量 `HECHAO_MICROSOFT_CLIENT_ID` 仍可用于内部覆盖测试。
 
 启动器和官网必须持续展示非官方产品声明，赫朝品牌保持主导，不得使用 Minecraft 官方徽标或暗示获得 Mojang/Microsoft 认可。客户端只分发自有模组、配置与资源；Minecraft 本体和官方资源必须通过合法官方服务获取。
 
@@ -119,3 +124,10 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 ```
 
 日志不得输出 Microsoft、Xbox、Minecraft、赫朝会话或内部同步令牌。同步失败时先检查任务结果、HTTPS 与 MariaDB 只读查询，不要通过重启 Minecraft 服务端处理。
+
+## 6. `0.10.0` 部署与回滚边界
+
+- 部署前按 [`API_OPERATIONS.md`](API_OPERATIONS.md) 备份生产数据库、当前 API 二进制、环境文件和 `current` 链接；本版本不需要执行新迁移。
+- 先在隔离账号上验证普通登录、`logout-all`、重新登录、Minecraft 绑定、错误密码解除拒绝和正确密码解除，再开放客户端候选。
+- API 回滚可恢复到 `0.9.0-20260723T195253Z`，无需回滚数据库结构；已经撤销的会话、票据和进服授权不会恢复，已解除的 Minecraft 绑定也必须由玩家重新验证后绑定。
+- 回滚或部署 API 不需要、也不得顺带启动、停止或重启任何 Minecraft 服务端。
