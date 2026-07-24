@@ -34,8 +34,17 @@ public sealed record MinecraftLaunchRequest(
 
 public sealed record MinecraftLaunchResult(int ProcessId);
 
+public sealed record MinecraftProcessExitedEventArgs(
+    string ProfileId,
+    int ProcessId,
+    int? ExitCode,
+    DateTimeOffset StartedAt,
+    DateTimeOffset ExitedAt);
+
 public interface IMinecraftGameLauncherService
 {
+    event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
+
     Task<MinecraftLaunchResult> LaunchAsync(
         MinecraftLaunchRequest request,
         IProgress<MinecraftLaunchProgress>? progress = null,
@@ -58,6 +67,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private readonly SemaphoreSlim _launchGate = new(1, 1);
     private readonly ConcurrentDictionary<string, Process> _runningProcesses =
         new(StringComparer.Ordinal);
+
+    public event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
 
     internal MinecraftGameLauncherService(
         HttpClient httpClient,
@@ -130,8 +141,6 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 }
             }
 
-            process.EnableRaisingEvents = true;
-            process.Exited += (_, _) => RemoveAndDisposeProcess(request.ProfileId, process);
             if (!_runningProcesses.TryAdd(request.ProfileId, process))
             {
                 process.Dispose();
@@ -146,7 +155,14 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                     throw new InvalidOperationException("The Minecraft process did not start.");
                 }
 
-                return new MinecraftLaunchResult(process.Id);
+                var processId = process.Id;
+                var startedAt = DateTimeOffset.UtcNow;
+                process.Exited += (_, _) => HandleProcessExited(
+                    request.ProfileId,
+                    process,
+                    startedAt);
+                process.EnableRaisingEvents = true;
+                return new MinecraftLaunchResult(processId);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -438,6 +454,62 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         }
 
         RemoveAndDisposeProcess(profileId, process);
+    }
+
+    private void HandleProcessExited(
+        string profileId,
+        Process process,
+        DateTimeOffset startedAt)
+    {
+        int? processId = null;
+        int? exitCode = null;
+        try
+        {
+            processId = process.Id;
+            exitCode = process.ExitCode;
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        try
+        {
+            if (processId is > 0)
+            {
+                NotifyProcessExited(new MinecraftProcessExitedEventArgs(
+                    profileId,
+                    processId.Value,
+                    exitCode,
+                    startedAt,
+                    DateTimeOffset.UtcNow));
+            }
+        }
+        finally
+        {
+            RemoveAndDisposeProcess(profileId, process);
+        }
+    }
+
+    private void NotifyProcessExited(MinecraftProcessExitedEventArgs eventArgs)
+    {
+        var handlers = ProcessExited;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        foreach (EventHandler<MinecraftProcessExitedEventArgs> handler in
+                 handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(this, eventArgs);
+            }
+            catch
+            {
+                // A diagnostics subscriber must never affect process cleanup.
+            }
+        }
     }
 
     private void RemoveAndDisposeProcess(string profileId, Process process)

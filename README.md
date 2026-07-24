@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.9.0`，API 源码版本是 `0.9.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、每档案独立 `.minecraft`、共享资源与 Java、Windows 安装包、真实 Minecraft 启动、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话和双重验证的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.9.1`，API 源码版本是 `0.9.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、每档案独立 `.minecraft`、共享资源与 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话和双重验证的管理员控制台。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
@@ -27,6 +27,7 @@
 - 私有 OSS 下载通过启动器 API 鉴权；API 仅为清单内对象签发 5 分钟 V4 URL，Bearer 不会随跳转发送到 OSS。
 - 生产发布公钥已内嵌，启动器只信任 `release-2026-07-primary`；私钥使用 Windows DPAPI 加密离线保存，不进入仓库或服务端。
 - 使用受管 Java 21 运行时和签名档案中的 Fabric 客户端构建正版会话，直接连接 `mc.hehe11.fun`；真实进程构建冒烟测试已通过，测试过程未启动游戏。
+- 记录 Minecraft 正常或异常退出；玩家可在设置页主动生成脱敏、限大小的本地诊断包，世界存档和账号凭据不会进入 ZIP，文件不会自动上传。
 - 在 Minecraft 进程启动前申请 10 分钟、一次性 Velocity 启动授权；授权失败时不会创建游戏进程。
 - Velocity 插件异步校验正版 UUID、账号状态、服务器状态、LuckPerms 等级和单服例外规则，支持 `disabled`、`monitor`、`enforce` 三种模式。
 - Windows 只读采集器每分钟通过 Minecraft 状态协议查询各 Velocity 目标；不持有 RCON、进程控制或服务器启停权限。
@@ -34,7 +35,7 @@
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复和维护状态，所有变更使用修订号并在同一事务中写入审计日志。
 - 启动器 API `0.9.0` 已通过 `https://launcher-api.hechao.world` 上线；目录会合并实时在线人数，并在心跳过期或端口关闭时显示关闭。
 
-API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁移 5 至 7、原子部署和公网回归；赫朝账号注册、登录、令牌轮换、退出撤销与未验证 Minecraft 凭据拒绝均已实测，验证账号和会话随后已清理。启动器 `0.9.0` 已生成 Windows 安装包候选，完成旧目录迁移、每档案 `.minecraft` 隔离、共享对象/Java、安装与卸载冒烟测试，并通过完整解决方案自动测试；尚未向玩家分发。管理后台代码随 API 上线，`AdminWeb__Enabled` 仍保持关闭，因此 `admin.hechao.world` 继续按设计返回 404。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁移 5 至 7、原子部署和公网回归；赫朝账号注册、登录、令牌轮换、退出撤销与未验证 Minecraft 凭据拒绝均已实测，验证账号和会话随后已清理。启动器 `0.9.1` 已生成 Windows 安装包候选，完成旧目录迁移、每档案 `.minecraft` 隔离、共享对象/Java、本地脱敏诊断、安装与卸载冒烟测试，并通过 `140/140` 完整解决方案自动测试；尚未向玩家分发。管理后台代码随 API 上线，`AdminWeb__Enabled` 仍保持关闭，因此 `admin.hechao.world` 继续按设计返回 404。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
@@ -77,10 +78,10 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
 6. [已完成] 备份数据库并部署 API `0.9.0`；赫朝账号核心链路和迁移已验收。管理员 Web 仍保持关闭，等待真实管理员 MFA 灰度。
-7. Minecraft API 许可与真实分组账号验收通过后，再向玩家发布启动器 `0.9.0`；安装包、目录迁移、档案隔离、五个工作区、下载历史、设置持久化、IconPark 图标、响应式布局与 125% DPI 字体渲染的本机候选检查已通过。
+7. Minecraft API 许可与真实分组账号验收通过后，再向玩家发布启动器 `0.9.1`；安装包、目录迁移、档案隔离、本地脱敏诊断、五个工作区、下载历史、设置持久化、IconPark 图标、响应式布局与 125% DPI 字体渲染的本机候选检查已通过。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 
 ## 实施文档
 
-完整的平台架构、HTTPS 迁移、客户端下载、权限、管理后台和分阶段任务见 [`docs/PLATFORM_PLAN.md`](docs/PLATFORM_PLAN.md)。Windows 安装包、数据目录、旧版迁移与卸载边界见 [`docs/WINDOWS_INSTALLER_AND_STORAGE.md`](docs/WINDOWS_INSTALLER_AND_STORAGE.md)。管理员浏览器登录与 MFA 见 [`docs/ADMIN_WEB_OPERATIONS.md`](docs/ADMIN_WEB_OPERATIONS.md)，目录 API 边界见 [`docs/ADMIN_CATALOG_OPERATIONS.md`](docs/ADMIN_CATALOG_OPERATIONS.md)。客户端发布与密钥边界见 [`docs/DISTRIBUTION_OPERATIONS.md`](docs/DISTRIBUTION_OPERATIONS.md)。Microsoft/LuckPerms 激活与运维见 [`docs/AUTHENTICATION_OPERATIONS.md`](docs/AUTHENTICATION_OPERATIONS.md)。Velocity 最终授权见 [`docs/VELOCITY_AUTHORIZATION_OPERATIONS.md`](docs/VELOCITY_AUTHORIZATION_OPERATIONS.md)。只读状态采集见 [`docs/SERVER_HEARTBEAT_OPERATIONS.md`](docs/SERVER_HEARTBEAT_OPERATIONS.md)。实时无密码资产基线见 [`docs/ASSET_INVENTORY.md`](docs/ASSET_INVENTORY.md)，API 发布与回滚见 [`docs/API_OPERATIONS.md`](docs/API_OPERATIONS.md)，数据库备份与恢复边界见 [`docs/DATABASE_OPERATIONS.md`](docs/DATABASE_OPERATIONS.md)，版本与 Git 规则见 [`docs/RELEASE_AND_GIT_WORKFLOW.md`](docs/RELEASE_AND_GIT_WORKFLOW.md)。
+完整的平台架构、HTTPS 迁移、客户端下载、权限、管理后台和分阶段任务见 [`docs/PLATFORM_PLAN.md`](docs/PLATFORM_PLAN.md)。Windows 安装包、数据目录、旧版迁移与卸载边界见 [`docs/WINDOWS_INSTALLER_AND_STORAGE.md`](docs/WINDOWS_INSTALLER_AND_STORAGE.md)，游戏退出与隐私诊断规则见 [`docs/GAME_DIAGNOSTICS.md`](docs/GAME_DIAGNOSTICS.md)。管理员浏览器登录与 MFA 见 [`docs/ADMIN_WEB_OPERATIONS.md`](docs/ADMIN_WEB_OPERATIONS.md)，目录 API 边界见 [`docs/ADMIN_CATALOG_OPERATIONS.md`](docs/ADMIN_CATALOG_OPERATIONS.md)。客户端发布与密钥边界见 [`docs/DISTRIBUTION_OPERATIONS.md`](docs/DISTRIBUTION_OPERATIONS.md)。Microsoft/LuckPerms 激活与运维见 [`docs/AUTHENTICATION_OPERATIONS.md`](docs/AUTHENTICATION_OPERATIONS.md)。Velocity 最终授权见 [`docs/VELOCITY_AUTHORIZATION_OPERATIONS.md`](docs/VELOCITY_AUTHORIZATION_OPERATIONS.md)。只读状态采集见 [`docs/SERVER_HEARTBEAT_OPERATIONS.md`](docs/SERVER_HEARTBEAT_OPERATIONS.md)。实时无密码资产基线见 [`docs/ASSET_INVENTORY.md`](docs/ASSET_INVENTORY.md)，API 发布与回滚见 [`docs/API_OPERATIONS.md`](docs/API_OPERATIONS.md)，数据库备份与恢复边界见 [`docs/DATABASE_OPERATIONS.md`](docs/DATABASE_OPERATIONS.md)，版本与 Git 规则见 [`docs/RELEASE_AND_GIT_WORKFLOW.md`](docs/RELEASE_AND_GIT_WORKFLOW.md)。

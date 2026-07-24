@@ -1,7 +1,7 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
-> 当前客户端源码版本：`0.9.0`，API 源码版本：`0.9.0`
-> 当前生产状态：API `0.9.0` 与赫朝账号链路已部署；启动器 `0.9.0` 尚未分发，Velocity 仍为 `monitor`，目录强制登录尚未启用
+> 当前客户端源码版本：`0.9.1`，API 源码版本：`0.9.0`
+> 当前生产状态：API `0.9.0` 与赫朝账号链路已部署；启动器 `0.9.1` 尚未分发，Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界
 
@@ -62,7 +62,7 @@
 4. 使用明确登记的桌面回调和授权码 + PKCE；不要额外开启设备码或密码回退流，也不创建或打包客户端密码。
 5. 客户端请求 `XboxLive.signin` 与 `XboxLive.offline_access`。
 6. 向 Mojang/Minecraft 申请 Java Game Service API 访问许可；新第三方应用未获许可时会返回 `Invalid app registration`。
-7. Client ID 已写入 `0.9.0` 客户端候选；环境变量 `HECHAO_MICROSOFT_CLIENT_ID` 仍可用于内部覆盖测试。
+7. Client ID 已写入 `0.9.1` 客户端候选；环境变量 `HECHAO_MICROSOFT_CLIENT_ID` 仍可用于内部覆盖测试。
 
 启动器和官网必须持续展示非官方产品声明，赫朝品牌保持主导，不得使用 Minecraft 官方徽标或暗示获得 Mojang/Microsoft 认可。客户端只分发自有模组、配置与资源；Minecraft 本体和官方资源必须通过合法官方服务获取。
 

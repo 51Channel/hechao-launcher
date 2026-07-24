@@ -1,6 +1,6 @@
 # Windows 安装包与游戏数据目录
 
-> 启动器源码版本：`0.9.0`
+> 启动器源码版本：`0.9.1`
 > 存储结构版本：`2`
 > 更新日期：`2026-07-24`
 
@@ -27,6 +27,8 @@
 
 %LocalAppData%\Hechao\Launcher\
   settings.json
+  game-exits.json
+  diagnostics\
 
 %LocalAppData%\Hechao\GameData\
   instances\
@@ -57,7 +59,7 @@
 | 目录 | 用途 | 能否随卸载删除 |
 | --- | --- | --- |
 | 程序目录 | 启动器 EXE、图标授权文件 | 可以 |
-| `Launcher` | 启动器设置与本机会话 | 默认保留 |
+| `Launcher` | 启动器设置、本机会话、退出记录和玩家生成的诊断包 | 默认保留 |
 | `instances` | 每个档案独立的 `.minecraft` | 默认保留 |
 | `shared/objects` | SHA-256 内容寻址下载缓存 | 默认保留 |
 | `shared/runtime` | 档案共用的受管 Java | 默认保留 |
@@ -81,7 +83,7 @@
 
 ## 4. 旧版目录迁移
 
-启动器 `0.9.0` 首次读取旧设置时自动执行一次迁移：
+启动器 `0.9.0` 及后续版本首次读取旧设置时自动执行一次迁移：
 
 | 旧位置 | 新位置 |
 | --- | --- |
@@ -128,7 +130,7 @@ artifacts\installer\Hechao-Launcher-Setup-<version>-win-x64.exe.sha256
 - .NET SDK `10.0.302`
 - NSIS 3，可通过 `winget install --id NSIS.NSIS --exact` 安装
 
-升级使用相同 `AppId` 和安装目录，覆盖启动器程序但保留游戏数据。卸载器只删除它登记安装的程序文件和快捷方式，不包含 `%LocalAppData%\Hechao\GameData` 删除规则。
+升级使用相同 `AppId` 和安装目录，覆盖启动器程序但保留游戏数据。卸载器只删除它登记安装的程序文件和快捷方式，不包含 `%LocalAppData%\Hechao\GameData` 或 `%LocalAppData%\Hechao\Launcher` 删除规则。
 
 ## 6. 发布验证
 
@@ -146,6 +148,7 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 - 开始菜单和可选桌面快捷方式指向安装目录。
 - 升级后设置与游戏数据仍存在。
 - 卸载后程序目录被清理，游戏数据根目录不受影响。
+- 退出记录和本地诊断包不进入安装包，也不随升级被覆盖。
 - 安装包、EXE 和 SHA-256 记录进入资产清单。
 
 对外发布前仍需配置 Authenticode 代码签名。客户端档案的 ECDSA 清单签名只能保护下载内容，不能替代 Windows 对安装包和 EXE 的代码签名。

@@ -1155,6 +1155,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <Grid>
@@ -2370,6 +2371,85 @@
                                                 Command="{Binding ResetLauncherSettingsCommand}"
                                                 Margin="0,0,8,8"
                                                 Content="恢复默认设置" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="4"
+                                Margin="0,16,0,0"
+                                Style="{StaticResource SurfacePanelStyle}"
+                                Padding="24">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="210" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="故障诊断"
+                                               Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBlock Text="诊断文件只保存在本机，不会自动上传。"
+                                               FontSize="12"
+                                               Foreground="{StaticResource InkMutedBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,7,28,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <controls:IconParkIcon Kind="History"
+                                                               Width="18"
+                                                               Height="18"
+                                                               Foreground="{StaticResource HechaoRedBrush}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,12,0" />
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="最近一次游戏退出"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding LatestGameExitText}"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource InkMutedBrush}"
+                                                       Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="诊断包会脱敏账号标识、令牌、网络地址与本机用户路径，并跳过世界存档。"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkMutedBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="30,16,0,0" />
+                                    <WrapPanel Margin="30,18,0,0">
+                                        <Button Style="{StaticResource BaseButtonStyle}"
+                                                Command="{Binding CreateDiagnosticBundleCommand}"
+                                                Margin="0,0,8,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:IconParkIcon Kind="Tool"
+                                                                       Width="14"
+                                                                       Height="14"
+                                                                       Margin="0,0,8,0" />
+                                                <TextBlock Text="{Binding DiagnosticActionText}"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource BaseButtonStyle}"
+                                                Command="{Binding OpenDiagnosticsDirectoryCommand}"
+                                                Margin="0,0,8,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:IconParkIcon Kind="FolderOpen"
+                                                                       Width="14"
+                                                                       Height="14"
+                                                                       Margin="0,0,8,0" />
+                                                <TextBlock Text="打开诊断目录"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Button>
                                     </WrapPanel>
                                 </StackPanel>
                             </Grid>

@@ -19,6 +19,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IClientInstallationService _installationService;
     private readonly IMinecraftGameLauncherService _gameLauncherService;
     private readonly IDownloadHistoryStore _downloadHistoryStore;
+    private readonly IGameDiagnosticsService _gameDiagnosticsService;
+    private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private LauncherSettings _settings;
     private LauncherPage _activePage = LauncherPage.Servers;
@@ -49,6 +51,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private DownloadJobViewModel? _activeDownload;
     private CancellationTokenSource? _activeInstallCancellation;
     private bool _isInstallingClient;
+    private GameExitRecord? _latestGameExit;
+    private bool _isDiagnosticBusy;
 
     public MainWindowViewModel(
         IServerCatalogClient catalogClient,
@@ -56,7 +60,8 @@ public sealed class MainWindowViewModel : ObservableObject
         ILauncherSettingsStore settingsStore,
         IClientInstallationService installationService,
         IMinecraftGameLauncherService gameLauncherService,
-        IDownloadHistoryStore downloadHistoryStore)
+        IDownloadHistoryStore downloadHistoryStore,
+        IGameDiagnosticsService gameDiagnosticsService)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -64,7 +69,11 @@ public sealed class MainWindowViewModel : ObservableObject
         _installationService = installationService;
         _gameLauncherService = gameLauncherService;
         _downloadHistoryStore = downloadHistoryStore;
+        _gameDiagnosticsService = gameDiagnosticsService;
+        _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
+        _latestGameExit = gameDiagnosticsService.LoadLatestExit();
+        _gameLauncherService.ProcessExited += GameLauncherService_OnProcessExited;
 
         MemoryOptions = ["2 GB", "4 GB", "6 GB", "8 GB", "12 GB", "16 GB"];
         _selectedMemory = MemoryOptions.Contains(_settings.Memory) ? _settings.Memory : "6 GB";
@@ -113,6 +122,10 @@ public sealed class MainWindowViewModel : ObservableObject
             () => DownloadHistory.Count > 0);
         ViewActivityServerCommand = new RelayCommand<ServerSummary>(ViewActivityServer);
         ResetLauncherSettingsCommand = new RelayCommand(ResetLauncherSettings);
+        CreateDiagnosticBundleCommand = new RelayCommand(
+            StartCreateDiagnosticBundle,
+            CanCreateDiagnosticBundle);
+        OpenDiagnosticsDirectoryCommand = new RelayCommand(OpenDiagnosticsDirectory);
 
         LoadDownloadHistory();
 
@@ -146,6 +159,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand ClearDownloadHistoryCommand { get; }
     public RelayCommand<ServerSummary> ViewActivityServerCommand { get; }
     public RelayCommand ResetLauncherSettingsCommand { get; }
+    public RelayCommand CreateDiagnosticBundleCommand { get; }
+    public RelayCommand OpenDiagnosticsDirectoryCommand { get; }
     public event EventHandler? CloseRequested;
 
     public LauncherPage ActivePage
@@ -210,6 +225,49 @@ public sealed class MainWindowViewModel : ObservableObject
         : DownloadHistory.Count > 0
             ? $"{DownloadHistory.Count} 条历史记录"
             : "暂无下载任务";
+    public string LatestGameExitText
+    {
+        get
+        {
+            if (_latestGameExit is null)
+            {
+                return "尚无游戏退出记录";
+            }
+
+            var profileName = _clientProfiles.TryGetValue(
+                _latestGameExit.ProfileId,
+                out var profile)
+                ? profile.DisplayName
+                : _latestGameExit.ProfileId;
+            var exitStatus = _latestGameExit.ExitCode switch
+            {
+                0 => "正常退出",
+                int exitCode => $"异常退出（代码 {exitCode}）",
+                _ => "退出状态未知"
+            };
+            return $"{profileName} · {exitStatus} · " +
+                   _latestGameExit.ExitedAt.ToLocalTime().ToString("MM-dd HH:mm");
+        }
+    }
+
+    public string DiagnosticActionText => IsDiagnosticBusy
+        ? "正在生成"
+        : "生成诊断包";
+
+    public bool IsDiagnosticBusy
+    {
+        get => _isDiagnosticBusy;
+        private set
+        {
+            if (!SetProperty(ref _isDiagnosticBusy, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(DiagnosticActionText));
+            CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
+        }
+    }
 
     public bool IsAuthenticated => _currentAccount is not null;
     public bool IsMinecraftLinked => _currentAccount?.IsMinecraftLinked == true;
@@ -305,9 +363,11 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(IsSelectedServerOnline));
             OnPropertyChanged(nameof(CurrentPageTitle));
             PrimaryActionCommand.RaiseCanExecuteChanged();
+            CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
             if (value is not null)
             {
                 _selectedProfileState = LocalProfileState.Missing;
+                CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
                 UpdateProgress = 0;
                 ClientStatusText = "正在检查客户端";
                 UpdatePrimaryActionForState();
@@ -560,6 +620,7 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 _clientProfiles[profile.Id] = profile;
             }
+            OnPropertyChanged(nameof(LatestGameExitText));
 
             Servers.Clear();
             ActivityServers.Clear();
@@ -707,6 +768,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 progress,
                 _activeInstallCancellation.Token);
             _selectedProfileState = LocalProfileState.Ready;
+            CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
             UpdateProgress = 100;
             ClientStatusText = "客户端已就绪";
             PrimaryActionText = "进入服务器";
@@ -1039,6 +1101,138 @@ public sealed class MainWindowViewModel : ObservableObject
         };
     }
 
+    private void GameLauncherService_OnProcessExited(
+        object? sender,
+        MinecraftProcessExitedEventArgs eventArgs)
+    {
+        var record = new GameExitRecord(
+            Guid.NewGuid(),
+            eventArgs.ProfileId,
+            eventArgs.ProcessId,
+            eventArgs.ExitCode,
+            eventArgs.StartedAt,
+            eventArgs.ExitedAt);
+        _ = RecordGameExitAsync(record);
+    }
+
+    private async Task RecordGameExitAsync(GameExitRecord record)
+    {
+        try
+        {
+            await _gameDiagnosticsService.RecordExitAsync(record);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+        }
+
+        DispatchToUi(() =>
+        {
+            _latestGameExit = record;
+            OnPropertyChanged(nameof(LatestGameExitText));
+            if (record.ExitCode != 0)
+            {
+                ShowToast("Minecraft 异常退出，可在设置页生成脱敏诊断包");
+            }
+        });
+    }
+
+    private bool CanCreateDiagnosticBundle() =>
+        SelectedServer is not null &&
+        _selectedProfileState != LocalProfileState.Missing &&
+        !IsDiagnosticBusy;
+
+    private async void StartCreateDiagnosticBundle()
+    {
+        var selectedServer = SelectedServer;
+        if (selectedServer is null || !CanCreateDiagnosticBundle())
+        {
+            return;
+        }
+
+        IsDiagnosticBusy = true;
+        try
+        {
+            var sensitiveValues = new List<string>();
+            if (_currentAccount is not null)
+            {
+                sensitiveValues.Add(_currentAccount.UserId.ToString("D"));
+                sensitiveValues.Add(_currentAccount.Username);
+                sensitiveValues.Add(_currentAccount.DisplayName);
+                if (!string.IsNullOrWhiteSpace(_currentAccount.Email))
+                {
+                    sensitiveValues.Add(_currentAccount.Email);
+                }
+
+                if (_currentAccount.MinecraftUuid is Guid minecraftUuid)
+                {
+                    sensitiveValues.Add(minecraftUuid.ToString("D"));
+                    sensitiveValues.Add(minecraftUuid.ToString("N"));
+                }
+
+                if (!string.IsNullOrWhiteSpace(_currentAccount.MinecraftName))
+                {
+                    sensitiveValues.Add(_currentAccount.MinecraftName);
+                }
+            }
+
+            var matchingExit = _latestGameExit?.ProfileId == selectedServer.ClientProfileId
+                ? _latestGameExit
+                : null;
+            var result = await _gameDiagnosticsService.CreateBundleAsync(
+                new GameDiagnosticBundleRequest(
+                    ClientDirectory,
+                    selectedServer.ClientProfileId,
+                    matchingExit,
+                    sensitiveValues));
+            OpenDirectory(_gameDiagnosticsService.DiagnosticsDirectory);
+            ShowToast(result.IncludedCrashReport
+                ? "脱敏诊断包已生成，并包含最新崩溃报告"
+                : "脱敏诊断包已生成");
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            ArgumentException or InvalidDataException or ManifestFormatException)
+        {
+            ShowToast("无法生成诊断包，请先确认客户端已安装且日志可读取");
+        }
+        finally
+        {
+            IsDiagnosticBusy = false;
+        }
+    }
+
+    private void OpenDiagnosticsDirectory()
+    {
+        try
+        {
+            Directory.CreateDirectory(_gameDiagnosticsService.DiagnosticsDirectory);
+            OpenDirectory(_gameDiagnosticsService.DiagnosticsDirectory);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            System.ComponentModel.Win32Exception)
+        {
+            ShowToast("暂时无法打开诊断目录");
+        }
+    }
+
+    private static void OpenDirectory(string path)
+    {
+        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+    }
+
+    private void DispatchToUi(Action action)
+    {
+        if (_uiContext is null || ReferenceEquals(SynchronizationContext.Current, _uiContext))
+        {
+            action();
+            return;
+        }
+
+        _uiContext.Post(_ => action(), null);
+    }
+
     private async Task RefreshClientStateAsync()
     {
         var selectedServer = SelectedServer;
@@ -1055,6 +1249,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         _selectedProfileState = state;
+        CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         switch (state)
         {
             case LocalProfileState.Ready:
@@ -1106,8 +1301,13 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         _clientDirectory = normalized;
+        _selectedProfileState = LocalProfileState.Missing;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+        CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
+        UpdateProgress = 0;
+        ClientStatusText = "正在检查客户端";
+        UpdatePrimaryActionForState();
         SaveSettings();
         _ = RefreshClientStateAsync();
         ShowToast("游戏数据目录已更新");
@@ -1117,8 +1317,13 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         SelectedMemory = "6 GB";
         _clientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory;
+        _selectedProfileState = LocalProfileState.Missing;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+        CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
+        UpdateProgress = 0;
+        ClientStatusText = "正在检查客户端";
+        UpdatePrimaryActionForState();
         CheckForUpdates = true;
         KeepDownloadsAfterClose = true;
         CloseLauncherAfterGameStart = false;

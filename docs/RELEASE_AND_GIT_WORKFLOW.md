@@ -37,7 +37,7 @@
 组件独立版本：
 
 ```text
-launcher-v0.9.0
+launcher-v0.9.1
 api-v0.6.0
 velocity-authorizer-v0.1.0
 publisher-v0.5.0
@@ -86,7 +86,7 @@ feat: add Velocity launch authorization
 - stage Velocity plugin in monitor mode without restarting the proxy
 - document activation, verification and rollback
 
-Tests: dotnet 135/135; Velocity 7/7
+Tests: dotnet 140/140; Velocity 7/7
 Production: API 0.5.0 healthy; plugin staged in monitor mode
 ```
 
