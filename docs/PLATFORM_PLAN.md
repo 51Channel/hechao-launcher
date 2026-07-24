@@ -473,7 +473,7 @@ POST /v1/internal/luckperms/snapshot
 - [ ] 选择 5 人、20 人两档灰度。
 - [ ] 模拟断网、损坏文件、服务器维护、权限变化和版本回滚。
 - [ ] 验证旧网站、中转 API 和 Minecraft 服务均未受影响。
-- [ ] 编写玩家安装说明和管理员发布手册。
+- [x] 编写玩家安装说明和管理员发布手册；见 [`PLAYER_INSTALLATION_GUIDE.md`](PLAYER_INSTALLATION_GUIDE.md) 与 [`ADMIN_RELEASE_RUNBOOK.md`](ADMIN_RELEASE_RUNBOOK.md)。
 
 完成标准：连续运行一个观察周期无阻断级故障，并完成一次真实回滚演练。
 

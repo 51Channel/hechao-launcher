@@ -151,7 +151,7 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 - 退出记录和本地诊断包不进入安装包，也不随升级被覆盖。
 - 安装包、EXE 和 SHA-256 记录进入资产清单。
 
-对外发布前仍需配置 Authenticode 代码签名。客户端档案的 ECDSA 清单签名只能保护下载内容，不能替代 Windows 对安装包和 EXE 的代码签名。
+当前已确认不为首版购买 Authenticode 代码签名证书，安装包和 EXE 的预期状态为 `NotSigned`。这不会影响程序运行或客户端档案的 ECDSA 验签，但会增加 SmartScreen 首次运行提示。内部灰度和正式公告必须只使用官方来源，并同时公布安装包文件名、版本、大小和 SHA-256；以后增加代码签名时应发布新版本，不得覆盖既有安装包。
 
 ## 7. 第三方构建资产
 

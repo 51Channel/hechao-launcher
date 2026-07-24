@@ -29,6 +29,7 @@
 5. `git diff --check` 通过，暂存区不含秘密、构建产物或本地运行数据。
 6. 创建明确提交并推送到用户指定远端。
 7. 对正式发布创建与组件对应的注释标签。
+8. 面向玩家的版本同步更新安装说明，面向管理员的版本按 [`ADMIN_RELEASE_RUNBOOK.md`](ADMIN_RELEASE_RUNBOOK.md) 完成灰度与收口。
 
 未获得 Git 远端、提交身份或推送权限时，可以完成开发和部署准备，但必须把“尚未推送”列为明确阻塞，不能声称版本已归档。
 
@@ -37,8 +38,8 @@
 组件独立版本：
 
 ```text
-launcher-v0.9.1
-api-v0.6.0
+launcher-v0.10.0
+api-v0.10.1
 velocity-authorizer-v0.1.0
 publisher-v0.5.0
 status-collector-v0.1.0
@@ -54,6 +55,8 @@ Windows 启动器正式候选统一使用：
 ```
 
 该入口必须产出 `Hechao-Launcher-Setup-<version>-win-x64.exe` 和同名 `.sha256`。发布记录同时登记安装包和安装后 `Hechao.Launcher.exe` 的版本、大小、SHA-256、代码签名状态，以及一次隔离目录安装/卸载结果。游戏数据目录不进入安装包或 Git；卸载测试必须确认其不在删除边界内。
+
+首版已明确不购买 Authenticode 证书，当前安装包与 EXE 的预期状态为 `NotSigned`。这不是跳过完整性验证：正式公告必须只使用官方来源，并同时给出版本、大小和 SHA-256。以后增加代码签名时应作为独立启动器版本提交、测试、构建和发布，不得覆盖已有安装包。
 
 ## 4. 提交前检查
 
@@ -86,8 +89,8 @@ feat: add Velocity launch authorization
 - stage Velocity plugin in monitor mode without restarting the proxy
 - document activation, verification and rollback
 
-Tests: dotnet 140/140; Velocity 7/7
-Production: API 0.5.0 healthy; plugin staged in monitor mode
+Tests: dotnet 143/143; Velocity 7/7
+Production: API 0.10.1 healthy; plugin staged in monitor mode
 ```
 
 提交正文只记录非秘密事实。远端推送后再把提交 ID 和标签补入发布记录；若因此修改文档，应形成一个小型 `docs:` 或 `ops:` 提交。

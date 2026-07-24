@@ -101,6 +101,8 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 
 `0.10.1` 生产回归确认三个启动器会话、管理员会话、后台票据和 Velocity 授权可以原子撤销；错误密码解除绑定返回 403 且不改变状态；正确密码返回 204，并删除身份、回退 `Member` 及撤销全部认证状态。测试账号、会话、身份和审计数据均已精确清理，用户、活动会话与活动授权恢复为 `0`。迁移仍为 `1` 至 `7`，本机与公网健康检查、旧官网和中转 API 均为 200，管理域名仍为 404，公网 8090 不可达，热修复启动后的 journal 无 warning。
 
+注释标签 `api-v0.10.1` 已推送，指向包含热修复源码与生产验收记录的提交 `6083d84`。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建

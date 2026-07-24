@@ -128,12 +128,13 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
 4. 启动器数据库已有本机每日备份和同主机恢复演练，但所有业务仍缺少异地副本，网站与 Sub2API 也没有新的统一恢复演练。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已于 2026-07-22 提交申请但尚未批准；Velocity 最终授权已实现并安装为 `monitor`，仍待管理员手动重启、目标映射核对和真实账号灰度，因此目录强制登录开关尚未启用。
-6. 当前 `Hechao.Launcher.exe` 尚未配置 Authenticode 代码签名，Windows SmartScreen 首次运行提示仍是生产发布风险；客户端清单的 ECDSA 签名不能替代 EXE 代码签名。
+6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态
 
 - 发布 ID：`0.10.1-20260724T102830Z`
 - API `0.10.1` 已部署；启动器 `0.10.0` 为未分发候选。管理员 Web 代码已进入生产二进制但功能保持关闭
+- Git 标签：`api-v0.10.1`，目标提交 `6083d84`
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
