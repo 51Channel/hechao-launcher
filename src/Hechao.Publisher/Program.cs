@@ -38,6 +38,9 @@ internal static class PublisherProgram
                 case "upload-oss":
                     await UploadOssAsync(options);
                     return 0;
+                case "upload-launcher-release":
+                    await UploadLauncherReleaseAsync(options);
+                    return 0;
                 default:
                     throw new PublisherUsageException($"Unknown command: {args[0]}");
             }
@@ -283,6 +286,47 @@ internal static class PublisherProgram
         Console.WriteLine($"Uploaded bytes: {result.UploadedBytes}");
     }
 
+    private static async Task UploadLauncherReleaseAsync(CommandOptions options)
+    {
+        var linkMinutesValue = options.Optional("link-minutes") ?? "60";
+        if (!int.TryParse(linkMinutesValue, out var linkMinutes) ||
+            linkMinutes is < 5 or > 1440)
+        {
+            throw new PublisherUsageException(
+                "--link-minutes must be between 5 and 1440.");
+        }
+
+        using var cancellation = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, eventArgs) =>
+        {
+            eventArgs.Cancel = true;
+            cancellation.Cancel();
+        };
+        var uploader = new LauncherReleaseUploader(
+            new LauncherReleaseUploadOptions(
+                Path.GetFullPath(options.Required("installer")),
+                options.Required("version"),
+                options.Required("sha256"),
+                options.Required("bucket"),
+                options.Required("region"),
+                options.Required("endpoint"),
+                options.Required("download-endpoint"),
+                Path.GetFullPath(options.Required("credential-dpapi")),
+                options.Required("dpapi-entropy-label"),
+                TimeSpan.FromMinutes(linkMinutes)));
+        var result = await uploader.UploadAsync(cancellation.Token);
+        Console.WriteLine(
+            result.Uploaded
+                ? "Uploaded launcher release."
+                : "Launcher release already present and verified.");
+        Console.WriteLine($"Object: {result.ObjectKey}");
+        Console.WriteLine($"Bytes: {result.Length}");
+        Console.WriteLine($"SHA-256: {result.Sha256}");
+        Console.WriteLine(
+            $"Internal download link expires: {result.DownloadUrlExpiresAt:O}");
+        Console.WriteLine(result.DownloadUrl);
+    }
+
     private static IEnumerable<string> EnumerateSourceFiles(string sourceDirectory)
     {
         var pending = new Stack<DirectoryInfo>();
@@ -428,6 +472,14 @@ internal static class PublisherProgram
         Console.WriteLine("          --endpoint <https-url> --object-prefix <prefix>");
         Console.WriteLine("          --credential-dpapi <path> --dpapi-entropy-label <label>");
         Console.WriteLine("          [--parallelism <1-32>]");
+        Console.WriteLine();
+        Console.WriteLine("Upload one immutable launcher installer and create a private download link:");
+        Console.WriteLine("  upload-launcher-release --installer <exe> --version <major.minor.patch>");
+        Console.WriteLine("          --sha256 <digest> --bucket <name> --region <region>");
+        Console.WriteLine("          --endpoint <https-oss-origin>");
+        Console.WriteLine("          --download-endpoint <https-custom-domain>");
+        Console.WriteLine("          --credential-dpapi <path> --dpapi-entropy-label <label>");
+        Console.WriteLine("          [--link-minutes <5-1440>]");
     }
 }
 

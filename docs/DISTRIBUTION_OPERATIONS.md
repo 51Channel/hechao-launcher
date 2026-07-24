@@ -210,6 +210,34 @@ Distribution__PresignedUrlSeconds=300
 
 同日完成补强：RAM 策略升级为 v2，发布器 `0.7.0` 接入远端元数据校验。使用活动档案对生产 OSS 全量复验，结果为 `4,754` 个校验后跳过、`0` 个上传、`0` 上传字节；所有当前对象均匹配本地长度和 SHA-256 元数据，没有创建新对象版本。
 
+### 启动器安装包内部灰度
+
+发布器 `0.8.0` 增加独立的启动器安装包上传流程。它只接受规范版本号和固定文件名，并把安装包写入：
+
+```text
+releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
+```
+
+仓库中的发布 RAM 策略模板只在原有 `objects/*` 之外增加 `releases/launcher/*` 的 `oss:GetObject` 与 `oss:PutObject`；没有 Bucket 列举、删除、版本管理或其他前缀权限。安装包上传前先在本地计算 SHA-256，发现与发布记录不符时不会发起 OSS 请求。远端同名对象只有在长度、`sha256`、`release-version` 和 `original-filename` 元数据全部一致时才允许跳过；任何不一致都拒绝覆盖。新对象显式使用私有 ACL、`Content-MD5`、禁止覆盖请求头和下载文件名，上传后必须再次读取元数据确认。
+
+内部灰度使用私有 Bucket 的短时 V4 签名地址，不建立公开目录，也不向 API 主机增加安装包写权限。链接有效期限制为 5 至 1440 分钟；链接属于临时访问能力，不得写入 Git、发布记录、长期公告或公开网页。重新分发时重新运行同一命令，校验既有对象后生成新链接：
+
+```powershell
+.\Hechao.Publisher.exe upload-launcher-release `
+  --installer artifacts\installer\Hechao-Launcher-Setup-0.10.0-win-x64.exe `
+  --version 0.10.0 `
+  --sha256 E2E14306882EF072016F35D740D2F06A7C8D12F63FFE28DD0F6A2C07B24D4876 `
+  --bucket hechaoworld `
+  --region cn-shanghai `
+  --endpoint https://oss-cn-shanghai.aliyuncs.com `
+  --download-endpoint https://download.hechao.world `
+  --credential-dpapi "$env:LOCALAPPDATA\HechaoLauncherAdmin\secrets\oss-publisher-credential.dpapi" `
+  --dpapi-entropy-label HechaoLauncherAdmin/OssPublisherCredential/v1 `
+  --link-minutes 1440
+```
+
+每次内部开放前都必须确认无签名直链返回拒绝访问、签名链接能够完整下载、下载字节数与 SHA-256 匹配，并记录链接到期时间但不记录链接本身。该流程只分发启动器安装包，不会修改 API、档案清单、游戏服务或现有网站。
+
 ## 6. 后续生产接入
 
 1. [x] 为 `download.hechao.world` 签发并绑定 HTTPS 证书，验证 TLS 与 CNAME。
@@ -223,6 +251,7 @@ Distribution__PresignedUrlSeconds=300
 9. [x] 部署 API `0.4.0`，将签名清单原子放入受限目录，并在同一发布操作中更新清单 SHA-256、总大小和版本。
 10. [ ] 先发布内部测试档案，验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
 11. [ ] Mojang API 审核、真实账号验收和 Velocity 最终授权完成后，再启用生产目录强制登录。
+12. [ ] 将发布 RAM 权限模板应用为 v3，使用发布器 `0.8.0` 上传启动器 `0.10.0`，验证私有直链拒绝和短时链接下载。
 
 ## 7. 游戏数据目录
 
