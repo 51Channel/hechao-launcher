@@ -52,7 +52,7 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 
 `0.6.0` 启动器已按 `win-x64` 单文件、自包含发布配置重建，文件版本、产品名、应用图标和内嵌信任包均已验证。发布 ZIP `artifacts/releases/Hechao-Launcher-0.6.0-win-x64.zip` 只包含 `Hechao.Launcher.exe`，SHA-256 为 `9529C175A168EDE850D4A519E50EA71268BB8A809D128FC5076F18D48D90CC0C`；EXE SHA-256 为 `0DF28FD71DA34303C1FAAC11C1D041884C4AF664D192D3D2A719FAF9A602C2E7`。历史管理端发布器 `0.5.0` 的 ZIP SHA-256 为 `176EAF4B50C36A9254E90C8B3EB5F35FAC4089095C594B3A94932B395F46B696`。
 
-管理端发布器源码为 `0.7.0`。它在上传前对每个内容寻址键执行 `HeadObject`，只有远端对象不存在时才上传；远端存在时必须同时匹配 `Content-Length` 与 `x-oss-meta-sha256`，不匹配立即失败且绝不覆盖。上传成功后会再次读取元数据完成闭环校验。上一份归档候选 `0.6.0` 基于提交 `12432fb5772f365d79784eb141e1af104d20022c`；其 EXE SHA-256 为 `54B7BE1AD936D2420F54C7164973321B5C9BC59CA30C8C1CA8B9E5284FBF8303`，ZIP SHA-256 为 `4B783D51C7F3DA8D71A98DE593042435029AE4F201C48DF3F57CA88F78D31DBF`。`0.7.0` 正式候选必须从版本提交重建并另行记录，不覆盖 `0.6.0`。
+管理端发布器 `0.7.0` 正式候选基于提交 `ac7bc8045c4c5f0b10b84987b8a8cb6f02bb3fca`。它在上传前对每个内容寻址键执行 `HeadObject`，只有远端对象不存在时才上传；远端存在时必须同时匹配 `Content-Length` 与 `x-oss-meta-sha256`，不匹配立即失败且绝不覆盖。上传成功后会再次读取元数据完成闭环校验。单文件 EXE 为 `74,022,178` 字节，SHA-256 为 `78C190972D00C40A1066A6ACB21BE1624E2AF7D08F2FB128D9768E662FEC7BAC`；发布归档 `artifacts/releases/Hechao-Publisher-0.7.0-win-x64.zip` 为 `32,090,108` 字节，SHA-256 为 `E05B589976D033015D1FC05D276FE4E19694B9BD7A359569A1AE0473AF1F2F18`，只包含该 EXE。EXE 按当前决定保持 `NotSigned`。上一份归档候选 `0.6.0` 保留不变，不被本版本覆盖。完整验收记录见 [`PUBLISHER_RELEASE_0.7.0.md`](PUBLISHER_RELEASE_0.7.0.md)。
 
 启动器程序和游戏档案独立发布。`0.6.0` 只改变登录器与进服授权流程，没有修改 `base-1.21.11` / `1.0.5` 的 874 MB 游戏文件清单，因此玩家不应为本次启动器升级重新下载完整客户端。
 
