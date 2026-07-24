@@ -20,7 +20,7 @@
     <AssemblyName>Hechao.Launcher</AssemblyName>
     <RootNamespace>Hechao.Launcher</RootNamespace>
     <Product>赫朝启动器</Product>
-    <Version>0.8.0</Version>
+    <Version>0.8.1</Version>
     <ApplicationIcon>Assets\hechao-launcher.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -29,6 +29,8 @@
     <Resource Include="Assets\hechao-fortress-banner.png" />
     <Resource Include="Assets\hechao-launcher-icon.png" />
     <Resource Include="Assets\hechao-launcher.ico" />
+    <EmbeddedResource Include="Assets\IconPark\LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Assets\IconPark\NOTICE.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

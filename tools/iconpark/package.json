@@ -1,0 +1,12 @@
+{
+  "name": "hechao-iconpark-generator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-iconpark-icons.mjs"
+  },
+  "dependencies": {
+    "@icon-park/svg": "1.4.2"
+  }
+}

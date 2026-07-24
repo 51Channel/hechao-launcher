@@ -1,0 +1,230 @@
+import fs from "node:fs";
+import path from "node:path";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+const require = createRequire(import.meta.url);
+const iconPark = require("@icon-park/svg");
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const outputPath = path.resolve(
+  scriptDirectory,
+  "../../src/Hechao.Launcher/Controls/IconParkGeometryRegistry.g.cs",
+);
+
+const iconNames = [
+  "Announcement",
+  "Box",
+  "Calendar",
+  "CheckOne",
+  "Close",
+  "Code",
+  "Delete",
+  "Down",
+  "Download",
+  "ExternalTransmission",
+  "Folder",
+  "FolderOpen",
+  "FullScreen",
+  "Game",
+  "History",
+  "IdCard",
+  "Install",
+  "Lock",
+  "Minus",
+  "PlayOne",
+  "Refresh",
+  "Remind",
+  "Repair",
+  "Right",
+  "Server",
+  "SettingTwo",
+  "Shield",
+  "Tool",
+  "Up",
+  "User",
+  "VolumeNotice",
+];
+
+function parseAttributes(source) {
+  return Object.fromEntries(
+    [...source.matchAll(/([\w-]+)="([^"]*)"/g)].map((match) => [
+      match[1],
+      match[2],
+    ]),
+  );
+}
+
+function number(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Invalid SVG number: ${value}`);
+  }
+
+  return parsed;
+}
+
+function format(value) {
+  return Number.isInteger(value) ? value.toString() : value.toString();
+}
+
+function circleToPath(attributes) {
+  const cx = number(attributes.cx);
+  const cy = number(attributes.cy);
+  const radius = number(attributes.r);
+  return [
+    `M ${format(cx - radius)} ${format(cy)}`,
+    `A ${format(radius)} ${format(radius)} 0 1 0 ${format(cx + radius)} ${format(cy)}`,
+    `A ${format(radius)} ${format(radius)} 0 1 0 ${format(cx - radius)} ${format(cy)}`,
+    "Z",
+  ].join(" ");
+}
+
+function rectToPath(attributes) {
+  const x = number(attributes.x);
+  const y = number(attributes.y);
+  const width = number(attributes.width);
+  const height = number(attributes.height);
+  const radius = Math.min(
+    number(attributes.rx ?? "0"),
+    width / 2,
+    height / 2,
+  );
+
+  if (radius === 0) {
+    return [
+      `M ${format(x)} ${format(y)}`,
+      `H ${format(x + width)}`,
+      `V ${format(y + height)}`,
+      `H ${format(x)}`,
+      "Z",
+    ].join(" ");
+  }
+
+  return [
+    `M ${format(x + radius)} ${format(y)}`,
+    `H ${format(x + width - radius)}`,
+    `A ${format(radius)} ${format(radius)} 0 0 1 ${format(x + width)} ${format(y + radius)}`,
+    `V ${format(y + height - radius)}`,
+    `A ${format(radius)} ${format(radius)} 0 0 1 ${format(x + width - radius)} ${format(y + height)}`,
+    `H ${format(x + radius)}`,
+    `A ${format(radius)} ${format(radius)} 0 0 1 ${format(x)} ${format(y + height - radius)}`,
+    `V ${format(y + radius)}`,
+    `A ${format(radius)} ${format(radius)} 0 0 1 ${format(x + radius)} ${format(y)}`,
+    "Z",
+  ].join(" ");
+}
+
+function extractParts(svg, iconName) {
+  const elements = [
+    ...svg.matchAll(/<(path|circle|rect)\b([^>]*)\/>/g),
+  ];
+
+  if (elements.length === 0) {
+    throw new Error(`${iconName} did not contain supported SVG elements.`);
+  }
+
+  return elements.map((match) => {
+    const [, elementName, rawAttributes] = match;
+    const attributes = parseAttributes(rawAttributes);
+    const data =
+      elementName === "path"
+        ? attributes.d
+        : elementName === "circle"
+          ? circleToPath(attributes)
+          : rectToPath(attributes);
+
+    if (!data) {
+      throw new Error(`${iconName} contains an element without path data.`);
+    }
+
+    return {
+      data,
+      fill: Boolean(attributes.fill && attributes.fill !== "none"),
+      stroke: Boolean(attributes.stroke && attributes.stroke !== "none"),
+      strokeWidth: number(attributes["stroke-width"] ?? "0"),
+      lineCap:
+        attributes["stroke-linecap"] === "round"
+          ? "PenLineCap.Round"
+          : "PenLineCap.Flat",
+      lineJoin:
+        attributes["stroke-linejoin"] === "round"
+          ? "PenLineJoin.Round"
+          : "PenLineJoin.Miter",
+    };
+  });
+}
+
+function escapeCSharp(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+}
+
+const definitions = iconNames.map((iconName) => {
+  const render = iconPark[iconName];
+  if (typeof render !== "function") {
+    throw new Error(`@icon-park/svg does not export ${iconName}.`);
+  }
+
+  const svg = render({
+    theme: "outline",
+    size: 48,
+    fill: "#000000",
+    strokeWidth: 4,
+  });
+  const parts = extractParts(svg, iconName);
+  const generatedParts = parts
+    .map(
+      (part) =>
+        `            Part("${escapeCSharp(part.data)}", fill: ${part.fill.toString().toLowerCase()}, stroke: ${part.stroke.toString().toLowerCase()}, strokeWidth: ${format(part.strokeWidth)}d, lineCap: ${part.lineCap}, lineJoin: ${part.lineJoin})`,
+    )
+    .join(",\n");
+
+  return `        [IconParkKind.${iconName}] =\n        [\n${generatedParts}\n        ]`;
+});
+
+const output = `// <auto-generated />
+// Generated from @icon-park/svg 1.4.2 (Apache-2.0).
+// Run "npm install && npm run generate" from tools/iconpark to refresh this file.
+
+using System.Windows.Media;
+
+namespace Hechao.Launcher.Controls;
+
+internal sealed record IconParkPart(
+    Geometry Geometry,
+    bool Fill,
+    bool Stroke,
+    double StrokeWidth,
+    PenLineCap LineCap,
+    PenLineJoin LineJoin);
+
+internal static class IconParkGeometryRegistry
+{
+    private static readonly IReadOnlyDictionary<IconParkKind, IconParkPart[]> Icons =
+        new Dictionary<IconParkKind, IconParkPart[]>
+        {
+${definitions.join(",\n")}
+        };
+
+    public static IReadOnlyList<IconParkPart> GetParts(IconParkKind kind) =>
+        Icons.TryGetValue(kind, out var parts)
+            ? parts
+            : Array.Empty<IconParkPart>();
+
+    private static IconParkPart Part(
+        string data,
+        bool fill,
+        bool stroke,
+        double strokeWidth,
+        PenLineCap lineCap,
+        PenLineJoin lineJoin)
+    {
+        var geometry = Geometry.Parse(data);
+        geometry.Freeze();
+        return new IconParkPart(geometry, fill, stroke, strokeWidth, lineCap, lineJoin);
+    }
+}
+`;
+
+fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.writeFileSync(outputPath, output, "utf8");
+console.log(`Generated ${iconNames.length} IconPark icons at ${outputPath}`);

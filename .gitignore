@@ -5,6 +5,7 @@ TestResults/
 **/bin/
 **/obj/
 **/build/
+**/node_modules/
 .gradle/
 *.user
 *.suo
