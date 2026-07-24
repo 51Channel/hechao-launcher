@@ -1,5 +1,8 @@
 .vs/
 .idea/
+.dotnet/
+.dotnet-sdk-*/
+.iconpark-tool/
 artifacts/
 TestResults/
 **/bin/

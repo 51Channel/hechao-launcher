@@ -15,7 +15,7 @@ $installerScript = Join-Path $repoRoot "installer\HechaoLauncher.nsi"
 
 function Resolve-Dotnet {
     $bundledCandidate = [System.IO.Path]::GetFullPath(
-        (Join-Path $repoRoot "..\.dotnet\dotnet.exe"))
+        (Join-Path $repoRoot ".dotnet\dotnet.exe"))
     if (Test-Path -LiteralPath $bundledCandidate) {
         return $bundledCandidate
     }

@@ -58,7 +58,7 @@ API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁
 
 ## 本地构建
 
-需要 .NET 10 SDK 和 Windows。
+需要 .NET 10 SDK 和 Windows。构建脚本会优先使用仓库根目录的 `.dotnet\dotnet.exe`，不存在时再使用系统 SDK；本机工具目录不会进入 Git。
 
 ```powershell
 dotnet build Hechao.Launcher.sln -c Release
