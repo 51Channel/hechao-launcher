@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.9.0`、赫朝账号、真实目录、认证会话、签名分发、Velocity 授权与状态心跳 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.10.1`、赫朝账号、账号安全、真实目录、认证会话、签名分发、Velocity 授权与状态心跳 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -55,6 +55,8 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - API `0.5.0` 发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T102842Z.dump`，SHA-256 为 `f6455e523cebc2ca6ca98d3b0c3ab7eebe4e87489141f3ae4dcf954191e12efc`；配置备份为 `/var/backups/hechao-launcher/api-configuration/environment-before-velocity-20260723T103150Z`。
 - API `0.6.0` 部署后数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T124326Z.dump`，SHA-256 为 `508b37c7a695413e2a3d3d5b7ff08212f720077121bb7237c522957ec08d9464`；校验和与 `pg_restore --list` 均通过。
 - API `0.9.0` 发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T195226Z.dump`，大小 `48,720` 字节，SHA-256 为 `621638f3500680e7ad3903cab62ac40a974defe0ecb65a4eb9cfc292cd5547d6`；校验和与 `pg_restore --list` 均通过。
+- API `0.10.0` 发布前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T101600Z.dump` 的 SHA-256 为 `9ceaaea545525e1a6ec199d11aa62fecad4e62220641cc847da2a7d1bb3f64f8`；配置与当前发布备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.10.0-20260724T101600Z.tar.gz` 的 SHA-256 为 `1f7935395a99f85355acde0d7110205ca2a560d8989d9a560b33e8561b0886ba`。
+- API `0.10.1` 热修复前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T102852Z.dump` 的 SHA-256 为 `d15397bfb1c318f4141ce97a13ac2a4692c755915ff46bdd9c46c5c6b051d1d4`；配置与当前发布备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.10.1-20260724T102852Z.tar.gz` 的 SHA-256 为 `c5fb969a7a24ebcb69e90f19bf112faf477d2a1ab68c53b7aeac3dc589f90ce4`。两轮数据库备份均通过校验和与 `pg_restore --list`。
 - `hechao-launcher-db-backup.timer` 已启用，每日生成 PostgreSQL custom-format 备份并保留 14 天；首份备份校验通过，`pg_restore --list` 可读取 36 个对象。
 - 首份备份已恢复到唯一命名的临时验证库，迁移版本、3 个客户端档案、4 个服务器和 0 个初始用户均与生产库一致，验证后只删除了临时库。
 - 网站与 Sub2API 仍缺少新的统一每日备份和异地副本；启动器数据库已完成同主机隔离恢复演练，但仍缺异地副本。
@@ -72,7 +74,9 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - 启动器 `0.8.2` 本机候选为 `68,547,782` 字节，EXE SHA-256 为 `53D27A7F51FFFCB72315C02CDEA751A33FC39E18D3F089C01A40C4097EDC04BD`；它放大了全局界面文字，修正了客户端准备步骤线与运行配置行的对齐，并针对 125% DPI 将苹方渲染改为 Ideal 字体度量、ClearType 抗锯齿和 Fixed 静态提示。五个工作区实机检查与 `125/125` 解决方案测试均已通过，尚未上传或向玩家分发。
 - 启动器 `0.9.0` 已改为正式安装式候选，程序目录与游戏数据分离；每个档案使用独立 `.minecraft`，共享对象和受管 Java，并支持从旧 `%AppData%` 或自定义根目录迁移。单文件 EXE 为 `68,556,366` 字节，SHA-256 为 `73347225BDDFF2A0F43DB57F13B4CF41AB1BEE1B46FC0CD74A992647DE9496E2`；NSIS 安装包为 `61,782,139` 字节，SHA-256 为 `35240A3A21764A21ACB286FC30B1FC4755DE90844B49B075FB8B69174018B97C`。Windows 安装/卸载冒烟测试和 `135/135` 解决方案测试已通过；两份 EXE 当前均为 `NotSigned`，尚未上传或向玩家分发。
 - 启动器 `0.9.1` 基于提交 `6adc93a` 增加 Minecraft 正常/异常退出记录、异常提示和玩家主动生成的本地脱敏诊断包；日志截尾、固定 ZIP 条目、世界存档排除、重解析点拒绝与 20 条退出/10 个诊断包保留上限均有自动测试。单文件 EXE 为 `68,591,719` 字节，SHA-256 为 `98C53E741F4880258568AA1EBC042E30102467AD139CF6A0AA8CCD02D484121F`；NSIS 安装包为 `61,795,645` 字节，SHA-256 为 `99E42CC78157050041F13504AE9ED93F1F1573D7244F06EA5E692EBF8291929F`。Windows 安装/卸载冒烟测试和 `140/140` 解决方案测试已通过；两份 EXE 当前均为 `NotSigned`，尚未上传或向玩家分发。
-- 启动器 `0.10.0` 基于提交 `9cba23e` 增加退出当前设备、退出所有设备及密码确认解除 Minecraft 绑定；服务端会原子撤销启动器会话、管理员会话、后台登录票据和 Velocity 进服授权。单文件 EXE 为 `68,607,280` 字节，SHA-256 为 `D9FA21C5F15E3B30FFED8FEF4E011672B75C4A15987712BBF574A0CEDD3834F3`；NSIS 安装包为 `61,796,065` 字节，SHA-256 为 `E2E14306882EF072016F35D740D2F06A7C8D12F63FFE28DD0F6A2C07B24D4876`。Linux x64 自包含 API 候选为 `103,635,312` 字节，SHA-256 为 `ECE445F76682775917D089630B6C0105AEE04707EE08D36886E53514E8CDCB11`。`143/143` 解决方案测试、账户页实机检查及隔离安装/卸载冒烟测试均通过，卸载后目录与注册表无残留；Windows EXE 均为 `NotSigned`。三份候选均未上传、部署或向玩家分发。
+- 启动器 `0.10.0` 基于提交 `9cba23e` 增加退出当前设备、退出所有设备及密码确认解除 Minecraft 绑定；服务端会原子撤销启动器会话、管理员会话、后台登录票据和 Velocity 进服授权。单文件 EXE 为 `68,607,280` 字节，SHA-256 为 `D9FA21C5F15E3B30FFED8FEF4E011672B75C4A15987712BBF574A0CEDD3834F3`；NSIS 安装包为 `61,796,065` 字节，SHA-256 为 `E2E14306882EF072016F35D740D2F06A7C8D12F63FFE28DD0F6A2C07B24D4876`。`143/143` 解决方案测试、账户页实机检查及隔离安装/卸载冒烟测试均通过，卸载后目录与注册表无残留；Windows EXE 均为 `NotSigned`，尚未上传或向玩家分发。
+- API `0.10.0-20260724T101528Z` 单文件为 `103,635,312` 字节，SHA-256 为 `ECE445F76682775917D089630B6C0105AEE04707EE08D36886E53514E8CDCB11`，归档 SHA-256 为 `020DD8BA3D8D797336B5155F60EC34F900D9B27310FB52085B6BAA1BFEA8A4E6`；生产回归发现 Npgsql 带参数多语句预处理问题。
+- API `0.10.1-20260724T102830Z` 基于提交 `19709c2` 将相关事务拆为单语句命令。单文件为 `103,634,800` 字节，SHA-256 为 `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3`；归档为 `45,282,743` 字节，SHA-256 为 `5EAF4651D076B1F72CDFF83ED1D628D046621286C58B6BACC0DB03453FEC36A9`。生产隔离回归、精确清理、公网与旧业务回归全部通过，当前在线。
 - 正式基础档案为 `base-1.21.11` / `1.0.5`，清单 SHA-256 为 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`；包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节。
 - 独立发布 RAM 用户 `hechao-launcher-publisher` 仅具备 `HechaoLauncherOssObjectPublish` 的 `oss:PutObject` 权限；AccessKey 仅以 Windows DPAPI `CurrentUser` 密文保存，主副本位于 `%LocalAppData%\HechaoLauncherAdmin\secrets`，同密文镜像位于 `H:\Hechao-SecureBackup`。首批 `4,900` 个对象已上传 OSS，共 `874,147,706` 字节，未覆盖任何既有对象。
 
@@ -128,8 +132,8 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 
 ## 5. 当前 API 部署状态
 
-- 发布 ID：`0.9.0-20260723T195253Z`
-- API `0.9.0` 已部署；API 与启动器 `0.10.0` 为未部署、未分发候选。管理员 Web 代码已进入生产二进制但功能保持关闭
+- 发布 ID：`0.10.1-20260724T102830Z`
+- API `0.10.1` 已部署；启动器 `0.10.0` 为未分发候选。管理员 Web 代码已进入生产二进制但功能保持关闭
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
@@ -138,7 +142,7 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
 - `GET /v1/catalog`：过渡阶段匿名请求返回目录，无效 Bearer 返回 401；正式强制开关待认证许可完成后启用
 - 数据库迁移：记录 `1` 至 `7` 全部通过，包括目录、认证、Velocity、心跳、管理员目录、管理员 Web 与赫朝账号
-- 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
+- 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
 - 状态心跳：错误凭据返回 401；真实三目标批次成功写入，目录实时人数与维护状态覆盖通过
