@@ -70,6 +70,8 @@ API 使用 `linux-x64` 自包含单文件发布。发布目录不得包含 PDB�
 
 活动档案必须使用独立 `profile-id`。Forge、Fabric、NeoForge 和原版档案不得共享可写 `.minecraft`。
 
+NeoForge 活动档案先运行 `tools/Prepare-NeoForgeActivityProfile.ps1`。该工具只接受不存在的输出目录，强制校验服务端同款 Meccha，并排除日志、存档、截图、账号缓存、PCL 运行文件和语音设备配置。候选仍必须完成签名验签、全量安装、逐文件 SHA-256 复验和“不启动游戏”的进程构建冒烟测试。上传 OSS、部署 API 清单和更新目录版本是三个独立生产动作，执行前必须得到明确确认。
+
 ## 6. API 发布
 
 发布前：

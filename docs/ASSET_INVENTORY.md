@@ -78,6 +78,7 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - API `0.10.0-20260724T101528Z` 单文件为 `103,635,312` 字节，SHA-256 为 `ECE445F76682775917D089630B6C0105AEE04707EE08D36886E53514E8CDCB11`，归档 SHA-256 为 `020DD8BA3D8D797336B5155F60EC34F900D9B27310FB52085B6BAA1BFEA8A4E6`；生产回归发现 Npgsql 带参数多语句预处理问题。
 - API `0.10.1-20260724T102830Z` 基于提交 `19709c2` 将相关事务拆为单语句命令。单文件为 `103,634,800` 字节，SHA-256 为 `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3`；归档为 `45,282,743` 字节，SHA-256 为 `5EAF4651D076B1F72CDFF83ED1D628D046621286C58B6BACC0DB03453FEC36A9`。生产隔离回归、精确清理、公网与旧业务回归全部通过，当前在线。
 - 正式基础档案为 `base-1.21.11` / `1.0.5`，清单 SHA-256 为 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`；包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节。
+- NeoForge 活动档案本地签名候选为 `activity-neoforge-1.21.11` / `1.0.0`，清单 SHA-256 为 `7CC71050A9BAD634D0F461D60F9F78C0CD7EBDC5844E475AAA01B0ABDD9E5242`；包含 `4,754` 个文件与对象、`621,732,083` 字节。Meccha SHA-256 `C72511BEF3B0CC2C1A1C97E1C33709901714460191F9549FD461E71215534E9E` 与活动服一致；生产信任验签、全量安装、逐文件复验和 NeoForge `21.11.42` 进程构建均通过，尚未上传或启用。
 - 独立发布 RAM 用户 `hechao-launcher-publisher` 仅具备 `HechaoLauncherOssObjectPublish` 的 `oss:PutObject` 权限；AccessKey 仅以 Windows DPAPI `CurrentUser` 密文保存，主副本位于 `%LocalAppData%\HechaoLauncherAdmin\secrets`，同密文镜像位于 `H:\Hechao-SecureBackup`。首批 `4,900` 个对象已上传 OSS，共 `874,147,706` 字节，未覆盖任何既有对象。
 
 ## 2. 主 Minecraft VPS：owl5

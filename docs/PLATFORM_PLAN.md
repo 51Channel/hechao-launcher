@@ -283,11 +283,11 @@
 
 - [x] 为 Minecraft `1.21.11` 指定受控 Java 21 运行时。
 - [x] Java 运行时安装到启动器受管目录，不依赖玩家本机环境。
-- [x] 将版本 JSON、依赖库、资源文件和 Fabric 客户端纳入签名档案。
+- [x] 将版本 JSON、依赖库、资源文件、Fabric 客户端和 NeoForge 活动客户端纳入签名档案。
 - [ ] 实现 Vanilla 启动。
 - [x] 实现 Fabric 安装与启动。
 - [ ] 实现 Forge 安装与启动。
-- [ ] 实现 NeoForge 安装与启动。
+- [x] 实现 NeoForge 安装与启动；`21.11.42` 活动候选已完成全量安装、逐文件复验和真实进程构建，测试未启动游戏。
 - [x] 正确生成 classpath、native 路径、JVM 参数和游戏参数。
 - [x] 使用 OAuth 会话启动，不把访问令牌写入日志。
 - [x] 启动目标统一指向 Velocity 公网入口 `mc.hehe11.fun`。
@@ -452,14 +452,14 @@ POST /v1/internal/luckperms/snapshot
 - [x] 建立私有 OSS 和 `download.hechao.world`，完成 CNAME 与 HTTPS。
 - [x] 完成清单生成、签名、上传、发布和回滚；独立发布身份与 `4,900` 个不可变对象已上线。
 - [x] 启动器完成断点续传、校验、修复和原子切换，生产公钥已内嵌。
-- [ ] 建立基础档案、NeoForge 活动档案和 DollNight 档案；基础 Fabric 档案已完成，其余待建立。
+- [ ] 建立基础档案、NeoForge 活动档案和 DollNight 档案；基础 Fabric 档案已上线，NeoForge `1.0.0` 本地签名候选已完成但尚未上传或启用，DollNight 待建立。
 
 完成标准：干净电脑可以安装，断网后可续传，篡改文件会被修复，坏版本可以回滚。
 
 ### 阶段 4：真正启动和进服
 
 - [x] 完成 Microsoft OAuth 和 Minecraft 会话实现。Minecraft API 许可申请已提交，仍需等待批准和真实账号验收。
-- [x] 完成基础档案的 Java、资源库、资源文件和 Fabric 启动；Forge 与 NeoForge 档案待接入。
+- [x] 完成基础档案的 Fabric 启动和活动候选的 NeoForge 启动；两者均使用受管 Java、独立档案和 Velocity 入口，Forge 仍待接入。
 - [x] 完成 Velocity 入口连接、短时启动授权和服务端最终授权实现；插件等待管理员手动重启后以 `monitor` 加载。
 - [ ] 完成目标映射、真实账号灰度并切换 Velocity `enforce`。
 - [x] 处理正常/异常退出和本地脱敏诊断。

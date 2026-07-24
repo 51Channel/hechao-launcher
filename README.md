@@ -27,7 +27,7 @@
 - 从共享 LuckPerms 数据库每 5 分钟同步主组，按 `Member`、`Participant`、`Collaborator`、`Administrator` 过滤目录。
 - 私有 OSS 下载通过启动器 API 鉴权；API 仅为清单内对象签发 5 分钟 V4 URL，Bearer 不会随跳转发送到 OSS。
 - 生产发布公钥已内嵌，启动器只信任 `release-2026-07-primary`；私钥使用 Windows DPAPI 加密离线保存，不进入仓库或服务端。
-- 使用受管 Java 21 运行时和签名档案中的 Fabric 客户端构建正版会话，直接连接 `mc.hehe11.fun`；真实进程构建冒烟测试已通过，测试过程未启动游戏。
+- 使用受管 Java 21 运行时和签名档案构建正版会话，直接连接 `mc.hehe11.fun`；Fabric 正式档案与 NeoForge `21.11.42` 活动候选均已通过真实全量安装和进程构建冒烟测试，测试过程未启动游戏。
 - 记录 Minecraft 正常或异常退出；玩家可在设置页主动生成脱敏、限大小的本地诊断包，世界存档和账号凭据不会进入 ZIP，文件不会自动上传。
 - 在 Minecraft 进程启动前申请 10 分钟、一次性 Velocity 启动授权；授权失败时不会创建游戏进程。
 - Velocity 插件异步校验正版 UUID、账号状态、服务器状态、LuckPerms 等级和单服例外规则，支持 `disabled`、`monitor`、`enforce` 三种模式。
