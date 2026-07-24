@@ -18,6 +18,9 @@
         FontFamily="{StaticResource UiFont}"
         Icon="/Assets/hechao-launcher.ico"
         Background="{StaticResource CanvasBrush}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <shell:WindowChrome.WindowChrome>
@@ -69,7 +72,7 @@
                                    RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border>
                         <TextBlock Text="赫朝"
-                                   FontSize="11"
+                                   FontSize="13"
                                    FontWeight="Black"
                                    Margin="0,5,0,0"
                                    HorizontalAlignment="Center" />
@@ -86,7 +89,7 @@
                                                        Height="20"
                                                        HorizontalAlignment="Center" />
                                 <TextBlock Text="服务器"
-                                           FontSize="10"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
                                            Margin="0,5,0,0"
                                            HorizontalAlignment="Center" />
@@ -102,7 +105,7 @@
                                                        Height="20"
                                                        HorizontalAlignment="Center" />
                                 <TextBlock Text="下载"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Margin="0,5,0,0"
                                            HorizontalAlignment="Center" />
                             </StackPanel>
@@ -117,7 +120,7 @@
                                                        Height="20"
                                                        HorizontalAlignment="Center" />
                                 <TextBlock Text="活动"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Margin="0,5,0,0"
                                            HorizontalAlignment="Center" />
                             </StackPanel>
@@ -132,7 +135,7 @@
                                                        Height="20"
                                                        HorizontalAlignment="Center" />
                                 <TextBlock Text="账户"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Margin="0,5,0,0"
                                            HorizontalAlignment="Center" />
                             </StackPanel>
@@ -147,7 +150,7 @@
                                                        Height="20"
                                                        HorizontalAlignment="Center" />
                                 <TextBlock Text="设置"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Margin="0,5,0,0"
                                            HorizontalAlignment="Center" />
                             </StackPanel>
@@ -157,7 +160,7 @@
                     <StackPanel Grid.Row="2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding LauncherVersionText}"
                                    FontFamily="Segoe UI"
-                                   FontSize="9"
+                                   FontSize="11"
                                    Foreground="{StaticResource InkFaintBrush}"
                                    HorizontalAlignment="Center" />
                         <Ellipse Width="5"
@@ -188,7 +191,7 @@
                                        FontSize="20"
                                        FontWeight="Black" />
                             <TextBlock Text="{Binding Servers.Count, StringFormat={}{0} 个可选世界}"
-                                       FontSize="10"
+                                       FontSize="12"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        Margin="0,5,0,0" />
                         </StackPanel>
@@ -264,7 +267,7 @@
                                                 VerticalAlignment="Center"
                                                 Margin="2,0,4,0">
                                         <TextBlock Text="{Binding Name}"
-                                                   FontSize="13"
+                                                   FontSize="14"
                                                    FontWeight="Bold" />
                                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                             <Ellipse Width="7"
@@ -287,7 +290,7 @@
                                                     </Style>
                                                 </Ellipse.Style>
                                             </Ellipse>
-                                            <TextBlock FontSize="10" Foreground="{StaticResource InkMutedBrush}">
+                                            <TextBlock FontSize="12" Foreground="{StaticResource InkMutedBrush}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Text" Value="未开放" />
@@ -307,7 +310,7 @@
                                         </StackPanel>
                                         <TextBlock Text="{Binding MinecraftVersion}"
                                                    FontFamily="Segoe UI"
-                                                   FontSize="9"
+                                                   FontSize="11"
                                                    Foreground="{StaticResource InkFaintBrush}"
                                                    Margin="0,4,0,0" />
                                     </StackPanel>
@@ -318,11 +321,11 @@
                                                 Margin="0,0,9,0">
                                         <TextBlock Text="{Binding OnlinePlayers}"
                                                    FontFamily="Segoe UI"
-                                                   FontSize="13"
+                                                   FontSize="14"
                                                    FontWeight="Bold"
                                                    HorizontalAlignment="Right" />
                                         <TextBlock FontFamily="Segoe UI"
-                                                   FontSize="9"
+                                                   FontSize="11"
                                                    Foreground="{StaticResource InkMutedBrush}"
                                                    HorizontalAlignment="Right">
                                             <Run Text="/" />
@@ -371,7 +374,7 @@
                                         Margin="5,0,5,0">
                                 <TextBlock Text="{Binding AccountDisplayName}"
                                            FontFamily="Segoe UI"
-                                           FontSize="15"
+                                           FontSize="16"
                                            FontWeight="Bold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                     <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
@@ -387,11 +390,11 @@
                                         </Ellipse.Style>
                                     </Ellipse>
                                     <TextBlock Text="{Binding AccountStatusText}"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}" />
                                 </StackPanel>
                                 <TextBlock Text="{Binding AccountAccessText}"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkFaintBrush}"
                                            Margin="0,4,0,0" />
                             </StackPanel>
@@ -426,7 +429,7 @@
                             VerticalAlignment="Center"
                             Margin="28,0,0,0">
                     <TextBlock Text="服务器"
-                               FontSize="12"
+                               FontSize="14"
                                Foreground="{StaticResource InkMutedBrush}"
                                VerticalAlignment="Center" />
                     <controls:IconParkIcon Kind="Right"
@@ -436,7 +439,7 @@
                                            Margin="11,0"
                                            VerticalAlignment="Center" />
                     <TextBlock Text="{Binding SelectedServer.Name}"
-                               FontSize="12"
+                               FontSize="14"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" />
                 </StackPanel>
@@ -540,7 +543,7 @@
                                     </Ellipse.Style>
                                 </Ellipse>
                                 <TextBlock Text="{Binding SelectedServerStatusText}"
-                                           FontSize="11"
+                                           FontSize="13"
                                            FontWeight="Bold" />
                             </StackPanel>
                         </Border>
@@ -551,7 +554,7 @@
                                 BorderThickness="1"
                                 CornerRadius="4">
                             <TextBlock Text="{Binding SelectedServerCategoryText}"
-                                       FontSize="11"
+                                       FontSize="13"
                                        Foreground="{StaticResource HechaoRedDarkBrush}"
                                        FontWeight="Bold" />
                         </Border>
@@ -573,7 +576,7 @@
                                        FontSize="28"
                                        FontWeight="Black" />
                             <TextBlock Text="{Binding SelectedServerDescriptionText}"
-                                       FontSize="11"
+                                       FontSize="13"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        Margin="0,6,0,0" />
                             <WrapPanel Margin="0,12,0,0">
@@ -585,7 +588,7 @@
                                                        Margin="0,0,6,0" />
                                 <TextBlock Text="{Binding SelectedServerVersionText}"
                                            FontFamily="Segoe UI"
-                                           FontSize="10"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            VerticalAlignment="Center" />
@@ -597,7 +600,7 @@
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,6,0" />
                                 <TextBlock Text="{Binding SelectedServerAccessText}"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            VerticalAlignment="Center" />
                                 <Border Width="1" Height="12" Background="{StaticResource BorderBrush}" Margin="13,0" />
@@ -608,7 +611,7 @@
                                          VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding SelectedServerPlayerText}"
                                            FontFamily="Segoe UI"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            VerticalAlignment="Center" />
                             </WrapPanel>
@@ -631,7 +634,7 @@
                                                        VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding PrimaryActionText}"
                                            Foreground="White"
-                                           FontSize="14"
+                                           FontSize="15"
                                            FontWeight="Bold"
                                            VerticalAlignment="Center" />
                             </StackPanel>
@@ -658,7 +661,7 @@
                                                VerticalAlignment="Center" />
                         <TextBlock Grid.Column="1"
                                    Text="赫朝快讯"
-                                   FontSize="11"
+                                   FontSize="13"
                                    FontWeight="Bold"
                                    VerticalAlignment="Center"
                                    Margin="0,0,14,0" />
@@ -668,7 +671,7 @@
                                 VerticalAlignment="Center" />
                         <TextBlock Grid.Column="3"
                                    Text="活动服务器会按录制计划开放，客户端将自动匹配当前版本。"
-                                   FontSize="10"
+                                   FontSize="12"
                                    Foreground="{StaticResource InkMutedBrush}"
                                    VerticalAlignment="Center"
                                    Margin="14,0" />
@@ -720,52 +723,90 @@
                                 </Border>
                                 <StackPanel Margin="10,-1,0,0">
                                     <TextBlock Text="客户端准备"
-                                               FontSize="16"
+                                               FontSize="17"
                                                FontWeight="Black" />
                                     <TextBlock Text="{Binding ClientStatusText}"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
                                 </StackPanel>
                             </StackPanel>
                             <TextBlock Text="{Binding LauncherVersionText, StringFormat=启动器 {0}}"
                                        FontFamily="Segoe UI"
-                                       FontSize="9"
+                                       FontSize="11"
                                        Foreground="{StaticResource InkFaintBrush}"
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Top"
                                        Margin="0,5,0,0" />
                         </Grid>
 
-                        <Grid Grid.Row="1" Margin="5,4,5,0">
-                            <Border Height="1"
+                        <Grid Grid.Row="1"
+                              Margin="5,4,5,0"
+                              VerticalAlignment="Top">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="31" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Row="1"
+                                    Grid.ColumnSpan="4"
+                                    Height="1"
                                     Margin="28,0"
                                     Background="{StaticResource BorderBrush}"
                                     VerticalAlignment="Center" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="检查环境" Style="{StaticResource ProcessLabelStyle}" />
-                                    <Ellipse Width="17" Height="17" Fill="{StaticResource SurfaceBrush}" Stroke="{StaticResource SteelBrush}" StrokeThickness="2" Margin="0,8,0,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="获取清单" Style="{StaticResource ProcessLabelStyle}" />
-                                    <Ellipse Width="17" Height="17" Fill="{StaticResource SurfaceBrush}" Stroke="{StaticResource BorderStrongBrush}" StrokeThickness="2" Margin="0,8,0,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="下载资源" Style="{StaticResource ProcessLabelStyle}" />
-                                    <Ellipse Width="17" Height="17" Fill="{StaticResource SurfaceBrush}" Stroke="{StaticResource BorderStrongBrush}" StrokeThickness="2" Margin="0,8,0,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="3">
-                                    <TextBlock Text="校验文件" Style="{StaticResource ProcessLabelStyle}" />
-                                    <Ellipse Width="17" Height="17" Fill="{StaticResource SurfaceBrush}" Stroke="{StaticResource BorderStrongBrush}" StrokeThickness="2" Margin="0,8,0,0" />
-                                </StackPanel>
-                            </Grid>
+                            <TextBlock Grid.Column="0"
+                                       Text="检查环境"
+                                       Style="{StaticResource ProcessLabelStyle}" />
+                            <TextBlock Grid.Column="1"
+                                       Text="获取清单"
+                                       Style="{StaticResource ProcessLabelStyle}" />
+                            <TextBlock Grid.Column="2"
+                                       Text="下载资源"
+                                       Style="{StaticResource ProcessLabelStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="校验文件"
+                                       Style="{StaticResource ProcessLabelStyle}" />
+                            <Ellipse Grid.Row="1"
+                                     Grid.Column="0"
+                                     Width="17"
+                                     Height="17"
+                                     Fill="{StaticResource SurfaceBrush}"
+                                     Stroke="{StaticResource SteelBrush}"
+                                     StrokeThickness="2"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                            <Ellipse Grid.Row="1"
+                                     Grid.Column="1"
+                                     Width="17"
+                                     Height="17"
+                                     Fill="{StaticResource SurfaceBrush}"
+                                     Stroke="{StaticResource BorderStrongBrush}"
+                                     StrokeThickness="2"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                            <Ellipse Grid.Row="1"
+                                     Grid.Column="2"
+                                     Width="17"
+                                     Height="17"
+                                     Fill="{StaticResource SurfaceBrush}"
+                                     Stroke="{StaticResource BorderStrongBrush}"
+                                     StrokeThickness="2"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                            <Ellipse Grid.Row="1"
+                                     Grid.Column="3"
+                                     Width="17"
+                                     Height="17"
+                                     Fill="{StaticResource SurfaceBrush}"
+                                     Stroke="{StaticResource BorderStrongBrush}"
+                                     StrokeThickness="2"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
                         </Grid>
 
                         <Grid Grid.Row="2" Margin="0,8,0,0">
@@ -775,15 +816,15 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="客户端包"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkMutedBrush}" />
                                 <TextBlock Text="{Binding SelectedProfileDisplayName}"
-                                           FontSize="13"
+                                           FontSize="14"
                                            FontWeight="Bold"
                                            Margin="0,5,0,0" />
                                 <TextBlock Text="{Binding SelectedProfileMetaText}"
                                            FontFamily="Segoe UI"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkFaintBrush}"
                                            Margin="0,4,0,0" />
                             </StackPanel>
@@ -795,11 +836,11 @@
                                 </Grid.RowDefinitions>
                                 <Grid>
                                     <TextBlock Text="进度"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}" />
                                     <TextBlock Text="{Binding UpdateProgress, StringFormat={}{0:0}%}"
                                                FontFamily="Segoe UI"
-                                               FontSize="10"
+                                               FontSize="12"
                                                FontWeight="Bold"
                                                HorizontalAlignment="Right" />
                                 </Grid>
@@ -811,7 +852,7 @@
                                              Margin="0,9,0,0" />
                                 <TextBlock Grid.Row="2"
                                            Text="{Binding ClientStatusText}"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkFaintBrush}"
                                            Margin="0,6,0,0" />
                             </Grid>
@@ -823,7 +864,7 @@
                                 <RowDefinition Height="40" />
                             </Grid.RowDefinitions>
                             <TextBlock Text="安装路径"
-                                       FontSize="9"
+                                       FontSize="11"
                                        Foreground="{StaticResource InkMutedBrush}" />
                             <Border Grid.Row="1"
                                     Background="{StaticResource SurfaceMutedBrush}"
@@ -833,7 +874,7 @@
                                 <Grid Margin="12,0,4,0">
                                     <TextBlock Text="{Binding ClientDirectory}"
                                                FontFamily="Consolas"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                VerticalAlignment="Center" />
                                     <Button HorizontalAlignment="Right"
@@ -877,10 +918,10 @@
                                     </Border>
                                     <StackPanel Margin="10,-1,0,0">
                                         <TextBlock Text="运行配置"
-                                                   FontSize="16"
+                                                   FontSize="17"
                                                    FontWeight="Black" />
                                         <TextBlock Text="保存后在下次启动时生效"
-                                                   FontSize="9"
+                                                   FontSize="11"
                                                    Foreground="{StaticResource InkMutedBrush}"
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
@@ -928,7 +969,7 @@
                                     <RowDefinition Height="44" />
                                 </Grid.RowDefinitions>
                                 <TextBlock Text="内存分配"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkMutedBrush}" />
                                 <ListBox Grid.Row="1"
                                          Style="{StaticResource MemorySegmentListStyle}"
@@ -954,7 +995,7 @@
                                                                Height="14"
                                                                Margin="0,0,8,0" />
                                         <TextBlock Text="修复客户端"
-                                                   FontSize="11"
+                                                   FontSize="13"
                                                    FontWeight="SemiBold" />
                                     </StackPanel>
                                 </Button>
@@ -969,7 +1010,7 @@
                                                                Height="14"
                                                                Margin="0,0,8,0" />
                                         <TextBlock Text="更多设置"
-                                                   FontSize="11"
+                                                   FontSize="13"
                                                    FontWeight="SemiBold" />
                                     </StackPanel>
                                 </Button>
@@ -989,12 +1030,12 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="活动记录"
-                                       FontSize="10"
+                                       FontSize="12"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
                             <TextBlock Grid.Column="1"
                                        Text="{Binding ClientStatusText}"
-                                       FontSize="9"
+                                       FontSize="11"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        VerticalAlignment="Center"
                                        Margin="24,0,0,0" />
@@ -1006,7 +1047,7 @@
                                          Fill="{StaticResource OnlineBrush}"
                                          Margin="0,0,7,0" />
                                 <TextBlock Text="设置自动保存"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkMutedBrush}" />
                             </StackPanel>
                         </Grid>
@@ -1049,7 +1090,7 @@
                                Stretch="Uniform" />
                     </Border>
                     <TextBlock Text="赫朝"
-                               FontSize="12"
+                               FontSize="14"
                                FontWeight="Black"
                                Margin="10,0,0,0"
                                VerticalAlignment="Center" />
@@ -1060,7 +1101,7 @@
                                            Margin="12,0"
                                            VerticalAlignment="Center" />
                     <TextBlock Text="{Binding CurrentPageTitle}"
-                               FontSize="12"
+                               FontSize="14"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center" />
                 </StackPanel>
@@ -1128,7 +1169,7 @@
                                            Style="{StaticResource PageHeaderTitleStyle}"
                                            Margin="0,5,0,0" />
                                 <TextBlock Text="{Binding DownloadQueueStatusText}"
-                                           FontSize="11"
+                                           FontSize="13"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            Margin="0,7,0,0" />
                             </StackPanel>
@@ -1200,18 +1241,18 @@
                                     </Grid.RowDefinitions>
                                     <Grid>
                                         <TextBlock Text="{Binding ActiveDownload.DisplayName}"
-                                                   FontSize="16"
+                                                   FontSize="17"
                                                    FontWeight="Black" />
                                         <TextBlock Text="{Binding ActiveDownload.ProgressText}"
                                                    FontFamily="Segoe UI"
-                                                   FontSize="11"
+                                                   FontSize="13"
                                                    FontWeight="Bold"
                                                    HorizontalAlignment="Right" />
                                     </Grid>
                                     <TextBlock Grid.Row="1"
                                                Text="{Binding ActiveDownload.CurrentFile}"
                                                FontFamily="Consolas"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,7,0,0" />
                                     <ProgressBar Grid.Row="2"
@@ -1222,7 +1263,7 @@
                                     <TextBlock Grid.Row="3"
                                                Text="{Binding ActiveDownload.Version, StringFormat=客户端版本 {0}}"
                                                FontFamily="Segoe UI"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkFaintBrush}"
                                                Margin="0,8,0,0" />
                                 </Grid>
@@ -1263,10 +1304,10 @@
                                                        VerticalAlignment="Center" />
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="当前没有正在进行的任务"
-                                               FontSize="14"
+                                               FontSize="15"
                                                FontWeight="Bold" />
                                     <TextBlock Text="从服务器页安装或修复客户端后，实时速度、文件和校验进度会显示在这里。"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
@@ -1280,7 +1321,7 @@
                                        Style="{StaticResource SectionTitleStyle}" />
                             <TextBlock Text="{Binding DownloadHistoryCount, StringFormat={}{0} 条记录}"
                                        FontFamily="Segoe UI"
-                                       FontSize="10"
+                                       FontSize="12"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Center" />
@@ -1315,10 +1356,10 @@
                                                 </Border>
                                                 <StackPanel Grid.Column="1" Margin="8,0,20,0">
                                                     <TextBlock Text="{Binding DisplayName}"
-                                                               FontSize="13"
+                                                               FontSize="14"
                                                                FontWeight="Bold" />
                                                     <TextBlock Text="{Binding FailureMessage}"
-                                                               FontSize="9"
+                                                               FontSize="11"
                                                                Foreground="{StaticResource InkMutedBrush}"
                                                                Margin="0,4,0,0" />
                                                 </StackPanel>
@@ -1326,11 +1367,11 @@
                                                             VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding ProgressText}"
                                                                FontFamily="Segoe UI"
-                                                               FontSize="10"
+                                                               FontSize="12"
                                                                FontWeight="SemiBold" />
                                                     <TextBlock Text="{Binding Version, StringFormat=版本 {0}}"
                                                                FontFamily="Segoe UI"
-                                                               FontSize="9"
+                                                               FontSize="11"
                                                                Foreground="{StaticResource InkFaintBrush}"
                                                                Margin="0,3,0,0" />
                                                 </StackPanel>
@@ -1338,13 +1379,13 @@
                                                             HorizontalAlignment="Right"
                                                             VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding StatusText}"
-                                                               FontSize="10"
+                                                               FontSize="12"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource HechaoRedDarkBrush}"
                                                                HorizontalAlignment="Right" />
                                                     <TextBlock Text="{Binding TimeText}"
                                                                FontFamily="Segoe UI"
-                                                               FontSize="9"
+                                                               FontSize="11"
                                                                Foreground="{StaticResource InkFaintBrush}"
                                                                Margin="0,3,0,0" />
                                                 </StackPanel>
@@ -1369,7 +1410,7 @@
                                     </Style>
                                 </Border.Style>
                                 <TextBlock Text="完成过的安装、更新、修复和中断任务都会保存在这里。"
-                                           FontSize="11"
+                                           FontSize="13"
                                            Foreground="{StaticResource InkMutedBrush}" />
                             </Border>
                         </Grid>
@@ -1403,7 +1444,7 @@
                                            Style="{StaticResource PageHeaderTitleStyle}"
                                            Margin="0,5,0,0" />
                                 <TextBlock Text="每场活动都使用独立客户端档案，启动器会自动准备对应模组与资源。"
-                                           FontSize="11"
+                                           FontSize="13"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            TextWrapping="Wrap"
                                            TextTrimming="None"
@@ -1437,12 +1478,12 @@
                                                            Foreground="{StaticResource HechaoRedBrush}"
                                                            Margin="0,0,10,0" />
                                     <TextBlock Text="活动录制以公告时间为准，未开放的活动仍可提前安装客户端。"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}" />
                                 </StackPanel>
                                 <TextBlock Text="{Binding ActivityServerCount, StringFormat={}{0} 个活动档案}"
                                            FontFamily="Segoe UI"
-                                           FontSize="10"
+                                           FontSize="12"
                                            FontWeight="Bold"
                                            HorizontalAlignment="Right" />
                             </Grid>
@@ -1491,11 +1532,11 @@
                                                     </Border>
                                                     <StackPanel Grid.Column="1">
                                                         <TextBlock Text="{Binding Name}"
-                                                                   FontSize="15"
+                                                                   FontSize="16"
                                                                    FontWeight="Black" />
                                                         <TextBlock Text="{Binding ShortName}"
                                                                    FontFamily="Segoe UI"
-                                                                   FontSize="9"
+                                                                   FontSize="11"
                                                                    Foreground="{StaticResource InkMutedBrush}"
                                                                    Margin="0,4,0,0" />
                                                     </StackPanel>
@@ -1527,7 +1568,7 @@
                                                                     </Style>
                                                                 </Ellipse.Style>
                                                             </Ellipse>
-                                                            <TextBlock FontSize="9" FontWeight="Bold">
+                                                            <TextBlock FontSize="11" FontWeight="Bold">
                                                                 <TextBlock.Style>
                                                                     <Style TargetType="TextBlock">
                                                                         <Setter Property="Text" Value="未开放" />
@@ -1555,25 +1596,25 @@
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel>
-                                                        <TextBlock Text="版本" FontSize="9" Foreground="{StaticResource InkFaintBrush}" />
+                                                        <TextBlock Text="版本" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
                                                         <TextBlock Text="{Binding MinecraftVersion}"
                                                                    FontFamily="Segoe UI"
-                                                                   FontSize="11"
+                                                                   FontSize="13"
                                                                    FontWeight="Bold"
                                                                    Margin="0,5,0,0" />
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="加载器" FontSize="9" Foreground="{StaticResource InkFaintBrush}" />
+                                                        <TextBlock Text="加载器" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
                                                         <TextBlock Text="{Binding Loader}"
                                                                    FontFamily="Segoe UI"
-                                                                   FontSize="11"
+                                                                   FontSize="13"
                                                                    FontWeight="Bold"
                                                                    Margin="0,5,0,0" />
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="2">
-                                                        <TextBlock Text="在线" FontSize="9" Foreground="{StaticResource InkFaintBrush}" />
+                                                        <TextBlock Text="在线" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
                                                         <TextBlock FontFamily="Segoe UI"
-                                                                   FontSize="11"
+                                                                   FontSize="13"
                                                                    FontWeight="Bold"
                                                                    Margin="0,5,0,0">
                                                             <Run Text="{Binding OnlinePlayers}" />
@@ -1613,7 +1654,7 @@
                                     </Style>
                                 </Border.Style>
                                 <TextBlock Text="当前目录中还没有活动服务器。"
-                                           FontSize="12"
+                                           FontSize="14"
                                            Foreground="{StaticResource InkMutedBrush}" />
                             </Border>
                         </Grid>
@@ -1641,7 +1682,7 @@
                                        Style="{StaticResource PageHeaderTitleStyle}"
                                        Margin="0,5,0,0" />
                             <TextBlock Text="赫朝账号负责社区身份与权限，Microsoft 正版身份只用于验证 Minecraft Java 版所有权。"
-                                       FontSize="11"
+                                       FontSize="13"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        TextWrapping="Wrap"
                                        TextTrimming="None"
@@ -1671,7 +1712,7 @@
                                     <TextBlock Text="登录顺序"
                                                Style="{StaticResource SectionTitleStyle}" />
                                     <TextBlock Text="先建立赫朝身份，再绑定正版游戏身份。两者职责分开，改绑和权限同步更清楚。"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
@@ -1689,7 +1730,7 @@
                                                 VerticalAlignment="Top">
                                             <TextBlock Text="1"
                                                        FontFamily="Segoe UI"
-                                                       FontSize="14"
+                                                       FontSize="15"
                                                        FontWeight="Bold"
                                                        Foreground="White"
                                                        HorizontalAlignment="Center"
@@ -1697,10 +1738,10 @@
                                         </Border>
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="赫朝账号"
-                                                       FontSize="14"
+                                                       FontSize="15"
                                                        FontWeight="Black" />
                                             <TextBlock Text="社区昵称、等级、活动资格和管理权限都归属于这个账号。"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        TextWrapping="Wrap"
                                                        TextTrimming="None"
@@ -1726,7 +1767,7 @@
                                                 VerticalAlignment="Top">
                                             <TextBlock Text="2"
                                                        FontFamily="Segoe UI"
-                                                       FontSize="14"
+                                                       FontSize="15"
                                                        FontWeight="Bold"
                                                        Foreground="{StaticResource SteelBrush}"
                                                        HorizontalAlignment="Center"
@@ -1734,10 +1775,10 @@
                                         </Border>
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="Microsoft / Minecraft"
-                                                       FontSize="14"
+                                                       FontSize="15"
                                                        FontWeight="Black" />
                                             <TextBlock Text="验证账号拥有 Minecraft Java 版。完成后才可由启动器进入服务器。"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        TextWrapping="Wrap"
                                                        TextTrimming="None"
@@ -1758,7 +1799,7 @@
                                                                    Foreground="{StaticResource SteelBrush}"
                                                                    Margin="0,0,12,0" />
                                             <TextBlock Text="启动器不会要求你在赫朝账号中填写 Microsoft 密码。"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        TextWrapping="Wrap"
                                                        TextTrimming="None" />
@@ -1808,7 +1849,7 @@
                                                     Click="LoginAccountButton_OnClick">
                                                 <TextBlock Text="登录赫朝账号"
                                                            Foreground="White"
-                                                           FontSize="13"
+                                                           FontSize="14"
                                                            FontWeight="Bold" />
                                             </Button>
                                         </Grid>
@@ -1869,7 +1910,7 @@
                                             <TextBlock Grid.Row="6"
                                                        Grid.ColumnSpan="2"
                                                        Text="至少 10 位，并同时包含字母与数字。"
-                                                       FontSize="9"
+                                                       FontSize="11"
                                                        Foreground="{StaticResource InkFaintBrush}"
                                                        Margin="0,6,0,0" />
                                             <Button Grid.Row="7"
@@ -1880,14 +1921,14 @@
                                                     Click="RegisterAccountButton_OnClick">
                                                 <TextBlock Text="创建赫朝账号"
                                                            Foreground="White"
-                                                           FontSize="13"
+                                                           FontSize="14"
                                                            FontWeight="Bold" />
                                             </Button>
                                         </Grid>
                                     </TabItem>
                                 </TabControl>
                                 <TextBlock Text="{Binding AccountFormMessage}"
-                                           FontSize="10"
+                                           FontSize="12"
                                            TextWrapping="Wrap"
                                            TextTrimming="None"
                                            Margin="0,14,0,0">
@@ -1946,21 +1987,21 @@
                                                Margin="0,18,0,0" />
                                     <TextBlock Text="{Binding AccountUsername}"
                                                FontFamily="Segoe UI"
-                                               FontSize="11"
+                                               FontSize="13"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,4,0,0" />
                                     <Border Height="1"
                                             Background="{StaticResource BorderBrush}"
                                             Margin="0,22,0,18" />
                                     <TextBlock Text="账户状态"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkFaintBrush}" />
                                     <TextBlock Text="{Binding AccountStatusText}"
-                                               FontSize="12"
+                                               FontSize="14"
                                                FontWeight="Bold"
                                                Margin="0,5,0,0" />
                                     <TextBlock Text="{Binding AccountAccessText}"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
@@ -1995,17 +2036,17 @@
                                         </Border>
                                         <StackPanel Grid.Column="1" Margin="8,0,20,0">
                                             <TextBlock Text="Minecraft Java 正版身份"
-                                                       FontSize="15"
+                                                       FontSize="16"
                                                        FontWeight="Black" />
                                             <TextBlock Text="{Binding MinecraftLinkStatusText}"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        TextWrapping="Wrap"
                                                        TextTrimming="None"
                                                        Margin="0,6,0,0" />
                                             <TextBlock Text="{Binding MinecraftIdentityText}"
                                                        FontFamily="Segoe UI"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        FontWeight="SemiBold"
                                                        Margin="0,9,0,0" />
                                         </StackPanel>
@@ -2017,7 +2058,7 @@
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="绑定 Microsoft 正版身份"
                                                        Foreground="White"
-                                                       FontSize="12"
+                                                       FontSize="14"
                                                        FontWeight="Bold" />
                                         </Button>
                                     </Grid>
@@ -2045,10 +2086,10 @@
                                         </Border>
                                         <StackPanel Grid.Column="1" Margin="8,0,20,0">
                                             <TextBlock Text="LuckPerms 权限"
-                                                       FontSize="15"
+                                                       FontSize="16"
                                                        FontWeight="Black" />
                                             <TextBlock Text="{Binding AccountAccessText}"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        TextWrapping="Wrap"
                                                        TextTrimming="None"
@@ -2080,7 +2121,7 @@
                                         BorderThickness="1"
                                         CornerRadius="5">
                                     <TextBlock Text="{Binding AccountFormMessage}"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource HechaoRedDarkBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None" />
@@ -2113,7 +2154,7 @@
                                        Style="{StaticResource PageHeaderTitleStyle}"
                                        Margin="0,5,0,0" />
                             <TextBlock Text="所有选项会立即保存，并在对应的下一次安装或启动时生效。"
-                                       FontSize="11"
+                                       FontSize="13"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        Margin="0,7,0,0" />
                         </StackPanel>
@@ -2131,7 +2172,7 @@
                                     <TextBlock Text="游戏与运行"
                                                Style="{StaticResource SectionTitleStyle}" />
                                     <TextBlock Text="适用于所有由赫朝启动器管理的客户端档案。"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
@@ -2151,10 +2192,10 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="游戏启动后关闭启动器"
-                                                       FontSize="12"
+                                                       FontSize="14"
                                                        FontWeight="SemiBold" />
                                             <TextBlock Text="Minecraft 进程成功创建后自动退出启动器。"
-                                                       FontSize="9"
+                                                       FontSize="11"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        Margin="0,4,0,0" />
                                         </StackPanel>
@@ -2180,7 +2221,7 @@
                                     <TextBlock Text="客户端与下载"
                                                Style="{StaticResource SectionTitleStyle}" />
                                     <TextBlock Text="目录变更不会移动已有文件，新的安装会写入新位置。"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
@@ -2201,7 +2242,7 @@
                                                 CornerRadius="4">
                                             <TextBlock Text="{Binding ClientDirectory}"
                                                        FontFamily="Consolas"
-                                                       FontSize="10"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        VerticalAlignment="Center"
                                                        Margin="12,0" />
@@ -2220,10 +2261,10 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="启动时检查客户端更新"
-                                                       FontSize="12"
+                                                       FontSize="14"
                                                        FontWeight="SemiBold" />
                                             <TextBlock Text="进入服务器前比较客户端档案与最新发布清单。"
-                                                       FontSize="9"
+                                                       FontSize="11"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        Margin="0,4,0,0" />
                                         </StackPanel>
@@ -2239,10 +2280,10 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="保留下载缓存"
-                                                       FontSize="12"
+                                                       FontSize="14"
                                                        FontWeight="SemiBold" />
                                             <TextBlock Text="修复或断点续传时复用已经校验通过的对象。"
-                                                       FontSize="9"
+                                                       FontSize="11"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        Margin="0,4,0,0" />
                                         </StackPanel>
@@ -2258,10 +2299,10 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="安装时打开下载中心"
-                                                       FontSize="12"
+                                                       FontSize="14"
                                                        FontWeight="SemiBold" />
                                             <TextBlock Text="开始安装或修复后自动切换到实时下载页面。"
-                                                       FontSize="9"
+                                                       FontSize="11"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        Margin="0,4,0,0" />
                                         </StackPanel>
@@ -2287,7 +2328,7 @@
                                     <TextBlock Text="启动器行为"
                                                Style="{StaticResource SectionTitleStyle}" />
                                     <TextBlock Text="设置首次打开的工作区，并管理本机启动器数据。"
-                                               FontSize="10"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
@@ -2301,10 +2342,10 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="默认打开页面"
-                                                       FontSize="12"
+                                                       FontSize="14"
                                                        FontWeight="SemiBold" />
                                             <TextBlock Text="下次启动赫朝启动器时首先显示的页面。"
-                                                       FontSize="9"
+                                                       FontSize="11"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        Margin="0,4,0,0" />
                                         </StackPanel>
@@ -2360,9 +2401,9 @@
                 <StackPanel>
                     <Grid>
                         <StackPanel>
-                            <TextBlock Text="通知中心" FontSize="16" FontWeight="Black" />
+                            <TextBlock Text="通知中心" FontSize="17" FontWeight="Black" />
                             <TextBlock Text="服务器与客户端动态"
-                                       FontSize="10"
+                                       FontSize="12"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        Margin="0,4,0,0" />
                         </StackPanel>
@@ -2398,10 +2439,10 @@
                             </Border>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="活动服开放安排"
-                                           FontSize="12"
+                                           FontSize="14"
                                            FontWeight="Bold" />
                                 <TextBlock Text="活动服务器会按录制计划开放，开放状态以服务器目录为准。"
-                                           FontSize="10"
+                                           FontSize="12"
                                            LineHeight="16"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            Margin="0,5,0,0"
@@ -2432,11 +2473,11 @@
                             </Border>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="{Binding SelectedProfileDisplayName}"
-                                           FontSize="12"
+                                           FontSize="14"
                                            FontWeight="Bold" />
                                 <TextBlock Text="{Binding SelectedProfileMetaText}"
                                            FontFamily="Segoe UI"
-                                           FontSize="10"
+                                           FontSize="12"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            Margin="0,5,0,0" />
                             </StackPanel>
@@ -2475,7 +2516,7 @@
                                        FontSize="19"
                                        FontWeight="Black" />
                             <TextBlock Text="客户端、性能与启动行为"
-                                       FontSize="10"
+                                       FontSize="12"
                                        Foreground="{StaticResource InkMutedBrush}"
                                        Margin="0,4,0,0" />
                         </StackPanel>
@@ -2512,16 +2553,16 @@
                                         CornerRadius="4">
                                     <TextBlock Text="RAM"
                                                FontFamily="Consolas"
-                                               FontSize="8"
+                                               FontSize="10"
                                                FontWeight="Bold"
                                                Foreground="{StaticResource HechaoRedDarkBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="游戏内存" FontSize="12" FontWeight="SemiBold" />
+                                    <TextBlock Text="游戏内存" FontSize="14" FontWeight="SemiBold" />
                                     <TextBlock Text="下次启动游戏时生效"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
                                 </StackPanel>
@@ -2554,10 +2595,10 @@
                                                            VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="0,2,8,0">
-                                    <TextBlock Text="客户端目录" FontSize="12" FontWeight="SemiBold" />
+                                    <TextBlock Text="客户端目录" FontSize="14" FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding ClientDirectory}"
                                                FontFamily="Consolas"
-                                               FontSize="9"
+                                               FontSize="11"
                                                LineHeight="14"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,5,0,0"
@@ -2597,9 +2638,9 @@
                                                            VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="启动时检查更新" FontSize="12" FontWeight="SemiBold" />
+                                    <TextBlock Text="启动时检查更新" FontSize="14" FontWeight="SemiBold" />
                                     <TextBlock Text="保持客户端与服务器版本一致"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
                                 </StackPanel>
@@ -2627,9 +2668,9 @@
                                                            VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="关闭后保留下载任务" FontSize="12" FontWeight="SemiBold" />
+                                    <TextBlock Text="关闭后保留下载任务" FontSize="14" FontWeight="SemiBold" />
                                     <TextBlock Text="下次打开后可以继续下载"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
                                 </StackPanel>
@@ -2664,10 +2705,10 @@
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding AccountDisplayName}"
                                                FontFamily="Segoe UI"
-                                               FontSize="12"
+                                               FontSize="14"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding AccountAccessText}"
-                                               FontSize="9"
+                                               FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
                                 </StackPanel>
@@ -2682,7 +2723,7 @@
                                                                Height="13"
                                                                Margin="0,0,7,0" />
                                         <TextBlock Text="{Binding AccountActionTooltip}"
-                                                   FontSize="10"
+                                                   FontSize="12"
                                                    FontWeight="SemiBold" />
                                     </StackPanel>
                                 </Button>
@@ -2700,7 +2741,7 @@
                                                            Height="13"
                                                            Margin="0,0,8,0" />
                                     <TextBlock Text="{Binding AdminConsoleButtonText}"
-                                               FontSize="10"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
                             </Button>
@@ -2715,10 +2756,10 @@
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{Binding LauncherVersionText, StringFormat=赫朝启动器 {0}}"
                                            FontFamily="Segoe UI"
-                                           FontSize="10"
+                                           FontSize="12"
                                            FontWeight="SemiBold" />
                                 <TextBlock Text="非 Minecraft 官方产品，与 Mojang 或 Microsoft 无关联。"
-                                           FontSize="8"
+                                           FontSize="10"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            Margin="0,4,0,0" />
                             </StackPanel>
@@ -2727,7 +2768,7 @@
                                         VerticalAlignment="Center">
                                 <Ellipse Width="7" Height="7" Fill="{StaticResource OnlineBrush}" Margin="0,0,6,0" />
                                 <TextBlock Text="设置自动保存"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{StaticResource InkMutedBrush}" />
                             </StackPanel>
                         </Grid>
@@ -2755,7 +2796,7 @@
                                            VerticalAlignment="Center" />
                     <TextBlock Text="{Binding ToastMessage}"
                                Foreground="White"
-                               FontSize="11"
+                               FontSize="13"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Border>

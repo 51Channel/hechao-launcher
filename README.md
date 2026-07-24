@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.8.1`，API 源码版本是 `0.9.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、真实 Minecraft 启动、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话和双重验证的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前客户端源码版本是 `0.8.2`，API 源码版本是 `0.9.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、断点续传、SHA-256 校验、修复、原子版本切换、真实 Minecraft 启动、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话和双重验证的管理员控制台。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
@@ -31,7 +31,7 @@
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复和维护状态，所有变更使用修订号并在同一事务中写入审计日志。
 - 启动器 API `0.9.0` 已通过 `https://launcher-api.hechao.world` 上线；目录会合并实时在线人数，并在心跳过期或端口关闭时显示关闭。
 
-API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁移 5 至 7、原子部署和公网回归；赫朝账号注册、登录、令牌轮换、退出撤销与未验证 Minecraft 凭据拒绝均已实测，验证账号和会话随后已清理。启动器 `0.8.1` 已生成 Windows 候选并完成五个工作区实机检查，IconPark 图标与本机苹方字体均已验证，但尚未向玩家分发。管理后台代码随 API 上线，`AdminWeb__Enabled` 仍保持关闭，因此 `admin.hechao.world` 继续按设计返回 404。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁移 5 至 7、原子部署和公网回归；赫朝账号注册、登录、令牌轮换、退出撤销与未验证 Minecraft 凭据拒绝均已实测，验证账号和会话随后已清理。启动器 `0.8.2` 已生成 Windows 候选并完成五个工作区实机检查，IconPark 图标、本机苹方字体、放大后的界面文字、运行配置对齐和 125% DPI ClearType 渲染均已验证，但尚未向玩家分发。管理后台代码随 API 上线，`AdminWeb__Enabled` 仍保持关闭，因此 `admin.hechao.world` 继续按设计返回 404。Microsoft 公共客户端应用已经注册并内置 Client ID；Minecraft Java API 访问许可已于 2026-07-22 提交申请，当前等待审核，因此生产目录强制登录开关保持关闭。Velocity 插件已放入代理插件目录并保持 `monitor`，将在管理员下一次手动重启 Velocity 后加载；本次开发没有重启任何 Minecraft 进程。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
@@ -71,7 +71,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
 6. [已完成] 备份数据库并部署 API `0.9.0`；赫朝账号核心链路和迁移已验收。管理员 Web 仍保持关闭，等待真实管理员 MFA 灰度。
-7. Minecraft API 许可与真实分组账号验收通过后，再向玩家发布启动器 `0.8.1`；五个工作区、下载历史、设置持久化、IconPark 图标和响应式布局的本机候选检查已通过。
+7. Minecraft API 许可与真实分组账号验收通过后，再向玩家发布启动器 `0.8.2`；五个工作区、下载历史、设置持久化、IconPark 图标、响应式布局与 125% DPI 字体渲染的本机候选检查已通过。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 
