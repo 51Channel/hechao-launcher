@@ -2,7 +2,7 @@
 
 > 启动器源码版本：`0.10.0`
 > 发布器源码版本：`0.6.0`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链、首份正式签名档案、不可变对象上传和 API `0.10.1` 在线激活均已完成；启动器 `0.10.0` 仍为未上传、未分发候选。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础与 NeoForge 活动档案的 API `0.10.1` 在线激活均已完成；启动器 `0.10.0` 仍为未上传、未分发候选。
 
 ## 1. 安全边界
 
@@ -144,15 +144,16 @@ https://launcher-api.hechao.world/v1/profiles/<profile-id>/objects/<sha256前两
 - 逻辑文件：`4,902` 个，去重对象：`4,900` 个，总大小：`874,147,856` 字节。
 - 清单已使用生产信任包验签，并对每个对象重新校验路径、长度、SHA-256 和 URL。
 
-当前本地待确认候选，尚未上传 OSS、部署 API 清单或启用目录：
+NeoForge 活动档案已于 `2026-07-24` 正式发布：
 
 - 干净源：`artifacts/client-sources/activity-neoforge-1.21.11-1.0.10`；原 `H:\MC\画画躲猫猫` 未修改。
-- 档案：`activity-neoforge-1.21.11` / `1.0.10` / Minecraft `1.21.11` / NeoForge `21.11.42` / Java `21`。线上未发布占位原为 `1.0.9`，候选顺延而不降级。
+- 档案：`activity-neoforge-1.21.11` / `1.0.10` / Minecraft `1.21.11` / NeoForge `21.11.42` / Java `21`；线上占位版本从 `1.0.9` 原子升级。
 - 清单：`artifacts/distributions/activity-neoforge-1.21.11-1.0.10/manifests/activity-neoforge-1.21.11.json`。
 - 清单 SHA-256：`0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F`。
 - 逻辑文件与去重对象均为 `4,754` 个，总大小 `621,732,083` 字节；清单大小 `2,098,066` 字节。
 - Meccha 仅有一份，SHA-256 为 `C72511BEF3B0CC2C1A1C97E1C33709901714460191F9549FD461E71215534E9E`，与活动服 `watch-ui` JAR 一致。
 - 已使用生产信任包验签，从本地对象全新安装后逐文件复验，并成功构建 `net.neoforged.fml.startup.Client`、NeoForge `21.11.42` 与 `mc.hehe11.fun` 参数；没有启动 Minecraft。
+- 生产验收确认 Member 无权取得活动清单、Participant 可以取得签名清单；全部 `203` 个新增对象和 `12` 个共享对象样本均从 OSS 下载并重算 SHA-256。活动服始终保持 `Closed 0/30`。完整证据见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
 ## 5. OSS 与 API 配置
 
@@ -160,6 +161,7 @@ https://launcher-api.hechao.world/v1/profiles/<profile-id>/objects/<sha256前两
 
 - Bucket：`hechaoworld`，地域 `cn-shanghai`，ACL 私有。
 - Bucket 级“阻止公共访问”：已开启。
+- Bucket 版本控制：已开启。OSS 在版本控制已开启或暂停时会忽略 `x-oss-forbid-overwrite`，因此该请求头不能作为当前 Bucket 的不可覆盖保证。
 - 自定义域名：`download.hechao.world`，CNAME 已生效。
 - HTTPS：DigiCert 证书已部署到 OSS，有效期至 `2026-10-20`；TLS 与 CNAME 已完成验证。
 
@@ -186,7 +188,7 @@ Distribution__PresignedUrlSeconds=300
 
 截至 `2026-07-24`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.10.1` 已读取并使用该分发配置。
 
-上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。该策略只允许对 `hechaoworld/objects/*` 执行 `oss:PutObject`，不允许读取、列举、覆盖或删除；AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
+上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。该策略只允许对 `hechaoworld/objects/*` 执行 `oss:PutObject`，不允许读取、列举或删除；`PutObject` 本身可以在版本控制 Bucket 中创建同名新版本。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
 
 ```powershell
 .\Hechao.Publisher.exe upload-oss `
@@ -200,9 +202,11 @@ Distribution__PresignedUrlSeconds=300
   --parallelism 8
 ```
 
-上传器会重新校验所有对象，发送 Content-MD5，保留 SDK CRC64，并设置 `x-oss-forbid-overwrite`。重复对象只能以 OSS 的“已存在”结果跳过，不能覆盖既有内容。
+上传器会重新校验所有对象，发送 Content-MD5，保留 SDK CRC64，并设置 `x-oss-forbid-overwrite`。该请求头仅在 Bucket 未开启或暂停版本控制时阻止同名覆盖；[阿里云 PutObject 文档](https://help.aliyun.com/en/oss/developer-reference/putobject)明确说明版本控制开启或暂停时会忽略它。当前 Bucket 会把重复键写成新版本，不能把“Already present”计数当作不可覆盖证据。下一次档案上传前，必须先完成版本感知的远端元数据检查，或配置 Bucket 级文件覆盖保护；不得继续依赖该请求头单独保证不可变性。
 
 `2026-07-23` 首次生产上传完成：`4,900/4,900` 个对象成功写入，`0` 个既有对象，上传字节数 `874,147,706`。随后部署 API `0.4.0-20260723T051123Z`，将 `base-1.21.11` / `1.0.5` 清单以 `root:hechao-api 0640` 原子发布，并将目录逻辑大小 `874,147,856` 与清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E` 同步到数据库。
+
+`2026-07-24` 活动档案上传提交 `4,754` 个对象和 `621,732,083` 字节。由于 Bucket 版本控制，OSS 报告 `4,754` 个上传、`0` 个已存在；其中与基础档案共享的 `4,551` 个摘要生成了同内容新版本，真正新增摘要为 `203` 个、`152,843,997` 字节。上传后对全部新增对象和共享样本完成真实下载与 SHA-256 复验，随后无重启地原子发布 `activity-neoforge-1.21.11` / `1.0.10`。
 
 ## 6. 后续生产接入
 
@@ -212,8 +216,8 @@ Distribution__PresignedUrlSeconds=300
 4. [x] 从现有客户端制作干净源，生成并独立校验 `base-1.21.11` / `1.0.5` 正式签名档案。
 5. [ ] 将生产签名密钥制作一份不依赖当前 Windows 用户配置的离机恢复副本。
 6. [x] 明确首版不购买 Authenticode 证书，当前 EXE 保持 `NotSigned`；玩家公告必须提供官方来源、大小和 SHA-256，未来签名作为独立版本处理。它与客户端清单签名不是同一套密钥。
-7. [x] 创建只允许新增 `hechaoworld/objects/*` 的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文。
-8. [x] 上传 `objects/`；对象键不可覆盖，重复 SHA-256 只保留一份。
+7. [x] 创建仅具备 `hechaoworld/objects/*` 写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文。
+8. [ ] 为版本控制 Bucket 增加可靠的同名对象检查或 Bucket 级文件覆盖保护；当前 `x-oss-forbid-overwrite` 会被 OSS 忽略。
 9. [x] 部署 API `0.4.0`，将签名清单原子放入受限目录，并在同一发布操作中更新清单 SHA-256、总大小和版本。
 10. [ ] 先发布内部测试档案，验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
 11. [ ] Mojang API 审核、真实账号验收和 Velocity 最终授权完成后，再启用生产目录强制登录。

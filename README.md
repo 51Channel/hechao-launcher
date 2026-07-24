@@ -27,7 +27,7 @@
 - 从共享 LuckPerms 数据库每 5 分钟同步主组，按 `Member`、`Participant`、`Collaborator`、`Administrator` 过滤目录。
 - 私有 OSS 下载通过启动器 API 鉴权；API 仅为清单内对象签发 5 分钟 V4 URL，Bearer 不会随跳转发送到 OSS。
 - 生产发布公钥已内嵌，启动器只信任 `release-2026-07-primary`；私钥使用 Windows DPAPI 加密离线保存，不进入仓库或服务端。
-- 使用受管 Java 21 运行时和签名档案构建正版会话，直接连接 `mc.hehe11.fun`；Fabric 正式档案与 NeoForge `21.11.42` 活动候选均已通过真实全量安装和进程构建冒烟测试，测试过程未启动游戏。
+- 使用受管 Java 21 运行时和签名档案构建正版会话，直接连接 `mc.hehe11.fun`；Fabric 基础档案与 NeoForge `21.11.42` 活动档案均已正式发布，并通过真实全量安装、生产下载和进程构建冒烟测试，测试过程未启动游戏。
 - 记录 Minecraft 正常或异常退出；玩家可在设置页主动生成脱敏、限大小的本地诊断包，世界存档和账号凭据不会进入 ZIP，文件不会自动上传。
 - 在 Minecraft 进程启动前申请 10 分钟、一次性 Velocity 启动授权；授权失败时不会创建游戏进程。
 - Velocity 插件异步校验正版 UUID、账号状态、服务器状态、LuckPerms 等级和单服例外规则，支持 `disabled`、`monitor`、`enforce` 三种模式。
@@ -43,7 +43,7 @@ API `0.10.1-20260724T102830Z` 已于 2026-07-24 完成两轮生产数据库与�
 - `src/Hechao.Launcher`：WPF 桌面客户端、视图模型、本地设置和演示服务。
 - `src/Hechao.Contracts`：服务器目录、客户端档案、权限等级和 API 接口模型。
 - `src/Hechao.Distribution`：签名清单、路径策略、断点续传、哈希校验、安装与回滚核心。
-- `src/Hechao.Publisher`：管理员离线生成密钥、对象文件和签名清单，并使用 DPAPI 凭据上传不可变 OSS 对象的命令行工具。
+- `src/Hechao.Publisher`：管理员离线生成密钥、内容寻址对象和签名清单，并使用 DPAPI 凭据上传 OSS 对象的命令行工具。
 - `src/Hechao.Api`：独立启动器 API、管理员 Web 控制台、MFA、目录 CRUD 与审计；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
 - `src/Hechao.StatusCollector`：游戏 VPS 上的只读 Minecraft 状态采集器，使用机器级 DPAPI 保护内部令牌。
 - `src/Hechao.VelocityAuthorizer`：Velocity 3.4 / Java 21 异步进服授权插件。
@@ -73,7 +73,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 
 ## 接入顺序
 
-1. 已使用独立只写 RAM 身份上传 `base-1.21.11` 的 `4,900` 个不可变对象，并原子发布 API `0.10.1`、签名清单、目录记录和实时心跳。
+1. 已使用独立写入 RAM 身份发布 `base-1.21.11` / `1.0.5` 与 `activity-neoforge-1.21.11` / `1.0.10`，并原子激活签名清单、目录记录和实时心跳；活动服保持关闭。
 2. 等待 Minecraft Java API 访问许可审核通过并完成真实账号验收。
 3. 由管理员在维护窗口手动重启 Velocity，使 `monitor` 模式插件加载；核对代理目标与平台目录后观察授权日志。
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、Java 运行时准备及单服权限验收。
