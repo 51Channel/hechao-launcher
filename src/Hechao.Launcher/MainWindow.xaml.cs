@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using Hechao.Distribution;
 using Hechao.Launcher.Services;
 using Hechao.Launcher.ViewModels;
 using Microsoft.Win32;
@@ -23,13 +24,28 @@ public partial class MainWindow : Window
         var installationService = ClientInstallationService.CreateDefault(apiClient);
         var gameLauncherService = MinecraftGameLauncherService.CreateDefault(
             LauncherIdentityConfiguration.MicrosoftClientId);
-        var viewModel = new MainWindowViewModel(
-            catalogClient,
-            authenticationService,
-            new JsonLauncherSettingsStore(),
-            installationService,
-            gameLauncherService,
-            new JsonDownloadHistoryStore());
+        MainWindowViewModel viewModel;
+        try
+        {
+            viewModel = new MainWindowViewModel(
+                catalogClient,
+                authenticationService,
+                new JsonLauncherSettingsStore(),
+                installationService,
+                gameLauncherService,
+                new JsonDownloadHistoryStore());
+        }
+        catch (ClientStorageMigrationException exception)
+        {
+            MessageBox.Show(
+                $"游戏数据迁移未完成，原目录中的文件仍被保留。\n\n{exception.Message}",
+                "赫朝启动器",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Application.Current.Shutdown(-1);
+            return;
+        }
+
         viewModel.CloseRequested += (_, _) => Close();
         DataContext = viewModel;
     }
@@ -109,7 +125,7 @@ public partial class MainWindow : Window
 
         var dialog = new OpenFolderDialog
         {
-            Title = "选择赫朝客户端目录",
+            Title = "选择赫朝游戏数据目录",
             Multiselect = false
         };
         var currentPath = Environment.ExpandEnvironmentVariables(viewModel.ClientDirectory);

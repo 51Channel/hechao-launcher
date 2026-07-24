@@ -12,11 +12,11 @@ public sealed class ProductionDistributionInstallationSmokeTests
         var manifestPath = Environment.GetEnvironmentVariable("HECHAO_SMOKE_MANIFEST_PATH");
         var trustBundlePath = Environment.GetEnvironmentVariable("HECHAO_SMOKE_TRUST_BUNDLE_PATH");
         var objectRoot = Environment.GetEnvironmentVariable("HECHAO_SMOKE_OBJECT_ROOT");
-        var instancesRoot = Environment.GetEnvironmentVariable("HECHAO_SMOKE_INSTALL_ROOT");
+        var dataRoot = Environment.GetEnvironmentVariable("HECHAO_SMOKE_INSTALL_ROOT");
         if (string.IsNullOrWhiteSpace(manifestPath) ||
             string.IsNullOrWhiteSpace(trustBundlePath) ||
             string.IsNullOrWhiteSpace(objectRoot) ||
-            string.IsNullOrWhiteSpace(instancesRoot))
+            string.IsNullOrWhiteSpace(dataRoot))
         {
             return;
         }
@@ -33,16 +33,17 @@ public sealed class ProductionDistributionInstallationSmokeTests
         var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
         await installer.InstallAsync(
             verified,
-            new ClientInstallationOptions(instancesRoot, KeepObjectCache: false));
+            new ClientInstallationOptions(dataRoot, KeepObjectCache: false));
 
         Assert.Equal(
             LocalProfileState.Ready,
             await installer.GetLocalStateAsync(
-                instancesRoot,
+                dataRoot,
                 verified.Manifest.ProfileId,
                 verified.Manifest.Version));
 
-        var activeDirectory = Path.Combine(instancesRoot, verified.Manifest.ProfileId);
+        var activeDirectory = new ClientStorageLayout(dataRoot)
+            .GetProfileGameDirectory(verified.Manifest.ProfileId);
         foreach (var file in verified.Manifest.Files)
         {
             var installedPath = ManifestValidator.ResolveManagedPath(activeDirectory, file.Path);

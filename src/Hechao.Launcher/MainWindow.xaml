@@ -863,7 +863,7 @@
                                 <RowDefinition Height="18" />
                                 <RowDefinition Height="40" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="安装路径"
+                            <TextBlock Text="游戏数据目录"
                                        FontSize="11"
                                        Foreground="{StaticResource InkMutedBrush}" />
                             <Border Grid.Row="1"
@@ -883,7 +883,7 @@
                                             Height="34"
                                             Content="&#xE838;"
                                             Command="{Binding OpenClientDirectoryCommand}"
-                                            ToolTip="打开客户端目录" />
+                                            ToolTip="打开游戏数据目录" />
                                 </Grid>
                             </Border>
                         </Grid>
@@ -958,7 +958,7 @@
                                 <controls:IconParkIcon Kind="Folder" Style="{StaticResource DetailRowIconStyle}" />
                                 <TextBlock Text="游戏目录" Style="{StaticResource DetailRowLabelStyle}" />
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding ClientDirectory}"
+                                           Text="{Binding SelectedProfileGameDirectory}"
                                            FontFamily="Consolas"
                                            Style="{StaticResource DetailRowValueStyle}" />
                             </Grid>
@@ -1184,7 +1184,7 @@
                                                                Width="14"
                                                                Height="14"
                                                                Margin="0,0,8,0" />
-                                        <TextBlock Text="打开客户端目录" />
+                                        <TextBlock Text="打开游戏数据目录" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource BaseButtonStyle}"
@@ -2228,7 +2228,7 @@
                                                Margin="0,7,28,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="客户端目录"
+                                    <TextBlock Text="游戏数据目录"
                                                Style="{StaticResource FormLabelStyle}" />
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -2361,7 +2361,7 @@
                                         <Button Style="{StaticResource BaseButtonStyle}"
                                                 Command="{Binding OpenClientDirectoryCommand}"
                                                 Margin="0,0,8,8"
-                                                Content="打开客户端目录" />
+                                                Content="打开游戏数据目录" />
                                         <Button Style="{StaticResource BaseButtonStyle}"
                                                 Command="{Binding ClearDownloadHistoryCommand}"
                                                 Margin="0,0,8,8"
@@ -2595,7 +2595,7 @@
                                                            VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="0,2,8,0">
-                                    <TextBlock Text="客户端目录" FontSize="14" FontWeight="SemiBold" />
+                                    <TextBlock Text="游戏数据目录" FontSize="14" FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding ClientDirectory}"
                                                FontFamily="Consolas"
                                                FontSize="11"
@@ -2611,7 +2611,7 @@
                                         Height="36"
                                         Content="&#xE838;"
                                         Command="{Binding OpenClientDirectoryCommand}"
-                                        ToolTip="打开客户端目录"
+                                        ToolTip="打开游戏数据目录"
                                         VerticalAlignment="Top" />
                             </Grid>
 

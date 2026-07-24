@@ -10,7 +10,7 @@ public interface IClientInstallationService
 {
     Task<LocalProfileState> GetLocalStateAsync(
         ClientProfileSummary profile,
-        string instancesRoot,
+        string dataRoot,
         CancellationToken cancellationToken = default);
 
     Task InstallAsync(
@@ -58,9 +58,9 @@ public sealed class ClientInstallationService : IClientInstallationService
 
     public Task<LocalProfileState> GetLocalStateAsync(
         ClientProfileSummary profile,
-        string instancesRoot,
+        string dataRoot,
         CancellationToken cancellationToken = default) =>
-        _installer.GetLocalStateAsync(instancesRoot, profile.Id, profile.Version, cancellationToken);
+        _installer.GetLocalStateAsync(dataRoot, profile.Id, profile.Version, cancellationToken);
 
     public async Task InstallAsync(
         ClientProfileSummary profile,

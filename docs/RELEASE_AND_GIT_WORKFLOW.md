@@ -37,7 +37,7 @@
 组件独立版本：
 
 ```text
-launcher-v0.6.0
+launcher-v0.9.0
 api-v0.6.0
 velocity-authorizer-v0.1.0
 publisher-v0.5.0
@@ -46,6 +46,14 @@ profile-base-1.21.11-v1.0.5
 ```
 
 标签只指向已经测试、记录并推送的提交。测试构建不占用正式版本号；已上传的对象、清单、发布归档和标签不得覆盖，应发布更高版本。
+
+Windows 启动器正式候选统一使用：
+
+```powershell
+.\tools\Build-WindowsInstaller.ps1
+```
+
+该入口必须产出 `Hechao-Launcher-Setup-<version>-win-x64.exe` 和同名 `.sha256`。发布记录同时登记安装包和安装后 `Hechao.Launcher.exe` 的版本、大小、SHA-256、代码签名状态，以及一次隔离目录安装/卸载结果。游戏数据目录不进入安装包或 Git；卸载测试必须确认其不在删除边界内。
 
 ## 4. 提交前检查
 
@@ -78,7 +86,7 @@ feat: add Velocity launch authorization
 - stage Velocity plugin in monitor mode without restarting the proxy
 - document activation, verification and rollback
 
-Tests: dotnet 63/63; Velocity 7/7
+Tests: dotnet 135/135; Velocity 7/7
 Production: API 0.5.0 healthy; plugin staged in monitor mode
 ```
 

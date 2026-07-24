@@ -2,7 +2,7 @@
 
 > 当前线上版本：`0.9.0-20260723T195253Z`
 > 本地源码版本：`0.9.0`
-> 当前阶段：赫朝账号 API 已生产部署；启动器 `0.8.2` 尚未向玩家分发，管理员 Web 仍显式关闭
+> 当前阶段：赫朝账号 API 已生产部署；启动器 `0.9.0` 尚未向玩家分发，管理员 Web 仍显式关闭
 
 ## 1. 运行边界
 
@@ -177,4 +177,4 @@ systemctl reload nginx
 | `0.6.0-20260723T123346Z` | `71313BCF82B6B6E1BB095F142E1BA6A06E9ADC7B834FA6F32F9B74914F078780` | 按 Velocity 目标的实时心跳、迁移 4、目录状态合并、任务实测与公网回归通过 |
 | `0.9.0-20260723T195253Z` | `159DDBA288078E0F2C6DAA4BF3C3A62507EC3A3F99FBEC24D15A78AAB57ADBBA` | 迁移 5 至 7、赫朝账号完整会话链、无效正版凭据拒绝、测试数据清理与旧域名回归通过；AdminWeb 保持关闭 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号 API 已于 2026-07-24 部署。启动器 `0.8.2` 仍是未分发候选；管理员 Web 代码已进入生产二进制但功能保持关闭。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号 API 已于 2026-07-24 部署。启动器 `0.9.0` 仍是未分发安装包候选；管理员 Web 代码已进入生产二进制但功能保持关闭。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

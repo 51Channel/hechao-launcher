@@ -1,6 +1,6 @@
 # 客户端分发与签名操作手册
 
-> 启动器源码版本：`0.8.2`
+> 启动器源码版本：`0.9.0`
 > 发布器源码版本：`0.5.0`
 > 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链、首份正式签名档案、不可变对象上传和 API `0.9.0` 在线激活均已完成。
 
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、DPAPI 凭据、对象上传、进服授权和状态心跳规则。`2026-07-23` 使用 .NET SDK `10.0.302` 验证为 `80/80` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、DPAPI 凭据、对象上传、进服授权和状态心跳规则。`2026-07-24` 使用 .NET SDK `10.0.302` 验证为 `135/135` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -185,14 +185,23 @@ Distribution__PresignedUrlSeconds=300
 10. [ ] 先发布内部测试档案，验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
 11. [ ] Mojang API 审核、真实账号验收和 Velocity 最终授权完成后，再启用生产目录强制登录。
 
-## 7. 客户端目录
+## 7. 游戏数据目录
 
-每个档案安装在 `%AppData%\Hechao\instances\<profile-id>`。安装器使用：
+启动器程序与游戏数据分离。默认数据根目录为 `%LocalAppData%\Hechao\GameData`，每个档案安装在：
 
-- `.<profile-id>.staging-*`：已校验但尚未启用的暂存版本。
-- `.<profile-id>.previous`：上一个完整活动版本。
-- `.hechao/cache/objects`：按 SHA-256 保存的下载缓存和 `.part` 续传文件。
+```text
+%LocalAppData%\Hechao\GameData\instances\<profile-id>\.minecraft
+```
+
+数据根目录使用：
+
+- `instances\.<profile-id>.staging-*`：已校验但尚未启用的暂存版本。
+- `instances\.<profile-id>.previous`：上一个完整活动版本。
+- `shared\objects`：按 SHA-256 保存的下载缓存和 `.part` 续传文件。
+- `shared\runtime`：所有档案共用的受管 Java 运行时。
 - `.hechao/locks`：同档案跨进程独占安装锁。
-- `.hechao-install.json`：活动版本、清单摘要和签名公钥标识。
+- `instances\<profile-id>\.hechao-install.json`：活动版本、存储结构版本、清单摘要和签名公钥标识。
 
-档案更新采用完整目录重建。未出现在新清单中的旧模组或旧配置不会进入新活动目录；玩家可变数据的迁移规则应在真正接入 Minecraft 启动前单独定义。
+档案更新采用完整目录重建。未出现在新清单中的旧模组或旧受管配置不会进入新活动目录；`saves`、截图、日志、崩溃报告、`options.txt`、`optionsof.txt` 和 `servers.dat` 始终保留，资源包和光影包保留玩家额外文件并允许清单更新同名受管文件。`assets` 与 `libraries` 在 NTFS 上优先硬链接共享对象，不支持硬链接时自动复制。
+
+启动器 `0.9.0` 会把旧 `%AppData%\Hechao\instances` 或设置中的自定义旧根目录迁移为结构版本 `2`。迁移只识别真实档案目录，拒绝重解析点，失败时保留原目录并停止启动。完整目录、安装包、升级和卸载规则见 [`WINDOWS_INSTALLER_AND_STORAGE.md`](WINDOWS_INSTALLER_AND_STORAGE.md)。

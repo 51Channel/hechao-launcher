@@ -9,9 +9,11 @@ public sealed class MinecraftLaunchBuildSmokeTests
     [Trait("Category", "Smoke")]
     public async Task BuildProcessAsync_BuildsFabricProcessWithoutStartingIt()
     {
-        var instancesRoot = Environment.GetEnvironmentVariable("HECHAO_SMOKE_INSTANCES_ROOT");
+        var dataRoot =
+            Environment.GetEnvironmentVariable("HECHAO_SMOKE_DATA_ROOT") ??
+            Environment.GetEnvironmentVariable("HECHAO_SMOKE_INSTANCES_ROOT");
         var runtimeRoot = Environment.GetEnvironmentVariable("HECHAO_SMOKE_RUNTIME_ROOT");
-        if (string.IsNullOrWhiteSpace(instancesRoot) ||
+        if (string.IsNullOrWhiteSpace(dataRoot) ||
             string.IsNullOrWhiteSpace(runtimeRoot))
         {
             return;
@@ -27,7 +29,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
             microsoftClientId: null,
             runtimeRoot);
         var request = new MinecraftLaunchRequest(
-            instancesRoot,
+            dataRoot,
             "base-1.21.11",
             4096,
             new MinecraftLaunchSession(

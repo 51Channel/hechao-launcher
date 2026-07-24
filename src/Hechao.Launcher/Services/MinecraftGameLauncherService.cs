@@ -27,7 +27,7 @@ public sealed record MinecraftLaunchProgress(
     double Percent);
 
 public sealed record MinecraftLaunchRequest(
-    string InstancesRoot,
+    string DataRoot,
     string ProfileId,
     int MaximumRamMb,
     MinecraftLaunchSession Session);
@@ -54,7 +54,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private readonly HttpClient _httpClient;
     private readonly MinecraftServerEndpoint _serverEndpoint;
     private readonly string? _microsoftClientId;
-    private readonly string _runtimeRoot;
+    private readonly string? _runtimeRootOverride;
     private readonly SemaphoreSlim _launchGate = new(1, 1);
     private readonly ConcurrentDictionary<string, Process> _runningProcesses =
         new(StringComparer.Ordinal);
@@ -63,12 +63,14 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         HttpClient httpClient,
         MinecraftServerEndpoint serverEndpoint,
         string? microsoftClientId,
-        string runtimeRoot)
+        string? runtimeRootOverride)
     {
         _httpClient = httpClient;
         _serverEndpoint = serverEndpoint;
         _microsoftClientId = microsoftClientId;
-        _runtimeRoot = Path.GetFullPath(runtimeRoot);
+        _runtimeRootOverride = string.IsNullOrWhiteSpace(runtimeRootOverride)
+            ? null
+            : Path.GetFullPath(runtimeRootOverride);
     }
 
     public static MinecraftGameLauncherService CreateDefault(string? microsoftClientId)
@@ -76,8 +78,6 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         var configuredEndpoint = Environment.GetEnvironmentVariable("HECHAO_MINECRAFT_SERVER_ENDPOINT");
         var serverEndpoint = MinecraftServerEndpoint.Parse(
             string.IsNullOrWhiteSpace(configuredEndpoint) ? DefaultServerEndpoint : configuredEndpoint);
-        var localApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var runtimeRoot = Path.Combine(localApplicationData, "Hechao", "Launcher", "runtime");
         var handler = new SocketsHttpHandler
         {
             AutomaticDecompression =
@@ -94,7 +94,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             httpClient,
             serverEndpoint,
             microsoftClientId,
-            runtimeRoot);
+            runtimeRootOverride: null);
     }
 
     public async Task<MinecraftLaunchResult> LaunchAsync(
@@ -172,12 +172,15 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         ValidateRequest(request);
         progress?.Report(new MinecraftLaunchProgress(MinecraftLaunchPhase.LoadingProfile, 2));
 
-        string profileDirectory;
+        string gameDirectory;
+        string runtimeRoot;
         MinecraftProfileMetadata metadata;
         try
         {
-            profileDirectory = ResolveProfileDirectory(request.InstancesRoot, request.ProfileId);
-            metadata = await ReadAndValidateMetadataAsync(profileDirectory, cancellationToken);
+            var layout = new ClientStorageLayout(request.DataRoot);
+            gameDirectory = ResolveProfileGameDirectory(layout, request.ProfileId);
+            runtimeRoot = _runtimeRootOverride ?? layout.RuntimeRoot;
+            metadata = await ReadAndValidateMetadataAsync(gameDirectory, cancellationToken);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or JsonException or ManifestFormatException)
@@ -188,10 +191,10 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 exception);
         }
 
-        Directory.CreateDirectory(_runtimeRoot);
-        var minecraftPath = new MinecraftPath(profileDirectory)
+        Directory.CreateDirectory(runtimeRoot);
+        var minecraftPath = new MinecraftPath(gameDirectory)
         {
-            Runtime = _runtimeRoot
+            Runtime = runtimeRoot
         };
         var parameters = MinecraftLauncherParameters.CreateDefault(minecraftPath, _httpClient);
         parameters.VersionLoader = new LocalJsonVersionLoader(minecraftPath);
@@ -267,7 +270,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             process.StartInfo.UseShellExecute = false;
 
             var javaPath = Path.GetFullPath(process.StartInfo.FileName);
-            if (!File.Exists(javaPath) || !IsWithin(_runtimeRoot, javaPath))
+            if (!File.Exists(javaPath) || !IsWithin(runtimeRoot, javaPath))
             {
                 process.Dispose();
                 throw new InvalidDataException("The resolved Java runtime is outside the managed runtime directory.");
@@ -287,9 +290,9 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private static void ValidateRequest(MinecraftLaunchRequest request)
     {
         ManifestValidator.ValidateProfileId(request.ProfileId);
-        if (string.IsNullOrWhiteSpace(request.InstancesRoot))
+        if (string.IsNullOrWhiteSpace(request.DataRoot))
         {
-            throw new ArgumentException("The instances root is required.", nameof(request));
+            throw new ArgumentException("The client data root is required.", nameof(request));
         }
 
         if (request.MaximumRamMb is < 1024 or > 64 * 1024)
@@ -308,17 +311,25 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         }
     }
 
-    private static string ResolveProfileDirectory(string instancesRoot, string profileId)
+    private static string ResolveProfileGameDirectory(
+        ClientStorageLayout layout,
+        string profileId)
     {
-        var root = Path.GetFullPath(Environment.ExpandEnvironmentVariables(instancesRoot));
-        var profileDirectory = ManifestValidator.ResolveManagedPath(root, profileId);
+        var profileDirectory = layout.GetProfileRoot(profileId);
+        var gameDirectory = layout.GetProfileGameDirectory(profileId);
         if (!Directory.Exists(profileDirectory))
         {
             throw new DirectoryNotFoundException(profileDirectory);
         }
 
         EnsureDirectoryIsNotReparsePoint(profileDirectory);
-        return profileDirectory;
+        if (!Directory.Exists(gameDirectory))
+        {
+            throw new DirectoryNotFoundException(gameDirectory);
+        }
+
+        EnsureDirectoryIsNotReparsePoint(gameDirectory);
+        return gameDirectory;
     }
 
     internal static async Task<MinecraftProfileMetadata> ReadAndValidateMetadataAsync(

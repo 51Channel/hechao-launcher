@@ -34,14 +34,37 @@ public sealed record InstalledProfileState(
     DateTimeOffset InstalledAt);
 
 public sealed record ClientInstallationOptions(
-    string InstancesRoot,
+    string DataRoot,
     bool KeepObjectCache = true);
 
 public sealed class ClientProfileInstaller(
     ResumableFileDownloader downloader,
     AtomicProfileDirectorySwitcher? directorySwitcher = null)
 {
-    private const string StateFileName = ".hechao-install.json";
+    private static readonly string[] PreservedGamePaths =
+    [
+        "saves",
+        "screenshots",
+        "resourcepacks",
+        "shaderpacks",
+        "logs",
+        "crash-reports",
+        "options.txt",
+        "optionsof.txt",
+        "servers.dat"
+    ];
+
+    private static readonly string[] ProtectedGamePaths =
+    [
+        "saves",
+        "screenshots",
+        "logs",
+        "crash-reports",
+        "options.txt",
+        "optionsof.txt",
+        "servers.dat"
+    ];
+
     private static readonly JsonSerializerOptions StateJsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -51,15 +74,19 @@ public sealed class ClientProfileInstaller(
         directorySwitcher ?? new AtomicProfileDirectorySwitcher();
 
     public async Task<LocalProfileState> GetLocalStateAsync(
-        string instancesRoot,
+        string dataRoot,
         string profileId,
         string expectedVersion,
         CancellationToken cancellationToken = default)
     {
         ManifestValidator.ValidateProfileId(profileId);
-        var activeDirectory = GetActiveDirectory(instancesRoot, profileId);
-        var statePath = Path.Combine(activeDirectory, StateFileName);
-        if (!File.Exists(statePath))
+        var layout = new ClientStorageLayout(dataRoot);
+        var activeDirectory = layout.GetProfileRoot(profileId);
+        var gameDirectory = layout.GetProfileGameDirectory(profileId);
+        var statePath = Path.Combine(
+            activeDirectory,
+            ClientStorageLayout.InstallStateFileName);
+        if (!File.Exists(statePath) || !Directory.Exists(gameDirectory))
         {
             return LocalProfileState.Missing;
         }
@@ -72,7 +99,7 @@ public sealed class ClientProfileInstaller(
                 StateJsonOptions,
                 cancellationToken);
             if (state is null ||
-                state.SchemaVersion != 1 ||
+                state.SchemaVersion != ClientStorageLayout.CurrentStorageSchemaVersion ||
                 !string.Equals(state.ProfileId, profileId, StringComparison.Ordinal))
             {
                 return LocalProfileState.Missing;
@@ -99,18 +126,21 @@ public sealed class ClientProfileInstaller(
         ManifestValidator.Validate(verifiedManifest.Manifest);
 
         var manifest = verifiedManifest.Manifest;
-        var instancesRoot = Path.GetFullPath(Environment.ExpandEnvironmentVariables(options.InstancesRoot));
-        Directory.CreateDirectory(instancesRoot);
-        var activeDirectory = GetActiveDirectory(instancesRoot, manifest.ProfileId);
-        var stagingDirectory = Path.Combine(
-            instancesRoot,
-            $".{manifest.ProfileId}.staging-{Guid.NewGuid():N}");
-        var previousDirectory = Path.Combine(instancesRoot, $".{manifest.ProfileId}.previous");
-        var objectCache = Path.Combine(instancesRoot, ".hechao", "cache", "objects");
-        await using var installationLock = AcquireInstallationLock(instancesRoot, manifest.ProfileId);
+        var layout = new ClientStorageLayout(options.DataRoot);
+        layout.EnsureBaseDirectories();
+        var activeDirectory = layout.GetProfileRoot(manifest.ProfileId);
+        var activeGameDirectory = layout.GetProfileGameDirectory(manifest.ProfileId);
+        var stagingDirectory = layout.CreateStagingProfileRoot(manifest.ProfileId);
+        var stagingGameDirectory = Path.Combine(
+            stagingDirectory,
+            ClientStorageLayout.GameDirectoryName);
+        var previousDirectory = layout.GetPreviousProfileRoot(manifest.ProfileId);
+        await using var installationLock = AcquireInstallationLock(layout, manifest.ProfileId);
 
-        EnsureDiskSpace(instancesRoot, manifest);
-        Directory.CreateDirectory(stagingDirectory);
+        EnsureDiskSpace(layout.DataRoot, manifest);
+        Directory.CreateDirectory(stagingGameDirectory);
+        PreserveWritableGameData(activeGameDirectory, stagingGameDirectory);
+        ApplyDeletePaths(stagingGameDirectory, manifest.DeletePaths);
 
         var totalBytes = manifest.Files.Sum(file => file.Size);
         long completedBytes = 0;
@@ -128,9 +158,27 @@ public sealed class ClientProfileInstaller(
                     completedBytes,
                     totalBytes));
 
-                var stagedPath = ManifestValidator.ResolveManagedPath(stagingDirectory, file.Path);
+                var stagedPath = ManifestValidator.ResolveManagedPath(stagingGameDirectory, file.Path);
                 Directory.CreateDirectory(Path.GetDirectoryName(stagedPath)!);
-                var activePath = ManifestValidator.ResolveManagedPath(activeDirectory, file.Path);
+                if (IsProtectedGamePath(file.Path) && File.Exists(stagedPath))
+                {
+                    completedBytes = checked(completedBytes + file.Size);
+                    progress?.Report(new ClientInstallProgress(
+                        ClientInstallPhase.Staging,
+                        CalculatePercent(completedBytes, totalBytes, 10, 80),
+                        file.Path,
+                        completedBytes,
+                        totalBytes));
+                    continue;
+                }
+
+                var activePath = ManifestValidator.ResolveManagedPath(activeGameDirectory, file.Path);
+                var normalizedDigest = file.Sha256.ToLowerInvariant();
+                var cachePath = Path.Combine(
+                    layout.ObjectCacheRoot,
+                    normalizedDigest[..2],
+                    normalizedDigest);
+                usedCachePaths.Add(cachePath);
 
                 if (await FileHashing.MatchesAsync(
                         activePath,
@@ -138,13 +186,22 @@ public sealed class ClientProfileInstaller(
                         file.Sha256,
                         cancellationToken))
                 {
-                    File.Copy(activePath, stagedPath, overwrite: true);
+                    if (IsShareablePath(file.Path) && options.KeepObjectCache)
+                    {
+                        await EnsureCachedFromActiveAsync(
+                            activePath,
+                            cachePath,
+                            file,
+                            cancellationToken);
+                        MaterializeFile(cachePath, stagedPath, preferHardLink: true);
+                    }
+                    else
+                    {
+                        File.Copy(activePath, stagedPath, overwrite: true);
+                    }
                 }
                 else
                 {
-                    var normalizedDigest = file.Sha256.ToLowerInvariant();
-                    var cachePath = Path.Combine(objectCache, normalizedDigest[..2], normalizedDigest);
-                    usedCachePaths.Add(cachePath);
                     var fileStartBytes = completedBytes;
                     var downloadProgress = new Progress<FileDownloadProgress>(value =>
                     {
@@ -154,10 +211,13 @@ public sealed class ClientProfileInstaller(
                             CalculatePercent(currentCompleted, totalBytes, 10, 80),
                             file.Path,
                             currentCompleted,
-                            totalBytes));
+                        totalBytes));
                     });
                     await downloader.DownloadAsync(file, cachePath, downloadProgress, cancellationToken);
-                    File.Copy(cachePath, stagedPath, overwrite: true);
+                    MaterializeFile(
+                        cachePath,
+                        stagedPath,
+                        preferHardLink: IsShareablePath(file.Path));
                 }
 
                 completedBytes = checked(completedBytes + file.Size);
@@ -199,25 +259,21 @@ public sealed class ClientProfileInstaller(
         }
     }
 
-    private static string GetActiveDirectory(string instancesRoot, string profileId)
-    {
-        var root = Path.GetFullPath(Environment.ExpandEnvironmentVariables(instancesRoot));
-        return ManifestValidator.ResolveManagedPath(root, profileId);
-    }
-
     private static async Task WriteStateAsync(
         string stagingDirectory,
         VerifiedClientManifest verifiedManifest,
         CancellationToken cancellationToken)
     {
         var state = new InstalledProfileState(
-            1,
+            ClientStorageLayout.CurrentStorageSchemaVersion,
             verifiedManifest.Manifest.ProfileId,
             verifiedManifest.Manifest.Version,
             verifiedManifest.EnvelopeSha256,
             verifiedManifest.KeyId,
             DateTimeOffset.UtcNow);
-        var statePath = Path.Combine(stagingDirectory, StateFileName);
+        var statePath = Path.Combine(
+            stagingDirectory,
+            ClientStorageLayout.InstallStateFileName);
         await using var stream = new FileStream(
             statePath,
             FileMode.CreateNew,
@@ -229,11 +285,12 @@ public sealed class ClientProfileInstaller(
         await stream.FlushAsync(cancellationToken);
     }
 
-    private static FileStream AcquireInstallationLock(string instancesRoot, string profileId)
+    private static FileStream AcquireInstallationLock(
+        ClientStorageLayout layout,
+        string profileId)
     {
-        var lockDirectory = Path.Combine(instancesRoot, ".hechao", "locks");
-        Directory.CreateDirectory(lockDirectory);
-        var lockPath = Path.Combine(lockDirectory, profileId + ".lock");
+        Directory.CreateDirectory(layout.LocksRoot);
+        var lockPath = Path.Combine(layout.LocksRoot, profileId + ".lock");
         try
         {
             return new FileStream(
@@ -251,7 +308,7 @@ public sealed class ClientProfileInstaller(
     }
 
     private static void EnsureDiskSpace(
-        string instancesRoot,
+        string dataRoot,
         ClientManifest manifest)
     {
         long stageBytes = 0;
@@ -261,7 +318,7 @@ public sealed class ClientProfileInstaller(
         }
 
         var requiredBytes = checked(stageBytes * 2 + 32L * 1024 * 1024);
-        var root = Path.GetPathRoot(Path.GetFullPath(instancesRoot));
+        var root = Path.GetPathRoot(Path.GetFullPath(dataRoot));
         if (string.IsNullOrWhiteSpace(root))
         {
             return;
@@ -282,6 +339,141 @@ public sealed class ClientProfileInstaller(
         }
 
         return Math.Clamp(offset + (completedBytes / (double)totalBytes * span), 0, 100);
+    }
+
+    private static void PreserveWritableGameData(
+        string activeGameDirectory,
+        string stagingGameDirectory)
+    {
+        if (!Directory.Exists(activeGameDirectory))
+        {
+            return;
+        }
+
+        RejectReparsePoint(activeGameDirectory);
+        foreach (var relativePath in PreservedGamePaths)
+        {
+            var source = ManifestValidator.ResolveManagedPath(
+                activeGameDirectory,
+                relativePath);
+            var destination = ManifestValidator.ResolveManagedPath(
+                stagingGameDirectory,
+                relativePath);
+            if (File.Exists(source))
+            {
+                RejectReparsePoint(source);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(source, destination, overwrite: true);
+            }
+            else if (Directory.Exists(source))
+            {
+                CopyDirectory(source, destination);
+            }
+        }
+    }
+
+    private static void ApplyDeletePaths(
+        string stagingGameDirectory,
+        IReadOnlyList<string> deletePaths)
+    {
+        foreach (var relativePath in deletePaths)
+        {
+            if (IsProtectedGamePath(relativePath))
+            {
+                continue;
+            }
+
+            var path = ManifestValidator.ResolveManagedPath(
+                stagingGameDirectory,
+                relativePath);
+            if (File.Exists(path))
+            {
+                RejectReparsePoint(path);
+                File.Delete(path);
+            }
+            else if (Directory.Exists(path))
+            {
+                RejectReparsePoint(path);
+                Directory.Delete(path, recursive: true);
+            }
+        }
+    }
+
+    private static async Task EnsureCachedFromActiveAsync(
+        string activePath,
+        string cachePath,
+        ClientManifestFile file,
+        CancellationToken cancellationToken)
+    {
+        if (await FileHashing.MatchesAsync(
+                cachePath,
+                file.Size,
+                file.Sha256,
+                cancellationToken))
+        {
+            return;
+        }
+
+        TryDeleteFile(cachePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+        if (!HardLinkFile.TryCreate(cachePath, activePath))
+        {
+            File.Copy(activePath, cachePath, overwrite: false);
+        }
+    }
+
+    private static void MaterializeFile(
+        string sourcePath,
+        string destinationPath,
+        bool preferHardLink)
+    {
+        TryDeleteFile(destinationPath);
+        if (!preferHardLink || !HardLinkFile.TryCreate(destinationPath, sourcePath))
+        {
+            File.Copy(sourcePath, destinationPath, overwrite: true);
+        }
+    }
+
+    private static bool IsShareablePath(string relativePath) =>
+        relativePath.StartsWith("assets/", StringComparison.OrdinalIgnoreCase) ||
+        relativePath.StartsWith("libraries/", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsProtectedGamePath(string relativePath) =>
+        ProtectedGamePaths.Any(protectedPath =>
+            string.Equals(
+                relativePath,
+                protectedPath,
+                StringComparison.OrdinalIgnoreCase) ||
+            relativePath.StartsWith(
+                protectedPath + "/",
+                StringComparison.OrdinalIgnoreCase));
+
+    private static void CopyDirectory(string source, string destination)
+    {
+        RejectReparsePoint(source);
+        Directory.CreateDirectory(destination);
+        foreach (var entry in Directory.EnumerateFileSystemEntries(source))
+        {
+            RejectReparsePoint(entry);
+            var destinationEntry = Path.Combine(destination, Path.GetFileName(entry));
+            if (Directory.Exists(entry))
+            {
+                CopyDirectory(entry, destinationEntry);
+            }
+            else
+            {
+                File.Copy(entry, destinationEntry, overwrite: true);
+            }
+        }
+    }
+
+    private static void RejectReparsePoint(string path)
+    {
+        if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new InvalidDataException(
+                $"The client profile contains an unsupported link: {path}");
+        }
     }
 
     private static void TryDeleteFile(string path)

@@ -69,7 +69,7 @@ public sealed class MainWindowViewModel : ObservableObject
         MemoryOptions = ["2 GB", "4 GB", "6 GB", "8 GB", "12 GB", "16 GB"];
         _selectedMemory = MemoryOptions.Contains(_settings.Memory) ? _settings.Memory : "6 GB";
         _clientDirectory = string.IsNullOrWhiteSpace(_settings.ClientDirectory)
-            ? "%AppData%\\Hechao\\instances"
+            ? JsonLauncherSettingsStore.DefaultClientDataDirectory
             : _settings.ClientDirectory;
         _checkForUpdates = _settings.CheckForUpdates;
         _keepDownloadsAfterClose = _settings.KeepDownloadsAfterClose;
@@ -301,6 +301,7 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedServerAccessText));
             OnPropertyChanged(nameof(SelectedProfileDisplayName));
             OnPropertyChanged(nameof(SelectedProfileMetaText));
+            OnPropertyChanged(nameof(SelectedProfileGameDirectory));
             OnPropertyChanged(nameof(IsSelectedServerOnline));
             OnPropertyChanged(nameof(CurrentPageTitle));
             PrimaryActionCommand.RaiseCanExecuteChanged();
@@ -414,6 +415,29 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     public string ClientDirectory => _clientDirectory;
+
+    public string SelectedProfileGameDirectory
+    {
+        get
+        {
+            var profileId = SelectedServer?.ClientProfileId;
+            if (string.IsNullOrWhiteSpace(profileId))
+            {
+                return ClientDirectory;
+            }
+
+            try
+            {
+                return new ClientStorageLayout(ClientDirectory)
+                    .GetProfileGameDirectory(profileId);
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException or NotSupportedException)
+            {
+                return ClientDirectory;
+            }
+        }
+    }
 
     public bool CloseLauncherAfterGameStart
     {
@@ -718,7 +742,7 @@ public sealed class MainWindowViewModel : ObservableObject
         catch (InsufficientDiskSpaceException)
         {
             ClientStatusText = "磁盘空间不足";
-            ShowToast("客户端目录所在磁盘空间不足");
+            ShowToast("游戏数据目录所在磁盘空间不足");
         }
         catch (ProfileInstallInProgressException)
         {
@@ -1059,7 +1083,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            ShowToast("暂时无法打开客户端目录");
+            ShowToast("暂时无法打开游戏数据目录");
         }
     }
 
@@ -1083,16 +1107,18 @@ public sealed class MainWindowViewModel : ObservableObject
 
         _clientDirectory = normalized;
         OnPropertyChanged(nameof(ClientDirectory));
+        OnPropertyChanged(nameof(SelectedProfileGameDirectory));
         SaveSettings();
         _ = RefreshClientStateAsync();
-        ShowToast("客户端目录已更新");
+        ShowToast("游戏数据目录已更新");
     }
 
     private void ResetLauncherSettings()
     {
         SelectedMemory = "6 GB";
-        _clientDirectory = "%AppData%\\Hechao\\instances";
+        _clientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory;
         OnPropertyChanged(nameof(ClientDirectory));
+        OnPropertyChanged(nameof(SelectedProfileGameDirectory));
         CheckForUpdates = true;
         KeepDownloadsAfterClose = true;
         CloseLauncherAfterGameStart = false;
@@ -1476,7 +1502,8 @@ public sealed class MainWindowViewModel : ObservableObject
             KeepDownloadsAfterClose,
             CloseLauncherAfterGameStart,
             OpenDownloadsWhenInstalling,
-            SelectedStartupPage);
+            SelectedStartupPage,
+            ClientStorageLayout.CurrentStorageSchemaVersion);
         _settingsStore.Save(_settings);
     }
 
