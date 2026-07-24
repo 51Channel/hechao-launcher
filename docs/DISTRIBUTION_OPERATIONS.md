@@ -1,7 +1,7 @@
 # 客户端分发与签名操作手册
 
 > 启动器源码版本：`0.10.0`
-> 发布器源码版本：`0.5.0`
+> 发布器源码版本：`0.6.0`
 > 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链、首份正式签名档案、不可变对象上传和 API `0.10.1` 在线激活均已完成；启动器 `0.10.0` 仍为未上传、未分发候选。
 
 ## 1. 安全边界
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、进服授权、账号安全和状态心跳规则。`2026-07-24` 使用 .NET SDK `10.0.302` 验证为 `143/143` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、跨域令牌隔离、OSS V4 URL、坏哈希、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、发布物闭合验收、对象目录白名单、进服授权、账号安全和状态心跳规则。`2026-07-24` 使用 .NET SDK `10.0.302` 验证为 `150/150` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -57,6 +57,8 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 ## 4. 生成客户端发布物
 
 每个档案使用独立源目录。源目录不能包含私钥、输出目录、符号链接、`.hechao` 或 `.hechao-install.json`。
+
+管理端发布器使用 `src/Hechao.Publisher/Properties/PublishProfiles/win-x64.pubxml` 构建自包含单文件。该配置明确关闭裁剪；裁剪会移除当前 JSON 序列化元数据，导致签名清单或 DPAPI 凭据命令在运行时失败。构建后不能只检查 `--help`，必须用正式信任包执行一次 `validate-release`。
 
 活动 NeoForge 源必须先通过仓库工具从 PCL 隔离目录制作。工具不会修改原客户端，会排除账号缓存、日志、世界、截图、语音设备与玩家音量配置，并强制只保留与活动服同 SHA-256 的 Meccha：
 
@@ -94,6 +96,15 @@ manifests/<profile-id>.json
 
 ```powershell
 dotnet run --project src\Hechao.Publisher -c Release -- verify `
+  --manifest artifacts\distributions\activity-neoforge-1.21.11-1.0.10\manifests\activity-neoforge-1.21.11.json `
+  --trust-bundle src\Hechao.Launcher\Assets\distribution-trust.json
+```
+
+验签后必须把清单与整个对象目录一起验收。该命令逐个重算对象 SHA-256，并拒绝缺失对象、多余旧对象、长度不符或 URL 哈希不一致：
+
+```powershell
+dotnet run --project src\Hechao.Publisher -c Release -- validate-release `
+  --distribution artifacts\distributions\activity-neoforge-1.21.11-1.0.10 `
   --manifest artifacts\distributions\activity-neoforge-1.21.11-1.0.10\manifests\activity-neoforge-1.21.11.json `
   --trust-bundle src\Hechao.Launcher\Assets\distribution-trust.json
 ```

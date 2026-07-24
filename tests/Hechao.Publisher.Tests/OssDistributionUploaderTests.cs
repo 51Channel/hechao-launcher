@@ -28,6 +28,34 @@ public sealed class OssDistributionUploaderTests
                 distribution.Path));
     }
 
+    [Fact]
+    public void ValidateAndEnumerateObjects_RejectsUnexpectedRootFile()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        File.WriteAllText(
+            System.IO.Path.Combine(distribution.Path, "objects", "notes.txt"),
+            "not an object");
+
+        Assert.Throws<PublisherUsageException>(
+            () => OssDistributionUploader.ValidateAndEnumerateObjects(
+                distribution.Path));
+    }
+
+    [Fact]
+    public void ValidateAndEnumerateObjects_RejectsNestedPrefixDirectory()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        Directory.CreateDirectory(System.IO.Path.Combine(
+            distribution.Path,
+            "objects",
+            distribution.Digest[..2],
+            "nested"));
+
+        Assert.Throws<PublisherUsageException>(
+            () => OssDistributionUploader.ValidateAndEnumerateObjects(
+                distribution.Path));
+    }
+
     private sealed class TestDistribution(
         string path,
         string objectPath,

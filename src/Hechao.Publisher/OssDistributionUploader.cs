@@ -127,8 +127,14 @@ internal sealed class OssDistributionUploader(OssUploadOptions options)
         }
 
         var objects = new List<DistributionObject>();
-        foreach (var prefixDirectory in objectRoot.EnumerateDirectories())
+        foreach (var prefixEntry in objectRoot.EnumerateFileSystemInfos())
         {
+            if (prefixEntry is not DirectoryInfo prefixDirectory)
+            {
+                throw new PublisherUsageException(
+                    $"Unexpected entry in the distribution object root: {prefixEntry.Name}");
+            }
+
             if ((prefixDirectory.Attributes & FileAttributes.ReparsePoint) != 0 ||
                 prefixDirectory.Name.Length != 2 ||
                 !prefixDirectory.Name.All(Uri.IsHexDigit))
@@ -137,8 +143,15 @@ internal sealed class OssDistributionUploader(OssUploadOptions options)
                     $"Invalid distribution object prefix: {prefixDirectory.Name}");
             }
 
-            foreach (var file in prefixDirectory.EnumerateFiles())
+            foreach (var objectEntry in prefixDirectory.EnumerateFileSystemInfos())
             {
+                if (objectEntry is not FileInfo file)
+                {
+                    throw new PublisherUsageException(
+                        $"Unexpected entry in distribution object prefix {prefixDirectory.Name}: " +
+                        objectEntry.Name);
+                }
+
                 if ((file.Attributes & FileAttributes.ReparsePoint) != 0 ||
                     file.Name.Length != 64 ||
                     !file.Name.All(Uri.IsHexDigit) ||

@@ -29,6 +29,9 @@ internal static class PublisherProgram
                 case "verify":
                     Verify(options);
                     return 0;
+                case "validate-release":
+                    ValidateRelease(options);
+                    return 0;
                 case "protect-oss-credential":
                     ProtectOssCredential(options);
                     return 0;
@@ -188,6 +191,22 @@ internal static class PublisherProgram
         Console.WriteLine($"Signing key: {verified.KeyId}");
         Console.WriteLine($"Files: {verified.Manifest.Files.Count}");
         Console.WriteLine($"Manifest SHA-256: {verified.EnvelopeSha256}");
+    }
+
+    private static void ValidateRelease(CommandOptions options)
+    {
+        var result = DistributionReleaseValidator.Validate(
+            options.Required("distribution"),
+            options.Required("manifest"),
+            options.Required("trust-bundle"));
+
+        Console.WriteLine($"Validated release: {result.ProfileId} {result.Version}");
+        Console.WriteLine($"Published at: {result.PublishedAt:O}");
+        Console.WriteLine($"Signing key: {result.KeyId}");
+        Console.WriteLine($"Manifest SHA-256: {result.ManifestSha256}");
+        Console.WriteLine(
+            $"Logical files: {result.LogicalFileCount} bytes={result.LogicalBytes}");
+        Console.WriteLine($"Objects: {result.ObjectCount} bytes={result.ObjectBytes}");
     }
 
     private static void ProtectOssCredential(CommandOptions options)
@@ -394,6 +413,10 @@ internal static class PublisherProgram
         Console.WriteLine();
         Console.WriteLine("Verify a signed manifest:");
         Console.WriteLine("  verify --manifest <path> --trust-bundle <path>");
+        Console.WriteLine();
+        Console.WriteLine("Validate a signed manifest and every immutable distribution object:");
+        Console.WriteLine("  validate-release --distribution <dir> --manifest <path>");
+        Console.WriteLine("          --trust-bundle <path>");
         Console.WriteLine();
         Console.WriteLine("Protect a publisher-only OSS credential from two redirected input lines:");
         Console.WriteLine("  protect-oss-credential --output <path> --metadata-output <path>");
