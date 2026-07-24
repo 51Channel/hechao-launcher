@@ -170,4 +170,62 @@ public sealed class ClientProfileInstallerTests
 
         Assert.Equal(replacement, await File.ReadAllBytesAsync(cachePath));
     }
+
+    [Fact]
+    public async Task InstallAsync_KeepsActiveProfileWhenObjectServiceIsUnavailable()
+    {
+        var content = "new-client-content"u8.ToArray();
+        var manifest = ManifestTestData.CreateManifest(content);
+        var handler = new ServiceUnavailableHandler();
+        using var httpClient = new HttpClient(handler);
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var layout = new ClientStorageLayout(temporary.Path);
+        var activeGameDirectory = layout.GetProfileGameDirectory(manifest.ProfileId);
+        Directory.CreateDirectory(activeGameDirectory);
+        var activeMarker = Path.Combine(activeGameDirectory, "current-version.txt");
+        await File.WriteAllTextAsync(activeMarker, "working-version");
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            installer.InstallAsync(
+                new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
+                new ClientInstallationOptions(temporary.Path)));
+
+        Assert.Equal("working-version", await File.ReadAllTextAsync(activeMarker));
+        Assert.False(Directory.Exists(layout.GetPreviousProfileRoot(manifest.ProfileId)));
+        Assert.Empty(Directory.EnumerateDirectories(
+            layout.InstancesRoot,
+            $".{manifest.ProfileId}.staging-*"));
+        Assert.Equal(3, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RepairsTamperedManagedFileAndRetainsPreviousVersion()
+    {
+        var content = "verified-client-content"u8.ToArray();
+        var manifest = ManifestTestData.CreateManifest(content);
+        var handler = new RangeResponseHandler(content);
+        using var httpClient = new HttpClient(handler);
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var layout = new ClientStorageLayout(temporary.Path);
+        var activeGameDirectory = layout.GetProfileGameDirectory(manifest.ProfileId);
+        var managedPath = Path.Combine(activeGameDirectory, "mods", "example.jar");
+        Directory.CreateDirectory(Path.GetDirectoryName(managedPath)!);
+        await File.WriteAllTextAsync(managedPath, "tampered");
+
+        await installer.InstallAsync(
+            new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
+            new ClientInstallationOptions(temporary.Path));
+
+        Assert.Equal(content, await File.ReadAllBytesAsync(managedPath));
+        Assert.Equal(
+            "tampered",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetPreviousProfileRoot(manifest.ProfileId),
+                ClientStorageLayout.GameDirectoryName,
+                "mods",
+                "example.jar")));
+        Assert.Single(handler.RequestedOffsets);
+    }
 }

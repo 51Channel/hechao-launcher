@@ -97,6 +97,71 @@ internal sealed class AuthenticatedRedirectHandler(byte[] content) : HttpMessage
     }
 }
 
+internal sealed class ExpiringAuthenticatedRedirectHandler(byte[] content) : HttpMessageHandler
+{
+    private int _apiRequestCount;
+
+    public List<CapturedDownloadRequest> Requests { get; } = [];
+
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var offset = request.Headers.Range?.Ranges.Single().From;
+        Requests.Add(new CapturedDownloadRequest(
+            request.RequestUri!.Host,
+            request.Headers.Authorization?.ToString(),
+            offset));
+
+        if (request.RequestUri.Host == "launcher-api.hechao.world")
+        {
+            var attempt = Interlocked.Increment(ref _apiRequestCount);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Redirect)
+            {
+                Headers =
+                {
+                    Location = new Uri(
+                        $"https://download.hechao.world/objects/private?ticket={attempt}")
+                }
+            });
+        }
+
+        if (request.RequestUri.Query == "?ticket=1")
+        {
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden));
+        }
+
+        var start = checked((int)(offset ?? 0));
+        var body = new ByteArrayContent(content[start..]);
+        if (offset.HasValue)
+        {
+            body.Headers.ContentRange = new ContentRangeHeaderValue(
+                start,
+                content.Length - 1,
+                content.Length);
+        }
+
+        return Task.FromResult(new HttpResponseMessage(
+            offset.HasValue ? HttpStatusCode.PartialContent : HttpStatusCode.OK)
+        {
+            Content = body
+        });
+    }
+}
+
+internal sealed class ServiceUnavailableHandler : HttpMessageHandler
+{
+    public int RequestCount { get; private set; }
+
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        RequestCount++;
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+    }
+}
+
 internal sealed record CapturedDownloadRequest(string Host, string? Authorization, long? RangeOffset);
 
 internal static class ManifestTestData

@@ -84,4 +84,46 @@ public sealed class ResumableFileDownloaderTests
         Assert.All(redirectHandler.Requests, request => Assert.Equal(8, request.RangeOffset));
         Assert.Equal(content, await File.ReadAllBytesAsync(destination));
     }
+
+    [Fact]
+    public async Task DownloadAsync_RefreshesExpiredRedirectWithoutLeakingBearerToken()
+    {
+        var content = "renew-private-download"u8.ToArray();
+        var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var redirectHandler = new ExpiringAuthenticatedRedirectHandler(content);
+        using var authorizationHandler = new OriginBoundBearerTokenHandler(
+            new Uri("https://launcher-api.hechao.world/"),
+            _ => ValueTask.FromResult("launcher-access-token"))
+        {
+            InnerHandler = redirectHandler
+        };
+        using var httpClient = new HttpClient(authorizationHandler);
+        var downloader = new ResumableFileDownloader(httpClient);
+        using var temporary = new TemporaryDirectory();
+        var destination = Path.Combine(temporary.Path, "object");
+        await File.WriteAllBytesAsync(destination + ".part", content[..6]);
+        var manifestFile = new ClientManifestFile(
+            "mods/private.jar",
+            content.Length,
+            digest,
+            "https://launcher-api.hechao.world/v1/profiles/activity/objects/aa/" + digest);
+
+        await downloader.DownloadAsync(manifestFile, destination);
+
+        Assert.Equal(4, redirectHandler.Requests.Count);
+        Assert.Equal(
+            ["launcher-api.hechao.world", "download.hechao.world",
+             "launcher-api.hechao.world", "download.hechao.world"],
+            redirectHandler.Requests.Select(request => request.Host));
+        Assert.All(
+            redirectHandler.Requests.Where(request =>
+                request.Host == "launcher-api.hechao.world"),
+            request => Assert.Equal("Bearer launcher-access-token", request.Authorization));
+        Assert.All(
+            redirectHandler.Requests.Where(request =>
+                request.Host == "download.hechao.world"),
+            request => Assert.Null(request.Authorization));
+        Assert.All(redirectHandler.Requests, request => Assert.Equal(6, request.RangeOffset));
+        Assert.Equal(content, await File.ReadAllBytesAsync(destination));
+    }
 }
