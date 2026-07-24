@@ -50,7 +50,9 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 
 两份私钥副本均由 Windows DPAPI `CurrentUser` 保护，ACL 仅允许当前管理员与 `SYSTEM`，并已完成解密往返与密文一致性验证。`H:` 镜像仍依赖同一 Windows 用户配置，只属于本机冗余，不能代替离机恢复副本。
 
-`0.6.0` 启动器已按 `win-x64` 单文件、自包含发布配置重建，文件版本、产品名、应用图标和内嵌信任包均已验证。发布 ZIP `artifacts/releases/Hechao-Launcher-0.6.0-win-x64.zip` 只包含 `Hechao.Launcher.exe`，SHA-256 为 `9529C175A168EDE850D4A519E50EA71268BB8A809D128FC5076F18D48D90CC0C`；EXE SHA-256 为 `0DF28FD71DA34303C1FAAC11C1D041884C4AF664D192D3D2A719FAF9A602C2E7`。管理端发布器保持 `0.5.0`，其 ZIP SHA-256 为 `176EAF4B50C36A9254E90C8B3EB5F35FAC4089095C594B3A94932B395F46B696`。
+`0.6.0` 启动器已按 `win-x64` 单文件、自包含发布配置重建，文件版本、产品名、应用图标和内嵌信任包均已验证。发布 ZIP `artifacts/releases/Hechao-Launcher-0.6.0-win-x64.zip` 只包含 `Hechao.Launcher.exe`，SHA-256 为 `9529C175A168EDE850D4A519E50EA71268BB8A809D128FC5076F18D48D90CC0C`；EXE SHA-256 为 `0DF28FD71DA34303C1FAAC11C1D041884C4AF664D192D3D2A719FAF9A602C2E7`。历史管理端发布器 `0.5.0` 的 ZIP SHA-256 为 `176EAF4B50C36A9254E90C8B3EB5F35FAC4089095C594B3A94932B395F46B696`。
+
+当前管理端发布器源码与最终本机候选均为 `0.6.0`，基于提交 `12432fb5772f365d79784eb141e1af104d20022c`。`artifacts/publish/publisher-win-x64-0.6.0-final/Hechao.Publisher.exe` 为 `74,018,082` 字节，SHA-256 为 `54B7BE1AD936D2420F54C7164973321B5C9BC59CA30C8C1CA8B9E5284FBF8303`；`artifacts/releases/Hechao-Publisher-0.6.0-win-x64.zip` 为 `32,088,917` 字节，SHA-256 为 `4B783D51C7F3DA8D71A98DE593042435029AE4F201C48DF3F57CA88F78D31DBF`，仅包含该 EXE。两者均为 `NotSigned`；从 ZIP 重新解压后的 EXE 哈希一致，并已使用生产信任包对活动档案 `1.0.10` 完成签名、对象路径、长度和 SHA-256 全量验收。
 
 启动器程序和游戏档案独立发布。`0.6.0` 只改变登录器与进服授权流程，没有修改 `base-1.21.11` / `1.0.5` 的 874 MB 游戏文件清单，因此玩家不应为本次启动器升级重新下载完整客户端。
 
