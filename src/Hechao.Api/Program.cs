@@ -378,12 +378,18 @@ app.MapPost("/v1/auth/login", LoginHechaoAccountAsync)
 app.MapPost("/v1/auth/minecraft/link", LinkMinecraftIdentityAsync)
     .RequireAuthorization()
     .RequireRateLimiting("authentication");
+app.MapPost("/v1/auth/minecraft/unlink", UnlinkMinecraftIdentityAsync)
+    .RequireAuthorization()
+    .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/minecraft/exchange", ExchangeMinecraftSessionAsync)
     .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/refresh", RefreshSessionAsync)
     .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/logout", LogoutAsync)
     .RequireAuthorization();
+app.MapPost("/v1/auth/logout-all", LogoutAllAsync)
+    .RequireAuthorization()
+    .RequireRateLimiting("authentication");
 app.MapGet("/v1/me", GetCurrentAccount)
     .RequireAuthorization();
 app.MapPost("/v1/velocity/launch-grants", CreateVelocityLaunchGrantAsync)
@@ -603,6 +609,49 @@ async Task<IResult> LinkMinecraftIdentityAsync(
     }
 }
 
+async Task<IResult> UnlinkMinecraftIdentityAsync(
+    MinecraftIdentityUnlinkRequest request,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var account = context.User.GetAccount();
+    if (account is null)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号登录会话无效。");
+    }
+
+    if (string.IsNullOrEmpty(request.CurrentPassword) ||
+        request.CurrentPassword.Length > 128)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["currentPassword"] = ["请输入当前赫朝账号密码。"]
+        });
+    }
+
+    var result = await authenticationRepository.UnlinkMinecraftIdentityAsync(
+        account.UserId,
+        request.CurrentPassword,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return result switch
+    {
+        MinecraftIdentityUnlinkResult.Success => Results.NoContent(),
+        MinecraftIdentityUnlinkResult.InvalidPassword => AuthenticationProblem(
+            StatusCodes.Status403Forbidden,
+            "当前赫朝账号密码不正确。"),
+        MinecraftIdentityUnlinkResult.NotLinked => AuthenticationProblem(
+            StatusCodes.Status409Conflict,
+            "该赫朝账号尚未绑定 Minecraft 正版身份。"),
+        _ => AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号登录会话无效。")
+    };
+}
+
 async Task<IResult> ExchangeMinecraftSessionAsync(
     MinecraftSessionExchangeRequest request,
     MinecraftServicesClient minecraftServices,
@@ -662,6 +711,26 @@ async Task<IResult> LogoutAsync(
     }
 
     return Results.NoContent();
+}
+
+async Task<IResult> LogoutAllAsync(
+    AuthenticationRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var account = context.User.GetAccount();
+    if (account is null)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号登录会话无效。");
+    }
+
+    var response = await repository.RevokeAllSessionsAsync(
+        account.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return Results.Ok(response);
 }
 
 IResult GetCurrentAccount(HttpContext context)

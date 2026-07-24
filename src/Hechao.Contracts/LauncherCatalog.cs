@@ -86,6 +86,7 @@ public sealed record HechaoAccountLoginRequest(
 
 public sealed record MinecraftSessionExchangeRequest(string MinecraftAccessToken);
 public sealed record MinecraftIdentityLinkRequest(string MinecraftAccessToken);
+public sealed record MinecraftIdentityUnlinkRequest(string CurrentPassword);
 
 public sealed record RefreshSessionRequest(string RefreshToken);
 
@@ -95,6 +96,10 @@ public sealed record AuthSessionResponse(
     string RefreshToken,
     DateTimeOffset RefreshTokenExpiresAt,
     HechaoAccount Account);
+
+public sealed record SessionRevocationResponse(
+    int RevokedLauncherSessions,
+    int RevokedAdminSessions);
 
 public sealed record LuckPermsPlayerSnapshot(
     Guid MinecraftUuid,

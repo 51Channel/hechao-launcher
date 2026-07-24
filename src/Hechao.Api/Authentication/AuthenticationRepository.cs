@@ -601,6 +601,146 @@ public sealed class AuthenticationRepository(
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<SessionRevocationResponse> RevokeAllSessionsAsync(
+        Guid userId,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var revoked = await RevokeAllAuthenticationStateAsync(
+            connection,
+            transaction,
+            userId,
+            now,
+            cancellationToken);
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.sessions.revoked_all",
+            sourceIp,
+            new
+            {
+                revoked.LauncherSessions,
+                revoked.AdminSessions,
+                revoked.AdminTickets,
+                revoked.VelocityLaunchGrants
+            },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new SessionRevocationResponse(
+            revoked.LauncherSessions,
+            revoked.AdminSessions);
+    }
+
+    public async Task<MinecraftIdentityUnlinkResult> UnlinkMinecraftIdentityAsync(
+        Guid userId,
+        string currentPassword,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var select = new NpgsqlCommand(
+            """
+            SELECT u.username,
+                   u.password_hash,
+                   i.minecraft_uuid,
+                   i.minecraft_name
+            FROM launcher.users u
+            LEFT JOIN launcher.minecraft_identities i ON i.user_id = u.id
+            WHERE u.id = $1 AND NOT u.is_disabled
+            FOR UPDATE OF u;
+            """,
+            connection,
+            transaction);
+        select.Parameters.AddWithValue(userId);
+
+        string? username = null;
+        string? passwordHash = null;
+        Guid? minecraftUuid = null;
+        string? minecraftName = null;
+        await using (var reader = await select.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                username = reader.GetString(0);
+                passwordHash = reader.IsDBNull(1) ? null : reader.GetString(1);
+                minecraftUuid = reader.IsDBNull(2) ? null : reader.GetGuid(2);
+                minecraftName = reader.IsDBNull(3) ? null : reader.GetString(3);
+            }
+        }
+
+        if (username is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return MinecraftIdentityUnlinkResult.AccountNotFound;
+        }
+
+        var verification = passwordHasher.VerifyHashedPassword(
+            new HechaoAccountPasswordSubject(userId, username),
+            passwordHash ?? _dummyPasswordHash,
+            currentPassword);
+        if (passwordHash is null || verification == PasswordVerificationResult.Failed)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return MinecraftIdentityUnlinkResult.InvalidPassword;
+        }
+
+        if (minecraftUuid is null || string.IsNullOrWhiteSpace(minecraftName))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return MinecraftIdentityUnlinkResult.NotLinked;
+        }
+
+        var revoked = await RevokeAllAuthenticationStateAsync(
+            connection,
+            transaction,
+            userId,
+            now,
+            cancellationToken);
+        await using (var unlink = new NpgsqlCommand(
+            """
+            DELETE FROM launcher.minecraft_identities
+            WHERE user_id = $1 AND minecraft_uuid = $2;
+
+            UPDATE launcher.users
+            SET access_tier = 'Member',
+                updated_at = $3
+            WHERE id = $1;
+            """,
+            connection,
+            transaction))
+        {
+            unlink.Parameters.AddWithValue(userId);
+            unlink.Parameters.AddWithValue(minecraftUuid.Value);
+            unlink.Parameters.AddWithValue(now);
+            await unlink.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.minecraft.unlinked",
+            sourceIp,
+            new
+            {
+                MinecraftUuid = minecraftUuid.Value,
+                MinecraftName = minecraftName,
+                revoked.LauncherSessions,
+                revoked.AdminSessions,
+                revoked.AdminTickets,
+                revoked.VelocityLaunchGrants
+            },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return MinecraftIdentityUnlinkResult.Success;
+    }
+
     private static async Task LockIdentityAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -862,6 +1002,82 @@ public sealed class AuthenticationRepository(
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    private static async Task<SecurityRevocationCounts> RevokeAllAuthenticationStateAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid userId,
+        DateTimeOffset revokedAt,
+        CancellationToken cancellationToken)
+    {
+        int launcherSessions;
+        await using (var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.auth_sessions
+            SET revoked_at = $2
+            WHERE user_id = $1 AND revoked_at IS NULL;
+            """,
+            connection,
+            transaction))
+        {
+            command.Parameters.AddWithValue(userId);
+            command.Parameters.AddWithValue(revokedAt);
+            launcherSessions = await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        int adminSessions;
+        await using (var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.admin_web_sessions
+            SET revoked_at = $2
+            WHERE user_id = $1 AND revoked_at IS NULL;
+            """,
+            connection,
+            transaction))
+        {
+            command.Parameters.AddWithValue(userId);
+            command.Parameters.AddWithValue(revokedAt);
+            adminSessions = await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        int adminTickets;
+        await using (var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.admin_login_tickets
+            SET consumed_at = $2
+            WHERE user_id = $1 AND consumed_at IS NULL;
+            """,
+            connection,
+            transaction))
+        {
+            command.Parameters.AddWithValue(userId);
+            command.Parameters.AddWithValue(revokedAt);
+            adminTickets = await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        int velocityLaunchGrants;
+        await using (var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.velocity_launch_grants
+            SET revoked_at = $2
+            WHERE user_id = $1
+              AND consumed_at IS NULL
+              AND revoked_at IS NULL;
+            """,
+            connection,
+            transaction))
+        {
+            command.Parameters.AddWithValue(userId);
+            command.Parameters.AddWithValue(revokedAt);
+            velocityLaunchGrants = await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        return new SecurityRevocationCounts(
+            launcherSessions,
+            adminSessions,
+            adminTickets,
+            velocityLaunchGrants);
+    }
+
     private static async Task WriteLoginAuditAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -1013,6 +1229,12 @@ public sealed class AuthenticationRepository(
         string PrimaryGroup,
         DateTimeOffset? SyncedAt,
         AccessTier AccessTier);
+
+    private sealed record SecurityRevocationCounts(
+        int LauncherSessions,
+        int AdminSessions,
+        int AdminTickets,
+        int VelocityLaunchGrants);
 }
 
 public sealed record AuthenticatedSession(Guid SessionId, HechaoAccount Account);
@@ -1025,3 +1247,11 @@ public sealed class HechaoAccountConflictException(string field) : Exception
 public sealed class HechaoAccountNotFoundException : Exception;
 public sealed class MinecraftIdentityAlreadyLinkedException : Exception;
 public sealed class HechaoAccountMinecraftLinkConflictException : Exception;
+
+public enum MinecraftIdentityUnlinkResult
+{
+    Success,
+    InvalidPassword,
+    NotLinked,
+    AccountNotFound
+}

@@ -2010,7 +2010,11 @@
                                     <Button Margin="0,24,0,0"
                                             Style="{StaticResource BaseButtonStyle}"
                                             Command="{Binding LogoutAccountCommand}"
-                                            Content="退出赫朝账号" />
+                                            Content="退出当前设备" />
+                                    <Button Margin="0,10,0,0"
+                                            Style="{StaticResource BaseButtonStyle}"
+                                            Command="{Binding LogoutAllDevicesCommand}"
+                                            Content="退出所有设备" />
                                 </StackPanel>
                             </Border>
 
@@ -2051,17 +2055,100 @@
                                                        FontWeight="SemiBold"
                                                        Margin="0,9,0,0" />
                                         </StackPanel>
-                                        <Button Grid.Column="2"
-                                                Style="{StaticResource PrimaryButtonStyle}"
-                                                MinWidth="176"
-                                                Height="46"
-                                                Command="{Binding LinkMinecraftCommand}"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="绑定 Microsoft 正版身份"
-                                                       Foreground="White"
-                                                       FontSize="14"
-                                                       FontWeight="Bold" />
-                                        </Button>
+                                        <Grid Grid.Column="2"
+                                              MinWidth="176"
+                                              VerticalAlignment="Center">
+                                            <Button Height="46"
+                                                    Command="{Binding LinkMinecraftCommand}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button"
+                                                           BasedOn="{StaticResource PrimaryButtonStyle}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsMinecraftLinked}"
+                                                                         Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <TextBlock Text="绑定 Microsoft 正版身份"
+                                                           Foreground="White"
+                                                           FontSize="14"
+                                                           FontWeight="Bold" />
+                                            </Button>
+                                            <Button Height="46"
+                                                    Command="{Binding UnlinkMinecraftCommand}"
+                                                    Content="解除 Minecraft 绑定">
+                                                <Button.Style>
+                                                    <Style TargetType="Button"
+                                                           BasedOn="{StaticResource BaseButtonStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsMinecraftLinked}"
+                                                                         Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <Border Margin="0,12,0,0"
+                                        Padding="22"
+                                        Background="{StaticResource HechaoRedSoftBrush}"
+                                        BorderBrush="#FFD8B2AD"
+                                        BorderThickness="1"
+                                        CornerRadius="5"
+                                        Visibility="{Binding IsMinecraftUnlinkFormVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="确认解除 Minecraft 绑定"
+                                                   FontSize="15"
+                                                   FontWeight="Black" />
+                                        <TextBlock Grid.Row="1"
+                                                   Text="这会撤销所有设备、管理后台和待使用的进服授权。请输入当前赫朝账号密码确认。"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource InkMutedBrush}"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   Margin="0,7,0,0" />
+                                        <Grid Grid.Row="2" Margin="0,16,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <PasswordBox x:Name="UnlinkMinecraftPasswordBox"
+                                                         Height="42"
+                                                         MaxLength="128"
+                                                         VerticalContentAlignment="Center"
+                                                         ToolTip="当前赫朝账号密码" />
+                                            <Button Grid.Column="1"
+                                                    MinWidth="84"
+                                                    Height="42"
+                                                    Margin="10,0,0,0"
+                                                    Style="{StaticResource BaseButtonStyle}"
+                                                    Click="CancelMinecraftUnlinkButton_OnClick"
+                                                    Content="取消" />
+                                            <Button Grid.Column="2"
+                                                    MinWidth="104"
+                                                    Height="42"
+                                                    Margin="10,0,0,0"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Click="ConfirmMinecraftUnlinkButton_OnClick">
+                                                <TextBlock Text="确认解除"
+                                                           Foreground="White"
+                                                           FontWeight="Bold" />
+                                            </Button>
+                                        </Grid>
                                     </Grid>
                                 </Border>
 
@@ -2120,7 +2207,8 @@
                                         Background="{StaticResource StripBrush}"
                                         BorderBrush="{StaticResource BorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="5">
+                                        CornerRadius="5"
+                                        Visibility="{Binding HasAccountFormMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <TextBlock Text="{Binding AccountFormMessage}"
                                                FontSize="12"
                                                Foreground="{StaticResource HechaoRedDarkBrush}"

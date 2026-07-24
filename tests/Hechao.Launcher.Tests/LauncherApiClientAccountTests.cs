@@ -118,6 +118,119 @@ public sealed class LauncherApiClientAccountTests
         Assert.Equal(2, handler.RequestCount);
     }
 
+    [Fact]
+    public async Task LogoutAllSessionsAsync_RevokesRemoteSessionsAndClearsLocalStore()
+    {
+        var handler = new RecordingHandler(
+            request =>
+            {
+                Assert.Equal("/v1/auth/refresh", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(JsonResponse(Session(UnlinkedAccount)));
+            },
+            request =>
+            {
+                Assert.Equal(HttpMethod.Post, request.Method);
+                Assert.Equal("/v1/auth/logout-all", request.RequestUri!.AbsolutePath);
+                Assert.Equal(
+                    new AuthenticationHeaderValue("Bearer", "access-token"),
+                    request.Headers.Authorization);
+                return Task.FromResult(JsonResponse(
+                    new SessionRevocationResponse(3, 1)));
+            });
+        var store = new InMemorySessionStore(
+            new StoredLauncherSession("refresh-token", UnlinkedAccount));
+        var client = CreateClient(handler, store);
+
+        await client.TryRestoreSessionAsync();
+        var result = await client.LogoutAllSessionsAsync();
+
+        Assert.Equal(3, result.RevokedLauncherSessions);
+        Assert.Equal(1, result.RevokedAdminSessions);
+        Assert.Null(store.Session);
+        Assert.Null(client.CurrentAccount);
+        Assert.Equal(2, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task UnlinkMinecraftIdentityAsync_SendsPasswordAndClearsLocalStore()
+    {
+        var linkedAccount = UnlinkedAccount with
+        {
+            MinecraftUuid = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            MinecraftName = "HechaoPlayer",
+            LuckPermsPrimaryGroup = "vip",
+            AccessTier = AccessTier.Participant
+        };
+        var handler = new RecordingHandler(
+            request =>
+            {
+                Assert.Equal("/v1/auth/refresh", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(JsonResponse(Session(linkedAccount)));
+            },
+            async request =>
+            {
+                Assert.Equal(HttpMethod.Post, request.Method);
+                Assert.Equal("/v1/auth/minecraft/unlink", request.RequestUri!.AbsolutePath);
+                Assert.Equal(
+                    new AuthenticationHeaderValue("Bearer", "access-token"),
+                    request.Headers.Authorization);
+                var body = await request.Content!
+                    .ReadFromJsonAsync<MinecraftIdentityUnlinkRequest>();
+                Assert.Equal("current-password", body!.CurrentPassword);
+                return new HttpResponseMessage(HttpStatusCode.NoContent);
+            });
+        var store = new InMemorySessionStore(
+            new StoredLauncherSession("refresh-token", linkedAccount));
+        var client = CreateClient(handler, store);
+
+        await client.TryRestoreSessionAsync();
+        await client.UnlinkMinecraftIdentityAsync("current-password");
+
+        Assert.Null(store.Session);
+        Assert.Null(client.CurrentAccount);
+        Assert.Equal(2, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task UnlinkMinecraftIdentityAsync_OnWrongPasswordKeepsLocalSession()
+    {
+        var linkedAccount = UnlinkedAccount with
+        {
+            MinecraftUuid = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            MinecraftName = "HechaoPlayer"
+        };
+        var handler = new RecordingHandler(
+            request =>
+            {
+                Assert.Equal("/v1/auth/refresh", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(JsonResponse(Session(linkedAccount)));
+            },
+            request =>
+            {
+                Assert.Equal("/v1/auth/minecraft/unlink", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden)
+                {
+                    Content = JsonContent.Create(new
+                    {
+                        title = "认证失败",
+                        detail = "当前赫朝账号密码不正确。"
+                    })
+                });
+            });
+        var store = new InMemorySessionStore(
+            new StoredLauncherSession("refresh-token", linkedAccount));
+        var client = CreateClient(handler, store);
+
+        await client.TryRestoreSessionAsync();
+        var exception = await Assert.ThrowsAsync<LauncherApiException>(() =>
+            client.UnlinkMinecraftIdentityAsync("wrong-password"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        Assert.Equal("当前赫朝账号密码不正确。", exception.ApiDetail);
+        Assert.NotNull(store.Session);
+        Assert.Equal(linkedAccount, client.CurrentAccount);
+    }
+
     private static LauncherApiClient CreateClient(
         HttpMessageHandler handler,
         ISecureSessionStore store)

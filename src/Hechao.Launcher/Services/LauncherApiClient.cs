@@ -166,6 +166,36 @@ public sealed class LauncherApiClient
         return linkedAccount;
     }
 
+    public async Task UnlinkMinecraftIdentityAsync(
+        string currentPassword,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendMinecraftIdentityUnlinkRequestAsync(
+            currentPassword,
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
+        {
+            await ReadRequiredNoContentAsync(firstResponse, cancellationToken);
+            await ClearSessionAsync(cancellationToken);
+            return;
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendMinecraftIdentityUnlinkRequestAsync(
+            currentPassword,
+            accessToken,
+            cancellationToken);
+        await ReadRequiredNoContentAsync(retryResponse, cancellationToken);
+        await ClearSessionAsync(cancellationToken);
+    }
+
     public async Task<HechaoAccount> ExchangeMinecraftSessionAsync(
         string minecraftAccessToken,
         CancellationToken cancellationToken = default)
@@ -276,8 +306,7 @@ public sealed class LauncherApiClient
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         var accessToken = _session?.AccessToken;
-        _session = null;
-        await _sessionStore.ClearAsync(cancellationToken);
+        await ClearSessionAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(accessToken))
         {
@@ -293,6 +322,38 @@ public sealed class LauncherApiClient
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
         }
+    }
+
+    public async Task<SessionRevocationResponse> LogoutAllSessionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendLogoutAllSessionsRequestAsync(
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
+        {
+            var result = await ReadRequiredAsync<SessionRevocationResponse>(
+                firstResponse,
+                cancellationToken);
+            await ClearSessionAsync(cancellationToken);
+            return result;
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendLogoutAllSessionsRequestAsync(
+            accessToken,
+            cancellationToken);
+        var retryResult = await ReadRequiredAsync<SessionRevocationResponse>(
+            retryResponse,
+            cancellationToken);
+        await ClearSessionAsync(cancellationToken);
+        return retryResult;
     }
 
     private async Task EnsureFreshAccessTokenAsync(CancellationToken cancellationToken)
@@ -424,6 +485,33 @@ public sealed class LauncherApiClient
             cancellationToken);
     }
 
+    private async Task<HttpResponseMessage> SendMinecraftIdentityUnlinkRequestAsync(
+        string currentPassword,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "v1/auth/minecraft/unlink")
+        {
+            Content = JsonContent.Create(
+                new MinecraftIdentityUnlinkRequest(currentPassword),
+                options: SerializerOptions)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+    }
+
+    private Task<HttpResponseMessage> SendLogoutAllSessionsRequestAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "v1/auth/logout-all");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return SendAndDisposeRequestAsync(request, cancellationToken);
+    }
+
     private Task<HttpResponseMessage> SendAdminBrowserTicketRequestAsync(
         string accessToken,
         CancellationToken cancellationToken)
@@ -471,6 +559,12 @@ public sealed class LauncherApiClient
         await _sessionStore.SaveAsync(
             new StoredLauncherSession(_session.RefreshToken, account),
             cancellationToken);
+    }
+
+    private async Task ClearSessionAsync(CancellationToken cancellationToken)
+    {
+        _session = null;
+        await _sessionStore.ClearAsync(cancellationToken);
     }
 
     private static async Task<T> ReadRequiredAsync<T>(
@@ -538,6 +632,24 @@ public sealed class LauncherApiClient
         }
 
         return destination.ToArray();
+    }
+
+    private static async Task ReadRequiredNoContentAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        var detail = await TryReadProblemDetailAsync(response, cancellationToken);
+        throw new LauncherApiException(response.StatusCode, detail);
     }
 
     private static async Task<string?> TryReadProblemDetailAsync(

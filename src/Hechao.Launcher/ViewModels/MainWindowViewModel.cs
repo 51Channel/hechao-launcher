@@ -46,6 +46,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private string? _accountStatusHint;
     private bool _isAccountBusy;
     private bool _isAdminConsoleBusy;
+    private bool _isMinecraftUnlinkFormVisible;
     private string _accountFormMessage = string.Empty;
     private bool _isAccountFormError;
     private DownloadJobViewModel? _activeDownload;
@@ -106,6 +107,15 @@ public sealed class MainWindowViewModel : ObservableObject
         LinkMinecraftCommand = new RelayCommand(
             StartMinecraftLink,
             () => IsAuthenticated && !IsMinecraftLinked && !IsAccountBusy);
+        UnlinkMinecraftCommand = new RelayCommand(
+            BeginMinecraftUnlink,
+            () => IsAuthenticated && IsMinecraftLinked && !IsAccountBusy);
+        CancelMinecraftUnlinkCommand = new RelayCommand(
+            CancelMinecraftUnlink,
+            () => IsMinecraftUnlinkFormVisible && !IsAccountBusy);
+        LogoutAllDevicesCommand = new RelayCommand(
+            StartLogoutAllDevices,
+            () => IsAuthenticated && !IsAccountBusy);
         OpenAdminConsoleCommand = new RelayCommand(
             OpenAdminConsole,
             () => IsAdministrator && !IsAdminConsoleBusy);
@@ -149,6 +159,9 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand AccountActionCommand { get; }
     public RelayCommand LogoutAccountCommand { get; }
     public RelayCommand LinkMinecraftCommand { get; }
+    public RelayCommand UnlinkMinecraftCommand { get; }
+    public RelayCommand CancelMinecraftUnlinkCommand { get; }
+    public RelayCommand LogoutAllDevicesCommand { get; }
     public RelayCommand OpenAdminConsoleCommand { get; }
     public RelayCommand ShowServersCommand { get; }
     public RelayCommand ShowDownloadsCommand { get; }
@@ -300,12 +313,34 @@ public sealed class MainWindowViewModel : ObservableObject
     public string AccountFormMessage
     {
         get => _accountFormMessage;
-        private set => SetProperty(ref _accountFormMessage, value);
+        private set
+        {
+            if (SetProperty(ref _accountFormMessage, value))
+            {
+                OnPropertyChanged(nameof(HasAccountFormMessage));
+            }
+        }
     }
+    public bool HasAccountFormMessage =>
+        !string.IsNullOrWhiteSpace(AccountFormMessage);
     public bool IsAccountFormError
     {
         get => _isAccountFormError;
         private set => SetProperty(ref _isAccountFormError, value);
+    }
+
+    public bool IsMinecraftUnlinkFormVisible
+    {
+        get => _isMinecraftUnlinkFormVisible;
+        private set
+        {
+            if (!SetProperty(ref _isMinecraftUnlinkFormVisible, value))
+            {
+                return;
+            }
+
+            CancelMinecraftUnlinkCommand.RaiseCanExecuteChanged();
+        }
     }
 
     public bool IsAccountBusy
@@ -322,6 +357,9 @@ public sealed class MainWindowViewModel : ObservableObject
             AccountActionCommand.RaiseCanExecuteChanged();
             LogoutAccountCommand.RaiseCanExecuteChanged();
             LinkMinecraftCommand.RaiseCanExecuteChanged();
+            UnlinkMinecraftCommand.RaiseCanExecuteChanged();
+            CancelMinecraftUnlinkCommand.RaiseCanExecuteChanged();
+            LogoutAllDevicesCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -1488,6 +1526,78 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    private void BeginMinecraftUnlink()
+    {
+        if (!IsAuthenticated || !IsMinecraftLinked || IsAccountBusy)
+        {
+            return;
+        }
+
+        IsMinecraftUnlinkFormVisible = true;
+        SetAccountFormStatus(
+            "解除绑定后，所有设备会退出，重新进服前需要再次绑定正版身份。",
+            isError: false);
+    }
+
+    private void CancelMinecraftUnlink()
+    {
+        IsMinecraftUnlinkFormVisible = false;
+        SetAccountFormStatus(string.Empty, isError: false);
+    }
+
+    public async Task<bool> UnlinkMinecraftAsync(string currentPassword)
+    {
+        if (!IsAuthenticated ||
+            !IsMinecraftLinked ||
+            IsAccountBusy ||
+            !IsMinecraftUnlinkFormVisible)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(currentPassword))
+        {
+            SetAccountFormStatus("请输入当前赫朝账号密码。", isError: true);
+            return false;
+        }
+
+        IsAccountBusy = true;
+        SetAccountFormStatus("正在解除 Minecraft 正版身份…", isError: false);
+        try
+        {
+            await _authenticationService.UnlinkMinecraftAsync(currentPassword);
+            IsMinecraftUnlinkFormVisible = false;
+            ClearAuthenticatedState();
+            SetAccountFormStatus(string.Empty, isError: false);
+            ShowToast("Minecraft 绑定已解除，所有设备均已退出");
+            return true;
+        }
+        catch (LauncherAuthenticationRequiredException)
+        {
+            IsMinecraftUnlinkFormVisible = false;
+            ClearAuthenticatedState();
+            SetAccountFormStatus("登录已过期，请重新登录。", isError: true);
+            return false;
+        }
+        catch (LauncherApiException exception)
+        {
+            SetAccountFormStatus(
+                exception.ApiDetail ?? "暂时无法解除 Minecraft 绑定。",
+                isError: true);
+            return false;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            SetAccountFormStatus("账号安全服务暂时不可用。", isError: true);
+            return false;
+        }
+        finally
+        {
+            IsAccountBusy = false;
+        }
+    }
+
     private async void StartAccountLogout()
     {
         if (!IsAuthenticated || IsAccountBusy)
@@ -1499,14 +1609,48 @@ public sealed class MainWindowViewModel : ObservableObject
         try
         {
             await _authenticationService.LogoutAsync();
-            SetCurrentAccount(null);
-            Servers.Clear();
-            ActivityServers.Clear();
-            OnPropertyChanged(nameof(ActivityServerCount));
-            OnPropertyChanged(nameof(HasActivityServers));
-            SelectedServer = null;
+            ClearAuthenticatedState();
             SetAccountFormStatus(string.Empty, isError: false);
             ShowToast("已退出赫朝账号");
+        }
+        finally
+        {
+            IsAccountBusy = false;
+        }
+    }
+
+    private async void StartLogoutAllDevices()
+    {
+        if (!IsAuthenticated || IsAccountBusy)
+        {
+            return;
+        }
+
+        IsAccountBusy = true;
+        SetAccountFormStatus("正在撤销所有设备的登录会话…", isError: false);
+        try
+        {
+            var response = await _authenticationService.LogoutAllDevicesAsync();
+            ClearAuthenticatedState();
+            SetAccountFormStatus(string.Empty, isError: false);
+            var deviceCount = Math.Max(1, response.RevokedLauncherSessions);
+            ShowToast($"已退出所有设备，共撤销 {deviceCount} 个启动器会话");
+        }
+        catch (LauncherAuthenticationRequiredException)
+        {
+            ClearAuthenticatedState();
+            SetAccountFormStatus("登录已过期，请重新登录。", isError: true);
+        }
+        catch (LauncherApiException exception)
+        {
+            SetAccountFormStatus(
+                exception.ApiDetail ?? "暂时无法退出所有设备。",
+                isError: true);
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            SetAccountFormStatus("账号安全服务暂时不可用。", isError: true);
         }
         finally
         {
@@ -1564,6 +1708,10 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         _currentAccount = account;
         _accountStatusHint = null;
+        if (account?.IsMinecraftLinked != true)
+        {
+            IsMinecraftUnlinkFormVisible = false;
+        }
         OnPropertyChanged(nameof(IsAuthenticated));
         OnPropertyChanged(nameof(IsMinecraftLinked));
         OnPropertyChanged(nameof(IsAdministrator));
@@ -1578,8 +1726,20 @@ public sealed class MainWindowViewModel : ObservableObject
         PrimaryActionCommand.RaiseCanExecuteChanged();
         LogoutAccountCommand.RaiseCanExecuteChanged();
         LinkMinecraftCommand.RaiseCanExecuteChanged();
+        UnlinkMinecraftCommand.RaiseCanExecuteChanged();
+        LogoutAllDevicesCommand.RaiseCanExecuteChanged();
         OpenAdminConsoleCommand.RaiseCanExecuteChanged();
         UpdatePrimaryActionForState();
+    }
+
+    private void ClearAuthenticatedState()
+    {
+        SetCurrentAccount(null);
+        Servers.Clear();
+        ActivityServers.Clear();
+        OnPropertyChanged(nameof(ActivityServerCount));
+        OnPropertyChanged(nameof(HasActivityServers));
+        SelectedServer = null;
     }
 
     private void UpdatePrimaryActionForState()

@@ -117,6 +117,32 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void ConfirmMinecraftUnlinkButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (await viewModel.UnlinkMinecraftAsync(UnlinkMinecraftPasswordBox.Password))
+        {
+            UnlinkMinecraftPasswordBox.Clear();
+        }
+    }
+
+    private void CancelMinecraftUnlinkButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        UnlinkMinecraftPasswordBox.Clear();
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.CancelMinecraftUnlinkCommand.Execute(null);
+        }
+    }
+
     private void ChooseClientDirectoryButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)

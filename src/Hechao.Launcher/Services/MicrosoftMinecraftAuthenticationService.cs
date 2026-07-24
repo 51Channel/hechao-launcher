@@ -21,6 +21,9 @@ public interface ILauncherAuthenticationService
         string password,
         CancellationToken cancellationToken = default);
     Task<HechaoAccount> LinkMinecraftAsync(CancellationToken cancellationToken = default);
+    Task UnlinkMinecraftAsync(
+        string currentPassword,
+        CancellationToken cancellationToken = default);
     Task<MinecraftLaunchSession> GetMinecraftLaunchSessionAsync(
         CancellationToken cancellationToken = default);
     Task<VelocityLaunchGrantResponse> PrepareVelocityLaunchAsync(
@@ -29,6 +32,8 @@ public interface ILauncherAuthenticationService
     Task<AdminBrowserTicketResponse> CreateAdminBrowserTicketAsync(
         CancellationToken cancellationToken = default);
     Task LogoutAsync(CancellationToken cancellationToken = default);
+    Task<SessionRevocationResponse> LogoutAllDevicesAsync(
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthenticationService
@@ -118,6 +123,18 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
             cancellationToken);
         _cachedMinecraftLaunchSession = CreateLaunchSession(account, minecraftSession);
         return account;
+    }
+
+    public async Task UnlinkMinecraftAsync(
+        string currentPassword,
+        CancellationToken cancellationToken = default)
+    {
+        _ = CurrentAccount ?? throw new LauncherAuthenticationRequiredException();
+        await _apiClient.UnlinkMinecraftIdentityAsync(
+            currentPassword,
+            cancellationToken);
+        _cachedMinecraftLaunchSession = null;
+        await ClearMicrosoftAccountsAsync();
     }
 
     public async Task<MinecraftLaunchSession> GetMinecraftLaunchSessionAsync(
@@ -217,16 +234,16 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
     {
         _cachedMinecraftLaunchSession = null;
         await _apiClient.LogoutAsync(cancellationToken);
-        if (_microsoftClient is null)
-        {
-            return;
-        }
+        await ClearMicrosoftAccountsAsync();
+    }
 
-        var accounts = await _microsoftClient.GetAccountsAsync();
-        foreach (var account in accounts)
-        {
-            await _microsoftClient.RemoveAsync(account);
-        }
+    public async Task<SessionRevocationResponse> LogoutAllDevicesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _apiClient.LogoutAllSessionsAsync(cancellationToken);
+        _cachedMinecraftLaunchSession = null;
+        await ClearMicrosoftAccountsAsync();
+        return response;
     }
 
     private async Task<IPublicClientApplication> GetMicrosoftClientAsync(CancellationToken cancellationToken)
@@ -286,6 +303,29 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
             minecraftSession.AccessToken,
             minecraftSession.ExpiresAt,
             minecraftSession.Xuid);
+    }
+
+    private async Task ClearMicrosoftAccountsAsync()
+    {
+        if (_microsoftClient is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var accounts = await _microsoftClient.GetAccountsAsync();
+            foreach (var account in accounts)
+            {
+                await _microsoftClient.RemoveAsync(account);
+            }
+        }
+        catch (Exception exception) when (
+            exception is MsalException or IOException or UnauthorizedAccessException)
+        {
+            // The Hechao session is already revoked; stale Microsoft cache can be
+            // retried or replaced on the next interactive authentication.
+        }
     }
 }
 
