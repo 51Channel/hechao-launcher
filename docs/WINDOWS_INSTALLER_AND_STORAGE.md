@@ -153,6 +153,8 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 
 当前已确认不为首版购买 Authenticode 代码签名证书，安装包和 EXE 的预期状态为 `NotSigned`。这不会影响程序运行或客户端档案的 ECDSA 验签，但会增加 SmartScreen 首次运行提示。内部灰度和正式公告必须只使用官方来源，并同时公布安装包文件名、版本、大小和 SHA-256；以后增加代码签名时应发布新版本，不得覆盖既有安装包。
 
+`0.10.0` 候选已重新执行 `0.9.1` 原地升级、干净安装和静默卸载。安装后的 EXE 产品版本为 `0.10.0+9cba23e9d0b5ba799af50dcc2ef0018cfe5a31e4`，SHA-256 与构建原件一致；IconPark 授权文件、设置和游戏数据均保留，卸载后程序目录、开始菜单和注册表项均已清理。安装包仍未上传或向玩家分发，完整记录见 [`LAUNCHER_RELEASE_0.10.0.md`](LAUNCHER_RELEASE_0.10.0.md)。
+
 ## 7. 第三方构建资产
 
 - 安装器：[NSIS 3](https://nsis.sourceforge.io/Docs/AppendixI.html)，使用 zlib/libpng 许可并允许商业应用。
