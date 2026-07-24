@@ -113,14 +113,19 @@
 
 构建脚本会依次执行：
 
-1. 运行完整解决方案测试。
-2. 生成 `win-x64`、自包含、单文件启动器。
-3. 编译简体中文/英文安装向导。
-4. 输出安装包和对应 SHA-256 文件。
+1. 预检 Windows 代码签名证书、SignTool 和 RFC 3161 时间戳。
+2. 运行完整解决方案测试。
+3. 生成 `win-x64`、自包含、单文件启动器并完成 Authenticode 签名。
+4. 编译简体中文/英文安装向导，并在 NSIS 编译期间签署卸载程序。
+5. 签署外层安装包。
+6. 验证启动器、卸载程序和安装包的发布者与时间戳。
+7. 在签名完成后输出启动器和安装包的 SHA-256 文件。
 
 输出：
 
 ```text
+artifacts\publish\win-x64\Hechao.Launcher.exe
+artifacts\publish\win-x64\Hechao.Launcher.exe.sha256
 artifacts\installer\Hechao-Launcher-Setup-<version>-win-x64.exe
 artifacts\installer\Hechao-Launcher-Setup-<version>-win-x64.exe.sha256
 ```
@@ -129,6 +134,11 @@ artifacts\installer\Hechao-Launcher-Setup-<version>-win-x64.exe.sha256
 
 - .NET SDK `10.0.302`
 - NSIS 3，可通过 `winget install --id NSIS.NSIS --exact` 安装
+- Windows SDK x64 SignTool，可通过 `.\tools\Install-WindowsSigningTools.ps1` 安装受校验的本机副本
+- 公网受信任的 RSA Authenticode 代码签名证书及颁发机构时间戳地址
+
+没有正式证书时，开发者只能使用
+`.\tools\Build-WindowsInstaller.ps1 -SkipSigning` 生成不可分发的内部测试包。完整证书配置、安全边界和验签方法见 [Windows 代码签名](WINDOWS_CODE_SIGNING.md)。
 
 升级使用相同 `AppId` 和安装目录，覆盖启动器程序但保留游戏数据。卸载器只删除它登记安装的程序文件和快捷方式，不包含 `%LocalAppData%\Hechao\GameData` 或 `%LocalAppData%\Hechao\Launcher` 删除规则。
 
@@ -139,7 +149,8 @@ artifacts\installer\Hechao-Launcher-Setup-<version>-win-x64.exe.sha256
 ```powershell
 dotnet test Hechao.Launcher.sln -c Release
 .\tools\Build-WindowsInstaller.ps1 -SkipTests
-Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorithm SHA256
+Get-AuthenticodeSignature .\artifacts\publish\win-x64\Hechao.Launcher.exe
+Get-AuthenticodeSignature .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe
 ```
 
 再在隔离目录执行安装/卸载冒烟测试，核对：
@@ -149,9 +160,10 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 - 升级后设置与游戏数据仍存在。
 - 卸载后程序目录被清理，游戏数据根目录不受影响。
 - 退出记录和本地诊断包不进入安装包，也不随升级被覆盖。
-- 安装包、EXE 和 SHA-256 记录进入资产清单。
+- 启动器、卸载程序和安装包的 Authenticode 状态均为 `Valid`，且包含可信时间戳。
+- 安装包、EXE、最终 SHA-256、发布者和签名状态进入资产清单。
 
-对外发布前仍需配置 Authenticode 代码签名。客户端档案的 ECDSA 清单签名只能保护下载内容，不能替代 Windows 对安装包和 EXE 的代码签名。
+正式发布入口默认要求 Authenticode 代码签名；缺少证书、私钥、SignTool、时间戳或任一层验签失败都会停止构建。客户端档案的 ECDSA 清单签名只能保护下载内容，不能替代 Windows 对安装包和 EXE 的代码签名。
 
 ## 7. 第三方构建资产
 

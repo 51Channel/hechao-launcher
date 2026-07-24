@@ -53,7 +53,9 @@ Windows 启动器正式候选统一使用：
 .\tools\Build-WindowsInstaller.ps1
 ```
 
-该入口必须产出 `Hechao-Launcher-Setup-<version>-win-x64.exe` 和同名 `.sha256`。发布记录同时登记安装包和安装后 `Hechao.Launcher.exe` 的版本、大小、SHA-256、代码签名状态，以及一次隔离目录安装/卸载结果。游戏数据目录不进入安装包或 Git；卸载测试必须确认其不在删除边界内。
+该入口默认要求可信 RSA Authenticode 证书，依次签署启动器、NSIS 卸载程序和外层安装包；缺少签名环境或任一验签失败时不得产出正式候选。`-SkipSigning` 只允许生成不可上传、不可灰度的内部开发包。
+
+入口必须产出启动器与安装包各自的 `.sha256`。发布记录同时登记安装包、安装后 `Hechao.Launcher.exe` 和 `Uninstall.exe` 的版本、大小、最终 SHA-256、发布者、签名状态与时间戳，以及一次隔离目录安装/卸载结果。哈希只能在签名后计算；游戏数据目录不进入安装包或 Git，卸载测试必须确认其不在删除边界内。详细步骤见 [Windows 代码签名](WINDOWS_CODE_SIGNING.md)。
 
 ## 4. 提交前检查
 

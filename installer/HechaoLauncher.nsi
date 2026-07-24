@@ -33,6 +33,16 @@ BrandingText "赫朝"
 Icon "..\src\Hechao.Launcher\Assets\hechao-launcher.ico"
 UninstallIcon "..\src\Hechao.Launcher\Assets\hechao-launcher.ico"
 
+!ifdef SIGN_UNINSTALLER
+  !ifndef POWERSHELL_EXE
+    !error "POWERSHELL_EXE is required when SIGN_UNINSTALLER is enabled."
+  !endif
+  !ifndef SIGNING_SCRIPT
+    !error "SIGNING_SCRIPT is required when SIGN_UNINSTALLER is enabled."
+  !endif
+  !uninstfinalize '"${POWERSHELL_EXE}" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${SIGNING_SCRIPT}" -Path "%1"' = 0
+!endif
+
 VIProductVersion "${APP_VERSION}.0"
 VIFileVersion "${APP_VERSION}.0"
 VIAddVersionKey /LANG=2052 "ProductName" "${APP_NAME}"

@@ -47,7 +47,8 @@ API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁
 - `src/Hechao.StatusCollector`：游戏 VPS 上的只读 Minecraft 状态采集器，使用机器级 DPAPI 保护内部令牌。
 - `src/Hechao.VelocityAuthorizer`：Velocity 3.4 / Java 21 异步进服授权插件。
 - `installer`：NSIS 3 简体中文/英文安装脚本。
-- `tools/Build-WindowsInstaller.ps1`：测试、发布、安装包编译和 SHA-256 生成入口。
+- `tools/Build-WindowsInstaller.ps1`：测试、三层 Windows 代码签名、安装包编译、验签和最终 SHA-256 生成入口。
+- `tools/Install-WindowsSigningTools.ps1`：安装固定版本并校验 Microsoft 发布者的本机 SignTool，不写入 Git。
 - `tests/Hechao.Distribution.Tests`：签名、路径、续传、跨域令牌隔离、坏哈希、并发锁和原子回滚测试。
 - `tests/Hechao.Api.Tests`：目录摘要锚定、OSS V4 预签名 URL 和进服授权规则测试。
 - `tests/Hechao.StatusCollector.Tests`：Minecraft 状态协议、失效目标隔离和心跳批次测试。
@@ -64,11 +65,13 @@ API `0.9.0-20260723T195253Z` 已于 2026-07-24 完成生产数据库备份、迁
 dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 dotnet publish src\Hechao.Launcher\Hechao.Launcher.csproj -c Release -p:PublishProfile=win-x64 -o artifacts\publish\win-x64
-.\tools\Build-WindowsInstaller.ps1
+.\tools\Build-WindowsInstaller.ps1 -SkipSigning # 仅内部开发
 dotnet publish src\Hechao.Api\Hechao.Api.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o artifacts\publish\api-linux-x64
 dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts\publish\status-collector-win-x64
 .\src\Hechao.VelocityAuthorizer\gradlew.bat -p src\Hechao.VelocityAuthorizer clean test jar --no-daemon
 ```
+
+Windows 正式候选使用 `.\tools\Build-WindowsInstaller.ps1`，默认要求公网受信任的 RSA Authenticode 证书、Windows SDK SignTool 和 RFC 3161 时间戳。配置与验签见 [Windows 代码签名](docs/WINDOWS_CODE_SIGNING.md)。
 
 ## 接入顺序
 
