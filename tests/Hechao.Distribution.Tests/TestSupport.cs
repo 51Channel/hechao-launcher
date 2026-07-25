@@ -242,6 +242,34 @@ internal sealed class TransientOperationCanceledHandler(
     }
 }
 
+internal sealed class RateLimitedThenSuccessHandler(
+    byte[] content,
+    int rateLimitCount,
+    TimeSpan retryAfter) : HttpMessageHandler
+{
+    private int _requestCount;
+
+    public int RequestCount => Volatile.Read(ref _requestCount);
+
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var requestCount = Interlocked.Increment(ref _requestCount);
+        if (requestCount <= rateLimitCount)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            response.Headers.RetryAfter = new RetryConditionHeaderValue(retryAfter);
+            return Task.FromResult(response);
+        }
+
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(content)
+        });
+    }
+}
+
 internal sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
 {
     public void Report(T value) => report(value);

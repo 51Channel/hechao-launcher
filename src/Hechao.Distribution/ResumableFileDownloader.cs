@@ -10,14 +10,15 @@ public sealed class ResumableFileDownloader
     private const int DefaultMaximumAttempts = 5;
     private const int MaximumRedirects = 5;
     private const int BufferSize = 128 * 1024;
+    private const string RetryAfterDataKey = "Hechao.RetryAfter";
     private readonly HttpClient _httpClient;
     private readonly int _maximumAttempts;
-    private readonly Func<int, CancellationToken, Task> _retryDelay;
+    private readonly Func<TimeSpan, CancellationToken, Task> _retryDelay;
 
     public ResumableFileDownloader(
         HttpClient httpClient,
         int maximumAttempts = DefaultMaximumAttempts,
-        Func<int, CancellationToken, Task>? retryDelay = null)
+        Func<TimeSpan, CancellationToken, Task>? retryDelay = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         if (maximumAttempts is < 1 or > 10)
@@ -30,7 +31,7 @@ public sealed class ResumableFileDownloader
 
         _httpClient = httpClient;
         _maximumAttempts = maximumAttempts;
-        _retryDelay = retryDelay ?? DelayBeforeRetryAsync;
+        _retryDelay = retryDelay ?? Task.Delay;
     }
 
     public async Task DownloadAsync(
@@ -82,7 +83,9 @@ public sealed class ResumableFileDownloader
                 exception is HttpRequestException or OperationCanceledException or IOException or ManifestIntegrityException)
             {
                 lastFailure = exception;
-                await _retryDelay(attempt, cancellationToken);
+                await _retryDelay(
+                    CalculateRetryDelay(attempt, exception),
+                    cancellationToken);
             }
         }
 
@@ -122,7 +125,19 @@ public sealed class ResumableFileDownloader
                 response.StatusCode);
         }
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var exception = new HttpRequestException(
+                $"The download server returned {(int)response.StatusCode} ({response.ReasonPhrase}).",
+                null,
+                response.StatusCode);
+            if (GetRetryAfter(response.Headers.RetryAfter) is { } retryAfter)
+            {
+                exception.Data[RetryAfterDataKey] = retryAfter;
+            }
+
+            throw exception;
+        }
 
         var append = existingBytes > 0 && response.StatusCode == HttpStatusCode.PartialContent;
         if (append)
@@ -226,17 +241,35 @@ public sealed class ResumableFileDownloader
             HttpStatusCode.TemporaryRedirect or
             HttpStatusCode.PermanentRedirect;
 
-    private static Task DelayBeforeRetryAsync(
+    private static TimeSpan CalculateRetryDelay(
         int failedAttempt,
-        CancellationToken cancellationToken)
+        Exception exception)
     {
-        var baseDelayMilliseconds = Math.Min(
-            4000,
-            250 * (1 << Math.Min(failedAttempt - 1, 4)));
+        var serverDelay = exception.Data[RetryAfterDataKey] as TimeSpan?;
+        var baseDelayMilliseconds = serverDelay.HasValue
+            ? Math.Clamp(serverDelay.Value.TotalMilliseconds, 250, 30_000)
+            : Math.Min(4000, 250 * (1 << Math.Min(failedAttempt - 1, 4)));
         var jitterMilliseconds = Random.Shared.Next(0, 151);
-        return Task.Delay(
-            TimeSpan.FromMilliseconds(baseDelayMilliseconds + jitterMilliseconds),
-            cancellationToken);
+        return TimeSpan.FromMilliseconds(baseDelayMilliseconds + jitterMilliseconds);
+    }
+
+    private static TimeSpan? GetRetryAfter(RetryConditionHeaderValue? retryAfter)
+    {
+        if (retryAfter?.Delta is { } delta && delta > TimeSpan.Zero)
+        {
+            return delta;
+        }
+
+        if (retryAfter?.Date is { } retryDate)
+        {
+            var delay = retryDate - DateTimeOffset.UtcNow;
+            if (delay > TimeSpan.Zero)
+            {
+                return delay;
+            }
+        }
+
+        return null;
     }
 
     private static void TryDelete(string path)
@@ -252,4 +285,5 @@ public sealed class ResumableFileDownloader
         {
         }
     }
+
 }

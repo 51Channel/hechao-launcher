@@ -152,4 +152,39 @@ public sealed class ResumableFileDownloaderTests
         Assert.Equal(5, handler.RequestCount);
         Assert.Equal(content, await File.ReadAllBytesAsync(destination));
     }
+
+    [Fact]
+    public async Task DownloadAsync_UsesRetryAfterDelayForRateLimitedResponse()
+    {
+        var content = "rate-limit-recovery"u8.ToArray();
+        var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var retryAfter = TimeSpan.FromSeconds(3);
+        var handler = new RateLimitedThenSuccessHandler(content, 1, retryAfter);
+        using var httpClient = new HttpClient(handler);
+        var observedDelays = new List<TimeSpan>();
+        var downloader = new ResumableFileDownloader(
+            httpClient,
+            retryDelay: (delay, _) =>
+            {
+                observedDelays.Add(delay);
+                return Task.CompletedTask;
+            });
+        using var temporary = new TemporaryDirectory();
+        var destination = Path.Combine(temporary.Path, "object");
+        var manifestFile = new ClientManifestFile(
+            "mods/example.jar",
+            content.Length,
+            digest,
+            "https://download.hechao.world/object");
+
+        await downloader.DownloadAsync(manifestFile, destination);
+
+        Assert.Equal(2, handler.RequestCount);
+        var observedDelay = Assert.Single(observedDelays);
+        Assert.InRange(
+            observedDelay,
+            retryAfter,
+            retryAfter + TimeSpan.FromMilliseconds(150));
+        Assert.Equal(content, await File.ReadAllBytesAsync(destination));
+    }
 }
