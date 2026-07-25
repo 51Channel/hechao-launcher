@@ -163,6 +163,8 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 
 `0.11.2` 已从 `0.11.1` 覆盖升级并保留设置、DPAPI 会话和已安装档案。基础客户端生产续传完成后显示 `100%` 与“客户端已就绪”；包含不可见字符的数据根目录通过 Windows 兼容短路径完成 Java 21 进程构建冒烟测试。安装包仍为本地内部候选，未上传 OSS，完整记录见 [`LAUNCHER_RELEASE_0.11.2.md`](LAUNCHER_RELEASE_0.11.2.md)。
 
+`0.11.3` 已从 `0.11.2` 覆盖升级并保留设置及已安装档案；本机验收时没有现存 DPAPI 会话文件，因此本次不声明登录状态保留。正式候选在 1500 x 860 窗口完成下载页、服务器页和账号页边界验收；安装包仍为本地内部候选，未上传 OSS，完整记录见 [`LAUNCHER_RELEASE_0.11.3.md`](LAUNCHER_RELEASE_0.11.3.md)。
+
 ## 7. 第三方构建资产
 
 - 安装器：[NSIS 3](https://nsis.sourceforge.io/Docs/AppendixI.html)，使用 zlib/libpng 许可并允许商业应用。
