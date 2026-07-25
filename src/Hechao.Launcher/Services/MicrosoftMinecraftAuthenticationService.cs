@@ -10,11 +10,15 @@ public interface ILauncherAuthenticationService
     HechaoAccount? CurrentAccount { get; }
     AuthenticatedPlayer? CurrentPlayer { get; }
     Task<HechaoAccount?> TryRestoreAsync(CancellationToken cancellationToken = default);
+    Task SendRegistrationCodeAsync(
+        string email,
+        CancellationToken cancellationToken = default);
     Task<HechaoAccount> RegisterAsync(
         string username,
         string displayName,
         string password,
-        string? email,
+        string email,
+        string code,
         CancellationToken cancellationToken = default);
     Task<HechaoAccount> LoginAsync(
         string usernameOrEmail,
@@ -41,6 +45,7 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
     private static readonly string[] XboxScopes = ["XboxLive.signin", "XboxLive.offline_access"];
 
     private readonly LauncherApiClient _apiClient;
+    private readonly ForumRegistrationClient _forumRegistrationClient;
     private readonly XboxMinecraftAuthenticationClient _minecraftAuthenticationClient;
     private readonly string? _microsoftClientId;
     private readonly SemaphoreSlim _clientInitializationGate = new(1, 1);
@@ -50,10 +55,12 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
 
     public MicrosoftMinecraftAuthenticationService(
         LauncherApiClient apiClient,
+        ForumRegistrationClient forumRegistrationClient,
         XboxMinecraftAuthenticationClient minecraftAuthenticationClient,
         string? microsoftClientId)
     {
         _apiClient = apiClient;
+        _forumRegistrationClient = forumRegistrationClient;
         _minecraftAuthenticationClient = minecraftAuthenticationClient;
         _microsoftClientId = microsoftClientId;
     }
@@ -66,18 +73,33 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
         return _apiClient.TryRestoreSessionAsync(cancellationToken);
     }
 
-    public Task<HechaoAccount> RegisterAsync(
+    public Task SendRegistrationCodeAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        return _forumRegistrationClient.SendRegistrationCodeAsync(
+            email,
+            cancellationToken);
+    }
+
+    public async Task<HechaoAccount> RegisterAsync(
         string username,
         string displayName,
         string password,
-        string? email,
+        string email,
+        string code,
         CancellationToken cancellationToken = default)
     {
-        return _apiClient.RegisterAccountAsync(
+        await _forumRegistrationClient.RegisterAsync(
             username,
             displayName,
-            password,
             email,
+            password,
+            code,
+            cancellationToken);
+        return await _apiClient.LoginAccountAsync(
+            email,
+            password,
             cancellationToken);
     }
 

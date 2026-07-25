@@ -1427,7 +1427,8 @@ public sealed class MainWindowViewModel : ObservableObject
         string username,
         string displayName,
         string password,
-        string? email)
+        string email,
+        string code)
     {
         if (IsAccountBusy)
         {
@@ -1436,9 +1437,13 @@ public sealed class MainWindowViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(username) ||
             string.IsNullOrWhiteSpace(displayName) ||
-            string.IsNullOrEmpty(password))
+            string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrEmpty(password) ||
+            string.IsNullOrWhiteSpace(code))
         {
-            SetAccountFormStatus("请完整填写账号名、显示名称和密码。", isError: true);
+            SetAccountFormStatus(
+                "请完整填写账号名、显示名称、邮箱、验证码和密码。",
+                isError: true);
             return false;
         }
 
@@ -1450,17 +1455,24 @@ public sealed class MainWindowViewModel : ObservableObject
                 username.Trim(),
                 displayName.Trim(),
                 password,
-                string.IsNullOrWhiteSpace(email) ? null : email.Trim());
+                email.Trim(),
+                code.Trim());
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
-            ShowToast($"赫朝账号 @{account.Username} 已创建");
+            ShowToast($"赫朝账号 @{account.Username} 已创建，并已同步社区");
             return true;
+        }
+        catch (ForumRegistrationException exception)
+        {
+            SetAccountFormStatus(exception.Detail, isError: true);
+            return false;
         }
         catch (LauncherApiException exception)
         {
             SetAccountFormStatus(
-                exception.ApiDetail ?? "暂时无法创建赫朝账号。",
+                exception.ApiDetail ??
+                "账号已经创建，但自动登录失败。请切换到登录页重试。",
                 isError: true);
             return false;
         }
@@ -1468,6 +1480,46 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is HttpRequestException or TaskCanceledException or IOException)
         {
             SetAccountFormStatus("暂时无法连接赫朝账号服务。", isError: true);
+            return false;
+        }
+        finally
+        {
+            IsAccountBusy = false;
+        }
+    }
+
+    public async Task<bool> SendRegistrationCodeAsync(string email)
+    {
+        if (IsAccountBusy)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            SetAccountFormStatus("请先填写用于赫朝账号的邮箱。", isError: true);
+            return false;
+        }
+
+        IsAccountBusy = true;
+        SetAccountFormStatus("正在发送邮箱验证码…", isError: false);
+        try
+        {
+            await _authenticationService.SendRegistrationCodeAsync(email.Trim());
+            SetAccountFormStatus(
+                "验证码已发送，请检查收件箱和垃圾邮件。",
+                isError: false);
+            return true;
+        }
+        catch (ForumRegistrationException exception)
+        {
+            SetAccountFormStatus(exception.Detail, isError: true);
+            return false;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or IOException)
+        {
+            SetAccountFormStatus("暂时无法连接赫朝社区，请稍后再试。", isError: true);
             return false;
         }
         finally

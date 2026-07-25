@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Hechao.Contracts;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
@@ -14,13 +13,11 @@ public sealed class AuthenticationRepository(
     NpgsqlDataSource dataSource,
     SessionTokenGenerator tokenGenerator,
     IOptions<LauncherAuthenticationOptions> authenticationOptions,
-    IPasswordHasher<HechaoAccountPasswordSubject> passwordHasher)
+    HechaoAccountPasswordService passwordService)
 {
     private const int MaximumActiveSessionsPerUser = 20;
     private readonly LauncherAuthenticationOptions _options = authenticationOptions.Value;
-    private readonly string _dummyPasswordHash = passwordHasher.HashPassword(
-        new HechaoAccountPasswordSubject(Guid.Empty, "missing"),
-        Convert.ToHexString(RandomNumberGenerator.GetBytes(32)));
+    private readonly string _dummyPasswordHash = passwordService.CreateDummyHash();
 
     public async Task<AuthSessionResponse> RegisterAccountAsync(
         string username,
@@ -34,7 +31,7 @@ public sealed class AuthenticationRepository(
         var now = DateTimeOffset.UtcNow;
         var userId = Guid.NewGuid();
         var passwordSubject = new HechaoAccountPasswordSubject(userId, username);
-        var passwordHash = passwordHasher.HashPassword(passwordSubject, password);
+        var passwordHash = passwordService.HashPassword(passwordSubject, password);
         var tokens = tokenGenerator.Create();
         var accessExpiresAt = now.AddMinutes(_options.AccessTokenMinutes);
         var refreshExpiresAt = now.AddDays(_options.RefreshTokenDays);
@@ -68,8 +65,7 @@ public sealed class AuthenticationRepository(
         catch (PostgresException exception) when (
             exception.SqlState == PostgresErrorCodes.UniqueViolation)
         {
-            throw new HechaoAccountConflictException(
-                exception.ConstraintName == "users_email_ci_idx" ? "email" : "username");
+            throw new HechaoAccountConflictException(ResolveConflictField(exception));
         }
 
         await InsertSessionAsync(
@@ -112,6 +108,234 @@ public sealed class AuthenticationRepository(
             account);
     }
 
+    public async Task<HechaoAccount> RegisterForumAccountAsync(
+        string username,
+        string displayName,
+        string password,
+        string email,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var userId = Guid.NewGuid();
+        var passwordHash = passwordService.HashPassword(
+            new HechaoAccountPasswordSubject(userId, username),
+            password);
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await using var insertUser = new NpgsqlCommand(
+                """
+                INSERT INTO launcher.users
+                    (id, username, display_name, email, password_hash,
+                     access_tier, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'Member', $6, $6);
+                """,
+                connection,
+                transaction);
+            insertUser.Parameters.AddWithValue(userId);
+            insertUser.Parameters.AddWithValue(username);
+            insertUser.Parameters.AddWithValue(displayName);
+            insertUser.Parameters.AddWithValue(email);
+            insertUser.Parameters.AddWithValue(passwordHash);
+            insertUser.Parameters.AddWithValue(now);
+            await insertUser.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (PostgresException exception) when (
+            exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            throw new HechaoAccountConflictException(ResolveConflictField(exception));
+        }
+
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.forum.registered",
+            sourceIp,
+            new { username, email },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return CreateUnlinkedAccount(userId, username, displayName, email, now);
+    }
+
+    public async Task<HechaoAccount?> AuthenticateForumAccountAsync(
+        string usernameOrEmail,
+        string password,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        const string selectSql = """
+            SELECT u.password_hash,
+                   u.id, u.username, u.display_name, u.email,
+                   i.minecraft_uuid, i.minecraft_name,
+                   COALESCE(i.luckperms_primary_group, 'default'),
+                   u.access_tier, i.luckperms_synced_at, u.created_at
+            FROM launcher.users u
+            LEFT JOIN launcher.minecraft_identities i ON i.user_id = u.id
+            WHERE (lower(u.username) = $1 OR lower(u.email) = $1)
+              AND NOT u.is_disabled
+            FOR UPDATE OF u;
+            """;
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var select = new NpgsqlCommand(selectSql, connection, transaction);
+        select.Parameters.AddWithValue(usernameOrEmail);
+
+        HechaoAccount? account = null;
+        string? storedPasswordHash = null;
+        await using (var reader = await select.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                storedPasswordHash = reader.IsDBNull(0) ? null : reader.GetString(0);
+                account = ReadAccount(reader, offset: 1);
+            }
+        }
+
+        var subject = account is null
+            ? new HechaoAccountPasswordSubject(Guid.Empty, "missing")
+            : new HechaoAccountPasswordSubject(account.UserId, account.Username);
+        var verification = passwordService.Verify(
+            subject,
+            storedPasswordHash ?? _dummyPasswordHash,
+            password);
+        if (account is null ||
+            storedPasswordHash is null ||
+            verification == AccountPasswordVerificationResult.Failed)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return null;
+        }
+
+        if (verification == AccountPasswordVerificationResult.SuccessRehashNeeded)
+        {
+            await using var rehash = new NpgsqlCommand(
+                "UPDATE launcher.users SET password_hash = $2, updated_at = now() WHERE id = $1;",
+                connection,
+                transaction);
+            rehash.Parameters.AddWithValue(account.UserId);
+            rehash.Parameters.AddWithValue(passwordService.HashPassword(subject, password));
+            await rehash.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            account.UserId,
+            "auth.forum.logged_in",
+            sourceIp,
+            new { account.Username },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return account;
+    }
+
+    public async Task<ForumLegacyAccountImportResponse> ImportLegacyForumAccountAsync(
+        string forumUserId,
+        string username,
+        string displayName,
+        string email,
+        string legacyPasswordHash,
+        bool isDisabled,
+        DateTimeOffset createdAt,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        HechaoAccount? existingAccount = null;
+        await using (var selectExisting = new NpgsqlCommand(
+            """
+            SELECT u.id, u.username, u.display_name, u.email,
+                   i.minecraft_uuid, i.minecraft_name,
+                   COALESCE(i.luckperms_primary_group, 'default'),
+                   u.access_tier, i.luckperms_synced_at, u.created_at
+            FROM launcher.external_identities external
+            JOIN launcher.users u ON u.id = external.user_id
+            LEFT JOIN launcher.minecraft_identities i ON i.user_id = u.id
+            WHERE external.provider = 'hechao_forum'
+              AND external.subject = $1
+            FOR UPDATE OF u;
+            """,
+            connection,
+            transaction))
+        {
+            selectExisting.Parameters.AddWithValue(forumUserId);
+            await using var reader = await selectExisting.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                existingAccount = ReadAccount(reader, offset: 0);
+            }
+        }
+        if (existingAccount is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return new ForumLegacyAccountImportResponse(
+                existingAccount,
+                Created: false);
+        }
+
+        var userId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        try
+        {
+            await using var insertUser = new NpgsqlCommand(
+                """
+                INSERT INTO launcher.users
+                    (id, username, display_name, email, password_hash,
+                     access_tier, is_disabled, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, 'Member', $6, $7, $8);
+                """,
+                connection,
+                transaction);
+            insertUser.Parameters.AddWithValue(userId);
+            insertUser.Parameters.AddWithValue(username);
+            insertUser.Parameters.AddWithValue(displayName);
+            insertUser.Parameters.AddWithValue(email);
+            insertUser.Parameters.AddWithValue(legacyPasswordHash);
+            insertUser.Parameters.AddWithValue(isDisabled);
+            insertUser.Parameters.AddWithValue(createdAt);
+            insertUser.Parameters.AddWithValue(now);
+            await insertUser.ExecuteNonQueryAsync(cancellationToken);
+
+            await using var insertIdentity = new NpgsqlCommand(
+                """
+                INSERT INTO launcher.external_identities
+                    (provider, subject, user_id, created_at)
+                VALUES ('hechao_forum', $1, $2, $3);
+                """,
+                connection,
+                transaction);
+            insertIdentity.Parameters.AddWithValue(forumUserId);
+            insertIdentity.Parameters.AddWithValue(userId);
+            insertIdentity.Parameters.AddWithValue(now);
+            await insertIdentity.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (PostgresException exception) when (
+            exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            throw new HechaoAccountConflictException(ResolveConflictField(exception));
+        }
+
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.forum.imported",
+            sourceIp,
+            new { forumUserId, username, email, isDisabled },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new ForumLegacyAccountImportResponse(
+            CreateUnlinkedAccount(userId, username, displayName, email, createdAt),
+            Created: true);
+    }
+
     public async Task<AuthSessionResponse?> LoginAccountAsync(
         string usernameOrEmail,
         string password,
@@ -151,21 +375,21 @@ public sealed class AuthenticationRepository(
         var passwordSubject = account is null
             ? new HechaoAccountPasswordSubject(Guid.Empty, "missing")
             : new HechaoAccountPasswordSubject(account.UserId, account.Username);
-        var verification = passwordHasher.VerifyHashedPassword(
+        var verification = passwordService.Verify(
             passwordSubject,
             storedPasswordHash ?? _dummyPasswordHash,
             password);
         if (account is null ||
             storedPasswordHash is null ||
-            verification == PasswordVerificationResult.Failed)
+            verification == AccountPasswordVerificationResult.Failed)
         {
             await transaction.RollbackAsync(cancellationToken);
             return null;
         }
 
-        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+        if (verification == AccountPasswordVerificationResult.SuccessRehashNeeded)
         {
-            var replacementHash = passwordHasher.HashPassword(passwordSubject, password);
+            var replacementHash = passwordService.HashPassword(passwordSubject, password);
             await using var rehash = new NpgsqlCommand(
                 "UPDATE launcher.users SET password_hash = $2, updated_at = now() WHERE id = $1;",
                 connection,
@@ -635,6 +859,179 @@ public sealed class AuthenticationRepository(
             revoked.AdminSessions);
     }
 
+    public async Task<ForumPasswordChangeResult> ChangeForumAccountPasswordAsync(
+        Guid userId,
+        string currentPassword,
+        string newPassword,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var select = new NpgsqlCommand(
+            """
+            SELECT username, password_hash
+            FROM launcher.users
+            WHERE id = $1 AND NOT is_disabled
+            FOR UPDATE;
+            """,
+            connection,
+            transaction);
+        select.Parameters.AddWithValue(userId);
+
+        string? username = null;
+        string? storedPasswordHash = null;
+        await using (var reader = await select.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                username = reader.GetString(0);
+                storedPasswordHash = reader.IsDBNull(1) ? null : reader.GetString(1);
+            }
+        }
+
+        if (username is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ForumPasswordChangeResult.AccountNotFound;
+        }
+
+        var subject = new HechaoAccountPasswordSubject(userId, username);
+        var verification = passwordService.Verify(
+            subject,
+            storedPasswordHash ?? _dummyPasswordHash,
+            currentPassword);
+        if (storedPasswordHash is null ||
+            verification == AccountPasswordVerificationResult.Failed)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ForumPasswordChangeResult.InvalidPassword;
+        }
+
+        if (string.Equals(newPassword, username, StringComparison.OrdinalIgnoreCase))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ForumPasswordChangeResult.InvalidNewPassword;
+        }
+
+        await UpdatePasswordAndRevokeAsync(
+            connection,
+            transaction,
+            userId,
+            username,
+            newPassword,
+            now,
+            cancellationToken);
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.forum.password_changed",
+            sourceIp,
+            new { revokedSessions = true },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return ForumPasswordChangeResult.Success;
+    }
+
+    public async Task<bool> ResetForumAccountPasswordAsync(
+        Guid userId,
+        string newPassword,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var select = new NpgsqlCommand(
+            """
+            SELECT username
+            FROM launcher.users
+            WHERE id = $1 AND NOT is_disabled
+            FOR UPDATE;
+            """,
+            connection,
+            transaction);
+        select.Parameters.AddWithValue(userId);
+        var username = await select.ExecuteScalarAsync(cancellationToken) as string;
+        if (username is null ||
+            string.Equals(newPassword, username, StringComparison.OrdinalIgnoreCase))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return false;
+        }
+
+        await UpdatePasswordAndRevokeAsync(
+            connection,
+            transaction,
+            userId,
+            username,
+            newPassword,
+            now,
+            cancellationToken);
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.forum.password_reset",
+            sourceIp,
+            new { revokedSessions = true },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<HechaoAccount?> UpdateForumAccountDisplayNameAsync(
+        Guid userId,
+        string displayName,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await using var update = new NpgsqlCommand(
+                """
+                UPDATE launcher.users
+                SET display_name = $2, updated_at = now()
+                WHERE id = $1 AND NOT is_disabled;
+                """,
+                connection,
+                transaction);
+            update.Parameters.AddWithValue(userId);
+            update.Parameters.AddWithValue(displayName);
+            if (await update.ExecuteNonQueryAsync(cancellationToken) != 1)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return null;
+            }
+        }
+        catch (PostgresException exception) when (
+            exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            throw new HechaoAccountConflictException(ResolveConflictField(exception));
+        }
+
+        var account = await ReadAccountAsync(
+            connection,
+            transaction,
+            userId,
+            lockUser: false,
+            cancellationToken);
+        await WriteAccountAuditAsync(
+            connection,
+            transaction,
+            userId,
+            "auth.forum.profile_updated",
+            sourceIp,
+            new { displayName },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return account;
+    }
+
     public async Task<MinecraftIdentityUnlinkResult> UnlinkMinecraftIdentityAsync(
         Guid userId,
         string currentPassword,
@@ -680,11 +1077,12 @@ public sealed class AuthenticationRepository(
             return MinecraftIdentityUnlinkResult.AccountNotFound;
         }
 
-        var verification = passwordHasher.VerifyHashedPassword(
+        var verification = passwordService.Verify(
             new HechaoAccountPasswordSubject(userId, username),
             passwordHash ?? _dummyPasswordHash,
             currentPassword);
-        if (passwordHash is null || verification == PasswordVerificationResult.Failed)
+        if (passwordHash is null ||
+            verification == AccountPasswordVerificationResult.Failed)
         {
             await transaction.RollbackAsync(cancellationToken);
             return MinecraftIdentityUnlinkResult.InvalidPassword;
@@ -748,6 +1146,41 @@ public sealed class AuthenticationRepository(
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return MinecraftIdentityUnlinkResult.Success;
+    }
+
+    private async Task UpdatePasswordAndRevokeAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid userId,
+        string username,
+        string newPassword,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using (var update = new NpgsqlCommand(
+            """
+            UPDATE launcher.users
+            SET password_hash = $2, updated_at = $3
+            WHERE id = $1;
+            """,
+            connection,
+            transaction))
+        {
+            update.Parameters.AddWithValue(userId);
+            update.Parameters.AddWithValue(
+                passwordService.HashPassword(
+                    new HechaoAccountPasswordSubject(userId, username),
+                    newPassword));
+            update.Parameters.AddWithValue(now);
+            await update.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await RevokeAllAuthenticationStateAsync(
+            connection,
+            transaction,
+            userId,
+            now,
+            cancellationToken);
     }
 
     private static async Task LockIdentityAsync(
@@ -1238,6 +1671,34 @@ public sealed class AuthenticationRepository(
             ToDateTimeOffset(reader.GetDateTime(offset + 9)));
     }
 
+    private static HechaoAccount CreateUnlinkedAccount(
+        Guid userId,
+        string username,
+        string displayName,
+        string email,
+        DateTimeOffset createdAt) =>
+        new(
+            userId,
+            username,
+            displayName,
+            email,
+            null,
+            null,
+            "default",
+            AccessTier.Member,
+            null,
+            createdAt);
+
+    private static string ResolveConflictField(PostgresException exception) =>
+        exception.ConstraintName switch
+        {
+            "users_email_ci_idx" => "email",
+            "users_display_name_unique_idx" => "displayName",
+            "external_identities_pkey" or "external_identities_provider_user_id_key" =>
+                "forumUserId",
+            _ => "username"
+        };
+
     private static AuthSessionResponse CreateSessionResponse(
         SessionTokenPair tokens,
         DateTimeOffset accessExpiresAt,
@@ -1302,5 +1763,13 @@ public enum MinecraftIdentityUnlinkResult
     Success,
     InvalidPassword,
     NotLinked,
+    AccountNotFound
+}
+
+public enum ForumPasswordChangeResult
+{
+    Success,
+    InvalidPassword,
+    InvalidNewPassword,
     AccountNotFound
 }

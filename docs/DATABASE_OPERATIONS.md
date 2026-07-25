@@ -43,6 +43,7 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `5` | `admin_catalog_revision` | 服务器目录修订号与审计目标索引 |
 | `6` | `admin_web_sessions` | 后台票据、独立浏览器会话、TOTP 凭据与注册状态 |
 | `7` | `hechao_accounts` | 赫朝账号名、邮箱与密码哈希 |
+| `8` | `forum_account_bridge` | 显示名称唯一约束与论坛外部身份映射 |
 
 ## 4. 自动备份
 

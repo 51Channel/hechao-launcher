@@ -70,6 +70,13 @@ builder.Services.AddOptions<LauncherAuthenticationOptions>()
                    Regex.IsMatch(options.InternalSyncTokenSha256, "^[0-9a-fA-F]{64}$"),
         "Authentication:InternalSyncTokenSha256 must be empty or a SHA-256 hex digest.")
     .ValidateOnStart();
+builder.Services.AddOptions<ForumAccountBridgeOptions>()
+    .Bind(builder.Configuration.GetSection(ForumAccountBridgeOptions.SectionName))
+    .Validate(
+        options => string.IsNullOrEmpty(options.InternalTokenSha256) ||
+                   Regex.IsMatch(options.InternalTokenSha256, "^[0-9a-fA-F]{64}$"),
+        "ForumAccountBridge:InternalTokenSha256 must be empty or a SHA-256 hex digest.")
+    .ValidateOnStart();
 builder.Services.AddOptions<VelocityAuthorizationOptions>()
     .Bind(builder.Configuration.GetSection(VelocityAuthorizationOptions.SectionName))
     .Validate(
@@ -159,6 +166,16 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1)
             }));
     options.AddPolicy("internal-heartbeats", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 120,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    options.AddPolicy("internal-forum", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
             _ => new FixedWindowRateLimiterOptions
@@ -274,7 +291,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ProfileManifestStore>();
 builder.Services.AddSingleton<OssPresignedUrlFactory>();
 builder.Services.AddSingleton<SessionTokenGenerator>();
+builder.Services.AddSingleton<HechaoAccountPasswordService>();
 builder.Services.AddSingleton<AuthenticationRepository>();
+builder.Services.AddSingleton<ForumAccountBridgeTokenValidator>();
 builder.Services.AddSingleton<InternalSyncTokenValidator>();
 builder.Services.AddSingleton<LuckPermsSyncRepository>();
 builder.Services.AddSingleton<VelocityAuthorizationTokenValidator>();
@@ -371,7 +390,10 @@ app.MapGet("/healthz", () => Results.Ok(new
 
 app.MapGet("/readyz", CheckReadinessAsync).DisableRateLimiting();
 
-app.MapPost("/v1/auth/register", RegisterHechaoAccountAsync)
+app.MapPost("/v1/auth/register", () => Results.Problem(
+        title: "请通过赫朝社区完成注册",
+        detail: "此版本起，赫朝启动器与 hechao.world 共用账号。请升级启动器或前往社区注册。",
+        statusCode: StatusCodes.Status426UpgradeRequired))
     .RequireRateLimiting("authentication");
 app.MapPost("/v1/auth/login", LoginHechaoAccountAsync)
     .RequireRateLimiting("authentication");
@@ -401,6 +423,18 @@ app.MapPost("/v1/internal/luckperms/snapshot", ImportLuckPermsSnapshotAsync)
     .RequireRateLimiting("internal-sync");
 app.MapPost("/v1/internal/server-heartbeats", ImportServerHeartbeatsAsync)
     .RequireRateLimiting("internal-heartbeats");
+app.MapPost("/v1/internal/forum/accounts/register", RegisterForumAccountAsync)
+    .RequireRateLimiting("internal-forum");
+app.MapPost("/v1/internal/forum/accounts/authenticate", AuthenticateForumAccountAsync)
+    .RequireRateLimiting("internal-forum");
+app.MapPost("/v1/internal/forum/accounts/import", ImportLegacyForumAccountAsync)
+    .RequireRateLimiting("internal-forum");
+app.MapPost("/v1/internal/forum/accounts/password/change", ChangeForumAccountPasswordAsync)
+    .RequireRateLimiting("internal-forum");
+app.MapPost("/v1/internal/forum/accounts/password/reset", ResetForumAccountPasswordAsync)
+    .RequireRateLimiting("internal-forum");
+app.MapPost("/v1/internal/forum/accounts/profile", UpdateForumAccountProfileAsync)
+    .RequireRateLimiting("internal-forum");
 app.MapGet("/v1/catalog", GetCatalogAsync)
     .RequireRateLimiting("catalog");
 app.MapGet("/v1/profiles/{profileId}/manifest", GetProfileManifestAsync)
@@ -473,54 +507,6 @@ async Task<IResult> CheckReadinessAsync(
     }, statusCode: StatusCodes.Status503ServiceUnavailable);
 }
 
-async Task<IResult> RegisterHechaoAccountAsync(
-    HechaoAccountRegisterRequest request,
-    AuthenticationRepository authenticationRepository,
-    HttpContext context,
-    CancellationToken cancellationToken)
-{
-    var username = request.Username?.Trim().ToLowerInvariant() ?? string.Empty;
-    var displayName = request.DisplayName?.Trim() ?? string.Empty;
-    var password = request.Password ?? string.Empty;
-    var email = string.IsNullOrWhiteSpace(request.Email)
-        ? null
-        : request.Email.Trim().ToLowerInvariant();
-    var errors = ValidateHechaoAccountRegistration(
-        username,
-        displayName,
-        password,
-        email);
-    if (errors.Count > 0)
-    {
-        return Results.ValidationProblem(errors);
-    }
-
-    try
-    {
-        var response = await authenticationRepository.RegisterAccountAsync(
-            username,
-            displayName,
-            password,
-            email,
-            context.Connection.RemoteIpAddress,
-            context.Request.Headers.UserAgent.ToString(),
-            cancellationToken);
-        return Results.Created("/v1/me", response);
-    }
-    catch (HechaoAccountConflictException exception)
-    {
-        return Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            [exception.Field] =
-            [
-                exception.Field == "email"
-                    ? "该邮箱已绑定其他赫朝账号。"
-                    : "该赫朝账号名已被使用。"
-            ]
-        });
-    }
-}
-
 async Task<IResult> LoginHechaoAccountAsync(
     HechaoAccountLoginRequest request,
     AuthenticationRepository authenticationRepository,
@@ -548,6 +534,264 @@ async Task<IResult> LoginHechaoAccountAsync(
             StatusCodes.Status401Unauthorized,
             "赫朝账号或密码不正确。")
         : Results.Ok(response);
+}
+
+async Task<IResult> RegisterForumAccountAsync(
+    ForumAccountRegisterRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    var username = request.Username?.Trim().ToLowerInvariant() ?? string.Empty;
+    var displayName = request.DisplayName?.Trim() ?? string.Empty;
+    var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
+    var password = request.Password ?? string.Empty;
+    var errors = ValidateHechaoAccountRegistration(
+        username,
+        displayName,
+        password,
+        email);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    try
+    {
+        var account = await authenticationRepository.RegisterForumAccountAsync(
+            username,
+            displayName,
+            password,
+            email,
+            context.Connection.RemoteIpAddress,
+            cancellationToken);
+        return Results.Created("/v1/me", account);
+    }
+    catch (HechaoAccountConflictException exception)
+    {
+        return AccountConflictProblem(exception);
+    }
+}
+
+async Task<IResult> AuthenticateForumAccountAsync(
+    ForumAccountAuthenticateRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    var usernameOrEmail = request.UsernameOrEmail?.Trim().ToLowerInvariant() ?? string.Empty;
+    var password = request.Password ?? string.Empty;
+    if (usernameOrEmail.Length is < 3 or > 254 ||
+        password.Length is < 1 or > 128)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号或密码不正确。");
+    }
+
+    var account = await authenticationRepository.AuthenticateForumAccountAsync(
+        usernameOrEmail,
+        password,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return account is null
+        ? AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "赫朝账号或密码不正确。")
+        : Results.Ok(account);
+}
+
+async Task<IResult> ImportLegacyForumAccountAsync(
+    ForumLegacyAccountImportRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    IOptions<ForumAccountBridgeOptions> bridgeOptions,
+    HechaoAccountPasswordService passwordService,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    if (!bridgeOptions.Value.AllowLegacyImport)
+    {
+        return Results.Problem(
+            title: "论坛旧账号导入已关闭",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    var forumUserId = request.ForumUserId?.Trim() ?? string.Empty;
+    var username = request.Username?.Trim().ToLowerInvariant() ?? string.Empty;
+    var displayName = request.DisplayName?.Trim() ?? string.Empty;
+    var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
+    var passwordHash = request.PasswordHash ?? string.Empty;
+    var errors = ValidateHechaoAccountRegistration(
+        username,
+        displayName,
+        "LegacyPass123",
+        email);
+    if (!Regex.IsMatch(forumUserId, "^[1-9][0-9]{0,18}$"))
+    {
+        errors["forumUserId"] = ["论坛用户 ID 无效。"];
+    }
+    if (!passwordService.IsSupportedLegacyHash(passwordHash))
+    {
+        errors["passwordHash"] = ["论坛旧密码哈希格式无效。"];
+    }
+    if (request.CreatedAt < new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero) ||
+        request.CreatedAt > DateTimeOffset.UtcNow.AddMinutes(5))
+    {
+        errors["createdAt"] = ["论坛账号创建时间无效。"];
+    }
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    try
+    {
+        var response = await authenticationRepository.ImportLegacyForumAccountAsync(
+            forumUserId,
+            username,
+            displayName,
+            email,
+            passwordHash,
+            request.IsDisabled,
+            request.CreatedAt,
+            context.Connection.RemoteIpAddress,
+            cancellationToken);
+        return Results.Ok(response);
+    }
+    catch (HechaoAccountConflictException exception)
+    {
+        return AccountConflictProblem(exception);
+    }
+}
+
+async Task<IResult> ChangeForumAccountPasswordAsync(
+    ForumAccountPasswordChangeRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    if (!IsValidPasswordShape(request.NewPassword))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["newPassword"] = ["密码需要 10–128 个字符，并同时包含字母和数字。"]
+        });
+    }
+
+    var result = await authenticationRepository.ChangeForumAccountPasswordAsync(
+        request.UserId,
+        request.CurrentPassword ?? string.Empty,
+        request.NewPassword,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return result switch
+    {
+        ForumPasswordChangeResult.Success => Results.NoContent(),
+        ForumPasswordChangeResult.InvalidPassword => AuthenticationProblem(
+            StatusCodes.Status403Forbidden,
+            "当前密码不正确。"),
+        ForumPasswordChangeResult.InvalidNewPassword => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["newPassword"] = ["新密码不能与赫朝账号名相同。"]
+            }),
+        _ => Results.NotFound()
+    };
+}
+
+async Task<IResult> ResetForumAccountPasswordAsync(
+    ForumAccountPasswordResetRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    if (!IsValidPasswordShape(request.NewPassword))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["newPassword"] = ["密码需要 10–128 个字符，并同时包含字母和数字。"]
+        });
+    }
+
+    return await authenticationRepository.ResetForumAccountPasswordAsync(
+        request.UserId,
+        request.NewPassword,
+        context.Connection.RemoteIpAddress,
+        cancellationToken)
+        ? Results.NoContent()
+        : Results.NotFound();
+}
+
+async Task<IResult> UpdateForumAccountProfileAsync(
+    ForumAccountProfileUpdateRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    var displayName = request.DisplayName?.Trim() ?? string.Empty;
+    if (displayName.Length is < 2 or > 32 || displayName.Any(char.IsControl))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["displayName"] = ["显示名称需要 2–32 个字符，且不能包含控制字符。"]
+        });
+    }
+
+    try
+    {
+        var account = await authenticationRepository.UpdateForumAccountDisplayNameAsync(
+            request.UserId,
+            displayName,
+            context.Connection.RemoteIpAddress,
+            cancellationToken);
+        return account is null ? Results.NotFound() : Results.Ok(account);
+    }
+    catch (HechaoAccountConflictException exception)
+    {
+        return AccountConflictProblem(exception);
+    }
 }
 
 async Task<IResult> LinkMinecraftIdentityAsync(
@@ -1278,16 +1522,64 @@ Dictionary<string, string[]> ValidateHechaoAccountRegistration(
         ];
     }
 
-    if (email is not null &&
-        (!MailAddress.TryCreate(email, out var parsedEmail) ||
+    if (string.IsNullOrWhiteSpace(email))
+    {
+        errors["email"] = ["请填写用于赫朝社区的邮箱。"];
+    }
+    else if (!MailAddress.TryCreate(email, out var parsedEmail) ||
          !string.Equals(parsedEmail.Address, email, StringComparison.OrdinalIgnoreCase) ||
-         email.Length > 254))
+         email.Length > 254)
     {
         errors["email"] = ["邮箱格式无效。"];
     }
 
     return errors;
 }
+
+IResult? ValidateForumBridgeRequest(
+    HttpContext context,
+    ForumAccountBridgeTokenValidator tokenValidator)
+{
+    if (context.Connection.RemoteIpAddress is not { } remoteAddress ||
+        !IPAddress.IsLoopback(remoteAddress))
+    {
+        return Results.NotFound();
+    }
+
+    if (!tokenValidator.IsConfigured)
+    {
+        return Results.Problem(
+            title: "论坛账号同步尚未配置",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var suppliedToken = context.Request.Headers["X-Hechao-Forum-Token"].ToString();
+    return tokenValidator.IsValid(suppliedToken)
+        ? null
+        : AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "论坛账号同步凭据无效。");
+}
+
+IResult AccountConflictProblem(HechaoAccountConflictException exception)
+{
+    var message = exception.Field switch
+    {
+        "email" => "该邮箱已绑定其他赫朝账号。",
+        "displayName" => "该显示名称已被使用。",
+        "forumUserId" => "该论坛账号已完成同步。",
+        _ => "该赫朝账号名已被使用。"
+    };
+    return Results.ValidationProblem(new Dictionary<string, string[]>
+    {
+        [exception.Field] = [message]
+    });
+}
+
+bool IsValidPasswordShape(string? password) =>
+    password is { Length: >= 10 and <= 128 } &&
+    password.Any(char.IsLetter) &&
+    password.Any(char.IsDigit);
 
 IResult AuthenticationProblem(int statusCode, string detail)
 {

@@ -19,6 +19,7 @@ public partial class MainWindow : Window
         var catalogClient = HttpServerCatalogClient.CreateDefault(new DemoServerCatalogClient(), apiClient);
         var authenticationService = new MicrosoftMinecraftAuthenticationService(
             apiClient,
+            ForumRegistrationClient.CreateDefault(),
             XboxMinecraftAuthenticationClient.CreateDefault(),
             LauncherIdentityConfiguration.MicrosoftClientId);
         var installationService = ClientInstallationService.CreateDefault(apiClient);
@@ -111,9 +112,35 @@ public partial class MainWindow : Window
                 RegisterUsernameTextBox.Text,
                 RegisterDisplayNameTextBox.Text,
                 RegisterPasswordBox.Password,
-                RegisterEmailTextBox.Text))
+                RegisterEmailTextBox.Text,
+                RegisterCodeTextBox.Text))
         {
             RegisterPasswordBox.Clear();
+            RegisterCodeTextBox.Clear();
+        }
+    }
+
+    private async void SendRegistrationCodeButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        SendRegistrationCodeButton.IsEnabled = false;
+        var sent = await viewModel.SendRegistrationCodeAsync(RegisterEmailTextBox.Text);
+        if (!sent)
+        {
+            SendRegistrationCodeButton.IsEnabled = true;
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(60));
+        if (IsLoaded)
+        {
+            SendRegistrationCodeButton.IsEnabled = true;
         }
     }
 

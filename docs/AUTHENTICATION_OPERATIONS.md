@@ -1,17 +1,17 @@
 # Microsoft 正版登录与 LuckPerms 权限
 
-> 当前启动器源码版本：`0.10.0`
-> 当前 API 源码与生产版本：`0.10.1`
-> 当前生产状态：赫朝账号与账号安全链路已部署；启动器 `0.10.0` 尚未分发，Velocity 仍为 `monitor`，目录强制登录尚未启用
+> 当前启动器源码版本：`0.11.0`
+> 当前 API 源码版本：`0.11.0`；生产版本：`0.10.1`
+> 当前生产状态：统一账号改版已完成本机测试、尚未部署；Velocity 仍为 `monitor`，目录强制登录尚未启用
 
 ## 1. 身份与权限边界
 
-赫朝账号是社区身份与权限主体，Microsoft/Minecraft Java 正版身份是可独立绑定的游戏所有权证明。启动器不采集 Microsoft 密码；赫朝账号密码只通过 TLS 发送到赫朝 API，服务端使用 ASP.NET Core Identity PBKDF2 哈希保存，客户端不落盘保存密码。
+赫朝账号是启动器与 `hechao.world` 共用的社区身份，Microsoft/Minecraft Java 正版身份是可独立绑定的游戏所有权证明。启动器不采集 Microsoft 密码；赫朝账号密码只通过 TLS 发送，服务端使用 ASP.NET Core Identity PBKDF2 哈希保存，客户端不落盘保存密码。旧论坛 scrypt 哈希仅用于一次兼容登录，成功后立即升级。
 
 登录链路：
 
 ```text
-赫朝账号注册或登录
+邮箱验证后注册赫朝统一账号，或使用账号名/邮箱登录
   -> 赫朝短期访问令牌 + 可轮换刷新令牌
   -> Windows 系统浏览器
   -> Microsoft OAuth 授权码 + PKCE
@@ -35,7 +35,10 @@
 
 ## 2. 已实现组件与生产状态
 
-- API 端点：`POST /v1/auth/register`、`POST /v1/auth/login`、`POST /v1/auth/minecraft/link`、`POST /v1/auth/refresh`、`POST /v1/auth/logout`、`GET /v1/me`。
+- API 玩家端点：`POST /v1/auth/login`、`POST /v1/auth/minecraft/link`、`POST /v1/auth/refresh`、`POST /v1/auth/logout`、`GET /v1/me`。旧 `POST /v1/auth/register` 从 `0.11.0` 起返回升级提示，避免绕过社区邮箱验证生成不同步账号。
+- 新账号统一通过 `hechao.world` 邮箱验证码注册；启动器 `0.11.0` 直接调用同一注册接口，完成后自动登录。
+- 论坛内部桥接只接受本机回环来源与独立高熵令牌；注册、登录、旧账号导入、改密、重置密码和显示名称同步均走内部端点。
+- 论坛密码变更会同时撤销启动器认证状态和其他论坛设备会话。完整边界与部署顺序见 [`UNIFIED_ACCOUNT_OPERATIONS.md`](UNIFIED_ACCOUNT_OPERATIONS.md)。
 - API `0.10.1` 已上线 `POST /v1/auth/logout-all` 和 `POST /v1/auth/minecraft/unlink`。
 - `logout-all` 在一个数据库事务中撤销该账号的启动器会话、管理员浏览器会话、未使用后台登录票据和未使用 Velocity 进服授权；成功后客户端同时清除本机 DPAPI 会话与 Microsoft 缓存。
 - `minecraft/unlink` 必须再次提交当前赫朝账号密码。校验成功后撤销上述全部认证状态、删除 Minecraft 身份绑定并将启动器等级回退为 `Member`；密码错误、账号不存在或当前未绑定均不会部分执行。
