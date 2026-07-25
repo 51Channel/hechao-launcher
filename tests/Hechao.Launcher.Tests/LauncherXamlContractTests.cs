@@ -134,13 +134,33 @@ public sealed class LauncherXamlContractTests
             .Descendants(presentation + "Style")
             .Single(element =>
                 element.Attribute(x + "Key")?.Value == "AccountTabStyle");
+        var tabFrame = style
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "TabFrame");
         var tabBorder = style
             .Descendants(presentation + "Border")
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "TabBackground");
+        var tabRightEdge = style
+            .Descendants(presentation + "Rectangle")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "TabRightEdge");
 
-        Assert.Equal("1", tabBorder.Attribute("Margin")?.Value);
+        Assert.Equal("1", tabFrame.Attribute("Margin")?.Value);
         Assert.Equal("True", tabBorder.Attribute("SnapsToDevicePixels")?.Value);
+        Assert.Equal("0,0,8,0", tabBorder.Attribute("Margin")?.Value);
+        Assert.Equal(
+            "1,1,0,1",
+            tabBorder.Attribute("BorderThickness")?.Value);
+        Assert.Equal("2", tabRightEdge.Attribute("Width")?.Value);
+        Assert.Equal("0,3,2,3", tabRightEdge.Attribute("Margin")?.Value);
+        Assert.Equal("2", tabRightEdge.Attribute("Panel.ZIndex")?.Value);
+        Assert.Contains(
+            style.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "UseLayoutRounding" &&
+                setter.Attribute("Value")?.Value == "True");
     }
 
     private static XDocument LoadLauncherXaml()
