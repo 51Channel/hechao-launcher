@@ -122,7 +122,7 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void AccountTabs_InsetTheirBorderFromTheTemplateEdge()
+    public void AccountTabs_UseEqualWidthItemsWithCompleteBorders()
     {
         var document = LoadThemeXaml();
         XNamespace presentation =
@@ -130,32 +130,39 @@ public sealed class LauncherXamlContractTests
         XNamespace x =
             "http://schemas.microsoft.com/winfx/2006/xaml";
 
+        var controlStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "AccountTabControlStyle");
+        var itemsPanel = controlStyle
+            .Descendants(presentation + "UniformGrid")
+            .Single();
         var style = document
             .Descendants(presentation + "Style")
             .Single(element =>
                 element.Attribute(x + "Key")?.Value == "AccountTabStyle");
-        var tabFrame = style
-            .Descendants(presentation + "Grid")
-            .Single(element =>
-                element.Attribute(x + "Name")?.Value == "TabFrame");
         var tabBorder = style
             .Descendants(presentation + "Border")
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "TabBackground");
-        var tabRightEdge = style
-            .Descendants(presentation + "Rectangle")
-            .Single(element =>
-                element.Attribute(x + "Name")?.Value == "TabRightEdge");
 
-        Assert.Equal("1", tabFrame.Attribute("Margin")?.Value);
+        Assert.Equal("1", itemsPanel.Attribute("Rows")?.Value);
         Assert.Equal("True", tabBorder.Attribute("SnapsToDevicePixels")?.Value);
-        Assert.Equal("0,0,8,0", tabBorder.Attribute("Margin")?.Value);
         Assert.Equal(
-            "1,1,0,1",
+            "{TemplateBinding BorderThickness}",
             tabBorder.Attribute("BorderThickness")?.Value);
-        Assert.Equal("2", tabRightEdge.Attribute("Width")?.Value);
-        Assert.Equal("0,3,2,3", tabRightEdge.Attribute("Margin")?.Value);
-        Assert.Equal("2", tabRightEdge.Attribute("Panel.ZIndex")?.Value);
+        Assert.Empty(style.Descendants(presentation + "Rectangle"));
+        Assert.Contains(
+            style.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "Margin" &&
+                setter.Attribute("Value")?.Value == "0,0,6,0");
+        Assert.Contains(
+            style.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "BorderThickness" &&
+                setter.Attribute("Value")?.Value == "1");
         Assert.Contains(
             style.Elements(presentation + "Setter"),
             setter =>

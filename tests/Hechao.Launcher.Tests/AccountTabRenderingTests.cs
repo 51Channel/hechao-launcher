@@ -10,23 +10,28 @@ namespace Hechao.Launcher.Tests;
 
 public sealed class AccountTabRenderingTests
 {
-    [Fact]
-    public void SelectedAccountTab_RendersItsRightBorderInsideTheLayoutSlot()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void SelectedAccountTab_RendersACompleteBorderAtItsOuterEdge(
+        int selectedIndex)
     {
         using var completed = new ManualResetEventSlim();
         Exception? failure = null;
-        var rightBorderPixelCount = 0;
-        var totalRedPixelCount = 0;
+        var selectedTabWidth = -1d;
+        var otherTabWidth = -1d;
+        var borderWidth = -1d;
+        var physicalBorderWidth = -1d;
+        var borderLeftInset = double.MaxValue;
+        var borderRightInset = double.MaxValue;
         var redMinimumX = int.MaxValue;
         var redMaximumX = int.MinValue;
         var redMinimumY = int.MaxValue;
         var redMaximumY = int.MinValue;
-        var selectedOriginX = -1d;
-        var selectedWidth = -1d;
-        var sampledRightEdge = -1;
-        var edgeRightInset = double.MaxValue;
-        var rightSideRedPixels = string.Empty;
-        var edgeDiagnostics = string.Empty;
+        var verticalBorderMinimumX = int.MaxValue;
+        var verticalBorderMaximumX = int.MinValue;
+        var selectedState = false;
+        var renderedBorderColor = Colors.Transparent;
 
         var thread = new Thread(() =>
         {
@@ -35,29 +40,31 @@ public sealed class AccountTabRenderingTests
                 var dispatcher = Dispatcher.CurrentDispatcher;
                 var resources = LoadThemeResources();
                 var tabStyle = (Style)resources["AccountTabStyle"];
-                var selectedTab = new TabItem
+                var tabs = new[]
                 {
-                    Header = "登录",
-                    IsSelected = true,
-                    Style = tabStyle
+                    new TabItem
+                    {
+                        Header = "Login",
+                        Style = tabStyle
+                    },
+                    new TabItem
+                    {
+                        Header = "Register",
+                        Style = tabStyle
+                    }
                 };
                 var tabControl = new TabControl
                 {
                     Width = 320,
                     Height = 160,
-                    SelectedIndex = 0,
-                    Background = Brushes.White,
-                    BorderThickness = new Thickness(0),
+                    Style = (Style)resources["AccountTabControlStyle"],
                     Items =
                     {
-                        selectedTab,
-                        new TabItem
-                        {
-                            Header = "注册",
-                            Style = tabStyle
-                        }
+                        tabs[0],
+                        tabs[1]
                     }
                 };
+                tabControl.SelectedIndex = selectedIndex;
                 var window = new Window
                 {
                     Width = 340,
@@ -67,92 +74,87 @@ public sealed class AccountTabRenderingTests
                     ShowActivated = false,
                     ShowInTaskbar = false,
                     WindowStyle = WindowStyle.None,
+                    Background = Brushes.White,
                     Content = tabControl
                 };
                 window.Resources.MergedDictionaries.Add(resources);
 
                 window.ContentRendered += (_, _) =>
                 {
-                    var edge = Assert.IsType<System.Windows.Shapes.Rectangle>(
+                    var selectedTab = tabs[selectedIndex];
+                    var otherTab = tabs[1 - selectedIndex];
+                    var border = Assert.IsType<Border>(
                         selectedTab.Template.FindName(
-                            "TabRightEdge",
+                            "TabBackground",
                             selectedTab));
-                    var edgeOrigin = edge.TranslatePoint(
+                    var tabOrigin = selectedTab.TranslatePoint(
                         new Point(0, 0),
                         tabControl);
-                    edgeDiagnostics =
-                        $"edge X/Y/width/height/background: {edgeOrigin.X}/" +
-                        $"{edgeOrigin.Y}/{edge.ActualWidth}/{edge.ActualHeight}/" +
-                        $"{edge.Fill}";
-                    var width = (int)Math.Ceiling(tabControl.ActualWidth);
-                    var height = (int)Math.Ceiling(tabControl.ActualHeight);
+                    var borderOrigin = border.TranslatePoint(
+                        new Point(0, 0),
+                        tabControl);
+
+                    selectedTabWidth = selectedTab.ActualWidth;
+                    otherTabWidth = otherTab.ActualWidth;
+                    borderWidth = border.ActualWidth;
+                    borderLeftInset = borderOrigin.X - tabOrigin.X;
+                    borderRightInset =
+                        tabOrigin.X + selectedTab.ActualWidth -
+                        borderOrigin.X - border.ActualWidth;
+                    selectedState = selectedTab.IsSelected;
+                    renderedBorderColor =
+                        Assert.IsType<SolidColorBrush>(border.BorderBrush).Color;
+
+                    var dpi = VisualTreeHelper.GetDpi(tabControl);
+                    physicalBorderWidth =
+                        border.ActualWidth * dpi.DpiScaleX;
+                    var width = (int)Math.Ceiling(
+                        tabControl.ActualWidth * dpi.DpiScaleX);
+                    var height = (int)Math.Ceiling(
+                        tabControl.ActualHeight * dpi.DpiScaleY);
                     var bitmap = new RenderTargetBitmap(
                         width,
                         height,
-                        96,
-                        96,
+                        dpi.PixelsPerInchX,
+                        dpi.PixelsPerInchY,
                         PixelFormats.Pbgra32);
                     bitmap.Render(tabControl);
 
-                    var origin = selectedTab.TranslatePoint(
-                        new Point(0, 0),
-                        tabControl);
-                    selectedOriginX = origin.X;
-                    selectedWidth = selectedTab.ActualWidth;
-                    var rightEdge = (int)Math.Round(
-                        origin.X + selectedTab.ActualWidth);
-                    sampledRightEdge = rightEdge;
-                    edgeRightInset =
-                        origin.X + selectedTab.ActualWidth -
-                        edgeOrigin.X -
-                        edge.ActualWidth;
                     var pixels = new byte[width * height * 4];
                     bitmap.CopyPixels(pixels, width * 4, 0);
-
                     for (var x = 0; x < width; x++)
                     {
                         for (var y = 0; y < height; y++)
                         {
-                            var offset = ((y * width) + x) * 4;
-                            var blue = pixels[offset];
-                            var green = pixels[offset + 1];
-                            var red = pixels[offset + 2];
-                            if (red >= 150 &&
-                                red >= green + 60 &&
-                                red >= blue + 60)
+                            if (!IsRedPixel(pixels, width, x, y))
                             {
-                                totalRedPixelCount++;
-                                redMinimumX = Math.Min(redMinimumX, x);
-                                redMaximumX = Math.Max(redMaximumX, x);
-                                redMinimumY = Math.Min(redMinimumY, y);
-                                redMaximumY = Math.Max(redMaximumY, y);
-                                if (x >= rightEdge - 12 &&
-                                    rightSideRedPixels.Length < 240)
-                                {
-                                    rightSideRedPixels += $"({x},{y})";
-                                }
+                                continue;
                             }
+
+                            redMinimumX = Math.Min(redMinimumX, x);
+                            redMaximumX = Math.Max(redMaximumX, x);
+                            redMinimumY = Math.Min(redMinimumY, y);
+                            redMaximumY = Math.Max(redMaximumY, y);
                         }
                     }
 
-                    for (var x = Math.Max(0, redMaximumX - 15);
-                         x <= Math.Min(width - 1, redMaximumX);
-                         x++)
+                    for (var x = redMinimumX; x <= redMaximumX; x++)
                     {
-                        for (var y = Math.Max(0, redMinimumY + 3);
-                             y < Math.Min(height, redMaximumY - 3);
-                             y++)
+                        var redPixelsInColumn = 0;
+                        for (var y = redMinimumY; y <= redMaximumY; y++)
                         {
-                            var offset = ((y * width) + x) * 4;
-                            var blue = pixels[offset];
-                            var green = pixels[offset + 1];
-                            var red = pixels[offset + 2];
-                            if (red >= 150 &&
-                                red >= green + 60 &&
-                                red >= blue + 60)
+                            if (IsRedPixel(pixels, width, x, y))
                             {
-                                rightBorderPixelCount++;
+                                redPixelsInColumn++;
                             }
+                        }
+
+                        if (redPixelsInColumn >= 20)
+                        {
+                            verticalBorderMinimumX =
+                                Math.Min(verticalBorderMinimumX, x);
+                            verticalBorderMaximumX =
+                                Math.Max(verticalBorderMaximumX, x);
                         }
                     }
 
@@ -187,15 +189,31 @@ public sealed class AccountTabRenderingTests
             ExceptionDispatchInfo.Capture(failure).Throw();
         }
 
-        Assert.True(
-            rightBorderPixelCount >= 8,
-            "Expected a visible selected-tab right border, but found only " +
-            $"{rightBorderPixelCount} red pixels. Total red pixels: " +
-            $"{totalRedPixelCount}; red X range: {redMinimumX}..{redMaximumX}; " +
-            $"selected tab X/width/right: {selectedOriginX}/{selectedWidth}/" +
-            $"{sampledRightEdge}; {edgeDiagnostics}; nearby red pixels: " +
-            $"{rightSideRedPixels}.");
-        Assert.InRange(edgeRightInset, 0d, 16d);
+        Assert.Equal(selectedTabWidth, otherTabWidth, precision: 3);
+        Assert.Equal(selectedTabWidth, borderWidth, precision: 3);
+        Assert.InRange(Math.Abs(borderLeftInset), 0d, 0.01d);
+        Assert.InRange(Math.Abs(borderRightInset), 0d, 0.01d);
+        Assert.True(selectedState);
+        Assert.Equal(Color.FromRgb(179, 38, 30), renderedBorderColor);
+        Assert.NotEqual(int.MaxValue, verticalBorderMinimumX);
+        Assert.NotEqual(int.MinValue, verticalBorderMaximumX);
+        var renderedBorderWidth =
+            verticalBorderMaximumX - verticalBorderMinimumX + 1;
+        Assert.InRange(
+            Math.Abs(renderedBorderWidth - physicalBorderWidth),
+            0d,
+            3d);
+    }
+
+    private static bool IsRedPixel(byte[] pixels, int width, int x, int y)
+    {
+        var offset = ((y * width) + x) * 4;
+        var blue = pixels[offset];
+        var green = pixels[offset + 1];
+        var red = pixels[offset + 2];
+        return red >= 150 &&
+               red >= green + 60 &&
+               red >= blue + 60;
     }
 
     private static ResourceDictionary LoadThemeResources()

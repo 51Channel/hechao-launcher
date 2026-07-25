@@ -1818,8 +1818,7 @@
                                     Style="{StaticResource SurfacePanelStyle}"
                                     Padding="26">
                                 <StackPanel>
-                                <TabControl Background="Transparent"
-                                            BorderThickness="0">
+                                <TabControl Style="{StaticResource AccountTabControlStyle}">
                                     <TabControl.Resources>
                                         <Style TargetType="TabItem"
                                                BasedOn="{StaticResource AccountTabStyle}" />
