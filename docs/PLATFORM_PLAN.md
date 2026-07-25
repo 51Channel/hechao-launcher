@@ -487,11 +487,11 @@ POST /v1/internal/luckperms/snapshot
 4. 等待已提交的 Minecraft Java API 访问许可审核通过并完成真实账号验收。
 5. 定义数据库表和 API 契约，用真实目录 API 替换演示数据（已完成）。
 6. 由管理员手动重启 Velocity 加载 `monitor` 插件，核对所有代理目标和替换服目录状态，再灰度切换 `enforce`。
-7. 创建只允许新增 `hechaoworld/objects/*` 的独立发布 RAM 身份，将 AccessKey 保存为 DPAPI 密文（已完成）。
+7. 创建独立发布 RAM 身份，将 AccessKey 保存为 DPAPI 密文；v3 仅允许 `hechaoworld/objects/*` 与 `hechaoworld/releases/launcher/*` 的 `GetObject/PutObject`（已完成）。
 8. 上传已校验的基础档案对象，部署 API `0.5.0`，再原子发布清单和目录记录（已完成）。
 9. 使用内部正版账号完成下载、安装、受管 Java、Fabric 启动和 Velocity 进服验收。
 10. 部署按 Velocity 目标的只读心跳、API `0.6.0` 和一分钟计划任务（已完成，不控制 Minecraft 进程）。
-11. 备份数据库并部署 API `0.10.1`（已完成）；账号安全生产隔离回归已通过，启动器 `0.10.0` 尚未分发，继续等待真实管理员 MFA、目录审计与 Minecraft 正版账号灰度。
+11. 备份数据库并部署 API `0.10.1`（已完成）；账号安全生产隔离回归已通过，启动器 `0.10.0` 已进入私有短时链接内部灰度，尚未公开分发，继续等待真实管理员 MFA、目录审计与 Minecraft 正版账号灰度。
 
 ## 18. 待确认事项
 

@@ -188,7 +188,7 @@ Distribution__PresignedUrlSeconds=300
 
 截至 `2026-07-24`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.10.1` 已读取并使用该分发配置。
 
-上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。策略 v2 只允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject` 与 `oss:PutObject`；不允许列举 Bucket、读取其他前缀、删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
+上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。策略 v3 只允许对 `acs:oss:*:*:hechaoworld/objects/*` 和 `acs:oss:*:*:hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；不允许列举 Bucket、读取其他前缀、删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验和生成私有启动器下载链接。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
 
 ```powershell
 .\Hechao.Publisher.exe upload-oss `
@@ -238,6 +238,8 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 
 每次内部开放前都必须确认无签名直链返回拒绝访问、签名链接能够完整下载、下载字节数与 SHA-256 匹配，并记录链接到期时间但不记录链接本身。该流程只分发启动器安装包，不会修改 API、档案清单、游戏服务或现有网站。
 
+`2026-07-25` 已使用发布器 `0.8.1` 将启动器 `0.10.0` 写入固定对象键。首次上传为 `61,796,065` 字节，远端长度与 `sha256`、`release-version`、`original-filename` 元数据全部通过回读校验。匿名永久直链实测返回 `403`；24 小时签名链接完整下载后的 SHA-256 为 `E2E14306882EF072016F35D740D2F06A7C8D12F63FFE28DD0F6A2C07B24D4876`。第二次执行只校验既有对象并生成新短时链接，没有再次上传或覆盖。完整签名链接不进入文档和 Git。
+
 ## 6. 后续生产接入
 
 1. [x] 为 `download.hechao.world` 签发并绑定 HTTPS 证书，验证 TLS 与 CNAME。
@@ -251,7 +253,7 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 9. [x] 部署 API `0.4.0`，将签名清单原子放入受限目录，并在同一发布操作中更新清单 SHA-256、总大小和版本。
 10. [ ] 先发布内部测试档案，验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
 11. [ ] Mojang API 审核、真实账号验收和 Velocity 最终授权完成后，再启用生产目录强制登录。
-12. [ ] 将发布 RAM 权限模板应用为 v3，使用发布器 `0.8.1` 上传启动器 `0.10.0`，验证私有直链拒绝和短时链接下载。
+12. [x] 将发布 RAM 权限模板应用为 v3，使用发布器 `0.8.1` 上传启动器 `0.10.0`，验证私有直链拒绝和短时链接下载。
 
 ## 7. 游戏数据目录
 
