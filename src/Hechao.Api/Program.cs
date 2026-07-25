@@ -206,8 +206,8 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 ReplenishmentPeriod = TimeSpan.FromSeconds(1),
-                TokenLimit = 96,
-                TokensPerPeriod = 40
+                TokenLimit = 192,
+                TokensPerPeriod = 80
             }));
     options.AddPolicy("catalog", context =>
         RateLimitPartition.GetFixedWindowLimiter(
