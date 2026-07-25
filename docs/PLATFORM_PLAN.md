@@ -62,7 +62,7 @@
 - [x] 赫朝 Microsoft 公共客户端注册、个人账户范围与桌面回调配置。
 - [x] 短期访问令牌、轮换刷新令牌、撤销与 Windows DPAPI 会话保护。
 - [x] LuckPerms 共享数据库只读同步、四级映射和玩家目录授权过滤。
-- [x] 生产 API `0.10.1`、签名清单分发、一次性进服授权、每 5 分钟权限同步、每分钟状态心跳、赫朝账号与账号安全链路部署验收。
+- [x] 生产 API `0.11.1`、签名清单分发、一次性进服授权、每 5 分钟权限同步、每分钟状态心跳、赫朝账号与账号安全链路部署验收。
 - [x] 真实客户端清理、生产签名、内容寻址对象和完整清单校验。
 - [x] 受管 Java 21 运行时、Fabric `0.19.2` 进程构建和 Velocity 入口参数。
 - [x] 独立的 DPAPI 发布密钥、OSS 只读 API 身份，以及只在对象前缀内执行元数据校验与写入的发布工具。
@@ -75,7 +75,7 @@
 - [x] 启动器管理员入口、一次性浏览器票据、独立 Cookie 会话、TOTP MFA、恢复码和 CSRF。
 - [x] 管理后台服务器目录、只读客户端档案和审计记录界面。
 
-更新、修复和“进入服务器”已经接入真实实现。`base-1.21.11` / `1.0.5` 档案包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节；`activity-neoforge-1.21.11` / `1.0.10` 包含 `4,754` 个文件与对象和 `621,732,083` 字节。两份生产签名档案、私有 OSS、API `0.10.1` 与实时心跳均已在线激活，活动服保持 `Closed`。发布器 `0.7.0` 已通过 `HeadObject` 解决版本控制 Bucket 的重复对象写入问题，生产全量复验为 `0` 上传、`4,754` 跳过。当前解决方案 `.NET 157/157` 与 Velocity `7/7` 测试通过，账户页、`0.9.1` 原地升级、干净安装、卸载和真实进程构建冒烟测试均未启动游戏。账号安全生产回归已验证全部设备退出、错误密码解除拒绝、正确密码解除及全部相关授权撤销。Velocity 插件已放入代理目录并保持 `monitor`，等待管理员下一次手动重启后加载。Microsoft 应用 Client ID 已接入，Minecraft API 许可申请已于 2026-07-22 提交但尚未批准，因此真实正版绑定验收、Velocity `enforce` 和目录强制开关仍未激活。
+更新、修复和“进入服务器”已经接入真实实现。`base-1.21.11` / `1.0.5` 档案包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节；`activity-neoforge-1.21.11` / `1.0.10` 包含 `4,754` 个文件与对象和 `621,732,083` 字节。两份生产签名档案、私有 OSS、API `0.11.1` 与实时心跳均已在线激活，活动服保持 `Closed`。发布器已通过 `HeadObject` 解决版本控制 Bucket 的重复对象写入问题，生产全量复验为 `0` 上传、`4,754` 跳过。当前解决方案 `.NET 193/193` 与 Velocity `7/7` 测试通过，启动器 `0.11.6` 已完成覆盖升级和实机界面验收，最终安装包尚未上传 OSS。账号安全生产回归已验证全部设备退出、错误密码解除拒绝、正确密码解除及全部相关授权撤销。管理员于 2026-07-26 确认 Minecraft Java API 许可已经通过，并明确授权单独重启 Velocity；插件已从启动日志确认以 `monitor` 模式加载。真实四级账号、目标映射与转服链路仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
 
 ## 4. 推荐总体架构
 
@@ -184,7 +184,7 @@
 ### 7.1 玩家登录
 
 - [x] 首次正版身份交换时建立稳定的赫朝内部用户 ID。
-- [ ] 使用 Microsoft OAuth 完成 Minecraft 正版身份验证，不采集 Microsoft 密码。代码与 Client ID 接入已完成，Minecraft API 许可申请已提交，等待批准后激活。
+- [ ] 使用 Microsoft OAuth 完成 Minecraft 正版身份验证，不采集 Microsoft 密码。代码、Client ID 与 Minecraft API 许可均已完成，真实四级账号生产验收完成后勾选。
 - [x] 将内部账号与 Minecraft UUID 绑定，并由 Minecraft Services 复核权益与档案。
 - [x] 访问令牌使用短有效期，刷新令牌可撤销并在刷新时轮换。
 - [x] Windows 客户端令牌使用 DPAPI 保护，MSAL 缓存使用 Windows 安全存储。
@@ -458,9 +458,9 @@ POST /v1/internal/luckperms/snapshot
 
 ### 阶段 4：真正启动和进服
 
-- [x] 完成 Microsoft OAuth 和 Minecraft 会话实现。Minecraft API 许可申请已提交，仍需等待批准和真实账号验收。
+- [x] 完成 Microsoft OAuth 和 Minecraft 会话实现，Minecraft API 许可已经通过；仍需完成真实账号验收。
 - [x] 完成基础档案的 Fabric 启动和活动候选的 NeoForge 启动；两者均使用受管 Java、独立档案和 Velocity 入口，Forge 仍待接入。
-- [x] 完成 Velocity 入口连接、短时启动授权和服务端最终授权实现；插件等待管理员手动重启后以 `monitor` 加载。
+- [x] 完成 Velocity 入口连接、短时启动授权和服务端最终授权实现；插件已于 2026-07-26 重启后以 `monitor` 加载。
 - [ ] 完成目标映射、真实账号灰度并切换 Velocity `enforce`。
 - [x] 处理正常/异常退出和本地脱敏诊断。
 - [ ] 在隐私、鉴权、限额和到期删除完成后提供主动诊断上传。
@@ -484,9 +484,9 @@ POST /v1/internal/luckperms/snapshot
 1. 完成两台服务器与阿里云的规格、端口、域名和服务盘点（阿里云和 `owl5` 已完成，`owl9` 待恢复密钥访问）。
 2. 确认现有 `hechao.world`、`api.hechao.world` 的监听方式和反向代理（已完成）。
 3. 确定新域名并部署不影响旧业务的 HTTPS 测试 API（已完成）。
-4. 等待已提交的 Minecraft Java API 访问许可审核通过并完成真实账号验收。
+4. Minecraft Java API 访问许可已经通过；完成真实普通、VIP、管理员和服主账号验收。
 5. 定义数据库表和 API 契约，用真实目录 API 替换演示数据（已完成）。
-6. 由管理员手动重启 Velocity 加载 `monitor` 插件，核对所有代理目标和替换服目录状态，再灰度切换 `enforce`。
+6. Velocity 已重启并加载 `monitor` 插件；核对所有代理目标和替换服目录状态，再灰度切换 `enforce`。
 7. 创建独立发布 RAM 身份，将 AccessKey 保存为 DPAPI 密文；v3 仅允许 `hechaoworld/objects/*` 与 `hechaoworld/releases/launcher/*` 的 `GetObject/PutObject`（已完成）。
 8. 上传已校验的基础档案对象，部署 API `0.5.0`，再原子发布清单和目录记录（已完成）。
 9. 使用内部正版账号完成下载、安装、受管 Java、Fabric 启动和 Velocity 进服验收。
@@ -499,7 +499,7 @@ POST /v1/internal/luckperms/snapshot
 - [x] `hechao.world` 和 `api.hechao.world` 当前由哪个进程监听 `80/443`。
 - [x] 现有玩家称号和权限数据来自共享 MariaDB 中的 LuckPerms。
 - [x] 强制 Microsoft 正版登录；正式开关在 API 许可、真实账号验收和 Velocity `enforce` 完成后启用。
-- [ ] Velocity 公网入口域名和端口是否保持不变。
+- [x] Velocity 公网入口保持 `mc.hehe11.fun`；Minecraft SRV 记录指向外部端口 `15156`，转发到内部 `25577`，2026-07-26 重启后已从公网验证 TCP 可达。
 - [x] 基础客户端完整包逻辑大小为 `874,147,856` 字节；常规更新差量待首次版本迭代统计。
 - [x] 阿里云 OSS、HTTPS 证书和独立启动器数据库均已开通；当前没有启用 CDN。
 - [x] 管理后台第一版只做服务器目录、只读客户端档案和审计，继续不提供运行控制。

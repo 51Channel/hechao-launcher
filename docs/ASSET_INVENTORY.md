@@ -115,13 +115,13 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 | Activity NeoForge | `E:\ActivityNeoForge` | `25568` | 未监听 |
 | DollNight | `E:\DollNight` | 与 Survival2 共用 `25565` | 替换服，不可与 Survival2 同时运行 |
 
-Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`。
+Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
 
 保留替换服目录：`E:\ActivityHybrid`、`E:\ActivityLocal`、`E:\ActivityServer`、`E:\MonsterActivity`。这些目录不能与占用相同入口端口的当前活动后端同时启动。
 
-Velocity 授权插件 `HechaoVelocityAuthorizer-0.1.0.jar` 已放入 `E:\Velocity\plugins`，SHA-256 为 `BA1E02150714A34D5FCEA348C64C578B31D9E4C85B53D3DA8EFD3681F31388C4`；配置位于 `E:\Velocity\plugins\hechao-velocity-authorizer\config.properties`，模式为 `monitor`，ACL 已收紧，备份位于 `E:\manual-backups\velocity-authorizer-20260723T103346Z`。安装前后 `25577` 的监听 PID 均为 `10324`，因此插件尚未被当前进程加载，将在管理员下一次手动重启 Velocity 后生效。
+Velocity 授权插件 `HechaoVelocityAuthorizer-0.1.0.jar` 已放入 `E:\Velocity\plugins`，SHA-256 为 `BA1E02150714A34D5FCEA348C64C578B31D9E4C85B53D3DA8EFD3681F31388C4`；配置位于 `E:\Velocity\plugins\hechao-velocity-authorizer\config.properties`，模式为 `monitor`，ACL 已收紧，备份位于 `E:\manual-backups\velocity-authorizer-20260723T103346Z`。2026-07-26 经管理员授权单独重启计划任务 `Codex-Velocity-Live`，监听 PID 从 `10324` 变为 `7104`；启动日志确认插件已加载并以 `monitor` 模式为 `owl5-main` 初始化。
 
-本轮仅执行了文件安装、系统与端口读取，没有启动、停止或重启任何 Minecraft 进程。
+本次激活前代理没有已建立的玩家连接；重启只作用于 Velocity，大厅、生存服、活动服和其他 Java 进程均未被操作。
 
 LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 `C:\ProgramData\Hechao\LauncherBridge`，计划任务 `Hechao Launcher LuckPerms Sync` 以 `SYSTEM` 身份每 5 分钟只读同步。当前快照共 114 人：`default=99`、`vip=12`、`admin=1`、`owner=2`。同步任务不控制任何 Minecraft 进程。
 
@@ -139,7 +139,7 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 2. `owl5` 的 `E:` 仅剩约 6.48 GiB，客户端构建物、备份或世界文件继续增长前必须清理或扩容。
 3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
 4. 启动器数据库已有本机每日备份和同主机恢复演练，但所有业务仍缺少异地副本，网站与 Sub2API 也没有新的统一恢复演练。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已于 2026-07-22 提交申请但尚未批准；Velocity 最终授权已实现并安装为 `monitor`，仍待管理员手动重启、目标映射核对和真实账号灰度，因此目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity 最终授权已加载为 `monitor`。真实四级账号、目标映射、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态

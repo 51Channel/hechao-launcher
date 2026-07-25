@@ -1,9 +1,9 @@
 # Velocity 进服授权运维
 
-> API：`0.5.0`
-> 启动器：`0.6.0`
+> API：`0.11.1`
+> 启动器：`0.11.6`
 > Velocity 插件：`0.1.0`
-> 当前状态：插件已安装为 `monitor`，等待管理员下一次手动重启 Velocity 后加载
+> 当前状态：插件已加载为 `monitor`，等待目标映射、真实账号和转服链路灰度
 
 ## 1. 授权链路
 
@@ -82,15 +82,15 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 - 安装备份：`E:\manual-backups\velocity-authorizer-20260723T103346Z`
 - 当前配置模式：`monitor`
 
-部署时 Velocity 的 `25577` 监听 PID 在前后均未变化。插件文件只会在管理员下一次手动重启 Velocity 后加载；本项目脚本不会自动重启代理或任何 Minecraft 后端服。
+文件部署时 Velocity 的 `25577` 监听 PID 在前后均未变化，因此当时没有加载插件。2026-07-26 经管理员明确授权，确认代理没有已建立的玩家连接后，单独停止并重新启动计划任务 `Codex-Velocity-Live`：旧 PID `10324` 退出，新 PID `7104` 于 03:14:11 启动。启动日志确认 `hechao-velocity-authorizer 0.1.0` 已加载，并于 03:14:13 以 `monitor` 模式为 `owl5-main` 初始化；`25577` 正常监听且启动日志没有 error 或 warning。该操作没有启动、停止或重启大厅、生存服、活动服或其他 Java 进程。
 
 ## 6. 从 monitor 切换到 enforce
 
 以下条件必须全部完成：
 
-1. Minecraft Java API 许可已批准，真实 Microsoft 正版登录成功。
+1. Minecraft Java API 许可已批准；仍需确认真实 Microsoft 正版登录成功。
 2. 普通、VIP、管理员、服主各至少一个账号完成目录和进服验收。
-3. 管理员手动重启 Velocity，并从启动日志确认插件以 `monitor` 初始化。
+3. [已完成] 管理员单独重启 Velocity，并从启动日志确认插件以 `monitor` 初始化。
 4. Velocity 的 `lobby`、`survival1`、`survival2`、`activity` 等所有可达目标都已登记到平台目录；历史目标如 `pvp` 要么登记，要么从代理配置和入口中移除。
 5. 共享同一 Velocity 目标的替换服一次只能有一个目录项处于 `Online`。特别是 `survival2` 与 DollNight 的切换必须先更新目录状态。
 6. `monitor` 日志中普通入口、NPC 转服、`/hub`、断线重连和 API 短暂失败均符合预期。

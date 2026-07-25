@@ -131,7 +131,7 @@ admin.hechao.world                未启用时 404
 - 服务器维护、关闭、权限变更和 API 暂时不可用。
 - 旧官网、中转 API、Velocity 与现有 Minecraft 服务没有受到影响。
 
-Minecraft Java API 许可、真实四级账号和 Velocity `enforce` 未完成前，不向全部玩家开放强制登录版本。
+真实四级账号、Velocity `monitor` 灰度和 `enforce` 验收未完成前，不向全部玩家开放强制登录版本。
 
 ## 8. 玩家公告内容
 
