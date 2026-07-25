@@ -742,10 +742,10 @@ public sealed class AdminWebSessionRepository
         command.Parameters.AddWithValue(targetType);
         command.Parameters.AddWithValue(targetId);
         AddInetParameter(command, sourceIp);
-        var afterParameter = command.Parameters.Add("afterData", NpgsqlDbType.Jsonb);
-        afterParameter.Value = after is null
-            ? DBNull.Value
-            : JsonSerializer.Serialize(after);
+        AdminPostgresParameters.AddPositional(
+            command.Parameters,
+            NpgsqlDbType.Jsonb,
+            after is null ? null : JsonSerializer.Serialize(after));
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 

@@ -444,16 +444,22 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         command.Parameters.AddWithValue(actorUserId);
         command.Parameters.AddWithValue(action);
         command.Parameters.AddWithValue(targetId);
-        var sourceIpParameter = command.Parameters.Add("sourceIp", NpgsqlDbType.Inet);
-        sourceIpParameter.Value = sourceIp is null ? DBNull.Value : sourceIp;
-        var beforeParameter = command.Parameters.Add("beforeData", NpgsqlDbType.Jsonb);
-        beforeParameter.Value = before is null
-            ? DBNull.Value
-            : JsonSerializer.Serialize(before, AuditJsonOptions);
-        var afterParameter = command.Parameters.Add("afterData", NpgsqlDbType.Jsonb);
-        afterParameter.Value = after is null
-            ? DBNull.Value
-            : JsonSerializer.Serialize(after, AuditJsonOptions);
+        AdminPostgresParameters.AddPositional(
+            command.Parameters,
+            NpgsqlDbType.Inet,
+            sourceIp);
+        AdminPostgresParameters.AddPositional(
+            command.Parameters,
+            NpgsqlDbType.Jsonb,
+            before is null
+                ? null
+                : JsonSerializer.Serialize(before, AuditJsonOptions));
+        AdminPostgresParameters.AddPositional(
+            command.Parameters,
+            NpgsqlDbType.Jsonb,
+            after is null
+                ? null
+                : JsonSerializer.Serialize(after, AuditJsonOptions));
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
