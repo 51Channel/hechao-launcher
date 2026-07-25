@@ -43,6 +43,7 @@ public sealed class ClientInstallationService : IClientInstallationService
             AllowAutoRedirect = false,
             AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(10),
+            MaxConnectionsPerServer = ClientProfileInstaller.DefaultMaxConcurrentDownloads,
             PooledConnectionLifetime = TimeSpan.FromMinutes(10)
         };
         var httpClient = new HttpClient(apiClient.CreateDownloadAuthorizationHandler(handler))

@@ -39,8 +39,11 @@ public sealed record ClientInstallationOptions(
 
 public sealed class ClientProfileInstaller(
     ResumableFileDownloader downloader,
-    AtomicProfileDirectorySwitcher? directorySwitcher = null)
+    AtomicProfileDirectorySwitcher? directorySwitcher = null,
+    int maxConcurrentDownloads = 16)
 {
+    public const int DefaultMaxConcurrentDownloads = 16;
+
     private static readonly string[] PreservedGamePaths =
     [
         "saves",
@@ -72,6 +75,14 @@ public sealed class ClientProfileInstaller(
 
     private readonly AtomicProfileDirectorySwitcher _directorySwitcher =
         directorySwitcher ?? new AtomicProfileDirectorySwitcher();
+
+    private readonly int _maxConcurrentDownloads =
+        maxConcurrentDownloads is >= 1 and <= 64
+            ? maxConcurrentDownloads
+            : throw new ArgumentOutOfRangeException(
+                nameof(maxConcurrentDownloads),
+                maxConcurrentDownloads,
+                "Concurrent downloads must be between 1 and 64.");
 
     public async Task<LocalProfileState> GetLocalStateAsync(
         string dataRoot,
@@ -145,6 +156,7 @@ public sealed class ClientProfileInstaller(
         var totalBytes = manifest.Files.Sum(file => file.Size);
         long completedBytes = 0;
         var usedCachePaths = new List<string>(manifest.Files.Count);
+        var pendingFiles = new List<PendingInstallFile>(manifest.Files.Count);
 
         try
         {
@@ -202,22 +214,8 @@ public sealed class ClientProfileInstaller(
                 }
                 else
                 {
-                    var fileStartBytes = completedBytes;
-                    var downloadProgress = new Progress<FileDownloadProgress>(value =>
-                    {
-                        var currentCompleted = Math.Min(totalBytes, fileStartBytes + value.BytesDownloaded);
-                        progress?.Report(new ClientInstallProgress(
-                            ClientInstallPhase.Downloading,
-                            CalculatePercent(currentCompleted, totalBytes, 10, 80),
-                            file.Path,
-                            currentCompleted,
-                        totalBytes));
-                    });
-                    await downloader.DownloadAsync(file, cachePath, downloadProgress, cancellationToken);
-                    MaterializeFile(
-                        cachePath,
-                        stagedPath,
-                        preferHardLink: IsShareablePath(file.Path));
+                    pendingFiles.Add(new PendingInstallFile(file, cachePath, stagedPath));
+                    continue;
                 }
 
                 completedBytes = checked(completedBytes + file.Size);
@@ -227,6 +225,42 @@ public sealed class ClientProfileInstaller(
                     file.Path,
                     completedBytes,
                     totalBytes));
+            }
+
+            if (pendingFiles.Count > 0)
+            {
+                await DownloadPendingFilesAsync(
+                    pendingFiles,
+                    completedBytes,
+                    totalBytes,
+                    progress,
+                    cancellationToken);
+
+                completedBytes = checked(
+                    completedBytes + pendingFiles.Sum(item => item.File.Size));
+                var lastStagingReport = Environment.TickCount64;
+                for (var index = 0; index < pendingFiles.Count; index++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var pendingFile = pendingFiles[index];
+                    MaterializeFile(
+                        pendingFile.CachePath,
+                        pendingFile.StagedPath,
+                        preferHardLink: IsShareablePath(pendingFile.File.Path));
+
+                    var now = Environment.TickCount64;
+                    if (index == pendingFiles.Count - 1 ||
+                        now - lastStagingReport >= 100)
+                    {
+                        lastStagingReport = now;
+                        progress?.Report(new ClientInstallProgress(
+                            ClientInstallPhase.Staging,
+                            CalculatePercent(completedBytes, totalBytes, 10, 80),
+                            pendingFile.File.Path,
+                            completedBytes,
+                            totalBytes));
+                    }
+                }
             }
 
             await WriteStateAsync(stagingDirectory, verifiedManifest, cancellationToken);
@@ -257,6 +291,96 @@ public sealed class ClientProfileInstaller(
         {
             TryDeleteDirectory(stagingDirectory);
         }
+    }
+
+    private async Task DownloadPendingFilesAsync(
+        IReadOnlyList<PendingInstallFile> pendingFiles,
+        long completedBytes,
+        long totalBytes,
+        IProgress<ClientInstallProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        var groups = pendingFiles
+            .GroupBy(item => item.CachePath, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new PendingDownloadGroup(
+                group.First().File,
+                group.Key,
+                group.ToArray()))
+            .ToArray();
+        var groupProgress = new long[groups.Length];
+        var progressGate = new object();
+        long aggregateDownloadedBytes = 0;
+        long lastReportedBytes = completedBytes;
+        var lastReportTick = Environment.TickCount64;
+
+        void ReportDownloadProgress(
+            int groupIndex,
+            PendingDownloadGroup group,
+            FileDownloadProgress value)
+        {
+            lock (progressGate)
+            {
+                var objectBytes = Math.Clamp(value.BytesDownloaded, 0, group.File.Size);
+                var weightedBytes = checked(objectBytes * group.Files.Count);
+                if (weightedBytes <= groupProgress[groupIndex])
+                {
+                    return;
+                }
+
+                aggregateDownloadedBytes = checked(
+                    aggregateDownloadedBytes +
+                    weightedBytes -
+                    groupProgress[groupIndex]);
+                groupProgress[groupIndex] = weightedBytes;
+                var currentBytes = Math.Min(
+                    totalBytes,
+                    checked(completedBytes + aggregateDownloadedBytes));
+                var now = Environment.TickCount64;
+                if (currentBytes < totalBytes && now - lastReportTick < 100)
+                {
+                    return;
+                }
+
+                lastReportTick = now;
+                lastReportedBytes = Math.Max(lastReportedBytes, currentBytes);
+                progress?.Report(new ClientInstallProgress(
+                    ClientInstallPhase.Downloading,
+                    CalculatePercent(lastReportedBytes, totalBytes, 10, 80),
+                    group.File.Path,
+                    lastReportedBytes,
+                    totalBytes));
+            }
+        }
+
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, groups.Length),
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = _maxConcurrentDownloads,
+                CancellationToken = cancellationToken
+            },
+            async (groupIndex, workerCancellationToken) =>
+            {
+                var group = groups[groupIndex];
+                var downloadProgress = new InlineProgress<FileDownloadProgress>(
+                    value => ReportDownloadProgress(groupIndex, group, value));
+                await downloader.DownloadAsync(
+                    group.File,
+                    group.CachePath,
+                    downloadProgress,
+                    workerCancellationToken);
+            });
+
+        var allPendingBytes = pendingFiles.Sum(item => item.File.Size);
+        var finalCompletedBytes = Math.Min(
+            totalBytes,
+            checked(completedBytes + allPendingBytes));
+        progress?.Report(new ClientInstallProgress(
+            ClientInstallPhase.Downloading,
+            CalculatePercent(finalCompletedBytes, totalBytes, 10, 80),
+            string.Empty,
+            finalCompletedBytes,
+            totalBytes));
     }
 
     private static async Task WriteStateAsync(
@@ -505,6 +629,21 @@ public sealed class ClientProfileInstaller(
         catch (UnauthorizedAccessException)
         {
         }
+    }
+
+    private sealed record PendingInstallFile(
+        ClientManifestFile File,
+        string CachePath,
+        string StagedPath);
+
+    private sealed record PendingDownloadGroup(
+        ClientManifestFile File,
+        string CachePath,
+        IReadOnlyList<PendingInstallFile> Files);
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }
 

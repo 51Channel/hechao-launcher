@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Hechao.Launcher.Infrastructure;
 
 namespace Hechao.Launcher.ViewModels;
@@ -28,6 +29,10 @@ public sealed class DownloadJobViewModel : ObservableObject
     private DownloadJobStatus _status;
     private DateTimeOffset? _completedAt;
     private string? _failureMessage;
+    private readonly Stopwatch _speedClock = Stopwatch.StartNew();
+    private long _lastSpeedSampleBytes;
+    private TimeSpan _lastSpeedSampleAt;
+    private double _bytesPerSecond;
 
     public DownloadJobViewModel(
         Guid id,
@@ -54,6 +59,7 @@ public sealed class DownloadJobViewModel : ObservableObject
         _completedAt = completedAt;
         _failureMessage = failureMessage;
         _percent = CalculatePercent(completedBytes, totalBytes, status);
+        _lastSpeedSampleBytes = completedBytes;
     }
 
     public Guid Id { get; }
@@ -68,6 +74,7 @@ public sealed class DownloadJobViewModel : ObservableObject
     public string CurrentFile => _currentFile;
     public DownloadJobStatus Status => _status;
     public string? FailureMessage => _failureMessage;
+    public double BytesPerSecond => _bytesPerSecond;
 
     public string StatusText => Status switch
     {
@@ -79,7 +86,10 @@ public sealed class DownloadJobViewModel : ObservableObject
 
     public string ProgressText => TotalBytes <= 0
         ? $"{Percent:0}%"
-        : $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)}";
+        : Status == DownloadJobStatus.Running && BytesPerSecond > 0
+            ? $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)} · " +
+              $"{FormatBytes((long)BytesPerSecond)}/s"
+            : $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)}";
 
     public string TimeText => (CompletedAt ?? StartedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
 
@@ -89,10 +99,12 @@ public sealed class DownloadJobViewModel : ObservableObject
         _completedBytes = Math.Max(0, completedBytes);
         _totalBytes = Math.Max(0, totalBytes);
         _currentFile = currentFile;
+        UpdateSpeed(_completedBytes);
         OnPropertyChanged(nameof(Percent));
         OnPropertyChanged(nameof(CompletedBytes));
         OnPropertyChanged(nameof(TotalBytes));
         OnPropertyChanged(nameof(CurrentFile));
+        OnPropertyChanged(nameof(BytesPerSecond));
         OnPropertyChanged(nameof(ProgressText));
     }
 
@@ -101,6 +113,7 @@ public sealed class DownloadJobViewModel : ObservableObject
         _status = status;
         _failureMessage = failureMessage;
         _completedAt = DateTimeOffset.UtcNow;
+        _bytesPerSecond = 0;
         if (status == DownloadJobStatus.Completed)
         {
             _percent = 100;
@@ -112,8 +125,39 @@ public sealed class DownloadJobViewModel : ObservableObject
         OnPropertyChanged(nameof(FailureMessage));
         OnPropertyChanged(nameof(CompletedAt));
         OnPropertyChanged(nameof(Percent));
+        OnPropertyChanged(nameof(BytesPerSecond));
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(TimeText));
+    }
+
+    private void UpdateSpeed(long completedBytes)
+    {
+        var now = _speedClock.Elapsed;
+        var elapsed = now - _lastSpeedSampleAt;
+        if (completedBytes < _lastSpeedSampleBytes)
+        {
+            _lastSpeedSampleBytes = completedBytes;
+            _lastSpeedSampleAt = now;
+            _bytesPerSecond = 0;
+            return;
+        }
+
+        if (elapsed < TimeSpan.FromMilliseconds(500))
+        {
+            return;
+        }
+
+        var bytesSinceLastSample = completedBytes - _lastSpeedSampleBytes;
+        var currentBytesPerSecond = elapsed.TotalSeconds <= 0
+            ? 0
+            : bytesSinceLastSample / elapsed.TotalSeconds;
+        _bytesPerSecond = currentBytesPerSecond <= 0
+            ? _bytesPerSecond
+            : _bytesPerSecond <= 0
+                ? currentBytesPerSecond
+                : _bytesPerSecond * 0.65 + currentBytesPerSecond * 0.35;
+        _lastSpeedSampleBytes = completedBytes;
+        _lastSpeedSampleAt = now;
     }
 
     private static double CalculatePercent(

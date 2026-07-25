@@ -162,6 +162,66 @@ internal sealed class ServiceUnavailableHandler : HttpMessageHandler
     }
 }
 
+internal sealed class DelayedObjectResponseHandler(
+    IReadOnlyDictionary<string, byte[]> objects,
+    TimeSpan delay) : HttpMessageHandler
+{
+    private int _activeRequests;
+    private int _maximumConcurrentRequests;
+    private int _requestCount;
+
+    public int MaximumConcurrentRequests => Volatile.Read(ref _maximumConcurrentRequests);
+    public int RequestCount => Volatile.Read(ref _requestCount);
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        Interlocked.Increment(ref _requestCount);
+        var activeRequests = Interlocked.Increment(ref _activeRequests);
+        UpdateMaximum(activeRequests);
+        try
+        {
+            await Task.Delay(delay, cancellationToken);
+            if (request.RequestUri is null ||
+                !objects.TryGetValue(request.RequestUri.AbsoluteUri, out var content))
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(content)
+            };
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _activeRequests);
+        }
+    }
+
+    private void UpdateMaximum(int candidate)
+    {
+        while (true)
+        {
+            var current = Volatile.Read(ref _maximumConcurrentRequests);
+            if (candidate <= current ||
+                Interlocked.CompareExchange(
+                    ref _maximumConcurrentRequests,
+                    candidate,
+                    current) == current)
+            {
+                return;
+            }
+        }
+    }
+}
+
+internal sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
+{
+    public void Report(T value) => report(value);
+}
+
 internal sealed record CapturedDownloadRequest(string Host, string? Authorization, long? RangeOffset);
 
 internal static class ManifestTestData

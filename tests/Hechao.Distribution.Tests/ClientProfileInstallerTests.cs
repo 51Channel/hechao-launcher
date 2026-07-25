@@ -228,4 +228,117 @@ public sealed class ClientProfileInstallerTests
                 "example.jar")));
         Assert.Single(handler.RequestedOffsets);
     }
+
+    [Fact]
+    public async Task InstallAsync_DownloadsMissingObjectsWithBoundedConcurrency()
+    {
+        const int fileCount = 12;
+        const int maximumConcurrency = 4;
+        var objects = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        var files = new List<ClientManifestFile>(fileCount);
+        for (var index = 0; index < fileCount; index++)
+        {
+            var content = System.Text.Encoding.UTF8.GetBytes($"parallel-object-{index}");
+            var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+            var url = $"https://download.hechao.world/objects/{index}";
+            objects.Add(url, content);
+            files.Add(new ClientManifestFile(
+                $"assets/objects/object-{index}.bin",
+                content.Length,
+                digest,
+                url));
+        }
+
+        var manifest = ManifestTestData.CreateManifest(objects.Values.First()) with
+        {
+            Files = files
+        };
+        var handler = new DelayedObjectResponseHandler(
+            objects,
+            TimeSpan.FromMilliseconds(75));
+        using var httpClient = new HttpClient(handler);
+        var installer = new ClientProfileInstaller(
+            new ResumableFileDownloader(httpClient),
+            maxConcurrentDownloads: maximumConcurrency);
+        using var temporary = new TemporaryDirectory();
+        var progressSamples = new List<long>();
+        var progress = new SynchronousProgress<ClientInstallProgress>(
+            value => progressSamples.Add(value.CompletedBytes));
+
+        await installer.InstallAsync(
+            new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
+            new ClientInstallationOptions(temporary.Path),
+            progress);
+
+        Assert.Equal(fileCount, handler.RequestCount);
+        Assert.InRange(handler.MaximumConcurrentRequests, 2, maximumConcurrency);
+        Assert.NotEmpty(progressSamples);
+        Assert.True(progressSamples.SequenceEqual(progressSamples.Order()));
+        Assert.Equal(files.Sum(file => file.Size), progressSamples[^1]);
+
+        var gameDirectory = new ClientStorageLayout(temporary.Path)
+            .GetProfileGameDirectory(manifest.ProfileId);
+        for (var index = 0; index < fileCount; index++)
+        {
+            Assert.Equal(
+                objects[$"https://download.hechao.world/objects/{index}"],
+                await File.ReadAllBytesAsync(Path.Combine(
+                    gameDirectory,
+                    "assets",
+                    "objects",
+                    $"object-{index}.bin")));
+        }
+    }
+
+    [Fact]
+    public async Task InstallAsync_DownloadsDuplicateObjectOnlyOnce()
+    {
+        var content = "shared-object"u8.ToArray();
+        var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var url = "https://download.hechao.world/objects/shared";
+        var manifest = ManifestTestData.CreateManifest(content) with
+        {
+            Files =
+            [
+                new ClientManifestFile(
+                    "assets/indexes/first.json",
+                    content.Length,
+                    digest,
+                    url),
+                new ClientManifestFile(
+                    "libraries/example/second.jar",
+                    content.Length,
+                    digest,
+                    url)
+            ]
+        };
+        var handler = new RangeResponseHandler(content);
+        using var httpClient = new HttpClient(handler);
+        var installer = new ClientProfileInstaller(
+            new ResumableFileDownloader(httpClient),
+            maxConcurrentDownloads: 4);
+        using var temporary = new TemporaryDirectory();
+
+        await installer.InstallAsync(
+            new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
+            new ClientInstallationOptions(temporary.Path));
+
+        var gameDirectory = new ClientStorageLayout(temporary.Path)
+            .GetProfileGameDirectory(manifest.ProfileId);
+        Assert.Single(handler.RequestedOffsets);
+        Assert.Equal(
+            content,
+            await File.ReadAllBytesAsync(Path.Combine(
+                gameDirectory,
+                "assets",
+                "indexes",
+                "first.json")));
+        Assert.Equal(
+            content,
+            await File.ReadAllBytesAsync(Path.Combine(
+                gameDirectory,
+                "libraries",
+                "example",
+                "second.jar")));
+    }
 }
