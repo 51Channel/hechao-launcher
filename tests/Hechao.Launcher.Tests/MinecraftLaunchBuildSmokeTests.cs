@@ -45,6 +45,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
 
         Assert.False(process.StartInfo.UseShellExecute);
         Assert.True(File.Exists(process.StartInfo.FileName));
+        Assert.DoesNotContain('\u200c', process.StartInfo.FileName);
 
         var arguments = GetArguments(process.StartInfo);
         Assert.Contains("net.fabricmc.loader.impl.launch.knot.KnotClient", arguments);
@@ -90,6 +91,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
 
         Assert.False(process.StartInfo.UseShellExecute);
         Assert.True(File.Exists(process.StartInfo.FileName));
+        Assert.DoesNotContain('\u200c', process.StartInfo.FileName);
 
         var arguments = GetArguments(process.StartInfo);
         Assert.Contains("net.neoforged.fml.startup.Client", arguments);

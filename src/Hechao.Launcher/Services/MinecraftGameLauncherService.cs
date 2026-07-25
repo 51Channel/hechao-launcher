@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
@@ -292,6 +294,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 throw new InvalidDataException("The resolved Java runtime is outside the managed runtime directory.");
             }
 
+            process.StartInfo.FileName = ResolveLaunchExecutablePath(javaPath);
             return process;
         }
         catch (Exception exception) when (exception is not MinecraftLaunchException)
@@ -326,6 +329,33 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             throw new MinecraftLaunchSessionExpiredException();
         }
     }
+
+    internal static string ResolveLaunchExecutablePath(string executablePath)
+    {
+        var fullPath = Path.GetFullPath(executablePath);
+        if (!OperatingSystem.IsWindows())
+        {
+            return fullPath;
+        }
+
+        var buffer = new StringBuilder(WindowsMaximumPath);
+        var length = GetShortPathName(fullPath, buffer, (uint)buffer.Capacity);
+        return length is > 0 and < WindowsMaximumPath
+            ? buffer.ToString()
+            : fullPath;
+    }
+
+    private const int WindowsMaximumPath = 32_768;
+
+    [DllImport(
+        "kernel32.dll",
+        EntryPoint = "GetShortPathNameW",
+        CharSet = CharSet.Unicode,
+        SetLastError = true)]
+    private static extern uint GetShortPathName(
+        string longPath,
+        StringBuilder shortPath,
+        uint bufferLength);
 
     private static string ResolveProfileGameDirectory(
         ClientStorageLayout layout,
