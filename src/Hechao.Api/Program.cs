@@ -382,6 +382,7 @@ app.Use(async (context, next) =>
 
     await next();
 });
+app.UseMiddleware<AdminWebCanonicalPathMiddleware>();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseRateLimiter();
@@ -474,7 +475,6 @@ adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibili
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 
 app.MapAdminWebEndpoints();
-app.MapGet("/admin", () => Results.Redirect("/admin/"));
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");
 
 await app.RunAsync();
