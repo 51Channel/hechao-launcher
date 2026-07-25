@@ -64,8 +64,8 @@ SQL
   central_remaining="$(
     docker exec -u postgres hechao-launcher-postgres \
       psql --username=hechao_db_admin --dbname=hechao_launcher \
-      --tuples-only --no-align --set=test_username="$username" \
-      --command="SELECT count(*) FROM launcher.users WHERE username = :'test_username';" \
+      --tuples-only --no-align \
+      --command="SELECT count(*) FROM launcher.users WHERE username = '${username}';" \
       2>/dev/null
   )"
   if [[ "$central_remaining" != "0" ]]; then
