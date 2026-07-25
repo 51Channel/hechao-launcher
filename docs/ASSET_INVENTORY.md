@@ -152,7 +152,7 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 
 - 发布 ID：`0.12.0-20260725T203001Z`
 - API `0.12.0` 已部署；启动器 `0.11.6` 为未分发候选。管理员 Web 已启用，但当前 MFA 凭据数为 `0`
-- Git 标签：`launcher-v0.11.6` 指向 `6998dc344c40b49eda0137bb239f3ddd058d248f`；API `0.12.0` 标签待本次发布文档收口后补齐
+- Git 标签：`launcher-v0.11.6` 指向 `6998dc344c40b49eda0137bb239f3ddd058d248f`；`api-v0.12.0`、`velocity-authorizer-v0.2.0` 与 `profile-pvp-fabric-1.20.1-v1.0.0` 均指向发布收口提交 `f0460d19383ecb30897a74de1fbac1cf541df4ed`
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
