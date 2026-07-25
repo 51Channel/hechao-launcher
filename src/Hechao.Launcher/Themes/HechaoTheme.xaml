@@ -855,6 +855,8 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
@@ -876,6 +878,8 @@
                         <ContentPresenter x:Name="PART_SelectedContentHost"
                                           Grid.Row="1"
                                           ContentSource="SelectedContent"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           SnapsToDevicePixels="True" />
                     </Grid>
                 </ControlTemplate>
@@ -887,8 +891,8 @@
         <Setter Property="Height" Value="40" />
         <Setter Property="Margin" Value="0,0,6,0" />
         <Setter Property="Padding" Value="16,0" />
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
@@ -906,8 +910,8 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
                                           Margin="{TemplateBinding Padding}"
                                           ContentSource="Header" />
                     </Border>

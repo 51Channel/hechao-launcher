@@ -22,6 +22,7 @@ public sealed class AccountTabRenderingTests
         var otherTabWidth = -1d;
         var borderWidth = -1d;
         var physicalBorderWidth = -1d;
+        var selectedContentWidth = -1d;
         var borderLeftInset = double.MaxValue;
         var borderRightInset = double.MaxValue;
         var redMinimumX = int.MaxValue;
@@ -45,11 +46,21 @@ public sealed class AccountTabRenderingTests
                     new TabItem
                     {
                         Header = "Login",
+                        Content = new Border
+                        {
+                            MinWidth = 24,
+                            Height = 24
+                        },
                         Style = tabStyle
                     },
                     new TabItem
                     {
                         Header = "Register",
+                        Content = new Border
+                        {
+                            MinWidth = 24,
+                            Height = 24
+                        },
                         Style = tabStyle
                     }
                 };
@@ -108,6 +119,8 @@ public sealed class AccountTabRenderingTests
                     var dpi = VisualTreeHelper.GetDpi(tabControl);
                     physicalBorderWidth =
                         border.ActualWidth * dpi.DpiScaleX;
+                    selectedContentWidth =
+                        Assert.IsType<Border>(selectedTab.Content).ActualWidth;
                     var width = (int)Math.Ceiling(
                         tabControl.ActualWidth * dpi.DpiScaleX);
                     var height = (int)Math.Ceiling(
@@ -191,6 +204,7 @@ public sealed class AccountTabRenderingTests
 
         Assert.Equal(selectedTabWidth, otherTabWidth, precision: 3);
         Assert.Equal(selectedTabWidth, borderWidth, precision: 3);
+        Assert.Equal(320d, selectedContentWidth, precision: 3);
         Assert.InRange(Math.Abs(borderLeftInset), 0d, 0.01d);
         Assert.InRange(Math.Abs(borderRightInset), 0d, 0.01d);
         Assert.True(selectedState);

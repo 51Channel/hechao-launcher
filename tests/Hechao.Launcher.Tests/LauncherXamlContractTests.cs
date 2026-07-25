@@ -148,6 +148,12 @@ public sealed class LauncherXamlContractTests
                 element.Attribute(x + "Name")?.Value == "TabBackground");
 
         Assert.Equal("1", itemsPanel.Attribute("Rows")?.Value);
+        Assert.Contains(
+            controlStyle.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value ==
+                "HorizontalContentAlignment" &&
+                setter.Attribute("Value")?.Value == "Stretch");
         Assert.Equal("True", tabBorder.Attribute("SnapsToDevicePixels")?.Value);
         Assert.Equal(
             "{TemplateBinding BorderThickness}",
