@@ -157,6 +157,8 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 
 `0.10.0` 候选已重新执行 `0.9.1` 原地升级、干净安装和静默卸载。安装后的 EXE 产品版本为 `0.10.0+9cba23e9d0b5ba799af50dcc2ef0018cfe5a31e4`，SHA-256 与构建原件一致；IconPark 授权文件、设置和游戏数据均保留，卸载后程序目录、开始菜单和注册表项均已清理。安装包仍未上传或向玩家分发，完整记录见 [`LAUNCHER_RELEASE_0.10.0.md`](LAUNCHER_RELEASE_0.10.0.md)。
 
+`0.11.1` 已完成 `0.11.0` 原地升级和启动冒烟验证。安装后 EXE、注册表版本、设置、DPAPI 会话和 IconPark 授权文件均通过，完整记录见 [`LAUNCHER_RELEASE_0.11.1.md`](LAUNCHER_RELEASE_0.11.1.md)。安装包仍为本地内部候选，未上传 OSS，也没有建立公开下载地址。
+
 ## 7. 第三方构建资产
 
 - 安装器：[NSIS 3](https://nsis.sourceforge.io/Docs/AppendixI.html)，使用 zlib/libpng 许可并允许商业应用。
