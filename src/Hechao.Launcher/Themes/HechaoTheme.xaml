@@ -294,24 +294,134 @@
         </Setter>
     </Style>
 
-    <Style x:Key="HechaoProgressBarStyle" TargetType="ProgressBar">
-        <Setter Property="Height" Value="7" />
+    <Style x:Key="HechaoProgressBarStyle" TargetType="{x:Type controls:AnimatedProgressBar}">
+        <Setter Property="Height" Value="8" />
         <Setter Property="Background" Value="{StaticResource SurfacePressedBrush}" />
         <Setter Property="Foreground" Value="{StaticResource HechaoRedBrush}" />
         <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ProgressBar">
-                    <Grid ClipToBounds="True">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="3" />
-                        <Border x:Name="PART_Indicator"
-                                HorizontalAlignment="Left"
+                <ControlTemplate TargetType="{x:Type controls:AnimatedProgressBar}">
+                    <Grid ClipToBounds="True"
+                          SnapsToDevicePixels="True">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4" />
+                        <Border HorizontalAlignment="Stretch"
                                 Background="{TemplateBinding Foreground}"
-                                CornerRadius="3" />
+                                CornerRadius="4"
+                                RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding DisplayRatio,
+                                    RelativeSource={RelativeSource TemplatedParent}}" />
+                            </Border.RenderTransform>
+                        </Border>
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ScrollViewer}">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    </Style>
+
+    <Style x:Key="SlimScrollThumbStyle" TargetType="{x:Type Thumb}">
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Border x:Name="ThumbSurface"
+                            Margin="2,1"
+                            Background="#667D817A"
+                            CornerRadius="3"
+                            SnapsToDevicePixels="True" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbSurface"
+                                    Property="Background"
+                                    Value="#997D817A" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="ThumbSurface"
+                                    Property="Background"
+                                    Value="{StaticResource SteelBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ScrollBar}">
+        <Setter Property="Width" Value="9" />
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#667D817A" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track"
+                               Margin="0,2"
+                               IsDirectionReversed="True"
+                               Focusable="False">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton x:Name="DecreaseButton"
+                                              Command="{x:Static ScrollBar.PageUpCommand}"
+                                              Focusable="False"
+                                              Opacity="0" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb x:Name="ScrollThumb"
+                                       Style="{StaticResource SlimScrollThumbStyle}"
+                                       HorizontalAlignment="Stretch" />
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton x:Name="IncreaseButton"
+                                              Command="{x:Static ScrollBar.PageDownCommand}"
+                                              Focusable="False"
+                                              Opacity="0" />
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Orientation" Value="Horizontal">
+                            <Setter TargetName="PART_Track"
+                                    Property="Margin"
+                                    Value="2,0" />
+                            <Setter TargetName="PART_Track"
+                                    Property="IsDirectionReversed"
+                                    Value="False" />
+                            <Setter TargetName="DecreaseButton"
+                                    Property="Command"
+                                    Value="{x:Static ScrollBar.PageLeftCommand}" />
+                            <Setter TargetName="IncreaseButton"
+                                    Property="Command"
+                                    Value="{x:Static ScrollBar.PageRightCommand}" />
+                            <Setter TargetName="ScrollThumb"
+                                    Property="VerticalAlignment"
+                                    Value="Stretch" />
+                            <Setter TargetName="ScrollThumb"
+                                    Property="MinWidth"
+                                    Value="34" />
+                            <Setter TargetName="ScrollThumb"
+                                    Property="MinHeight"
+                                    Value="0" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto" />
+                <Setter Property="Height" Value="9" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="ProcessLabelStyle" TargetType="TextBlock">
@@ -742,9 +852,9 @@
     </Style>
 
     <Style x:Key="AccountTabStyle" TargetType="TabItem">
-        <Setter Property="MinWidth" Value="108" />
-        <Setter Property="Height" Value="38" />
-        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="MinWidth" Value="110" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Margin" Value="0,0,8,0" />
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="Foreground" Value="{StaticResource InkMutedBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -754,11 +864,13 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
                     <Border x:Name="TabBackground"
+                            Margin="1"
                             Background="{StaticResource SurfaceMutedBrush}"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
-                            Padding="{TemplateBinding Padding}">
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           ContentSource="Header" />

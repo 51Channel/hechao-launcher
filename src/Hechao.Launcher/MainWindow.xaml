@@ -685,10 +685,11 @@
                     </Grid>
                 </Border>
 
-                <ScrollViewer Grid.Row="3"
-                              VerticalScrollBarVisibility="Auto"
+                <ScrollViewer x:Name="ServerDetailsScrollViewer"
+                              Grid.Row="3"
+                              VerticalScrollBarVisibility="Hidden"
                               HorizontalScrollBarVisibility="Disabled">
-                <Grid MinHeight="292">
+                <Grid MinHeight="332">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="56*" />
                         <ColumnDefinition Width="44*" />
@@ -699,12 +700,15 @@
                     </Grid.RowDefinitions>
 
                     <!-- Client readiness -->
-                    <Grid Grid.Column="0" Margin="28,20,26,18">
+                    <Grid x:Name="ClientReadinessPanel"
+                          Grid.Column="0"
+                          Margin="28,20,26,24">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="42" />
                             <RowDefinition Height="66" />
                             <RowDefinition Height="72" />
-                            <RowDefinition Height="66" />
+                            <RowDefinition x:Name="ClientDirectoryRow"
+                                           Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
@@ -844,12 +848,12 @@
                                                FontWeight="Bold"
                                                HorizontalAlignment="Right" />
                                 </Grid>
-                                <ProgressBar Grid.Row="1"
-                                             Style="{StaticResource HechaoProgressBarStyle}"
-                                             Minimum="0"
-                                             Maximum="100"
-                                             Value="{Binding UpdateProgress, Mode=OneWay}"
-                                             Margin="0,9,0,0" />
+                                <controls:AnimatedProgressBar Grid.Row="1"
+                                                              Style="{StaticResource HechaoProgressBarStyle}"
+                                                              Minimum="0"
+                                                              Maximum="100"
+                                                              Value="{Binding UpdateProgress, Mode=OneWay}"
+                                                              Margin="0,9,0,0" />
                                 <TextBlock Grid.Row="2"
                                            Text="{Binding ClientStatusText}"
                                            FontSize="11"
@@ -858,7 +862,7 @@
                             </Grid>
                         </Grid>
 
-                        <Grid Grid.Row="3" Margin="0,10,0,0">
+                        <Grid Grid.Row="3" Margin="0,10,0,2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="18" />
                                 <RowDefinition Height="40" />
@@ -893,7 +897,7 @@
                     <Border Grid.Column="1"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1,0,0,0">
-                        <Grid Margin="28,20,28,18">
+                        <Grid Margin="28,20,28,24">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="42" />
                                 <RowDefinition Height="40" />
@@ -1256,11 +1260,11 @@
                                                FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,7,0,0" />
-                                    <ProgressBar Grid.Row="2"
-                                                 Style="{StaticResource HechaoProgressBarStyle}"
-                                                 Value="{Binding ActiveDownload.Percent, Mode=OneWay}"
-                                                 Maximum="100"
-                                                 Margin="0,12,0,0" />
+                                    <controls:AnimatedProgressBar Grid.Row="2"
+                                                                  Style="{StaticResource HechaoProgressBarStyle}"
+                                                                  Value="{Binding ActiveDownload.Percent, Mode=OneWay}"
+                                                                  Maximum="100"
+                                                                  Margin="0,12,0,0" />
                                     <TextBlock Grid.Row="3"
                                                Text="{Binding ActiveDownload.Version, StringFormat=客户端版本 {0}}"
                                                FontFamily="Segoe UI"
