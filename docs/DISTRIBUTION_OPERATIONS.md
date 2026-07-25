@@ -1,8 +1,8 @@
 # 客户端分发与签名操作手册
 
-> 启动器源码版本：`0.11.1`
+> 启动器源码版本：`0.11.2`
 > 发布器源码版本：`0.8.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础与 NeoForge 活动档案的 API `0.11.0` 在线激活均已完成；启动器 `0.11.1` 已构建并通过本机升级，尚未上传。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础与 NeoForge 活动档案的 API `0.11.1` 在线激活均已完成；启动器 `0.11.2` 已通过本机升级、并行续传、全量落盘和 Java 兼容路径验证，最终安装包尚未上传。
 
 ## 1. 安全边界
 
@@ -155,6 +155,16 @@ NeoForge 活动档案已于 `2026-07-24` 正式发布：
 - 已使用生产信任包验签，从本地对象全新安装后逐文件复验，并成功构建 `net.neoforged.fml.startup.Client`、NeoForge `21.11.42` 与 `mc.hehe11.fun` 参数；没有启动 Minecraft。
 - 生产验收确认 Member 无权取得活动清单、Participant 可以取得签名清单；全部 `203` 个新增对象和 `12` 个共享对象样本均从 OSS 下载并重算 SHA-256。活动服始终保持 `Closed 0/30`。完整证据见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
+### 启动器 0.11.2 下载链路
+
+基础档案包含 `4,902` 个逻辑文件和 `4,900` 个去重对象，其中 `4,355` 个对象小于 64 KiB。旧版逐对象串行执行“API 鉴权 -> 302 -> OSS”时，生产实测只有约 `15 KiB/s`。`0.11.2` 改为最多 16 路受控并行，按 SHA-256 去重任务，聚合单调进度，并保留 Range 续传、逐对象哈希和原子目录切换。
+
+游戏对象下载使用不经过系统代理的独立 `HttpClient`；登录、目录和普通 API 仍遵循 Windows 代理设置。临时网络中断、服务端 429/5xx 或提前断流最多重试 5 次，采用指数退避、随机抖动并尊重 `Retry-After`。Bearer 仍只发送给 `launcher-api.hechao.world`，不会随 302 跳转到 OSS。
+
+API `0.11.1` 的 `downloads` 策略按赫朝账号分区，令牌桶容量 `192`、每秒补充 `80`；全局每 IP 每分钟 `6000` 和登录每 IP 每分钟 `10` 的限制保持不变。拒绝响应带 `Retry-After`。该策略只用于已授权且属于签名清单的对象入口，不放宽注册、登录、管理员或论坛内部端点。
+
+生产续传从已有 `222,431,031` 字节对象缓存开始，在 `94.64` 秒内完成剩余对象并原子安装。最终 `.minecraft` 为 `4,902` 个文件、`874,147,856` 字节，安装状态为 `base-1.21.11` / `1.0.5`，无残留 `.part`。完整记录见 [`LAUNCHER_RELEASE_0.11.2.md`](LAUNCHER_RELEASE_0.11.2.md)。
+
 ## 5. OSS 与 API 配置
 
 当前云端基线：
@@ -186,7 +196,7 @@ Distribution__PresignedUrlSeconds=300
 
 [`configure-distribution.sh`](../deploy/linux/configure-distribution.sh) 从标准输入读取 AccessKey ID 和 Secret，写入权限 `600` 的环境文件，并创建只读清单目录；脚本不会重启 API。
 
-截至 `2026-07-24`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.10.1` 已读取并使用该分发配置。
+截至 `2026-07-26`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.11.1` 已读取并使用该分发配置。
 
 上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。策略 v3 只允许对 `acs:oss:*:*:hechaoworld/objects/*` 和 `acs:oss:*:*:hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；不允许列举 Bucket、读取其他前缀、删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验和生成私有启动器下载链接。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
 

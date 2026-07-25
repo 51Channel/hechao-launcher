@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.10.1-20260724T102830Z`
-> 本地 API 源码版本：`0.11.0`
-> 当前阶段：统一社区账号候选已完成本机测试、尚未部署；启动器 `0.11.0` 为未分发候选，管理员 Web 仍显式关闭
+> 当前线上版本：`0.11.1-20260725T165050Z`
+> 本地 API 源码版本：`0.11.1`
+> 当前阶段：统一社区账号与并行分发已部署；启动器 `0.11.2` 为未分发候选，管理员 Web 仍显式关闭
 
 ## 1. 运行边界
 
@@ -103,6 +103,12 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 
 注释标签 `api-v0.10.1` 已推送，指向包含热修复源码与生产验收记录的提交 `6083d84`。
 
+`0.11.1` 将已授权对象下载从每账号每分钟 `600` 的固定窗口改为独立令牌桶，并为拒绝响应写入 `Retry-After`。首轮 `0.11.1-20260725T160210Z` 使用容量 `96`、每秒 `40`，真实基础档案续传成功但日志仍出现小文件突发 429；最终 `0.11.1-20260725T165050Z` 调整为容量 `192`、每秒 `80`。登录、管理员、论坛内部策略和全局每 IP 每分钟 `6000` 均未放宽。
+
+最终单文件程序为 `103,711,283` 字节，SHA-256 `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45`；上传归档为 `45,309,559` 字节，SHA-256 `E727E9B840E81CDEFE5D45586AEF874B6E082D29562F797F45ECC8C98589E587`。热修复前发布与配置备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.11.1-hotfix-20260725T165050Z.tar.gz` 为 `45,447,113` 字节，SHA-256 `52DA8D1D120D2F3A5983128B66CF22F69C1EBE56754527B04A350CACE8BBECB4`。原子部署后本机与公网健康/就绪均为 200、数据库 ready、旧官网与中转 API 为 200、两个管理员入口保持 404，journal 无 warning。回滚目标为 `0.11.1-20260725T160210Z`，更早的 `0.11.0-20260725T074100Z` 也继续保留。
+
+部署一致性数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T170025Z.dump`，大小 `80,137` 字节，SHA-256 `0E32FFDD4AAA0C0306A2950AE2EEE9990921AA26DC87A63EEDD256CC6F0B208`。`sha256sum -c` 通过，`pg_restore --list` 成功读取 `110` 条归档目录项。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
@@ -186,6 +192,7 @@ systemctl reload nginx
 | `0.6.0-20260723T123346Z` | `71313BCF82B6B6E1BB095F142E1BA6A06E9ADC7B834FA6F32F9B74914F078780` | 按 Velocity 目标的实时心跳、迁移 4、目录状态合并、任务实测与公网回归通过 |
 | `0.9.0-20260723T195253Z` | `159DDBA288078E0F2C6DAA4BF3C3A62507EC3A3F99FBEC24D15A78AAB57ADBBA` | 迁移 5 至 7、赫朝账号完整会话链、无效正版凭据拒绝、测试数据清理与旧域名回归通过；AdminWeb 保持关闭 |
 | `0.10.0-20260724T101528Z` | `ECE445F76682775917D089630B6C0105AEE04707EE08D36886E53514E8CDCB11` | 账号安全端点上线；生产回归发现带参数多语句命令与 Npgsql 预处理不兼容，保留为回溯版本 |
-| `0.10.1-20260724T102830Z` | `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3` | 单语句事务热修复、全部设备退出、解除绑定、精确清理、公网与旧业务回归通过；当前线上版本 |
+| `0.10.1-20260724T102830Z` | `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3` | 单语句事务热修复、全部设备退出、解除绑定、精确清理、公网与旧业务回归通过 |
+| `0.11.1-20260725T165050Z` | `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45` | 论坛统一账号、并行对象签名、独立令牌桶、`Retry-After`、真实基础档案续传与公网回归通过；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号与账号安全 API `0.10.1` 已于 2026-07-24 部署。启动器 `0.10.0` 仍是未分发候选；管理员 Web 代码已进入生产二进制但功能保持关闭。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全和论坛统一账号已部署。API `0.11.1` 为当前线上版本，启动器 `0.11.2` 为未分发候选；管理员 Web 代码已进入生产二进制但功能保持关闭。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

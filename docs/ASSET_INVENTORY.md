@@ -1,6 +1,6 @@
 # 赫朝平台无密码资产清单
 
-> 核查时间：2026-07-24（Asia/Shanghai）
+> 核查时间：2026-07-26（Asia/Shanghai）
 > 用途：`PLATFORM_PLAN.md` 阶段 0 基线、部署前检查与回滚定位
 > 安全边界：本文不记录密码、私钥、数据库口令、令牌或云 AccessKey
 
@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.10.1`、赫朝账号、账号安全、真实目录、认证会话、签名分发、Velocity 授权与状态心跳 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.11.1`、赫朝账号、账号安全、真实目录、并行签名分发、Velocity 授权与状态心跳 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -57,6 +57,8 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - API `0.9.0` 发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260723T195226Z.dump`，大小 `48,720` 字节，SHA-256 为 `621638f3500680e7ad3903cab62ac40a974defe0ecb65a4eb9cfc292cd5547d6`；校验和与 `pg_restore --list` 均通过。
 - API `0.10.0` 发布前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T101600Z.dump` 的 SHA-256 为 `9ceaaea545525e1a6ec199d11aa62fecad4e62220641cc847da2a7d1bb3f64f8`；配置与当前发布备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.10.0-20260724T101600Z.tar.gz` 的 SHA-256 为 `1f7935395a99f85355acde0d7110205ca2a560d8989d9a560b33e8561b0886ba`。
 - API `0.10.1` 热修复前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T102852Z.dump` 的 SHA-256 为 `d15397bfb1c318f4141ce97a13ac2a4692c755915ff46bdd9c46c5c6b051d1d4`；配置与当前发布备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.10.1-20260724T102852Z.tar.gz` 的 SHA-256 为 `c5fb969a7a24ebcb69e90f19bf112faf477d2a1ab68c53b7aeac3dc589f90ce4`。两轮数据库备份均通过校验和与 `pg_restore --list`。
+- API `0.11.1` 最终限流热修复前发布与配置备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.11.1-hotfix-20260725T165050Z.tar.gz` 为 `45,447,113` 字节，SHA-256 为 `52da8d1d120d2f3a5983128b66cf22f69c1ebe56754527b04a350cace8bbecb4`；直接回滚目标为 `0.11.1-20260725T160210Z`。
+- API `0.11.1` 部署一致性数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T170025Z.dump` 为 `80,137` 字节，SHA-256 为 `0e32ffddf4aaa0c0306a2950ae2eee9990921aa26dc87a63eedd256cc6f0b208`；校验和通过，`pg_restore --list` 可读取 `110` 条归档目录项。
 - 活动档案 `1.0.10` 发布前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T120517Z.dump` 为 `64,196` 字节，SHA-256 为 `5CDF0991013A99A74622BFF23C37C9EC9C999418BB023306F18C33F9987F74A8`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-activity-neoforge-1.0.10-20260724T120517Z`，其中清单归档 SHA-256 为 `5C918781D08434FC581E0F69E91ABF08F5A2E3F2756F3FC985606D51F45F9ACE`。数据库校验和与 `pg_restore --list` 均通过。
 - `hechao-launcher-db-backup.timer` 已启用，每日生成 PostgreSQL custom-format 备份并保留 14 天；首份备份校验通过，`pg_restore --list` 可读取 36 个对象。
 - 首份备份已恢复到唯一命名的临时验证库，迁移版本、3 个客户端档案、4 个服务器和 0 个初始用户均与生产库一致，验证后只删除了临时库。
@@ -79,7 +81,9 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - 启动器 `0.9.1` 基于提交 `6adc93a` 增加 Minecraft 正常/异常退出记录、异常提示和玩家主动生成的本地脱敏诊断包；日志截尾、固定 ZIP 条目、世界存档排除、重解析点拒绝与 20 条退出/10 个诊断包保留上限均有自动测试。单文件 EXE 为 `68,591,719` 字节，SHA-256 为 `98C53E741F4880258568AA1EBC042E30102467AD139CF6A0AA8CCD02D484121F`；NSIS 安装包为 `61,795,645` 字节，SHA-256 为 `99E42CC78157050041F13504AE9ED93F1F1573D7244F06EA5E692EBF8291929F`。Windows 安装/卸载冒烟测试和 `140/140` 解决方案测试已通过；两份 EXE 当前均为 `NotSigned`，尚未上传或向玩家分发。
 - 启动器 `0.10.0` 基于提交 `9cba23e9d0b5ba799af50dcc2ef0018cfe5a31e4` 增加退出当前设备、退出所有设备及密码确认解除 Minecraft 绑定；服务端会原子撤销启动器会话、管理员会话、后台登录票据和 Velocity 进服授权。单文件 EXE 为 `68,607,280` 字节，SHA-256 为 `D9FA21C5F15E3B30FFED8FEF4E011672B75C4A15987712BBF574A0CEDD3834F3`；NSIS 安装包为 `61,796,065` 字节，SHA-256 为 `E2E14306882EF072016F35D740D2F06A7C8D12F63FFE28DD0F6A2C07B24D4876`。`157/157` 解决方案测试、账户页实机检查、`0.9.1` 原地升级、干净安装、卸载、IconPark 授权文件和用户数据保留验收均通过；卸载后程序目录、快捷方式和注册表无残留。Windows EXE 均为 `NotSigned`。安装包已上传私有 OSS，匿名直链返回 `403`，当前仅通过最长 24 小时的签名链接供内部灰度，尚未公开发布。完整记录见 [`LAUNCHER_RELEASE_0.10.0.md`](LAUNCHER_RELEASE_0.10.0.md)。
 - API `0.10.0-20260724T101528Z` 单文件为 `103,635,312` 字节，SHA-256 为 `ECE445F76682775917D089630B6C0105AEE04707EE08D36886E53514E8CDCB11`，归档 SHA-256 为 `020DD8BA3D8D797336B5155F60EC34F900D9B27310FB52085B6BAA1BFEA8A4E6`；生产回归发现 Npgsql 带参数多语句预处理问题。
-- API `0.10.1-20260724T102830Z` 基于提交 `19709c2` 将相关事务拆为单语句命令。单文件为 `103,634,800` 字节，SHA-256 为 `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3`；归档为 `45,282,743` 字节，SHA-256 为 `5EAF4651D076B1F72CDFF83ED1D628D046621286C58B6BACC0DB03453FEC36A9`。生产隔离回归、精确清理、公网与旧业务回归全部通过，当前在线。
+- API `0.10.1-20260724T102830Z` 基于提交 `19709c2` 将相关事务拆为单语句命令。单文件为 `103,634,800` 字节，SHA-256 为 `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3`；归档为 `45,282,743` 字节，SHA-256 为 `5EAF4651D076B1F72CDFF83ED1D628D046621286C58B6BACC0DB03453FEC36A9`。生产隔离回归、精确清理、公网与旧业务回归全部通过，现保留为历史回滚版本。
+- 启动器 `0.11.2` 基于提交 `9622e54c1c9726e33a6f2848dae2720fa8405f7f`。单文件 EXE 为 `68,633,838` 字节，SHA-256 为 `5E71FB31B4983AB4115B9BD314E9756558E8B2D4EDBCE5C1B089CEAA5ACBBE65`；NSIS 安装包为 `61,800,211` 字节，SHA-256 为 `FC3E2AD75A9E35C3FD6FCD6FBF8375BB6BE7BCE651E922EA07F865D873A1F3DC`。`185/185` 测试、覆盖升级、基础档案全量落盘、并行续传和 Java 兼容路径验证均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。
+- API `0.11.1-20260725T165050Z` 基于提交 `3f17cba`。单文件为 `103,711,283` 字节，SHA-256 为 `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45`；归档为 `45,309,559` 字节，SHA-256 为 `E727E9B840E81CDEFE5D45586AEF874B6E082D29562F797F45ECC8C98589E587`。生产健康、数据库、旧网站、中转 API、管理员入口和 journal 回归均通过，当前在线。
 - 正式基础档案为 `base-1.21.11` / `1.0.5`，清单 SHA-256 为 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`；包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节。
 - NeoForge 活动正式档案为 `activity-neoforge-1.21.11` / `1.0.10`，清单 SHA-256 为 `0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F`；包含 `4,754` 个文件与对象、`621,732,083` 字节。Meccha SHA-256 `C72511BEF3B0CC2C1A1C97E1C33709901714460191F9549FD461E71215534E9E` 与活动服一致；生产信任验签、发布物闭合验收、全量安装、逐文件复验、NeoForge `21.11.42` 进程构建、分级授权和真实 OSS 下载均通过，当前解决方案测试为 `157/157`。API 已无重启原子激活，活动服保持 `Closed 0/30`。
 - 独立发布 RAM 用户 `hechao-launcher-publisher` 绑定 `HechaoLauncherOssObjectPublish` v3，仅可对 `hechaoworld/objects/*` 与 `hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；没有列举、其他前缀读取、删除或版本管理权限。AccessKey 仅以 Windows DPAPI `CurrentUser` 密文保存，主副本位于 `%LocalAppData%\HechaoLauncherAdmin\secrets`，同密文镜像位于 `H:\Hechao-SecureBackup`。首批基础档案 `4,900` 个对象共 `874,147,706` 字节；活动档案随后提交 `4,754` 个对象和 `621,732,083` 字节；启动器 `0.10.0` 私有安装包为 `61,796,065` 字节。
@@ -137,9 +141,9 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 
 ## 5. 当前 API 部署状态
 
-- 发布 ID：`0.10.1-20260724T102830Z`
-- API `0.10.1` 已部署；启动器 `0.10.0` 为未分发候选。管理员 Web 代码已进入生产二进制但功能保持关闭
-- Git 标签：`api-v0.10.1`，目标提交 `6083d84`
+- 发布 ID：`0.11.1-20260725T165050Z`
+- API `0.11.1` 已部署；启动器 `0.11.2` 为未分发候选。管理员 Web 代码已进入生产二进制但功能保持关闭
+- Git 标签：`api-v0.11.1` 指向 `3f17cba`；`launcher-v0.11.2` 指向 `9622e54c1c9726e33a6f2848dae2720fa8405f7f`
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
