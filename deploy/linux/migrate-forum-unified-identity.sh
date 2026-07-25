@@ -81,7 +81,16 @@ runuser -u ecs-user -- env HOME=/home/ecs-user \
   bash "$site_root" > "$apply_log" 2>&1
 
 chmod 0600 "$dry_run_log" "$apply_log"
-curl -fsS http://127.0.0.1:3000/ >/dev/null
+
+site_ready=false
+for _ in {1..30}; do
+  if curl -fsS --max-time 2 http://127.0.0.1:3000/ >/dev/null 2>&1; then
+    site_ready=true
+    break
+  fi
+  sleep 1
+done
+test "$site_ready" = true
 
 grep -E '^(论坛账号：|完成：)' "$dry_run_log"
 grep -E '^(论坛账号：|完成：)' "$apply_log"
