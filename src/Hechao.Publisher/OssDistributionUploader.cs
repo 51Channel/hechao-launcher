@@ -23,6 +23,37 @@ internal sealed record OssRemoteObject(
     long ContentLength,
     IReadOnlyDictionary<string, string> Metadata);
 
+internal static class OssServiceExceptionClassifier
+{
+    public static bool Matches(
+        Exception exception,
+        int statusCode,
+        params string[] errorCodes)
+    {
+        var serviceException = Find(exception);
+        return serviceException?.StatusCode == statusCode &&
+               errorCodes.Contains(
+                   serviceException.ErrorCode,
+                   StringComparer.Ordinal);
+    }
+
+    public static bool ContainsServiceException(Exception exception) =>
+        Find(exception) is not null;
+
+    private static ServiceException? Find(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is ServiceException serviceException)
+            {
+                return serviceException;
+            }
+        }
+
+        return null;
+    }
+}
+
 internal interface IOssObjectStore : IDisposable
 {
     Task<OssRemoteObject?> HeadAsync(
@@ -79,9 +110,13 @@ internal sealed class AlibabaOssObjectStore : IOssObjectStore
                     result.Metadata ?? new Dictionary<string, string>(),
                     StringComparer.OrdinalIgnoreCase));
         }
-        catch (ServiceException exception) when (
-            exception.StatusCode == 404 &&
-            exception.ErrorCode is "NoSuchKey" or "NoSuchObject" or "NotFound")
+        catch (Exception exception) when (
+            OssServiceExceptionClassifier.Matches(
+                exception,
+                404,
+                "NoSuchKey",
+                "NoSuchObject",
+                "NotFound"))
         {
             return null;
         }
@@ -201,9 +236,12 @@ internal sealed class OssDistributionUploader
                         Interlocked.Increment(ref uploaded);
                         Interlocked.Add(ref uploadedBytes, item.Length);
                     }
-                    catch (ServiceException exception) when (
-                        exception.StatusCode == 409 &&
-                        exception.ErrorCode is "FileAlreadyExists" or "ObjectAlreadyExists")
+                    catch (Exception exception) when (
+                        OssServiceExceptionClassifier.Matches(
+                            exception,
+                            409,
+                            "FileAlreadyExists",
+                            "ObjectAlreadyExists"))
                     {
                         var concurrentObject = await store.HeadAsync(
                             bucket,

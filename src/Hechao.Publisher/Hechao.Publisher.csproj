@@ -16,7 +16,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Hechao.Publisher</AssemblyName>
     <RootNamespace>Hechao.Publisher</RootNamespace>
-    <Version>0.8.0</Version>
+    <Version>0.8.1</Version>
   </PropertyGroup>
 
 </Project>

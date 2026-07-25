@@ -1,9 +1,42 @@
 using System.Security.Cryptography;
+using AlibabaCloud.OSS.V2;
 
 namespace Hechao.Publisher.Tests;
 
 public sealed class OssDistributionUploaderTests
 {
+    [Fact]
+    public void ServiceExceptionClassifier_FindsNestedSdkError()
+    {
+        var serviceException = new ServiceException(
+            404,
+            new Dictionary<string, string>
+            {
+                ["Code"] = "NoSuchKey",
+                ["Message"] = "missing"
+            },
+            new Dictionary<string, string>(),
+            new Dictionary<string, string>());
+        var operationException = new InvalidOperationException(
+            "operation failed",
+            serviceException);
+
+        Assert.True(
+            OssServiceExceptionClassifier.Matches(
+                operationException,
+                404,
+                "NoSuchKey",
+                "NotFound"));
+        Assert.True(
+            OssServiceExceptionClassifier.ContainsServiceException(
+                operationException));
+        Assert.False(
+            OssServiceExceptionClassifier.Matches(
+                operationException,
+                409,
+                "FileAlreadyExists"));
+    }
+
     [Fact]
     public void ValidateAndEnumerateObjects_AcceptsContentAddressedObjects()
     {

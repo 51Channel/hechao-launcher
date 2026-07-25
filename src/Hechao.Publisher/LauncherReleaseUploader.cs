@@ -96,9 +96,13 @@ internal sealed class AlibabaLauncherReleaseObjectStore
                     result.Metadata ?? new Dictionary<string, string>(),
                     StringComparer.OrdinalIgnoreCase));
         }
-        catch (ServiceException exception) when (
-            exception.StatusCode == 404 &&
-            exception.ErrorCode is "NoSuchKey" or "NoSuchObject" or "NotFound")
+        catch (Exception exception) when (
+            OssServiceExceptionClassifier.Matches(
+                exception,
+                404,
+                "NoSuchKey",
+                "NoSuchObject",
+                "NotFound"))
         {
             return null;
         }
@@ -271,13 +275,17 @@ internal sealed class LauncherReleaseUploader
                     cancellationToken);
                 uploaded = true;
             }
-            catch (ServiceException exception) when (
-                exception.StatusCode == 409 &&
-                exception.ErrorCode is "FileAlreadyExists" or "ObjectAlreadyExists")
+            catch (Exception exception) when (
+                OssServiceExceptionClassifier.Matches(
+                    exception,
+                    409,
+                    "FileAlreadyExists",
+                    "ObjectAlreadyExists"))
             {
                 uploaded = false;
             }
-            catch (ServiceException exception)
+            catch (Exception exception) when (
+                OssServiceExceptionClassifier.ContainsServiceException(exception))
             {
                 throw new IOException(
                     $"Unable to upload OSS launcher release {objectKey}.",
@@ -332,7 +340,8 @@ internal sealed class LauncherReleaseUploader
                 objectKey,
                 cancellationToken);
         }
-        catch (ServiceException exception)
+        catch (Exception exception) when (
+            OssServiceExceptionClassifier.ContainsServiceException(exception))
         {
             throw new IOException(
                 $"Unable to read OSS launcher release {objectKey}.",
