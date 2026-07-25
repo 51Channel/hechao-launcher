@@ -1,9 +1,9 @@
 # Velocity 进服授权运维
 
-> API：`0.11.1`
+> API：`0.12.0`
 > 启动器：`0.11.6`
-> Velocity 插件：`0.1.0`
-> 当前状态：插件已加载为 `monitor`，等待目标映射、真实账号和转服链路灰度
+> Velocity 插件：`0.2.0`
+> 当前状态：插件已加载为 `monitor`，全部生产目标已映射，授权定向路由自动验收通过；等待真实四级账号灰度
 
 ## 1. 授权链路
 
@@ -13,10 +13,13 @@
   -> 启动器在创建 Minecraft 进程前申请 10 分钟一次性启动授权
   -> Minecraft 连接 online-mode + modern forwarding 的 Velocity
   -> Velocity 在 ServerPreConnectEvent 中异步请求赫朝 API
-  -> 首次连接消费启动授权；后续转服重新校验目标服权限
+  -> 首次连接消费启动授权，并把初始大厅目标改写为授权选择的后端目标
+  -> 后续 NPC、命令或插件转服按实际目标重新校验权限
 ```
 
 启动授权证明本次 Minecraft 连接由已登录的赫朝启动器发起，不是可以交给游戏客户端使用的票据。授权 ID 不写入 Minecraft 参数，Velocity 根据正版 UUID 向 API 消费最新、未使用且未过期的授权。
+
+首次连接时，启动授权中的服务器选择是权威目标。启动器始终连接统一 Velocity 公网入口，即使代理先把玩家放到 `lobby`，API `0.12.0` 也会返回授权对应的 `velocityTarget`，插件 `0.2.0` 再把本次 `ServerPreConnectEvent` 的目标改写到该后端。返回目标必须存在于当前 Velocity 注册表中；未知目标在 `monitor` 中只记录告警，在 `enforce` 中拒绝。
 
 启动器只在 Java、依赖库、游戏参数和进程对象均准备完成后申请授权。API 请求失败时会释放未启动的进程对象，不会留下一个随后必然被拒绝的 Minecraft 进程。
 
@@ -74,27 +77,31 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 
 ## 5. 当前安装基线
 
-- 插件：`E:\Velocity\plugins\HechaoVelocityAuthorizer-0.1.0.jar`
-- JAR SHA-256：`BA1E02150714A34D5FCEA348C64C578B31D9E4C85B53D3DA8EFD3681F31388C4`
+- 插件：`E:\Velocity\plugins\HechaoVelocityAuthorizer-0.2.0.jar`
+- JAR SHA-256：`9CBBB1453D7260CD8AAD48EDC6BE4E80B8A5E41374D5012E0DBA64ACC0188D37`
 - API：`https://launcher-api.hechao.world/v1/internal/velocity/authorize`
 - 代理实例：`owl5-main`
 - 请求超时：`2500 ms`
-- 安装备份：`E:\manual-backups\velocity-authorizer-20260723T103346Z`
+- 安装备份：`E:\manual-backups\VelocityAuthorizer-0.2.0-20260726-044028`
 - 当前配置模式：`monitor`
+- 当前计划任务：`Codex-Velocity-Live`
+- 当前监听：`127.0.0.1:25577`，PID `6068`
 
-文件部署时 Velocity 的 `25577` 监听 PID 在前后均未变化，因此当时没有加载插件。2026-07-26 经管理员明确授权，确认代理没有已建立的玩家连接后，单独停止并重新启动计划任务 `Codex-Velocity-Live`：旧 PID `10324` 退出，新 PID `7104` 于 03:14:11 启动。启动日志确认 `hechao-velocity-authorizer 0.1.0` 已加载，并于 03:14:13 以 `monitor` 模式为 `owl5-main` 初始化；`25577` 正常监听且启动日志没有 error 或 warning。该操作没有启动、停止或重启大厅、生存服、活动服或其他 Java 进程。
+2026-07-26 部署 `0.2.0` 前确认代理没有已建立的玩家连接，仅重启计划任务 `Codex-Velocity-Live`。04:40:31 的启动日志确认 `hechao-velocity-authorizer 0.2.0` 已加载，并以 `monitor` 模式为 `owl5-main` 初始化；新 PID `6068` 正常监听 `25577`。备份目录包含旧 `0.1.0` JAR、配置和 `velocity.toml`。大厅、Survival1、Survival2 和活动后端进程均未被重启。
+
+生产数据库与内部授权 API 已使用一次性合成授权做闭环验收：绑定账号 `51Channel` 以初始目标 `lobby` 请求授权后，API 返回 `Allowed=true`、`Reason=Allowed`、`ServerId=pvp`、`VelocityTarget=pvp`、`AccessTier=Administrator`、`LuckPermsPrimaryGroup=owner`。授权已消费，临时授权行已删除，审计记录保留。插件目标改写行为同时由 `11/11` 个 Java 测试覆盖；该自动验收不替代真实玩家连接、NPC 转服和 `/hub` 灰度。
 
 ## 6. 从 monitor 切换到 enforce
 
 以下条件必须全部完成：
 
 1. Minecraft Java API 许可已批准；仍需确认真实 Microsoft 正版登录成功。
-2. 普通、VIP、管理员、服主各至少一个账号完成目录和进服验收。
+2. 普通、VIP、管理员、服主各至少一个账号完成目录和进服验收。当前 22 个社区账号中只有 1 个绑定 Minecraft，因此此项未完成。
 3. [已完成] 管理员单独重启 Velocity，并从启动日志确认插件以 `monitor` 初始化。
-4. Velocity 的 `lobby`、`survival1`、`survival2`、`activity` 等所有可达目标都已登记到平台目录；历史目标如 `pvp` 要么登记，要么从代理配置和入口中移除。
+4. [已完成] Velocity 的 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight 对应目录都已登记；替换服共享目标关系已记录。
 5. 共享同一 Velocity 目标的替换服一次只能有一个目录项处于 `Online`。特别是 `survival2` 与 DollNight 的切换必须先更新目录状态。
-6. `monitor` 日志中普通入口、NPC 转服、`/hub`、断线重连和 API 短暂失败均符合预期。
-7. 数据库已有可验证备份，API 和插件配置都有回滚副本。
+6. [部分完成] 自动化和生产合成授权已确认初始大厅到 `pvp` 的定向结果；仍需真实玩家验证普通入口、NPC 转服、`/hub`、断线重连和 API 短暂失败。
+7. [已完成] 数据库已有可验证备份，API 和插件配置都有回滚副本。
 
 随后由管理员安排一次 Velocity 手动重启窗口：
 
@@ -111,7 +118,7 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 游戏 VPS：
 
 ```powershell
-Get-FileHash 'E:\Velocity\plugins\HechaoVelocityAuthorizer-0.1.0.jar' -Algorithm SHA256
+Get-FileHash 'E:\Velocity\plugins\HechaoVelocityAuthorizer-0.2.0.jar' -Algorithm SHA256
 Select-String -Path 'E:\Velocity\plugins\hechao-velocity-authorizer\config.properties' -Pattern '^mode='
 Get-ChildItem 'E:\Velocity\logs' -File |
     Sort-Object LastWriteTime -Descending |
@@ -142,4 +149,4 @@ ORDER BY velocity_target, sort_order, id;
 
 若 `monitor` 产生异常，只需将模式改为 `disabled`，由管理员在合适窗口手动重启 Velocity。若 `enforce` 阻断正常玩家，优先回退到 `monitor`，保留日志和审计记录，再检查目标映射、LuckPerms 新鲜度、账号绑定和 API 可用性。
 
-插件安装脚本会把旧 JAR 和配置备份到 `E:\manual-backups`，但不会执行重启。API `0.10.1` 可以继续在线，即使插件暂时禁用；不要通过关闭数据库、停止大厅或重启全部 Minecraft 服务来处理授权问题。
+插件安装脚本会把旧 JAR 和配置备份到 `E:\manual-backups`，但不会执行重启。当前直接回滚副本中的旧插件为 `0.1.0`，SHA-256 `BA1E02150714A34D5FCEA348C64C578B31D9E4C85B53D3DA8EFD3681F31388C4`。回滚时先恢复旧 JAR 与配置，再只重启 Velocity；API `0.12.0` 可以继续在线。不要通过关闭数据库、停止大厅或重启全部 Minecraft 服务来处理授权问题。

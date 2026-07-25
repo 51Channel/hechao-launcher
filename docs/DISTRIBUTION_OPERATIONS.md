@@ -2,7 +2,7 @@
 
 > 启动器源码版本：`0.11.6`
 > 发布器源码版本：`0.8.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础与 NeoForge 活动档案的 API `0.11.1` 在线激活均已完成；启动器 `0.11.6` 已通过本机升级、平滑并行进度、全量落盘、Java 兼容路径与页面边界验证，最终安装包尚未上传。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础、NeoForge 活动和 PVP Fabric 档案的 API `0.12.0` 在线激活均已完成；启动器 `0.11.6` 已通过本机升级、平滑并行进度、全量落盘、Java 兼容路径与页面边界验证，最终安装包尚未上传。
 
 ## 1. 安全边界
 
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、过期下载链接刷新、跨域令牌隔离、OSS V4 URL、OSS 不可用时保留当前版本、坏哈希与篡改修复、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全和状态心跳规则。`2026-07-24` 使用 .NET SDK `10.0.302` 验证为 `157/157` 通过；Velocity 插件另有 `7/7` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、过期下载链接刷新、跨域令牌隔离、OSS V4 URL、OSS 不可用时保留当前版本、坏哈希与篡改修复、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全、状态心跳和授权目标定向规则。`2026-07-26` 使用 .NET SDK `10.0.302` 验证为 `200/200` 通过；Velocity 插件另有 `11/11` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -155,6 +155,16 @@ NeoForge 活动档案已于 `2026-07-24` 正式发布：
 - 已使用生产信任包验签，从本地对象全新安装后逐文件复验，并成功构建 `net.neoforged.fml.startup.Client`、NeoForge `21.11.42` 与 `mc.hehe11.fun` 参数；没有启动 Minecraft。
 - 生产验收确认 Member 无权取得活动清单、Participant 可以取得签名清单；全部 `203` 个新增对象和 `12` 个共享对象样本均从 OSS 下载并重算 SHA-256。活动服始终保持 `Closed 0/30`。完整证据见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
+PVP Fabric 档案已于 `2026-07-25` 正式发布：
+
+- 干净源：`artifacts/client-sources/pvp-fabric-1.20.1-1.0.0`，来自 `H:\MC\Minecraft 1.20.1 Fabric - 玩家客户端`；日常客户端原目录未修改。
+- 档案：`pvp-fabric-1.20.1` / `1.0.0` / Minecraft `1.20.1` / Fabric `0.16.14` / Java `17`。
+- 清单：`artifacts/distributions/pvp-fabric-1.20.1-1.0.0/manifests/pvp-fabric-1.20.1.json`。
+- 清单 SHA-256：`A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6`。
+- 逻辑文件 `3,749` 个、`885,821,291` 字节；去重对象 `3,748` 个、`862,792,438` 字节。
+- 生产上传新增 `3,547` 个对象、`764,553,396` 字节，另外 `201` 个对象通过长度与 SHA-256 元数据校验后跳过。
+- 线上服务器显示名为“恐怖整蛊”，最低等级 `Participant`，Velocity 目标 `pvp`，后端为 `owl9.vipi9.top:19243`。完整证据见 [`PVP_PROFILE_RELEASE_1.0.0.md`](PVP_PROFILE_RELEASE_1.0.0.md)。
+
 ### 启动器 0.11.2 下载链路
 
 基础档案包含 `4,902` 个逻辑文件和 `4,900` 个去重对象，其中 `4,355` 个对象小于 64 KiB。旧版逐对象串行执行“API 鉴权 -> 302 -> OSS”时，生产实测只有约 `15 KiB/s`。`0.11.2` 改为最多 16 路受控并行，按 SHA-256 去重任务，聚合单调进度，并保留 Range 续传、逐对象哈希和原子目录切换。
@@ -202,7 +212,7 @@ Distribution__PresignedUrlSeconds=300
 
 [`configure-distribution.sh`](../deploy/linux/configure-distribution.sh) 从标准输入读取 AccessKey ID 和 Secret，写入权限 `600` 的环境文件，并创建只读清单目录；脚本不会重启 API。
 
-截至 `2026-07-26`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.11.1` 已读取并使用该分发配置。
+截至 `2026-07-26`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.12.0` 已读取并使用该分发配置。
 
 上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。策略 v3 只允许对 `acs:oss:*:*:hechaoworld/objects/*` 和 `acs:oss:*:*:hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；不允许列举 Bucket、读取其他前缀、删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验和生成私有启动器下载链接。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
 
@@ -225,6 +235,8 @@ Distribution__PresignedUrlSeconds=300
 `2026-07-24` 活动档案上传提交 `4,754` 个对象和 `621,732,083` 字节。由于 Bucket 版本控制，OSS 报告 `4,754` 个上传、`0` 个已存在；其中与基础档案共享的 `4,551` 个摘要生成了同内容新版本，真正新增摘要为 `203` 个、`152,843,997` 字节。上传后对全部新增对象和共享样本完成真实下载与 SHA-256 复验，随后无重启地原子发布 `activity-neoforge-1.21.11` / `1.0.10`。
 
 同日完成补强：RAM 策略升级为 v2，发布器 `0.7.0` 接入远端元数据校验。使用活动档案对生产 OSS 全量复验，结果为 `4,754` 个校验后跳过、`0` 个上传、`0` 上传字节；所有当前对象均匹配本地长度和 SHA-256 元数据，没有创建新对象版本。
+
+`2026-07-25` 发布 PVP 档案时，发布器对 `201` 个共享对象执行远端长度与 SHA-256 元数据校验并跳过，只上传 `3,547` 个缺失对象。发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；清单快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，归档 SHA-256 `CD99BB5059B58EA834B0BFF8D3A27D061C32439ED5E7D9E079ECA21DC4CBCF0F`。清单于 `2026-07-25T20:12:10.4811149+00:00` 原子激活。
 
 ### 启动器安装包内部灰度
 
@@ -262,14 +274,15 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 2. [x] 创建只允许读取 `hechaoworld/objects/*` 的专用 RAM 身份和 AccessKey，并部署到 API 主机。
 3. [x] 生成离线生产签名密钥，将公钥信任包嵌入启动器，并完成签名、验签和篡改拒绝演练。
 4. [x] 从现有客户端制作干净源，生成并独立校验 `base-1.21.11` / `1.0.5` 正式签名档案。
-5. [ ] 将生产签名密钥制作一份不依赖当前 Windows 用户配置的离机恢复副本。
-6. [x] 明确首版不购买 Authenticode 证书，当前 EXE 保持 `NotSigned`；玩家公告必须提供官方来源、大小和 SHA-256，未来签名作为独立版本处理。它与客户端清单签名不是同一套密钥。
-7. [x] 创建仅具备 `hechaoworld/objects/*` 元数据读取与写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文；没有列举或删除权限。
-8. [x] 发布器 `0.7.0` 对版本控制 Bucket 执行 `HeadObject` 长度与 SHA-256 元数据校验；匹配则跳过，不匹配则硬失败，不再依赖 `x-oss-forbid-overwrite` 单独保证不可变性。
-9. [x] 部署 API `0.4.0`，将签名清单原子放入受限目录，并在同一发布操作中更新清单 SHA-256、总大小和版本。
-10. [ ] 先发布内部测试档案，验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
-11. [ ] Mojang API 审核、真实账号验收和 Velocity 最终授权完成后，再启用生产目录强制登录。
-12. [x] 将发布 RAM 权限模板应用为 v3，使用发布器 `0.8.1` 上传启动器 `0.10.0`，验证私有直链拒绝和短时链接下载。
+5. [x] 制作并发布 `activity-neoforge-1.21.11` / `1.0.10` 与 `pvp-fabric-1.20.1` / `1.0.0`，保持独立 `.minecraft`、加载器和 Java 版本。
+6. [ ] 将生产签名密钥制作一份不依赖当前 Windows 用户配置的离机恢复副本。
+7. [x] 明确首版不购买 Authenticode 证书，当前 EXE 保持 `NotSigned`；玩家公告必须提供官方来源、大小和 SHA-256，未来签名作为独立版本处理。它与客户端清单签名不是同一套密钥。
+8. [x] 创建仅具备 `hechaoworld/objects/*` 元数据读取与写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文；没有列举或删除权限。
+9. [x] 发布器 `0.7.0` 对版本控制 Bucket 执行 `HeadObject` 长度与 SHA-256 元数据校验；匹配则跳过，不匹配则硬失败，不再依赖 `x-oss-forbid-overwrite` 单独保证不可变性。
+10. [x] 部署 API，将签名清单原子放入受限目录，并在同一发布操作中更新清单 SHA-256、总大小和版本。
+11. [ ] 用真实四级账号验证未登录、越权、链接过期、断网续传、损坏修复、磁盘不足和真实回滚。
+12. [ ] Minecraft API 审核已通过；真实账号验收和 Velocity `enforce` 完成后，再启用生产目录强制登录。
+13. [x] 将发布 RAM 权限模板应用为 v3，使用发布器 `0.8.1` 上传启动器 `0.10.0`，验证私有直链拒绝和短时链接下载。
 
 ## 7. 游戏数据目录
 

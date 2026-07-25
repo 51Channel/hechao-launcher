@@ -1,7 +1,7 @@
 # Server heartbeat operations
 
-> Production state: API `0.10.1-20260724T102830Z` and collector `0.1.0` deployed
-> on 2026-07-23. The first scheduled run completed with result `0`.
+> Production state: API `0.12.0-20260725T203001Z` and collector `0.1.0` deployed.
+> The five-target configuration was verified on 2026-07-26 and the scheduled task remains read-only.
 > The pre-hardening collector binary is retained in
 > `C:\ProgramData\Hechao\StatusCollector\backups\redirect-hardening-20260723T125705Z`.
 
@@ -23,8 +23,8 @@ Minecraft Server List Ping against loopback ports.
   `D24201646D13CF0CA4F7261DC06C0EFAF2BC9B425A9B539BD3689095EFAD8DFF`
 
 Heartbeats are keyed by Velocity target rather than catalog server ID. This is required
-because `survival2` and replacement activities such as DollNight can share one Velocity
-target. The catalog's configured `Maintenance` or `Closed` state always wins. A catalog
+because replacement activities can share a Velocity target with another catalog entry.
+The catalog's configured `Maintenance` or `Closed` state always wins. A catalog
 row configured as `Online` uses a fresh target heartbeat; an expired or offline heartbeat
 is shown as `Closed`.
 
@@ -60,14 +60,34 @@ configuration JSON.
 
 The production target list is:
 
-| Velocity target | Loopback endpoint | Notes |
-| --- | --- | --- |
-| `lobby` | `127.0.0.1:25566` | Lobby |
-| `survival2` | `127.0.0.1:25565` | Survival or its active replacement |
-| `activity` | `127.0.0.1:25568` | NeoForge activity server |
+| Velocity target | Endpoint | Fallback maximum | Notes |
+| --- | --- | --- | --- |
+| `lobby` | `127.0.0.1:25566` | `300` | Lobby |
+| `survival2` | `127.0.0.1:25565` | `100` | Survival2 or its active replacement |
+| `survival1` | `127.0.0.1:19228` | `20` | Survival1 |
+| `pvp` | `owl9.vipi9.top:19243` | `20` | External PVP Fabric backend |
+| `activity` | `127.0.0.1:25568` | `30` | NeoForge activity server |
 
 Only add a target after it exists in `launcher.servers`; the API rejects unknown targets
 atomically.
+
+The pre-change configuration is retained at:
+
+```text
+C:\ProgramData\Hechao\StatusCollector\backups\server-heartbeats-before-targets-20260726-042625.json
+```
+
+The manual production run observed:
+
+| Target | Observation |
+| --- | --- |
+| `lobby` | `0/200`, Purpur 1.21.11, protocol 774 |
+| `survival2` | `0/100`, online |
+| `survival1` | `0/20`, Purpur 1.21.11, protocol 774 |
+| `pvp` | `0/20`, Minecraft 1.20.1, protocol 763 |
+| `activity` | offline; connection failure isolated to this target |
+
+One offline target does not abort the remaining batch and is not a reason to start that server.
 
 ## Verification
 
@@ -93,7 +113,7 @@ Windows checks:
 Get-ScheduledTask -TaskName 'Hechao Launcher Server Heartbeats'
 Get-ScheduledTaskInfo -TaskName 'Hechao Launcher Server Heartbeats'
 Get-NetTCPConnection -State Listen |
-    Where-Object LocalPort -In 25565,25566,25568
+    Where-Object LocalPort -In 19228,25565,25566,25568
 ```
 
 The final command is read-only. A missing listener is reported as offline; it must not be

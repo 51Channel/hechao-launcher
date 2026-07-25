@@ -38,12 +38,13 @@
 组件独立版本：
 
 ```text
-launcher-v0.10.0
-api-v0.10.1
-velocity-authorizer-v0.1.0
+launcher-v0.11.6
+api-v0.12.0
+velocity-authorizer-v0.2.0
 publisher-v0.8.1
 status-collector-v0.1.0
 profile-base-1.21.11-v1.0.5
+profile-pvp-fabric-1.20.1-v1.0.0
 ```
 
 标签只指向已经测试、记录并推送的提交。测试构建不占用正式版本号；已上传的对象、清单、发布归档和标签不得覆盖，应发布更高版本。
@@ -82,15 +83,15 @@ git config --get user.email
 ## 5. 发布提交模板
 
 ```text
-feat: add Velocity launch authorization
+feat: add grant-directed Velocity routing
 
-- issue one-time launch grants immediately before process start
-- enforce UUID, server state, tier and per-server overrides in API
-- stage Velocity plugin in monitor mode without restarting the proxy
-- document activation, verification and rollback
+- return the selected target when a one-time grant is consumed
+- rewrite the initial lobby target to the authorized backend
+- keep the production plugin in monitor mode during real-account validation
+- document deployment, production smoke, rollback and remaining acceptance
 
-Tests: dotnet 143/143; Velocity 7/7
-Production: API 0.10.1 healthy; plugin staged in monitor mode
+Tests: dotnet 200/200; Velocity 11/11
+Production: API 0.12.0 healthy; plugin 0.2.0 loaded in monitor mode
 ```
 
 提交正文只记录非秘密事实。远端推送后再把提交 ID 和标签补入发布记录；若因此修改文档，应形成一个小型 `docs:` 或 `ops:` 提交。

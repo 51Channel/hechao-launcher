@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.11.1`、赫朝账号、账号安全、真实目录、并行签名分发、Velocity 授权与状态心跳 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.12.0`、赫朝账号、账号安全、三份生产档案、授权定向路由与状态心跳 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -59,7 +59,9 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - API `0.10.1` 热修复前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T102852Z.dump` 的 SHA-256 为 `d15397bfb1c318f4141ce97a13ac2a4692c755915ff46bdd9c46c5c6b051d1d4`；配置与当前发布备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.10.1-20260724T102852Z.tar.gz` 的 SHA-256 为 `c5fb969a7a24ebcb69e90f19bf112faf477d2a1ab68c53b7aeac3dc589f90ce4`。两轮数据库备份均通过校验和与 `pg_restore --list`。
 - API `0.11.1` 最终限流热修复前发布与配置备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.11.1-hotfix-20260725T165050Z.tar.gz` 为 `45,447,113` 字节，SHA-256 为 `52da8d1d120d2f3a5983128b66cf22f69c1ebe56754527b04a350cace8bbecb4`；直接回滚目标为 `0.11.1-20260725T160210Z`。
 - API `0.11.1` 部署一致性数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T170025Z.dump` 为 `80,137` 字节，SHA-256 为 `0e32ffddf4aaa0c0306a2950ae2eee9990921aa26dc87a63eedd256cc6f0b208`；校验和通过，`pg_restore --list` 可读取 `110` 条归档目录项。
+- API `0.12.0` 部署前发布与配置备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.11.3-20260725T203220Z.tar.gz` 的 SHA-256 为 `71d850aabd85ab203ce585c679a53609f91f013dfdae6937e1b208e88625ec12`；数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T203227Z.dump` 的 SHA-256 为 `e1e3f1f864d1cb363e426346892dc0c6651409e001da9f0b05f9435d55a5c7d9`。当前发布为 `0.12.0-20260725T203001Z`，直接回滚目标为 `0.11.3-20260725T195000Z`。
 - 活动档案 `1.0.10` 发布前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T120517Z.dump` 为 `64,196` 字节，SHA-256 为 `5CDF0991013A99A74622BFF23C37C9EC9C999418BB023306F18C33F9987F74A8`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-activity-neoforge-1.0.10-20260724T120517Z`，其中清单归档 SHA-256 为 `5C918781D08434FC581E0F69E91ABF08F5A2E3F2756F3FC985606D51F45F9ACE`。数据库校验和与 `pg_restore --list` 均通过。
+- PVP 档案 `1.0.0` 发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，清单归档 SHA-256 为 `cd99bb5059b58ea834b0bff8d3a27d061c32439ed5e7d9e079eca21dc4cbcf0f`。
 - `hechao-launcher-db-backup.timer` 已启用，每日生成 PostgreSQL custom-format 备份并保留 14 天；首份备份校验通过，`pg_restore --list` 可读取 36 个对象。
 - 首份备份已恢复到唯一命名的临时验证库，迁移版本、3 个客户端档案、4 个服务器和 0 个初始用户均与生产库一致，验证后只删除了临时库。
 - 网站与 Sub2API 仍缺少新的统一每日备份和异地副本；启动器数据库已完成同主机隔离恢复演练，但仍缺异地副本。
@@ -86,9 +88,11 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - 启动器 `0.11.3` 基于提交 `876d905190e246cf906167183546e8b7c0e41db9`。单文件 EXE 为 `68,636,908` 字节，SHA-256 为 `CEB4AD2B69260941028CED2E4BBC7F8A11F39450FF79F8B9D4A89C3B3194733E`；NSIS 安装包为 `61,803,987` 字节，SHA-256 为 `FDEB88A559A94D37FD70F059104E8DAD68AD347FA6E51ABF8943F166606824A9`。`191/191` 测试、覆盖升级、动画中间值、服务器与账号页实机验收均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。
 - 启动器 `0.11.4` 基于提交 `f21097225312659220fdb82ea630feffba1d5024`。单文件 EXE 为 `68,637,409` 字节，SHA-256 为 `2FB18541D8FC0B1D398C25FF567B0F626CA9FCBA32F80B9EC6BDED05470223FA`；NSIS 安装包为 `61,804,910` 字节，SHA-256 为 `D6249C33C97FD375A295B9BD7FB9B8236E8B981C964227CB3B776CA276E9A0D9`。`192/192` 测试、真实 WPF 像素渲染、覆盖升级及登录/注册两种选中状态实机截图均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。
 - 启动器 `0.11.6` 基于提交 `6998dc344c40b49eda0137bb239f3ddd058d248f`。单文件 EXE 为 `68,637,418` 字节，SHA-256 为 `58C1063B5BC65684C55FC685DCB0E5F45CD4151B3DAC8E361030D0BFF1A59F67`；NSIS 安装包为 `61,802,610` 字节，SHA-256 为 `32E06CF9DCE0811293E1279C4C76B8B2C5C8401859FC5A84DCE64AB1227416E9`。`193/193` 测试、等宽完整页签边框、表单整栏拉伸、覆盖升级及登录/注册两种状态实机截图均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。`0.11.5` 仅为未上传、未打标签的本机失败候选。
-- API `0.11.1-20260725T165050Z` 基于提交 `3f17cba`。单文件为 `103,711,283` 字节，SHA-256 为 `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45`；归档为 `45,309,559` 字节，SHA-256 为 `E727E9B840E81CDEFE5D45586AEF874B6E082D29562F797F45ECC8C98589E587`。生产健康、数据库、旧网站、中转 API、管理员入口和 journal 回归均通过，当前在线。
+- API `0.11.1-20260725T165050Z` 基于提交 `3f17cba`。单文件为 `103,711,283` 字节，SHA-256 为 `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45`；归档为 `45,309,559` 字节，SHA-256 为 `E727E9B840E81CDEFE5D45586AEF874B6E082D29562F797F45ECC8C98589E587`。生产健康、数据库、旧网站、中转 API、管理员入口和 journal 回归均通过，现保留为历史版本。
+- API `0.12.0-20260725T203001Z` 单文件为 `103,716,915` 字节，SHA-256 为 `B46A22280243BA9801EB66FD628ED598CD27F0FED7995788C4452D222C3B27D1`；归档为 `45,382,027` 字节，SHA-256 为 `C76DA133466A4D609F8009A5206FDAFCDDE72DC0CB7D78FBC8E8C8B473DA5D41`。授权定向路由、健康/就绪、旧业务与生产合成授权回归通过，当前在线。
 - 正式基础档案为 `base-1.21.11` / `1.0.5`，清单 SHA-256 为 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`；包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节。
 - NeoForge 活动正式档案为 `activity-neoforge-1.21.11` / `1.0.10`，清单 SHA-256 为 `0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F`；包含 `4,754` 个文件与对象、`621,732,083` 字节。Meccha SHA-256 `C72511BEF3B0CC2C1A1C97E1C33709901714460191F9549FD461E71215534E9E` 与活动服一致；生产信任验签、发布物闭合验收、全量安装、逐文件复验、NeoForge `21.11.42` 进程构建、分级授权和真实 OSS 下载均通过，当前解决方案测试为 `157/157`。API 已无重启原子激活，活动服保持 `Closed 0/30`。
+- PVP 正式档案为 `pvp-fabric-1.20.1` / `1.0.0`，清单 SHA-256 为 `A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6`；包含 `3,749` 个逻辑文件、`3,748` 个去重对象和 `885,821,291` 字节。加载器为 Fabric `0.16.14`，运行时为 Java `17`；生产上传新增 `3,547` 个对象、校验跳过 `201` 个对象，当前目录显示名为“恐怖整蛊”。
 - 独立发布 RAM 用户 `hechao-launcher-publisher` 绑定 `HechaoLauncherOssObjectPublish` v3，仅可对 `hechaoworld/objects/*` 与 `hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；没有列举、其他前缀读取、删除或版本管理权限。AccessKey 仅以 Windows DPAPI `CurrentUser` 密文保存，主副本位于 `%LocalAppData%\HechaoLauncherAdmin\secrets`，同密文镜像位于 `H:\Hechao-SecureBackup`。首批基础档案 `4,900` 个对象共 `874,147,706` 字节；活动档案随后提交 `4,754` 个对象和 `621,732,083` 字节；启动器 `0.10.0` 私有安装包为 `61,796,065` 字节。
 - Bucket 版本控制已开启，OSS 会忽略 `x-oss-forbid-overwrite`。活动首次上传因此为 `4,551` 个共享摘要创建同内容新版本，真正新增 `203` 个摘要、`152,843,997` 字节。发布器 `0.7.0` 已改为先校验当前对象长度与 SHA-256 元数据，匹配则跳过，不匹配则硬失败；生产全量复验结果为 `0` 个上传、`4,754` 个跳过、`0` 上传字节。完整记录见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
@@ -99,8 +103,8 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 | 系统 | Windows Server 2022 Standard | 已实时读取 |
 | CPU 配额 | 6 核 / 6 逻辑处理器，宿主型号 Ryzen 9 9950X | 已实时读取 |
 | 内存 | 约 18.0 GiB | 已实时读取 |
-| `C:` | 约 39.13 GiB，剩余约 16.22 GiB | 已实时读取 |
-| `E:` | 约 69.99 GiB，剩余约 6.48 GiB | 已实时读取，空间偏低 |
+| `C:` | 约 39.13 GiB，剩余 `9,402,572,800` 字节（约 8.76 GiB） | 迁移一份历史备份后实时读取 |
+| `E:` | 约 69.99 GiB，剩余 `14,922,022,912` 字节（约 13.90 GiB） | 清理损坏并发备份、迁移历史备份后实时读取 |
 | SSH | 外部端口 `15152`，Windows 内部 `22` | 已验证密钥登录 |
 | RDP | 外部端口 `15153`，Windows 内部 `3389` | 连接方式已记录，未在本轮登录 |
 
@@ -115,17 +119,19 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 | Activity NeoForge | `E:\ActivityNeoForge` | `25568` | 未监听 |
 | DollNight | `E:\DollNight` | 与 Survival2 共用 `25565` | 替换服，不可与 Survival2 同时运行 |
 
-Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
+Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`、`pvp -> owl9.vipi9.top:19243`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
 
 保留替换服目录：`E:\ActivityHybrid`、`E:\ActivityLocal`、`E:\ActivityServer`、`E:\MonsterActivity`。这些目录不能与占用相同入口端口的当前活动后端同时启动。
 
-Velocity 授权插件 `HechaoVelocityAuthorizer-0.1.0.jar` 已放入 `E:\Velocity\plugins`，SHA-256 为 `BA1E02150714A34D5FCEA348C64C578B31D9E4C85B53D3DA8EFD3681F31388C4`；配置位于 `E:\Velocity\plugins\hechao-velocity-authorizer\config.properties`，模式为 `monitor`，ACL 已收紧，备份位于 `E:\manual-backups\velocity-authorizer-20260723T103346Z`。2026-07-26 经管理员授权单独重启计划任务 `Codex-Velocity-Live`，监听 PID 从 `10324` 变为 `7104`；启动日志确认插件已加载并以 `monitor` 模式为 `owl5-main` 初始化。
+Velocity 授权插件 `HechaoVelocityAuthorizer-0.2.0.jar` 已放入 `E:\Velocity\plugins`，SHA-256 为 `9CBBB1453D7260CD8AAD48EDC6BE4E80B8A5E41374D5012E0DBA64ACC0188D37`；配置位于 `E:\Velocity\plugins\hechao-velocity-authorizer\config.properties`，模式为 `monitor`，ACL 已收紧，备份位于 `E:\manual-backups\VelocityAuthorizer-0.2.0-20260726-044028`。计划任务 `Codex-Velocity-Live` 当前 PID 为 `6068`；启动日志确认插件 `0.2.0` 已加载并为 `owl5-main` 初始化。
 
 本次激活前代理没有已建立的玩家连接；重启只作用于 Velocity，大厅、生存服、活动服和其他 Java 进程均未被操作。
 
 LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 `C:\ProgramData\Hechao\LauncherBridge`，计划任务 `Hechao Launcher LuckPerms Sync` 以 `SYSTEM` 身份每 5 分钟只读同步。当前快照共 114 人：`default=99`、`vip=12`、`admin=1`、`owner=2`。同步任务不控制任何 Minecraft 进程。
 
-状态采集器 `0.1.0` 位于 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 为 `D24201646D13CF0CA4F7261DC06C0EFAF2BC9B425A9B539BD3689095EFAD8DFF`。计划任务 `Hechao Launcher Server Heartbeats` 以 `SYSTEM` 身份每分钟查询 `lobby`、`survival2` 和 `activity` 的 Minecraft 状态，令牌使用 `LocalMachine` DPAPI 加密；首次自动执行返回码为 `0`。实测大厅 `0/200`、`survival2` `0/100`、活动服端口未监听，API 目录分别返回 `Online`、`Online`、`Closed`，玩偶服仍由后台 `Maintenance` 状态覆盖。采集器不包含 RCON 或进程启停能力，HTTP 自动重定向已关闭以避免内部请求头离开配置的 API 地址。
+状态采集器 `0.1.0` 位于 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 为 `D24201646D13CF0CA4F7261DC06C0EFAF2BC9B425A9B539BD3689095EFAD8DFF`。计划任务 `Hechao Launcher Server Heartbeats` 以 `SYSTEM` 身份每分钟查询 `lobby`、`survival2`、`survival1`、`pvp` 和 `activity`，令牌使用 `LocalMachine` DPAPI 加密。手动生产批次观测为大厅 `0/200`、Survival2 `0/100`、Survival1 `0/20`、PVP `0/20`、活动服离线；单个离线目标不会中断其余心跳。采集器不包含 RCON 或进程启停能力，HTTP 自动重定向已关闭以避免内部请求头离开配置的 API 地址。
+
+2026-07-26 曾因两个每日任务并发创建约 3.4 GB 的不完整 ZIP，导致 `E:` 空间耗尽。两个损坏归档和一个 0 字节大厅归档已验证后清理；一份 `7,963,944,183` 字节的历史备份在核对文件名与大小后迁移到 `C:\manual-backups\E-drive-overflow`。新的世界备份引擎位于 `C:\ProgramData\Hechao\WorldBackup\Invoke-WorldBackup.ps1`，大小 `9,900` 字节，SHA-256 为 `C8166E8DE97AB3CCC03B6C652266C2B4541CA05F66E0FA271366C0845F9F1DB8`，会全局串行、按接近源文件总量做磁盘预检、写入 `.partial`、校验 ZIP 条目，并让 ZIP 与 SHA-256 旁车文件成对完成。远端双轮冒烟测试已通过；首次由 Essentials 正式计划任务生成的世界归档仍待验收。
 
 ## 3. 旧 Minecraft VPS：owl9
 
@@ -136,17 +142,17 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 ## 4. 当前阻塞与风险
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；离机私钥恢复副本仍待建立。
-2. `owl5` 的 `E:` 仅剩约 6.48 GiB，客户端构建物、备份或世界文件继续增长前必须清理或扩容。
+2. `owl5` 的 `E:` 已恢复到约 13.90 GiB，但世界备份仍会快速消耗空间；首次正式计划备份必须核对 ZIP、SHA-256、保留数量和剩余空间。
 3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
 4. 启动器数据库已有本机每日备份和同主机恢复演练，但所有业务仍缺少异地副本，网站与 Sub2API 也没有新的统一恢复演练。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity 最终授权已加载为 `monitor`。真实四级账号、目标映射、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态
 
-- 发布 ID：`0.11.1-20260725T165050Z`
-- API `0.11.1` 已部署；启动器 `0.11.6` 为未分发候选。管理员 Web 代码已进入生产二进制但功能保持关闭
-- Git 标签：`api-v0.11.1` 指向 `3f17cba`；`launcher-v0.11.6` 指向 `6998dc344c40b49eda0137bb239f3ddd058d248f`
+- 发布 ID：`0.12.0-20260725T203001Z`
+- API `0.12.0` 已部署；启动器 `0.11.6` 为未分发候选。管理员 Web 已启用，但当前 MFA 凭据数为 `0`
+- Git 标签：`launcher-v0.11.6` 指向 `6998dc344c40b49eda0137bb239f3ddd058d248f`；API `0.12.0` 标签待本次发布文档收口后补齐
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
@@ -154,11 +160,11 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 - 公网入口：`https://launcher-api.hechao.world`
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
 - `GET /v1/catalog`：过渡阶段匿名请求返回目录，无效 Bearer 返回 401；正式强制开关待认证许可完成后启用
-- 数据库迁移：记录 `1` 至 `7` 全部通过，包括目录、认证、Velocity、心跳、管理员目录、管理员 Web 与赫朝账号
+- 数据库迁移：启动时迁移校验全部通过，包括目录、认证、Velocity、心跳、管理员目录、管理员 Web 与赫朝账号
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
-- 状态心跳：错误凭据返回 401；真实三目标批次成功写入，目录实时人数与维护状态覆盖通过
+- 状态心跳：错误凭据返回 401；真实五目标批次成功写入，活动服离线被隔离，目录实时人数与维护状态覆盖通过
 - 数据库应用角色：非超级用户，无建库和建角色权限
 - 公网 `8.148.207.171:5433`：连接超时，符合预期
 - Nginx 站点：`/etc/nginx/sites-available/hechao-launcher.conf`
@@ -178,4 +184,4 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 - 不修改现有网站和 Sub2API 的监听地址，不安装第二个争抢 `80/443` 的代理。
 - 公网只由 Nginx 终止 TLS；高位上游端口不加入 UFW 公网规则。
 - 每次改 Nginx 前先保存配置并执行 `nginx -t`，失败时不得 reload。
-- 平台施工不自动启动、停止或重启任何 Minecraft 服务端。
+- 日常部署不得无理由启动、停止或重启 Minecraft 服务；需要维护时只操作明确目标，并先核对玩家连接、备份与回滚路径。
