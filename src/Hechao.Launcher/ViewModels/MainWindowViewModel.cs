@@ -49,6 +49,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isMinecraftUnlinkFormVisible;
     private string _accountFormMessage = string.Empty;
     private bool _isAccountFormError;
+    private bool _isMicrosoftSignInVisible;
+    private CancellationTokenSource? _microsoftSignInCancellation;
     private DownloadJobViewModel? _activeDownload;
     private CancellationTokenSource? _activeInstallCancellation;
     private bool _isInstallingClient;
@@ -92,8 +94,14 @@ public sealed class MainWindowViewModel : ObservableObject
         _activePage = GetStartupPage(_selectedStartupPage);
 
         SelectServerCommand = new RelayCommand<ServerSummary>(SelectServer);
-        PrimaryActionCommand = new RelayCommand(StartPrimaryAction, CanUseSelectedServer);
-        RepairCommand = new RelayCommand(StartRepair, () => !IsProgressActive);
+        PrimaryActionCommand = new AsyncRelayCommand(
+            StartPrimaryActionAsync,
+            HandleUnexpectedPrimaryActionError,
+            CanUseSelectedServer);
+        RepairCommand = new AsyncRelayCommand(
+            () => InstallSelectedProfileAsync(isRepair: true),
+            HandleUnexpectedPrimaryActionError,
+            () => !IsProgressActive);
         RefreshCommand = new RelayCommand(() => _ = LoadCatalogAsync(userInitiated: true), () => !_isCatalogLoading);
         OpenClientDirectoryCommand = new RelayCommand(OpenClientDirectory);
         ToggleNotificationsCommand = new RelayCommand(ToggleNotifications);
@@ -104,9 +112,14 @@ public sealed class MainWindowViewModel : ObservableObject
         LogoutAccountCommand = new RelayCommand(
             StartAccountLogout,
             () => IsAuthenticated && !IsAccountBusy);
-        LinkMinecraftCommand = new RelayCommand(
-            StartMinecraftLink,
+        LinkMinecraftCommand = new AsyncRelayCommand(
+            StartMinecraftLinkAsync,
+            HandleUnexpectedMicrosoftSignInError,
             () => IsAuthenticated && !IsMinecraftLinked && !IsAccountBusy);
+        CancelMicrosoftSignInCommand = new RelayCommand(
+            CancelMicrosoftSignIn,
+            () => IsMicrosoftSignInVisible &&
+                _microsoftSignInCancellation is { IsCancellationRequested: false });
         UnlinkMinecraftCommand = new RelayCommand(
             BeginMinecraftUnlink,
             () => IsAuthenticated && IsMinecraftLinked && !IsAccountBusy);
@@ -149,8 +162,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public IReadOnlyList<string> StartupPageOptions { get; }
     public string LauncherVersionText { get; } = $"v{LauncherProductInfo.Version}";
     public RelayCommand<ServerSummary> SelectServerCommand { get; }
-    public RelayCommand PrimaryActionCommand { get; }
-    public RelayCommand RepairCommand { get; }
+    public AsyncRelayCommand PrimaryActionCommand { get; }
+    public AsyncRelayCommand RepairCommand { get; }
     public RelayCommand RefreshCommand { get; }
     public RelayCommand OpenClientDirectoryCommand { get; }
     public RelayCommand ToggleNotificationsCommand { get; }
@@ -158,7 +171,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand CloseOverlaysCommand { get; }
     public RelayCommand AccountActionCommand { get; }
     public RelayCommand LogoutAccountCommand { get; }
-    public RelayCommand LinkMinecraftCommand { get; }
+    public AsyncRelayCommand LinkMinecraftCommand { get; }
+    public RelayCommand CancelMicrosoftSignInCommand { get; }
     public RelayCommand UnlinkMinecraftCommand { get; }
     public RelayCommand CancelMinecraftUnlinkCommand { get; }
     public RelayCommand LogoutAllDevicesCommand { get; }
@@ -342,6 +356,25 @@ public sealed class MainWindowViewModel : ObservableObject
             CancelMinecraftUnlinkCommand.RaiseCanExecuteChanged();
         }
     }
+
+    public bool IsMicrosoftSignInVisible
+    {
+        get => _isMicrosoftSignInVisible;
+        private set
+        {
+            if (!SetProperty(ref _isMicrosoftSignInVisible, value))
+            {
+                return;
+            }
+
+            CancelMicrosoftSignInCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public string MicrosoftSignInTitle => "正在等待 Microsoft 登录";
+
+    public string MicrosoftSignInDescription =>
+        "浏览器已打开，请在 Microsoft 页面选择正版账号并完成授权。完成后，启动器会自动继续验证 Minecraft Java 版。";
 
     public bool IsAccountBusy
     {
@@ -739,7 +772,7 @@ public sealed class MainWindowViewModel : ObservableObject
         ActivePage = LauncherPage.Servers;
     }
 
-    private async void StartPrimaryAction()
+    private async Task StartPrimaryActionAsync()
     {
         if (IsProgressActive || SelectedServer is null)
         {
@@ -771,11 +804,6 @@ public sealed class MainWindowViewModel : ObservableObject
         await LaunchSelectedServerAsync();
     }
 
-    private async void StartRepair()
-    {
-        await InstallSelectedProfileAsync(isRepair: true);
-    }
-
     private async Task<bool> InstallSelectedProfileAsync(bool isRepair)
     {
         if (IsProgressActive || SelectedServer is null ||
@@ -789,17 +817,17 @@ public sealed class MainWindowViewModel : ObservableObject
         UpdateProgress = 0;
         ClientStatusText = isRepair ? "正在校验客户端" : "正在准备下载";
         PrimaryActionText = isRepair ? "正在修复" : "正在安装";
-        BeginDownload(profile, isRepair);
-        _activeInstallCancellation = new CancellationTokenSource();
-        _isInstallingClient = true;
-        CancelDownloadCommand.RaiseCanExecuteChanged();
-        var progress = new Progress<ClientInstallProgress>(ApplyInstallProgress);
         var succeeded = false;
         var completionStatus = DownloadJobStatus.Failed;
         string? completionMessage = null;
 
         try
         {
+            _activeInstallCancellation = new CancellationTokenSource();
+            _isInstallingClient = true;
+            BeginDownload(profile, isRepair);
+            CancelDownloadCommand.RaiseCanExecuteChanged();
+            var progress = new Progress<ClientInstallProgress>(ApplyInstallProgress);
             await _installationService.InstallAsync(
                 profile,
                 new ClientInstallationOptions(ClientDirectory, KeepDownloadsAfterClose),
@@ -862,6 +890,15 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             ClientStatusText = "安装未完成";
             ShowToast("客户端安装中断，重新操作会从已下载位置继续");
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Unexpected client installation failure: {0}",
+                exception);
+            ClientStatusText = "安装已安全停止";
+            completionMessage = "启动器遇到未预期的安装错误";
+            ShowToast("安装已安全停止，客户端当前版本没有被替换");
         }
         finally
         {
@@ -1417,6 +1454,14 @@ public sealed class MainWindowViewModel : ObservableObject
             SetAccountFormStatus("暂时无法连接赫朝账号服务。", isError: true);
             return false;
         }
+        catch (Exception exception)
+        {
+            Trace.TraceError("Unexpected Hechao account login failure: {0}", exception);
+            SetAccountFormStatus(
+                "登录未完成，请检查账号信息后重试。",
+                isError: true);
+            return false;
+        }
         finally
         {
             IsAccountBusy = false;
@@ -1528,7 +1573,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async void StartMinecraftLink()
+    private async Task StartMinecraftLinkAsync()
     {
         if (!IsAuthenticated || IsMinecraftLinked || IsAccountBusy)
         {
@@ -1536,10 +1581,17 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         IsAccountBusy = true;
-        SetAccountFormStatus("正在打开 Microsoft 正版认证…", isError: false);
+        var cancellation = new CancellationTokenSource();
+        _microsoftSignInCancellation = cancellation;
+        IsMicrosoftSignInVisible = true;
+        CancelMicrosoftSignInCommand.RaiseCanExecuteChanged();
+        SetAccountFormStatus(
+            "请在浏览器中完成 Microsoft 正版认证。",
+            isError: false);
         try
         {
-            var account = await _authenticationService.LinkMinecraftAsync();
+            var account = await _authenticationService.LinkMinecraftAsync(
+                cancellation.Token);
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
@@ -1572,10 +1624,62 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             SetAccountFormStatus("正版认证服务暂时不可用。", isError: true);
         }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Unexpected Microsoft sign-in failure: {0}",
+                exception);
+            SetAccountFormStatus(
+                "Microsoft 登录未完成，请关闭浏览器页面后重试。",
+                isError: true);
+        }
         finally
         {
+            if (ReferenceEquals(_microsoftSignInCancellation, cancellation))
+            {
+                _microsoftSignInCancellation = null;
+            }
+
+            IsMicrosoftSignInVisible = false;
+            cancellation.Dispose();
             IsAccountBusy = false;
         }
+    }
+
+    private void CancelMicrosoftSignIn()
+    {
+        if (_microsoftSignInCancellation is null)
+        {
+            return;
+        }
+
+        SetAccountFormStatus("正在取消 Microsoft 正版认证…", isError: false);
+        _microsoftSignInCancellation.Cancel();
+        CancelMicrosoftSignInCommand.RaiseCanExecuteChanged();
+    }
+
+    private void HandleUnexpectedPrimaryActionError(Exception exception)
+    {
+        Trace.TraceError("Unexpected launcher primary action failure: {0}", exception);
+        _activeInstallCancellation?.Cancel();
+        IsProgressActive = false;
+        ClientStatusText = "操作已安全停止";
+        UpdatePrimaryActionForState();
+        ShowToast("操作已安全停止，请重试；现有客户端文件未被替换");
+    }
+
+    private void HandleUnexpectedMicrosoftSignInError(Exception exception)
+    {
+        Trace.TraceError("Unhandled Microsoft sign-in command failure: {0}", exception);
+        var cancellation = _microsoftSignInCancellation;
+        _microsoftSignInCancellation = null;
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+        IsMicrosoftSignInVisible = false;
+        IsAccountBusy = false;
+        SetAccountFormStatus(
+            "Microsoft 登录未完成，请关闭浏览器页面后重试。",
+            isError: true);
     }
 
     private void BeginMinecraftUnlink()

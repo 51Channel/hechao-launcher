@@ -126,6 +126,14 @@ public sealed class LauncherApiClient
             new HechaoAccountLoginRequest(usernameOrEmail, password),
             SerializerOptions,
             cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            var detail = await TryReadProblemDetailAsync(response, cancellationToken);
+            throw new LauncherApiException(
+                response.StatusCode,
+                detail ?? "赫朝账号或密码不正确。");
+        }
+
         var session = await ReadRequiredAsync<AuthSessionResponse>(response, cancellationToken);
         await SetSessionAsync(session, cancellationToken);
         return session.Account;

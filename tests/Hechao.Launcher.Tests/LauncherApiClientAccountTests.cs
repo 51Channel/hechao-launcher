@@ -50,6 +50,29 @@ public sealed class LauncherApiClientAccountTests
     }
 
     [Fact]
+    public async Task LoginAccountAsync_OnInvalidCredentialsReturnsRecoverableApiError()
+    {
+        var handler = new RecordingHandler(_ =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = JsonContent.Create(new
+                {
+                    title = "认证失败",
+                    detail = "赫朝账号或密码不正确。"
+                })
+            }));
+        var store = new InMemorySessionStore(null);
+        var client = CreateClient(handler, store);
+
+        var exception = await Assert.ThrowsAsync<LauncherApiException>(() =>
+            client.LoginAccountAsync("hechao", "wrong-password"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, exception.StatusCode);
+        Assert.Equal("赫朝账号或密码不正确。", exception.ApiDetail);
+        Assert.Null(store.Session);
+    }
+
+    [Fact]
     public async Task RegisterAccountAsync_UsesFirstValidationMessage()
     {
         var handler = new RecordingHandler(_ =>

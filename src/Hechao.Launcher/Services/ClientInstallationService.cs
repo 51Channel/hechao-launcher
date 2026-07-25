@@ -82,7 +82,16 @@ public sealed class ClientInstallationService : IClientInstallationService
             throw new ClientManifestMismatchException("The signed manifest digest does not match the catalog.");
         }
 
-        await _installer.InstallAsync(verified, options, progress, cancellationToken);
+        // Profile verification, preservation and atomic directory switching contain
+        // synchronous file-system work. Keep those operations away from the WPF
+        // dispatcher so a large existing client cannot freeze the launcher window.
+        await Task.Run(
+            () => _installer.InstallAsync(
+                verified,
+                options,
+                progress,
+                cancellationToken),
+            cancellationToken);
     }
 }
 

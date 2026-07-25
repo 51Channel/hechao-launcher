@@ -1258,7 +1258,7 @@
                                                Margin="0,7,0,0" />
                                     <ProgressBar Grid.Row="2"
                                                  Style="{StaticResource HechaoProgressBarStyle}"
-                                                 Value="{Binding ActiveDownload.Percent}"
+                                                 Value="{Binding ActiveDownload.Percent, Mode=OneWay}"
                                                  Maximum="100"
                                                  Margin="0,12,0,0" />
                                     <TextBlock Grid.Row="3"
@@ -2245,6 +2245,124 @@
                         </Grid>
                     </Grid>
                 </ScrollViewer>
+
+                <Border Panel.ZIndex="40"
+                        Background="#990F1110"
+                        Visibility="{Binding IsMicrosoftSignInVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Width="520"
+                            Padding="30"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SurfacePanelStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="54" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="44"
+                                        Height="44"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Background="{StaticResource HechaoRedSoftBrush}"
+                                        BorderBrush="#FFD8B2AD"
+                                        BorderThickness="1"
+                                        CornerRadius="5">
+                                    <controls:IconParkIcon Kind="ExternalTransmission"
+                                                           Width="20"
+                                                           Height="20"
+                                                           Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding MicrosoftSignInTitle}"
+                                               FontSize="20"
+                                               FontWeight="Black" />
+                                    <TextBlock Text="MICROSOFT / MINECRAFT"
+                                               FontFamily="Segoe UI"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource HechaoRedDarkBrush}"
+                                               Margin="0,5,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding MicrosoftSignInDescription}"
+                                       FontSize="13"
+                                       LineHeight="22"
+                                       Foreground="{StaticResource InkMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,24,0,0" />
+
+                            <Border Grid.Row="2"
+                                    Margin="0,22,0,0"
+                                    Padding="14"
+                                    Background="{StaticResource SurfaceMutedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="9"
+                                            Height="9"
+                                            Margin="1,2,12,0"
+                                            VerticalAlignment="Top"
+                                            Background="#FF23845B"
+                                            CornerRadius="5" />
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="浏览器窗口已打开"
+                                                   FontSize="13"
+                                                   FontWeight="Bold" />
+                                        <TextBlock Text="如果没有看到浏览器，取消本次登录后重新点击绑定按钮。"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource InkFaintBrush}"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   Margin="0,5,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Grid Grid.Row="3" Margin="0,24,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="启动器不会读取或保存你的 Microsoft 密码。"
+                                           FontSize="11"
+                                           Foreground="{StaticResource InkFaintBrush}"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        MinWidth="126"
+                                        Height="40"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        Command="{Binding CancelMicrosoftSignInCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:IconParkIcon Kind="Close"
+                                                               Width="14"
+                                                               Height="14"
+                                                               Margin="0,0,7,0" />
+                                        <TextBlock Text="取消本次登录"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Border>
             </Grid>
 
             <!-- Settings page -->
