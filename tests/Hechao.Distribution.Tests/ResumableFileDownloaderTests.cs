@@ -34,7 +34,9 @@ public sealed class ResumableFileDownloaderTests
         var content = "corrupted-content"u8.ToArray();
         var handler = new RangeResponseHandler(content);
         using var httpClient = new HttpClient(handler);
-        var downloader = new ResumableFileDownloader(httpClient);
+        var downloader = new ResumableFileDownloader(
+            httpClient,
+            retryDelay: static (_, _) => Task.CompletedTask);
         using var temporary = new TemporaryDirectory();
         var destination = Path.Combine(temporary.Path, "object");
         var manifestFile = new ClientManifestFile(
@@ -48,7 +50,7 @@ public sealed class ResumableFileDownloaderTests
 
         Assert.False(File.Exists(destination));
         Assert.False(File.Exists(destination + ".part"));
-        Assert.Equal(3, handler.RequestedOffsets.Count);
+        Assert.Equal(5, handler.RequestedOffsets.Count);
     }
 
     [Fact]
@@ -124,6 +126,30 @@ public sealed class ResumableFileDownloaderTests
                 request.Host == "download.hechao.world"),
             request => Assert.Null(request.Authorization));
         Assert.All(redirectHandler.Requests, request => Assert.Equal(6, request.RangeOffset));
+        Assert.Equal(content, await File.ReadAllBytesAsync(destination));
+    }
+
+    [Fact]
+    public async Task DownloadAsync_RetriesTransientOperationCancellation()
+    {
+        var content = "transient-cancellation"u8.ToArray();
+        var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var handler = new TransientOperationCanceledHandler(content, failureCount: 4);
+        using var httpClient = new HttpClient(handler);
+        var downloader = new ResumableFileDownloader(
+            httpClient,
+            retryDelay: static (_, _) => Task.CompletedTask);
+        using var temporary = new TemporaryDirectory();
+        var destination = Path.Combine(temporary.Path, "object");
+        var manifestFile = new ClientManifestFile(
+            "mods/example.jar",
+            content.Length,
+            digest,
+            "https://download.hechao.world/object");
+
+        await downloader.DownloadAsync(manifestFile, destination);
+
+        Assert.Equal(5, handler.RequestCount);
         Assert.Equal(content, await File.ReadAllBytesAsync(destination));
     }
 }

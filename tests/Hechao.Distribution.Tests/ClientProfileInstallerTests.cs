@@ -178,7 +178,9 @@ public sealed class ClientProfileInstallerTests
         var manifest = ManifestTestData.CreateManifest(content);
         var handler = new ServiceUnavailableHandler();
         using var httpClient = new HttpClient(handler);
-        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(
+            httpClient,
+            retryDelay: static (_, _) => Task.CompletedTask));
         using var temporary = new TemporaryDirectory();
         var layout = new ClientStorageLayout(temporary.Path);
         var activeGameDirectory = layout.GetProfileGameDirectory(manifest.ProfileId);
@@ -196,7 +198,7 @@ public sealed class ClientProfileInstallerTests
         Assert.Empty(Directory.EnumerateDirectories(
             layout.InstancesRoot,
             $".{manifest.ProfileId}.staging-*"));
-        Assert.Equal(3, handler.RequestCount);
+        Assert.Equal(5, handler.RequestCount);
     }
 
     [Fact]

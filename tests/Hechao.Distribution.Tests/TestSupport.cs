@@ -217,6 +217,31 @@ internal sealed class DelayedObjectResponseHandler(
     }
 }
 
+internal sealed class TransientOperationCanceledHandler(
+    byte[] content,
+    int failureCount) : HttpMessageHandler
+{
+    private int _requestCount;
+
+    public int RequestCount => Volatile.Read(ref _requestCount);
+
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var requestCount = Interlocked.Increment(ref _requestCount);
+        if (requestCount <= failureCount)
+        {
+            throw new OperationCanceledException("The simulated connection was interrupted.");
+        }
+
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(content)
+        });
+    }
+}
+
 internal sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
 {
     public void Report(T value) => report(value);

@@ -5,11 +5,33 @@ namespace Hechao.Distribution;
 
 public sealed record FileDownloadProgress(long BytesDownloaded, long TotalBytes);
 
-public sealed class ResumableFileDownloader(HttpClient httpClient)
+public sealed class ResumableFileDownloader
 {
-    private const int MaximumAttempts = 3;
+    private const int DefaultMaximumAttempts = 5;
     private const int MaximumRedirects = 5;
     private const int BufferSize = 128 * 1024;
+    private readonly HttpClient _httpClient;
+    private readonly int _maximumAttempts;
+    private readonly Func<int, CancellationToken, Task> _retryDelay;
+
+    public ResumableFileDownloader(
+        HttpClient httpClient,
+        int maximumAttempts = DefaultMaximumAttempts,
+        Func<int, CancellationToken, Task>? retryDelay = null)
+    {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        if (maximumAttempts is < 1 or > 10)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(maximumAttempts),
+                maximumAttempts,
+                "Download attempts must be between 1 and 10.");
+        }
+
+        _httpClient = httpClient;
+        _maximumAttempts = maximumAttempts;
+        _retryDelay = retryDelay ?? DelayBeforeRetryAsync;
+    }
 
     public async Task DownloadAsync(
         ClientManifestFile manifestFile,
@@ -35,7 +57,7 @@ public sealed class ResumableFileDownloader(HttpClient httpClient)
         var partialPath = destinationPath + ".part";
 
         Exception? lastFailure = null;
-        for (var attempt = 1; attempt <= MaximumAttempts; attempt++)
+        for (var attempt = 1; attempt <= _maximumAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
@@ -55,12 +77,12 @@ public sealed class ResumableFileDownloader(HttpClient httpClient)
                 return;
             }
             catch (Exception exception) when (
-                attempt < MaximumAttempts &&
+                attempt < _maximumAttempts &&
                 !cancellationToken.IsCancellationRequested &&
-                exception is HttpRequestException or TaskCanceledException or IOException or ManifestIntegrityException)
+                exception is HttpRequestException or OperationCanceledException or IOException or ManifestIntegrityException)
             {
                 lastFailure = exception;
-                await Task.Delay(TimeSpan.FromMilliseconds(250 * attempt * attempt), cancellationToken);
+                await _retryDelay(attempt, cancellationToken);
             }
         }
 
@@ -168,7 +190,7 @@ public sealed class ResumableFileDownloader(HttpClient httpClient)
                 request.Headers.Range = new RangeHeaderValue(existingBytes, null);
             }
 
-            var response = await httpClient.SendAsync(
+            var response = await _httpClient.SendAsync(
                 request,
                 HttpCompletionOption.ResponseHeadersRead,
                 cancellationToken);
@@ -203,6 +225,19 @@ public sealed class ResumableFileDownloader(HttpClient httpClient)
             HttpStatusCode.RedirectMethod or
             HttpStatusCode.TemporaryRedirect or
             HttpStatusCode.PermanentRedirect;
+
+    private static Task DelayBeforeRetryAsync(
+        int failedAttempt,
+        CancellationToken cancellationToken)
+    {
+        var baseDelayMilliseconds = Math.Min(
+            4000,
+            250 * (1 << Math.Min(failedAttempt - 1, 4)));
+        var jitterMilliseconds = Random.Shared.Next(0, 151);
+        return Task.Delay(
+            TimeSpan.FromMilliseconds(baseDelayMilliseconds + jitterMilliseconds),
+            cancellationToken);
+    }
 
     private static void TryDelete(string path)
     {
