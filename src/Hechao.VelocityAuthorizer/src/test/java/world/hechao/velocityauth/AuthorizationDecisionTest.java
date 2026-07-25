@@ -25,6 +25,7 @@ final class AuthorizationDecisionTest {
         assertEquals("InsufficientTier", decision.reason());
         assertEquals("你的当前称号等级不足以进入该服务器。", decision.message());
         assertNull(decision.serverId());
+        assertEquals("activity", decision.velocityTarget());
     }
 
     @Test
@@ -32,10 +33,12 @@ final class AuthorizationDecisionTest {
         AuthorizationDecision decision = AuthorizationDecision.fromJson(
                 "{\"allowed\":true,\"reason\":\"Allowed\","
                         + "\"message\":\"line\\n\\u5141\\u8bb8\","
-                        + "\"serverId\":\"lobby\"}");
+                        + "\"serverId\":\"lobby\","
+                        + "\"velocityTarget\":\"survival2\"}");
 
         assertEquals("line\n允许", decision.message());
         assertEquals("lobby", decision.serverId());
+        assertEquals("survival2", decision.velocityTarget());
     }
 
     @Test
@@ -44,6 +47,16 @@ final class AuthorizationDecisionTest {
                 IllegalArgumentException.class,
                 () -> AuthorizationDecision.fromJson(
                         "{\"allowed\":true,\"reason\":\"Allowed\","
-                                + "\"message\":{\"nested\":true},\"serverId\":null}"));
+                                + "\"message\":{\"nested\":true},\"serverId\":null,"
+                                + "\"velocityTarget\":\"lobby\"}"));
+    }
+
+    @Test
+    void rejectsAllowedDecisionWithoutGrantedTarget() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> AuthorizationDecision.fromJson(
+                        "{\"allowed\":true,\"reason\":\"Allowed\","
+                                + "\"message\":\"ok\",\"serverId\":\"lobby\"}"));
     }
 }

@@ -6,8 +6,8 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
-if [[ "$#" -ne 6 ]]; then
-  echo "usage: publish-profile.sh <manifest> <profile-id> <version> <bytes> <sha256> <published-at>" >&2
+if [[ "$#" -lt 6 ]] || [[ "$#" -gt 7 ]]; then
+  echo "usage: publish-profile.sh <manifest> <profile-id> <version> <bytes> <sha256> <published-at> [display-name]" >&2
   exit 1
 fi
 
@@ -17,6 +17,7 @@ profile_version="$3"
 download_bytes="$4"
 manifest_sha256="${5,,}"
 published_at="$6"
+display_name="${7:-}"
 manifest_directory="/var/lib/hechao-launcher-api/manifests"
 destination_manifest="${manifest_directory}/${profile_id}.json"
 postgres_container="hechao-launcher-postgres"
@@ -26,7 +27,8 @@ if [[ ! -f "$source_manifest" ]] ||
    [[ ! "$profile_version" =~ ^[0-9A-Za-z._+-]{1,40}$ ]] ||
    [[ ! "$download_bytes" =~ ^[0-9]+$ ]] ||
    [[ ! "$manifest_sha256" =~ ^[0-9a-f]{64}$ ]] ||
-   [[ ! "$published_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?$ ]]; then
+   [[ ! "$published_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?$ ]] ||
+   [[ -n "$display_name" && ( "${#display_name}" -gt 80 || "$display_name" =~ [[:cntrl:]] ) ]]; then
   echo "invalid profile publication arguments" >&2
   exit 1
 fi
@@ -56,7 +58,24 @@ if [[ -f "$destination_manifest" ]]; then
 fi
 mv -f "$temporary_manifest" "$destination_manifest"
 
-update_sql="UPDATE launcher.client_profiles
+if [[ -n "$display_name" ]]; then
+  escaped_display_name="${display_name//\'/\'\'}"
+  update_sql="INSERT INTO launcher.client_profiles
+    (id, display_name, version, download_bytes, sha256, published_at, is_active)
+VALUES
+    ('${profile_id}', '${escaped_display_name}', '${profile_version}',
+     ${download_bytes}, '${manifest_sha256}', '${published_at}'::timestamptz, true)
+ON CONFLICT (id) DO UPDATE
+SET display_name = EXCLUDED.display_name,
+    version = EXCLUDED.version,
+    download_bytes = EXCLUDED.download_bytes,
+    sha256 = EXCLUDED.sha256,
+    published_at = EXCLUDED.published_at,
+    is_active = true,
+    updated_at = now()
+RETURNING id;"
+else
+  update_sql="UPDATE launcher.client_profiles
 SET version = '${profile_version}',
     download_bytes = ${download_bytes},
     sha256 = '${manifest_sha256}',
@@ -64,6 +83,7 @@ SET version = '${profile_version}',
     updated_at = now()
 WHERE id = '${profile_id}'
 RETURNING id;"
+fi
 
 set +e
 updated_profile="$(

@@ -4,7 +4,8 @@ record AuthorizationDecision(
         boolean allowed,
         String reason,
         String message,
-        String serverId) {
+        String serverId,
+        String velocityTarget) {
 
     static AuthorizationDecision fromJson(String json) {
         FlatJsonObject object = FlatJsonObject.parse(json);
@@ -12,6 +13,7 @@ record AuthorizationDecision(
                 object.requiredBoolean("allowed"),
                 object.requiredString("reason"),
                 object.requiredString("message"),
-                object.nullableString("serverId"));
+                object.nullableString("serverId"),
+                object.requiredString("velocityTarget"));
     }
 }

@@ -9,8 +9,12 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +26,7 @@ import org.slf4j.Logger;
 @Plugin(
         id = "hechao-velocity-authorizer",
         name = "Hechao Velocity Authorizer",
-        version = "0.1.0",
+        version = "0.2.0",
         description = "Server-side Microsoft UUID and LuckPerms authorization for Hechao",
         authors = {"Hechao"})
 public final class HechaoVelocityAuthorizer {
@@ -31,6 +35,7 @@ public final class HechaoVelocityAuthorizer {
 
     private final Logger logger;
     private final Path dataDirectory;
+    private final ProxyServer proxyServer;
     private final Set<UUID> authorizedConnections = ConcurrentHashMap.newKeySet();
     private volatile PluginConfiguration configuration;
     private volatile AuthorizationApiClient apiClient;
@@ -38,9 +43,11 @@ public final class HechaoVelocityAuthorizer {
     @Inject
     public HechaoVelocityAuthorizer(
             Logger logger,
-            @DataDirectory Path dataDirectory) {
+            @DataDirectory Path dataDirectory,
+            ProxyServer proxyServer) {
         this.logger = logger;
         this.dataDirectory = dataDirectory;
+        this.proxyServer = proxyServer;
     }
 
     @Subscribe
@@ -155,6 +162,10 @@ public final class HechaoVelocityAuthorizer {
         }
 
         if (decision.allowed()) {
+            if (initialConnection &&
+                    !routeInitialConnection(event, mode, target, decision)) {
+                return;
+            }
             if (initialConnection) {
                 authorizedConnections.add(player.getUniqueId());
             }
@@ -178,6 +189,44 @@ public final class HechaoVelocityAuthorizer {
                     target,
                     decision.reason());
         }
+    }
+
+    boolean routeInitialConnection(
+            ServerPreConnectEvent event,
+            AuthorizationMode mode,
+            String originalTarget,
+            AuthorizationDecision decision) {
+        String grantedTarget = decision.velocityTarget().toLowerCase(Locale.ROOT);
+        if (grantedTarget.equals(originalTarget)) {
+            return true;
+        }
+
+        Optional<RegisteredServer> destination = proxyServer.getServer(grantedTarget);
+        if (destination.isPresent()) {
+            event.setResult(ServerPreConnectEvent.ServerResult.allowed(destination.get()));
+            logger.info(
+                    "Routed {} from initial target {} to granted target {}.",
+                    event.getPlayer().getUsername(),
+                    originalTarget,
+                    grantedTarget);
+            return true;
+        }
+
+        if (mode == AuthorizationMode.ENFORCE) {
+            deny(event, true, SERVICE_UNAVAILABLE_MESSAGE);
+            logger.error(
+                    "Denied {} because granted target {} is not registered on this proxy.",
+                    event.getPlayer().getUsername(),
+                    grantedTarget);
+            return false;
+        }
+
+        logger.warn(
+                "[monitor] Granted target {} for {} is not registered; keeping initial target {}.",
+                grantedTarget,
+                event.getPlayer().getUsername(),
+                originalTarget);
+        return true;
     }
 
     private static void deny(

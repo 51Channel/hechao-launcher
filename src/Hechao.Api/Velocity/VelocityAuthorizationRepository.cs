@@ -95,7 +95,8 @@ public sealed class VelocityAuthorizationRepository(
         CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
-        var target = request.VelocityTarget.ToLowerInvariant();
+        var requestedTarget = request.VelocityTarget.ToLowerInvariant();
+        var effectiveTarget = requestedTarget;
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
@@ -104,30 +105,79 @@ public sealed class VelocityAuthorizationRepository(
             transaction,
             request.MinecraftUuid,
             cancellationToken);
-        var server = await ReadServerByTargetAsync(
-            connection,
-            transaction,
-            player?.UserId,
-            target,
-            cancellationToken);
-
-        var reason = VelocityAuthorizationRules.Evaluate(
-            player,
-            server,
-            now,
-            TimeSpan.FromMinutes(_options.MaximumLuckPermsAgeMinutes));
-
-        if (reason == VelocityAuthorizationReason.Allowed && request.InitialConnection)
+        VelocityServerAccess? server = null;
+        VelocityAuthorizationReason reason;
+        if (request.InitialConnection)
         {
-            reason = await ConsumeLaunchGrantAsync(
+            reason = VelocityAuthorizationRules.Evaluate(
+                player,
+                server,
+                now,
+                TimeSpan.FromMinutes(_options.MaximumLuckPermsAgeMinutes));
+            if (reason == VelocityAuthorizationReason.ServerUnknown)
+            {
+                var grant = await ReadPendingLaunchGrantAsync(
+                    connection,
+                    transaction,
+                    player!,
+                    now,
+                    cancellationToken);
+                if (grant is null)
+                {
+                    reason = VelocityAuthorizationReason.LaunchGrantRequired;
+                }
+                else
+                {
+                    server = await ReadServerByIdAsync(
+                        connection,
+                        transaction,
+                        player!.UserId,
+                        grant.ServerId,
+                        cancellationToken);
+                    reason = VelocityAuthorizationRules.Evaluate(
+                        player,
+                        server,
+                        now,
+                        TimeSpan.FromMinutes(_options.MaximumLuckPermsAgeMinutes));
+                    if (server is not null)
+                    {
+                        effectiveTarget = server.VelocityTarget.ToLowerInvariant();
+                    }
+
+                    if (reason == VelocityAuthorizationReason.Allowed &&
+                        _options.RequireGrantIpMatch &&
+                        !AddressesEqual(grant.SourceIp, remoteAddress))
+                    {
+                        reason = VelocityAuthorizationReason.LaunchGrantIpMismatch;
+                    }
+
+                    if (reason == VelocityAuthorizationReason.Allowed)
+                    {
+                        await ConsumeLaunchGrantAsync(
+                            connection,
+                            transaction,
+                            grant.GrantId,
+                            effectiveTarget,
+                            request.ProxyInstance,
+                            now,
+                            cancellationToken);
+                    }
+                }
+            }
+        }
+        else
+        {
+            server = await ReadServerByTargetAsync(
                 connection,
                 transaction,
-                player!,
-                target,
-                request.ProxyInstance,
-                remoteAddress,
-                now,
+                player?.UserId,
+                requestedTarget,
                 cancellationToken);
+            reason = VelocityAuthorizationRules.Evaluate(
+                player,
+                server,
+                now,
+                TimeSpan.FromMinutes(_options.MaximumLuckPermsAgeMinutes));
         }
 
         if (request.InitialConnection || reason != VelocityAuthorizationReason.Allowed)
@@ -153,7 +203,7 @@ public sealed class VelocityAuthorizationRepository(
             reason,
             VelocityAuthorizationRules.GetMessage(reason),
             server?.ServerId,
-            target,
+            effectiveTarget,
             player?.AccessTier,
             player?.LuckPermsPrimaryGroup,
             now);
@@ -290,18 +340,15 @@ public sealed class VelocityAuthorizationRepository(
                 : Enum.Parse<ServerAccessOverride>(reader.GetString(4), ignoreCase: true));
     }
 
-    private async Task<VelocityAuthorizationReason> ConsumeLaunchGrantAsync(
+    private static async Task<PendingLaunchGrant?> ReadPendingLaunchGrantAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         VelocityPlayerAccess player,
-        string velocityTarget,
-        string proxyInstance,
-        IPAddress? remoteAddress,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         const string selectSql = """
-            SELECT id, source_ip
+            SELECT id, requested_server_id, source_ip
             FROM launcher.velocity_launch_grants
             WHERE user_id = $1
               AND minecraft_uuid = $2
@@ -313,8 +360,6 @@ public sealed class VelocityAuthorizationRepository(
             FOR UPDATE SKIP LOCKED;
             """;
 
-        Guid grantId;
-        IPAddress? grantAddress;
         await using (var select = new NpgsqlCommand(selectSql, connection, transaction))
         {
             select.Parameters.AddWithValue(player.UserId);
@@ -323,18 +368,25 @@ public sealed class VelocityAuthorizationRepository(
             await using var reader = await select.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
-                return VelocityAuthorizationReason.LaunchGrantRequired;
+                return null;
             }
 
-            grantId = reader.GetGuid(0);
-            grantAddress = reader.IsDBNull(1) ? null : reader.GetFieldValue<IPAddress>(1);
+            return new PendingLaunchGrant(
+                reader.GetGuid(0),
+                reader.GetString(1),
+                reader.IsDBNull(2) ? null : reader.GetFieldValue<IPAddress>(2));
         }
+    }
 
-        if (_options.RequireGrantIpMatch && !AddressesEqual(grantAddress, remoteAddress))
-        {
-            return VelocityAuthorizationReason.LaunchGrantIpMismatch;
-        }
-
+    private static async Task ConsumeLaunchGrantAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid grantId,
+        string velocityTarget,
+        string proxyInstance,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
         const string updateSql = """
             UPDATE launcher.velocity_launch_grants
             SET consumed_at = $2,
@@ -349,7 +401,6 @@ public sealed class VelocityAuthorizationRepository(
         update.Parameters.AddWithValue(velocityTarget);
         update.Parameters.AddWithValue(proxyInstance);
         await update.ExecuteNonQueryAsync(cancellationToken);
-        return VelocityAuthorizationReason.Allowed;
     }
 
     private static async Task RevokeExistingGrantsAsync(
@@ -487,3 +538,8 @@ public sealed record VelocityLaunchGrantCreationResult(
     VelocityAuthorizationReason Reason,
     string Message,
     VelocityLaunchGrantResponse? Grant);
+
+internal sealed record PendingLaunchGrant(
+    Guid GrantId,
+    string ServerId,
+    IPAddress? SourceIp);

@@ -46,7 +46,7 @@ final class AuthorizationApiClient {
                 .timeout(requestTimeout)
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json; charset=utf-8")
-                .header("User-Agent", "HechaoVelocityAuthorizer/0.1.0")
+                .header("User-Agent", "HechaoVelocityAuthorizer/0.2.0")
                 .header("X-Hechao-Velocity-Token", token)
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .build();
