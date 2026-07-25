@@ -167,6 +167,8 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 
 `0.11.4` 已从 `0.11.3` 覆盖升级，设置及已安装档案保持原位。正式安装版分别完成登录与注册选中状态截图，并由真实 WPF 像素测试确认右侧边框存在；安装包仍为本地内部候选，未上传 OSS，完整记录见 [`LAUNCHER_RELEASE_0.11.4.md`](LAUNCHER_RELEASE_0.11.4.md)。
 
+`0.11.6` 已覆盖本机失败候选 `0.11.5`，设置及已安装档案保持原位。正式安装版确认登录和注册按钮等宽、四边完整，登录表单与注册表单均恢复整栏宽度；安装包仍为本地内部候选，未上传 OSS，完整记录见 [`LAUNCHER_RELEASE_0.11.6.md`](LAUNCHER_RELEASE_0.11.6.md)。
+
 ## 7. 第三方构建资产
 
 - 安装器：[NSIS 3](https://nsis.sourceforge.io/Docs/AppendixI.html)，使用 zlib/libpng 许可并允许商业应用。
