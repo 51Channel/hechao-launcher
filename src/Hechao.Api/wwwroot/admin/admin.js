@@ -20,6 +20,10 @@ const state = {
     selectedUserSecurity: null,
     pendingSecurityAction: null,
     pendingVisibilityChange: null,
+    selectedProfileDetail: null,
+    pendingProfileRelease: null,
+    pendingProfileChannelRollback: null,
+    pendingProfileChannelAssignment: null,
     recoveryCodes: [],
     toastTimer: null
 };
@@ -58,7 +62,8 @@ function cacheElements() {
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
         "server-table-body", "server-empty-state", "profile-count",
-        "profile-table-body", "diagnostic-count", "diagnostic-table-body",
+        "profile-table-body", "profile-empty-state",
+        "diagnostic-count", "diagnostic-table-body",
         "diagnostic-empty-state", "audit-list", "audit-empty-state",
         "load-more-audit-button", "server-drawer", "server-form",
         "drawer-kicker", "drawer-title", "close-drawer-button",
@@ -91,6 +96,7 @@ function cacheElements() {
         "user-security-session-list", "user-security-session-empty",
         "revoke-all-user-sessions-button", "user-security-admin-session-count",
         "user-security-admin-ticket-count", "user-security-launch-grant-count",
+        "user-security-forum-revocation-count",
         "security-action-dialog", "security-action-form", "security-action-icon",
         "security-action-title", "security-action-message",
         "security-action-error", "security-action-reason",
@@ -98,6 +104,20 @@ function cacheElements() {
         "cancel-security-action-button", "accept-security-action-button",
         "confirm-dialog", "confirm-icon", "confirm-title", "confirm-message",
         "cancel-confirm-button", "accept-confirm-button", "recovery-dialog",
+        "create-profile-button", "profile-create-dialog", "profile-create-form",
+        "profile-create-error", "profile-create-id", "profile-create-name",
+        "cancel-profile-create-button", "save-profile-create-button",
+        "profile-drawer", "profile-drawer-title", "close-profile-drawer-button",
+        "finish-profile-drawer-button", "profile-drawer-error",
+        "profile-manager-id", "profile-manager-revision", "profile-manager-name",
+        "profile-manager-active", "save-profile-metadata-button",
+        "profile-manifest-file", "import-profile-release-button",
+        "profile-channel-list", "profile-release-count", "profile-release-list",
+        "profile-release-empty", "profile-pause-dialog", "profile-pause-form",
+        "profile-pause-icon", "profile-pause-title", "profile-pause-message",
+        "profile-pause-error", "profile-pause-reason-field",
+        "profile-pause-reason", "cancel-profile-pause-button",
+        "accept-profile-pause-button",
         "recovery-code-list", "copy-recovery-button", "download-recovery-button",
         "finish-recovery-button", "toast", "toast-icon", "toast-message"
     ].forEach(id => {
@@ -131,6 +151,41 @@ function bindEvents() {
         button.addEventListener("click", () => switchView(button.dataset.view));
     });
     elements["create-server-button"].addEventListener("click", openCreateServer);
+    elements["create-profile-button"].addEventListener("click", openCreateProfile);
+    elements["cancel-profile-create-button"].addEventListener(
+        "click",
+        closeCreateProfile);
+    elements["profile-create-form"].addEventListener("submit", createProfile);
+    elements["close-profile-drawer-button"].addEventListener(
+        "click",
+        closeProfileDrawer);
+    elements["finish-profile-drawer-button"].addEventListener(
+        "click",
+        closeProfileDrawer);
+    elements["save-profile-metadata-button"].addEventListener(
+        "click",
+        saveProfileMetadata);
+    elements["import-profile-release-button"].addEventListener(
+        "click",
+        importProfileRelease);
+    elements["cancel-profile-pause-button"].addEventListener(
+        "click",
+        closeProfilePauseDialog);
+    elements["profile-pause-form"].addEventListener(
+        "submit",
+        submitProfilePause);
+    elements["profile-create-dialog"].addEventListener("cancel", event => {
+        event.preventDefault();
+        closeCreateProfile();
+    });
+    elements["profile-drawer"].addEventListener("cancel", event => {
+        event.preventDefault();
+        closeProfileDrawer();
+    });
+    elements["profile-pause-dialog"].addEventListener("cancel", event => {
+        event.preventDefault();
+        closeProfilePauseDialog();
+    });
     elements["close-drawer-button"].addEventListener("click", closeServerDrawer);
     elements["cancel-server-button"].addEventListener("click", closeServerDrawer);
     elements["server-form"].addEventListener("submit", saveServer);
@@ -192,9 +247,12 @@ function bindEvents() {
         event.preventDefault();
         closeSecurityAction();
     });
-    elements["cancel-confirm-button"].addEventListener("click", () =>
-        elements["confirm-dialog"].close());
-    elements["accept-confirm-button"].addEventListener("click", applyVisibilityChange);
+    elements["cancel-confirm-button"].addEventListener("click", closeConfirmation);
+    elements["accept-confirm-button"].addEventListener("click", applyConfirmation);
+    elements["confirm-dialog"].addEventListener("cancel", event => {
+        event.preventDefault();
+        closeConfirmation();
+    });
     elements["load-more-audit-button"].addEventListener("click", loadMoreAudit);
     elements["copy-recovery-button"].addEventListener("click", () =>
         copyText(state.recoveryCodes.join("\n"), "恢复码已复制"));
@@ -242,9 +300,15 @@ async function initialize() {
 
 async function api(path, options = {}) {
     const method = options.method || "GET";
-    const headers = new Headers({ "Accept": "application/json" });
-    if (options.body !== undefined) {
-        headers.set("Content-Type", "application/json");
+    const headers = new Headers({
+        "Accept": options.accept || "application/json"
+    });
+    if (options.rawBody !== undefined) {
+        headers.set(
+            "Content-Type",
+            options.contentType || "application/octet-stream");
+    } else if (options.body !== undefined) {
+        headers.set("Content-Type", options.contentType || "application/json");
     }
 
     const unsafe = !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase());
@@ -257,7 +321,11 @@ async function api(path, options = {}) {
         method,
         headers,
         credentials: "same-origin",
-        body: options.body === undefined ? undefined : JSON.stringify(options.body)
+        body: options.rawBody !== undefined
+            ? options.rawBody
+            : options.body === undefined
+                ? undefined
+                : JSON.stringify(options.body)
     });
     if (response.status === 204) {
         return null;
@@ -1426,30 +1494,634 @@ function renderProfiles() {
         const name = document.createElement("strong");
         name.textContent = profile.displayName;
         const id = document.createElement("span");
-        id.textContent = profile.id;
+        id.textContent = `${profile.id} · r${profile.revision}`;
         copy.append(name, id);
         identity.append(copy);
+
+        const production = profile.channels?.find(
+            channel => channel.channel === "Production");
+        const productionCell = document.createElement("td");
+        const productionCopy = document.createElement("div");
+        productionCopy.className = "meta-stack";
+        const productionVersion = document.createElement("strong");
+        productionVersion.textContent = production?.version
+            ? `v${production.version}`
+            : "尚未发布";
+        const productionMeta = document.createElement("span");
+        productionMeta.textContent = production?.manifestSha256
+            ? `${formatBytes(profile.downloadBytes)} · ${shortHash(production.manifestSha256)}`
+            : "正式通道未分配";
+        productionCopy.append(productionVersion, productionMeta);
+        productionCell.append(productionCopy);
+
+        const channelsCell = document.createElement("td");
+        const channelSummary = document.createElement("div");
+        channelSummary.className = "profile-channel-summary";
+        ["Test", "Gray", "Production"].forEach(channelName => {
+            const channel = profile.channels?.find(
+                item => item.channel === channelName);
+            const pill = document.createElement("span");
+            pill.className = `channel-pill ${channel?.manifestSha256 ? "assigned" : ""}`;
+            pill.textContent = channelSummaryText(channelName, channel);
+            channelSummary.append(pill);
+        });
+        channelsCell.append(channelSummary);
+
         const status = document.createElement("td");
         const badge = document.createElement("span");
         badge.className = `status-badge ${profile.isActive ? "status-online" : "status-archived"}`;
         badge.textContent = profile.isActive ? "启用" : "停用";
         status.append(badge);
-        const hash = document.createElement("td");
-        const hashText = document.createElement("span");
-        hashText.className = "hash-text";
-        hashText.title = profile.sha256 || "尚未发布哈希";
-        hashText.textContent = profile.sha256 || "—";
-        hash.append(hashText);
+
+        const actions = document.createElement("td");
+        actions.className = "actions-column";
+        const actionList = document.createElement("div");
+        actionList.className = "row-actions";
+        actionList.append(
+            iconButton("pencil", "管理客户端档案", () => openProfileDrawer(profile.id)));
+        actions.append(actionList);
+
         row.append(
             identity,
-            textCell(`v${profile.version}`),
-            textCell(formatBytes(profile.downloadBytes)),
-            textCell(formatDateTime(profile.publishedAt)),
+            productionCell,
+            channelsCell,
+            textCell(String(profile.releaseCount)),
             status,
-            hash
+            actions
         );
         elements["profile-table-body"].append(row);
     });
+    elements["profile-empty-state"].hidden = state.profiles.length !== 0;
+    elements["profile-table-body"].parentElement.hidden = false;
+}
+
+function channelSummaryText(channelName, channel) {
+    const label = channelText(channelName);
+    if (!channel?.manifestSha256) return `${label} —`;
+    if (channelName === "Production") return `${label} v${channel.version}`;
+    return `${label} ${channel.rolloutPercentage}%`;
+}
+
+function channelText(channel) {
+    return {
+        Test: "测试",
+        Gray: "灰度",
+        Production: "正式"
+    }[channel] || channel;
+}
+
+function openCreateProfile() {
+    elements["profile-create-form"].reset();
+    setInlineError(elements["profile-create-error"], "");
+    elements["profile-create-dialog"].showModal();
+    elements["profile-create-id"].focus();
+}
+
+function closeCreateProfile() {
+    if (elements["profile-create-dialog"].open) {
+        elements["profile-create-dialog"].close();
+    }
+    setInlineError(elements["profile-create-error"], "");
+}
+
+async function createProfile(event) {
+    event.preventDefault();
+    setBusy(elements["save-profile-create-button"], true);
+    setInlineError(elements["profile-create-error"], "");
+    try {
+        const detail = await api("/v1/admin/catalog/client-profiles", {
+            method: "POST",
+            body: {
+                id: elements["profile-create-id"].value.trim(),
+                displayName: elements["profile-create-name"].value.trim()
+            }
+        });
+        closeCreateProfile();
+        showToast("客户端档案已创建");
+        await reloadProfiles();
+        await showProfileDetail(detail);
+    } catch (error) {
+        setInlineError(elements["profile-create-error"], error.message);
+    } finally {
+        setBusy(elements["save-profile-create-button"], false);
+    }
+}
+
+async function openProfileDrawer(profileId) {
+    setInlineError(elements["profile-drawer-error"], "");
+    try {
+        const detail = await api(
+            `/v1/admin/catalog/client-profiles/${encodeURIComponent(profileId)}`);
+        await showProfileDetail(detail);
+    } catch (error) {
+        showToast(error.message, true);
+    }
+}
+
+async function showProfileDetail(detail) {
+    state.selectedProfileDetail = detail;
+    renderProfileManager();
+    if (!elements["profile-drawer"].open) {
+        elements["profile-drawer"].showModal();
+    }
+}
+
+function closeProfileDrawer() {
+    if (elements["profile-drawer"].open) {
+        elements["profile-drawer"].close();
+    }
+    state.selectedProfileDetail = null;
+    elements["profile-manifest-file"].value = "";
+    setInlineError(elements["profile-drawer-error"], "");
+}
+
+function renderProfileManager() {
+    const detail = state.selectedProfileDetail;
+    if (!detail) return;
+    const profile = detail.profile;
+    elements["profile-drawer-title"].textContent = profile.displayName;
+    elements["profile-manager-id"].textContent = profile.id;
+    elements["profile-manager-revision"].textContent = `修订 ${profile.revision}`;
+    elements["profile-manager-name"].value = profile.displayName;
+    elements["profile-manager-active"].checked = profile.isActive;
+    elements["profile-release-count"].textContent =
+        `${detail.releases.length} 个版本`;
+    renderProfileChannels(detail);
+    renderProfileReleases(detail);
+}
+
+function renderProfileChannels(detail) {
+    const container = elements["profile-channel-list"];
+    container.replaceChildren();
+    ["Test", "Gray", "Production"].forEach(channelName => {
+        const channel = detail.profile.channels.find(
+            item => item.channel === channelName);
+        if (!channel) return;
+
+        const card = document.createElement("article");
+        card.className = "profile-channel-card";
+        const heading = document.createElement("div");
+        heading.className = "profile-channel-heading";
+        const copy = document.createElement("div");
+        const title = document.createElement("strong");
+        title.textContent = `${channelText(channelName)}通道`;
+        const description = document.createElement("span");
+        description.textContent = channelDescription(channelName);
+        copy.append(title, description);
+        const badge = document.createElement("span");
+        badge.className = `status-badge ${channel.manifestSha256 ? "status-online" : "status-archived"}`;
+        badge.textContent = channel.version ? `v${channel.version}` : "未分配";
+        heading.append(copy, badge);
+
+        const controls = document.createElement("div");
+        controls.className = "profile-channel-controls";
+        const releaseField = document.createElement("label");
+        releaseField.textContent = "发布版本";
+        const releaseSelect = document.createElement("select");
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "不分配";
+        releaseSelect.append(emptyOption);
+        detail.releases.filter(release => !release.isPaused).forEach(release => {
+            const option = document.createElement("option");
+            option.value = release.manifestSha256;
+            option.textContent =
+                `v${release.version} · ${shortHash(release.manifestSha256)}`;
+            releaseSelect.append(option);
+        });
+        releaseSelect.value = channel.manifestSha256 || "";
+        releaseField.append(releaseSelect);
+
+        const percentageField = document.createElement("label");
+        percentageField.textContent = "覆盖比例";
+        const percentageInput = document.createElement("input");
+        percentageInput.type = "number";
+        percentageInput.min = "0";
+        percentageInput.max = "100";
+        percentageInput.step = "1";
+        percentageInput.value = channelName === "Production"
+            ? "100"
+            : String(channel.rolloutPercentage);
+        percentageInput.disabled = channelName === "Production";
+        percentageField.append(percentageInput);
+        controls.append(releaseField, percentageField);
+
+        const actions = document.createElement("div");
+        actions.className = "profile-channel-actions";
+        const revision = document.createElement("span");
+        revision.textContent = `通道修订 r${channel.revision}`;
+        const buttons = document.createElement("div");
+        const rollbackButton = actionButton(
+            "rotate-ccw",
+            "回滚上一版本",
+            () => confirmProfileChannelRollback(channel));
+        rollbackButton.disabled = !channel.manifestSha256;
+        const saveButton = actionButton(
+            "save",
+            "保存通道",
+            () => saveProfileChannel(
+                channel,
+                releaseSelect.value || null,
+                Number(percentageInput.value),
+                saveButton));
+        buttons.append(rollbackButton, saveButton);
+        actions.append(revision, buttons);
+        card.append(heading, controls, actions);
+        container.append(card);
+    });
+}
+
+function channelDescription(channelName) {
+    return {
+        Test: "仅管理员账号按稳定桶命中，用于首轮验证。",
+        Gray: "所有已登录玩家按稳定桶命中，逐步扩大覆盖。",
+        Production: "未命中测试和灰度时使用的正式版本。"
+    }[channelName] || "";
+}
+
+function actionButton(icon, label, handler, className = "button-secondary") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `button ${className}`;
+    const image = document.createElement("img");
+    image.src = `${iconRoot}${icon}.svg`;
+    image.alt = "";
+    const text = document.createElement("span");
+    text.textContent = label;
+    button.append(image, text);
+    button.addEventListener("click", handler);
+    return button;
+}
+
+function renderProfileReleases(detail) {
+    const container = elements["profile-release-list"];
+    container.replaceChildren();
+    detail.releases.forEach(release => {
+        const card = document.createElement("article");
+        card.className = `profile-release-card ${release.isPaused ? "paused" : ""}`;
+        const heading = document.createElement("div");
+        heading.className = "profile-release-heading";
+        const identity = document.createElement("div");
+        const version = document.createElement("strong");
+        version.textContent = `v${release.version}`;
+        const published = document.createElement("span");
+        published.textContent =
+            `${formatDateTime(release.publishedAt)} · r${release.revision}`;
+        identity.append(version, published);
+        const badge = document.createElement("span");
+        badge.className = `status-badge ${release.isPaused ? "status-maintenance" : "status-online"}`;
+        badge.textContent = release.isPaused ? "已暂停" : "可发布";
+        heading.append(identity, badge);
+
+        const facts = document.createElement("dl");
+        facts.className = "profile-release-facts";
+        appendReleaseFact(
+            facts,
+            "运行环境",
+            `${release.minecraftVersion} · ${release.loader}` +
+            (release.loaderVersion ? ` ${release.loaderVersion}` : ""));
+        appendReleaseFact(facts, "Java", release.javaVersion);
+        appendReleaseFact(
+            facts,
+            "资源",
+            `${formatBytes(release.downloadBytes)} · ${release.fileCount} 个文件`);
+        appendReleaseFact(
+            facts,
+            "导入人",
+            release.createdByDisplayName || "系统迁移");
+
+        const hash = document.createElement("code");
+        hash.className = "profile-release-hash";
+        hash.textContent = release.manifestSha256;
+        hash.title = release.manifestSha256;
+
+        const footer = document.createElement("div");
+        footer.className = "profile-release-actions";
+        const channelButtons = document.createElement("div");
+        if (!release.isPaused) {
+            ["Test", "Gray", "Production"].forEach(channelName => {
+                const assignButton = document.createElement("button");
+                assignButton.type = "button";
+                assignButton.className = "button button-secondary";
+                assignButton.textContent =
+                    channelName === "Production"
+                        ? "设为正式"
+                        : `发布到${channelText(channelName)}`;
+                assignButton.addEventListener(
+                    "click",
+                    () => requestProfileChannelAssignment(release, channelName));
+                channelButtons.append(assignButton);
+            });
+        }
+        const pauseButton = actionButton(
+            release.isPaused ? "rotate-ccw" : "archive",
+            release.isPaused ? "恢复版本" : "暂停版本",
+            () => openProfilePauseDialog(release),
+            release.isPaused ? "button-secondary" : "button-danger");
+        footer.append(channelButtons, pauseButton);
+        if (release.pauseReason) {
+            const reason = document.createElement("p");
+            reason.className = "profile-release-pause-reason";
+            reason.textContent = `暂停原因：${release.pauseReason}`;
+            card.append(heading, facts, hash, reason, footer);
+        } else {
+            card.append(heading, facts, hash, footer);
+        }
+        container.append(card);
+    });
+    elements["profile-release-empty"].hidden = detail.releases.length !== 0;
+}
+
+function appendReleaseFact(container, label, value) {
+    const item = document.createElement("div");
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const description = document.createElement("dd");
+    description.textContent = value || "—";
+    item.append(term, description);
+    container.append(item);
+}
+
+async function saveProfileMetadata() {
+    const detail = state.selectedProfileDetail;
+    if (!detail) return;
+    setBusy(elements["save-profile-metadata-button"], true);
+    setInlineError(elements["profile-drawer-error"], "");
+    try {
+        const updated = await api(
+            `/v1/admin/catalog/client-profiles/${encodeURIComponent(detail.profile.id)}`,
+            {
+                method: "PUT",
+                body: {
+                    displayName: elements["profile-manager-name"].value.trim(),
+                    isActive: elements["profile-manager-active"].checked,
+                    expectedRevision: detail.profile.revision
+                }
+            });
+        await applyProfileDetail(updated);
+        showToast("客户端档案信息已保存");
+    } catch (error) {
+        await handleProfileMutationError(error);
+    } finally {
+        setBusy(elements["save-profile-metadata-button"], false);
+    }
+}
+
+async function importProfileRelease() {
+    const detail = state.selectedProfileDetail;
+    const file = elements["profile-manifest-file"].files[0];
+    if (!detail || !file) {
+        setInlineError(elements["profile-drawer-error"], "请选择已签名 JSON 清单。");
+        return;
+    }
+
+    setBusy(elements["import-profile-release-button"], true);
+    setInlineError(elements["profile-drawer-error"], "");
+    try {
+        const updated = await api(
+            `/v1/admin/catalog/client-profiles/${encodeURIComponent(detail.profile.id)}/releases`,
+            {
+                method: "POST",
+                rawBody: await file.arrayBuffer(),
+                contentType: "application/vnd.hechao.signed-manifest+json"
+            });
+        elements["profile-manifest-file"].value = "";
+        await applyProfileDetail(updated);
+        showToast("签名版本已验证并导入");
+    } catch (error) {
+        await handleProfileMutationError(error);
+    } finally {
+        setBusy(elements["import-profile-release-button"], false);
+    }
+}
+
+async function saveProfileChannel(
+    channel,
+    manifestSha256,
+    rolloutPercentage,
+    button) {
+    const detail = state.selectedProfileDetail;
+    if (!detail) return;
+    setBusy(button, true);
+    setInlineError(elements["profile-drawer-error"], "");
+    try {
+        const updated = await updateProfileChannel(
+            detail.profile.id,
+            channel,
+            manifestSha256,
+            rolloutPercentage);
+        await applyProfileDetail(updated);
+        showToast(`${channelText(channel.channel)}通道已更新`);
+    } catch (error) {
+        await handleProfileMutationError(error);
+    } finally {
+        setBusy(button, false);
+    }
+}
+
+function updateProfileChannel(
+    profileId,
+    channel,
+    manifestSha256,
+    rolloutPercentage) {
+    return api(
+        `/v1/admin/catalog/client-profiles/${encodeURIComponent(profileId)}` +
+        `/channels/${encodeURIComponent(channel.channel)}`,
+        {
+            method: "PUT",
+            body: {
+                manifestSha256,
+                rolloutPercentage,
+                expectedRevision: channel.revision
+            }
+        });
+}
+
+function requestProfileChannelAssignment(release, channelName) {
+    const detail = state.selectedProfileDetail;
+    if (!detail) return;
+    const channel = detail.profile.channels.find(
+        item => item.channel === channelName);
+    if (!channel) return;
+    if (channelName !== "Production") {
+        assignProfileChannelRelease(release, channel);
+        return;
+    }
+
+    state.pendingVisibilityChange = null;
+    state.pendingProfileChannelRollback = null;
+    state.pendingProfileChannelAssignment = { release, channel };
+    elements["confirm-icon"].src = `${iconRoot}package.svg`;
+    elements["confirm-title"].textContent = "切换正式版本";
+    elements["confirm-message"].textContent =
+        `正式通道将切换到 v${release.version}，所有未命中测试和灰度的玩家都会使用该版本。`;
+    elements["accept-confirm-button"].textContent = "确认设为正式";
+    elements["accept-confirm-button"].className = "button button-primary";
+    elements["confirm-dialog"].showModal();
+}
+
+async function assignProfileChannelRelease(release, channel) {
+    const detail = state.selectedProfileDetail;
+    if (!detail) return;
+    const rolloutPercentage = channel.channel === "Production"
+        ? 100
+        : channel.rolloutPercentage > 0
+            ? channel.rolloutPercentage
+            : channel.channel === "Test" ? 100 : 10;
+    setInlineError(elements["profile-drawer-error"], "");
+    try {
+        const updated = await updateProfileChannel(
+            detail.profile.id,
+            channel,
+            release.manifestSha256,
+            rolloutPercentage);
+        await applyProfileDetail(updated);
+        showToast(`v${release.version} 已发布到${channelText(channel.channel)}通道`);
+    } catch (error) {
+        await handleProfileMutationError(error);
+    }
+}
+
+function confirmProfileChannelRollback(channel) {
+    state.pendingVisibilityChange = null;
+    state.pendingProfileChannelAssignment = null;
+    state.pendingProfileChannelRollback = channel;
+    elements["confirm-icon"].src = `${iconRoot}rotate-ccw.svg`;
+    elements["confirm-title"].textContent = `回滚${channelText(channel.channel)}通道`;
+    elements["confirm-message"].textContent =
+        `${channelText(channel.channel)}通道将回到当前版本之前最近的可用版本。`;
+    elements["accept-confirm-button"].textContent = "确认回滚";
+    elements["accept-confirm-button"].className = "button button-danger";
+    elements["confirm-dialog"].showModal();
+}
+
+async function applyProfileChannelRollback() {
+    const channel = state.pendingProfileChannelRollback;
+    const detail = state.selectedProfileDetail;
+    if (!channel || !detail) return;
+    setBusy(elements["accept-confirm-button"], true);
+    try {
+        const updated = await api(
+            `/v1/admin/catalog/client-profiles/${encodeURIComponent(detail.profile.id)}` +
+            `/channels/${encodeURIComponent(channel.channel)}/rollback`,
+            {
+                method: "POST",
+                body: { expectedRevision: channel.revision }
+            });
+        closeConfirmation();
+        await applyProfileDetail(updated);
+        showToast(`${channelText(channel.channel)}通道已回滚`);
+    } catch (error) {
+        closeConfirmation();
+        await handleProfileMutationError(error);
+    } finally {
+        setBusy(elements["accept-confirm-button"], false);
+    }
+}
+
+function openProfilePauseDialog(release) {
+    const pausing = !release.isPaused;
+    state.pendingProfileRelease = { release, pausing };
+    elements["profile-pause-icon"].src =
+        `${iconRoot}${pausing ? "archive" : "rotate-ccw"}.svg`;
+    elements["profile-pause-title"].textContent =
+        pausing ? "暂停问题版本" : "恢复已暂停版本";
+    elements["profile-pause-message"].textContent = pausing
+        ? `v${release.version} 将被禁止继续分发，引用它的通道会自动回滚。`
+        : `v${release.version} 将恢复为可发布状态，但不会自动重新分配到任何通道。`;
+    elements["profile-pause-reason-field"].hidden = !pausing;
+    elements["profile-pause-reason"].required = pausing;
+    elements["profile-pause-reason"].value = "";
+    elements["accept-profile-pause-button"].textContent =
+        pausing ? "确认暂停并回滚" : "确认恢复版本";
+    elements["accept-profile-pause-button"].className =
+        `button ${pausing ? "button-danger" : "button-primary"}`;
+    setInlineError(elements["profile-pause-error"], "");
+    elements["profile-pause-dialog"].showModal();
+    if (pausing) elements["profile-pause-reason"].focus();
+}
+
+function closeProfilePauseDialog() {
+    if (elements["profile-pause-dialog"].open) {
+        elements["profile-pause-dialog"].close();
+    }
+    state.pendingProfileRelease = null;
+    setInlineError(elements["profile-pause-error"], "");
+}
+
+async function submitProfilePause(event) {
+    event.preventDefault();
+    const pending = state.pendingProfileRelease;
+    const detail = state.selectedProfileDetail;
+    if (!pending || !detail) return;
+    setBusy(elements["accept-profile-pause-button"], true);
+    setInlineError(elements["profile-pause-error"], "");
+    try {
+        const updated = await api(
+            `/v1/admin/catalog/client-profiles/${encodeURIComponent(detail.profile.id)}` +
+            `/releases/${encodeURIComponent(pending.release.manifestSha256)}/pause`,
+            {
+                method: "PUT",
+                body: {
+                    isPaused: pending.pausing,
+                    reason: pending.pausing
+                        ? elements["profile-pause-reason"].value.trim()
+                        : "",
+                    expectedRevision: pending.release.revision
+                }
+            });
+        const version = pending.release.version;
+        const pausing = pending.pausing;
+        closeProfilePauseDialog();
+        await applyProfileDetail(updated);
+        showToast(pausing ? `v${version} 已暂停并完成通道回滚` : `v${version} 已恢复`);
+    } catch (error) {
+        setInlineError(elements["profile-pause-error"], error.message);
+        if (error.status === 409) {
+            await refreshSelectedProfile();
+        }
+    } finally {
+        setBusy(elements["accept-profile-pause-button"], false);
+    }
+}
+
+async function applyProfileDetail(detail) {
+    state.selectedProfileDetail = detail;
+    renderProfileManager();
+    await reloadProfiles();
+}
+
+async function reloadProfiles() {
+    state.profiles = await api("/v1/admin/catalog/client-profiles");
+    renderProfiles();
+    populateProfileOptions();
+}
+
+async function refreshSelectedProfile() {
+    const profileId = state.selectedProfileDetail?.profile.id;
+    if (!profileId) return;
+    state.selectedProfileDetail = await api(
+        `/v1/admin/catalog/client-profiles/${encodeURIComponent(profileId)}`);
+    renderProfileManager();
+    await reloadProfiles();
+}
+
+async function handleProfileMutationError(error) {
+    setInlineError(elements["profile-drawer-error"], error.message);
+    if (error.status === 409) {
+        try {
+            await refreshSelectedProfile();
+        } catch (refreshError) {
+            setInlineError(elements["profile-drawer-error"], refreshError.message);
+        }
+    }
+}
+
+function shortHash(value) {
+    if (!value) return "—";
+    return value.length > 12
+        ? `${value.slice(0, 8)}…${value.slice(-4)}`
+        : value;
 }
 
 function renderDiagnostics() {
@@ -1650,6 +2322,8 @@ async function saveServer(event) {
 
 function confirmVisibilityChange(server) {
     state.pendingVisibilityChange = server;
+    state.pendingProfileChannelRollback = null;
+    state.pendingProfileChannelAssignment = null;
     const restoring = !server.isVisible;
     elements["confirm-icon"].src =
         `${iconRoot}${restoring ? "rotate-ccw" : "archive"}.svg`;
@@ -1661,6 +2335,37 @@ function confirmVisibilityChange(server) {
     elements["accept-confirm-button"].className =
         `button ${restoring ? "button-primary" : "button-danger"}`;
     elements["confirm-dialog"].showModal();
+}
+
+function closeConfirmation() {
+    if (elements["confirm-dialog"].open) {
+        elements["confirm-dialog"].close();
+    }
+    state.pendingVisibilityChange = null;
+    state.pendingProfileChannelRollback = null;
+    state.pendingProfileChannelAssignment = null;
+}
+
+function applyConfirmation() {
+    if (state.pendingProfileChannelRollback) {
+        return applyProfileChannelRollback();
+    }
+    if (state.pendingProfileChannelAssignment) {
+        return applyProfileChannelAssignment();
+    }
+    return applyVisibilityChange();
+}
+
+async function applyProfileChannelAssignment() {
+    const pending = state.pendingProfileChannelAssignment;
+    if (!pending) return;
+    setBusy(elements["accept-confirm-button"], true);
+    try {
+        await assignProfileChannelRelease(pending.release, pending.channel);
+        closeConfirmation();
+    } finally {
+        setBusy(elements["accept-confirm-button"], false);
+    }
 }
 
 async function applyVisibilityChange() {
@@ -1675,15 +2380,14 @@ async function applyVisibilityChange() {
                 expectedRevision: server.revision
             }
         });
-        elements["confirm-dialog"].close();
+        closeConfirmation();
         showToast(server.isVisible ? "服务器已归档" : "服务器已恢复");
         await loadConsoleData();
     } catch (error) {
-        elements["confirm-dialog"].close();
+        closeConfirmation();
         showToast(error.message, true);
         await loadConsoleData();
     } finally {
-        state.pendingVisibilityChange = null;
         setBusy(elements["accept-confirm-button"], false);
     }
 }
@@ -1760,6 +2464,9 @@ function auditIcon(action) {
     if (action.includes("security.minecraft_ban")) return "shield-check";
     if (action.includes("security.account")) return "key-round";
     if (action.includes("access.server_rule")) return "users";
+    if (action.includes("client_profile_release")) return "package";
+    if (action.includes("client_profile_channel")) return "refresh-cw";
+    if (action.includes("client_profile")) return "package";
     if (action.includes("created")) return "plus";
     if (action.includes("archived")) return "archive";
     if (action.includes("restored")) return "rotate-ccw";
@@ -1775,6 +2482,16 @@ function auditActionText(action) {
         "catalog.server.updated": "编辑服务器",
         "catalog.server.archived": "归档服务器",
         "catalog.server.restored": "恢复服务器",
+        "catalog.client_profile.created": "创建客户端档案",
+        "catalog.client_profile.updated": "编辑客户端档案",
+        "catalog.client_profile.enabled": "启用客户端档案",
+        "catalog.client_profile.disabled": "停用客户端档案",
+        "catalog.client_profile_release.imported": "导入签名客户端版本",
+        "catalog.client_profile_release.hydrated": "补全迁移版本元数据",
+        "catalog.client_profile_release.paused": "暂停客户端版本",
+        "catalog.client_profile_release.resumed": "恢复客户端版本",
+        "catalog.client_profile_channel.updated": "更新客户端发布通道",
+        "catalog.client_profile_channel.rolled_back": "回滚客户端发布通道",
         "access.server_rule.created": "新增单服权限规则",
         "access.server_rule.updated": "编辑单服权限规则",
         "access.server_rule.deleted": "清除单服权限规则",

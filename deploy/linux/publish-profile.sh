@@ -39,6 +39,26 @@ if [[ "$actual_sha256" != "$manifest_sha256" ]]; then
   exit 1
 fi
 
+release_channel_table_sql="
+  SELECT to_regclass('launcher.client_profile_channels') IS NOT NULL;"
+set +e
+release_channel_table="$(
+  docker exec "$postgres_container" sh -lc \
+    'psql -X -q -U "$POSTGRES_USER" -d hechao_launcher -v ON_ERROR_STOP=1 -At -c "$1"' \
+    sh "$release_channel_table_sql" 2>&1
+)"
+database_status=$?
+set -e
+if [[ "$database_status" -ne 0 ]]; then
+  echo "could not inspect the profile release schema: $release_channel_table" >&2
+  exit 1
+fi
+if [[ "$release_channel_table" == "t" ]]; then
+  echo "legacy profile publishing is disabled on API 0.17 and later" >&2
+  echo "import the signed manifest in the admin console, then promote Test, Gray, and Production explicitly" >&2
+  exit 2
+fi
+
 install -d -o root -g hechao-api -m 0750 "$manifest_directory"
 temporary_manifest="$(mktemp "${manifest_directory}/.${profile_id}.tmp.XXXXXX")"
 backup_manifest=""

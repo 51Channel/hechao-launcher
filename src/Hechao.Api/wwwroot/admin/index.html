@@ -312,24 +312,36 @@
                     <div class="section-heading">
                         <div>
                             <h2>客户端档案</h2>
-                            <p>当前目录可绑定的已发布档案。</p>
+                            <p>管理不可变签名版本，并按测试、灰度、正式三条通道逐级发布。</p>
                         </div>
-                        <span id="profile-count" class="count-label">0 个档案</span>
+                        <div class="section-actions">
+                            <span id="profile-count" class="count-label">0 个档案</span>
+                            <button id="create-profile-button"
+                                    class="button button-primary" type="button">
+                                <img src="/admin/assets/icons/plus.svg" alt="">
+                                新建档案
+                            </button>
+                        </div>
                     </div>
                     <div class="table-frame">
                         <table class="profile-table">
                             <thead>
                             <tr>
                                 <th>档案</th>
-                                <th>版本</th>
-                                <th>下载大小</th>
-                                <th>发布时间</th>
+                                <th>正式版本</th>
+                                <th>发布通道</th>
+                                <th>版本数</th>
                                 <th>状态</th>
-                                <th>SHA-256</th>
+                                <th class="actions-column">操作</th>
                             </tr>
                             </thead>
                             <tbody id="profile-table-body"></tbody>
                         </table>
+                        <div id="profile-empty-state" class="empty-state" hidden>
+                            <img src="/admin/assets/icons/package.svg" alt="">
+                            <strong>还没有客户端档案</strong>
+                            <span>先创建档案，再导入由离线发布密钥签名的清单。</span>
+                        </div>
                     </div>
                 </section>
 
@@ -499,6 +511,173 @@
                     </button>
                 </div>
             </footer>
+        </form>
+    </dialog>
+
+    <dialog id="profile-create-dialog" class="confirm-dialog profile-create-dialog">
+        <form id="profile-create-form">
+            <div class="confirm-icon">
+                <img src="/admin/assets/icons/package.svg" alt="">
+            </div>
+            <h2>新建客户端档案</h2>
+            <p>档案创建后先保持停用。导入签名清单并分配正式通道后才会进入玩家目录。</p>
+            <div id="profile-create-error" class="inline-alert" hidden>
+                <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                <span></span>
+            </div>
+            <label class="security-action-field">
+                档案 ID
+                <input id="profile-create-id" maxlength="64" required
+                       placeholder="activity-neoforge-1.21.11">
+                <span>创建后不可修改，只允许小写字母、数字、点、下划线和短横线。</span>
+            </label>
+            <label class="security-action-field">
+                显示名称
+                <input id="profile-create-name" maxlength="80" required
+                       placeholder="活动服 NeoForge">
+            </label>
+            <div class="confirm-actions">
+                <button id="cancel-profile-create-button"
+                        class="button button-secondary" type="button">取消</button>
+                <button id="save-profile-create-button"
+                        class="button button-primary" type="submit">
+                    <img src="/admin/assets/icons/plus.svg" alt="">
+                    创建档案
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="profile-drawer" class="drawer profile-drawer">
+        <div class="drawer-layout">
+            <header class="drawer-header">
+                <div>
+                    <span>客户端发布</span>
+                    <h2 id="profile-drawer-title">客户端档案</h2>
+                </div>
+                <button id="close-profile-drawer-button"
+                        class="icon-button" type="button" title="关闭">
+                    <img src="/admin/assets/icons/x.svg" alt="">
+                </button>
+            </header>
+            <div class="drawer-body">
+                <div id="profile-drawer-error" class="inline-alert" hidden>
+                    <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                    <span></span>
+                </div>
+
+                <section class="profile-manager-section">
+                    <div class="profile-manager-heading">
+                        <div>
+                            <span>档案信息</span>
+                            <strong id="profile-manager-id">—</strong>
+                        </div>
+                        <span id="profile-manager-revision"
+                              class="count-label">修订 0</span>
+                    </div>
+                    <div class="profile-metadata-grid">
+                        <label>
+                            显示名称
+                            <input id="profile-manager-name" maxlength="80">
+                        </label>
+                        <label class="checkbox-field">
+                            <input id="profile-manager-active" type="checkbox">
+                            <span>
+                                <strong>允许玩家使用</strong>
+                                <small>启用前必须存在未暂停的正式版本。</small>
+                            </span>
+                        </label>
+                    </div>
+                    <button id="save-profile-metadata-button"
+                            class="button button-secondary profile-section-action"
+                            type="button">
+                        <img src="/admin/assets/icons/save.svg" alt="">
+                        保存档案信息
+                    </button>
+                </section>
+
+                <section class="profile-manager-section">
+                    <div class="profile-manager-heading">
+                        <div>
+                            <span>导入发布</span>
+                            <strong>已签名 JSON 清单</strong>
+                        </div>
+                    </div>
+                    <p class="profile-manager-copy">
+                        对象仍由受限发布器上传。这里会重新验证离线签名、档案 ID、
+                        对象地址和清单 SHA-256，再写入不可变版本库。
+                    </p>
+                    <div class="profile-import-row">
+                        <input id="profile-manifest-file"
+                               type="file" accept=".json,application/json">
+                        <button id="import-profile-release-button"
+                                class="button button-primary" type="button">
+                            <img src="/admin/assets/icons/package.svg" alt="">
+                            验证并导入
+                        </button>
+                    </div>
+                </section>
+
+                <section class="profile-manager-section">
+                    <div class="profile-manager-heading">
+                        <div>
+                            <span>发布通道</span>
+                            <strong>测试 → 灰度 → 正式</strong>
+                        </div>
+                    </div>
+                    <div id="profile-channel-list" class="profile-channel-list"></div>
+                </section>
+
+                <section class="profile-manager-section">
+                    <div class="profile-manager-heading">
+                        <div>
+                            <span>版本历史</span>
+                            <strong id="profile-release-count">0 个版本</strong>
+                        </div>
+                    </div>
+                    <div id="profile-release-list" class="profile-release-list"></div>
+                    <div id="profile-release-empty" class="security-empty" hidden>
+                        尚未导入签名版本。
+                    </div>
+                </section>
+            </div>
+            <footer class="drawer-footer">
+                <span>通道切换、暂停和回滚均写入管理员审计日志。</span>
+                <div>
+                    <button id="finish-profile-drawer-button"
+                            class="button button-secondary" type="button">关闭</button>
+                </div>
+            </footer>
+        </div>
+    </dialog>
+
+    <dialog id="profile-pause-dialog"
+            class="confirm-dialog security-action-dialog">
+        <form id="profile-pause-form">
+            <div class="confirm-icon">
+                <img id="profile-pause-icon"
+                     src="/admin/assets/icons/archive.svg" alt="">
+            </div>
+            <h2 id="profile-pause-title">暂停问题版本</h2>
+            <p id="profile-pause-message"></p>
+            <div id="profile-pause-error" class="inline-alert" hidden>
+                <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                <span></span>
+            </div>
+            <label id="profile-pause-reason-field"
+                   class="security-action-field">
+                暂停原因
+                <textarea id="profile-pause-reason"
+                          minlength="2" maxlength="280" rows="4"
+                          placeholder="说明崩溃、模组冲突或分发异常"></textarea>
+                <span>引用该版本的通道会在同一事务中退回上一可用版本。</span>
+            </label>
+            <div class="confirm-actions">
+                <button id="cancel-profile-pause-button"
+                        class="button button-secondary" type="button">取消</button>
+                <button id="accept-profile-pause-button"
+                        class="button button-danger" type="submit">确认暂停并回滚</button>
+            </div>
         </form>
     </dialog>
 

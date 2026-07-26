@@ -245,6 +245,20 @@ Distribution__PresignedUrlSeconds=300
 
 同日完成补强：RAM 策略升级为 v2，发布器 `0.7.0` 接入远端元数据校验。使用活动档案对生产 OSS 全量复验，结果为 `4,754` 个校验后跳过、`0` 个上传、`0` 上传字节；所有当前对象均匹配本地长度和 SHA-256 元数据，没有创建新对象版本。
 
+API `0.17.0` 起，签名清单不再通过 `publish-profile.sh` 直接覆盖活动指针。
+管理员后台只接收离线发布器生成的原始签名 JSON，使用 API 内嵌的只读公钥信任包
+完成 Ed25519 验签，并按清单文件 SHA-256 保存为：
+
+```text
+/var/lib/hechao-launcher-api/manifests/releases/<profile-id>/<sha256>.json
+```
+
+数据库迁移 14 建立不可变发布记录及 Test、Gray、Production 三个通道。正式发布必须
+依次经过签名导入、Test、Gray 和 Production；暂停问题版本会在事务中自动把受影响
+通道移到上一份未暂停发布。迁移 14 存在时，旧 `publish-profile.sh` 会在写文件前
+明确退出，避免绕过验签、通道修订和审计。完整后台流程见
+[`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。
+
 `2026-07-25` 发布 PVP 档案时，发布器对 `201` 个共享对象执行远端长度与 SHA-256 元数据校验并跳过，只上传 `3,547` 个缺失对象。发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；清单快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，归档 SHA-256 `CD99BB5059B58EA834B0BFF8D3A27D061C32439ED5E7D9E079ECA21DC4CBCF0F`。清单于 `2026-07-25T20:12:10.4811149+00:00` 原子激活。
 
 ### 启动器安装包内部灰度

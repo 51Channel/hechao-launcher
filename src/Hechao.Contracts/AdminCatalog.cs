@@ -71,7 +71,10 @@ public sealed record AdminClientProfileRecord(
     string Sha256,
     DateTimeOffset PublishedAt,
     bool IsActive,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    long Revision,
+    int ReleaseCount,
+    IReadOnlyList<AdminClientProfileChannelRecord> Channels);
 
 public sealed record AdminAuditLogEntry(
     long Id,

@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
 > 当前线上版本：`0.16.0-20260726T222124Z`
-> 本地 API 源码版本：`0.16.0`
-> 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期、单服规则、账号安全、论坛会话联动和受控全局等级已部署；启动器 `0.11.12` 已进入私有 OSS 灰度，管理员 Web 已启用但尚未登记 MFA
+> 本地 API 源码版本：`0.17.0`
+> 当前阶段：客户端档案签名导入、Test/Gray/Production、暂停和自动回滚已完成隔离数据库演练，等待原子部署；启动器 `0.11.12` 已进入私有 OSS 灰度，管理员 Web 已启用但尚未登记 MFA
 
 ## 1. 运行边界
 
@@ -31,6 +31,7 @@
 - 玩家诊断端点：`POST /v1/diagnostics/uploads` 与一次性令牌保护的 `PUT /v1/diagnostics/uploads/{id}`
 - 管理员诊断端点：`GET /v1/admin/diagnostics` 与 `GET /v1/admin/diagnostics/{id}/download`，要求 MFA
 - 管理员玩家端点：`GET /v1/admin/users`、访问预览、单服规则、受控全局等级、账号停用/恢复、设备会话撤销及 Minecraft UUID 封禁
+- 管理员发布端点：`/v1/admin/catalog/client-profiles/*`，包括签名清单导入、三通道、稳定灰度、暂停和回滚
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -258,5 +259,6 @@ systemctl reload nginx
 | `0.14.1-20260726T190856Z` | `F02CC7AAC3AE4FC8726548E3777D231D035B03E19487CAB32627333CEBBB8A3A` | 排期、公告、玩家搜索、访问预览、单服规则、迁移 10、启动预检与公网回归通过；历史版本 |
 | `0.15.0-20260726T202540Z` | `42ACC44468989A567E936993934046266A9D2B22B43758322E693BC23A089FD6` | 账号与设备会话安全、UUID 封禁、迁移 11、隔离端到端验收、原子部署与公网回归通过；`0.16.0` 的直接回滚目标 |
 | `0.16.0-20260726T222124Z` | `8B932BC0BFE5C0D3D2A97460555695AD33544CC2814A96B8AF16E672F8B5CDB5` | 论坛 Cookie 联动、受控 LuckPerms 等级、迁移 12 至 13、生产 worker 投递和公网回归通过；当前线上版本 |
+| `0.17.0-20260726T231515Z` | `80CBE367AE39B46B855DAC31A060E6DC7C50FF80135A4040982429068B674C5B` | 签名发布导入、不可变清单、Test/Gray/Production、稳定分桶、暂停自动回滚、迁移 14 和隔离生产副本演练通过；待原子部署 |
 
 数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期和单服规则已部署。API `0.16.0` 为当前线上版本，启动器 `0.11.12` 已进入私有 OSS 灰度；管理员 Web 已启用但尚未登记 MFA，大厅代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

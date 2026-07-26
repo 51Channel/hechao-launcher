@@ -1,7 +1,7 @@
 # 管理员服务器目录 API
 
-> 源码版本：API `0.16.0`（基础目录自 `0.7.0` 起保持兼容）
-> 生产状态：API `0.16.0` 已部署，管理员 Web 已启用；当前 MFA 凭据数为 0，目录写入尚未完成真实管理员验收
+> 源码版本：API `0.17.0`（基础目录自 `0.7.0` 起保持兼容）
+> 生产状态：API `0.17.0` 已完成隔离数据库发布演练，生产仍为 `0.16.0`；当前 MFA 凭据数为 0，目录写入尚未完成真实管理员验收
 > 安全边界：只管理目录数据，不包含 Minecraft、Velocity 或 Java 进程的启动、停止、重启和命令执行能力
 
 ## 1. 访问控制
@@ -18,7 +18,14 @@
 | --- | --- |
 | `GET /v1/admin/catalog/servers` | 查看全部服务器，包括已归档记录和当前修订号 |
 | `GET /v1/admin/catalog/servers/{serverId}` | 按 ID 查看单个服务器及当前修订号 |
-| `GET /v1/admin/catalog/client-profiles` | 查看可绑定的客户端档案及启用状态 |
+| `GET /v1/admin/catalog/client-profiles` | 查看客户端档案、三个发布通道、启用状态和发布数量 |
+| `GET /v1/admin/catalog/client-profiles/{profileId}` | 查看档案、通道和全部不可变发布 |
+| `POST /v1/admin/catalog/client-profiles` | 创建空档案和 Test、Gray、Production 三个通道 |
+| `PUT /v1/admin/catalog/client-profiles/{profileId}` | 修改显示名，或在正式通道存在可用发布后启用档案 |
+| `POST /v1/admin/catalog/client-profiles/{profileId}/releases` | 导入并验证离线签名的原始 JSON 清单 |
+| `PUT /v1/admin/catalog/client-profiles/{profileId}/channels/{channel}` | 为通道指定发布和测试/灰度比例 |
+| `POST /v1/admin/catalog/client-profiles/{profileId}/channels/{channel}/rollback` | 按发布时间回退到该通道的上一份可用发布 |
+| `PUT /v1/admin/catalog/client-profiles/{profileId}/releases/{sha256}/pause` | 暂停或恢复发布；暂停时自动移走所有通道指针 |
 | `POST /v1/admin/catalog/servers` | 新增服务器，可先以隐藏状态创建 |
 | `PUT /v1/admin/catalog/servers/{serverId}` | 编辑显示、状态、容量、版本、加载器、等级、档案、Velocity 目标和排序 |
 | `PUT /v1/admin/catalog/servers/{serverId}/visibility` | 归档或恢复服务器，不物理删除 |
@@ -44,7 +51,45 @@
 有效拒绝规则、有效允许规则、LuckPerms 数据新鲜度、全局最低等级。到期规则自动
 退回等级判定；允许规则不能绕过账号禁用、未绑定、归档或服务器关闭。
 
-## 3. 并发与验证
+## 3. 客户端发布通道
+
+API `0.17.0` 把“客户端档案”和“某次签名发布”分开。档案 ID 创建后不变，
+每次发布以签名清单原始字节的 SHA-256 为不可变主键，保存到：
+
+```text
+/var/lib/hechao-launcher-api/manifests/releases/<profile-id>/<sha256>.json
+```
+
+上传端不能提交版本号、下载大小或加载器等可伪造元数据。API 使用内嵌只读公钥
+信任包验证 Ed25519 签名，再从签名负载提取档案 ID、版本、Minecraft、Java、
+加载器、文件数、逻辑大小和发布时间。路由档案 ID 与签名负载不一致、未知 Key ID、
+签名错误、摘要错误、超限或重复版本都会被拒绝。
+
+每个档案固定拥有：
+
+- `Test`：只对 `Administrator` 生效，比例可设为 `0` 至 `100`。
+- `Gray`：对已登录账号生效，比例可设为 `0` 至 `100`。
+- `Production`：正式兜底，比例固定为 `100`。
+
+测试和灰度使用 `userId + profileId + channel` 的 SHA-256 稳定分桶。同一账号在比例
+不变时不会随机跳组；匿名目录只解析正式通道。优先级为 Test、Gray、Production。
+被暂停的发布永远不能被解析。暂停某个正在使用的发布时，API 在同一事务内把受影响
+通道回退到按 `publishedAt` 排序的上一份未暂停发布；没有候选时清空通道并禁用档案。
+恢复发布只解除暂停，不会自动重新推广。
+
+新档案默认禁用。只有正式通道已指向未暂停发布时才能启用。正式推广、回滚、暂停、
+恢复和档案启停均要求管理员 MFA、CSRF、期望修订号和审计。生产发布的标准顺序是：
+
+1. 离线发布器生成并验证签名清单，内容对象先写入私有 OSS。
+2. 后台创建档案或打开现有档案，原样导入签名 JSON。
+3. 指向 Test，并由管理员账号完成安装、修复和启动验证。
+4. 指向 Gray，先设小比例并观察下载与启动结果。
+5. 明确二次确认后指向 Production，再启用档案。
+
+迁移 14 存在后，`deploy/linux/publish-profile.sh` 会在修改文件或数据库前退出。
+不得再用旧脚本直接改 `client_profiles`，否则会绕过签名验证、通道修订和审计。
+
+## 4. 并发与验证
 
 数据库迁移 5 为每个服务器增加从 `1` 开始的 `revision`。编辑、归档和恢复必须提交上次读取到的 `expectedRevision`：
 
@@ -60,10 +105,14 @@
 - 公告最多 `280` 个字符；开放时间必须早于关闭时间。
 - 绑定的客户端档案必须存在且处于启用状态。
 - 单服规则原因最多 `240` 个字符；到期时间必须晚于当前时间。
+- 档案 ID 为 2 至 64 位小写字母、数字、点、下划线或短横线。
+- 档案显示名为 1 至 80 个可显示字符。
+- Test 和 Gray 比例为 0 至 100；Production 固定为 100。
+- 档案、通道和发布暂停分别使用自己的修订号，过期写入返回 `409 Conflict`。
 
 `velocity_target` 允许多个目录服务器共享。这是活动替换服复用 `survival2` 代理目标时需要的结构，不应添加唯一约束。
 
-## 4. 审计
+## 5. 审计
 
 新增、编辑、归档和恢复均在服务器变更的同一 PostgreSQL 事务中写入 `launcher.audit_logs`。任一步失败时两者一起回滚。
 
@@ -85,22 +134,37 @@ catalog.server.restored
 access.server_rule.created
 access.server_rule.updated
 access.server_rule.deleted
+catalog.client_profile.created
+catalog.client_profile.updated
+catalog.client_profile.enabled
+catalog.client_profile.disabled
+catalog.client_profile_release.imported
+catalog.client_profile_release.hydrated
+catalog.client_profile_release.paused
+catalog.client_profile_release.resumed
+catalog.client_profile_channel.updated
+catalog.client_profile_channel.rolled_back
 ```
 
 重复提交相同可见性属于幂等成功，不增加修订号，也不制造无变化审计记录。
 
-## 5. 部署与回滚
+## 6. 部署与回滚
 
 本功能代码、数据库结构与公网管理入口已部署，但尚未完成管理员 MFA。正式写入前必须：
 
-1. 生成并校验目标 API Linux 发布物、提交号与 SHA-256；当前生产基线为 `0.16.0-20260726T222124Z`。
+1. 生成并校验目标 API Linux 发布物、提交号与 SHA-256；当前候选为 `0.17.0-20260726T231515Z`。
 2. 创建部署前数据库备份，运行 `pg_restore --list` 验证可读。
 3. 确认至少一个真实 `Administrator` 身份可用于授权测试。
-4. 部署 API 后验证迁移 5、迁移 6、迁移 10、`healthz`、`readyz` 和旧目录端点。
+4. 部署 API 后验证迁移 5、迁移 6、迁移 10、迁移 14、`healthz`、`readyz` 和旧目录端点。
 5. 验证普通账号不能创建后台票据，管理员必须完成 MFA 后才能读取目录。
 6. 只在维护窗口创建一条隐藏测试服务器，核对审计后再归档。
-7. 回归 `hechao.world`、`api.hechao.world`、启动器目录、分发和心跳。
+7. 导入两份真实签名清单，验证不可变存储、三通道、回滚、暂停和修订冲突。
+8. 回归 `hechao.world`、`api.hechao.world`、启动器目录、分发和心跳。
 
-回滚应用时可以把 `current` 链接切回已验证的 API `0.14.1-20260726T190856Z`。迁移 5、迁移 6、迁移 10 与迁移 11 都是加法变更，旧版本会忽略新增字段和表，不需要在故障回滚中删除。禁止为回滚执行 `DROP COLUMN`、`DROP TABLE` 或删除审计记录。
+回滚应用时可以把 `current` 链接切回已验证的 API `0.16.0-20260726T222124Z`。
+迁移 5、迁移 6、迁移 10、迁移 11 与迁移 14 都是加法变更，旧版本会忽略新增表，
+不需要在故障回滚中删除。回滚到 `0.16.0` 后目录继续读取迁移时同步到
+`client_profiles` 的正式发布快照，但不能使用新通道操作。禁止为回滚执行
+`DROP COLUMN`、`DROP TABLE` 或删除审计记录。
 
 本功能的部署只需要重启 `hechao-launcher-api.service`，不需要也不允许重启 Minecraft、Velocity、大厅、生存服或活动服。

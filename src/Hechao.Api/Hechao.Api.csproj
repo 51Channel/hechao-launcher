@@ -15,6 +15,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Migrations\*.sql" />
+    <EmbeddedResource Include="Distribution\distribution-trust.json" />
+    <Content Remove="Distribution\distribution-trust.json" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -24,7 +26,7 @@
     <AssemblyName>Hechao.Api</AssemblyName>
     <RootNamespace>Hechao.Api</RootNamespace>
     <Product>赫朝启动器 API</Product>
-    <Version>0.16.0</Version>
+    <Version>0.17.0</Version>
   </PropertyGroup>
 
 </Project>

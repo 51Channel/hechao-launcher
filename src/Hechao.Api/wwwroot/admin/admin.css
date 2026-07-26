@@ -903,6 +903,52 @@ td:first-child {
     margin-bottom: 16px;
 }
 
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-table th:first-child,
+.profile-table td:first-child {
+    width: 22%;
+}
+
+.profile-table th:nth-child(2),
+.profile-table td:nth-child(2) {
+    width: 18%;
+}
+
+.profile-table th:nth-child(3),
+.profile-table td:nth-child(3) {
+    width: 29%;
+}
+
+.profile-channel-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.channel-pill {
+    display: inline-flex;
+    min-height: 23px;
+    align-items: center;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface-muted);
+    color: var(--ink-muted);
+    font-size: 9px;
+    font-weight: 650;
+}
+
+.channel-pill.assigned {
+    border-color: #c8ded2;
+    background: var(--success-soft);
+    color: var(--success);
+}
+
 .access-preview {
     margin-top: 28px;
     padding-top: 24px;
@@ -1178,6 +1224,16 @@ dialog::backdrop {
     box-shadow: -16px 0 42px rgba(20, 24, 30, 0.18);
 }
 
+.profile-drawer {
+    width: min(820px, 100vw);
+}
+
+.drawer-layout {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 76px minmax(0, 1fr) 72px;
+}
+
 .drawer[open] {
     animation: drawer-in 150ms ease-out;
 }
@@ -1235,6 +1291,211 @@ dialog::backdrop {
 .drawer-footer > div {
     display: flex;
     gap: 8px;
+}
+
+.profile-create-dialog form {
+    display: block;
+}
+
+.profile-manager-section {
+    padding: 0 0 24px;
+    margin: 0 0 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.profile-manager-section:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+}
+
+.profile-manager-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.profile-manager-heading > div > span,
+.profile-manager-heading > div > strong {
+    display: block;
+}
+
+.profile-manager-heading > div > span {
+    margin-bottom: 4px;
+    color: var(--brand);
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.profile-manager-heading > div > strong {
+    font-size: 15px;
+}
+
+.profile-metadata-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+    gap: 12px;
+    align-items: end;
+}
+
+.profile-section-action {
+    margin-top: 12px;
+}
+
+.profile-manager-copy {
+    margin: -4px 0 14px;
+    color: var(--ink-secondary);
+    font-size: 11px;
+    line-height: 1.65;
+}
+
+.profile-import-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.profile-import-row input[type="file"] {
+    height: auto;
+    min-height: 40px;
+    padding: 7px;
+}
+
+.profile-channel-list,
+.profile-release-list {
+    display: grid;
+    gap: 10px;
+}
+
+.profile-channel-card,
+.profile-release-card {
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface);
+}
+
+.profile-release-card.paused {
+    border-color: #ead2a9;
+    background: #fffdf8;
+}
+
+.profile-channel-heading,
+.profile-release-heading,
+.profile-channel-actions,
+.profile-release-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.profile-channel-heading > div > strong,
+.profile-channel-heading > div > span,
+.profile-release-heading > div > strong,
+.profile-release-heading > div > span {
+    display: block;
+}
+
+.profile-channel-heading > div > strong,
+.profile-release-heading > div > strong {
+    color: var(--ink);
+    font-size: 12px;
+}
+
+.profile-channel-heading > div > span,
+.profile-release-heading > div > span {
+    margin-top: 4px;
+    color: var(--ink-muted);
+    font-size: 9px;
+}
+
+.profile-channel-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 112px;
+    gap: 10px;
+    margin: 14px 0 12px;
+}
+
+.profile-channel-actions {
+    padding-top: 11px;
+    border-top: 1px solid var(--line);
+}
+
+.profile-channel-actions > span {
+    color: var(--ink-muted);
+    font-size: 9px;
+}
+
+.profile-channel-actions > div,
+.profile-release-actions > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.profile-release-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin: 14px 0;
+}
+
+.profile-release-facts div {
+    min-width: 0;
+}
+
+.profile-release-facts dt {
+    margin: 0 0 3px;
+    color: var(--ink-muted);
+    font-size: 9px;
+}
+
+.profile-release-facts dd {
+    margin: 0;
+    overflow: hidden;
+    color: var(--ink-secondary);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-release-hash {
+    display: block;
+    overflow: hidden;
+    margin: 0 0 13px;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    background: var(--surface-muted);
+    color: var(--ink-muted);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-release-actions {
+    align-items: flex-end;
+}
+
+.profile-release-actions .button,
+.profile-channel-actions .button {
+    min-height: 34px;
+    padding: 0 11px;
+    font-size: 10px;
+}
+
+.profile-release-pause-reason {
+    margin: -2px 0 13px;
+    padding: 10px;
+    border-left: 3px solid var(--warning);
+    background: var(--warning-soft);
+    color: var(--warning);
+    font-size: 10px;
+    line-height: 1.55;
 }
 
 .form-grid {
@@ -1503,6 +1764,10 @@ dialog::backdrop {
     .summary-strip > div:nth-child(-n + 2) {
         border-bottom: 1px solid var(--line);
     }
+
+    .profile-metadata-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 680px) {
@@ -1576,6 +1841,15 @@ dialog::backdrop {
 
     .content {
         padding: 16px;
+    }
+
+    .section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .section-actions {
+        justify-content: space-between;
     }
 
     .toolbar {
@@ -1666,8 +1940,6 @@ dialog::backdrop {
     .profile-table td:nth-child(3),
     .profile-table th:nth-child(4),
     .profile-table td:nth-child(4),
-    .profile-table th:nth-child(6),
-    .profile-table td:nth-child(6),
     .diagnostic-table th:nth-child(4),
     .diagnostic-table td:nth-child(4),
     .diagnostic-table th:nth-child(5),
@@ -1707,6 +1979,35 @@ dialog::backdrop {
     .diagnostic-table th:first-child,
     .diagnostic-table td:first-child {
         width: 52%;
+    }
+
+    .profile-table .actions-column {
+        width: 64px;
+    }
+
+    .profile-import-row,
+    .profile-channel-controls,
+    .profile-release-facts {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-channel-heading,
+    .profile-release-heading,
+    .profile-channel-actions,
+    .profile-release-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .profile-channel-actions > div,
+    .profile-release-actions > div,
+    .profile-release-actions > .button {
+        width: 100%;
+    }
+
+    .profile-channel-actions .button,
+    .profile-release-actions .button {
+        flex: 1;
     }
 
     .server-table th,

@@ -40,7 +40,12 @@ public sealed class CatalogRepository(
             .Select(server => server.ClientProfileId)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        var profiles = await ReadProfilesAsync(connection, profileIds, cancellationToken);
+        var profiles = await ReadProfilesAsync(
+            connection,
+            profileIds,
+            userId,
+            accessTier,
+            cancellationToken);
         return new LauncherCatalogSnapshot(DateTimeOffset.UtcNow, servers, profiles);
     }
 
@@ -51,8 +56,7 @@ public sealed class CatalogRepository(
         CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT profile.id, profile.display_name, profile.version,
-                   profile.download_bytes, profile.sha256, profile.published_at
+            SELECT profile.id
             FROM launcher.client_profiles profile
             WHERE profile.id = $3
               AND profile.is_active
@@ -101,19 +105,19 @@ public sealed class CatalogRepository(
         command.Parameters.AddWithValue(userId);
         command.Parameters.AddWithValue(accessTier.ToString());
         command.Parameters.AddWithValue(profileId);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        var accessible =
+            await command.ExecuteScalarAsync(cancellationToken) is not null;
+        if (!accessible)
         {
             return null;
         }
 
-        return new ClientProfileSummary(
-            reader.GetString(0),
-            reader.GetString(1),
-            reader.GetString(2),
-            reader.GetInt64(3),
-            reader.GetString(4),
-            new DateTimeOffset(reader.GetDateTime(5)));
+        return await ReadProfileAsync(
+            connection,
+            profileId,
+            userId,
+            accessTier,
+            cancellationToken);
     }
 
     private static async Task<bool> IsMinecraftIdentityBannedAsync(
@@ -138,6 +142,8 @@ public sealed class CatalogRepository(
     private static async Task<IReadOnlyList<ClientProfileSummary>> ReadProfilesAsync(
         NpgsqlConnection connection,
         string[] profileIds,
+        Guid? userId,
+        AccessTier? accessTier,
         CancellationToken cancellationToken)
     {
         if (profileIds.Length == 0)
@@ -146,28 +152,95 @@ public sealed class CatalogRepository(
         }
 
         const string sql = """
-            SELECT id, display_name, version, download_bytes, sha256, published_at
-            FROM launcher.client_profiles
-            WHERE is_active AND id = ANY($1)
-            ORDER BY id;
+            SELECT profile.id, profile.display_name, channel.channel,
+                   channel.rollout_percentage, release.version,
+                   release.download_bytes, release.manifest_sha256,
+                   release.published_at, release.is_paused
+            FROM launcher.client_profiles profile
+            JOIN launcher.client_profile_channels channel
+                ON channel.profile_id = profile.id
+            JOIN launcher.client_profile_releases release
+                ON release.manifest_sha256 = channel.release_sha256
+            WHERE profile.is_active AND profile.id = ANY($1)
+            ORDER BY profile.id, channel.channel;
             """;
 
-        var profiles = new List<ClientProfileSummary>();
+        var profiles = new Dictionary<string, ProfileCandidateBuilder>(
+            StringComparer.Ordinal);
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue(profileIds);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            profiles.Add(new ClientProfileSummary(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetInt64(3),
-                reader.GetString(4),
-                new DateTimeOffset(reader.GetDateTime(5))));
+            var profileId = reader.GetString(0);
+            if (!profiles.TryGetValue(profileId, out var builder))
+            {
+                builder = new ProfileCandidateBuilder(
+                    profileId,
+                    reader.GetString(1));
+                profiles.Add(profileId, builder);
+            }
+
+            builder.Candidates.Add(ReadReleaseCandidate(reader, offset: 2));
         }
 
-        return profiles;
+        return profiles.Values
+            .Select(item => item.Resolve(userId, accessTier))
+            .Where(item => item is not null)
+            .Select(item => item!)
+            .OrderBy(item => item.Id, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static async Task<ClientProfileSummary?> ReadProfileAsync(
+        NpgsqlConnection connection,
+        string profileId,
+        Guid? userId,
+        AccessTier? accessTier,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT profile.id, profile.display_name, channel.channel,
+                   channel.rollout_percentage, release.version,
+                   release.download_bytes, release.manifest_sha256,
+                   release.published_at, release.is_paused
+            FROM launcher.client_profiles profile
+            JOIN launcher.client_profile_channels channel
+                ON channel.profile_id = profile.id
+            JOIN launcher.client_profile_releases release
+                ON release.manifest_sha256 = channel.release_sha256
+            WHERE profile.is_active AND profile.id = $1
+            ORDER BY channel.channel;
+            """;
+        ProfileCandidateBuilder? builder = null;
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue(profileId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            builder ??= new ProfileCandidateBuilder(
+                reader.GetString(0),
+                reader.GetString(1));
+            builder.Candidates.Add(ReadReleaseCandidate(reader, offset: 2));
+        }
+
+        return builder?.Resolve(userId, accessTier);
+    }
+
+    private static ClientProfileReleaseCandidate ReadReleaseCandidate(
+        NpgsqlDataReader reader,
+        int offset)
+    {
+        return new ClientProfileReleaseCandidate(
+            Enum.Parse<ClientProfileReleaseChannel>(
+                reader.GetString(offset),
+                ignoreCase: true),
+            reader.GetInt32(offset + 1),
+            reader.GetString(offset + 2),
+            reader.GetInt64(offset + 3),
+            reader.GetString(offset + 4),
+            new DateTimeOffset(reader.GetDateTime(offset + 5)),
+            reader.GetBoolean(offset + 6));
     }
 
     private static async Task<IReadOnlyList<ServerSummary>> ReadServersAsync(
@@ -289,5 +362,32 @@ public sealed class CatalogRepository(
         }
 
         return servers;
+    }
+
+    private sealed class ProfileCandidateBuilder(
+        string profileId,
+        string displayName)
+    {
+        public List<ClientProfileReleaseCandidate> Candidates { get; } = [];
+
+        public ClientProfileSummary? Resolve(
+            Guid? userId,
+            AccessTier? accessTier)
+        {
+            var release = ClientProfileReleaseResolver.Resolve(
+                profileId,
+                userId,
+                accessTier,
+                Candidates);
+            return release is null
+                ? null
+                : new ClientProfileSummary(
+                    profileId,
+                    displayName,
+                    release.Version,
+                    release.DownloadBytes,
+                    release.ManifestSha256,
+                    release.PublishedAt);
+        }
     }
 }

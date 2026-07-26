@@ -69,36 +69,6 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         return await reader.ReadAsync(cancellationToken) ? ReadServer(reader) : null;
     }
 
-    public async Task<IReadOnlyList<AdminClientProfileRecord>> GetClientProfilesAsync(
-        CancellationToken cancellationToken)
-    {
-        const string sql = """
-            SELECT id, display_name, version, download_bytes, sha256, published_at,
-                   is_active, updated_at
-            FROM launcher.client_profiles
-            ORDER BY is_active DESC, display_name, id;
-            """;
-
-        var profiles = new List<AdminClientProfileRecord>();
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(sql, connection);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            profiles.Add(new AdminClientProfileRecord(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetInt64(3),
-                reader.GetString(4),
-                new DateTimeOffset(reader.GetDateTime(5)),
-                reader.GetBoolean(6),
-                new DateTimeOffset(reader.GetDateTime(7))));
-        }
-
-        return profiles;
-    }
-
     public async Task<AdminCatalogMutationResult> CreateServerAsync(
         AdminServerCreateRequest request,
         Guid actorUserId,

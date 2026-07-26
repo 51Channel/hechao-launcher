@@ -1,7 +1,7 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.11.12`、API `0.16.0`
-> 生产状态：API `0.16.0` 已部署且 `AdminWeb__Enabled=true`；当前 MFA 凭据数为 0，首次登记尚未完成
+> 源码版本：启动器 `0.11.12`、API `0.17.0`
+> 生产状态：API `0.17.0` 已完成隔离数据库发布演练，生产仍为 `0.16.0` 且 `AdminWeb__Enabled=true`；当前 MFA 凭据数为 0，首次登记尚未完成
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
 
@@ -118,6 +118,12 @@ API `0.16.0` 已生产部署，管理后台开关已启用，但真实管理员�
 API `0.16.0` 包含玩家账号安全抽屉、论坛 Cookie 联动、受控全局等级和管理端点，完整生效范围、
 迁移、审计和回滚见
 [`ADMIN_ACCOUNT_SECURITY_OPERATIONS.md`](ADMIN_ACCOUNT_SECURITY_OPERATIONS.md)。
+
+API `0.17.0` 在“客户端档案”页增加完整发布工作台：创建档案、原样导入签名清单、
+查看版本元数据、设置 Test/Gray/Production、调整稳定灰度比例、回滚通道、
+暂停问题版本和恢复发布。Production 指派、回滚与暂停均使用独立确认界面；
+修订冲突会刷新当前档案，不会静默覆盖。详细规则见
+[`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。
 
 ## 7. 回滚
 

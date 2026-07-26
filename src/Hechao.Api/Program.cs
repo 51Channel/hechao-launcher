@@ -17,6 +17,7 @@ using Hechao.Api.LuckPerms;
 using Hechao.Api.Monitoring;
 using Hechao.Api.Velocity;
 using Hechao.Contracts;
+using Hechao.Distribution;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -369,6 +370,7 @@ builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionStringBuilder.Co
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton<CatalogRepository>();
 builder.Services.AddSingleton<AdminCatalogRepository>();
+builder.Services.AddSingleton<AdminProfileReleaseRepository>();
 builder.Services.AddSingleton<AdminAccessRepository>();
 builder.Services.AddSingleton<LuckPermsTierCommandRepository>();
 builder.Services.AddSingleton<AdminAccountSecurityRepository>();
@@ -378,6 +380,7 @@ builder.Services.AddSingleton<AdminWebSessionRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ProfileManifestStore>();
+builder.Services.AddSingleton<DistributionTrustBundleProvider>();
 builder.Services.AddSingleton<OssPresignedUrlFactory>();
 builder.Services.AddSingleton<SessionTokenGenerator>();
 builder.Services.AddSingleton<HechaoAccountPasswordService>();
@@ -559,6 +562,33 @@ var adminApi = app.MapGroup("/v1/admin")
 adminApi.MapGet("/catalog/servers", GetAdminServersAsync);
 adminApi.MapGet("/catalog/servers/{serverId}", GetAdminServerAsync);
 adminApi.MapGet("/catalog/client-profiles", GetAdminClientProfilesAsync);
+adminApi.MapGet(
+    "/catalog/client-profiles/{profileId}",
+    GetAdminClientProfileAsync);
+adminApi.MapPost(
+        "/catalog/client-profiles",
+        CreateAdminClientProfileAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPut(
+        "/catalog/client-profiles/{profileId}",
+        UpdateAdminClientProfileAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPost(
+        "/catalog/client-profiles/{profileId}/releases",
+        ImportAdminClientProfileReleaseAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPut(
+        "/catalog/client-profiles/{profileId}/channels/{channel}",
+        SetAdminClientProfileChannelAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPost(
+        "/catalog/client-profiles/{profileId}/channels/{channel}/rollback",
+        RollbackAdminClientProfileChannelAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPut(
+        "/catalog/client-profiles/{profileId}/releases/{manifestSha256}/pause",
+        SetAdminClientProfileReleasePauseAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapPost("/catalog/servers", CreateAdminServerAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapPut("/catalog/servers/{serverId}", UpdateAdminServerAsync)
@@ -1502,10 +1532,336 @@ async Task<IResult> GetAdminServerAsync(
 }
 
 async Task<IResult> GetAdminClientProfilesAsync(
-    AdminCatalogRepository repository,
+    AdminProfileReleaseRepository repository,
     CancellationToken cancellationToken)
 {
-    return Results.Ok(await repository.GetClientProfilesAsync(cancellationToken));
+    return Results.Ok(await repository.GetProfilesAsync(cancellationToken));
+}
+
+async Task<IResult> GetAdminClientProfileAsync(
+    string profileId,
+    AdminProfileReleaseRepository repository,
+    CancellationToken cancellationToken)
+{
+    if (!AdminProfileReleaseRules.IsValidProfileId(profileId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["profileId"] = ["客户端档案 ID 无效。"]
+        });
+    }
+
+    var detail = await repository.GetDetailAsync(profileId, cancellationToken);
+    return detail is null ? Results.NotFound() : Results.Ok(detail);
+}
+
+async Task<IResult> CreateAdminClientProfileAsync(
+    AdminClientProfileCreateRequest request,
+    AdminProfileReleaseRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminProfileReleaseRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.CreateProfileAsync(
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    if (result.Status == AdminProfileMutationStatus.DuplicateId)
+    {
+        return Results.Conflict(new { message = "客户端档案 ID 已存在。" });
+    }
+
+    if (result.Status != AdminProfileMutationStatus.Success)
+    {
+        return MapAdminProfileMutationResult(result);
+    }
+
+    var detail = await repository.GetDetailAsync(request.Id, cancellationToken);
+    return Results.Created(
+        $"/v1/admin/catalog/client-profiles/{request.Id}",
+        detail);
+}
+
+async Task<IResult> UpdateAdminClientProfileAsync(
+    string profileId,
+    AdminClientProfileUpdateRequest request,
+    AdminProfileReleaseRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminProfileReleaseRules.IsValidProfileId(profileId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["profileId"] = ["客户端档案 ID 无效。"]
+        });
+    }
+
+    var errors = AdminProfileReleaseRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.UpdateProfileAsync(
+        profileId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return await MapAdminProfileMutationWithDetailAsync(
+        profileId,
+        result,
+        repository,
+        cancellationToken);
+}
+
+async Task<IResult> ImportAdminClientProfileReleaseAsync(
+    string profileId,
+    AdminProfileReleaseRepository repository,
+    ProfileManifestStore manifestStore,
+    DistributionTrustBundleProvider trustBundleProvider,
+    IOptions<DistributionOptions> distributionOptions,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminProfileReleaseRules.IsValidProfileId(profileId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["profileId"] = ["客户端档案 ID 无效。"]
+        });
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    if (context.Request.ContentLength is <= 0 ||
+        context.Request.ContentLength > distributionOptions.Value.MaximumManifestBytes)
+    {
+        return Results.Problem(
+            title: "签名清单大小无效",
+            detail: "请选择有效的签名 JSON 清单。",
+            statusCode: StatusCodes.Status413PayloadTooLarge);
+    }
+
+    byte[] envelope;
+    try
+    {
+        envelope = await ReadLimitedRequestBodyAsync(
+            context.Request,
+            distributionOptions.Value.MaximumManifestBytes,
+            cancellationToken);
+    }
+    catch (InvalidDataException exception)
+    {
+        return Results.Problem(
+            title: "签名清单大小无效",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status413PayloadTooLarge);
+    }
+
+    ValidatedProfileReleaseManifest manifest;
+    try
+    {
+        manifest = ProfileReleaseManifestValidator.Validate(
+            envelope,
+            profileId,
+            trustBundleProvider.TrustBundle);
+    }
+    catch (Exception exception) when (
+        exception is ManifestFormatException or
+            ManifestIntegrityException or
+            ManifestSignatureException or
+            OverflowException)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["manifest"] = [$"签名清单验证失败：{exception.Message}"]
+        });
+    }
+
+    StoredProfileManifest storedManifest;
+    try
+    {
+        storedManifest = await manifestStore.StoreReleaseAsync(
+            profileId,
+            manifest.ManifestSha256,
+            envelope,
+            cancellationToken);
+    }
+    catch (Exception exception) when (
+        exception is IOException or UnauthorizedAccessException)
+    {
+        return Results.Problem(
+            title: "无法保存签名清单",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var result = await repository.ImportReleaseAsync(
+        manifest,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    if (result.Status != AdminProfileMutationStatus.Success)
+    {
+        manifestStore.DeleteStoredRelease(storedManifest);
+        return MapAdminProfileMutationResult(result);
+    }
+
+    var detail = await repository.GetDetailAsync(profileId, cancellationToken);
+    return Results.Created(
+        $"/v1/admin/catalog/client-profiles/{profileId}",
+        detail);
+}
+
+async Task<IResult> SetAdminClientProfileChannelAsync(
+    string profileId,
+    ClientProfileReleaseChannel channel,
+    AdminClientProfileChannelUpdateRequest request,
+    AdminProfileReleaseRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminProfileReleaseRules.IsValidProfileId(profileId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["profileId"] = ["客户端档案 ID 无效。"]
+        });
+    }
+
+    var errors = AdminProfileReleaseRules.Validate(channel, request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.SetChannelAsync(
+        profileId,
+        channel,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return await MapAdminProfileMutationWithDetailAsync(
+        profileId,
+        result,
+        repository,
+        cancellationToken);
+}
+
+async Task<IResult> RollbackAdminClientProfileChannelAsync(
+    string profileId,
+    ClientProfileReleaseChannel channel,
+    AdminClientProfileChannelRollbackRequest request,
+    AdminProfileReleaseRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminProfileReleaseRules.IsValidProfileId(profileId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["profileId"] = ["客户端档案 ID 无效。"]
+        });
+    }
+
+    var errors = AdminProfileReleaseRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.RollbackChannelAsync(
+        profileId,
+        channel,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return await MapAdminProfileMutationWithDetailAsync(
+        profileId,
+        result,
+        repository,
+        cancellationToken);
+}
+
+async Task<IResult> SetAdminClientProfileReleasePauseAsync(
+    string profileId,
+    string manifestSha256,
+    AdminClientProfileReleasePauseRequest request,
+    AdminProfileReleaseRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminProfileReleaseRules.IsValidProfileId(profileId) ||
+        !AdminProfileReleaseRules.IsValidManifestSha256(manifestSha256))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["release"] = ["客户端档案或发布清单 SHA-256 无效。"]
+        });
+    }
+
+    var errors = AdminProfileReleaseRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.SetReleasePauseAsync(
+        profileId,
+        manifestSha256,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return await MapAdminProfileMutationWithDetailAsync(
+        profileId,
+        result,
+        repository,
+        cancellationToken);
 }
 
 async Task<IResult> CreateAdminServerAsync(
@@ -2018,6 +2374,63 @@ IResult MapAdminMutationResult(AdminCatalogMutationResult result)
     };
 }
 
+async Task<IResult> MapAdminProfileMutationWithDetailAsync(
+    string profileId,
+    AdminProfileMutationResult result,
+    AdminProfileReleaseRepository repository,
+    CancellationToken cancellationToken)
+{
+    if (result.Status != AdminProfileMutationStatus.Success)
+    {
+        return MapAdminProfileMutationResult(result);
+    }
+
+    var detail = await repository.GetDetailAsync(profileId, cancellationToken);
+    return detail is null ? Results.NotFound() : Results.Ok(detail);
+}
+
+IResult MapAdminProfileMutationResult(AdminProfileMutationResult result)
+{
+    return result.Status switch
+    {
+        AdminProfileMutationStatus.Success => Results.Ok(result.Detail),
+        AdminProfileMutationStatus.NotFound => Results.NotFound(),
+        AdminProfileMutationStatus.RevisionConflict => Results.Conflict(new
+        {
+            message = "客户端档案或发布通道已被其他管理员修改，请刷新后重试。"
+        }),
+        AdminProfileMutationStatus.DuplicateId => Results.Conflict(new
+        {
+            message = "客户端档案 ID 已存在。"
+        }),
+        AdminProfileMutationStatus.DuplicateVersion => Results.Conflict(new
+        {
+            message = "该档案版本已经存在，版本号不能指向另一份清单。"
+        }),
+        AdminProfileMutationStatus.ReleaseNotFound => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["manifestSha256"] = ["所选发布不存在或不属于该客户端档案。"]
+            }),
+        AdminProfileMutationStatus.ReleasePaused => Results.Conflict(new
+        {
+            message = "已暂停的发布不能分配到发布通道。"
+        }),
+        AdminProfileMutationStatus.ProductionReleaseRequired =>
+            Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["isActive"] = ["启用档案前必须先配置一个未暂停的正式版本。"]
+            }),
+        AdminProfileMutationStatus.NoRollbackTarget => Results.Conflict(new
+        {
+            message = "当前通道没有更早的可用版本可以回滚。"
+        }),
+        _ => Results.Problem(
+            title: "客户端档案发布操作失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
+
 IResult MapAdminAccessMutationResult(AdminAccessMutationResult result)
 {
     return result.Status switch
@@ -2045,6 +2458,41 @@ IResult MapAdminAccessMutationResult(AdminAccessMutationResult result)
             title: "单服权限规则更新失败",
             statusCode: StatusCodes.Status500InternalServerError)
     };
+}
+
+async Task<byte[]> ReadLimitedRequestBodyAsync(
+    HttpRequest request,
+    int maximumBytes,
+    CancellationToken cancellationToken)
+{
+    using var output = new MemoryStream(
+        request.ContentLength is > 0 and <= int.MaxValue
+            ? (int)request.ContentLength.Value
+            : 0);
+    var buffer = new byte[64 * 1024];
+    while (true)
+    {
+        var read = await request.Body.ReadAsync(buffer, cancellationToken);
+        if (read == 0)
+        {
+            break;
+        }
+
+        if (output.Length + read > maximumBytes)
+        {
+            throw new InvalidDataException(
+                $"签名清单不能超过 {maximumBytes} 字节。");
+        }
+
+        await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+    }
+
+    if (output.Length == 0)
+    {
+        throw new InvalidDataException("签名清单不能为空。");
+    }
+
+    return output.ToArray();
 }
 
 IResult MapAdminAccountSecurityMutationResult(
