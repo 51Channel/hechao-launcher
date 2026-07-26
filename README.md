@@ -38,7 +38,7 @@
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复和维护状态，所有变更使用修订号并在同一事务中写入审计日志。
 - 启动器 API `0.12.0` 已通过 `https://launcher-api.hechao.world` 上线；对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 
-API `0.12.0-20260725T203001Z` 已完成部署前备份、哈希校验、原子切换和公网回归；旧官网与中转 API 均保持 200。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight，生产合成授权确认首次连接可从大厅定向到 `pvp`。当前解决方案测试为 `226/226`，Velocity 测试为 `11/11`。启动器 `0.11.10` 已完成覆盖升级与私有 OSS 回归；`0.11.11` 在此基础上加入玩家主动回滚、运行中保护和更强的原子恢复边界，正在构建新的内部候选。生产账号共有 22 个，但只有 1 个已绑定 Minecraft，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变，等待真实普通、VIP、管理员和服主账号验收。世界备份引擎已部署并通过夹具测试，三服错峰计划已写入磁盘，首次正式世界归档仍待验收。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.12.0-20260725T203001Z` 已完成部署前备份、哈希校验、原子切换和公网回归；旧官网与中转 API 均保持 200。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight，生产合成授权确认首次连接可从大厅定向到 `pvp`。当前解决方案测试为 `226/226`，Velocity 测试为 `11/11`。启动器 `0.11.11` 加入玩家主动回滚、运行中保护和更强的原子恢复边界，已完成覆盖升级、安装版界面、私有 OSS 不可变对象、匿名 `403` 与签名下载整包哈希回归，现进入内部灰度。生产账号共有 22 个，但只有 1 个已绑定 Minecraft，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变，等待真实普通、VIP、管理员和服主账号验收。世界备份引擎已部署并通过夹具测试，三服错峰计划已写入磁盘，首次正式世界归档仍待验收。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
@@ -82,7 +82,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、每档案 Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
 6. [已完成] 部署 API `0.12.0`；赫朝账号、对象分发、下载专用限流和授权定向路由已验收。管理员 Web 已启用，但正式管理员 MFA 尚未登记。
-7. 启动器 `0.11.10` 已替换 `0.11.9` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.10.md`](docs/PRELAUNCH_PILOT_0.11.10.md) 复验真实游戏启动与运行配置侧栏。
+7. 启动器 `0.11.11` 已替换 `0.11.10` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.11.md`](docs/PRELAUNCH_PILOT_0.11.11.md) 复验玩家主动回滚与真实游戏启动。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 
