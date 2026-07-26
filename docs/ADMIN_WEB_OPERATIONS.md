@@ -1,7 +1,7 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.11.7`、API `0.12.0`
-> 生产状态：API `0.12.0` 已部署且 `AdminWeb__Enabled=true`；当前 MFA 凭据数为 0，首次登记尚未完成
+> 源码版本：启动器 `0.11.12`、API `0.13.0`
+> 生产状态：API `0.13.0` 已部署且 `AdminWeb__Enabled=true`；当前 MFA 凭据数为 0，首次登记尚未完成
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
 
@@ -95,7 +95,7 @@ location / {
 
 正式部署前：
 
-1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.12.0`，启动器候选为 `0.11.7`。
+1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.13.0`，启动器源码候选为 `0.11.12`。
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
@@ -106,7 +106,7 @@ location / {
 9. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。
 10. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
 
-API `0.12.0` 已生产部署，管理后台开关已启用，但真实管理员尚未完成首次 TOTP 与恢复码保存。在登记完成前不得执行管理写入，也不得把开关开启视为 MFA 已验收。
+API `0.13.0` 已生产部署，管理后台开关已启用，但真实管理员尚未完成首次 TOTP 与恢复码保存。在登记完成前不得执行管理写入，也不得把开关开启视为 MFA 已验收。
 
 2026-07-26 的生产只读复核确认 `AdminWeb__Enabled=true`，
 `https://admin.hechao.world/admin/` 返回 200，并带有 `no-store`、CSP、

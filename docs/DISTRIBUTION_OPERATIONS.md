@@ -2,7 +2,7 @@
 
 > 启动器源码版本：`0.11.11`
 > 发布器源码版本：`0.8.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础、NeoForge 活动和 PVP Fabric 档案的 API `0.12.0` 在线激活均已完成；启动器 `0.11.11` 已加入玩家主动回滚并完成私有 OSS 灰度发布闭环。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.13.0` 托管，启动器 `0.11.11` 已加入玩家主动回滚并完成私有 OSS 灰度发布闭环。
 
 ## 1. 安全边界
 
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、过期下载链接刷新、跨域令牌隔离、OSS V4 URL、OSS 不可用时保留当前版本、坏哈希与篡改修复、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、每档案 Java、Java 主版本校验、特殊路径目录联接、Fabric 类路径、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全、状态心跳和授权目标定向规则。`2026-07-26` 使用 .NET SDK `10.0.302` 验证为 `218/218` 通过；Velocity 插件另有 `11/11` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、过期下载链接刷新、跨域令牌隔离、OSS V4 URL、OSS 不可用时保留当前版本、坏哈希与篡改修复、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、每档案 Java、Java 主版本校验、特殊路径目录联接、Vanilla、Forge、Fabric 和 NeoForge 类路径、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全、状态心跳和授权目标定向规则。`2026-07-27` 使用 .NET SDK `10.0.302` 验证为 `240/240` 通过；Velocity 插件另有 `11/11` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -164,6 +164,15 @@ PVP Fabric 档案已于 `2026-07-25` 正式发布：
 - 逻辑文件 `3,749` 个、`885,821,291` 字节；去重对象 `3,748` 个、`862,792,438` 字节。
 - 生产上传新增 `3,547` 个对象、`764,553,396` 字节，另外 `201` 个对象通过长度与 SHA-256 元数据校验后跳过。
 - 线上服务器显示名为“恐怖整蛊”，最低等级 `Participant`，Velocity 目标 `pvp`，后端为 `owl9.vipi9.top:19243`。完整证据见 [`PVP_PROFILE_RELEASE_1.0.0.md`](PVP_PROFILE_RELEASE_1.0.0.md)。
+
+Vanilla、Forge 与 DollNight 档案已于 `2026-07-27` 正式发布：
+
+- `vanilla-1.21.11` / `1.0.0`：Minecraft `1.21.11`、Vanilla、Java `21`，`4,671` 个文件与对象、`549,101,696` 字节，清单 SHA-256 `C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865`。该档案已绑定 Survival1。
+- `forge-1.20.1` / `1.0.0`：Minecraft `1.20.1`、Forge `47.4.0`、Java `17`，`3,667` 个文件与对象、`725,771,107` 字节，清单 SHA-256 `D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C`。该档案已发布但未绑定服务器，不会出现在玩家目录。
+- `dollnight-1.21.11` / `1.0.0`：Minecraft `1.21.11`、Fabric `0.19.2`、Java `21`，`4,902` 个逻辑文件、`4,900` 个去重对象和 `874,147,856` 字节，清单 SHA-256 `6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575`。该档案已绑定 DollNight。
+- 三份档案均完成生产信任验签、发布物闭合校验、隔离全量安装、逐文件复验和“不启动游戏”的进程构建。生产权限回归确认匿名拒绝、Member 仅能取得有权且已绑定的档案、Participant 可取得 DollNight；对象 302 下载后长度与 SHA-256 一致。
+- 生产发布前备份位于 `/var/backups/hechao-launcher/profile-publication/20260726T182024Z`。发布期间 API 未重启，公网 `/healthz`、`/readyz` 正常，warning 及以上日志为 `0`。
+- 完整证据见 [`VANILLA_PROFILE_RELEASE_1.0.0.md`](VANILLA_PROFILE_RELEASE_1.0.0.md)、[`FORGE_PROFILE_RELEASE_1.0.0.md`](FORGE_PROFILE_RELEASE_1.0.0.md) 与 [`DOLLNIGHT_PROFILE_RELEASE_1.0.0.md`](DOLLNIGHT_PROFILE_RELEASE_1.0.0.md)。
 
 ### 启动器 0.11.2 下载链路
 
@@ -326,7 +335,7 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 2. [x] 创建只允许读取 `hechaoworld/objects/*` 的专用 RAM 身份和 AccessKey，并部署到 API 主机。
 3. [x] 生成离线生产签名密钥，将公钥信任包嵌入启动器，并完成签名、验签和篡改拒绝演练。
 4. [x] 从现有客户端制作干净源，生成并独立校验 `base-1.21.11` / `1.0.5` 正式签名档案。
-5. [x] 制作并发布 `activity-neoforge-1.21.11` / `1.0.10` 与 `pvp-fabric-1.20.1` / `1.0.0`，保持独立 `.minecraft`、加载器和 Java 版本。
+5. [x] 制作并发布 `activity-neoforge-1.21.11` / `1.0.10`、`pvp-fabric-1.20.1` / `1.0.0`、`vanilla-1.21.11` / `1.0.0`、`forge-1.20.1` / `1.0.0` 与 `dollnight-1.21.11` / `1.0.0`，保持独立 `.minecraft`、加载器和 Java 版本。
 6. [ ] 将生产签名密钥制作一份不依赖当前 Windows 用户配置的离机恢复副本。
 7. [x] 明确首版不购买 Authenticode 证书，当前 EXE 保持 `NotSigned`；玩家公告必须提供官方来源、大小和 SHA-256，未来签名作为独立版本处理。它与客户端清单签名不是同一套密钥。
 8. [x] 创建仅具备 `hechaoworld/objects/*` 元数据读取与写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文；没有列举或删除权限。
