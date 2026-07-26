@@ -185,7 +185,7 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 
 `0.11.9` 已从 `0.11.8` 静默覆盖升级到原安装目录。安装前后设置文件和 DPAPI 赫朝会话哈希一致；含不可见格式字符的数据根目录完成真实 Java 启动冒烟，进程持续进入 Minecraft 初始化且不再出现 `KnotClient` 类缺失。安装后的 EXE 产品版本为 `0.11.9+1699de93dbf1fd95dc800f28eb5a735c277ea930`。完整记录见 [`LAUNCHER_RELEASE_0.11.9.md`](LAUNCHER_RELEASE_0.11.9.md)。
 
-`0.11.10` 统一运行配置侧栏中 Java 模式与内存档位的分段选择器布局，并增加控件绘制空间，避免 WPF 最小高度与固定行高冲突造成底边裁切。该版本不改变安装目录、数据目录、每档案 Java 或设置文件格式。
+`0.11.10` 统一运行配置侧栏中 Java 模式与内存档位的分段选择器布局，并增加控件绘制空间，避免 WPF 最小高度与固定行高冲突造成底边裁切。该版本已从 `0.11.9` 静默覆盖升级，设置与 DPAPI 会话哈希保持一致；安装后的 EXE ProductVersion 为 `0.11.10+efdde7662d097638d181d93af3f5e2ae695df8cf`。完整记录见 [`LAUNCHER_RELEASE_0.11.10.md`](LAUNCHER_RELEASE_0.11.10.md)。
 
 ## 7. 第三方构建资产
 
