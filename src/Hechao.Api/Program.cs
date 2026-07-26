@@ -79,6 +79,28 @@ builder.Services.AddOptions<ForumAccountBridgeOptions>()
                    Regex.IsMatch(options.InternalTokenSha256, "^[0-9a-fA-F]{64}$"),
         "ForumAccountBridge:InternalTokenSha256 must be empty or a SHA-256 hex digest.")
     .ValidateOnStart();
+builder.Services.AddOptions<ForumSessionRevocationOptions>()
+    .Bind(builder.Configuration.GetSection(ForumSessionRevocationOptions.SectionName))
+    .Validate(
+        options => !options.Enabled || options.TryGetBaseUri(out _),
+        "ForumSessionRevocation:BaseUrl must be a loopback HTTP origin.")
+    .Validate(
+        options => !options.Enabled || options.HasValidToken(),
+        "ForumSessionRevocation:InternalToken must contain 32 to 256 non-whitespace characters.")
+    .Validate(
+        options => options.DeliveryIntervalSeconds is >= 1 and <= 300,
+        "ForumSessionRevocation:DeliveryIntervalSeconds must be between 1 and 300.")
+    .Validate(
+        options => options.RequestTimeoutSeconds is >= 1 and <= 30,
+        "ForumSessionRevocation:RequestTimeoutSeconds must be between 1 and 30.")
+    .Validate(
+        options => options.LeaseSeconds >= options.RequestTimeoutSeconds + 5 &&
+                   options.LeaseSeconds <= 300,
+        "ForumSessionRevocation:LeaseSeconds must exceed the request timeout and be at most 300.")
+    .Validate(
+        options => options.BatchSize is >= 1 and <= 100,
+        "ForumSessionRevocation:BatchSize must be between 1 and 100.")
+    .ValidateOnStart();
 builder.Services.AddOptions<VelocityAuthorizationOptions>()
     .Bind(builder.Configuration.GetSection(VelocityAuthorizationOptions.SectionName))
     .Validate(
@@ -360,6 +382,7 @@ builder.Services.AddSingleton<SessionTokenGenerator>();
 builder.Services.AddSingleton<HechaoAccountPasswordService>();
 builder.Services.AddSingleton<AuthenticationRepository>();
 builder.Services.AddSingleton<ForumAccountBridgeTokenValidator>();
+builder.Services.AddSingleton<ForumSessionRevocationRepository>();
 builder.Services.AddSingleton<InternalSyncTokenValidator>();
 builder.Services.AddSingleton<LuckPermsSyncRepository>();
 builder.Services.AddSingleton<VelocityAuthorizationTokenValidator>();
@@ -371,6 +394,8 @@ builder.Services.AddSingleton(serviceProvider =>
 builder.Services.AddSingleton<DiagnosticUploadStorage>();
 builder.Services.AddSingleton<DiagnosticUploadRepository>();
 builder.Services.AddHostedService<DiagnosticUploadCleanupService>();
+builder.Services.AddHttpClient<ForumSessionRevocationClient>();
+builder.Services.AddHostedService<ForumSessionRevocationDeliveryService>();
 builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.minecraftservices.com/");

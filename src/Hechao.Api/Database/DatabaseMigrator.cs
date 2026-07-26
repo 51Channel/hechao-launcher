@@ -29,7 +29,8 @@ public sealed class DatabaseMigrator(NpgsqlDataSource dataSource, ILogger<Databa
         new(8, "forum_account_bridge", "Hechao.Api.Database.Migrations.008_forum_account_bridge.sql"),
         new(9, "diagnostic_uploads", "Hechao.Api.Database.Migrations.009_diagnostic_uploads.sql"),
         new(10, "admin_access_and_server_schedules", "Hechao.Api.Database.Migrations.010_admin_access_and_server_schedules.sql"),
-        new(11, "admin_account_security", "Hechao.Api.Database.Migrations.011_admin_account_security.sql")
+        new(11, "admin_account_security", "Hechao.Api.Database.Migrations.011_admin_account_security.sql"),
+        new(12, "forum_session_revocation_outbox", "Hechao.Api.Database.Migrations.012_forum_session_revocation_outbox.sql")
     ];
 
     public async Task ApplyAsync(CancellationToken cancellationToken = default)

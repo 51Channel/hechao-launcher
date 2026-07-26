@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Hechao.Api.Authentication;
 using Hechao.Contracts;
 using Npgsql;
 using NpgsqlTypes;
@@ -25,7 +26,9 @@ public sealed record AdminAccountSecurityMutationResult(
     AdminMinecraftIdentityBanRecord? CurrentBan = null,
     AdminSecurityRevocationCounts? Revoked = null);
 
-public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
+public sealed class AdminAccountSecurityRepository(
+    NpgsqlDataSource dataSource,
+    ForumSessionRevocationRepository forumSessionRevocations)
 {
     private static readonly JsonSerializerOptions AuditJsonOptions = CreateAuditJsonOptions();
 
@@ -226,7 +229,7 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
             }
         }
 
-        var revoked = new AdminSecurityRevocationCounts(1, 0, 0, 0);
+        var revoked = new AdminSecurityRevocationCounts(1, 0, 0, 0, 0);
         await WriteAuditAsync(
             connection,
             transaction,
@@ -533,6 +536,7 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
             counts.AdminSessions,
             counts.AdminTickets,
             counts.VelocityLaunchGrants,
+            counts.ForumSessionRevocations,
             ban);
     }
 
@@ -658,6 +662,12 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
                       AND consumed_at IS NULL
                       AND revoked_at IS NULL
                       AND expires_at > now()
+                ),
+                (
+                    SELECT count(*)::integer
+                    FROM launcher.forum_session_revocation_outbox
+                    WHERE user_id = $1
+                      AND completed_at IS NULL
                 );
             """;
 
@@ -668,7 +678,8 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
         return new PendingSecurityCounts(
             reader.GetInt32(0),
             reader.GetInt32(1),
-            reader.GetInt32(2));
+            reader.GetInt32(2),
+            reader.GetInt32(3));
     }
 
     private static async Task<AccountState?> ReadAccountStateForUpdateAsync(
@@ -913,7 +924,7 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
                (ban.ExpiresAt is null || ban.ExpiresAt > now);
     }
 
-    private static async Task<AdminSecurityRevocationCounts> RevokeAllAuthenticationStateAsync(
+    private async Task<AdminSecurityRevocationCounts> RevokeAllAuthenticationStateAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid userId,
@@ -966,11 +977,18 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
             userId,
             revokedAt,
             cancellationToken);
+        await forumSessionRevocations.EnqueueAsync(
+            connection,
+            transaction,
+            userId,
+            revokedAt,
+            cancellationToken);
         return new AdminSecurityRevocationCounts(
             launcherSessions,
             adminSessions,
             adminTickets,
-            velocityLaunchGrants);
+            velocityLaunchGrants,
+            1);
     }
 
     private static async Task<int> ExecuteRevocationAsync(
@@ -1041,5 +1059,6 @@ public sealed class AdminAccountSecurityRepository(NpgsqlDataSource dataSource)
     private sealed record PendingSecurityCounts(
         int AdminSessions,
         int AdminTickets,
-        int VelocityLaunchGrants);
+        int VelocityLaunchGrants,
+        int ForumSessionRevocations);
 }

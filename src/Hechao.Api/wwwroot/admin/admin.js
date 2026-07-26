@@ -897,17 +897,15 @@ function renderUserSecurity() {
         `${security.launcherSessions.length} 个活跃会话`;
     elements["user-security-session-empty"].hidden =
         security.launcherSessions.length !== 0;
-    elements["revoke-all-user-sessions-button"].disabled =
-        security.launcherSessions.length === 0 &&
-        security.activeAdminSessions === 0 &&
-        security.pendingAdminTickets === 0 &&
-        security.pendingVelocityLaunchGrants === 0;
+    elements["revoke-all-user-sessions-button"].disabled = false;
     elements["user-security-admin-session-count"].textContent =
         String(security.activeAdminSessions);
     elements["user-security-admin-ticket-count"].textContent =
         String(security.pendingAdminTickets);
     elements["user-security-launch-grant-count"].textContent =
         String(security.pendingVelocityLaunchGrants);
+    elements["user-security-forum-revocation-count"].textContent =
+        String(security.pendingForumSessionRevocations);
     setInlineError(elements["user-security-error"], "");
 }
 
@@ -931,7 +929,7 @@ function openSecurityAction(kind, sessionId = null) {
         "account-disable": {
             icon: "key-round",
             title: "停用赫朝账号",
-            message: `停用“${user.displayName}”后，新登录、启动器、后台会话和进服授权都会立即失效。论坛已有 Cookie 需由论坛会话管理另行撤销。`,
+            message: `停用“${user.displayName}”后，新登录、启动器、后台会话和进服授权会立即失效，论坛已有 Cookie 会进入可靠撤销队列。`,
             accept: "确认停用",
             danger: true
         },
@@ -945,7 +943,7 @@ function openSecurityAction(kind, sessionId = null) {
         "sessions-revoke-all": {
             icon: "log-out",
             title: "撤销全部会话",
-            message: `撤销“${user.displayName}”的全部启动器设备、后台会话、登录票据和待消费进服授权。`,
+            message: `撤销“${user.displayName}”的全部启动器设备、后台会话、登录票据、待消费进服授权和论坛 Cookie。`,
             accept: "全部撤销",
             danger: true
         },
@@ -1097,8 +1095,15 @@ function securityActionSuccessText(kind, revoked) {
           revoked.adminTickets +
           revoked.velocityLaunchGrants
         : 0;
-    return total > 0
-        ? `${labels[kind]}，共失效 ${total} 项凭据`
+    const forumQueued = revoked?.forumSessionRevocations > 0;
+    if (total > 0 && forumQueued) {
+        return `${labels[kind]}，共失效 ${total} 项凭据，论坛撤销已排队`;
+    }
+    if (total > 0) {
+        return `${labels[kind]}，共失效 ${total} 项凭据`;
+    }
+    return forumQueued
+        ? `${labels[kind]}，论坛撤销已排队`
         : labels[kind];
 }
 

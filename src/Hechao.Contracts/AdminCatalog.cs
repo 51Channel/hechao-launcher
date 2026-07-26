@@ -132,6 +132,7 @@ public sealed record AdminUserSecuritySummary(
     int ActiveAdminSessions,
     int PendingAdminTickets,
     int PendingVelocityLaunchGrants,
+    int PendingForumSessionRevocations,
     AdminMinecraftIdentityBanRecord? MinecraftIdentityBan);
 
 public sealed record AdminSecurityReasonRequest(string Reason);
@@ -149,7 +150,8 @@ public sealed record AdminSecurityRevocationCounts(
     int LauncherSessions,
     int AdminSessions,
     int AdminTickets,
-    int VelocityLaunchGrants);
+    int VelocityLaunchGrants,
+    int ForumSessionRevocations);
 
 public sealed record AdminServerAccessRuleRecord(
     Guid UserId,
