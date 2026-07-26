@@ -8,7 +8,15 @@
 >
 > 配套 API：`0.12.0-20260725T203001Z`，本次没有服务端变更
 >
-> 状态：私有 OSS 灰度候选已验证；尚未面向玩家公开发布
+> 状态：已被 `0.11.9` 替代，停止分发；未面向玩家公开发布
+
+## 后续发现
+
+`0.11.8` 只把 Java 可执行文件切换到安全目录联接，Fabric 类路径和游戏目录仍引用
+含不可见格式字符的原始路径。结果是 JVM 可以启动，但会立即报
+`ClassNotFoundException: net.fabricmc.loader.impl.launch.knot.KnotClient`。
+该候选不得继续灰度；修复与重新验收记录见
+[`LAUNCHER_RELEASE_0.11.9.md`](LAUNCHER_RELEASE_0.11.9.md)。
 
 ## 功能范围
 

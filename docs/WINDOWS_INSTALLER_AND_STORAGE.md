@@ -183,6 +183,8 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 
 `0.11.8` 已从 `0.11.7` 静默覆盖升级到原安装目录。设置文件和 DPAPI 赫朝会话哈希保持一致，基础档案的 Java 21 从旧共享运行时迁移到档案目录并通过真实进程构建冒烟；PVP 1.20.1 档案界面显示 Java 17。安装后的 EXE 产品版本为 `0.11.8+71f2a479c4bdf755dbdfa151f95106384c3c4ea4`。完整记录见 [`LAUNCHER_RELEASE_0.11.8.md`](LAUNCHER_RELEASE_0.11.8.md)。
 
+`0.11.9` 已从 `0.11.8` 静默覆盖升级到原安装目录。安装前后设置文件和 DPAPI 赫朝会话哈希一致；含不可见格式字符的数据根目录完成真实 Java 启动冒烟，进程持续进入 Minecraft 初始化且不再出现 `KnotClient` 类缺失。安装后的 EXE 产品版本为 `0.11.9+1699de93dbf1fd95dc800f28eb5a735c277ea930`。完整记录见 [`LAUNCHER_RELEASE_0.11.9.md`](LAUNCHER_RELEASE_0.11.9.md)。
+
 ## 7. 第三方构建资产
 
 - 安装器：[NSIS 3](https://nsis.sourceforge.io/Docs/AppendixI.html)，使用 zlib/libpng 许可并允许商业应用。
