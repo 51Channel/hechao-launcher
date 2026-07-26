@@ -1,6 +1,6 @@
 # API 0.17.0 发布记录
 
-> 状态：隔离生产副本验收通过，等待生产原子部署
+> 状态：生产部署与公网回归完成
 > 候选发布 ID：`0.17.0-20260726T231515Z`
 > 日期：`2026-07-27`
 
@@ -62,15 +62,27 @@
 演练结束后，临时数据库、systemd 单元和测试目录均为 `0`；生产 API 继续运行
 `0.16.0-20260726T222124Z`。
 
-## 5. 生产顺序
+## 5. 生产部署
 
-1. 创建统一账号部署前备份并校验清单。
-2. 提交并推送 `0.17.0` 功能代码和运维文档。
-3. 使用 `install-release.sh` 原子部署候选归档。
-4. 验证迁移 14、`healthz`、`readyz`、后台静态资源和发布 API。
-5. 回归官网、中转 API、玩家目录、清单下载、对象重定向、心跳和授权。
-6. 核对 systemd 重启计数与错误日志。
-7. 更新本记录为生产完成并创建 `api-v0.17.0` 标签。
+- 功能提交：`4f75838`。
+- 部署前统一备份：
+  `/var/backups/hechao-unified-account/20260726T232033Z`。
+- 备份清单全部通过 `sha256sum -c`，PostgreSQL dump 通过
+  `pg_restore --list`。
+- `install-release.sh` 原子切换到
+  `/opt/hechao-launcher-api/releases/0.17.0-20260726T231515Z`。
+- `/healthz` 与 `/readyz` 均报告 `0.17.0` 和数据库 ready。
+- 迁移最高版本为 `14`；生产生成 `6` 条发布记录、`18` 条通道记录，
+  `6` 个 Production 指针，玩家目录继续返回 `5` 个启用档案。
+- 活动档案正式目录仍解析为 `1.0.10` 和清单摘要
+  `0e059bbfe9fab6770204de547567ca64420a45e8364fa93206bb316e8ae2b69f`。
+- `launcher-api.hechao.world`、`admin.hechao.world`、`hechao.world` 和
+  `api.hechao.world` 均返回预期 `200`。
+- 心跳在切换后继续返回 `200`；systemd `NRestarts=0`，启动日志无 warning、
+  error 或 critical。
+- 现场发现的三份旧 `publish-profile.sh` 已先备份到
+  `/var/backups/hechao-launcher/legacy-profile-publisher/pre-0.17.0-20260726T232033Z`
+  再替换为防绕过版本；在迁移 14 数据库上实测以退出码 `2` 拒绝执行。
 
 本次只重启 `hechao-launcher-api.service`，不启动、停止或重启任何 Minecraft、
 Velocity、大厅、生存服或活动服。
