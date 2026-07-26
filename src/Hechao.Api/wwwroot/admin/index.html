@@ -128,6 +128,10 @@
                     <img src="/admin/assets/icons/package.svg" alt="">
                     <span>客户端档案</span>
                 </button>
+                <button class="nav-item" type="button" data-view="diagnostics">
+                    <img src="/admin/assets/icons/activity.svg" alt="">
+                    <span>诊断包</span>
+                </button>
                 <button class="nav-item" type="button" data-view="audit">
                     <img src="/admin/assets/icons/scroll-text.svg" alt="">
                     <span>审计记录</span>
@@ -251,6 +255,37 @@
                             </thead>
                             <tbody id="profile-table-body"></tbody>
                         </table>
+                    </div>
+                </section>
+
+                <section id="diagnostics-section" class="view-section" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <h2>玩家诊断包</h2>
+                            <p>只显示玩家主动确认上传且尚未到期的脱敏诊断包。</p>
+                        </div>
+                        <span id="diagnostic-count" class="count-label">0 个诊断包</span>
+                    </div>
+                    <div class="table-frame">
+                        <table class="diagnostic-table">
+                            <thead>
+                            <tr>
+                                <th>诊断编号</th>
+                                <th>玩家</th>
+                                <th>客户端档案</th>
+                                <th>大小</th>
+                                <th>上传时间</th>
+                                <th>自动删除</th>
+                                <th class="actions-column">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="diagnostic-table-body"></tbody>
+                        </table>
+                        <div id="diagnostic-empty-state" class="empty-state" hidden>
+                            <img src="/admin/assets/icons/activity.svg" alt="">
+                            <strong>暂无待处理诊断包</strong>
+                            <span>玩家必须先在启动器中生成并明确确认上传。</span>
+                        </div>
                     </div>
                 </section>
 

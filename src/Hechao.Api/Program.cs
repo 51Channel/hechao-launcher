@@ -11,6 +11,7 @@ using Hechao.Api.Admin;
 using Hechao.Api.Authentication;
 using Hechao.Api.Catalog;
 using Hechao.Api.Database;
+using Hechao.Api.Diagnostics;
 using Hechao.Api.Distribution;
 using Hechao.Api.LuckPerms;
 using Hechao.Api.Monitoring;
@@ -112,6 +113,34 @@ builder.Services.AddOptions<DistributionOptions>()
         options => options.PresignedUrlSeconds is >= 60 and <= 900,
         "Distribution:PresignedUrlSeconds must be between 60 and 900.")
     .Validate(IsValidOssConfiguration, "Distribution OSS configuration is invalid.")
+    .ValidateOnStart();
+builder.Services.AddOptions<DiagnosticUploadOptions>()
+    .Bind(builder.Configuration.GetSection(DiagnosticUploadOptions.SectionName))
+    .Validate(
+        options => options.HasValidStorageRoot(),
+        "DiagnosticUploads:StorageRoot must be an absolute path.")
+    .Validate(
+        options => options.UploadTokenMinutes is >= 2 and <= 30,
+        "DiagnosticUploads:UploadTokenMinutes must be between 2 and 30.")
+    .Validate(
+        options => options.RetentionDays is >= 1 and <= 90,
+        "DiagnosticUploads:RetentionDays must be between 1 and 90.")
+    .Validate(
+        options => options.MaximumBytes is >= 1024 * 1024 and <= 64L * 1024 * 1024,
+        "DiagnosticUploads:MaximumBytes must be between 1 MiB and 64 MiB.")
+    .Validate(
+        options => options.MaximumUploadsPerDay is >= 1 and <= 50,
+        "DiagnosticUploads:MaximumUploadsPerDay must be between 1 and 50.")
+    .Validate(
+        options => options.MaximumBytesPerDay >= options.MaximumBytes &&
+                   options.MaximumBytesPerDay <= 1024L * 1024 * 1024,
+        "DiagnosticUploads:MaximumBytesPerDay is invalid.")
+    .Validate(
+        options => options.MaximumActiveUploads is >= 1 and <= 100,
+        "DiagnosticUploads:MaximumActiveUploads must be between 1 and 100.")
+    .Validate(
+        options => options.CleanupMinutes is >= 5 and <= 1440,
+        "DiagnosticUploads:CleanupMinutes must be between 5 and 1440.")
     .ValidateOnStart();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -221,6 +250,28 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+    options.AddPolicy("diagnostics", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            context.Connection.RemoteIpAddress?.ToString() ??
+            "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(10)
+            }));
+    options.AddPolicy("diagnostic-upload", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 20,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(10)
+            }));
     options.AddPolicy("admin", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
@@ -312,6 +363,11 @@ builder.Services.AddSingleton<VelocityAuthorizationTokenValidator>();
 builder.Services.AddSingleton<VelocityAuthorizationRepository>();
 builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
 builder.Services.AddSingleton<ServerHeartbeatRepository>();
+builder.Services.AddSingleton(serviceProvider =>
+    serviceProvider.GetRequiredService<IOptions<DiagnosticUploadOptions>>().Value);
+builder.Services.AddSingleton<DiagnosticUploadStorage>();
+builder.Services.AddSingleton<DiagnosticUploadRepository>();
+builder.Services.AddHostedService<DiagnosticUploadCleanupService>();
 builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.minecraftservices.com/");
@@ -473,6 +529,7 @@ adminApi.MapPut("/catalog/servers/{serverId}", UpdateAdminServerAsync)
 adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibilityAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
+app.MapDiagnosticUploads(adminApi);
 
 app.MapAdminWebEndpoints();
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");

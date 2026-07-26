@@ -35,7 +35,8 @@ public partial class MainWindow : Window
                 installationService,
                 gameLauncherService,
                 new JsonDownloadHistoryStore(),
-                new JsonGameDiagnosticsService());
+                new JsonGameDiagnosticsService(),
+                new GameDiagnosticUploadService(apiClient));
         }
         catch (ClientStorageMigrationException exception)
         {
@@ -264,6 +265,31 @@ public partial class MainWindow : Window
         if (result == MessageBoxResult.Yes)
         {
             await viewModel.RollbackSelectedProfileAsync();
+        }
+    }
+
+    private async void UploadDiagnosticButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel ||
+            !viewModel.CanUploadDiagnosticBundle)
+        {
+            return;
+        }
+
+        var result = MessageBox.Show(
+            this,
+            "将上传刚刚生成的脱敏诊断包。\n\n" +
+            "包内不含世界存档、账号密码或会话令牌；服务器最多保存 14 天，" +
+            "管理员每次下载都会记录审计。\n\n是否继续？",
+            "上传诊断包",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Information,
+            MessageBoxResult.No);
+        if (result == MessageBoxResult.Yes)
+        {
+            await viewModel.UploadLatestDiagnosticBundleAsync();
         }
     }
 

@@ -6,6 +6,7 @@ const state = {
     csrfToken: null,
     servers: [],
     profiles: [],
+    diagnostics: [],
     auditEntries: [],
     auditBeforeId: null,
     activeView: "servers",
@@ -46,11 +47,12 @@ function cacheElements() {
         "copy-secret-button", "enrollment-expiry", "console-view",
         "account-avatar", "account-name", "account-group", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
-        "servers-section", "profiles-section", "audit-section",
+        "servers-section", "profiles-section", "diagnostics-section", "audit-section",
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
         "server-table-body", "server-empty-state", "profile-count",
-        "profile-table-body", "audit-list", "audit-empty-state",
+        "profile-table-body", "diagnostic-count", "diagnostic-table-body",
+        "diagnostic-empty-state", "audit-list", "audit-empty-state",
         "load-more-audit-button", "server-drawer", "server-form",
         "drawer-kicker", "drawer-title", "close-drawer-button",
         "cancel-server-button", "save-server-button", "form-error",
@@ -349,14 +351,17 @@ async function enterConsole() {
 async function loadConsoleData() {
     setBusy(elements["refresh-button"], true);
     try {
-        const [servers, profiles] = await Promise.all([
+        const [servers, profiles, diagnostics] = await Promise.all([
             api("/v1/admin/catalog/servers"),
-            api("/v1/admin/catalog/client-profiles")
+            api("/v1/admin/catalog/client-profiles"),
+            api("/v1/admin/diagnostics?limit=200")
         ]);
         state.servers = servers;
         state.profiles = profiles;
+        state.diagnostics = diagnostics;
         renderServers();
         renderProfiles();
+        renderDiagnostics();
         populateProfileOptions();
         if (state.activeView === "audit" && state.auditEntries.length === 0) {
             await loadAudit(true);
@@ -383,7 +388,7 @@ async function refreshCurrentView() {
 }
 
 function switchView(view) {
-    if (!["servers", "profiles", "audit"].includes(view)) {
+    if (!["servers", "profiles", "diagnostics", "audit"].includes(view)) {
         return;
     }
     state.activeView = view;
@@ -392,12 +397,14 @@ function switchView(view) {
     const labels = {
         servers: "服务器目录",
         profiles: "客户端档案",
+        diagnostics: "玩家诊断包",
         audit: "审计记录"
     };
     elements["breadcrumb-current"].textContent = labels[view];
     elements["view-title"].textContent = labels[view];
     elements["servers-section"].hidden = view !== "servers";
     elements["profiles-section"].hidden = view !== "profiles";
+    elements["diagnostics-section"].hidden = view !== "diagnostics";
     elements["audit-section"].hidden = view !== "audit";
     if (view === "audit" && state.auditEntries.length === 0) {
         loadAudit(true);
@@ -593,6 +600,80 @@ function renderProfiles() {
         );
         elements["profile-table-body"].append(row);
     });
+}
+
+function renderDiagnostics() {
+    elements["diagnostic-table-body"].replaceChildren();
+    elements["diagnostic-count"].textContent =
+        `${state.diagnostics.length} 个诊断包`;
+    state.diagnostics.forEach(upload => {
+        const row = document.createElement("tr");
+        const identity = document.createElement("td");
+        const copy = document.createElement("div");
+        copy.className = "profile-name";
+        const id = document.createElement("strong");
+        id.textContent = upload.uploadId.slice(0, 8);
+        const hash = document.createElement("span");
+        hash.textContent = upload.sha256;
+        hash.title = upload.sha256;
+        copy.append(id, hash);
+        identity.append(copy);
+
+        const player = document.createElement("td");
+        const playerCopy = document.createElement("div");
+        playerCopy.className = "meta-stack";
+        const displayName = document.createElement("strong");
+        displayName.textContent = upload.accountDisplayName;
+        const userId = document.createElement("span");
+        userId.textContent = upload.userId.slice(0, 8);
+        playerCopy.append(displayName, userId);
+        player.append(playerCopy);
+
+        const profile = document.createElement("td");
+        const profileCopy = document.createElement("div");
+        profileCopy.className = "meta-stack";
+        const profileId = document.createElement("strong");
+        profileId.textContent = upload.profileId;
+        const launcherVersion = document.createElement("span");
+        launcherVersion.textContent = `启动器 v${upload.launcherVersion}`;
+        profileCopy.append(profileId, launcherVersion);
+        profile.append(profileCopy);
+
+        const actions = document.createElement("td");
+        actions.className = "actions-column";
+        const actionGroup = document.createElement("div");
+        actionGroup.className = "row-actions";
+        actionGroup.append(iconButton(
+            "download",
+            "下载诊断包并写入审计",
+            () => downloadDiagnostic(upload)));
+        actions.append(actionGroup);
+
+        row.append(
+            identity,
+            player,
+            profile,
+            textCell(formatBytes(upload.size)),
+            textCell(formatDateTime(upload.uploadedAt)),
+            textCell(formatDateTime(upload.expiresAt)),
+            actions
+        );
+        elements["diagnostic-table-body"].append(row);
+    });
+    elements["diagnostic-empty-state"].hidden = state.diagnostics.length !== 0;
+    elements["diagnostic-table-body"].parentElement.hidden =
+        state.diagnostics.length === 0;
+}
+
+function downloadDiagnostic(upload) {
+    const anchor = document.createElement("a");
+    anchor.href =
+        `/v1/admin/diagnostics/${encodeURIComponent(upload.uploadId)}/download`;
+    anchor.download = `Hechao-Diagnostic-${upload.uploadId}.zip`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    showToast("正在下载诊断包，操作已写入审计记录");
 }
 
 function populateProfileOptions() {
@@ -822,6 +903,7 @@ function auditIcon(action) {
     if (action.includes("restored")) return "rotate-ccw";
     if (action.includes("mfa")) return "shield-check";
     if (action.includes("session")) return "key-round";
+    if (action.includes("diagnostic")) return "activity";
     return "pencil";
 }
 
@@ -837,7 +919,12 @@ function auditActionText(action) {
         "admin.mfa.enrollment.started": "开始设置双重验证",
         "admin.mfa.enabled": "启用双重验证",
         "admin.mfa.verified": "完成双重验证",
-        "admin.mfa.recovery_code_used": "使用恢复码"
+        "admin.mfa.recovery_code_used": "使用恢复码",
+        "diagnostic.upload.authorized": "授权诊断上传",
+        "diagnostic.upload.completed": "诊断包上传完成",
+        "diagnostic.upload.failed": "诊断包上传失败",
+        "diagnostic.upload.expired": "诊断包到期删除",
+        "diagnostic.admin.downloaded": "管理员下载诊断包"
     };
     return labels[action] || action;
 }

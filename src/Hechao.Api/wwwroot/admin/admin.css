@@ -1389,7 +1389,8 @@ dialog::backdrop {
     }
 
     .server-table,
-    .profile-table {
+    .profile-table,
+    .diagnostic-table {
         min-width: 0;
     }
 
@@ -1400,7 +1401,13 @@ dialog::backdrop {
     .profile-table th:nth-child(4),
     .profile-table td:nth-child(4),
     .profile-table th:nth-child(6),
-    .profile-table td:nth-child(6) {
+    .profile-table td:nth-child(6),
+    .diagnostic-table th:nth-child(4),
+    .diagnostic-table td:nth-child(4),
+    .diagnostic-table th:nth-child(5),
+    .diagnostic-table td:nth-child(5),
+    .diagnostic-table th:nth-child(6),
+    .diagnostic-table td:nth-child(6) {
         display: none;
     }
 
@@ -1419,14 +1426,18 @@ dialog::backdrop {
     }
 
     .profile-table th:first-child,
-    .profile-table td:first-child {
+    .profile-table td:first-child,
+    .diagnostic-table th:first-child,
+    .diagnostic-table td:first-child {
         width: 52%;
     }
 
     .server-table th,
     .server-table td,
     .profile-table th,
-    .profile-table td {
+    .profile-table td,
+    .diagnostic-table th,
+    .diagnostic-table td {
         padding: 11px 10px;
     }
 }

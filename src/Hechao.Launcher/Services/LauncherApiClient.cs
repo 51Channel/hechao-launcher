@@ -16,13 +16,23 @@ public sealed class LauncherApiClient
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
 
     private readonly HttpClient _httpClient;
+    private readonly HttpClient _uploadHttpClient;
     private readonly ISecureSessionStore _sessionStore;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private AuthSessionResponse? _session;
 
     internal LauncherApiClient(HttpClient httpClient, ISecureSessionStore sessionStore)
+        : this(httpClient, httpClient, sessionStore)
+    {
+    }
+
+    internal LauncherApiClient(
+        HttpClient httpClient,
+        HttpClient uploadHttpClient,
+        ISecureSessionStore sessionStore)
     {
         _httpClient = httpClient;
+        _uploadHttpClient = uploadHttpClient;
         _sessionStore = sessionStore;
     }
 
@@ -59,12 +69,8 @@ public sealed class LauncherApiClient
             throw new InvalidOperationException("The launcher API must use HTTPS unless it is a loopback test endpoint.");
         }
 
-        var handler = new SocketsHttpHandler
-        {
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
-            ConnectTimeout = TimeSpan.FromSeconds(5),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
-        };
+        var handler = CreateSocketsHttpHandler();
+        var uploadHandler = CreateSocketsHttpHandler();
         var httpClient = new HttpClient(handler)
         {
             BaseAddress = baseUri,
@@ -72,7 +78,19 @@ public sealed class LauncherApiClient
         };
         httpClient.DefaultRequestHeaders.UserAgent.Add(LauncherProductInfo.CreateUserAgent());
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        return new LauncherApiClient(httpClient, sessionStore ?? new DpapiSessionStore());
+        var uploadHttpClient = new HttpClient(uploadHandler)
+        {
+            BaseAddress = baseUri,
+            Timeout = TimeSpan.FromMinutes(5)
+        };
+        uploadHttpClient.DefaultRequestHeaders.UserAgent.Add(
+            LauncherProductInfo.CreateUserAgent());
+        uploadHttpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+        return new LauncherApiClient(
+            httpClient,
+            uploadHttpClient,
+            sessionStore ?? new DpapiSessionStore());
     }
 
     public async Task<HechaoAccount?> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
@@ -283,6 +301,73 @@ public sealed class LauncherApiClient
         return await ReadRequiredAsync<VelocityLaunchGrantResponse>(retryResponse, cancellationToken);
     }
 
+    public async Task<DiagnosticUploadAuthorizationResponse> CreateDiagnosticUploadAsync(
+        DiagnosticUploadCreateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendDiagnosticUploadCreateRequestAsync(
+            request,
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
+        {
+            return await ReadRequiredAsync<DiagnosticUploadAuthorizationResponse>(
+                firstResponse,
+                cancellationToken);
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendDiagnosticUploadCreateRequestAsync(
+            request,
+            accessToken,
+            cancellationToken);
+        return await ReadRequiredAsync<DiagnosticUploadAuthorizationResponse>(
+            retryResponse,
+            cancellationToken);
+    }
+
+    public async Task<DiagnosticUploadReceipt> UploadDiagnosticAsync(
+        DiagnosticUploadAuthorizationResponse authorization,
+        Stream archive,
+        long size,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(authorization);
+        ArgumentNullException.ThrowIfNull(archive);
+        if (!archive.CanRead ||
+            size is <= 0 ||
+            size > authorization.MaximumBytes ||
+            authorization.UploadTokenExpiresAt <= DateTimeOffset.UtcNow)
+        {
+            throw new InvalidDataException(
+                "The diagnostic upload authorization is invalid.");
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"v1/diagnostics/uploads/{authorization.UploadId:D}");
+        request.Headers.TryAddWithoutValidation(
+            "X-Hechao-Diagnostic-Token",
+            authorization.UploadToken);
+        request.Content = new StreamContent(archive, 64 * 1024);
+        request.Content.Headers.ContentType =
+            new MediaTypeHeaderValue("application/zip");
+        request.Content.Headers.ContentLength = size;
+        using var response = await _uploadHttpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        return await ReadRequiredAsync<DiagnosticUploadReceipt>(
+            response,
+            cancellationToken);
+    }
+
     public async Task<AdminBrowserTicketResponse> CreateAdminBrowserTicketAsync(
         CancellationToken cancellationToken = default)
     {
@@ -469,6 +554,28 @@ public sealed class LauncherApiClient
                 options: SerializerOptions)
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendDiagnosticUploadCreateRequestAsync(
+        DiagnosticUploadCreateRequest diagnosticRequest,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "v1/diagnostics/uploads")
+        {
+            Content = JsonContent.Create(
+                diagnosticRequest,
+                options: SerializerOptions)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            accessToken);
         return await _httpClient.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,
@@ -713,6 +820,17 @@ public sealed class LauncherApiClient
         options.Converters.Add(new JsonStringEnumConverter());
         return options;
     }
+
+    private static SocketsHttpHandler CreateSocketsHttpHandler() =>
+        new()
+        {
+            AutomaticDecompression =
+                DecompressionMethods.GZip |
+                DecompressionMethods.Deflate |
+                DecompressionMethods.Brotli,
+            ConnectTimeout = TimeSpan.FromSeconds(5),
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+        };
 }
 
 public sealed class LauncherAuthenticationRequiredException : Exception;

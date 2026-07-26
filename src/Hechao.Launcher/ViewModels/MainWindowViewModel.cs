@@ -20,6 +20,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IMinecraftGameLauncherService _gameLauncherService;
     private readonly IDownloadHistoryStore _downloadHistoryStore;
     private readonly IGameDiagnosticsService _gameDiagnosticsService;
+    private readonly IGameDiagnosticUploadService _diagnosticUploadService;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _profileJavaPaths =
@@ -59,6 +60,9 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isInstallingClient;
     private GameExitRecord? _latestGameExit;
     private bool _isDiagnosticBusy;
+    private GameDiagnosticBundleResult? _latestDiagnosticBundle;
+    private string? _latestDiagnosticProfileId;
+    private string _diagnosticUploadStatus = "先在本机生成诊断包，再决定是否上传。";
 
     public MainWindowViewModel(
         IServerCatalogClient catalogClient,
@@ -67,7 +71,8 @@ public sealed class MainWindowViewModel : ObservableObject
         IClientInstallationService installationService,
         IMinecraftGameLauncherService gameLauncherService,
         IDownloadHistoryStore downloadHistoryStore,
-        IGameDiagnosticsService gameDiagnosticsService)
+        IGameDiagnosticsService gameDiagnosticsService,
+        IGameDiagnosticUploadService diagnosticUploadService)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -76,6 +81,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _gameLauncherService = gameLauncherService;
         _downloadHistoryStore = downloadHistoryStore;
         _gameDiagnosticsService = gameDiagnosticsService;
+        _diagnosticUploadService = diagnosticUploadService;
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
@@ -297,6 +303,19 @@ public sealed class MainWindowViewModel : ObservableObject
         ? "正在生成"
         : "生成诊断包";
 
+    public string DiagnosticUploadActionText => IsDiagnosticBusy
+        ? "正在处理"
+        : "上传给管理员";
+
+    public string DiagnosticUploadStatus => _diagnosticUploadStatus;
+
+    public bool CanUploadDiagnosticBundle =>
+        IsAuthenticated &&
+        !IsDiagnosticBusy &&
+        _latestDiagnosticBundle is not null &&
+        !string.IsNullOrWhiteSpace(_latestDiagnosticProfileId) &&
+        File.Exists(_latestDiagnosticBundle.BundlePath);
+
     public bool IsDiagnosticBusy
     {
         get => _isDiagnosticBusy;
@@ -308,6 +327,8 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             OnPropertyChanged(nameof(DiagnosticActionText));
+            OnPropertyChanged(nameof(DiagnosticUploadActionText));
+            OnPropertyChanged(nameof(CanUploadDiagnosticBundle));
             CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         }
     }
@@ -1509,6 +1530,12 @@ public sealed class MainWindowViewModel : ObservableObject
                     selectedServer.ClientProfileId,
                     matchingExit,
                     sensitiveValues));
+            _latestDiagnosticBundle = result;
+            _latestDiagnosticProfileId = selectedServer.ClientProfileId;
+            _diagnosticUploadStatus =
+                $"{Path.GetFileName(result.BundlePath)} · {FormatFileSize(result.Size)} · 尚未上传";
+            OnPropertyChanged(nameof(DiagnosticUploadStatus));
+            OnPropertyChanged(nameof(CanUploadDiagnosticBundle));
             OpenDirectory(_gameDiagnosticsService.DiagnosticsDirectory);
             ShowToast(result.IncludedCrashReport
                 ? "脱敏诊断包已生成，并包含最新崩溃报告"
@@ -1523,6 +1550,66 @@ public sealed class MainWindowViewModel : ObservableObject
         finally
         {
             IsDiagnosticBusy = false;
+        }
+    }
+
+    public async Task<bool> UploadLatestDiagnosticBundleAsync()
+    {
+        var bundle = _latestDiagnosticBundle;
+        var profileId = _latestDiagnosticProfileId;
+        if (!CanUploadDiagnosticBundle ||
+            bundle is null ||
+            string.IsNullOrWhiteSpace(profileId))
+        {
+            return false;
+        }
+
+        IsDiagnosticBusy = true;
+        _diagnosticUploadStatus = "正在校验并上传诊断包…";
+        OnPropertyChanged(nameof(DiagnosticUploadStatus));
+        try
+        {
+            var receipt = await _diagnosticUploadService.UploadAsync(
+                bundle,
+                profileId);
+            _latestDiagnosticBundle = null;
+            _latestDiagnosticProfileId = null;
+            var shortId = receipt.UploadId.ToString("N")[..8];
+            _diagnosticUploadStatus =
+                $"已上传 · 编号 {shortId} · " +
+                $"{receipt.ExpiresAt.ToLocalTime():yyyy-MM-dd} 自动删除";
+            OnPropertyChanged(nameof(DiagnosticUploadStatus));
+            ShowToast("诊断包已安全上传，管理员下载会写入审计记录");
+            return true;
+        }
+        catch (LauncherAuthenticationRequiredException)
+        {
+            ClearAuthenticatedState();
+            _diagnosticUploadStatus = "登录已过期，诊断包仍保留在本机。";
+            OnPropertyChanged(nameof(DiagnosticUploadStatus));
+            ShowToast("请重新登录后再上传诊断包");
+            return false;
+        }
+        catch (LauncherApiException exception)
+        {
+            _diagnosticUploadStatus = "上传未完成，诊断包仍保留在本机。";
+            OnPropertyChanged(nameof(DiagnosticUploadStatus));
+            ShowToast(exception.ApiDetail ?? "诊断上传暂时不可用");
+            return false;
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidDataException or HttpRequestException or TaskCanceledException)
+        {
+            _diagnosticUploadStatus = "上传未完成，诊断包仍保留在本机。";
+            OnPropertyChanged(nameof(DiagnosticUploadStatus));
+            ShowToast("诊断上传失败，请检查网络后重试");
+            return false;
+        }
+        finally
+        {
+            IsDiagnosticBusy = false;
+            OnPropertyChanged(nameof(CanUploadDiagnosticBundle));
         }
     }
 
@@ -2164,6 +2251,7 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(MinecraftLinkStatusText));
         OnPropertyChanged(nameof(AccountActionGlyph));
         OnPropertyChanged(nameof(AccountActionTooltip));
+        OnPropertyChanged(nameof(CanUploadDiagnosticBundle));
         PrimaryActionCommand.RaiseCanExecuteChanged();
         LogoutAccountCommand.RaiseCanExecuteChanged();
         LinkMinecraftCommand.RaiseCanExecuteChanged();
@@ -2172,6 +2260,11 @@ public sealed class MainWindowViewModel : ObservableObject
         OpenAdminConsoleCommand.RaiseCanExecuteChanged();
         UpdatePrimaryActionForState();
     }
+
+    private static string FormatFileSize(long bytes) =>
+        bytes >= 1024 * 1024
+            ? $"{bytes / (1024d * 1024d):0.0} MiB"
+            : $"{Math.Max(1, bytes / 1024d):0.0} KiB";
 
     private void ClearAuthenticatedState()
     {

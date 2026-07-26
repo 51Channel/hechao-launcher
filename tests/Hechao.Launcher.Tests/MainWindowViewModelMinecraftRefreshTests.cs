@@ -139,7 +139,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             installation ?? new StubInstallationService(),
             gameLauncher,
             new StubDownloadHistoryStore(),
-            new StubGameDiagnosticsService());
+            new StubGameDiagnosticsService(),
+            new StubDiagnosticUploadService());
     }
 
     private static InstalledProfileState CreateInstalledState(string version) =>
@@ -305,6 +306,15 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public void Save(LauncherSettings settings)
         {
         }
+    }
+
+    private sealed class StubDiagnosticUploadService : IGameDiagnosticUploadService
+    {
+        public Task<DiagnosticUploadReceipt> UploadAsync(
+            GameDiagnosticBundleResult bundle,
+            string profileId,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class StubInstallationService : IClientInstallationService

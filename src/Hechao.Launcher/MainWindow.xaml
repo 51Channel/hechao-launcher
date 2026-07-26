@@ -2786,6 +2786,12 @@
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
                                                Margin="30,16,0,0" />
+                                    <TextBlock Text="{Binding DiagnosticUploadStatus}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkMutedBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="30,8,0,0" />
                                     <WrapPanel Margin="30,18,0,0">
                                         <Button Style="{StaticResource BaseButtonStyle}"
                                                 Command="{Binding CreateDiagnosticBundleCommand}"
@@ -2796,6 +2802,21 @@
                                                                        Height="14"
                                                                        Margin="0,0,8,0" />
                                                 <TextBlock Text="{Binding DiagnosticActionText}"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource BaseButtonStyle}"
+                                                IsEnabled="{Binding CanUploadDiagnosticBundle}"
+                                                Click="UploadDiagnosticButton_OnClick"
+                                                ToolTip="只上传刚刚由启动器生成的脱敏诊断包"
+                                                Margin="0,0,8,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:IconParkIcon Kind="ExternalTransmission"
+                                                                       Width="14"
+                                                                       Height="14"
+                                                                       Margin="0,0,8,0" />
+                                                <TextBlock Text="{Binding DiagnosticUploadActionText}"
                                                            FontSize="13"
                                                            FontWeight="SemiBold" />
                                             </StackPanel>

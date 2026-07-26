@@ -176,6 +176,31 @@ public sealed class LauncherXamlContractTests
                 setter.Attribute("Value")?.Value == "True");
     }
 
+    [Fact]
+    public void DiagnosticUpload_IsSeparateFromLocalBundleCreation()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var uploadButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Click")?.Value ==
+                "UploadDiagnosticButton_OnClick");
+        var createButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Command")?.Value ==
+                "{Binding CreateDiagnosticBundleCommand}");
+
+        Assert.Equal(
+            "{Binding CanUploadDiagnosticBundle}",
+            uploadButton.Attribute("IsEnabled")?.Value);
+        Assert.Null(uploadButton.Attribute("Command"));
+        Assert.Null(createButton.Attribute("Click"));
+    }
+
     private static XDocument LoadLauncherXaml()
     {
         var repositoryRoot = FindRepositoryRoot();
