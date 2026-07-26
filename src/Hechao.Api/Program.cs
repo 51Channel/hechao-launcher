@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -1550,7 +1551,7 @@ async Task<IResult> UpsertAdminServerAccessRuleAsync(
 async Task<IResult> DeleteAdminServerAccessRuleAsync(
     Guid userId,
     string serverId,
-    AdminServerAccessRuleDeleteRequest request,
+    [FromBody] AdminServerAccessRuleDeleteRequest request,
     AdminAccessRepository repository,
     HttpContext context,
     CancellationToken cancellationToken)
