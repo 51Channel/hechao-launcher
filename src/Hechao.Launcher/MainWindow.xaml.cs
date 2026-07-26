@@ -210,6 +210,38 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void ChooseProfileJavaButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Title = $"选择 {viewModel.SelectedProfileJavaVersionText}",
+            Filter = "Java 可执行文件 (java.exe;javaw.exe)|java.exe;javaw.exe",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (viewModel.IsUsingCustomJava)
+        {
+            var currentDirectory = Path.GetDirectoryName(
+                viewModel.SelectedProfileJavaPathText);
+            if (Directory.Exists(currentDirectory))
+            {
+                dialog.InitialDirectory = currentDirectory;
+            }
+        }
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            await viewModel.UpdateSelectedProfileJavaPathAsync(dialog.FileName);
+        }
+    }
+
     private void ToggleMaximizedState()
     {
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;

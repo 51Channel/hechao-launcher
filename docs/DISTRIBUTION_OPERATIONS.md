@@ -1,8 +1,8 @@
 # 客户端分发与签名操作手册
 
-> 启动器源码版本：`0.11.7`
+> 启动器源码版本：`0.11.8`
 > 发布器源码版本：`0.8.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础、NeoForge 活动和 PVP Fabric 档案的 API `0.12.0` 在线激活均已完成；启动器 `0.11.7` 已通过本机覆盖升级、Microsoft 游戏凭据刷新回归与完整发布测试，并已上传私有 OSS，替换 `0.11.6` 进入 2 至 3 人灰度准备。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链、生产签名信任链，以及基础、NeoForge 活动和 PVP Fabric 档案的 API `0.12.0` 在线激活均已完成；启动器 `0.11.8` 已通过每档案 Java、旧运行时复用、自定义 Java 与特殊路径回归，正在构建私有 OSS 灰度制品。
 
 ## 1. 安全边界
 
@@ -23,7 +23,7 @@ dotnet build Hechao.Launcher.sln -c Release
 dotnet test Hechao.Launcher.sln -c Release
 ```
 
-自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、过期下载链接刷新、跨域令牌隔离、OSS V4 URL、OSS 不可用时保留当前版本、坏哈希与篡改修复、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全、状态心跳和授权目标定向规则。`2026-07-26` 使用 .NET SDK `10.0.302` 验证为 `200/200` 通过；Velocity 插件另有 `11/11` 个 Java 测试通过。
+自动化测试覆盖签名篡改、未知公钥、目录摘要锚定、路径穿越、远程 HTTP、断点续传、过期下载链接刷新、跨域令牌隔离、OSS V4 URL、OSS 不可用时保留当前版本、坏哈希与篡改修复、跨进程安装锁、版本保留、切换失败回滚、旧目录迁移、档案隔离、共享对象、玩家数据保留、每档案 Java、Java 主版本校验、特殊路径目录联接、退出记录、脱敏诊断、DPAPI 凭据、对象上传、远端对象校验、发布物闭合验收、对象目录白名单、进服授权、账号安全、状态心跳和授权目标定向规则。`2026-07-26` 使用 .NET SDK `10.0.302` 验证为 `217/217` 通过；Velocity 插件另有 `11/11` 个 Java 测试通过。
 
 同日完成生产档案全量安装验收：从正式签名清单读取 `4,900` 个内容寻址对象，在全新目录安装 `4,902` 个档案文件并逐个重新计算 SHA-256，耗时约 76 秒。安装状态锚定清单 SHA-256 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`，测试配置关闭缓存后残留对象缓存数为 0。随后使用该安装结果成功构建 Fabric Knot 游戏进程和 `mc.hehe11.fun` 入口参数；测试没有调用进程启动。
 
@@ -313,10 +313,14 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 - `instances\.<profile-id>.staging-*`：已校验但尚未启用的暂存版本。
 - `instances\.<profile-id>.previous`：上一个完整活动版本。
 - `shared\objects`：按 SHA-256 保存的下载缓存和 `.part` 续传文件。
-- `shared\runtime`：所有档案共用的受管 Java 运行时。
+- `instances\<profile-id>\runtime`：随该客户端档案安装的受管 Java 运行时。
+- `instances\<profile-id>\.hechao-java.json`：受管 Java 主版本、相对可执行路径和安装时间。
+- `shared\runtime`：旧版本共用 Java 的迁移来源；`0.11.8` 新安装不再从这里直接启动。
 - `.hechao/locks`：同档案跨进程独占安装锁。
 - `instances\<profile-id>\.hechao-install.json`：活动版本、存储结构版本、清单摘要和签名公钥标识。
 
 档案更新采用完整目录重建。未出现在新清单中的旧模组或旧受管配置不会进入新活动目录；`saves`、截图、日志、崩溃报告、`options.txt`、`optionsof.txt` 和 `servers.dat` 始终保留，资源包和光影包保留玩家额外文件并允许清单更新同名受管文件。`assets` 与 `libraries` 在 NTFS 上优先硬链接共享对象，不支持硬链接时自动复制。
+
+`0.11.8` 在客户端原子切换后准备档案 Java，并把该阶段映射到总进度的 `85%` 至 `100%`。首次升级会先查找旧 `shared\runtime` 和其他档案中的相同 Java 主版本，验证后复制复用；没有兼容候选时才从 Mojang/Microsoft 运行时清单下载。玩家自定义 Java 只记录在本地启动器设置中，不进入签名档案、OSS 或 API；每次保存和启动前都校验 `java -version` 与 `hechao-profile.json` 的 `javaMajorVersion` 一致。
 
 启动器 `0.9.0` 及后续版本会把旧 `%AppData%\Hechao\instances` 或设置中的自定义旧根目录迁移为结构版本 `2`。迁移只识别真实档案目录，拒绝重解析点，失败时保留原目录并停止启动。完整目录、安装包、升级和卸载规则见 [`WINDOWS_INSTALLER_AND_STORAGE.md`](WINDOWS_INSTALLER_AND_STORAGE.md)。

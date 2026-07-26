@@ -32,7 +32,8 @@ public sealed record MinecraftLaunchRequest(
     string DataRoot,
     string ProfileId,
     int MaximumRamMb,
-    MinecraftLaunchSession Session);
+    MinecraftLaunchSession Session,
+    string? JavaExecutablePath = null);
 
 public sealed record MinecraftLaunchResult(int ProcessId);
 
@@ -192,12 +193,17 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
 
         string gameDirectory;
         string runtimeRoot;
+        string launchRuntimeRoot;
+        string? customJavaPath = null;
         MinecraftProfileMetadata metadata;
         try
         {
             var layout = new ClientStorageLayout(request.DataRoot);
             gameDirectory = ResolveProfileGameDirectory(layout, request.ProfileId);
-            runtimeRoot = _runtimeRootOverride ?? layout.RuntimeRoot;
+            runtimeRoot = _runtimeRootOverride ?? layout.GetProfileRuntimeRoot(request.ProfileId);
+            launchRuntimeRoot = ProfileRuntimePathResolver.GetLaunchRoot(
+                runtimeRoot,
+                request.ProfileId);
             metadata = await ReadAndValidateMetadataAsync(gameDirectory, cancellationToken);
         }
         catch (Exception exception) when (
@@ -209,10 +215,28 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 exception);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.JavaExecutablePath))
+        {
+            try
+            {
+                customJavaPath = (await JavaRuntimeValidator.ValidateAsync(
+                    request.JavaExecutablePath,
+                    metadata.JavaMajorVersion,
+                    cancellationToken)).ExecutablePath;
+            }
+            catch (JavaRuntimeValidationException exception)
+            {
+                throw new MinecraftLaunchException(
+                    MinecraftLaunchFailure.InvalidJavaSelection,
+                    $"The selected Java runtime is not compatible with Java {metadata.JavaMajorVersion}.",
+                    exception);
+            }
+        }
+
         Directory.CreateDirectory(runtimeRoot);
         var minecraftPath = new MinecraftPath(gameDirectory)
         {
-            Runtime = runtimeRoot
+            Runtime = launchRuntimeRoot
         };
         var parameters = MinecraftLauncherParameters.CreateDefault(minecraftPath, _httpClient);
         parameters.VersionLoader = new LocalJsonVersionLoader(minecraftPath);
@@ -288,13 +312,14 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             process.StartInfo.UseShellExecute = false;
 
             var javaPath = Path.GetFullPath(process.StartInfo.FileName);
-            if (!File.Exists(javaPath) || !IsWithin(runtimeRoot, javaPath))
+            if (!File.Exists(javaPath) || !IsWithin(launchRuntimeRoot, javaPath))
             {
                 process.Dispose();
                 throw new InvalidDataException("The resolved Java runtime is outside the managed runtime directory.");
             }
 
-            process.StartInfo.FileName = ResolveLaunchExecutablePath(javaPath);
+            process.StartInfo.FileName = customJavaPath ??
+                ResolveLaunchExecutablePath(javaPath);
             return process;
         }
         catch (Exception exception) when (exception is not MinecraftLaunchException)
@@ -625,6 +650,7 @@ public sealed record MinecraftServerEndpoint(string Host, int Port)
 public enum MinecraftLaunchFailure
 {
     InvalidProfile,
+    InvalidJavaSelection,
     RuntimePreparation,
     ProcessCreation,
     ProcessStart

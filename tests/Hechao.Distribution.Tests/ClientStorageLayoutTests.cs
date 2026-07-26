@@ -22,6 +22,13 @@ public sealed class ClientStorageLayoutTests
                 temporary.Path,
                 "instances",
                 "base-1.21.11",
+                "runtime"),
+            layout.GetProfileRuntimeRoot("base-1.21.11"));
+        Assert.Equal(
+            Path.Combine(
+                temporary.Path,
+                "instances",
+                "base-1.21.11",
                 ClientStorageLayout.GameDirectoryName),
             layout.GetProfileGameDirectory("base-1.21.11"));
     }

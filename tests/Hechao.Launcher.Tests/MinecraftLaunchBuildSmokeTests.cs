@@ -7,6 +7,55 @@ public sealed class MinecraftLaunchBuildSmokeTests
 {
     [Fact]
     [Trait("Category", "Smoke")]
+    public async Task PerProfileRuntime_InstallsAndBuildsFromConfiguredDataRoot()
+    {
+        var dataRoot = Environment.GetEnvironmentVariable(
+            "HECHAO_PROFILE_RUNTIME_SMOKE_DATA_ROOT");
+        if (string.IsNullOrWhiteSpace(dataRoot))
+        {
+            return;
+        }
+
+        using var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(30)
+        };
+        var runtimeService = new ProfileJavaRuntimeService(httpClient);
+        await runtimeService.InstallAsync(
+            dataRoot,
+            "base-1.21.11");
+        Assert.True(await runtimeService.IsReadyAsync(
+            dataRoot,
+            "base-1.21.11"));
+
+        var launcher = new MinecraftGameLauncherService(
+            httpClient,
+            MinecraftServerEndpoint.Parse("mc.hehe11.fun"),
+            microsoftClientId: null,
+            runtimeRootOverride: null);
+        var request = new MinecraftLaunchRequest(
+            dataRoot,
+            "base-1.21.11",
+            4096,
+            new MinecraftLaunchSession(
+                "HechaoSmokeTest",
+                Guid.Parse("12345678-1234-1234-1234-123456789abc"),
+                "not-a-real-minecraft-token",
+                DateTimeOffset.UtcNow.AddMinutes(10),
+                Xuid: null));
+
+        using var process = await launcher.BuildProcessAsync(request);
+
+        Assert.True(File.Exists(process.StartInfo.FileName));
+        Assert.DoesNotContain('\u200c', process.StartInfo.FileName);
+        Assert.EndsWith(
+            "javaw.exe",
+            process.StartInfo.FileName,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "Smoke")]
     public async Task BuildProcessAsync_BuildsFabricProcessWithoutStartingIt()
     {
         var dataRoot =

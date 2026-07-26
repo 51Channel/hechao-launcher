@@ -22,6 +22,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IGameDiagnosticsService _gameDiagnosticsService;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _profileJavaPaths =
+        new(StringComparer.Ordinal);
     private LauncherSettings _settings;
     private LauncherPage _activePage = LauncherPage.Servers;
     private ServerSummary? _selectedServer;
@@ -75,6 +77,17 @@ public sealed class MainWindowViewModel : ObservableObject
         _gameDiagnosticsService = gameDiagnosticsService;
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
+        if (_settings.ProfileJavaPaths is not null)
+        {
+            foreach (var (profileId, javaPath) in _settings.ProfileJavaPaths)
+            {
+                if (!string.IsNullOrWhiteSpace(profileId) &&
+                    !string.IsNullOrWhiteSpace(javaPath))
+                {
+                    _profileJavaPaths[profileId] = javaPath;
+                }
+            }
+        }
         _latestGameExit = gameDiagnosticsService.LoadLatestExit();
         _gameLauncherService.ProcessExited += GameLauncherService_OnProcessExited;
 
@@ -149,6 +162,7 @@ public sealed class MainWindowViewModel : ObservableObject
             StartCreateDiagnosticBundle,
             CanCreateDiagnosticBundle);
         OpenDiagnosticsDirectoryCommand = new RelayCommand(OpenDiagnosticsDirectory);
+        UseManagedJavaCommand = new RelayCommand(UseManagedJava);
 
         LoadDownloadHistory();
 
@@ -188,6 +202,7 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand ResetLauncherSettingsCommand { get; }
     public RelayCommand CreateDiagnosticBundleCommand { get; }
     public RelayCommand OpenDiagnosticsDirectoryCommand { get; }
+    public RelayCommand UseManagedJavaCommand { get; }
     public event EventHandler? CloseRequested;
 
     public LauncherPage ActivePage
@@ -431,6 +446,7 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedProfileDisplayName));
             OnPropertyChanged(nameof(SelectedProfileMetaText));
             OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+            NotifySelectedProfileJavaPropertiesChanged();
             OnPropertyChanged(nameof(IsSelectedServerOnline));
             OnPropertyChanged(nameof(CurrentPageTitle));
             PrimaryActionCommand.RaiseCanExecuteChanged();
@@ -566,6 +582,46 @@ public sealed class MainWindowViewModel : ObservableObject
                 exception is ArgumentException or NotSupportedException)
             {
                 return ClientDirectory;
+            }
+        }
+    }
+
+    public string SelectedProfileJavaVersionText =>
+        $"Java {GetSelectedProfileJavaMajorVersion()}";
+
+    public bool IsUsingManagedJava =>
+        string.IsNullOrWhiteSpace(GetSelectedProfileCustomJavaPath());
+
+    public bool IsUsingCustomJava => !IsUsingManagedJava;
+
+    public string SelectedProfileJavaModeText =>
+        IsUsingManagedJava ? "随客户端安装" : "自定义 Java";
+
+    public string SelectedProfileJavaPathText
+    {
+        get
+        {
+            var customPath = GetSelectedProfileCustomJavaPath();
+            if (!string.IsNullOrWhiteSpace(customPath))
+            {
+                return customPath;
+            }
+
+            var profileId = SelectedServer?.ClientProfileId;
+            if (string.IsNullOrWhiteSpace(profileId))
+            {
+                return "选择服务器后显示";
+            }
+
+            try
+            {
+                return new ClientStorageLayout(ClientDirectory)
+                    .GetProfileRuntimeRoot(profileId);
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException or NotSupportedException)
+            {
+                return "随客户端安装";
             }
         }
     }
@@ -834,6 +890,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 progress,
                 _activeInstallCancellation.Token);
             _selectedProfileState = LocalProfileState.Ready;
+            NotifySelectedProfileJavaPropertiesChanged();
             CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
             UpdateProgress = 100;
             ClientStatusText = "客户端已就绪";
@@ -876,6 +933,11 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             ClientStatusText = "安装正在进行";
             ShowToast("另一个启动器窗口正在安装这个客户端");
+        }
+        catch (ProfileJavaRuntimeException)
+        {
+            ClientStatusText = "Java 安装未完成";
+            ShowToast("客户端文件已校验，但配套 Java 安装失败；重新修复会继续下载");
         }
         catch (OperationCanceledException) when (
             _activeInstallCancellation?.IsCancellationRequested == true)
@@ -938,7 +1000,8 @@ public sealed class MainWindowViewModel : ObservableObject
                     ClientDirectory,
                     selectedServer.ClientProfileId,
                     ParseMemoryInMiB(SelectedMemory),
-                    launchSession),
+                    launchSession,
+                    GetSelectedProfileCustomJavaPath()),
                 progress,
                 async cancellationToken =>
                 {
@@ -1018,13 +1081,19 @@ public sealed class MainWindowViewModel : ObservableObject
             ClientStatusText = exception.Failure switch
             {
                 MinecraftLaunchFailure.InvalidProfile => "客户端启动信息无效",
-                MinecraftLaunchFailure.RuntimePreparation => "Java 21 准备失败",
+                MinecraftLaunchFailure.InvalidJavaSelection => "自定义 Java 不兼容",
+                MinecraftLaunchFailure.RuntimePreparation => "Java 准备失败",
                 MinecraftLaunchFailure.ProcessCreation => "无法生成游戏进程",
                 _ => "游戏启动失败"
             };
-            ShowToast(exception.Failure == MinecraftLaunchFailure.InvalidProfile
-                ? "客户端不完整，请先修复客户端"
-                : "游戏启动未完成，请检查网络或使用客户端修复");
+            ShowToast(exception.Failure switch
+            {
+                MinecraftLaunchFailure.InvalidProfile =>
+                    "客户端不完整，请先修复客户端",
+                MinecraftLaunchFailure.InvalidJavaSelection =>
+                    $"当前客户端需要 Java {GetSelectedProfileJavaMajorVersion()}，请重新选择或恢复自动 Java",
+                _ => "游戏启动未完成，请检查网络或使用客户端修复"
+            });
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
@@ -1088,6 +1157,9 @@ public sealed class MainWindowViewModel : ObservableObject
                 : $"正在下载 {Path.GetFileName(progress.CurrentPath)}",
             ClientInstallPhase.Staging => "正在准备客户端",
             ClientInstallPhase.Switching => "正在切换客户端版本",
+            ClientInstallPhase.PreparingRuntime => string.IsNullOrWhiteSpace(progress.CurrentPath)
+                ? "正在安装配套 Java"
+                : $"正在安装 {progress.CurrentPath}",
             ClientInstallPhase.Complete => "客户端已就绪",
             _ => ClientStatusText
         };
@@ -1428,6 +1500,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _selectedProfileState = LocalProfileState.Missing;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+        NotifySelectedProfileJavaPropertiesChanged();
         CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         UpdateProgress = 0;
         ClientStatusText = "正在检查客户端";
@@ -1441,9 +1514,11 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         SelectedMemory = "6 GB";
         _clientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory;
+        _profileJavaPaths.Clear();
         _selectedProfileState = LocalProfileState.Missing;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+        NotifySelectedProfileJavaPropertiesChanged();
         CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         UpdateProgress = 0;
         ClientStatusText = "正在检查客户端";
@@ -2073,8 +2148,135 @@ public sealed class MainWindowViewModel : ObservableObject
             CloseLauncherAfterGameStart,
             OpenDownloadsWhenInstalling,
             SelectedStartupPage,
-            ClientStorageLayout.CurrentStorageSchemaVersion);
+            ClientStorageLayout.CurrentStorageSchemaVersion,
+            new Dictionary<string, string>(
+                _profileJavaPaths,
+                StringComparer.Ordinal));
         _settingsStore.Save(_settings);
+    }
+
+    public async Task<bool> UpdateSelectedProfileJavaPathAsync(string path)
+    {
+        var profileId = SelectedServer?.ClientProfileId;
+        if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            var validated = await JavaRuntimeValidator.ValidateAsync(
+                path,
+                GetSelectedProfileJavaMajorVersion());
+            _profileJavaPaths[profileId] = validated.ExecutablePath;
+            SaveSettings();
+            NotifySelectedProfileJavaPropertiesChanged();
+            ShowToast(
+                $"当前客户端已改用自定义 Java {validated.MajorVersion}");
+            return true;
+        }
+        catch (JavaRuntimeVersionMismatchException exception)
+        {
+            ShowToast(
+                $"当前客户端需要 Java {exception.ExpectedMajorVersion}，所选文件是 Java {exception.ActualMajorVersion}");
+            return false;
+        }
+        catch (JavaRuntimeValidationException)
+        {
+            ShowToast("无法使用所选 Java，请选择完整运行时中的 java.exe 或 javaw.exe");
+            return false;
+        }
+    }
+
+    private void UseManagedJava()
+    {
+        var profileId = SelectedServer?.ClientProfileId;
+        if (string.IsNullOrWhiteSpace(profileId))
+        {
+            return;
+        }
+
+        if (_profileJavaPaths.Remove(profileId))
+        {
+            SaveSettings();
+        }
+
+        NotifySelectedProfileJavaPropertiesChanged();
+        ShowToast($"当前客户端已恢复自动 Java {GetSelectedProfileJavaMajorVersion()}");
+    }
+
+    private string? GetSelectedProfileCustomJavaPath()
+    {
+        var profileId = SelectedServer?.ClientProfileId;
+        return !string.IsNullOrWhiteSpace(profileId) &&
+               _profileJavaPaths.TryGetValue(profileId, out var javaPath)
+            ? javaPath
+            : null;
+    }
+
+    private int GetSelectedProfileJavaMajorVersion()
+    {
+        try
+        {
+            var metadataPath = Path.Combine(
+                SelectedProfileGameDirectory,
+                "hechao-profile.json");
+            if (File.Exists(metadataPath))
+            {
+                using var document = JsonDocument.Parse(File.ReadAllText(metadataPath));
+                if (document.RootElement.TryGetProperty(
+                        "javaMajorVersion",
+                        out var javaMajorVersion) &&
+                    javaMajorVersion.TryGetInt32(out var installedMajorVersion) &&
+                    installedMajorVersion is >= 8 and <= 99)
+                {
+                    return installedMajorVersion;
+                }
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+        }
+
+        return GetRecommendedJavaMajorVersion(
+            SelectedServer?.MinecraftVersion ?? string.Empty);
+    }
+
+    internal static int GetRecommendedJavaMajorVersion(string minecraftVersion)
+    {
+        var components = minecraftVersion
+            .Split('.', StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => int.TryParse(value, out var parsed) ? parsed : 0)
+            .Take(3)
+            .ToArray();
+        if (components.Length < 2 || components[0] != 1)
+        {
+            return 21;
+        }
+
+        var minor = components[1];
+        var patch = components.Length > 2 ? components[2] : 0;
+        if (minor > 20 || minor == 20 && patch >= 5)
+        {
+            return 21;
+        }
+
+        if (minor >= 18)
+        {
+            return 17;
+        }
+
+        return minor == 17 ? 16 : 8;
+    }
+
+    private void NotifySelectedProfileJavaPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(SelectedProfileJavaVersionText));
+        OnPropertyChanged(nameof(IsUsingManagedJava));
+        OnPropertyChanged(nameof(IsUsingCustomJava));
+        OnPropertyChanged(nameof(SelectedProfileJavaModeText));
+        OnPropertyChanged(nameof(SelectedProfileJavaPathText));
     }
 
     private static LauncherPage GetStartupPage(string startupPage)

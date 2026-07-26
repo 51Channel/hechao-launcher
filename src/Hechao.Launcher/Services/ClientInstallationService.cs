@@ -25,15 +25,18 @@ public sealed class ClientInstallationService : IClientInstallationService
     private readonly LauncherApiClient _apiClient;
     private readonly ManifestTrustBundle _trustBundle;
     private readonly ClientProfileInstaller _installer;
+    private readonly IProfileJavaRuntimeService _javaRuntimeService;
 
-    private ClientInstallationService(
+    internal ClientInstallationService(
         LauncherApiClient apiClient,
         ManifestTrustBundle trustBundle,
-        ClientProfileInstaller installer)
+        ClientProfileInstaller installer,
+        IProfileJavaRuntimeService javaRuntimeService)
     {
         _apiClient = apiClient;
         _trustBundle = trustBundle;
         _installer = installer;
+        _javaRuntimeService = javaRuntimeService;
     }
 
     public static ClientInstallationService CreateDefault(LauncherApiClient apiClient)
@@ -55,14 +58,32 @@ public sealed class ClientInstallationService : IClientInstallationService
         return new ClientInstallationService(
             apiClient,
             ManifestTrustBundleLoader.LoadDefault(),
-            new ClientProfileInstaller(new ResumableFileDownloader(httpClient)));
+            new ClientProfileInstaller(new ResumableFileDownloader(httpClient)),
+            new ProfileJavaRuntimeService(httpClient));
     }
 
-    public Task<LocalProfileState> GetLocalStateAsync(
+    public async Task<LocalProfileState> GetLocalStateAsync(
         ClientProfileSummary profile,
         string dataRoot,
-        CancellationToken cancellationToken = default) =>
-        _installer.GetLocalStateAsync(dataRoot, profile.Id, profile.Version, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        var profileState = await _installer.GetLocalStateAsync(
+            dataRoot,
+            profile.Id,
+            profile.Version,
+            cancellationToken);
+        if (profileState != LocalProfileState.Ready)
+        {
+            return profileState;
+        }
+
+        return await _javaRuntimeService.IsReadyAsync(
+            dataRoot,
+            profile.Id,
+            cancellationToken)
+            ? LocalProfileState.Ready
+            : LocalProfileState.UpdateRequired;
+    }
 
     public async Task InstallAsync(
         ClientProfileSummary profile,
@@ -84,6 +105,21 @@ public sealed class ClientInstallationService : IClientInstallationService
             throw new ClientManifestMismatchException("The signed manifest digest does not match the catalog.");
         }
 
+        var totalClientBytes = verified.Manifest.Files.Sum(file => file.Size);
+        var profileProgress = progress is null
+            ? null
+            : new InlineProgress<ClientInstallProgress>(value =>
+            {
+                var mappedPhase = value.Phase == ClientInstallPhase.Complete
+                    ? ClientInstallPhase.Switching
+                    : value.Phase;
+                progress.Report(value with
+                {
+                    Phase = mappedPhase,
+                    Percent = Math.Clamp(value.Percent * 0.85, 0, 85)
+                });
+            });
+
         // Profile verification, preservation and atomic directory switching contain
         // synchronous file-system work. Keep those operations away from the WPF
         // dispatcher so a large existing client cannot freeze the launcher window.
@@ -91,9 +127,35 @@ public sealed class ClientInstallationService : IClientInstallationService
             () => _installer.InstallAsync(
                 verified,
                 options,
-                progress,
+                profileProgress,
                 cancellationToken),
             cancellationToken);
+
+        var runtimeProgress = progress is null
+            ? null
+            : new InlineProgress<ProfileJavaInstallProgress>(value =>
+                progress.Report(new ClientInstallProgress(
+                    ClientInstallPhase.PreparingRuntime,
+                    85 + Math.Clamp(value.Percent, 0, 100) * 0.15,
+                    value.CurrentPath,
+                    totalClientBytes,
+                    totalClientBytes)));
+        await _javaRuntimeService.InstallAsync(
+            options.DataRoot,
+            profile.Id,
+            runtimeProgress,
+            cancellationToken);
+        progress?.Report(new ClientInstallProgress(
+            ClientInstallPhase.Complete,
+            100,
+            string.Empty,
+            totalClientBytes,
+            totalClientBytes));
+    }
+
+    private sealed class InlineProgress<T>(Action<T> callback) : IProgress<T>
+    {
+        public void Report(T value) => callback(value);
     }
 }
 

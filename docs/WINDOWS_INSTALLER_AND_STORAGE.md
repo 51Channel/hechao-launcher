@@ -1,6 +1,6 @@
 # Windows 安装包与游戏数据目录
 
-> 启动器源码版本：`0.11.7`
+> 启动器源码版本：`0.11.8`
 > 存储结构版本：`2`
 > 更新日期：`2026-07-26`
 
@@ -12,7 +12,7 @@
 - 默认游戏数据根目录为 `%LocalAppData%\Hechao\GameData`。
 - 每个客户端档案拥有独立的 `instances\<profile-id>\.minecraft`。
 - 不同 Minecraft、Fabric、Forge、NeoForge 和原版档案不能共用可写游戏目录。
-- `assets`、`libraries`、下载对象和 Java 运行时在数据根目录下共享，避免重复占用。
+- 下载对象在数据根目录下共享；Java 运行时随对应客户端档案安装，避免不同 Minecraft 版本互相覆盖。
 - 设置保存在 `%LocalAppData%\Hechao\Launcher\settings.json`，不放在程序目录。
 - 更新或卸载启动器不会删除游戏数据、档案、存档和共享下载。
 
@@ -34,6 +34,8 @@
   instances\
     base-1.21.11\
       .hechao-install.json
+      .hechao-java.json
+      runtime\
       .minecraft\
         versions\
         mods\
@@ -42,13 +44,15 @@
         resourcepacks\
     activity-neoforge-1.21.11\
       .hechao-install.json
+      .hechao-java.json
+      runtime\
       .minecraft\
     .base-1.21.11.previous\
       .hechao-install.json
       .minecraft\
   shared\
     objects\
-    runtime\
+    runtime\                 # 旧版本迁移来源，新安装不再共用
   .hechao\
     locks\
     storage-layout.json
@@ -60,9 +64,9 @@
 | --- | --- | --- |
 | 程序目录 | 启动器 EXE、图标授权文件 | 可以 |
 | `Launcher` | 启动器设置、本机会话、退出记录和玩家生成的诊断包 | 默认保留 |
-| `instances` | 每个档案独立的 `.minecraft` | 默认保留 |
+| `instances` | 每个档案独立的 `.minecraft`、受管 Java 和运行时状态 | 默认保留 |
 | `shared/objects` | SHA-256 内容寻址下载缓存 | 默认保留 |
-| `shared/runtime` | 档案共用的受管 Java | 默认保留 |
+| `shared/runtime` | `0.11.7` 及更早版本的 Java 迁移来源 | 默认保留 |
 | `.hechao/locks` | 跨进程安装锁 | 可自动重建 |
 
 ## 3. 档案安装与更新
@@ -78,8 +82,11 @@
 5. `assets` 与 `libraries` 优先通过 NTFS 硬链接复用；不支持时退回普通复制。
 6. 写入结构版本为 `2` 的 `.hechao-install.json`。
 7. 原子切换活动目录，并保留一个 `.<profile-id>.previous` 回滚版本。
+8. 在 `instances\<profile-id>\runtime` 安装该档案要求的 Java，校验真实主版本并写入 `.hechao-java.json`。
 
 从 `0.11.1` 起，清单校验、文件保留、哈希检查和目录切换在界面线程之外执行；进度值只从安装器单向更新界面。安装入口具有重复点击保护和异常边界，任何未预期错误都会结束当前任务、恢复按钮，并保持原活动版本不被替换。
+
+`0.11.8` 把客户端文件阶段映射到总进度的 `0%` 至 `85%`，Java 准备阶段使用 `85%` 至 `100%`。只有客户端文件和档案 Java 都准备完成后才显示“客户端已就绪”。若 Java 下载失败，已校验的客户端文件会保留，下一次“修复客户端”从 Java 阶段继续。
 
 模组、加载器和受管配置以签名清单为准。未列入新清单的旧受管文件不会进入新活动版本；玩家存档等可写数据不依赖清单存在。
 
@@ -93,6 +100,7 @@
 | 自定义旧客户端根目录 | 原自定义根目录下的 `instances\<profile-id>\.minecraft` |
 | `.hechao/cache/objects` | `shared/objects` |
 | 旧 `.hechao-install.json` | 保留在档案根目录并升级为结构版本 `2` |
+| `shared/runtime` | 作为种子复制到首个需要相同主版本的档案 `runtime` |
 
 迁移安全规则：
 
@@ -105,7 +113,9 @@
 
 设置页更换游戏数据目录只切换后续使用的根目录，不会在界面线程里搬运数百 MB 或数 GB 的现有档案。旧目录保持不变；需要整体迁盘时先退出启动器，再按本手册备份并迁移，或重新选择原目录恢复。
 
-`0.11.2` 启动 Java 前会把受管 `java.exe` 转换为 Windows 提供的兼容短路径。这样即使玩家过去选择的目录意外含有不可见格式字符，Microsoft Java 21 仍能定位同目录的 `java.dll`；游戏目录、对象缓存和玩家设置不会因此迁移或改名。
+`0.11.8` 不再依赖可能被系统关闭的 8.3 短文件名。若玩家过去选择的数据根目录含有不可见 Unicode 格式字符，启动器会在 `%LocalAppData%\Hechao\Launcher\runtime-links` 创建仅指向该档案 `runtime` 的本地目录联接，并从安全别名启动 Java。真实游戏数据、运行时、对象缓存和玩家设置不会迁移或改名；已有别名必须解析到预期目录，否则启动会停止。
+
+每个档案默认使用随客户端安装的受管 Java。玩家也可以在所选服务器的“运行配置”中为该客户端档案选择自己的 `java.exe` 或 `javaw.exe`。启动器会先执行 `java -version`，确认主版本与档案声明一致，再把路径按档案 ID 保存到 `settings.json`；切换回“自动”只删除该档案的覆盖设置，不删除玩家自己的 Java。
 
 ## 5. 安装、升级与卸载
 

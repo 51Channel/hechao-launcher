@@ -8,6 +8,7 @@ public enum ClientInstallPhase
     Downloading,
     Staging,
     Switching,
+    PreparingRuntime,
     Complete
 }
 

@@ -5,6 +5,7 @@ public sealed class ClientStorageLayout
     public const int LegacyStorageSchemaVersion = 1;
     public const int CurrentStorageSchemaVersion = 2;
     public const string GameDirectoryName = ".minecraft";
+    public const string RuntimeDirectoryName = "runtime";
     public const string InstallStateFileName = ".hechao-install.json";
 
     public ClientStorageLayout(string dataRoot)
@@ -34,6 +35,9 @@ public sealed class ClientStorageLayout
 
     public string GetProfileGameDirectory(string profileId) =>
         Path.Combine(GetProfileRoot(profileId), GameDirectoryName);
+
+    public string GetProfileRuntimeRoot(string profileId) =>
+        Path.Combine(GetProfileRoot(profileId), RuntimeDirectoryName);
 
     public string GetPreviousProfileRoot(string profileId)
     {

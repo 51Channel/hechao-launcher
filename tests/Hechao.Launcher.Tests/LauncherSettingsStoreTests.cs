@@ -85,6 +85,35 @@ public sealed class LauncherSettingsStoreTests
     }
 
     [Fact]
+    public async Task Load_RoundTripsIndependentProfileJavaPaths()
+    {
+        using var temporary = new TemporaryDirectory();
+        var settingsPath = Path.Combine(temporary.Path, "settings.json");
+        var dataRoot = Path.Combine(temporary.Path, "game-data");
+        var expected = new LauncherSettings(
+            ClientDirectory: dataRoot,
+            ProfileJavaPaths: new Dictionary<string, string>
+            {
+                ["base-1.21.11"] = @"C:\Java\21\bin\javaw.exe",
+                ["pvp-fabric-1.20.1"] = @"D:\Java\17\bin\java.exe"
+            });
+        var store = new JsonLauncherSettingsStore(
+            settingsPath,
+            new ClientStorageMigrator());
+
+        store.Save(expected);
+        var actual = store.Load();
+
+        Assert.NotNull(actual.ProfileJavaPaths);
+        Assert.Equal(
+            expected.ProfileJavaPaths!["base-1.21.11"],
+            actual.ProfileJavaPaths!["base-1.21.11"]);
+        Assert.Equal(
+            expected.ProfileJavaPaths["pvp-fabric-1.20.1"],
+            actual.ProfileJavaPaths["pvp-fabric-1.20.1"]);
+    }
+
+    [Fact]
     public async Task Load_RejectsSettingsFromANewerStorageSchema()
     {
         using var temporary = new TemporaryDirectory();

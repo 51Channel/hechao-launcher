@@ -13,7 +13,8 @@ public sealed record LauncherSettings(
     bool CloseLauncherAfterGameStart = false,
     bool OpenDownloadsWhenInstalling = true,
     string StartupPage = "服务器",
-    int StorageSchemaVersion = ClientStorageLayout.CurrentStorageSchemaVersion);
+    int StorageSchemaVersion = ClientStorageLayout.CurrentStorageSchemaVersion,
+    Dictionary<string, string>? ProfileJavaPaths = null);
 
 public interface ILauncherSettingsStore
 {
