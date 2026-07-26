@@ -6,7 +6,7 @@ param(
     [string]$ProtectedTokenPath =
         "$env:ProgramData\Hechao\LauncherBridge\sync-token.dat",
 
-    [string]$LobbyRoot = 'E:\Lobby',
+    [string]$LobbyRoot = 'E:\LobbyServer',
     [string]$BackupRoot = 'E:\manual-backups',
     [string]$ApiBaseUrl = 'https://launcher-api.hechao.world/',
     [string]$AgentId = 'owl5-lobby',

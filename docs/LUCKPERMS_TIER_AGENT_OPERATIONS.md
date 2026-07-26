@@ -4,6 +4,8 @@
 >
 > 目标 API：`0.16.0`
 >
+> 生产状态：JAR 与受限配置已部署到大厅，未重启服务器；等待服主下次自行重启后加载验收
+>
 > 边界：只修改四个固定全局组，不执行控制台命令，不启动、停止或重启任何服务器
 
 ## 1. 设计
@@ -43,7 +45,7 @@
 配置文件位于：
 
 ```text
-E:\Lobby\plugins\HechaoLuckPermsTierAgent\config.properties
+E:\LobbyServer\plugins\HechaoLuckPermsTierAgent\config.properties
 ```
 
 关键设置：
@@ -85,6 +87,18 @@ claim-limit=10
 5. 返回 `ServerRestartPerformed=false`。
 
 安装不会启动或重启大厅。插件只有在服主下一次自行启动大厅时才加载。
+
+2026-07-27 已部署：
+
+```text
+E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.0.jar
+SHA-256 35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B
+E:\LobbyServer\plugins\HechaoLuckPermsTierAgent\config.properties
+```
+
+配置 ACL 继承已关闭，明文令牌未进入终端输出或 Git。备份位于
+`E:\manual-backups\luckperms-tier-agent-20260726T223127Z`。安装前后 Java PID
+集合一致，返回 `ServerRestartPerformed=false`。
 
 ## 5. 验收与回滚
 

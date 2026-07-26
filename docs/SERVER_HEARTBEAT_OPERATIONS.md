@@ -1,6 +1,6 @@
 # Server heartbeat operations
 
-> Production state: API `0.15.0-20260726T202540Z` and collector `0.1.0` deployed.
+> Production state: API `0.16.0-20260726T222124Z` and collector `0.1.0` deployed.
 > The five-target configuration was verified on 2026-07-26 and the scheduled task remains read-only.
 > The pre-hardening collector binary is retained in
 > `C:\ProgramData\Hechao\StatusCollector\backups\redirect-hardening-20260723T125705Z`.

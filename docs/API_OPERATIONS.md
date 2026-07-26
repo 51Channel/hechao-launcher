@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.15.0-20260726T202540Z`
-> 本地 API 源码版本：`0.15.0`
-> 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期、单服访问规则和账号安全已部署；启动器 `0.11.12` 已进入私有 OSS 灰度，管理员 Web 已启用但尚未登记 MFA
+> 当前线上版本：`0.16.0-20260726T222124Z`
+> 本地 API 源码版本：`0.16.0`
+> 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期、单服规则、账号安全、论坛会话联动和受控全局等级已部署；启动器 `0.11.12` 已进入私有 OSS 灰度，管理员 Web 已启用但尚未登记 MFA
 
 ## 1. 运行边界
 
@@ -24,13 +24,13 @@
 - API `0.10.1` 身份端点：`POST /v1/auth/logout-all`、`POST /v1/auth/minecraft/unlink`；已部署，不增加数据库迁移
 - 启动器进服授权：`POST /v1/velocity/launch-grants`
 - Velocity 内部授权：`POST /v1/internal/velocity/authorize`
-- LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`
+- LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`、等级命令 `claim` 与 `complete`
 - 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
 - 管理员票据端点：`POST /v1/admin-auth/tickets`，仅允许 `Administrator` 启动器会话
 - 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF
 - 玩家诊断端点：`POST /v1/diagnostics/uploads` 与一次性令牌保护的 `PUT /v1/diagnostics/uploads/{id}`
 - 管理员诊断端点：`GET /v1/admin/diagnostics` 与 `GET /v1/admin/diagnostics/{id}/download`，要求 MFA
-- 管理员玩家端点：`GET /v1/admin/users`、访问预览、单服规则、账号停用/恢复、设备会话撤销及 Minecraft UUID 封禁
+- 管理员玩家端点：`GET /v1/admin/users`、访问预览、单服规则、受控全局等级、账号停用/恢复、设备会话撤销及 Minecraft UUID 封禁
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -70,6 +70,13 @@ DiagnosticUploads__MaximumUploadsPerDay
 DiagnosticUploads__MaximumBytesPerDay
 DiagnosticUploads__MaximumActiveUploads
 DiagnosticUploads__CleanupMinutes
+ForumSessionRevocation__Enabled
+ForumSessionRevocation__BaseUrl
+ForumSessionRevocation__InternalToken
+ForumSessionRevocation__DeliveryIntervalSeconds
+ForumSessionRevocation__RequestTimeoutSeconds
+ForumSessionRevocation__LeaseSeconds
+ForumSessionRevocation__BatchSize
 OSS_ACCESS_KEY_ID
 OSS_ACCESS_KEY_SECRET
 ```
@@ -152,6 +159,14 @@ Minecraft UUID 封禁，以及目录、对象下载、Minecraft 绑定与 Veloci
 .NET 测试、原子部署、公网回归与部署后无 warning/error 均已通过。完整制品哈希、
 备份、接口和回滚边界见 [`API_RELEASE_0.15.0.md`](API_RELEASE_0.15.0.md) 与
 [`ADMIN_ACCOUNT_SECURITY_OPERATIONS.md`](ADMIN_ACCOUNT_SECURITY_OPERATIONS.md)。
+
+`0.16.0` 新增论坛既有 Cookie 撤销 outbox、幂等投递 worker、受控四级全局等级命令
+和大厅 LuckPerms 代理契约。迁移 `12`、`13` 均为加法变更。最终发布 ID 为
+`0.16.0-20260726T222124Z`；`.NET 283/283`、Velocity `11/11`、等级代理 `4/4`、
+隔离生产备份还原、管理静态资源、论坛覆盖包构建、生产 worker 投递、原子部署和旧业务
+回归均通过。大厅代理文件已部署但没有重启大厅。完整记录见
+[`API_RELEASE_0.16.0.md`](API_RELEASE_0.16.0.md) 与
+[`LUCKPERMS_TIER_AGENT_OPERATIONS.md`](LUCKPERMS_TIER_AGENT_OPERATIONS.md)。
 
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
@@ -240,7 +255,8 @@ systemctl reload nginx
 | `0.11.1-20260725T165050Z` | `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45` | 论坛统一账号、并行对象签名、独立令牌桶、`Retry-After`、真实基础档案续传与公网回归通过；历史版本 |
 | `0.12.0-20260725T203001Z` | `B46A22280243BA9801EB66FD628ED598CD27F0FED7995788C4452D222C3B27D1` | 授权目标定向、PVP 目录与生产合成授权回归通过；历史版本 |
 | `0.13.0-20260726T173536Z` | `F2B7466A9AFAB142F110D7C2EB692DE1BA2FDD653F7CF42D4AE31D5BF7E8C811` | 诊断上传、失败路径、审计、14 天清理与旧业务回归通过；历史版本 |
-| `0.14.1-20260726T190856Z` | `F02CC7AAC3AE4FC8726548E3777D231D035B03E19487CAB32627333CEBBB8A3A` | 排期、公告、玩家搜索、访问预览、单服规则、迁移 10、启动预检与公网回归通过；`0.15.0` 的直接回滚目标 |
-| `0.15.0-20260726T202540Z` | `42ACC44468989A567E936993934046266A9D2B22B43758322E693BC23A089FD6` | 账号与设备会话安全、UUID 封禁、迁移 11、隔离端到端验收、原子部署与公网回归通过；当前线上版本 |
+| `0.14.1-20260726T190856Z` | `F02CC7AAC3AE4FC8726548E3777D231D035B03E19487CAB32627333CEBBB8A3A` | 排期、公告、玩家搜索、访问预览、单服规则、迁移 10、启动预检与公网回归通过；历史版本 |
+| `0.15.0-20260726T202540Z` | `42ACC44468989A567E936993934046266A9D2B22B43758322E693BC23A089FD6` | 账号与设备会话安全、UUID 封禁、迁移 11、隔离端到端验收、原子部署与公网回归通过；`0.16.0` 的直接回滚目标 |
+| `0.16.0-20260726T222124Z` | `8B932BC0BFE5C0D3D2A97460555695AD33544CC2814A96B8AF16E672F8B5CDB5` | 论坛 Cookie 联动、受控 LuckPerms 等级、迁移 12 至 13、生产 worker 投递和公网回归通过；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号、授权定向路由、诊断上传、服务器排期和单服规则已部署。API `0.15.0` 为当前线上版本，启动器 `0.11.12` 已进入私有 OSS 灰度；管理员 Web 已启用但尚未登记 MFA。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期和单服规则已部署。API `0.16.0` 为当前线上版本，启动器 `0.11.12` 已进入私有 OSS 灰度；管理员 Web 已启用但尚未登记 MFA，大厅代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

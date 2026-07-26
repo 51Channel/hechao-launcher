@@ -46,6 +46,9 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `8` | `forum_account_bridge` | 显示名称唯一约束与论坛外部身份映射 |
 | `9` | `diagnostic_uploads` | 玩家诊断上传、一次性令牌、配额、状态与到期清理 |
 | `10` | `admin_access_and_server_schedules` | 服务器公告/开放排期、单服规则修订号与查询索引 |
+| `11` | `admin_account_security` | 平台账号状态、设备与平台会话撤销、Minecraft UUID 定时封禁 |
+| `12` | `forum_session_revocation_outbox` | 论坛 Cookie 撤销 outbox、租约、重试和幂等投递状态 |
+| `13` | `luckperms_tier_change_commands` | 固定四级全局等级命令、代理认领、完成状态与历史索引 |
 
 ## 4. 自动备份
 
@@ -87,7 +90,15 @@ API `0.15.0` 发布前数据库备份
 为 `95,200` 字节，SHA-256
 `54a9f6c6321bc7adf10ac516e8a634c3c79724382f3d790c72d005fce142721e`。
 同名校验文件与 `pg_restore --list` 均通过。该备份还原到隔离临时数据库后完成
-迁移 11 与账号安全端到端验收，临时数据库随后清理；当前生产迁移记录为 `1` 至 `11`。
+迁移 11 与账号安全端到端验收，临时数据库随后清理。
+
+API `0.16.0` 发布前协调备份位于
+`/var/backups/hechao-unified-account/20260726T222616Z`。其中数据库 dump 为
+`108,668` 字节，SHA-256
+`00B4AEB14F49B596A41311FCAB89B49DB317280B55A2C7AFA1E691658D325784`；
+清单中的 PostgreSQL、论坛 SQLite、论坛源码、API 发布与配置共 8 项均通过校验。
+该备份完成隔离恢复与迁移 `11` 至 `13` 验收，生产部署后再次核对迁移记录为
+`1` 至 `13`。
 
 ## 5. 恢复边界
 
