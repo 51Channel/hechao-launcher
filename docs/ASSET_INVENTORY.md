@@ -62,6 +62,7 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - API `0.12.0` 部署前发布与配置备份 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.11.3-20260725T203220Z.tar.gz` 的 SHA-256 为 `71d850aabd85ab203ce585c679a53609f91f013dfdae6937e1b208e88625ec12`；数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T203227Z.dump` 的 SHA-256 为 `e1e3f1f864d1cb363e426346892dc0c6651409e001da9f0b05f9435d55a5c7d9`。当前发布为 `0.12.0-20260725T203001Z`，直接回滚目标为 `0.11.3-20260725T195000Z`。
 - 活动档案 `1.0.10` 发布前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T120517Z.dump` 为 `64,196` 字节，SHA-256 为 `5CDF0991013A99A74622BFF23C37C9EC9C999418BB023306F18C33F9987F74A8`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-activity-neoforge-1.0.10-20260724T120517Z`，其中清单归档 SHA-256 为 `5C918781D08434FC581E0F69E91ABF08F5A2E3F2756F3FC985606D51F45F9ACE`。数据库校验和与 `pg_restore --list` 均通过。
 - PVP 档案 `1.0.0` 发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，清单归档 SHA-256 为 `cd99bb5059b58ea834b0bff8d3a27d061c32439ed5e7d9e079eca21dc4cbcf0f`。
+- 启动器 `0.11.6` 小范围测试前数据库基线 `/var/backups/hechao-launcher/database/hechao-launcher-20260726T084308Z.dump` 为 `85,620` 字节，SHA-256 为 `199e8811da08e9f9c2f1db88866f9dd51574ab9b043b6ba147b3092ad0413c36`；备份服务结果、校验和与 `pg_restore --list` 均通过。
 - `hechao-launcher-db-backup.timer` 已启用，每日生成 PostgreSQL custom-format 备份并保留 14 天；首份备份校验通过，`pg_restore --list` 可读取 36 个对象。
 - 首份备份已恢复到唯一命名的临时验证库，迁移版本、3 个客户端档案、4 个服务器和 0 个初始用户均与生产库一致，验证后只删除了临时库。
 - 网站与 Sub2API 仍缺少新的统一每日备份和异地副本；启动器数据库已完成同主机隔离恢复演练，但仍缺异地副本。
@@ -87,7 +88,7 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - 启动器 `0.11.2` 基于提交 `9622e54c1c9726e33a6f2848dae2720fa8405f7f`。单文件 EXE 为 `68,633,838` 字节，SHA-256 为 `5E71FB31B4983AB4115B9BD314E9756558E8B2D4EDBCE5C1B089CEAA5ACBBE65`；NSIS 安装包为 `61,800,211` 字节，SHA-256 为 `FC3E2AD75A9E35C3FD6FCD6FBF8375BB6BE7BCE651E922EA07F865D873A1F3DC`。`185/185` 测试、覆盖升级、基础档案全量落盘、并行续传和 Java 兼容路径验证均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。
 - 启动器 `0.11.3` 基于提交 `876d905190e246cf906167183546e8b7c0e41db9`。单文件 EXE 为 `68,636,908` 字节，SHA-256 为 `CEB4AD2B69260941028CED2E4BBC7F8A11F39450FF79F8B9D4A89C3B3194733E`；NSIS 安装包为 `61,803,987` 字节，SHA-256 为 `FDEB88A559A94D37FD70F059104E8DAD68AD347FA6E51ABF8943F166606824A9`。`191/191` 测试、覆盖升级、动画中间值、服务器与账号页实机验收均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。
 - 启动器 `0.11.4` 基于提交 `f21097225312659220fdb82ea630feffba1d5024`。单文件 EXE 为 `68,637,409` 字节，SHA-256 为 `2FB18541D8FC0B1D398C25FF567B0F626CA9FCBA32F80B9EC6BDED05470223FA`；NSIS 安装包为 `61,804,910` 字节，SHA-256 为 `D6249C33C97FD375A295B9BD7FB9B8236E8B981C964227CB3B776CA276E9A0D9`。`192/192` 测试、真实 WPF 像素渲染、覆盖升级及登录/注册两种选中状态实机截图均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。
-- 启动器 `0.11.6` 基于提交 `6998dc344c40b49eda0137bb239f3ddd058d248f`。单文件 EXE 为 `68,637,418` 字节，SHA-256 为 `58C1063B5BC65684C55FC685DCB0E5F45CD4151B3DAC8E361030D0BFF1A59F67`；NSIS 安装包为 `61,802,610` 字节，SHA-256 为 `32E06CF9DCE0811293E1279C4C76B8B2C5C8401859FC5A84DCE64AB1227416E9`。`193/193` 测试、等宽完整页签边框、表单整栏拉伸、覆盖升级及登录/注册两种状态实机截图均通过；两份 EXE 均为 `NotSigned`，尚未上传 OSS。`0.11.5` 仅为未上传、未打标签的本机失败候选。
+- 启动器 `0.11.6` 基于提交 `6998dc344c40b49eda0137bb239f3ddd058d248f`。单文件 EXE 为 `68,637,418` 字节，SHA-256 为 `58C1063B5BC65684C55FC685DCB0E5F45CD4151B3DAC8E361030D0BFF1A59F67`；NSIS 安装包为 `61,802,610` 字节，SHA-256 为 `32E06CF9DCE0811293E1279C4C76B8B2C5C8401859FC5A84DCE64AB1227416E9`。`193/193` 发布构建测试、等宽完整页签边框、表单整栏拉伸、覆盖升级及登录/注册两种状态实机截图均通过；当前主分支回归为 `.NET 200/200` 与 Velocity `11/11`。两份 EXE 均为 `NotSigned`。安装包已上传私有 OSS 固定键，匿名访问 `403`、短时签名下载 `200` 且远端大小与 SHA-256 复验一致，当前仅供 2 至 3 人灰度。`0.11.5` 仅为未上传、未打标签的本机失败候选。
 - API `0.11.1-20260725T165050Z` 基于提交 `3f17cba`。单文件为 `103,711,283` 字节，SHA-256 为 `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45`；归档为 `45,309,559` 字节，SHA-256 为 `E727E9B840E81CDEFE5D45586AEF874B6E082D29562F797F45ECC8C98589E587`。生产健康、数据库、旧网站、中转 API、管理员入口和 journal 回归均通过，现保留为历史版本。
 - API `0.12.0-20260725T203001Z` 单文件为 `103,716,915` 字节，SHA-256 为 `B46A22280243BA9801EB66FD628ED598CD27F0FED7995788C4452D222C3B27D1`；归档为 `45,382,027` 字节，SHA-256 为 `C76DA133466A4D609F8009A5206FDAFCDDE72DC0CB7D78FBC8E8C8B473DA5D41`。授权定向路由、健康/就绪、旧业务与生产合成授权回归通过，当前在线。
 - 正式基础档案为 `base-1.21.11` / `1.0.5`，清单 SHA-256 为 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`；包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节。
@@ -164,7 +165,7 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 ## 5. 当前 API 部署状态
 
 - 发布 ID：`0.12.0-20260725T203001Z`
-- API `0.12.0` 已部署；启动器 `0.11.6` 为未分发候选。管理员 Web 已启用，但当前 MFA 凭据数为 `0`
+- API `0.12.0` 已部署；启动器 `0.11.6` 为私有 OSS 灰度候选，尚未公开分发。管理员 Web 已启用，但当前 MFA 凭据数为 `0`
 - Git 标签：`launcher-v0.11.6` 指向 `6998dc344c40b49eda0137bb239f3ddd058d248f`；`api-v0.12.0`、`velocity-authorizer-v0.2.0` 与 `profile-pvp-fabric-1.20.1-v1.0.0` 均指向发布收口提交 `f0460d19383ecb30897a74de1fbac1cf541df4ed`
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试

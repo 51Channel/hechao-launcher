@@ -67,6 +67,13 @@ API `0.5.0` 上线前生成的备份为 `/var/backups/hechao-launcher/database/h
 
 API `0.10.0` 发布前备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T101600Z.dump` 为 `63,799` 字节，SHA-256 `9ceaaea545525e1a6ec199d11aa62fecad4e62220641cc847da2a7d1bb3f64f8`。API `0.10.1` 热修复前备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T102852Z.dump` 为 `63,846` 字节，SHA-256 `d15397bfb1c318f4141ce97a13ac2a4692c755915ff46bdd9c46c5c6b051d1d4`。五份备份的校验和与目录读取均通过，迁移记录 `1` 至 `7` 已由 API 启动校验。
 
+启动器 `0.11.6` 小范围测试前基线备份
+`/var/backups/hechao-launcher/database/hechao-launcher-20260726T084308Z.dump`
+为 `85,620` 字节，SHA-256
+`199e8811da08e9f9c2f1db88866f9dd51574ab9b043b6ba147b3092ad0413c36`。
+备份服务结果为 `success`，同名校验文件和 `pg_restore --list` 均通过；生成过程
+没有重启 API。
+
 ## 5. 恢复边界
 
 不得直接把备份覆盖到正在运行的生产库。恢复演练应先创建独立临时数据库，导入最近备份，核对迁移记录、表数量、目录记录和权限，再删除临时数据库。生产恢复需要先停止 API 写入、额外生成一次备份、记录当前数据卷和发布 ID，然后在维护窗口切换。
