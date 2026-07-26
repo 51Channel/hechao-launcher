@@ -102,8 +102,54 @@ public sealed record AdminUserSummary(
     AccessTier AccessTier,
     DateTimeOffset? LuckPermsSyncedAt,
     bool IsDisabled,
+    bool IsMinecraftIdentityBanned,
     int ActiveRuleCount,
     DateTimeOffset CreatedAt);
+
+public sealed record AdminDeviceSessionRecord(
+    Guid SessionId,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset LastSeenAt,
+    DateTimeOffset RefreshExpiresAt,
+    string? SourceIp);
+
+public sealed record AdminMinecraftIdentityBanRecord(
+    Guid MinecraftUuid,
+    string Reason,
+    DateTimeOffset? ExpiresAt,
+    Guid CreatedBy,
+    string? CreatedByDisplayName,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? RevokedAt,
+    Guid? RevokedBy,
+    string? RevokedReason,
+    DateTimeOffset UpdatedAt,
+    long Revision);
+
+public sealed record AdminUserSecuritySummary(
+    AdminUserSummary User,
+    IReadOnlyList<AdminDeviceSessionRecord> LauncherSessions,
+    int ActiveAdminSessions,
+    int PendingAdminTickets,
+    int PendingVelocityLaunchGrants,
+    AdminMinecraftIdentityBanRecord? MinecraftIdentityBan);
+
+public sealed record AdminSecurityReasonRequest(string Reason);
+
+public sealed record AdminMinecraftIdentityBanRequest(
+    string Reason,
+    DateTimeOffset? ExpiresAt,
+    long? ExpectedRevision);
+
+public sealed record AdminMinecraftIdentityBanDeleteRequest(
+    string Reason,
+    long ExpectedRevision);
+
+public sealed record AdminSecurityRevocationCounts(
+    int LauncherSessions,
+    int AdminSessions,
+    int AdminTickets,
+    int VelocityLaunchGrants);
 
 public sealed record AdminServerAccessRuleRecord(
     Guid UserId,
@@ -129,6 +175,7 @@ public enum AdminEffectiveAccessReason
     AllowedByRule,
     PlayerNotLinked,
     PlayerDisabled,
+    MinecraftIdentityBanned,
     ServerArchived,
     ServerUnavailable,
     DeniedByRule,

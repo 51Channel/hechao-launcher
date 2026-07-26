@@ -73,6 +73,22 @@ public sealed class AdminAccessRulesTests
     }
 
     [Fact]
+    public void Evaluate_MinecraftIdentityBanPreventsAllServerAccess()
+    {
+        var access = AdminAccessRules.Evaluate(
+            CreateUser(AccessTier.Administrator, isMinecraftIdentityBanned: true),
+            serverVisible: true,
+            ServerStatus.Online,
+            AccessTier.Member,
+            CreateRule(AdminServerAccessDecision.Allow, null),
+            Now,
+            TimeSpan.FromHours(1));
+
+        Assert.False(access.Allowed);
+        Assert.Equal(AdminEffectiveAccessReason.MinecraftIdentityBanned, access.Reason);
+    }
+
+    [Fact]
     public void Validate_RejectsExpiredRuleAndInvalidRevision()
     {
         var errors = AdminAccessRules.Validate(
@@ -87,7 +103,9 @@ public sealed class AdminAccessRulesTests
         Assert.Contains("expectedRevision", errors);
     }
 
-    private static AdminUserSummary CreateUser(AccessTier tier)
+    private static AdminUserSummary CreateUser(
+        AccessTier tier,
+        bool isMinecraftIdentityBanned = false)
     {
         return new AdminUserSummary(
             Guid.Parse("11111111-1111-1111-1111-111111111111"),
@@ -100,6 +118,7 @@ public sealed class AdminAccessRulesTests
             tier,
             Now,
             IsDisabled: false,
+            IsMinecraftIdentityBanned: isMinecraftIdentityBanned,
             ActiveRuleCount: 0,
             Now);
     }

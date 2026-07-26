@@ -1,7 +1,7 @@
 # 启动器 API 运维与回滚
 
 > 当前线上版本：`0.14.1-20260726T190856Z`
-> 本地 API 源码版本：`0.14.1`
+> 本地 API 源码版本：`0.15.0`
 > 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期和单服访问规则已部署；启动器 `0.11.12` 已进入私有 OSS 灰度，管理员 Web 已启用但尚未登记 MFA
 
 ## 1. 运行边界
@@ -30,7 +30,7 @@
 - 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF
 - 玩家诊断端点：`POST /v1/diagnostics/uploads` 与一次性令牌保护的 `PUT /v1/diagnostics/uploads/{id}`
 - 管理员诊断端点：`GET /v1/admin/diagnostics` 与 `GET /v1/admin/diagnostics/{id}/download`，要求 MFA
-- 管理员玩家端点：`GET /v1/admin/users`、`GET /v1/admin/users/{userId}/access-preview` 及单服规则 `PUT`/`DELETE`
+- 管理员玩家端点：`GET /v1/admin/users`、访问预览、单服规则、账号停用/恢复、设备会话撤销及 Minecraft UUID 封禁
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -144,6 +144,11 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 自动推断，安装脚本在就绪超时前自动恢复 `0.13.0`。`0.14.1` 显式声明请求体，
 先在独立端口完成真实配置启动预检，再原子切换生产。完整记录见
 [`API_RELEASE_0.14.1.md`](API_RELEASE_0.14.1.md)。
+
+`0.15.0` 增加账号停用/恢复、单设备与全部认证状态撤销、带到期时间和修订号的
+Minecraft UUID 封禁，以及目录、对象下载、Minecraft 绑定与 Velocity 的统一拒绝。
+迁移 `11` 只新增 UUID 封禁表；完整接口和回滚边界见
+[`ADMIN_ACCOUNT_SECURITY_OPERATIONS.md`](ADMIN_ACCOUNT_SECURITY_OPERATIONS.md)。
 
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 

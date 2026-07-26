@@ -348,6 +348,7 @@ builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton<CatalogRepository>();
 builder.Services.AddSingleton<AdminCatalogRepository>();
 builder.Services.AddSingleton<AdminAccessRepository>();
+builder.Services.AddSingleton<AdminAccountSecurityRepository>();
 builder.Services.AddSingleton<AdminWebTokenGenerator>();
 builder.Services.AddSingleton<AdminTotpService>();
 builder.Services.AddSingleton<AdminWebSessionRepository>();
@@ -532,6 +533,21 @@ adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibili
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/users", SearchAdminUsersAsync);
 adminApi.MapGet("/users/{userId:guid}/access-preview", GetAdminUserAccessPreviewAsync);
+adminApi.MapGet("/users/{userId:guid}/security", GetAdminUserSecurityAsync);
+adminApi.MapPost("/users/{userId:guid}/account/disable", DisableAdminUserAccountAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPost("/users/{userId:guid}/account/enable", EnableAdminUserAccountAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPost("/users/{userId:guid}/sessions/revoke-all", RevokeAllAdminUserSessionsAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPost(
+        "/users/{userId:guid}/sessions/{sessionId:guid}/revoke",
+        RevokeAdminUserSessionAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapPut("/users/{userId:guid}/minecraft-ban", SetAdminMinecraftIdentityBanAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapDelete("/users/{userId:guid}/minecraft-ban", RevokeAdminMinecraftIdentityBanAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapPut(
         "/users/{userId:guid}/access-rules/{serverId}",
         UpsertAdminServerAccessRuleAsync)
@@ -914,6 +930,12 @@ async Task<IResult> LinkMinecraftIdentityAsync(
             StatusCodes.Status409Conflict,
             "该赫朝账号已经绑定其他 Minecraft 正版身份。");
     }
+    catch (MinecraftIdentityBannedException)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status403Forbidden,
+            "该 Minecraft 正版身份已被管理员封禁。");
+    }
     catch (MinecraftVerificationException exception)
     {
         return exception.Failure switch
@@ -971,6 +993,9 @@ async Task<IResult> UnlinkMinecraftIdentityAsync(
         MinecraftIdentityUnlinkResult.NotLinked => AuthenticationProblem(
             StatusCodes.Status409Conflict,
             "该赫朝账号尚未绑定 Minecraft 正版身份。"),
+        MinecraftIdentityUnlinkResult.IdentityBanned => AuthenticationProblem(
+            StatusCodes.Status403Forbidden,
+            "该 Minecraft 正版身份处于封禁状态，解除封禁前不能更换绑定。"),
         _ => AuthenticationProblem(
             StatusCodes.Status401Unauthorized,
             "赫朝账号登录会话无效。")
@@ -1011,6 +1036,12 @@ async Task<IResult> ExchangeMinecraftSessionAsync(
                 StatusCodes.Status503ServiceUnavailable,
                 "暂时无法向 Minecraft 服务验证账号，请稍后重试。")
         };
+    }
+    catch (MinecraftIdentityBannedException)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status403Forbidden,
+            "该 Minecraft 正版身份已被管理员封禁。");
     }
 }
 
@@ -1510,6 +1541,191 @@ async Task<IResult> GetAdminUserAccessPreviewAsync(
     return preview is null ? Results.NotFound() : Results.Ok(preview);
 }
 
+async Task<IResult> GetAdminUserSecurityAsync(
+    Guid userId,
+    AdminAccountSecurityRepository repository,
+    CancellationToken cancellationToken)
+{
+    var security = await repository.GetSecurityAsync(userId, cancellationToken);
+    return security is null ? Results.NotFound() : Results.Ok(security);
+}
+
+Task<IResult> DisableAdminUserAccountAsync(
+    Guid userId,
+    AdminSecurityReasonRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    return SetAdminUserAccountDisabledAsync(
+        userId,
+        isDisabled: true,
+        request,
+        repository,
+        context,
+        cancellationToken);
+}
+
+Task<IResult> EnableAdminUserAccountAsync(
+    Guid userId,
+    AdminSecurityReasonRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    return SetAdminUserAccountDisabledAsync(
+        userId,
+        isDisabled: false,
+        request,
+        repository,
+        context,
+        cancellationToken);
+}
+
+async Task<IResult> SetAdminUserAccountDisabledAsync(
+    Guid userId,
+    bool isDisabled,
+    AdminSecurityReasonRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminAccountSecurityRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.SetAccountDisabledAsync(
+        userId,
+        isDisabled,
+        request.Reason,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccountSecurityMutationResult(result);
+}
+
+async Task<IResult> RevokeAllAdminUserSessionsAsync(
+    Guid userId,
+    AdminSecurityReasonRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminAccountSecurityRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.RevokeAllSessionsAsync(
+        userId,
+        request.Reason,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccountSecurityMutationResult(result);
+}
+
+async Task<IResult> RevokeAdminUserSessionAsync(
+    Guid userId,
+    Guid sessionId,
+    AdminSecurityReasonRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminAccountSecurityRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.RevokeSessionAsync(
+        userId,
+        sessionId,
+        request.Reason,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccountSecurityMutationResult(result);
+}
+
+async Task<IResult> SetAdminMinecraftIdentityBanAsync(
+    Guid userId,
+    AdminMinecraftIdentityBanRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminAccountSecurityRules.Validate(request, DateTimeOffset.UtcNow);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.SetMinecraftIdentityBanAsync(
+        userId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccountSecurityMutationResult(result);
+}
+
+async Task<IResult> RevokeAdminMinecraftIdentityBanAsync(
+    Guid userId,
+    [FromBody] AdminMinecraftIdentityBanDeleteRequest request,
+    AdminAccountSecurityRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminAccountSecurityRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.RevokeMinecraftIdentityBanAsync(
+        userId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccountSecurityMutationResult(result);
+}
+
 async Task<IResult> UpsertAdminServerAccessRuleAsync(
     Guid userId,
     string serverId,
@@ -1633,6 +1849,49 @@ IResult MapAdminAccessMutationResult(AdminAccessMutationResult result)
         }),
         _ => Results.Problem(
             title: "单服权限规则更新失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
+
+IResult MapAdminAccountSecurityMutationResult(
+    AdminAccountSecurityMutationResult result)
+{
+    return result.Status switch
+    {
+        AdminAccountSecurityMutationStatus.Success => Results.Ok(new
+        {
+            security = result.Security,
+            revoked = result.Revoked
+        }),
+        AdminAccountSecurityMutationStatus.UserNotFound => Results.NotFound(),
+        AdminAccountSecurityMutationStatus.SessionNotFound => Results.NotFound(new
+        {
+            message = "设备会话不存在、已到期或已经撤销。"
+        }),
+        AdminAccountSecurityMutationStatus.MinecraftIdentityNotLinked =>
+            Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["minecraftIdentity"] = ["该账号尚未绑定 Minecraft 正版身份。"]
+            }),
+        AdminAccountSecurityMutationStatus.MinecraftBanNotFound => Results.NotFound(new
+        {
+            message = "当前没有可解除的 Minecraft UUID 封禁。"
+        }),
+        AdminAccountSecurityMutationStatus.SelfProtection => Results.Conflict(new
+        {
+            message = "不能停用或封禁当前管理员自身。"
+        }),
+        AdminAccountSecurityMutationStatus.LastAdministrator => Results.Conflict(new
+        {
+            message = "不能停用最后一个有效管理员账号。"
+        }),
+        AdminAccountSecurityMutationStatus.RevisionConflict => Results.Conflict(new
+        {
+            message = "Minecraft UUID 封禁记录已被其他管理员修改，请刷新后重试。",
+            current = result.CurrentBan
+        }),
+        _ => Results.Problem(
+            title: "账号安全操作失败",
             statusCode: StatusCodes.Status500InternalServerError)
     };
 }

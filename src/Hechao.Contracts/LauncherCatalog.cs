@@ -141,6 +141,7 @@ public enum VelocityAuthorizationReason
     Allowed,
     PlayerNotLinked,
     PlayerDisabled,
+    MinecraftIdentityBanned,
     ServerUnknown,
     ServerUnavailable,
     AccessDenied,

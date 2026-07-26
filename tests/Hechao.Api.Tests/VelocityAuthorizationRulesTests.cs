@@ -48,6 +48,18 @@ public sealed class VelocityAuthorizationRulesTests
     }
 
     [Fact]
+    public void Evaluate_BannedMinecraftIdentityCannotUseExplicitAllow()
+    {
+        var result = VelocityAuthorizationRules.Evaluate(
+            Player(AccessTier.Administrator, minecraftBanned: true),
+            Server(AccessTier.Member, ServerAccessOverride.Allow),
+            Now,
+            MaximumSnapshotAge);
+
+        Assert.Equal(VelocityAuthorizationReason.MinecraftIdentityBanned, result);
+    }
+
+    [Fact]
     public void Evaluate_ExplicitDenyWins()
     {
         var result = VelocityAuthorizationRules.Evaluate(
@@ -110,6 +122,7 @@ public sealed class VelocityAuthorizationRulesTests
     private static VelocityPlayerAccess Player(
         AccessTier tier,
         bool disabled = false,
+        bool minecraftBanned = false,
         DateTimeOffset? syncedAt = default,
         bool snapshotAvailable = true)
     {
@@ -117,6 +130,7 @@ public sealed class VelocityAuthorizationRulesTests
             Guid.Parse("11111111-1111-1111-1111-111111111111"),
             Guid.Parse("22222222-2222-2222-2222-222222222222"),
             disabled,
+            minecraftBanned,
             tier,
             tier == AccessTier.Member ? "default" : "vip",
             snapshotAvailable ? syncedAt ?? Now : null);

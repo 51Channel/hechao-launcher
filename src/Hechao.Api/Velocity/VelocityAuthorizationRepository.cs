@@ -228,6 +228,13 @@ public sealed class VelocityAuthorizationRepository(
             SELECT user_account.id,
                    identity.minecraft_uuid,
                    user_account.is_disabled,
+                   EXISTS (
+                       SELECT 1
+                       FROM launcher.minecraft_identity_bans identity_ban
+                       WHERE identity_ban.minecraft_uuid = identity.minecraft_uuid
+                         AND identity_ban.revoked_at IS NULL
+                         AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now())
+                   ),
                    user_account.access_tier,
                    identity.luckperms_primary_group,
                    identity.luckperms_synced_at
@@ -248,9 +255,10 @@ public sealed class VelocityAuthorizationRepository(
             reader.GetGuid(0),
             reader.GetGuid(1),
             reader.GetBoolean(2),
-            Enum.Parse<AccessTier>(reader.GetString(3), ignoreCase: true),
-            reader.GetString(4),
-            reader.IsDBNull(5) ? null : ToDateTimeOffset(reader.GetDateTime(5)));
+            reader.GetBoolean(3),
+            Enum.Parse<AccessTier>(reader.GetString(4), ignoreCase: true),
+            reader.GetString(5),
+            reader.IsDBNull(6) ? null : ToDateTimeOffset(reader.GetDateTime(6)));
     }
 
     private static Task<VelocityServerAccess?> ReadServerByIdAsync(

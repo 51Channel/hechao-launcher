@@ -449,6 +449,11 @@ public sealed class AuthenticationRepository(
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await LockIdentityAsync(connection, transaction, identity.MinecraftUuid, cancellationToken);
+        await ThrowIfMinecraftIdentityBannedAsync(
+            connection,
+            transaction,
+            identity.MinecraftUuid,
+            cancellationToken);
         var account = await ReadAccountAsync(
             connection,
             transaction,
@@ -593,6 +598,11 @@ public sealed class AuthenticationRepository(
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await LockIdentityAsync(connection, transaction, identity.MinecraftUuid, cancellationToken);
+        await ThrowIfMinecraftIdentityBannedAsync(
+            connection,
+            transaction,
+            identity.MinecraftUuid,
+            cancellationToken);
         var luckPerms = await ReadLuckPermsAccessAsync(
             connection,
             transaction,
@@ -1094,6 +1104,16 @@ public sealed class AuthenticationRepository(
             return MinecraftIdentityUnlinkResult.NotLinked;
         }
 
+        if (await IsMinecraftIdentityBannedAsync(
+                connection,
+                transaction,
+                minecraftUuid.Value,
+                cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return MinecraftIdentityUnlinkResult.IdentityBanned;
+        }
+
         var revoked = await RevokeAllAuthenticationStateAsync(
             connection,
             transaction,
@@ -1195,6 +1215,42 @@ public sealed class AuthenticationRepository(
             transaction);
         command.Parameters.AddWithValue(minecraftUuid.ToString("D"));
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task ThrowIfMinecraftIdentityBannedAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid minecraftUuid,
+        CancellationToken cancellationToken)
+    {
+        if (await IsMinecraftIdentityBannedAsync(
+                connection,
+                transaction,
+                minecraftUuid,
+                cancellationToken))
+        {
+            throw new MinecraftIdentityBannedException();
+        }
+    }
+
+    private static async Task<bool> IsMinecraftIdentityBannedAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid minecraftUuid,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT 1
+            FROM launcher.minecraft_identity_bans
+            WHERE minecraft_uuid = $1
+              AND revoked_at IS NULL
+              AND (expires_at IS NULL OR expires_at > now());
+            """,
+            connection,
+            transaction);
+        command.Parameters.AddWithValue(minecraftUuid);
+        return await command.ExecuteScalarAsync(cancellationToken) is not null;
     }
 
     private static async Task<LuckPermsAccess> ReadLuckPermsAccessAsync(
@@ -1757,12 +1813,14 @@ public sealed class HechaoAccountConflictException(string field) : Exception
 public sealed class HechaoAccountNotFoundException : Exception;
 public sealed class MinecraftIdentityAlreadyLinkedException : Exception;
 public sealed class HechaoAccountMinecraftLinkConflictException : Exception;
+public sealed class MinecraftIdentityBannedException : Exception;
 
 public enum MinecraftIdentityUnlinkResult
 {
     Success,
     InvalidPassword,
     NotLinked,
+    IdentityBanned,
     AccountNotFound
 }
 

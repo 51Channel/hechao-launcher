@@ -562,6 +562,149 @@
         </form>
     </dialog>
 
+    <dialog id="user-security-drawer" class="drawer">
+        <form id="user-security-form" method="dialog">
+            <header class="drawer-header">
+                <div>
+                    <span id="user-security-kicker">账号安全</span>
+                    <h2 id="user-security-title">玩家安全管理</h2>
+                </div>
+                <button id="close-user-security-button" class="icon-button"
+                        type="button" title="关闭">
+                    <img src="/admin/assets/icons/x.svg" alt="">
+                </button>
+            </header>
+            <div class="drawer-body">
+                <div id="user-security-error" class="inline-alert" hidden>
+                    <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                    <span></span>
+                </div>
+
+                <section class="security-section">
+                    <div class="security-section-heading">
+                        <div>
+                            <span>赫朝账号</span>
+                            <strong id="user-security-account-name">—</strong>
+                        </div>
+                        <span id="user-security-account-status"
+                              class="status-badge status-online">正常</span>
+                    </div>
+                    <p id="user-security-account-meta" class="security-copy"></p>
+                    <button id="user-security-account-action"
+                            class="button button-danger security-full-button"
+                            type="button">
+                        <img src="/admin/assets/icons/key-round.svg" alt="">
+                        停用账号
+                    </button>
+                </section>
+
+                <section class="security-section">
+                    <div class="security-section-heading">
+                        <div>
+                            <span>Minecraft 正版身份</span>
+                            <strong id="user-security-minecraft-name">尚未绑定</strong>
+                        </div>
+                        <span id="user-security-minecraft-status"
+                              class="status-badge status-archived">未绑定</span>
+                    </div>
+                    <p id="user-security-minecraft-uuid"
+                       class="security-monospace">无 Minecraft UUID</p>
+                    <p id="user-security-ban-meta" class="security-copy"></p>
+                    <button id="user-security-ban-action"
+                            class="button button-danger security-full-button"
+                            type="button">
+                        <img src="/admin/assets/icons/shield-check.svg" alt="">
+                        封禁 UUID
+                    </button>
+                </section>
+
+                <section class="security-section">
+                    <div class="security-section-heading">
+                        <div>
+                            <span>启动器设备会话</span>
+                            <strong id="user-security-session-count">0 个活跃会话</strong>
+                        </div>
+                        <button id="revoke-all-user-sessions-button"
+                                class="button button-secondary" type="button">
+                            <img src="/admin/assets/icons/log-out.svg" alt="">
+                            全部撤销
+                        </button>
+                    </div>
+                    <div id="user-security-session-list"
+                         class="security-session-list"></div>
+                    <div id="user-security-session-empty"
+                         class="security-empty" hidden>
+                        当前没有活跃的启动器设备会话。
+                    </div>
+                </section>
+
+                <section class="security-section">
+                    <div class="security-section-heading">
+                        <div>
+                            <span>其他即时凭据</span>
+                            <strong>执行“全部撤销”时一并失效</strong>
+                        </div>
+                    </div>
+                    <dl class="security-count-grid">
+                        <div>
+                            <dt>后台会话</dt>
+                            <dd id="user-security-admin-session-count">0</dd>
+                        </div>
+                        <div>
+                            <dt>登录票据</dt>
+                            <dd id="user-security-admin-ticket-count">0</dd>
+                        </div>
+                        <div>
+                            <dt>进服授权</dt>
+                            <dd id="user-security-launch-grant-count">0</dd>
+                        </div>
+                    </dl>
+                </section>
+            </div>
+            <footer class="drawer-footer">
+                <span>所有安全操作都会记录原因、操作者和来源地址。</span>
+                <div>
+                    <button id="finish-user-security-button"
+                            class="button button-secondary" type="button">关闭</button>
+                </div>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog id="security-action-dialog"
+            class="confirm-dialog security-action-dialog">
+        <form id="security-action-form">
+            <div class="confirm-icon">
+                <img id="security-action-icon"
+                     src="/admin/assets/icons/key-round.svg" alt="">
+            </div>
+            <h2 id="security-action-title">确认安全操作</h2>
+            <p id="security-action-message"></p>
+            <div id="security-action-error" class="inline-alert" hidden>
+                <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                <span></span>
+            </div>
+            <label class="security-action-field">
+                操作原因
+                <textarea id="security-action-reason"
+                          minlength="4" maxlength="500" rows="4" required
+                          placeholder="至少 4 个字符，将写入审计日志"></textarea>
+            </label>
+            <label id="security-action-expiry-field"
+                   class="security-action-field" hidden>
+                封禁到期时间
+                <input id="security-action-expires-at" type="datetime-local">
+                <span>留空表示长期封禁。</span>
+            </label>
+            <div class="confirm-actions">
+                <button id="cancel-security-action-button"
+                        class="button button-secondary" type="button">取消</button>
+                <button id="accept-security-action-button"
+                        class="button button-danger" type="submit">确认执行</button>
+            </div>
+        </form>
+    </dialog>
+
     <dialog id="confirm-dialog" class="confirm-dialog">
         <div class="confirm-icon">
             <img id="confirm-icon" src="/admin/assets/icons/archive.svg" alt="">

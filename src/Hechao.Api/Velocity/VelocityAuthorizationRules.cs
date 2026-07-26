@@ -20,6 +20,11 @@ internal static class VelocityAuthorizationRules
             return VelocityAuthorizationReason.PlayerDisabled;
         }
 
+        if (player.IsMinecraftIdentityBanned)
+        {
+            return VelocityAuthorizationReason.MinecraftIdentityBanned;
+        }
+
         if (server is null)
         {
             return VelocityAuthorizationReason.ServerUnknown;
@@ -59,6 +64,7 @@ internal static class VelocityAuthorizationRules
             VelocityAuthorizationReason.Allowed => "允许进入服务器。",
             VelocityAuthorizationReason.PlayerNotLinked => "请先通过赫朝启动器完成 Microsoft 正版登录。",
             VelocityAuthorizationReason.PlayerDisabled => "该赫朝账号已被停用。",
+            VelocityAuthorizationReason.MinecraftIdentityBanned => "该 Minecraft 正版身份已被管理员封禁。",
             VelocityAuthorizationReason.ServerUnknown => "目标服务器尚未登记到赫朝平台。",
             VelocityAuthorizationReason.ServerUnavailable => "目标服务器当前未开放。",
             VelocityAuthorizationReason.AccessDenied => "你没有该服务器的进入权限。",
@@ -75,6 +81,7 @@ internal sealed record VelocityPlayerAccess(
     Guid UserId,
     Guid MinecraftUuid,
     bool IsDisabled,
+    bool IsMinecraftIdentityBanned,
     AccessTier AccessTier,
     string LuckPermsPrimaryGroup,
     DateTimeOffset? LuckPermsSyncedAt);

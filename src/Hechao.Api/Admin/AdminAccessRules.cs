@@ -81,6 +81,11 @@ public static class AdminAccessRules
             return (false, AdminEffectiveAccessReason.PlayerNotLinked);
         }
 
+        if (user.IsMinecraftIdentityBanned)
+        {
+            return (false, AdminEffectiveAccessReason.MinecraftIdentityBanned);
+        }
+
         if (!serverVisible)
         {
             return (false, AdminEffectiveAccessReason.ServerArchived);

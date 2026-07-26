@@ -17,6 +17,8 @@ const state = {
     editingServer: null,
     selectedAccessPreview: null,
     editingAccessServer: null,
+    selectedUserSecurity: null,
+    pendingSecurityAction: null,
     pendingVisibilityChange: null,
     recoveryCodes: [],
     toastTimer: null
@@ -75,6 +77,22 @@ function cacheElements() {
         "cancel-access-rule-button", "save-access-rule-button",
         "delete-access-rule-button", "access-rule-error",
         "access-rule-decision", "access-rule-reason", "access-rule-expires-at",
+        "user-security-drawer", "user-security-form", "user-security-kicker",
+        "user-security-title", "close-user-security-button",
+        "finish-user-security-button", "user-security-error",
+        "user-security-account-name", "user-security-account-status",
+        "user-security-account-meta", "user-security-account-action",
+        "user-security-minecraft-name", "user-security-minecraft-status",
+        "user-security-minecraft-uuid", "user-security-ban-meta",
+        "user-security-ban-action", "user-security-session-count",
+        "user-security-session-list", "user-security-session-empty",
+        "revoke-all-user-sessions-button", "user-security-admin-session-count",
+        "user-security-admin-ticket-count", "user-security-launch-grant-count",
+        "security-action-dialog", "security-action-form", "security-action-icon",
+        "security-action-title", "security-action-message",
+        "security-action-error", "security-action-reason",
+        "security-action-expiry-field", "security-action-expires-at",
+        "cancel-security-action-button", "accept-security-action-button",
         "confirm-dialog", "confirm-icon", "confirm-title", "confirm-message",
         "cancel-confirm-button", "accept-confirm-button", "recovery-dialog",
         "recovery-code-list", "copy-recovery-button", "download-recovery-button",
@@ -127,6 +145,47 @@ function bindEvents() {
     elements["delete-access-rule-button"].addEventListener(
         "click",
         deleteAccessRule);
+    elements["close-user-security-button"].addEventListener(
+        "click",
+        closeUserSecurity);
+    elements["finish-user-security-button"].addEventListener(
+        "click",
+        closeUserSecurity);
+    elements["user-security-account-action"].addEventListener(
+        "click",
+        () => {
+            const security = state.selectedUserSecurity;
+            if (security) {
+                openSecurityAction(
+                    security.user.isDisabled ? "account-enable" : "account-disable");
+            }
+        });
+    elements["user-security-ban-action"].addEventListener(
+        "click",
+        () => {
+            const security = state.selectedUserSecurity;
+            if (security?.user.minecraftUuid) {
+                openSecurityAction(
+                    security.minecraftIdentityBan ? "minecraft-unban" : "minecraft-ban");
+            }
+        });
+    elements["revoke-all-user-sessions-button"].addEventListener(
+        "click",
+        () => openSecurityAction("sessions-revoke-all"));
+    elements["security-action-form"].addEventListener(
+        "submit",
+        submitSecurityAction);
+    elements["cancel-security-action-button"].addEventListener(
+        "click",
+        closeSecurityAction);
+    elements["user-security-drawer"].addEventListener("cancel", event => {
+        event.preventDefault();
+        closeUserSecurity();
+    });
+    elements["security-action-dialog"].addEventListener("cancel", event => {
+        event.preventDefault();
+        closeSecurityAction();
+    });
     elements["cancel-confirm-button"].addEventListener("click", () =>
         elements["confirm-dialog"].close());
     elements["accept-confirm-button"].addEventListener("click", applyVisibilityChange);
@@ -627,6 +686,7 @@ async function searchUsers(event) {
         state.users = await api(userSearchPath());
         renderUsers();
         closeAccessPreview();
+        closeUserSecurity();
     } catch (error) {
         showToast(error.message, true);
     } finally {
@@ -664,9 +724,14 @@ function renderUsers() {
 
         const status = document.createElement("td");
         const statusBadge = document.createElement("span");
+        const restricted = user.isDisabled || user.isMinecraftIdentityBanned;
         statusBadge.className =
-            `status-badge ${user.isDisabled ? "status-closed" : "status-online"}`;
-        statusBadge.textContent = user.isDisabled ? "已停用" : "正常";
+            `status-badge ${restricted ? "status-closed" : "status-online"}`;
+        statusBadge.textContent = user.isDisabled
+            ? "已停用"
+            : user.isMinecraftIdentityBanned
+                ? "UUID 已封禁"
+                : "正常";
         status.append(statusBadge);
 
         const actions = document.createElement("td");
@@ -677,6 +742,10 @@ function renderUsers() {
             "eye",
             "预览最终权限",
             () => openAccessPreview(user.userId)));
+        actionGroup.append(iconButton(
+            "key-round",
+            "管理账号安全",
+            () => openUserSecurity(user.userId)));
         actions.append(actionGroup);
 
         row.append(
@@ -691,6 +760,346 @@ function renderUsers() {
     });
     elements["user-empty-state"].hidden = state.users.length !== 0;
     elements["user-table-body"].parentElement.hidden = state.users.length === 0;
+}
+
+async function openUserSecurity(userId) {
+    try {
+        const security = await api(
+            `/v1/admin/users/${encodeURIComponent(userId)}/security`);
+        state.selectedUserSecurity = security;
+        renderUserSecurity();
+        if (!elements["user-security-drawer"].open) {
+            elements["user-security-drawer"].showModal();
+        }
+    } catch (error) {
+        showToast(error.message, true);
+    }
+}
+
+function closeUserSecurity() {
+    state.selectedUserSecurity = null;
+    state.pendingSecurityAction = null;
+    if (elements["security-action-dialog"].open) {
+        elements["security-action-dialog"].close();
+    }
+    if (elements["user-security-drawer"].open) {
+        elements["user-security-drawer"].close();
+    }
+    elements["user-security-session-list"].replaceChildren();
+    setInlineError(elements["user-security-error"], "");
+}
+
+function renderUserSecurity() {
+    const security = state.selectedUserSecurity;
+    if (!security) return;
+    const user = security.user;
+    const isSelf = state.session?.player?.userId === user.userId;
+    elements["user-security-kicker"].textContent =
+        `${tierText(user.accessTier)} · @${user.username}`;
+    elements["user-security-title"].textContent = `${user.displayName} 的安全状态`;
+    elements["user-security-account-name"].textContent = user.displayName;
+    setStatusBadge(
+        elements["user-security-account-status"],
+        user.isDisabled ? "已停用" : "正常",
+        user.isDisabled ? "status-closed" : "status-online");
+    elements["user-security-account-meta"].textContent = [
+        `账号 @${user.username}`,
+        user.email || "未登记邮箱",
+        `当前等级 ${tierText(user.accessTier)}`
+    ].join(" · ");
+    setButtonContent(
+        elements["user-security-account-action"],
+        "key-round",
+        user.isDisabled ? "恢复账号" : "停用账号");
+    elements["user-security-account-action"].className =
+        `button ${user.isDisabled ? "button-secondary" : "button-danger"} ` +
+        "security-full-button";
+    elements["user-security-account-action"].disabled = isSelf;
+    elements["user-security-account-action"].title = isSelf
+        ? "不能停用当前管理员自身"
+        : "";
+
+    elements["user-security-minecraft-name"].textContent =
+        user.minecraftName || "尚未绑定";
+    elements["user-security-minecraft-uuid"].textContent =
+        user.minecraftUuid || "无 Minecraft UUID";
+    if (!user.minecraftUuid) {
+        setStatusBadge(
+            elements["user-security-minecraft-status"],
+            "未绑定",
+            "status-archived");
+        elements["user-security-ban-meta"].textContent =
+            "账号绑定正版身份后才能执行 UUID 封禁。";
+        elements["user-security-ban-action"].disabled = true;
+    } else if (security.minecraftIdentityBan) {
+        const ban = security.minecraftIdentityBan;
+        setStatusBadge(
+            elements["user-security-minecraft-status"],
+            "UUID 已封禁",
+            "status-closed");
+        elements["user-security-ban-meta"].textContent = [
+            `原因：${ban.reason}`,
+            ban.expiresAt
+                ? `到期：${formatDateTime(ban.expiresAt)}`
+                : "长期封禁",
+            ban.createdByDisplayName
+                ? `操作者：${ban.createdByDisplayName}`
+                : null
+        ].filter(Boolean).join(" · ");
+        setButtonContent(
+            elements["user-security-ban-action"],
+            "rotate-ccw",
+            "解除 UUID 封禁");
+        elements["user-security-ban-action"].className =
+            "button button-secondary security-full-button";
+        elements["user-security-ban-action"].disabled = isSelf;
+    } else {
+        setStatusBadge(
+            elements["user-security-minecraft-status"],
+            "正常",
+            "status-online");
+        elements["user-security-ban-meta"].textContent =
+            "该 UUID 当前没有生效中的封禁记录。";
+        setButtonContent(
+            elements["user-security-ban-action"],
+            "shield-check",
+            "封禁 UUID");
+        elements["user-security-ban-action"].className =
+            "button button-danger security-full-button";
+        elements["user-security-ban-action"].disabled = isSelf;
+    }
+    elements["user-security-ban-action"].title = isSelf
+        ? "不能封禁当前管理员自身"
+        : "";
+
+    elements["user-security-session-list"].replaceChildren();
+    security.launcherSessions.forEach(session => {
+        const item = document.createElement("div");
+        item.className = "security-session-item";
+        const copy = document.createElement("div");
+        const title = document.createElement("strong");
+        title.textContent = `设备会话 · ${session.sessionId.slice(-8)}`;
+        const meta = document.createElement("span");
+        meta.textContent = [
+            session.sourceIp || "无来源地址",
+            `最后活动 ${formatDateTime(session.lastSeenAt)}`,
+            `到期 ${formatDateTime(session.refreshExpiresAt)}`
+        ].join(" · ");
+        copy.append(title, meta);
+        const revoke = iconButton(
+            "log-out",
+            "撤销这个设备会话",
+            () => openSecurityAction("session-revoke", session.sessionId));
+        item.append(copy, revoke);
+        elements["user-security-session-list"].append(item);
+    });
+    elements["user-security-session-count"].textContent =
+        `${security.launcherSessions.length} 个活跃会话`;
+    elements["user-security-session-empty"].hidden =
+        security.launcherSessions.length !== 0;
+    elements["revoke-all-user-sessions-button"].disabled =
+        security.launcherSessions.length === 0 &&
+        security.activeAdminSessions === 0 &&
+        security.pendingAdminTickets === 0 &&
+        security.pendingVelocityLaunchGrants === 0;
+    elements["user-security-admin-session-count"].textContent =
+        String(security.activeAdminSessions);
+    elements["user-security-admin-ticket-count"].textContent =
+        String(security.pendingAdminTickets);
+    elements["user-security-launch-grant-count"].textContent =
+        String(security.pendingVelocityLaunchGrants);
+    setInlineError(elements["user-security-error"], "");
+}
+
+function setStatusBadge(element, text, statusClassName) {
+    element.className = `status-badge ${statusClassName}`;
+    element.textContent = text;
+}
+
+function setButtonContent(button, icon, text) {
+    const image = document.createElement("img");
+    image.src = `${iconRoot}${icon}.svg`;
+    image.alt = "";
+    button.replaceChildren(image, document.createTextNode(text));
+}
+
+function openSecurityAction(kind, sessionId = null) {
+    const security = state.selectedUserSecurity;
+    if (!security) return;
+    const user = security.user;
+    const actions = {
+        "account-disable": {
+            icon: "key-round",
+            title: "停用赫朝账号",
+            message: `停用“${user.displayName}”后，新登录、启动器、后台会话和进服授权都会立即失效。论坛已有 Cookie 需由论坛会话管理另行撤销。`,
+            accept: "确认停用",
+            danger: true
+        },
+        "account-enable": {
+            icon: "rotate-ccw",
+            title: "恢复赫朝账号",
+            message: `恢复“${user.displayName}”的赫朝账号。已有 UUID 封禁不会随账号恢复自动解除。`,
+            accept: "确认恢复",
+            danger: false
+        },
+        "sessions-revoke-all": {
+            icon: "log-out",
+            title: "撤销全部会话",
+            message: `撤销“${user.displayName}”的全部启动器设备、后台会话、登录票据和待消费进服授权。`,
+            accept: "全部撤销",
+            danger: true
+        },
+        "session-revoke": {
+            icon: "log-out",
+            title: "撤销设备会话",
+            message: `撤销设备会话 ${sessionId?.slice(-8) || ""}，该设备需要重新登录。`,
+            accept: "确认撤销",
+            danger: true
+        },
+        "minecraft-ban": {
+            icon: "shield-check",
+            title: "封禁 Minecraft UUID",
+            message: `封禁 ${user.minecraftName || user.minecraftUuid} 后，正版绑定、客户端下载和 Velocity 进服都会被拒绝。`,
+            accept: "确认封禁",
+            danger: true,
+            expiry: true
+        },
+        "minecraft-unban": {
+            icon: "rotate-ccw",
+            title: "解除 Minecraft UUID 封禁",
+            message: `解除 ${user.minecraftName || user.minecraftUuid} 的 UUID 封禁；账号停用状态不会自动改变。`,
+            accept: "确认解除",
+            danger: false
+        }
+    };
+    const action = actions[kind];
+    if (!action) return;
+    state.pendingSecurityAction = { kind, sessionId };
+    elements["security-action-icon"].src = `${iconRoot}${action.icon}.svg`;
+    elements["security-action-title"].textContent = action.title;
+    elements["security-action-message"].textContent = action.message;
+    elements["security-action-reason"].value = "";
+    elements["security-action-expires-at"].value = "";
+    elements["security-action-expiry-field"].hidden = !action.expiry;
+    elements["accept-security-action-button"].textContent = action.accept;
+    elements["accept-security-action-button"].className =
+        `button ${action.danger ? "button-danger" : "button-primary"}`;
+    setInlineError(elements["security-action-error"], "");
+    elements["security-action-dialog"].showModal();
+    elements["security-action-reason"].focus();
+}
+
+function closeSecurityAction() {
+    state.pendingSecurityAction = null;
+    setInlineError(elements["security-action-error"], "");
+    if (elements["security-action-dialog"].open) {
+        elements["security-action-dialog"].close();
+    }
+}
+
+async function submitSecurityAction(event) {
+    event.preventDefault();
+    const pending = state.pendingSecurityAction;
+    const security = state.selectedUserSecurity;
+    if (!pending || !security ||
+        !elements["security-action-form"].reportValidity()) {
+        return;
+    }
+
+    const userId = encodeURIComponent(security.user.userId);
+    const reason = elements["security-action-reason"].value.trim();
+    let path;
+    let method = "POST";
+    let body = { reason };
+    switch (pending.kind) {
+        case "account-disable":
+            path = `/v1/admin/users/${userId}/account/disable`;
+            break;
+        case "account-enable":
+            path = `/v1/admin/users/${userId}/account/enable`;
+            break;
+        case "sessions-revoke-all":
+            path = `/v1/admin/users/${userId}/sessions/revoke-all`;
+            break;
+        case "session-revoke":
+            path = `/v1/admin/users/${userId}/sessions/` +
+                `${encodeURIComponent(pending.sessionId)}/revoke`;
+            break;
+        case "minecraft-ban":
+            path = `/v1/admin/users/${userId}/minecraft-ban`;
+            method = "PUT";
+            body = {
+                reason,
+                expiresAt: parseInputDateTime(
+                    elements["security-action-expires-at"].value),
+                expectedRevision: null
+            };
+            break;
+        case "minecraft-unban":
+            path = `/v1/admin/users/${userId}/minecraft-ban`;
+            method = "DELETE";
+            body = {
+                reason,
+                expectedRevision: security.minecraftIdentityBan?.revision
+            };
+            break;
+        default:
+            return;
+    }
+
+    setBusy(elements["accept-security-action-button"], true);
+    setInlineError(elements["security-action-error"], "");
+    try {
+        const response = await api(path, { method, body });
+        const updated = response.security;
+        closeSecurityAction();
+        if (updated) {
+            state.selectedUserSecurity = updated;
+            const index = state.users.findIndex(
+                item => item.userId === updated.user.userId);
+            if (index >= 0) state.users[index] = updated.user;
+            renderUsers();
+            renderUserSecurity();
+            if (state.selectedAccessPreview?.user?.userId === updated.user.userId) {
+                closeAccessPreview();
+            }
+        }
+        showToast(securityActionSuccessText(pending.kind, response.revoked));
+    } catch (error) {
+        if (error.status === 409) {
+            try {
+                const refreshed = await api(
+                    `/v1/admin/users/${userId}/security`);
+                state.selectedUserSecurity = refreshed;
+                renderUserSecurity();
+            } catch {
+                // Preserve the original action error.
+            }
+        }
+        setInlineError(elements["security-action-error"], error.message);
+    } finally {
+        setBusy(elements["accept-security-action-button"], false);
+    }
+}
+
+function securityActionSuccessText(kind, revoked) {
+    const labels = {
+        "account-disable": "账号已停用",
+        "account-enable": "账号已恢复",
+        "sessions-revoke-all": "全部会话已撤销",
+        "session-revoke": "设备会话已撤销",
+        "minecraft-ban": "Minecraft UUID 已封禁",
+        "minecraft-unban": "Minecraft UUID 封禁已解除"
+    };
+    const total = revoked
+        ? revoked.launcherSessions +
+          revoked.adminSessions +
+          revoked.adminTickets +
+          revoked.velocityLaunchGrants
+        : 0;
+    return total > 0
+        ? `${labels[kind]}，共失效 ${total} 项凭据`
+        : labels[kind];
 }
 
 async function openAccessPreview(userId) {
@@ -807,6 +1216,7 @@ function accessReasonText(reason) {
         AllowedByRule: "单服规则允许",
         PlayerNotLinked: "未绑定正版身份",
         PlayerDisabled: "账号已停用",
+        MinecraftIdentityBanned: "UUID 已封禁",
         ServerArchived: "服务器已归档",
         ServerUnavailable: "服务器未开放",
         DeniedByRule: "单服规则拒绝",
@@ -1246,6 +1656,8 @@ function auditMeta(primary, secondary) {
 }
 
 function auditIcon(action) {
+    if (action.includes("security.minecraft_ban")) return "shield-check";
+    if (action.includes("security.account")) return "key-round";
     if (action.includes("access.server_rule")) return "users";
     if (action.includes("created")) return "plus";
     if (action.includes("archived")) return "archive";
@@ -1265,6 +1677,13 @@ function auditActionText(action) {
         "access.server_rule.created": "新增单服权限规则",
         "access.server_rule.updated": "编辑单服权限规则",
         "access.server_rule.deleted": "清除单服权限规则",
+        "security.account.disabled": "停用赫朝账号",
+        "security.account.enabled": "恢复赫朝账号",
+        "security.sessions.revoked_all": "撤销全部账号会话",
+        "security.session.revoked": "撤销设备会话",
+        "security.minecraft_ban.created": "封禁 Minecraft UUID",
+        "security.minecraft_ban.updated": "更新 Minecraft UUID 封禁",
+        "security.minecraft_ban.revoked": "解除 Minecraft UUID 封禁",
         "admin.login_ticket.created": "创建后台登录票据",
         "admin.web_session.created": "登录管理后台",
         "admin.web_session.revoked": "退出管理后台",

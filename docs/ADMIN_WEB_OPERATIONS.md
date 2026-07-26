@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.11.12`、API `0.14.1`
+> 源码版本：启动器 `0.11.12`、API `0.15.0`
 > 生产状态：API `0.14.1` 已部署且 `AdminWeb__Enabled=true`；当前 MFA 凭据数为 0，首次登记尚未完成
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
@@ -99,12 +99,13 @@ location / {
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
-5. 部署 API 后确认迁移 5、迁移 6、迁移 10、`healthz` 和 `readyz`。
+5. 部署 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、`healthz` 和 `readyz`。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
 7. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存。
 8. 用普通成员确认票据端点返回 403。
 9. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。
-10. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
+10. 验证玩家账号停用/恢复、设备会话撤销、UUID 封禁/解除、最后管理员保护和审计。
+11. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
 
 API `0.14.1` 已生产部署，管理后台开关已启用，但真实管理员尚未完成首次 TOTP 与恢复码保存。在登记完成前不得执行管理写入，也不得把开关开启视为 MFA 已验收。
 
@@ -113,6 +114,10 @@ API `0.14.1` 已生产部署，管理后台开关已启用，但真实管理员�
 `DENY` frame policy 等安全响应头。数据库中 MFA 凭据、有效登记和有效后台会话
 均为 0；首次登记仍必须由真实管理员在启动器生成的一次性浏览器会话中完成，
 运维脚本不得代替管理员生成或保存 TOTP 密钥。
+
+API `0.15.0` 增加玩家账号安全抽屉和管理端点，完整生效范围、论坛 Cookie 边界、
+迁移、审计和回滚见
+[`ADMIN_ACCOUNT_SECURITY_OPERATIONS.md`](ADMIN_ACCOUNT_SECURITY_OPERATIONS.md)。
 
 ## 7. 回滚
 

@@ -18,6 +18,18 @@ public sealed class CatalogRepository(
         CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        if (userId is not null &&
+            await IsMinecraftIdentityBannedAsync(
+                connection,
+                userId.Value,
+                cancellationToken))
+        {
+            return new LauncherCatalogSnapshot(
+                DateTimeOffset.UtcNow,
+                Array.Empty<ServerSummary>(),
+                Array.Empty<ClientProfileSummary>());
+        }
+
         var servers = await ReadServersAsync(
             connection,
             userId,
@@ -44,6 +56,15 @@ public sealed class CatalogRepository(
             FROM launcher.client_profiles profile
             WHERE profile.id = $3
               AND profile.is_active
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM launcher.minecraft_identities identity
+                  JOIN launcher.minecraft_identity_bans identity_ban
+                      ON identity_ban.minecraft_uuid = identity.minecraft_uuid
+                  WHERE identity.user_id = $1
+                    AND identity_ban.revoked_at IS NULL
+                    AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now())
+              )
               AND EXISTS (
                   SELECT 1
                   FROM launcher.servers server
@@ -93,6 +114,25 @@ public sealed class CatalogRepository(
             reader.GetInt64(3),
             reader.GetString(4),
             new DateTimeOffset(reader.GetDateTime(5)));
+    }
+
+    private static async Task<bool> IsMinecraftIdentityBannedAsync(
+        NpgsqlConnection connection,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT 1
+            FROM launcher.minecraft_identities identity
+            JOIN launcher.minecraft_identity_bans identity_ban
+                ON identity_ban.minecraft_uuid = identity.minecraft_uuid
+            WHERE identity.user_id = $1
+              AND identity_ban.revoked_at IS NULL
+              AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now());
+            """;
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue(userId);
+        return await command.ExecuteScalarAsync(cancellationToken) is not null;
     }
 
     private static async Task<IReadOnlyList<ClientProfileSummary>> ReadProfilesAsync(

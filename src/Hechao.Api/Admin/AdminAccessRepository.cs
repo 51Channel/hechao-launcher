@@ -47,6 +47,13 @@ public sealed class AdminAccessRepository(
                    user_account.access_tier,
                    identity.luckperms_synced_at,
                    user_account.is_disabled,
+                   EXISTS (
+                       SELECT 1
+                       FROM launcher.minecraft_identity_bans identity_ban
+                       WHERE identity_ban.minecraft_uuid = identity.minecraft_uuid
+                         AND identity_ban.revoked_at IS NULL
+                         AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now())
+                   ),
                    (
                        SELECT count(*)::integer
                        FROM launcher.server_access_overrides access_rule
@@ -352,6 +359,13 @@ public sealed class AdminAccessRepository(
                    user_account.access_tier,
                    identity.luckperms_synced_at,
                    user_account.is_disabled,
+                   EXISTS (
+                       SELECT 1
+                       FROM launcher.minecraft_identity_bans identity_ban
+                       WHERE identity_ban.minecraft_uuid = identity.minecraft_uuid
+                         AND identity_ban.revoked_at IS NULL
+                         AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now())
+                   ),
                    (
                        SELECT count(*)::integer
                        FROM launcher.server_access_overrides access_rule
@@ -386,8 +400,9 @@ public sealed class AdminAccessRepository(
                 ? null
                 : new DateTimeOffset(reader.GetDateTime(8)),
             reader.GetBoolean(9),
-            reader.GetInt32(10),
-            new DateTimeOffset(reader.GetDateTime(11)));
+            reader.GetBoolean(10),
+            reader.GetInt32(11),
+            new DateTimeOffset(reader.GetDateTime(12)));
     }
 
     private static async Task<AdminServerAccessRuleRecord?> GetRuleForUpdateAsync(
