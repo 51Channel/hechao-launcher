@@ -30,6 +30,8 @@ public interface ILauncherAuthenticationService
         CancellationToken cancellationToken = default);
     Task<MinecraftLaunchSession> GetMinecraftLaunchSessionAsync(
         CancellationToken cancellationToken = default);
+    Task<MinecraftLaunchSession> RefreshMinecraftLaunchSessionAsync(
+        CancellationToken cancellationToken = default);
     Task<VelocityLaunchGrantResponse> PrepareVelocityLaunchAsync(
         string serverId,
         CancellationToken cancellationToken = default);
@@ -253,6 +255,39 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
         throw new MicrosoftReauthenticationRequiredException();
     }
 
+    public async Task<MinecraftLaunchSession> RefreshMinecraftLaunchSessionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var currentAccount = CurrentAccount ?? throw new LauncherAuthenticationRequiredException();
+        if (currentAccount.MinecraftUuid is not { } linkedMinecraftUuid ||
+            string.IsNullOrWhiteSpace(currentAccount.MinecraftName))
+        {
+            throw new MinecraftIdentityLinkRequiredException();
+        }
+
+        var microsoftResult = await AcquireMicrosoftTokenInteractiveAsync(cancellationToken);
+        var minecraftSession = await _minecraftAuthenticationClient.AuthenticateAsync(
+            microsoftResult.AccessToken,
+            cancellationToken);
+        var profile = await _minecraftAuthenticationClient.GetProfileAsync(
+            minecraftSession.AccessToken,
+            cancellationToken);
+        if (profile.MinecraftUuid != linkedMinecraftUuid)
+        {
+            throw new MicrosoftAccountMismatchException(
+                currentAccount.MinecraftName,
+                profile.MinecraftName);
+        }
+
+        _cachedMinecraftLaunchSession = new MinecraftLaunchSession(
+            profile.MinecraftName,
+            profile.MinecraftUuid,
+            minecraftSession.AccessToken,
+            minecraftSession.ExpiresAt,
+            minecraftSession.Xuid);
+        return _cachedMinecraftLaunchSession;
+    }
+
     public Task<VelocityLaunchGrantResponse> PrepareVelocityLaunchAsync(
         string serverId,
         CancellationToken cancellationToken = default)
@@ -377,6 +412,14 @@ public sealed class MicrosoftSignInCanceledException : Exception;
 public sealed class MicrosoftSignInFailedException(Exception? innerException = null)
     : Exception("Microsoft authentication did not complete.", innerException);
 public sealed class MicrosoftReauthenticationRequiredException : Exception;
+public sealed class MicrosoftAccountMismatchException(
+    string linkedMinecraftName,
+    string authenticatedMinecraftName)
+    : Exception("The authenticated Microsoft account does not match the linked Minecraft identity.")
+{
+    public string LinkedMinecraftName { get; } = linkedMinecraftName;
+    public string AuthenticatedMinecraftName { get; } = authenticatedMinecraftName;
+}
 public sealed class MinecraftIdentityLinkRequiredException : Exception;
 
 internal static class MicrosoftBrowserCompletionPage

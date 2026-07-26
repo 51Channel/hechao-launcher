@@ -931,7 +931,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         try
         {
-            var launchSession = await _authenticationService.GetMinecraftLaunchSessionAsync();
+            var launchSession = await GetMinecraftLaunchSessionWithRefreshAsync();
             SetCurrentAccount(_authenticationService.CurrentAccount);
             await _gameLauncherService.LaunchAsync(
                 new MinecraftLaunchRequest(
@@ -968,8 +968,25 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (MicrosoftReauthenticationRequiredException)
         {
-            ClientStatusText = "游戏登录已过期";
-            ShowToast("请退出账号后重新登录，以刷新游戏凭据");
+            ClientStatusText = "游戏凭据刷新未完成";
+            ShowToast("请重新点击进入服务器，并在浏览器中完成 Microsoft 正版认证");
+        }
+        catch (MicrosoftAuthenticationNotConfiguredException)
+        {
+            ClientStatusText = "Microsoft 登录尚未配置";
+            ShowToast("当前启动器无法进行 Microsoft 正版认证，请更新启动器");
+        }
+        catch (MicrosoftSignInCanceledException)
+        {
+            ClientStatusText = "已取消正版认证";
+            ShowToast("已取消 Microsoft 正版认证，游戏没有启动");
+        }
+        catch (MicrosoftAccountMismatchException exception)
+        {
+            ClientStatusText = "Microsoft 账号不匹配";
+            ActivePage = LauncherPage.Account;
+            ShowToast(
+                $"当前选择的是 {exception.AuthenticatedMinecraftName}，请登录已绑定玩家 {exception.LinkedMinecraftName} 对应的 Microsoft 账号");
         }
         catch (MicrosoftSignInFailedException)
         {
@@ -1018,6 +1035,38 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             IsProgressActive = false;
             UpdatePrimaryActionForState();
+        }
+    }
+
+    private async Task<MinecraftLaunchSession> GetMinecraftLaunchSessionWithRefreshAsync()
+    {
+        try
+        {
+            return await _authenticationService.GetMinecraftLaunchSessionAsync();
+        }
+        catch (MicrosoftReauthenticationRequiredException)
+        {
+            ClientStatusText = "请在浏览器中刷新 Microsoft 游戏凭据";
+            ShowToast("游戏凭据已过期，请在浏览器中完成 Microsoft 正版认证");
+            var cancellation = new CancellationTokenSource();
+            _microsoftSignInCancellation = cancellation;
+            IsMicrosoftSignInVisible = true;
+            CancelMicrosoftSignInCommand.RaiseCanExecuteChanged();
+            try
+            {
+                return await _authenticationService.RefreshMinecraftLaunchSessionAsync(
+                    cancellation.Token);
+            }
+            finally
+            {
+                if (ReferenceEquals(_microsoftSignInCancellation, cancellation))
+                {
+                    _microsoftSignInCancellation = null;
+                }
+
+                IsMicrosoftSignInVisible = false;
+                cancellation.Dispose();
+            }
         }
     }
 
