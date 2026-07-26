@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前启动器私有 OSS 灰度候选为 `0.11.12`，API 生产版本为 `0.14.1`，本地待部署版本为 `0.15.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则和账号安全操作的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前启动器私有 OSS 灰度候选为 `0.11.12`，API 生产版本为 `0.15.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则和账号安全操作的管理员控制台。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
@@ -36,9 +36,9 @@
 - Windows 只读采集器每分钟通过 Minecraft 状态协议查询各 Velocity 目标；不持有 RCON、进程控制或服务器启停权限。
 - `Administrator` 可从启动器申请 90 秒一次性后台票据；票据只放 URL fragment，兑换后改用 `HttpOnly`、`Secure`、`SameSite=Strict` 的独立浏览器会话，不把启动器 Bearer 交给网页。
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复、公告、开放排期、玩家搜索、访问预览和单服规则，所有变更使用修订号并在同一事务中写入审计日志。
-- 启动器 API `0.14.1` 已通过 `https://launcher-api.hechao.world` 上线；对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
+- 启动器 API `0.15.0` 已通过 `https://launcher-api.hechao.world` 上线；对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 
-API `0.14.1-20260726T190856Z` 已完成部署前备份、哈希校验、独立端口启动预检、原子切换和公网回归；维护公告、开放/关闭时间、玩家搜索、实际访问预览及带有效期的单服允许/拒绝规则已上线，旧官网与中转 API 均保持 200。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight，生产合成授权确认首次连接可从大厅定向到 `pvp`。当前解决方案测试为 `259/259`，Velocity 测试为 `11/11`。Vanilla、Forge 与 DollNight 正式档案已完成签名、全量安装、逐文件校验、生产发布和权限下载回归；Survival1 与 DollNight 已绑定新档案，Forge 保持未绑定直到真实服务器建立。生产账号的真实四级验收尚未完成，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变。世界备份引擎已部署并通过夹具测试，三服错峰计划已写入磁盘，首次正式世界归档仍待验收。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.15.0-20260726T202540Z` 已完成隔离生产备份还原、完整账号安全流程、部署前备份、哈希校验、原子切换和公网回归；账号停用/恢复、设备会话撤销、全部认证状态撤销、Minecraft UUID 定时封禁与事务审计已经上线。维护公告、开放/关闭时间、玩家搜索、实际访问预览及带有效期的单服允许/拒绝规则继续正常，旧官网与中转 API 均保持 200。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight，生产合成授权确认首次连接可从大厅定向到 `pvp`。当前解决方案测试为 `261/261`，Velocity 测试为 `11/11`。生产管理员 MFA 凭据数仍为 `0`，真实四级账号验收也尚未完成，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变。世界备份引擎已部署并通过夹具测试，三服错峰计划已写入磁盘，首次正式世界归档仍待验收。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
@@ -81,7 +81,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 3. [已完成] `hechao-velocity-authorizer 0.2.0` 已以 `monitor` 模式加载；全部代理目标已经登记，生产合成授权已验证一次性授权选择的后端目标能够改写初始大厅路由。
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、每档案 Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
-6. [已完成] 部署 API `0.14.1`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期和单服访问规则已验收。管理员 Web 已启用，但正式管理员 MFA 尚未登记。
+6. [已完成] 部署 API `0.15.0`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期、单服访问规则和账号安全已上线。管理员 Web 已启用，但正式管理员 MFA 尚未登记，账号安全页面仍需真实管理员验收。
 7. 启动器 `0.11.12` 已替换 `0.11.11` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.12.md`](docs/PRELAUNCH_PILOT_0.11.12.md) 验证玩家确认诊断上传，并回归登录、安装、修复、回滚与真实游戏启动。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
