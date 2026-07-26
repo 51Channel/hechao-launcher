@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.11.12`、API `0.17.0`
+> 源码版本：启动器 `0.11.13`、API `0.18.0`
 > 生产状态：API `0.17.0-20260726T231515Z` 已部署且 `AdminWeb__Enabled=true`；当前 MFA 凭据数为 0，首次登记尚未完成
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
@@ -95,11 +95,11 @@ location / {
 
 正式部署前：
 
-1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.17.0-20260726T231515Z`，启动器源码候选为 `0.11.12`。
+1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.17.0-20260726T231515Z`，API 源码候选为 `0.18.0`，启动器源码候选为 `0.11.13`。
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
-5. 部署 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、`healthz` 和 `readyz`。
+5. 部署 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、`healthz` 和 `readyz`。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
 7. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存。
 8. 用普通成员确认票据端点返回 403。
@@ -124,6 +124,12 @@ API `0.17.0` 在“客户端档案”页增加完整发布工作台：创建档�
 暂停问题版本和恢复发布。Production 指派、回滚与暂停均使用独立确认界面；
 修订冲突会刷新当前档案，不会静默覆盖。详细规则见
 [`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。
+
+API `0.18.0` 在“运行数据”页增加 24 小时、7 天和 30 天聚合。页面只显示事件数、
+独立用户数、安装/修复与启动成功率、传输字节、启动器版本、档案版本和固定失败分类，
+不提供用户明细、文件路径或异常文本。候选已通过隔离管理员会话验收；正式页面仍要等
+真实管理员完成 MFA 后验收。完整边界见
+[`LAUNCHER_TELEMETRY_OPERATIONS.md`](LAUNCHER_TELEMETRY_OPERATIONS.md)。
 
 ## 7. 回滚
 

@@ -132,6 +132,10 @@
                     <img src="/admin/assets/icons/package.svg" alt="">
                     <span>客户端档案</span>
                 </button>
+                <button class="nav-item" type="button" data-view="telemetry">
+                    <img src="/admin/assets/icons/activity.svg" alt="">
+                    <span>运行数据</span>
+                </button>
                 <button class="nav-item" type="button" data-view="diagnostics">
                     <img src="/admin/assets/icons/activity.svg" alt="">
                     <span>诊断包</span>
@@ -343,6 +347,133 @@
                             <span>先创建档案，再导入由离线发布密钥签名的清单。</span>
                         </div>
                     </div>
+                </section>
+
+                <section id="telemetry-section" class="view-section" hidden>
+                    <div class="section-heading telemetry-heading">
+                        <div>
+                            <h2>启动器运行数据</h2>
+                            <p>仅汇总操作结果、版本、耗时与字节数，不采集文件路径、异常正文或账号资料。</p>
+                        </div>
+                        <div class="segmented-control" role="group" aria-label="统计时间范围">
+                            <button class="active" type="button" data-telemetry-hours="24">24 小时</button>
+                            <button type="button" data-telemetry-hours="168">7 天</button>
+                            <button type="button" data-telemetry-hours="720">30 天</button>
+                        </div>
+                    </div>
+
+                    <div class="summary-strip telemetry-summary" aria-label="运行数据摘要">
+                        <div>
+                            <span>事件总数</span>
+                            <strong id="telemetry-event-count">0</strong>
+                        </div>
+                        <div>
+                            <span>活跃玩家</span>
+                            <strong id="telemetry-user-count">0</strong>
+                        </div>
+                        <div>
+                            <span>下载尝试</span>
+                            <strong id="telemetry-download-attempts">0</strong>
+                        </div>
+                        <div>
+                            <span>下载失败率</span>
+                            <strong id="telemetry-download-failure-rate">0%</strong>
+                        </div>
+                    </div>
+
+                    <div class="telemetry-operation-grid">
+                        <section class="telemetry-operation">
+                            <div class="telemetry-operation-heading">
+                                <div>
+                                    <span>内容分发</span>
+                                    <h3>安装与修复</h3>
+                                </div>
+                                <strong id="telemetry-download-bytes">0 B</strong>
+                            </div>
+                            <dl class="telemetry-facts">
+                                <div><dt>成功</dt><dd id="telemetry-download-succeeded">0</dd></div>
+                                <div><dt>失败</dt><dd id="telemetry-download-failed">0</dd></div>
+                                <div><dt>取消</dt><dd id="telemetry-download-canceled">0</dd></div>
+                            </dl>
+                        </section>
+                        <section class="telemetry-operation">
+                            <div class="telemetry-operation-heading">
+                                <div>
+                                    <span>游戏进程</span>
+                                    <h3>启动 Minecraft</h3>
+                                </div>
+                                <strong id="telemetry-launch-failure-rate">0%</strong>
+                            </div>
+                            <dl class="telemetry-facts">
+                                <div><dt>尝试</dt><dd id="telemetry-launch-attempts">0</dd></div>
+                                <div><dt>成功</dt><dd id="telemetry-launch-succeeded">0</dd></div>
+                                <div><dt>失败</dt><dd id="telemetry-launch-failed">0</dd></div>
+                            </dl>
+                        </section>
+                    </div>
+
+                    <div class="telemetry-table-grid">
+                        <section>
+                            <div class="telemetry-table-heading">
+                                <div>
+                                    <h3>启动器版本分布</h3>
+                                    <p>按每名活跃玩家最近一次事件统计。</p>
+                                </div>
+                            </div>
+                            <div class="table-frame">
+                                <table class="telemetry-table">
+                                    <thead>
+                                    <tr><th>启动器版本</th><th>玩家数</th><th>占比</th></tr>
+                                    </thead>
+                                    <tbody id="telemetry-launcher-version-body"></tbody>
+                                </table>
+                                <div id="telemetry-launcher-version-empty" class="empty-state" hidden>
+                                    <strong>暂无版本数据</strong>
+                                </div>
+                            </div>
+                        </section>
+                        <section>
+                            <div class="telemetry-table-heading">
+                                <div>
+                                    <h3>客户端档案版本</h3>
+                                    <p>显示有操作记录的档案版本与覆盖人数。</p>
+                                </div>
+                            </div>
+                            <div class="table-frame">
+                                <table class="telemetry-table">
+                                    <thead>
+                                    <tr><th>客户端档案</th><th>版本</th><th>玩家 / 事件</th></tr>
+                                    </thead>
+                                    <tbody id="telemetry-profile-version-body"></tbody>
+                                </table>
+                                <div id="telemetry-profile-version-empty" class="empty-state" hidden>
+                                    <strong>暂无档案版本数据</strong>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="telemetry-failure-section">
+                        <div class="telemetry-table-heading">
+                            <div>
+                                <h3>主要失败原因</h3>
+                                <p>使用固定分类汇总，不保存玩家看到的错误正文。</p>
+                            </div>
+                            <span id="telemetry-period-label" class="count-label"></span>
+                        </div>
+                        <div class="table-frame">
+                            <table class="telemetry-table telemetry-failure-table">
+                                <thead>
+                                <tr><th>操作</th><th>失败分类</th><th>次数</th></tr>
+                                </thead>
+                                <tbody id="telemetry-failure-body"></tbody>
+                            </table>
+                            <div id="telemetry-failure-empty" class="empty-state" hidden>
+                                <img src="/admin/assets/icons/shield-check.svg" alt="">
+                                <strong>当前窗口没有失败事件</strong>
+                            </div>
+                        </div>
+                    </section>
                 </section>
 
                 <section id="diagnostics-section" class="view-section" hidden>

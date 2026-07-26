@@ -21,6 +21,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IDownloadHistoryStore _downloadHistoryStore;
     private readonly IGameDiagnosticsService _gameDiagnosticsService;
     private readonly IGameDiagnosticUploadService _diagnosticUploadService;
+    private readonly ILauncherTelemetryService _telemetryService;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _profileJavaPaths =
@@ -72,7 +73,8 @@ public sealed class MainWindowViewModel : ObservableObject
         IMinecraftGameLauncherService gameLauncherService,
         IDownloadHistoryStore downloadHistoryStore,
         IGameDiagnosticsService gameDiagnosticsService,
-        IGameDiagnosticUploadService diagnosticUploadService)
+        IGameDiagnosticUploadService diagnosticUploadService,
+        ILauncherTelemetryService? telemetryService = null)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -82,6 +84,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _downloadHistoryStore = downloadHistoryStore;
         _gameDiagnosticsService = gameDiagnosticsService;
         _diagnosticUploadService = diagnosticUploadService;
+        _telemetryService =
+            telemetryService ?? NullLauncherTelemetryService.Instance;
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
@@ -173,6 +177,9 @@ public sealed class MainWindowViewModel : ObservableObject
 
         LoadDownloadHistory();
 
+        _ = _telemetryService.RecordAsync(
+            LauncherTelemetryEventType.LauncherStarted,
+            LauncherTelemetryOutcome.Success);
         _ = InitializeAsync();
     }
 
@@ -914,6 +921,9 @@ public sealed class MainWindowViewModel : ObservableObject
         var succeeded = false;
         var completionStatus = DownloadJobStatus.Failed;
         string? completionMessage = null;
+        var telemetryClock = Stopwatch.StartNew();
+        var telemetryOutcome = LauncherTelemetryOutcome.Failure;
+        var telemetryFailure = LauncherTelemetryFailureCode.Unexpected;
 
         try
         {
@@ -938,44 +948,54 @@ public sealed class MainWindowViewModel : ObservableObject
             ShowToast(isRepair ? "客户端修复完成" : "客户端安装完成");
             succeeded = true;
             completionStatus = DownloadJobStatus.Completed;
+            telemetryOutcome = LauncherTelemetryOutcome.Success;
+            telemetryFailure = LauncherTelemetryFailureCode.None;
         }
         catch (LauncherAuthenticationRequiredException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.AuthenticationRequired;
             ClientStatusText = "需要登录后下载";
             ShowToast("请先登录赫朝账号");
         }
         catch (LauncherApiException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.ProfileUnavailable;
             ClientStatusText = "客户端尚未发布";
             ShowToast("该客户端档案尚未发布下载清单");
         }
         catch (LauncherApiException exception)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.ApiUnavailable;
             ClientStatusText = "下载服务不可用";
             ShowToast(exception.ApiDetail ?? "客户端分发服务暂时不可用");
         }
         catch (ManifestSignatureException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.SignatureInvalid;
             ClientStatusText = "清单签名无效";
             ShowToast("客户端清单未通过签名验证，安装已停止");
         }
         catch (Exception exception) when (exception is ManifestIntegrityException or ClientManifestMismatchException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.IntegrityFailed;
             ClientStatusText = "文件校验失败";
             ShowToast("下载内容与发布清单不一致，安装已停止");
         }
         catch (InsufficientDiskSpaceException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.InsufficientDiskSpace;
             ClientStatusText = "磁盘空间不足";
             ShowToast("游戏数据目录所在磁盘空间不足");
         }
         catch (ProfileInstallInProgressException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.InstallBusy;
             ClientStatusText = "安装正在进行";
             ShowToast("另一个启动器窗口正在安装这个客户端");
         }
         catch (ProfileJavaRuntimeException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.RuntimePreparationFailed;
             ClientStatusText = "Java 安装未完成";
             ShowToast("客户端文件已校验，但配套 Java 安装失败；重新修复会继续下载");
         }
@@ -984,12 +1004,17 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             completionStatus = DownloadJobStatus.Canceled;
             completionMessage = "用户取消了下载";
+            telemetryOutcome = LauncherTelemetryOutcome.Canceled;
+            telemetryFailure = LauncherTelemetryFailureCode.UserCanceled;
             ClientStatusText = "下载已取消";
             ShowToast("下载任务已取消");
         }
         catch (Exception exception) when (
             exception is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
         {
+            telemetryFailure = exception is HttpRequestException or TaskCanceledException
+                ? LauncherTelemetryFailureCode.NetworkUnavailable
+                : LauncherTelemetryFailureCode.IoFailure;
             ClientStatusText = "安装未完成";
             ShowToast("客户端安装中断，重新操作会从已下载位置继续");
         }
@@ -1004,8 +1029,19 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         finally
         {
+            var completedBytes = ActiveDownload?.CompletedBytes;
             completionMessage ??= succeeded ? null : ClientStatusText;
             CompleteActiveDownload(completionStatus, completionMessage);
+            await _telemetryService.RecordAsync(
+                isRepair
+                    ? LauncherTelemetryEventType.Repair
+                    : LauncherTelemetryEventType.Install,
+                telemetryOutcome,
+                telemetryFailure,
+                profile.Id,
+                profile.Version,
+                telemetryClock.Elapsed,
+                completedBytes);
             _isInstallingClient = false;
             _activeInstallCancellation?.Dispose();
             _activeInstallCancellation = null;
@@ -1045,6 +1081,9 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         var activatedVersion = _rollbackCandidate.Version;
+        var telemetryClock = Stopwatch.StartNew();
+        var telemetryOutcome = LauncherTelemetryOutcome.Failure;
+        var telemetryFailure = LauncherTelemetryFailureCode.Unexpected;
         IsProgressActive = true;
         UpdateProgress = 10;
         ClientStatusText = $"正在回滚到 v{activatedVersion}";
@@ -1070,10 +1109,13 @@ public sealed class MainWindowViewModel : ObservableObject
             ClientStatusText = $"已回滚到 v{activatedState.Version}";
             NotifySelectedProfileJavaPropertiesChanged();
             ShowToast($"客户端已回滚到 v{activatedState.Version}，存档与设置已保留");
+            telemetryOutcome = LauncherTelemetryOutcome.Success;
+            telemetryFailure = LauncherTelemetryFailureCode.None;
             return true;
         }
         catch (ProfileRollbackRuntimeException exception)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.RuntimePreparationFailed;
             switched = true;
             _selectedProfileState = LocalProfileState.UpdateRequired;
             NotifySelectedProfileJavaPropertiesChanged();
@@ -1083,23 +1125,28 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (ProfileRollbackUnavailableException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.RollbackUnavailable;
             SetRollbackCandidate(null);
             ClientStatusText = "没有可回滚版本";
             ShowToast("上一版本不存在或未通过完整性检查");
         }
         catch (ProfileInstallInProgressException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.InstallBusy;
             ClientStatusText = "客户端正在使用";
             ShowToast("另一个启动器窗口正在安装或回滚这个客户端");
         }
         catch (OperationCanceledException)
         {
+            telemetryOutcome = LauncherTelemetryOutcome.Canceled;
+            telemetryFailure = LauncherTelemetryFailureCode.UserCanceled;
             ClientStatusText = "回滚已取消";
             ShowToast("客户端回滚已取消，当前版本保持不变");
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.IoFailure;
             ClientStatusText = "回滚未完成";
             ShowToast("无法安全切换版本，请退出 Minecraft 后重试");
         }
@@ -1113,6 +1160,13 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         finally
         {
+            await _telemetryService.RecordAsync(
+                LauncherTelemetryEventType.Rollback,
+                telemetryOutcome,
+                telemetryFailure,
+                profile.Id,
+                activatedVersion,
+                telemetryClock.Elapsed);
             IsProgressActive = false;
             await RefreshRollbackCandidateAsync(profile, selectedServer.Id);
             if (!switched)
@@ -1133,6 +1187,15 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         var selectedServer = SelectedServer;
+        var profileVersion = _clientProfiles.TryGetValue(
+                selectedServer.ClientProfileId,
+                out var selectedProfile)
+            ? selectedProfile.Version
+            : "unknown";
+        var telemetryClock = Stopwatch.StartNew();
+        var telemetryOutcome = LauncherTelemetryOutcome.Failure;
+        var telemetryFailure = LauncherTelemetryFailureCode.Unexpected;
+        var closeAfterLaunch = false;
         IsProgressActive = true;
         UpdateProgress = 0;
         ClientStatusText = "正在准备正版游戏会话";
@@ -1162,40 +1225,50 @@ public sealed class MainWindowViewModel : ObservableObject
             UpdateProgress = 100;
             ClientStatusText = "游戏已启动";
             ShowToast($"正在进入 {selectedServer.Name}");
+            telemetryOutcome = LauncherTelemetryOutcome.Success;
+            telemetryFailure = LauncherTelemetryFailureCode.None;
             if (CloseLauncherAfterGameStart)
             {
-                CloseRequested?.Invoke(this, EventArgs.Empty);
+                closeAfterLaunch = true;
             }
         }
         catch (LauncherAuthenticationRequiredException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.AuthenticationRequired;
             ClientStatusText = "需要登录后启动";
             ActivePage = LauncherPage.Account;
             ShowToast("请先登录赫朝账号");
         }
         catch (MinecraftIdentityLinkRequiredException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.MinecraftIdentityRequired;
             ClientStatusText = "需要绑定正版身份";
             ActivePage = LauncherPage.Account;
             ShowToast("请先在赫朝账户页绑定 Minecraft 正版身份");
         }
         catch (MicrosoftReauthenticationRequiredException)
         {
+            telemetryFailure =
+                LauncherTelemetryFailureCode.MicrosoftReauthenticationRequired;
             ClientStatusText = "游戏凭据刷新未完成";
             ShowToast("请重新点击进入服务器，并在浏览器中完成 Microsoft 正版认证");
         }
         catch (MicrosoftAuthenticationNotConfiguredException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.MicrosoftNotConfigured;
             ClientStatusText = "Microsoft 登录尚未配置";
             ShowToast("当前启动器无法进行 Microsoft 正版认证，请更新启动器");
         }
         catch (MicrosoftSignInCanceledException)
         {
+            telemetryOutcome = LauncherTelemetryOutcome.Canceled;
+            telemetryFailure = LauncherTelemetryFailureCode.MicrosoftCanceled;
             ClientStatusText = "已取消正版认证";
             ShowToast("已取消 Microsoft 正版认证，游戏没有启动");
         }
         catch (MicrosoftAccountMismatchException exception)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.MicrosoftAccountMismatch;
             ClientStatusText = "Microsoft 账号不匹配";
             ActivePage = LauncherPage.Account;
             ShowToast(
@@ -1203,31 +1276,48 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (MicrosoftSignInFailedException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.MicrosoftSignInFailed;
             ClientStatusText = "Microsoft 登录失败";
             ShowToast("Microsoft 登录失败，请稍后重试");
         }
         catch (MinecraftSignInException exception)
         {
+            telemetryFailure = exception.Failure == MinecraftSignInFailure.ServiceUnavailable
+                ? LauncherTelemetryFailureCode.NetworkUnavailable
+                : LauncherTelemetryFailureCode.MinecraftOwnership;
             ClientStatusText = "正版身份验证失败";
             ShowToast(GetMinecraftSignInError(exception.Failure));
         }
         catch (MinecraftLaunchSessionExpiredException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.MinecraftSessionExpired;
             ClientStatusText = "游戏登录已过期";
             ShowToast("Minecraft 游戏凭据已过期，请重新启动");
         }
         catch (LauncherApiException exception)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.LaunchAuthorizationFailed;
             ClientStatusText = "进服授权失败";
             ShowToast(exception.ApiDetail ?? "暂时无法取得服务器进入权限");
         }
         catch (MinecraftAlreadyRunningException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.GameAlreadyRunning;
             ClientStatusText = "游戏正在运行";
             ShowToast("这个客户端已经在运行");
         }
         catch (MinecraftLaunchException exception)
         {
+            telemetryFailure = exception.Failure switch
+            {
+                MinecraftLaunchFailure.InvalidProfile =>
+                    LauncherTelemetryFailureCode.InvalidProfile,
+                MinecraftLaunchFailure.InvalidJavaSelection =>
+                    LauncherTelemetryFailureCode.InvalidJavaSelection,
+                MinecraftLaunchFailure.RuntimePreparation =>
+                    LauncherTelemetryFailureCode.RuntimePreparationFailed,
+                _ => LauncherTelemetryFailureCode.ProcessCreationFailed
+            };
             ClientStatusText = exception.Failure switch
             {
                 MinecraftLaunchFailure.InvalidProfile => "客户端启动信息无效",
@@ -1247,13 +1337,26 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
+            telemetryFailure = LauncherTelemetryFailureCode.NetworkUnavailable;
             ClientStatusText = "进服授权服务不可用";
             ShowToast("无法连接赫朝授权服务，请稍后再试");
         }
         finally
         {
+            await _telemetryService.RecordAsync(
+                LauncherTelemetryEventType.Launch,
+                telemetryOutcome,
+                telemetryFailure,
+                selectedServer.ClientProfileId,
+                profileVersion,
+                telemetryClock.Elapsed);
             IsProgressActive = false;
             UpdatePrimaryActionForState();
+        }
+
+        if (closeAfterLaunch)
+        {
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -1471,6 +1574,25 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
         }
+
+        var profileVersion = _clientProfiles.TryGetValue(
+                record.ProfileId,
+                out var profile)
+            ? profile.Version
+            : "unknown";
+        await _telemetryService.RecordAsync(
+            LauncherTelemetryEventType.GameExit,
+            record.ExitCode == 0
+                ? LauncherTelemetryOutcome.Success
+                : LauncherTelemetryOutcome.Failure,
+            record.ExitCode == 0
+                ? LauncherTelemetryFailureCode.None
+                : record.ExitCode is null
+                    ? LauncherTelemetryFailureCode.Unexpected
+                    : LauncherTelemetryFailureCode.GameExitedNonZero,
+            record.ProfileId,
+            profileVersion,
+            record.ExitedAt - record.StartedAt);
 
         DispatchToUi(() =>
         {
@@ -2238,6 +2360,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private void SetCurrentAccount(HechaoAccount? account)
     {
         _currentAccount = account;
+        if (account is not null)
+        {
+            _telemetryService.TryFlush();
+        }
         _accountStatusHint = null;
         if (account?.IsMinecraftLinked != true)
         {

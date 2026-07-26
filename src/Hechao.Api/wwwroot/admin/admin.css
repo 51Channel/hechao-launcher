@@ -1703,6 +1703,131 @@ dialog::backdrop {
     height: 17px;
 }
 
+.telemetry-heading {
+    margin-bottom: 16px;
+}
+
+.telemetry-heading .segmented-control {
+    flex: 0 0 auto;
+}
+
+.telemetry-summary {
+    margin-bottom: 14px;
+}
+
+.telemetry-operation-grid,
+.telemetry-table-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.telemetry-operation {
+    min-width: 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.telemetry-operation-heading {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+}
+
+.telemetry-operation-heading span,
+.telemetry-table-heading p {
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.telemetry-operation-heading h3,
+.telemetry-table-heading h3 {
+    margin: 4px 0 0;
+    font-size: 14px;
+}
+
+.telemetry-operation-heading > strong {
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.telemetry-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+}
+
+.telemetry-facts > div {
+    padding: 15px 18px;
+    border-right: 1px solid var(--line);
+}
+
+.telemetry-facts > div:last-child {
+    border-right: 0;
+}
+
+.telemetry-facts dt {
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.telemetry-facts dd {
+    margin: 7px 0 0;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 750;
+}
+
+.telemetry-table-grid > section {
+    min-width: 0;
+}
+
+.telemetry-table-heading {
+    min-height: 48px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 9px;
+}
+
+.telemetry-table-heading h3,
+.telemetry-table-heading p {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.telemetry-table-heading p {
+    margin-top: 5px;
+}
+
+.telemetry-table {
+    min-width: 520px;
+}
+
+.telemetry-table th:first-child,
+.telemetry-table td:first-child {
+    width: 46%;
+}
+
+.telemetry-failure-section {
+    margin-top: 4px;
+}
+
+.telemetry-failure-table {
+    min-width: 620px;
+}
+
+.telemetry-failure-table th:first-child,
+.telemetry-failure-table td:first-child {
+    width: 30%;
+}
+
 @media (max-width: 980px) {
     .console-shell {
         grid-template-columns: 78px minmax(0, 1fr);
@@ -1763,6 +1888,11 @@ dialog::backdrop {
 
     .summary-strip > div:nth-child(-n + 2) {
         border-bottom: 1px solid var(--line);
+    }
+
+    .telemetry-operation-grid,
+    .telemetry-table-grid {
+        grid-template-columns: 1fr;
     }
 
     .profile-metadata-grid {
@@ -1886,6 +2016,22 @@ dialog::backdrop {
     .summary-strip strong {
         margin-top: 4px;
         font-size: 19px;
+    }
+
+    .telemetry-heading .segmented-control {
+        width: 100%;
+    }
+
+    .telemetry-heading .segmented-control button {
+        flex: 1;
+    }
+
+    .telemetry-operation-heading {
+        align-items: flex-start;
+    }
+
+    .telemetry-facts > div {
+        padding: 13px;
     }
 
     .enrollment-layout {

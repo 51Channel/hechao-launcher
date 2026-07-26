@@ -15,6 +15,7 @@ using Hechao.Api.Diagnostics;
 using Hechao.Api.Distribution;
 using Hechao.Api.LuckPerms;
 using Hechao.Api.Monitoring;
+using Hechao.Api.Telemetry;
 using Hechao.Api.Velocity;
 using Hechao.Contracts;
 using Hechao.Distribution;
@@ -166,6 +167,15 @@ builder.Services.AddOptions<DiagnosticUploadOptions>()
         options => options.CleanupMinutes is >= 5 and <= 1440,
         "DiagnosticUploads:CleanupMinutes must be between 5 and 1440.")
     .ValidateOnStart();
+builder.Services.AddOptions<LauncherTelemetryOptions>()
+    .Bind(builder.Configuration.GetSection(LauncherTelemetryOptions.SectionName))
+    .Validate(
+        options => options.RetentionDays is >= 7 and <= 90,
+        "LauncherTelemetry:RetentionDays must be between 7 and 90.")
+    .Validate(
+        options => options.CleanupHours is >= 1 and <= 24,
+        "LauncherTelemetry:CleanupHours must be between 1 and 24.")
+    .ValidateOnStart();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
@@ -296,6 +306,18 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(10)
             }));
+    options.AddPolicy("telemetry", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            context.Connection.RemoteIpAddress?.ToString() ??
+            "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 60,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
     options.AddPolicy("admin", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
@@ -398,6 +420,8 @@ builder.Services.AddSingleton(serviceProvider =>
 builder.Services.AddSingleton<DiagnosticUploadStorage>();
 builder.Services.AddSingleton<DiagnosticUploadRepository>();
 builder.Services.AddHostedService<DiagnosticUploadCleanupService>();
+builder.Services.AddSingleton<LauncherTelemetryRepository>();
+builder.Services.AddHostedService<LauncherTelemetryCleanupService>();
 builder.Services.AddHttpClient<ForumSessionRevocationClient>();
 builder.Services.AddHostedService<ForumSessionRevocationDeliveryService>();
 builder.Services.AddHttpClient<MinecraftServicesClient>(client =>
@@ -515,6 +539,9 @@ app.MapPost("/v1/auth/logout-all", LogoutAllAsync)
     .RequireRateLimiting("authentication");
 app.MapGet("/v1/me", GetCurrentAccount)
     .RequireAuthorization();
+app.MapPost("/v1/telemetry/events", ImportLauncherTelemetryAsync)
+    .RequireAuthorization()
+    .RequireRateLimiting("telemetry");
 app.MapPost("/v1/velocity/launch-grants", CreateVelocityLaunchGrantAsync)
     .RequireAuthorization()
     .RequireRateLimiting("authentication");
@@ -625,6 +652,7 @@ adminApi.MapDelete(
         DeleteAdminServerAccessRuleAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
+adminApi.MapGet("/telemetry/summary", GetAdminLauncherTelemetrySummaryAsync);
 app.MapDiagnosticUploads(adminApi);
 
 app.MapAdminWebEndpoints();
@@ -670,6 +698,35 @@ async Task<IResult> CheckReadinessAsync(
         database = "unavailable",
         checkedAt = DateTimeOffset.UtcNow
     }, statusCode: StatusCodes.Status503ServiceUnavailable);
+}
+
+async Task<IResult> ImportLauncherTelemetryAsync(
+    LauncherTelemetryBatchRequest request,
+    LauncherTelemetryRepository repository,
+    TimeProvider timeProvider,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var account = context.User.GetAccount();
+    if (account is null)
+    {
+        return AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "登录会话无效。");
+    }
+
+    var errors = LauncherTelemetryRules.Validate(
+        request,
+        timeProvider.GetUtcNow());
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    return Results.Ok(await repository.ImportAsync(
+        account.UserId,
+        request,
+        cancellationToken));
 }
 
 async Task<IResult> LoginHechaoAccountAsync(
@@ -1997,6 +2054,25 @@ async Task<IResult> GetAdminAuditLogsAsync(
     return Results.Ok(await repository.GetAuditLogsAsync(
         beforeId,
         pageSize,
+        cancellationToken));
+}
+
+async Task<IResult> GetAdminLauncherTelemetrySummaryAsync(
+    int? hours,
+    LauncherTelemetryRepository repository,
+    CancellationToken cancellationToken)
+{
+    var windowHours = hours ?? 24;
+    if (!LauncherTelemetryRules.IsSupportedWindow(windowHours))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["hours"] = ["统计窗口只支持 24、168 或 720 小时。"]
+        });
+    }
+
+    return Results.Ok(await repository.GetSummaryAsync(
+        windowHours,
         cancellationToken));
 }
 

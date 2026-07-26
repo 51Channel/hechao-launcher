@@ -36,7 +36,8 @@ public partial class MainWindow : Window
                 gameLauncherService,
                 new JsonDownloadHistoryStore(),
                 new JsonGameDiagnosticsService(),
-                new GameDiagnosticUploadService(apiClient));
+                new GameDiagnosticUploadService(apiClient),
+                new JsonLauncherTelemetryService(apiClient));
         }
         catch (ClientStorageMigrationException exception)
         {

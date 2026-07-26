@@ -7,6 +7,8 @@ const state = {
     servers: [],
     users: [],
     profiles: [],
+    telemetry: null,
+    telemetryHours: 24,
     diagnostics: [],
     auditEntries: [],
     auditBeforeId: null,
@@ -58,11 +60,22 @@ function cacheElements() {
         "account-avatar", "account-name", "account-group", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
         "servers-section", "users-section", "profiles-section",
+        "telemetry-section",
         "diagnostics-section", "audit-section",
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
         "server-table-body", "server-empty-state", "profile-count",
         "profile-table-body", "profile-empty-state",
+        "telemetry-event-count", "telemetry-user-count",
+        "telemetry-download-attempts", "telemetry-download-failure-rate",
+        "telemetry-download-bytes", "telemetry-download-succeeded",
+        "telemetry-download-failed", "telemetry-download-canceled",
+        "telemetry-launch-failure-rate", "telemetry-launch-attempts",
+        "telemetry-launch-succeeded", "telemetry-launch-failed",
+        "telemetry-launcher-version-body", "telemetry-launcher-version-empty",
+        "telemetry-profile-version-body", "telemetry-profile-version-empty",
+        "telemetry-failure-body", "telemetry-failure-empty",
+        "telemetry-period-label",
         "diagnostic-count", "diagnostic-table-body",
         "diagnostic-empty-state", "audit-list", "audit-empty-state",
         "load-more-audit-button", "server-drawer", "server-form",
@@ -149,6 +162,19 @@ function bindEvents() {
     });
     document.querySelectorAll("[data-view]").forEach(button => {
         button.addEventListener("click", () => switchView(button.dataset.view));
+    });
+    document.querySelectorAll("[data-telemetry-hours]").forEach(button => {
+        button.addEventListener("click", async () => {
+            const hours = Number(button.dataset.telemetryHours);
+            if (![24, 168, 720].includes(hours) ||
+                hours === state.telemetryHours) {
+                return;
+            }
+            state.telemetryHours = hours;
+            document.querySelectorAll("[data-telemetry-hours]").forEach(item =>
+                item.classList.toggle("active", item === button));
+            await reloadTelemetry();
+        });
     });
     elements["create-server-button"].addEventListener("click", openCreateServer);
     elements["create-profile-button"].addEventListener("click", openCreateProfile);
@@ -512,19 +538,22 @@ async function enterConsole() {
 async function loadConsoleData() {
     setBusy(elements["refresh-button"], true);
     try {
-        const [servers, profiles, diagnostics, users] = await Promise.all([
+        const [servers, profiles, diagnostics, users, telemetry] = await Promise.all([
             api("/v1/admin/catalog/servers"),
             api("/v1/admin/catalog/client-profiles"),
             api("/v1/admin/diagnostics?limit=200"),
-            api(userSearchPath())
+            api(userSearchPath()),
+            api(`/v1/admin/telemetry/summary?hours=${state.telemetryHours}`)
         ]);
         state.servers = servers;
         state.profiles = profiles;
         state.diagnostics = diagnostics;
         state.users = users;
+        state.telemetry = telemetry;
         renderServers();
         renderUsers();
         renderProfiles();
+        renderTelemetry();
         renderDiagnostics();
         populateProfileOptions();
         if (state.activeView === "audit" && state.auditEntries.length === 0) {
@@ -552,7 +581,7 @@ async function refreshCurrentView() {
 }
 
 function switchView(view) {
-    if (!["servers", "users", "profiles", "diagnostics", "audit"].includes(view)) {
+    if (!["servers", "users", "profiles", "telemetry", "diagnostics", "audit"].includes(view)) {
         return;
     }
     state.activeView = view;
@@ -562,6 +591,7 @@ function switchView(view) {
         servers: "服务器目录",
         users: "玩家与权限",
         profiles: "客户端档案",
+        telemetry: "运行数据",
         diagnostics: "玩家诊断包",
         audit: "审计记录"
     };
@@ -570,11 +600,170 @@ function switchView(view) {
     elements["servers-section"].hidden = view !== "servers";
     elements["users-section"].hidden = view !== "users";
     elements["profiles-section"].hidden = view !== "profiles";
+    elements["telemetry-section"].hidden = view !== "telemetry";
     elements["diagnostics-section"].hidden = view !== "diagnostics";
     elements["audit-section"].hidden = view !== "audit";
     if (view === "audit" && state.auditEntries.length === 0) {
         loadAudit(true);
     }
+}
+
+async function reloadTelemetry() {
+    setBusy(elements["refresh-button"], true);
+    try {
+        state.telemetry = await api(
+            `/v1/admin/telemetry/summary?hours=${state.telemetryHours}`);
+        renderTelemetry();
+        elements["last-refreshed"].textContent =
+            `更新于 ${new Date().toLocaleTimeString("zh-CN", {
+                hour: "2-digit",
+                minute: "2-digit"
+            })}`;
+    } catch (error) {
+        showToast(error.message, true);
+    } finally {
+        setBusy(elements["refresh-button"], false);
+    }
+}
+
+function renderTelemetry() {
+    const summary = state.telemetry;
+    if (!summary) return;
+
+    elements["telemetry-event-count"].textContent =
+        summary.eventCount.toLocaleString("zh-CN");
+    elements["telemetry-user-count"].textContent =
+        summary.uniqueUsers.toLocaleString("zh-CN");
+    elements["telemetry-download-attempts"].textContent =
+        summary.downloads.attempts.toLocaleString("zh-CN");
+    elements["telemetry-download-failure-rate"].textContent =
+        formatPercentage(summary.downloads.failureRate);
+    elements["telemetry-download-bytes"].textContent =
+        formatBytes(summary.downloads.bytes);
+    elements["telemetry-download-succeeded"].textContent =
+        summary.downloads.succeeded.toLocaleString("zh-CN");
+    elements["telemetry-download-failed"].textContent =
+        summary.downloads.failed.toLocaleString("zh-CN");
+    elements["telemetry-download-canceled"].textContent =
+        summary.downloads.canceled.toLocaleString("zh-CN");
+    elements["telemetry-launch-failure-rate"].textContent =
+        formatPercentage(summary.launches.failureRate);
+    elements["telemetry-launch-attempts"].textContent =
+        summary.launches.attempts.toLocaleString("zh-CN");
+    elements["telemetry-launch-succeeded"].textContent =
+        summary.launches.succeeded.toLocaleString("zh-CN");
+    elements["telemetry-launch-failed"].textContent =
+        summary.launches.failed.toLocaleString("zh-CN");
+    elements["telemetry-period-label"].textContent =
+        `${formatDateTime(summary.from)} 至 ${formatDateTime(summary.to)}`;
+
+    const launcherBody = elements["telemetry-launcher-version-body"];
+    launcherBody.replaceChildren();
+    summary.launcherVersions.forEach(version => {
+        const percentage = summary.uniqueUsers === 0
+            ? 0
+            : version.users * 100 / summary.uniqueUsers;
+        const row = document.createElement("tr");
+        row.append(
+            textCell(`v${version.launcherVersion}`),
+            textCell(version.users.toLocaleString("zh-CN")),
+            textCell(formatPercentage(percentage)));
+        launcherBody.append(row);
+    });
+    toggleTelemetryTable(
+        launcherBody,
+        elements["telemetry-launcher-version-empty"],
+        summary.launcherVersions.length > 0);
+
+    const profileBody = elements["telemetry-profile-version-body"];
+    profileBody.replaceChildren();
+    summary.profileVersions.forEach(version => {
+        const profile = state.profiles.find(item => item.id === version.profileId);
+        const row = document.createElement("tr");
+        row.append(
+            identityTextCell(
+                profile?.displayName || version.profileId,
+                version.profileId),
+            textCell(`v${version.profileVersion}`),
+            textCell(
+                `${version.users.toLocaleString("zh-CN")} / ` +
+                version.events.toLocaleString("zh-CN")));
+        profileBody.append(row);
+    });
+    toggleTelemetryTable(
+        profileBody,
+        elements["telemetry-profile-version-empty"],
+        summary.profileVersions.length > 0);
+
+    const failureBody = elements["telemetry-failure-body"];
+    failureBody.replaceChildren();
+    summary.failures.forEach(failure => {
+        const row = document.createElement("tr");
+        row.append(
+            textCell(telemetryEventText(failure.type)),
+            textCell(telemetryFailureText(failure.failureCode)),
+            textCell(failure.count.toLocaleString("zh-CN")));
+        failureBody.append(row);
+    });
+    toggleTelemetryTable(
+        failureBody,
+        elements["telemetry-failure-empty"],
+        summary.failures.length > 0);
+}
+
+function toggleTelemetryTable(body, emptyState, hasData) {
+    body.closest("table").hidden = !hasData;
+    emptyState.hidden = hasData;
+}
+
+function formatPercentage(value) {
+    const number = Number(value);
+    return `${Number.isFinite(number) ? number.toFixed(number >= 10 ? 1 : 2) : "0"}%`;
+}
+
+function telemetryEventText(type) {
+    const labels = {
+        LauncherStarted: "启动器启动",
+        Install: "安装客户端",
+        Repair: "修复客户端",
+        Rollback: "回滚版本",
+        Launch: "启动 Minecraft",
+        GameExit: "Minecraft 退出"
+    };
+    return labels[type] || type;
+}
+
+function telemetryFailureText(code) {
+    const labels = {
+        UserCanceled: "玩家取消",
+        AuthenticationRequired: "赫朝登录失效",
+        ProfileUnavailable: "客户端档案未发布",
+        ApiUnavailable: "API 服务不可用",
+        SignatureInvalid: "发布签名无效",
+        IntegrityFailed: "文件校验失败",
+        InsufficientDiskSpace: "磁盘空间不足",
+        InstallBusy: "客户端正被占用",
+        RuntimePreparationFailed: "Java 准备失败",
+        NetworkUnavailable: "网络不可用",
+        IoFailure: "本地文件读写失败",
+        RollbackUnavailable: "回滚版本不可用",
+        MinecraftIdentityRequired: "未绑定正版身份",
+        MicrosoftReauthenticationRequired: "Microsoft 凭据过期",
+        MicrosoftNotConfigured: "Microsoft 登录未配置",
+        MicrosoftCanceled: "取消 Microsoft 登录",
+        MicrosoftAccountMismatch: "Microsoft 账号不匹配",
+        MicrosoftSignInFailed: "Microsoft 登录失败",
+        MinecraftOwnership: "Minecraft 所有权验证失败",
+        MinecraftSessionExpired: "游戏会话过期",
+        LaunchAuthorizationFailed: "进服授权失败",
+        GameAlreadyRunning: "游戏已在运行",
+        InvalidProfile: "客户端启动信息无效",
+        InvalidJavaSelection: "Java 版本不兼容",
+        ProcessCreationFailed: "游戏进程创建失败",
+        GameExitedNonZero: "Minecraft 异常退出",
+        Unexpected: "未预期错误"
+    };
+    return labels[code] || code;
 }
 
 function renderServers() {
@@ -677,6 +866,19 @@ function profileCell(server) {
 function textCell(value) {
     const cell = document.createElement("td");
     cell.textContent = value;
+    return cell;
+}
+
+function identityTextCell(primary, secondary) {
+    const cell = document.createElement("td");
+    const stack = document.createElement("div");
+    stack.className = "meta-stack";
+    const strong = document.createElement("strong");
+    strong.textContent = primary;
+    const span = document.createElement("span");
+    span.textContent = secondary;
+    stack.append(strong, span);
+    cell.append(stack);
     return cell;
 }
 

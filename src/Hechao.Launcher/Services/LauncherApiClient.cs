@@ -10,7 +10,7 @@ using Hechao.Distribution;
 
 namespace Hechao.Launcher.Services;
 
-public sealed class LauncherApiClient
+public sealed class LauncherApiClient : ILauncherTelemetryApiClient
 {
     private const string DefaultApiBaseUrl = "https://launcher-api.hechao.world/";
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
@@ -301,6 +301,38 @@ public sealed class LauncherApiClient
         return await ReadRequiredAsync<VelocityLaunchGrantResponse>(retryResponse, cancellationToken);
     }
 
+    public async Task<LauncherTelemetryBatchResponse> SubmitTelemetryAsync(
+        LauncherTelemetryBatchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendTelemetryRequestAsync(
+            request,
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized ||
+            _session is null)
+        {
+            return await ReadRequiredAsync<LauncherTelemetryBatchResponse>(
+                firstResponse,
+                cancellationToken);
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendTelemetryRequestAsync(
+            request,
+            accessToken,
+            cancellationToken);
+        return await ReadRequiredAsync<LauncherTelemetryBatchResponse>(
+            retryResponse,
+            cancellationToken);
+    }
+
     public async Task<DiagnosticUploadAuthorizationResponse> CreateDiagnosticUploadAsync(
         DiagnosticUploadCreateRequest request,
         CancellationToken cancellationToken = default)
@@ -554,6 +586,28 @@ public sealed class LauncherApiClient
                 options: SerializerOptions)
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendTelemetryRequestAsync(
+        LauncherTelemetryBatchRequest telemetryRequest,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "v1/telemetry/events")
+        {
+            Content = JsonContent.Create(
+                telemetryRequest,
+                options: SerializerOptions)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            accessToken);
         return await _httpClient.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,

@@ -263,16 +263,16 @@ for _ in {1..40}; do
   sleep 1
 done
 [[ "$ready" == true ]] || fail "candidate did not become ready"
-[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.17.0" ]] ||
+[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.18.0" ]] ||
   fail "candidate reported an unexpected version"
 
 migration_count="$(
   docker exec -u postgres "$container" \
     psql --username="$database_admin" --dbname="$database_name" \
     --tuples-only --no-align \
-    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version = 14;"
+    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version = 15;"
 )"
-[[ "$migration_count" == "1" ]] || fail "migration 14 was not applied"
+[[ "$migration_count" == "1" ]] || fail "migration 15 was not applied"
 
 for asset in index.html admin.js admin.css; do
   status="$(
@@ -288,6 +288,10 @@ grep -Fq 'profile-channel-list' "${response_root}/index.html" ||
   fail "admin page does not contain release channels"
 grep -Fq 'submitProfilePause' "${response_root}/admin.js" ||
   fail "admin script does not contain release pause workflow"
+grep -Fq 'telemetry-section' "${response_root}/index.html" ||
+  fail "admin page does not contain launcher telemetry"
+grep -Fq 'renderTelemetry' "${response_root}/admin.js" ||
+  fail "admin script does not contain launcher telemetry rendering"
 
 suffix="$(openssl rand -hex 4)"
 admin_username="profadm${suffix}"
@@ -347,6 +351,64 @@ login_status="$(
 )"
 assert_status 200 "$login_status" "admin launcher login"
 admin_access_token="$(json_value "${response_root}/admin-login.json" '.accessToken')"
+
+telemetry_now="$(date --utc +'%Y-%m-%dT%H:%M:%SZ')"
+telemetry_event_a="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+telemetry_event_b="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+telemetry_payload="$(
+  jq -cn \
+    --arg eventA "$telemetry_event_a" \
+    --arg eventB "$telemetry_event_b" \
+    --arg occurredAt "$telemetry_now" \
+    '{
+      events:[
+        {
+          eventId:$eventA,
+          type:"Install",
+          outcome:"Failure",
+          failureCode:"NetworkUnavailable",
+          launcherVersion:"0.11.13",
+          occurredAt:$occurredAt,
+          profileId:"activity-neoforge-1.21.11",
+          profileVersion:"1.0.10",
+          durationMilliseconds:1200,
+          bytes:4096
+        },
+        {
+          eventId:$eventB,
+          type:"Launch",
+          outcome:"Success",
+          failureCode:"None",
+          launcherVersion:"0.11.13",
+          occurredAt:$occurredAt,
+          profileId:"activity-neoforge-1.21.11",
+          profileVersion:"1.0.10",
+          durationMilliseconds:800,
+          bytes:null
+        }
+      ]
+    }'
+)"
+for attempt in first duplicate; do
+  telemetry_status="$(
+    curl --silent --show-error \
+      --output "${response_root}/telemetry-${attempt}.json" \
+      --write-out '%{http_code}' \
+      --header "Authorization: Bearer ${admin_access_token}" \
+      --header 'Content-Type: application/json' \
+      --data "$telemetry_payload" \
+      "${base_url}/v1/telemetry/events"
+  )"
+  assert_status 200 "$telemetry_status" "launcher telemetry ${attempt} submission"
+done
+[[ "$(json_value "${response_root}/telemetry-first.json" '.accepted')" == "2" ]] ||
+  fail "first telemetry submission was not accepted"
+[[ "$(json_value "${response_root}/telemetry-first.json" '.duplicates')" == "0" ]] ||
+  fail "first telemetry submission unexpectedly contained duplicates"
+[[ "$(json_value "${response_root}/telemetry-duplicate.json" '.accepted')" == "0" ]] ||
+  fail "duplicate telemetry submission inserted rows"
+[[ "$(json_value "${response_root}/telemetry-duplicate.json" '.duplicates')" == "2" ]] ||
+  fail "duplicate telemetry submission was not idempotent"
 
 ticket_status="$(
   curl --silent --show-error \
@@ -492,6 +554,23 @@ admin_json_write() {
     --data "$payload" \
     "${base_url}${path}"
 }
+
+telemetry_summary_status="$(
+  admin_get \
+    "/v1/admin/telemetry/summary?hours=24" \
+    "${response_root}/telemetry-summary.json"
+)"
+assert_status 200 "$telemetry_summary_status" "launcher telemetry summary"
+[[ "$(json_value "${response_root}/telemetry-summary.json" '.downloads.attempts')" == "1" ]] ||
+  fail "telemetry summary did not include the download attempt"
+[[ "$(json_value "${response_root}/telemetry-summary.json" '.downloads.failed')" == "1" ]] ||
+  fail "telemetry summary did not include the download failure"
+[[ "$(json_value "${response_root}/telemetry-summary.json" '.launches.succeeded')" == "1" ]] ||
+  fail "telemetry summary did not include the successful launch"
+[[ "$(json_value "${response_root}/telemetry-summary.json" '.launcherVersions[0].launcherVersion')" == "0.11.13" ]] ||
+  fail "telemetry summary did not include launcher version usage"
+[[ "$(json_value "${response_root}/telemetry-summary.json" '.failures[0].failureCode')" == "NetworkUnavailable" ]] ||
+  fail "telemetry summary did not include the fixed failure code"
 
 create_payload="$(
   jq -cn \
@@ -708,7 +787,8 @@ audit_count="$(
 )"
 ((audit_count >= 8)) || fail "release audit trail is incomplete"
 
-echo "PASS: API 0.17.0 isolated client-profile release smoke test"
-echo "Evidence: migration=14, signed-import=verified, immutable-storage=verified"
+echo "PASS: API 0.18.0 isolated client-profile release and telemetry smoke test"
+echo "Evidence: migration=15, telemetry-idempotency=verified, telemetry-summary=verified"
+echo "Evidence: signed-import=verified, immutable-storage=verified"
 echo "Evidence: test-gray-production=verified, rollback=verified, pause-auto-rollback=verified"
 echo "Evidence: resume-no-promote=verified, catalog-cohort=verified, revision-conflict=verified"
