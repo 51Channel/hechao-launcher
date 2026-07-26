@@ -283,6 +283,112 @@ public sealed class MinecraftLaunchBuildSmokeTests
         Assert.Contains("mc.hehe11.fun", arguments);
     }
 
+    [Fact]
+    [Trait("Category", "Smoke")]
+    public async Task BuildProcessAsync_BuildsVanillaProcessWithoutStartingIt()
+    {
+        var dataRoot = Environment.GetEnvironmentVariable("HECHAO_VANILLA_SMOKE_DATA_ROOT");
+        var runtimeRoot = Environment.GetEnvironmentVariable("HECHAO_VANILLA_SMOKE_RUNTIME_ROOT");
+        if (string.IsNullOrWhiteSpace(dataRoot) ||
+            string.IsNullOrWhiteSpace(runtimeRoot))
+        {
+            return;
+        }
+
+        using var process = await BuildProcessAsync(
+            dataRoot,
+            runtimeRoot,
+            "vanilla-1.21.11");
+        var arguments = GetArguments(process.StartInfo);
+
+        Assert.Contains("net.minecraft.client.main.Main", arguments);
+        Assert.DoesNotContain(
+            "net.fabricmc.loader",
+            arguments,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("--quickPlayMultiplayer", arguments);
+        Assert.Contains("mc.hehe11.fun", arguments);
+    }
+
+    [Fact]
+    [Trait("Category", "Smoke")]
+    public async Task BuildProcessAsync_BuildsForgeProcessWithoutStartingIt()
+    {
+        var dataRoot = Environment.GetEnvironmentVariable("HECHAO_FORGE_SMOKE_DATA_ROOT");
+        var runtimeRoot = Environment.GetEnvironmentVariable("HECHAO_FORGE_SMOKE_RUNTIME_ROOT");
+        if (string.IsNullOrWhiteSpace(dataRoot) ||
+            string.IsNullOrWhiteSpace(runtimeRoot))
+        {
+            return;
+        }
+
+        using var process = await BuildProcessAsync(
+            dataRoot,
+            runtimeRoot,
+            "forge-1.20.1");
+        var arguments = GetArguments(process.StartInfo);
+
+        Assert.Contains("cpw.mods.bootstraplauncher.BootstrapLauncher", arguments);
+        Assert.Contains("--fml.forgeVersion", arguments);
+        Assert.Contains("47.4.0", arguments);
+        Assert.Contains("--quickPlayMultiplayer", arguments);
+        Assert.Contains("mc.hehe11.fun", arguments);
+    }
+
+    [Fact]
+    [Trait("Category", "Smoke")]
+    public async Task BuildProcessAsync_BuildsDollNightProcessWithoutStartingIt()
+    {
+        var dataRoot = Environment.GetEnvironmentVariable("HECHAO_DOLLNIGHT_SMOKE_DATA_ROOT");
+        var runtimeRoot = Environment.GetEnvironmentVariable("HECHAO_DOLLNIGHT_SMOKE_RUNTIME_ROOT");
+        if (string.IsNullOrWhiteSpace(dataRoot) ||
+            string.IsNullOrWhiteSpace(runtimeRoot))
+        {
+            return;
+        }
+
+        using var process = await BuildProcessAsync(
+            dataRoot,
+            runtimeRoot,
+            "dollnight-1.21.11");
+        var arguments = GetArguments(process.StartInfo);
+
+        Assert.Contains("net.fabricmc.loader.impl.launch.knot.KnotClient", arguments);
+        Assert.Contains("fabric-loader-0.19.2", arguments);
+        Assert.Contains("--quickPlayMultiplayer", arguments);
+        Assert.Contains("mc.hehe11.fun", arguments);
+    }
+
+    private static async Task<Process> BuildProcessAsync(
+        string dataRoot,
+        string runtimeRoot,
+        string profileId)
+    {
+        using var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(30)
+        };
+        var launcher = new MinecraftGameLauncherService(
+            httpClient,
+            MinecraftServerEndpoint.Parse("mc.hehe11.fun"),
+            microsoftClientId: null,
+            runtimeRoot);
+        var request = new MinecraftLaunchRequest(
+            dataRoot,
+            profileId,
+            4096,
+            new MinecraftLaunchSession(
+                "HechaoSmokeTest",
+                Guid.Parse("12345678-1234-1234-1234-123456789abc"),
+                "not-a-real-minecraft-token",
+                DateTimeOffset.UtcNow.AddMinutes(10),
+                Xuid: null));
+
+        return await launcher.BuildProcessAsync(
+            request,
+            cancellationToken: CancellationToken.None);
+    }
+
     private static string GetArguments(ProcessStartInfo startInfo)
     {
         return startInfo.ArgumentList.Count > 0
