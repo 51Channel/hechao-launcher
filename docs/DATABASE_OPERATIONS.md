@@ -1,7 +1,7 @@
 # 启动器数据库运维
 
 > 当前数据库：PostgreSQL 16
-> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳和审计数据
+> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳、诊断上传、单服访问规则和审计数据
 
 ## 1. 运行边界
 
@@ -44,6 +44,8 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `6` | `admin_web_sessions` | 后台票据、独立浏览器会话、TOTP 凭据与注册状态 |
 | `7` | `hechao_accounts` | 赫朝账号名、邮箱与密码哈希 |
 | `8` | `forum_account_bridge` | 显示名称唯一约束与论坛外部身份映射 |
+| `9` | `diagnostic_uploads` | 玩家诊断上传、一次性令牌、配额、状态与到期清理 |
+| `10` | `admin_access_and_server_schedules` | 服务器公告/开放排期、单服规则修订号与查询索引 |
 
 ## 4. 自动备份
 
@@ -73,6 +75,12 @@ API `0.10.0` 发布前备份 `/var/backups/hechao-launcher/database/hechao-launc
 `199e8811da08e9f9c2f1db88866f9dd51574ab9b043b6ba147b3092ad0413c36`。
 备份服务结果为 `success`，同名校验文件和 `pg_restore --list` 均通过；生成过程
 没有重启 API。
+
+API `0.14.1` 发布前、迁移 10 已应用后的数据库备份
+`/var/backups/hechao-launcher/database/hechao-launcher-20260726T191147Z.dump`
+为 `94,908` 字节，SHA-256
+`c2d9563544bffdf4060bc51ff93a5c27d1d13c84c1d25f6ec3c963aaa7181029`。
+同名校验文件与 `pg_restore --list` 均通过；当前迁移记录为 `1` 至 `10`。
 
 ## 5. 恢复边界
 

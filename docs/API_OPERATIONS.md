@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.13.0-20260726T173536Z`
-> 本地 API 源码版本：`0.13.0`
-> 当前阶段：统一社区账号、三份生产档案、并行分发、授权定向路由和诊断上传已部署；启动器 `0.11.12` 为源码候选，管理员 Web 已启用但尚未登记 MFA
+> 当前线上版本：`0.14.1-20260726T190856Z`
+> 本地 API 源码版本：`0.14.1`
+> 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期和单服访问规则已部署；启动器 `0.11.12` 为源码候选，管理员 Web 已启用但尚未登记 MFA
 
 ## 1. 运行边界
 
@@ -30,6 +30,7 @@
 - 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF
 - 玩家诊断端点：`POST /v1/diagnostics/uploads` 与一次性令牌保护的 `PUT /v1/diagnostics/uploads/{id}`
 - 管理员诊断端点：`GET /v1/admin/diagnostics` 与 `GET /v1/admin/diagnostics/{id}/download`，要求 MFA
+- 管理员玩家端点：`GET /v1/admin/users`、`GET /v1/admin/users/{userId}/access-preview` 及单服规则 `PUT`/`DELETE`
 - 日志：systemd journal
 
 API 不监听公网地址，不开放 UFW 高位端口，也不负责启动或停止 Minecraft 服务端。
@@ -136,6 +137,14 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 [`API_RELEASE_0.13.0.md`](API_RELEASE_0.13.0.md) 与
 [`DIAGNOSTIC_UPLOAD_OPERATIONS.md`](DIAGNOSTIC_UPLOAD_OPERATIONS.md)。
 
+`0.14.1` 新增服务器公告与一次性开放/关闭时间、玩家搜索、最终访问结果预览及
+带原因、到期时间和修订号的单服允许/拒绝规则。迁移 10 只增加服务器排期字段和
+访问规则修订字段；目录和 Velocity 授权使用同一排期状态，手动 `Maintenance` /
+`Closed` 始终优先。首次 `0.14.0` 切换在路由构建阶段发现 `DELETE` 请求体不能
+自动推断，安装脚本在就绪超时前自动恢复 `0.13.0`。`0.14.1` 显式声明请求体，
+先在独立端口完成真实配置启动预检，再原子切换生产。完整记录见
+[`API_RELEASE_0.14.1.md`](API_RELEASE_0.14.1.md)。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
@@ -221,7 +230,8 @@ systemctl reload nginx
 | `0.10.0-20260724T101528Z` | `ECE445F76682775917D089630B6C0105AEE04707EE08D36886E53514E8CDCB11` | 账号安全端点上线；生产回归发现带参数多语句命令与 Npgsql 预处理不兼容，保留为回溯版本 |
 | `0.10.1-20260724T102830Z` | `07452219F072D2CD91E53F427819DC2F13B9E887D278D2F817110F462AC7CBE3` | 单语句事务热修复、全部设备退出、解除绑定、精确清理、公网与旧业务回归通过 |
 | `0.11.1-20260725T165050Z` | `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45` | 论坛统一账号、并行对象签名、独立令牌桶、`Retry-After`、真实基础档案续传与公网回归通过；历史版本 |
-| `0.12.0-20260725T203001Z` | `B46A22280243BA9801EB66FD628ED598CD27F0FED7995788C4452D222C3B27D1` | 授权目标定向、PVP 目录与生产合成授权回归通过；直接回滚目标 |
-| `0.13.0-20260726T173536Z` | `F2B7466A9AFAB142F110D7C2EB692DE1BA2FDD653F7CF42D4AE31D5BF7E8C811` | 诊断上传、失败路径、审计、14 天清理与旧业务回归通过；当前线上版本 |
+| `0.12.0-20260725T203001Z` | `B46A22280243BA9801EB66FD628ED598CD27F0FED7995788C4452D222C3B27D1` | 授权目标定向、PVP 目录与生产合成授权回归通过；历史版本 |
+| `0.13.0-20260726T173536Z` | `F2B7466A9AFAB142F110D7C2EB692DE1BA2FDD653F7CF42D4AE31D5BF7E8C811` | 诊断上传、失败路径、审计、14 天清理与旧业务回归通过；`0.14.1` 的直接回滚目标 |
+| `0.14.1-20260726T190856Z` | `F02CC7AAC3AE4FC8726548E3777D231D035B03E19487CAB32627333CEBBB8A3A` | 排期、公告、玩家搜索、访问预览、单服规则、迁移 10、启动预检与公网回归通过；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号、授权定向路由和诊断上传已部署。API `0.13.0` 为当前线上版本，启动器 `0.11.12` 为源码候选；管理员 Web 已启用但尚未登记 MFA。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号、授权定向路由、诊断上传、服务器排期和单服规则已部署。API `0.14.1` 为当前线上版本，启动器 `0.11.12` 为源码候选；管理员 Web 已启用但尚未登记 MFA。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

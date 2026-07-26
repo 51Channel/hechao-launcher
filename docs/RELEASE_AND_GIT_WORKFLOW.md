@@ -91,7 +91,7 @@ feat: add grant-directed Velocity routing
 - document deployment, production smoke, rollback and remaining acceptance
 
 Tests: dotnet 200/200; Velocity 11/11
-Production: API 0.13.0 healthy; plugin 0.2.0 loaded in monitor mode
+Production: API 0.14.1 healthy; plugin 0.2.0 loaded in monitor mode
 ```
 
 提交正文只记录非秘密事实。远端推送后再把提交 ID 和标签补入发布记录；若因此修改文档，应形成一个小型 `docs:` 或 `ops:` 提交。
