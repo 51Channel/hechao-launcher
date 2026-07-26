@@ -28,6 +28,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private LauncherPage _activePage = LauncherPage.Servers;
     private ServerSummary? _selectedServer;
     private LocalProfileState _selectedProfileState = LocalProfileState.Missing;
+    private InstalledProfileState? _rollbackCandidate;
     private double _updateProgress;
     private string _clientStatusText = "正在检查客户端";
     private string _primaryActionText = "安装客户端";
@@ -436,6 +437,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            SetRollbackCandidate(null);
             OnPropertyChanged(nameof(SelectedServerStatusText));
             OnPropertyChanged(nameof(SelectedServerLoaderText));
             OnPropertyChanged(nameof(SelectedServerPlayerText));
@@ -507,6 +509,16 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
     public bool IsSelectedServerOnline => SelectedServer?.Status == ServerStatus.Online;
+    public bool CanRollbackSelectedProfile =>
+        _rollbackCandidate is not null &&
+        !IsProgressActive &&
+        !IsSelectedProfileRunning();
+    public string RollbackCandidateVersion => _rollbackCandidate?.Version ?? string.Empty;
+    public string RollbackProfileToolTip => _rollbackCandidate is null
+        ? "当前没有可回滚的上一版本"
+        : IsSelectedProfileRunning()
+            ? "请先退出当前客户端"
+            : $"回滚到 v{_rollbackCandidate.Version}";
 
     public double UpdateProgress
     {
@@ -542,6 +554,8 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 RepairCommand.RaiseCanExecuteChanged();
                 PrimaryActionCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(CanRollbackSelectedProfile));
+                OnPropertyChanged(nameof(RollbackProfileToolTip));
             }
         }
     }
@@ -883,13 +897,15 @@ public sealed class MainWindowViewModel : ObservableObject
             _isInstallingClient = true;
             BeginDownload(profile, isRepair);
             CancelDownloadCommand.RaiseCanExecuteChanged();
-            var progress = new Progress<ClientInstallProgress>(ApplyInstallProgress);
+            var progress = new InlineProgress<ClientInstallProgress>(
+                value => DispatchToUi(() => ApplyInstallProgress(value)));
             await _installationService.InstallAsync(
                 profile,
                 new ClientInstallationOptions(ClientDirectory, KeepDownloadsAfterClose),
                 progress,
                 _activeInstallCancellation.Token);
             _selectedProfileState = LocalProfileState.Ready;
+            await RefreshRollbackCandidateAsync(profile, SelectedServer?.Id);
             NotifySelectedProfileJavaPropertiesChanged();
             CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
             UpdateProgress = 100;
@@ -977,6 +993,114 @@ public sealed class MainWindowViewModel : ObservableObject
         return succeeded;
     }
 
+    public async Task<bool> RollbackSelectedProfileAsync()
+    {
+        var selectedServer = SelectedServer;
+        if (selectedServer is null ||
+            !_clientProfiles.TryGetValue(selectedServer.ClientProfileId, out var profile))
+        {
+            ShowToast("当前服务器没有可回滚的客户端档案");
+            return false;
+        }
+
+        if (_rollbackCandidate is null)
+        {
+            ShowToast("当前没有可回滚的上一版本");
+            return false;
+        }
+
+        if (IsProgressActive)
+        {
+            return false;
+        }
+
+        if (_gameLauncherService.IsProfileRunning(profile.Id))
+        {
+            ShowToast("请先退出当前客户端再回滚版本");
+            return false;
+        }
+
+        var activatedVersion = _rollbackCandidate.Version;
+        IsProgressActive = true;
+        UpdateProgress = 10;
+        ClientStatusText = $"正在回滚到 v{activatedVersion}";
+        PrimaryActionText = "正在回滚";
+        var switched = false;
+
+        try
+        {
+            var progress = new InlineProgress<ClientInstallProgress>(
+                value => DispatchToUi(() => ApplyInstallProgress(value)));
+            var activatedState = await _installationService.RollbackAsync(
+                profile,
+                ClientDirectory,
+                progress);
+            switched = true;
+            _selectedProfileState = string.Equals(
+                    activatedState.Version,
+                    profile.Version,
+                    StringComparison.Ordinal)
+                ? LocalProfileState.Ready
+                : LocalProfileState.UpdateRequired;
+            UpdateProgress = 100;
+            ClientStatusText = $"已回滚到 v{activatedState.Version}";
+            NotifySelectedProfileJavaPropertiesChanged();
+            ShowToast($"客户端已回滚到 v{activatedState.Version}，存档与设置已保留");
+            return true;
+        }
+        catch (ProfileRollbackRuntimeException exception)
+        {
+            switched = true;
+            _selectedProfileState = LocalProfileState.UpdateRequired;
+            NotifySelectedProfileJavaPropertiesChanged();
+            ClientStatusText = $"已回滚到 v{exception.ActivatedState.Version}，Java 待修复";
+            ShowToast("版本已回滚，但配套 Java 未准备完成；点击修复客户端即可补齐");
+            return true;
+        }
+        catch (ProfileRollbackUnavailableException)
+        {
+            SetRollbackCandidate(null);
+            ClientStatusText = "没有可回滚版本";
+            ShowToast("上一版本不存在或未通过完整性检查");
+        }
+        catch (ProfileInstallInProgressException)
+        {
+            ClientStatusText = "客户端正在使用";
+            ShowToast("另一个启动器窗口正在安装或回滚这个客户端");
+        }
+        catch (OperationCanceledException)
+        {
+            ClientStatusText = "回滚已取消";
+            ShowToast("客户端回滚已取消，当前版本保持不变");
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            ClientStatusText = "回滚未完成";
+            ShowToast("无法安全切换版本，请退出 Minecraft 后重试");
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Unexpected client rollback failure: {0}",
+                exception);
+            ClientStatusText = "回滚已安全停止";
+            ShowToast("回滚已安全停止，当前客户端版本没有被替换");
+        }
+        finally
+        {
+            IsProgressActive = false;
+            await RefreshRollbackCandidateAsync(profile, selectedServer.Id);
+            if (!switched)
+            {
+                UpdateProgress = _selectedProfileState == LocalProfileState.Ready ? 100 : 0;
+            }
+            UpdatePrimaryActionForState();
+        }
+
+        return false;
+    }
+
     private async Task LaunchSelectedServerAsync()
     {
         if (IsProgressActive || SelectedServer is null)
@@ -1009,6 +1133,8 @@ public sealed class MainWindowViewModel : ObservableObject
                         selectedServer.Id,
                         cancellationToken);
                 });
+            OnPropertyChanged(nameof(CanRollbackSelectedProfile));
+            OnPropertyChanged(nameof(RollbackProfileToolTip));
             UpdateProgress = 100;
             ClientStatusText = "游戏已启动";
             ShowToast($"正在进入 {selectedServer.Name}");
@@ -1326,6 +1452,8 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             _latestGameExit = record;
             OnPropertyChanged(nameof(LatestGameExitText));
+            OnPropertyChanged(nameof(CanRollbackSelectedProfile));
+            OnPropertyChanged(nameof(RollbackProfileToolTip));
             if (record.ExitCode != 0)
             {
                 ShowToast("Minecraft 异常退出，可在设置页生成脱敏诊断包");
@@ -1438,13 +1566,22 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var state = await _installationService.GetLocalStateAsync(profile, ClientDirectory);
+        var stateTask = _installationService.GetLocalStateAsync(
+            profile,
+            ClientDirectory);
+        var rollbackTask = _installationService.GetRollbackCandidateAsync(
+            profile,
+            ClientDirectory);
+        await Task.WhenAll(stateTask, rollbackTask);
+        var state = await stateTask;
+        var rollbackCandidate = await rollbackTask;
         if (SelectedServer?.Id != selectedServer.Id || IsProgressActive)
         {
             return;
         }
 
         _selectedProfileState = state;
+        SetRollbackCandidate(rollbackCandidate);
         CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         switch (state)
         {
@@ -1462,6 +1599,30 @@ public sealed class MainWindowViewModel : ObservableObject
                 break;
         }
         UpdatePrimaryActionForState();
+    }
+
+    private async Task RefreshRollbackCandidateAsync(
+        ClientProfileSummary profile,
+        string? selectedServerId)
+    {
+        try
+        {
+            var candidate = await _installationService.GetRollbackCandidateAsync(
+                profile,
+                ClientDirectory);
+            if (SelectedServer?.Id == selectedServerId)
+            {
+                SetRollbackCandidate(candidate);
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            if (SelectedServer?.Id == selectedServerId)
+            {
+                SetRollbackCandidate(null);
+            }
+        }
     }
 
     private void OpenClientDirectory()
@@ -2279,6 +2440,37 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedProfileJavaPathText));
     }
 
+    private bool IsSelectedProfileRunning()
+    {
+        var profileId = SelectedServer?.ClientProfileId;
+        if (string.IsNullOrWhiteSpace(profileId))
+        {
+            return false;
+        }
+
+        try
+        {
+            return _gameLauncherService.IsProfileRunning(profileId);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    private void SetRollbackCandidate(InstalledProfileState? candidate)
+    {
+        if (Equals(_rollbackCandidate, candidate))
+        {
+            return;
+        }
+
+        _rollbackCandidate = candidate;
+        OnPropertyChanged(nameof(CanRollbackSelectedProfile));
+        OnPropertyChanged(nameof(RollbackCandidateVersion));
+        OnPropertyChanged(nameof(RollbackProfileToolTip));
+    }
+
     private static LauncherPage GetStartupPage(string startupPage)
     {
         return startupPage switch
@@ -2287,5 +2479,10 @@ public sealed class MainWindowViewModel : ObservableObject
             "活动" => LauncherPage.Activities,
             _ => LauncherPage.Servers
         };
+    }
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }

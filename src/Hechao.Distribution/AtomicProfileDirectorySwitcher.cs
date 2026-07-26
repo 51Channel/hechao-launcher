@@ -6,6 +6,7 @@ public sealed class AtomicProfileDirectorySwitcher(Action? beforeActivate = null
     {
         var suffix = Guid.NewGuid().ToString("N");
         var stalePreviousDirectory = previousDirectory + ".stale-" + suffix;
+        var failedActiveDirectory = activeDirectory + ".failed-" + suffix;
         var previousWasStashed = false;
         var activeWasMoved = false;
 
@@ -31,16 +32,25 @@ public sealed class AtomicProfileDirectorySwitcher(Action? beforeActivate = null
         {
             try
             {
-                if (!Directory.Exists(activeDirectory) && activeWasMoved && Directory.Exists(previousDirectory))
+                if (activeWasMoved && Directory.Exists(activeDirectory))
+                {
+                    Directory.Move(activeDirectory, failedActiveDirectory);
+                }
+
+                if (activeWasMoved && Directory.Exists(previousDirectory))
                 {
                     Directory.Move(previousDirectory, activeDirectory);
                     activeWasMoved = false;
                 }
 
-                if (previousWasStashed && !Directory.Exists(previousDirectory) && Directory.Exists(stalePreviousDirectory))
+                if (previousWasStashed &&
+                    !Directory.Exists(previousDirectory) &&
+                    Directory.Exists(stalePreviousDirectory))
                 {
                     Directory.Move(stalePreviousDirectory, previousDirectory);
                 }
+
+                TryDeleteDirectory(failedActiveDirectory);
             }
             catch (Exception rollbackFailure)
             {

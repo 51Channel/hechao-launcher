@@ -48,6 +48,8 @@ public interface IMinecraftGameLauncherService
 {
     event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
 
+    bool IsProfileRunning(string profileId);
+
     Task<MinecraftLaunchResult> LaunchAsync(
         MinecraftLaunchRequest request,
         IProgress<MinecraftLaunchProgress>? progress = null,
@@ -109,6 +111,13 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             serverEndpoint,
             microsoftClientId,
             runtimeRootOverride: null);
+    }
+
+    public bool IsProfileRunning(string profileId)
+    {
+        ManifestValidator.ValidateProfileId(profileId);
+        RemoveExitedProcess(profileId);
+        return _runningProcesses.ContainsKey(profileId);
     }
 
     public async Task<MinecraftLaunchResult> LaunchAsync(

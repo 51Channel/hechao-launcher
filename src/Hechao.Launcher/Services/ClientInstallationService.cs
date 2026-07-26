@@ -13,9 +13,20 @@ public interface IClientInstallationService
         string dataRoot,
         CancellationToken cancellationToken = default);
 
+    Task<InstalledProfileState?> GetRollbackCandidateAsync(
+        ClientProfileSummary profile,
+        string dataRoot,
+        CancellationToken cancellationToken = default);
+
     Task InstallAsync(
         ClientProfileSummary profile,
         ClientInstallationOptions options,
+        IProgress<ClientInstallProgress>? progress = null,
+        CancellationToken cancellationToken = default);
+
+    Task<InstalledProfileState> RollbackAsync(
+        ClientProfileSummary profile,
+        string dataRoot,
         IProgress<ClientInstallProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }
@@ -85,6 +96,15 @@ public sealed class ClientInstallationService : IClientInstallationService
             : LocalProfileState.UpdateRequired;
     }
 
+    public Task<InstalledProfileState?> GetRollbackCandidateAsync(
+        ClientProfileSummary profile,
+        string dataRoot,
+        CancellationToken cancellationToken = default) =>
+        _installer.GetPreviousStateAsync(
+            dataRoot,
+            profile.Id,
+            cancellationToken);
+
     public async Task InstallAsync(
         ClientProfileSummary profile,
         ClientInstallationOptions options,
@@ -153,6 +173,72 @@ public sealed class ClientInstallationService : IClientInstallationService
             totalClientBytes));
     }
 
+    public async Task<InstalledProfileState> RollbackAsync(
+        ClientProfileSummary profile,
+        string dataRoot,
+        IProgress<ClientInstallProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        progress?.Report(new ClientInstallProgress(
+            ClientInstallPhase.Switching,
+            10,
+            string.Empty,
+            0,
+            0));
+        var state = await Task.Run(
+            () => _installer.RollbackAsync(
+                dataRoot,
+                profile.Id,
+                cancellationToken),
+            cancellationToken);
+
+        progress?.Report(new ClientInstallProgress(
+            ClientInstallPhase.Switching,
+            85,
+            string.Empty,
+            0,
+            0));
+        try
+        {
+            if (!await _javaRuntimeService.IsReadyAsync(
+                    dataRoot,
+                    profile.Id,
+                    cancellationToken))
+            {
+                var runtimeProgress = progress is null
+                    ? null
+                    : new InlineProgress<ProfileJavaInstallProgress>(value =>
+                        progress.Report(new ClientInstallProgress(
+                            ClientInstallPhase.PreparingRuntime,
+                            85 + Math.Clamp(value.Percent, 0, 100) * 0.15,
+                            value.CurrentPath,
+                            0,
+                            0)));
+                await _javaRuntimeService.InstallAsync(
+                    dataRoot,
+                    profile.Id,
+                    runtimeProgress,
+                    cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new ProfileRollbackRuntimeException(state, exception);
+        }
+
+        progress?.Report(new ClientInstallProgress(
+            ClientInstallPhase.Complete,
+            100,
+            string.Empty,
+            0,
+            0));
+        return state;
+    }
+
     private sealed class InlineProgress<T>(Action<T> callback) : IProgress<T>
     {
         public void Report(T value) => callback(value);
@@ -160,3 +246,13 @@ public sealed class ClientInstallationService : IClientInstallationService
 }
 
 public sealed class ClientManifestMismatchException(string message) : IOException(message);
+
+public sealed class ProfileRollbackRuntimeException(
+    InstalledProfileState activatedState,
+    Exception innerException)
+    : IOException(
+        $"Profile {activatedState.ProfileId} was rolled back to {activatedState.Version}, but its Java runtime is not ready.",
+        innerException)
+{
+    public InstalledProfileState ActivatedState { get; } = activatedState;
+}

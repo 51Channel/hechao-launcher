@@ -74,19 +74,82 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         Assert.Contains("AnotherPlayer", viewModel.ToastMessage);
     }
 
+    [Fact]
+    public async Task RollbackVersion_ActivatesCandidateAndOffersCatalogUpdate()
+    {
+        var authentication = new StubAuthenticationService();
+        var gameLauncher = new StubGameLauncherService();
+        var installation = new StubInstallationService
+        {
+            RollbackCandidate = CreateInstalledState("0.9.0")
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            gameLauncher,
+            installation);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "客户端已就绪" &&
+            viewModel.CanRollbackSelectedProfile);
+
+        var result = await viewModel.RollbackSelectedProfileAsync();
+
+        Assert.True(result);
+        Assert.Equal(1, installation.RollbackRequestCount);
+        Assert.Equal("已回滚到 v0.9.0", viewModel.ClientStatusText);
+        Assert.Equal("更新客户端", viewModel.PrimaryActionText);
+        Assert.Equal("1.0.5", viewModel.RollbackCandidateVersion);
+    }
+
+    [Fact]
+    public async Task RollbackVersion_IsDisabledWhileProfileIsRunning()
+    {
+        var authentication = new StubAuthenticationService();
+        var gameLauncher = new StubGameLauncherService
+        {
+            ProfileRunning = true
+        };
+        var installation = new StubInstallationService
+        {
+            RollbackCandidate = CreateInstalledState("0.9.0")
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            gameLauncher,
+            installation);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        Assert.False(viewModel.CanRollbackSelectedProfile);
+        Assert.Contains("先退出", viewModel.RollbackProfileToolTip);
+        Assert.False(await viewModel.RollbackSelectedProfileAsync());
+        Assert.Equal(0, installation.RollbackRequestCount);
+    }
+
     private static MainWindowViewModel CreateViewModel(
         StubAuthenticationService authentication,
-        StubGameLauncherService gameLauncher)
+        StubGameLauncherService gameLauncher,
+        StubInstallationService? installation = null)
     {
         return new MainWindowViewModel(
             new StubCatalogClient(),
             authentication,
             new StubSettingsStore(),
-            new StubInstallationService(),
+            installation ?? new StubInstallationService(),
             gameLauncher,
             new StubDownloadHistoryStore(),
             new StubGameDiagnosticsService());
     }
+
+    private static InstalledProfileState CreateInstalledState(string version) =>
+        new(
+            ClientStorageLayout.CurrentStorageSchemaVersion,
+            "base-1.21.11",
+            version,
+            new string('a', 64),
+            "release-test",
+            DateTimeOffset.UtcNow);
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
@@ -246,11 +309,20 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
 
     private sealed class StubInstallationService : IClientInstallationService
     {
+        public InstalledProfileState? RollbackCandidate { get; set; }
+        public int RollbackRequestCount { get; private set; }
+
         public Task<LocalProfileState> GetLocalStateAsync(
             ClientProfileSummary profile,
             string dataRoot,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(LocalProfileState.Ready);
+
+        public Task<InstalledProfileState?> GetRollbackCandidateAsync(
+            ClientProfileSummary profile,
+            string dataRoot,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(RollbackCandidate);
 
         public Task InstallAsync(
             ClientProfileSummary profile,
@@ -258,6 +330,25 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             IProgress<ClientInstallProgress>? progress = null,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<InstalledProfileState> RollbackAsync(
+            ClientProfileSummary profile,
+            string dataRoot,
+            IProgress<ClientInstallProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            RollbackRequestCount++;
+            var activated = RollbackCandidate ??
+                throw new ProfileRollbackUnavailableException(profile.Id);
+            RollbackCandidate = CreateInstalledState(profile.Version);
+            progress?.Report(new ClientInstallProgress(
+                ClientInstallPhase.Complete,
+                100,
+                string.Empty,
+                0,
+                0));
+            return Task.FromResult(activated);
+        }
     }
 
     private sealed class StubGameLauncherService : IMinecraftGameLauncherService
@@ -269,6 +360,9 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         }
 
         public int LaunchRequestCount { get; private set; }
+        public bool ProfileRunning { get; init; }
+
+        public bool IsProfileRunning(string profileId) => ProfileRunning;
 
         public async Task<MinecraftLaunchResult> LaunchAsync(
             MinecraftLaunchRequest request,

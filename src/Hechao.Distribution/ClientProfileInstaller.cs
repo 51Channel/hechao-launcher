@@ -127,6 +127,89 @@ public sealed class ClientProfileInstaller(
         }
     }
 
+    public Task<InstalledProfileState?> GetPreviousStateAsync(
+        string dataRoot,
+        string profileId,
+        CancellationToken cancellationToken = default)
+    {
+        ManifestValidator.ValidateProfileId(profileId);
+        var layout = new ClientStorageLayout(dataRoot);
+        return ReadInstalledStateAsync(
+            layout.GetPreviousProfileRoot(profileId),
+            profileId,
+            cancellationToken);
+    }
+
+    public async Task<InstalledProfileState> RollbackAsync(
+        string dataRoot,
+        string profileId,
+        CancellationToken cancellationToken = default)
+    {
+        ManifestValidator.ValidateProfileId(profileId);
+        var layout = new ClientStorageLayout(dataRoot);
+        layout.EnsureBaseDirectories();
+        var activeDirectory = layout.GetProfileRoot(profileId);
+        var activeGameDirectory = layout.GetProfileGameDirectory(profileId);
+        var previousDirectory = layout.GetPreviousProfileRoot(profileId);
+        var previousGameDirectory = Path.Combine(
+            previousDirectory,
+            ClientStorageLayout.GameDirectoryName);
+        var stagingDirectory = layout.CreateStagingProfileRoot(profileId);
+        var stagingGameDirectory = Path.Combine(
+            stagingDirectory,
+            ClientStorageLayout.GameDirectoryName);
+
+        await using var installationLock = AcquireInstallationLock(layout, profileId);
+        var activeState = await ReadInstalledStateAsync(
+            activeDirectory,
+            profileId,
+            cancellationToken);
+        var previousState = await ReadInstalledStateAsync(
+            previousDirectory,
+            profileId,
+            cancellationToken);
+        if (activeState is null || previousState is null ||
+            !Directory.Exists(activeGameDirectory) ||
+            !Directory.Exists(previousGameDirectory))
+        {
+            throw new ProfileRollbackUnavailableException(profileId);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var preserveStagingAfterFailure = false;
+        try
+        {
+            CloneDirectory(
+                previousDirectory,
+                stagingDirectory,
+                preferHardLinks: true,
+                cancellationToken);
+            PreserveWritableGameData(
+                activeGameDirectory,
+                stagingGameDirectory,
+                replaceDestination: true,
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            _directorySwitcher.Switch(
+                stagingDirectory,
+                activeDirectory,
+                previousDirectory);
+            return previousState;
+        }
+        catch (ProfileRollbackException)
+        {
+            preserveStagingAfterFailure = true;
+            throw;
+        }
+        finally
+        {
+            if (!preserveStagingAfterFailure)
+            {
+                TryDeleteDirectory(stagingDirectory);
+            }
+        }
+    }
+
     public async Task InstallAsync(
         VerifiedClientManifest verifiedManifest,
         ClientInstallationOptions options,
@@ -151,13 +234,18 @@ public sealed class ClientProfileInstaller(
 
         EnsureDiskSpace(layout.DataRoot, manifest);
         Directory.CreateDirectory(stagingGameDirectory);
-        PreserveWritableGameData(activeGameDirectory, stagingGameDirectory);
+        PreserveWritableGameData(
+            activeGameDirectory,
+            stagingGameDirectory,
+            replaceDestination: false,
+            cancellationToken);
         ApplyDeletePaths(stagingGameDirectory, manifest.DeletePaths);
 
         var totalBytes = manifest.Files.Sum(file => file.Size);
         long completedBytes = 0;
         var usedCachePaths = new List<string>(manifest.Files.Count);
         var pendingFiles = new List<PendingInstallFile>(manifest.Files.Count);
+        var preserveStagingAfterSwitchFailure = false;
 
         try
         {
@@ -288,9 +376,17 @@ public sealed class ClientProfileInstaller(
                 totalBytes,
                 totalBytes));
         }
+        catch (ProfileRollbackException)
+        {
+            preserveStagingAfterSwitchFailure = true;
+            throw;
+        }
         finally
         {
-            TryDeleteDirectory(stagingDirectory);
+            if (!preserveStagingAfterSwitchFailure)
+            {
+                TryDeleteDirectory(stagingDirectory);
+            }
         }
     }
 
@@ -466,9 +562,52 @@ public sealed class ClientProfileInstaller(
         return Math.Clamp(offset + (completedBytes / (double)totalBytes * span), 0, 100);
     }
 
+    private static async Task<InstalledProfileState?> ReadInstalledStateAsync(
+        string profileDirectory,
+        string profileId,
+        CancellationToken cancellationToken)
+    {
+        var gameDirectory = Path.Combine(
+            profileDirectory,
+            ClientStorageLayout.GameDirectoryName);
+        var statePath = Path.Combine(
+            profileDirectory,
+            ClientStorageLayout.InstallStateFileName);
+        if (!Directory.Exists(profileDirectory) ||
+            !Directory.Exists(gameDirectory) ||
+            !File.Exists(statePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            RejectReparsePoint(profileDirectory);
+            RejectReparsePoint(gameDirectory);
+            RejectReparsePoint(statePath);
+            await using var stream = File.OpenRead(statePath);
+            var state = await JsonSerializer.DeserializeAsync<InstalledProfileState>(
+                stream,
+                StateJsonOptions,
+                cancellationToken);
+            return state is not null &&
+                   state.SchemaVersion == ClientStorageLayout.CurrentStorageSchemaVersion &&
+                   string.Equals(state.ProfileId, profileId, StringComparison.Ordinal)
+                ? state
+                : null;
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+    }
+
     private static void PreserveWritableGameData(
         string activeGameDirectory,
-        string stagingGameDirectory)
+        string stagingGameDirectory,
+        bool replaceDestination,
+        CancellationToken cancellationToken)
     {
         if (!Directory.Exists(activeGameDirectory))
         {
@@ -478,12 +617,18 @@ public sealed class ClientProfileInstaller(
         RejectReparsePoint(activeGameDirectory);
         foreach (var relativePath in PreservedGamePaths)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var source = ManifestValidator.ResolveManagedPath(
                 activeGameDirectory,
                 relativePath);
             var destination = ManifestValidator.ResolveManagedPath(
                 stagingGameDirectory,
                 relativePath);
+            if (replaceDestination)
+            {
+                DeleteEntry(destination);
+            }
+
             if (File.Exists(source))
             {
                 RejectReparsePoint(source);
@@ -492,7 +637,11 @@ public sealed class ClientProfileInstaller(
             }
             else if (Directory.Exists(source))
             {
-                CopyDirectory(source, destination);
+                CloneDirectory(
+                    source,
+                    destination,
+                    preferHardLinks: false,
+                    cancellationToken);
             }
         }
     }
@@ -573,22 +722,46 @@ public sealed class ClientProfileInstaller(
                 protectedPath + "/",
                 StringComparison.OrdinalIgnoreCase));
 
-    private static void CopyDirectory(string source, string destination)
+    private static void CloneDirectory(
+        string source,
+        string destination,
+        bool preferHardLinks,
+        CancellationToken cancellationToken)
     {
         RejectReparsePoint(source);
         Directory.CreateDirectory(destination);
         foreach (var entry in Directory.EnumerateFileSystemEntries(source))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             RejectReparsePoint(entry);
             var destinationEntry = Path.Combine(destination, Path.GetFileName(entry));
             if (Directory.Exists(entry))
             {
-                CopyDirectory(entry, destinationEntry);
+                CloneDirectory(
+                    entry,
+                    destinationEntry,
+                    preferHardLinks,
+                    cancellationToken);
             }
-            else
+            else if (!preferHardLinks ||
+                     !HardLinkFile.TryCreate(destinationEntry, entry))
             {
                 File.Copy(entry, destinationEntry, overwrite: true);
             }
+        }
+    }
+
+    private static void DeleteEntry(string path)
+    {
+        if (File.Exists(path))
+        {
+            RejectReparsePoint(path);
+            File.Delete(path);
+        }
+        else if (Directory.Exists(path))
+        {
+            RejectReparsePoint(path);
+            Directory.Delete(path, recursive: true);
         }
     }
 
@@ -657,3 +830,6 @@ public sealed class InsufficientDiskSpaceException(long requiredBytes, long avai
 
 public sealed class ProfileInstallInProgressException(string profileId, Exception innerException)
     : IOException($"Another process is already installing profile {profileId}.", innerException);
+
+public sealed class ProfileRollbackUnavailableException(string profileId)
+    : IOException($"Profile {profileId} does not have a valid previous installation.");

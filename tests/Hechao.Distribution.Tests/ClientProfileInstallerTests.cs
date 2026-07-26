@@ -1,9 +1,218 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Hechao.Distribution.Tests;
 
 public sealed class ClientProfileInstallerTests
 {
+    [Fact]
+    public async Task GetPreviousStateAsync_ReturnsOnlyValidPreviousInstallation()
+    {
+        var content = "unused"u8.ToArray();
+        using var httpClient = new HttpClient(new RangeResponseHandler(content));
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var profileId = "base-1.21.11";
+
+        Assert.Null(await installer.GetPreviousStateAsync(temporary.Path, profileId));
+
+        var layout = new ClientStorageLayout(temporary.Path);
+        var previousDirectory = layout.GetPreviousProfileRoot(profileId);
+        await WriteInstalledProfileAsync(
+            previousDirectory,
+            profileId,
+            "1.0.0",
+            "previous-client");
+
+        var state = await installer.GetPreviousStateAsync(temporary.Path, profileId);
+
+        Assert.NotNull(state);
+        Assert.Equal("1.0.0", state.Version);
+    }
+
+    [Fact]
+    public async Task RollbackAsync_ActivatesPreviousVersionAndPreservesCurrentPlayerData()
+    {
+        var content = "unused"u8.ToArray();
+        using var httpClient = new HttpClient(new RangeResponseHandler(content));
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var profileId = "base-1.21.11";
+        var layout = new ClientStorageLayout(temporary.Path);
+        var activeDirectory = layout.GetProfileRoot(profileId);
+        var previousDirectory = layout.GetPreviousProfileRoot(profileId);
+        await WriteInstalledProfileAsync(
+            activeDirectory,
+            profileId,
+            "2.0.0",
+            "current-client");
+        await WriteInstalledProfileAsync(
+            previousDirectory,
+            profileId,
+            "1.0.0",
+            "previous-client");
+        var activeGameDirectory = Path.Combine(
+            activeDirectory,
+            ClientStorageLayout.GameDirectoryName);
+        var previousGameDirectory = Path.Combine(
+            previousDirectory,
+            ClientStorageLayout.GameDirectoryName);
+        Directory.CreateDirectory(Path.Combine(
+            activeGameDirectory,
+            "saves",
+            "current-world"));
+        await File.WriteAllTextAsync(
+            Path.Combine(activeGameDirectory, "saves", "current-world", "level.dat"),
+            "current-world-data");
+        await File.WriteAllTextAsync(
+            Path.Combine(activeGameDirectory, "options.txt"),
+            "current-options");
+        Directory.CreateDirectory(Path.Combine(
+            previousGameDirectory,
+            "saves",
+            "old-world"));
+        await File.WriteAllTextAsync(
+            Path.Combine(previousGameDirectory, "saves", "old-world", "level.dat"),
+            "old-world-data");
+        await File.WriteAllTextAsync(
+            Path.Combine(previousGameDirectory, "options.txt"),
+            "old-options");
+
+        var activatedState = await installer.RollbackAsync(
+            temporary.Path,
+            profileId);
+
+        Assert.Equal("1.0.0", activatedState.Version);
+        Assert.Equal(
+            "previous-client",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetProfileGameDirectory(profileId),
+                "managed.txt")));
+        Assert.Equal(
+            "current-world-data",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetProfileGameDirectory(profileId),
+                "saves",
+                "current-world",
+                "level.dat")));
+        Assert.Equal(
+            "current-options",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetProfileGameDirectory(profileId),
+                "options.txt")));
+        Assert.False(Directory.Exists(Path.Combine(
+            layout.GetProfileGameDirectory(profileId),
+            "saves",
+            "old-world")));
+        Assert.Equal(
+            "current-client",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetPreviousProfileRoot(profileId),
+                ClientStorageLayout.GameDirectoryName,
+                "managed.txt")));
+        Assert.Equal(
+            "2.0.0",
+            (await installer.GetPreviousStateAsync(temporary.Path, profileId))!.Version);
+    }
+
+    [Fact]
+    public async Task RollbackAsync_RejectsConcurrentInstallerForSameProfile()
+    {
+        var content = "unused"u8.ToArray();
+        using var httpClient = new HttpClient(new RangeResponseHandler(content));
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var profileId = "base-1.21.11";
+        var layout = new ClientStorageLayout(temporary.Path);
+        layout.EnsureBaseDirectories();
+        await WriteInstalledProfileAsync(
+            layout.GetProfileRoot(profileId),
+            profileId,
+            "2.0.0",
+            "current-client");
+        await WriteInstalledProfileAsync(
+            layout.GetPreviousProfileRoot(profileId),
+            profileId,
+            "1.0.0",
+            "previous-client");
+        await using var heldLock = new FileStream(
+            Path.Combine(layout.LocksRoot, profileId + ".lock"),
+            FileMode.OpenOrCreate,
+            FileAccess.ReadWrite,
+            FileShare.None);
+
+        await Assert.ThrowsAsync<ProfileInstallInProgressException>(() =>
+            installer.RollbackAsync(temporary.Path, profileId));
+    }
+
+    [Fact]
+    public async Task RollbackAsync_RejectsMissingOrInvalidPreviousInstallation()
+    {
+        var content = "unused"u8.ToArray();
+        using var httpClient = new HttpClient(new RangeResponseHandler(content));
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var profileId = "base-1.21.11";
+        var layout = new ClientStorageLayout(temporary.Path);
+        await WriteInstalledProfileAsync(
+            layout.GetProfileRoot(profileId),
+            profileId,
+            "2.0.0",
+            "current-client");
+
+        await Assert.ThrowsAsync<ProfileRollbackUnavailableException>(() =>
+            installer.RollbackAsync(temporary.Path, profileId));
+
+        Assert.Equal(
+            "current-client",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetProfileGameDirectory(profileId),
+                "managed.txt")));
+    }
+
+    [Fact]
+    public async Task RollbackAsync_RestoresBothVersionsWhenActivationFails()
+    {
+        var content = "unused"u8.ToArray();
+        using var httpClient = new HttpClient(new RangeResponseHandler(content));
+        var switcher = new AtomicProfileDirectorySwitcher(
+            () => throw new IOException("simulated activation failure"));
+        var installer = new ClientProfileInstaller(
+            new ResumableFileDownloader(httpClient),
+            switcher);
+        using var temporary = new TemporaryDirectory();
+        var profileId = "base-1.21.11";
+        var layout = new ClientStorageLayout(temporary.Path);
+        await WriteInstalledProfileAsync(
+            layout.GetProfileRoot(profileId),
+            profileId,
+            "2.0.0",
+            "current-client");
+        await WriteInstalledProfileAsync(
+            layout.GetPreviousProfileRoot(profileId),
+            profileId,
+            "1.0.0",
+            "previous-client");
+
+        await Assert.ThrowsAsync<IOException>(() =>
+            installer.RollbackAsync(temporary.Path, profileId));
+
+        Assert.Equal(
+            "current-client",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetProfileGameDirectory(profileId),
+                "managed.txt")));
+        Assert.Equal(
+            "previous-client",
+            await File.ReadAllTextAsync(Path.Combine(
+                layout.GetPreviousProfileRoot(profileId),
+                ClientStorageLayout.GameDirectoryName,
+                "managed.txt")));
+        Assert.Empty(Directory.EnumerateDirectories(
+            layout.InstancesRoot,
+            $".{profileId}.staging-*"));
+    }
+
     [Fact]
     public async Task InstallAsync_ActivatesVerifiedProfileAndKeepsPreviousVersion()
     {
@@ -342,5 +551,37 @@ public sealed class ClientProfileInstallerTests
                 "libraries",
                 "example",
                 "second.jar")));
+    }
+
+    private static async Task WriteInstalledProfileAsync(
+        string profileDirectory,
+        string profileId,
+        string version,
+        string managedContent)
+    {
+        var gameDirectory = Path.Combine(
+            profileDirectory,
+            ClientStorageLayout.GameDirectoryName);
+        Directory.CreateDirectory(gameDirectory);
+        await File.WriteAllTextAsync(
+            Path.Combine(gameDirectory, "managed.txt"),
+            managedContent);
+        var state = new InstalledProfileState(
+            ClientStorageLayout.CurrentStorageSchemaVersion,
+            profileId,
+            version,
+            new string('a', 64),
+            "release-test",
+            DateTimeOffset.UtcNow);
+        await using var stream = new FileStream(
+            Path.Combine(
+                profileDirectory,
+                ClientStorageLayout.InstallStateFileName),
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            16 * 1024,
+            FileOptions.Asynchronous);
+        await JsonSerializer.SerializeAsync(stream, state);
     }
 }

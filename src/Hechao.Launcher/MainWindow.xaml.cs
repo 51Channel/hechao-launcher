@@ -242,6 +242,31 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void RollbackProfileButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel ||
+            !viewModel.CanRollbackSelectedProfile)
+        {
+            return;
+        }
+
+        var result = MessageBox.Show(
+            this,
+            $"将当前客户端回滚到 v{viewModel.RollbackCandidateVersion}。\n\n" +
+            "存档、截图、设置和服务器列表会保留；如果服务器目录仍发布新版本，回滚后会显示“更新客户端”。\n\n" +
+            "是否继续？",
+            "回滚客户端版本",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (result == MessageBoxResult.Yes)
+        {
+            await viewModel.RollbackSelectedProfileAsync();
+        }
+    }
+
     private void ToggleMaximizedState()
     {
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
