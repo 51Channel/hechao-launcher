@@ -1,8 +1,8 @@
 # 客户端分发与签名操作手册
 
-> 启动器源码版本：`0.11.11`
+> 启动器源码版本：`0.11.12`
 > 发布器源码版本：`0.8.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.14.1` 托管，启动器 `0.11.11` 已加入玩家主动回滚并完成私有 OSS 灰度发布闭环。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.14.1` 托管，启动器 `0.11.12` 已加入玩家确认诊断上传并完成私有 OSS 灰度发布闭环。
 
 ## 1. 安全边界
 
@@ -329,6 +329,16 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 `F6687C4CBB53BEFB3DC3D8B84FFBDF0AEC589DF69D710EE4F5DF43EFD47CB894`，
 耗时约 `1.12` 秒。签名链接只保存在管理员账户的 ACL 保护目录。
 
+`2026-07-27` 已将启动器 `0.11.12` 写入
+`releases/launcher/0.11.12/Hechao-Launcher-Setup-0.11.12-win-x64.exe`。
+第二次执行确认远端对象匹配并跳过，没有覆盖或重复上传。匿名访问返回 `403`，
+24 小时 Bucket 原始节点签名下载返回 `200`，完整下载为 `61,833,814` 字节，
+SHA-256 为 `F54297318865995225CE8CB748C115EA4DCA8219E02AE09ABE266F783EC033D6`，
+耗时约 `1.50` 秒。`--download-endpoint` 必须使用
+`https://hechaoworld.oss-cn-shanghai.aliyuncs.com` 这类 Bucket 原始节点；
+服务级 `https://oss-cn-shanghai.aliyuncs.com` 生成的签名地址会返回 `403`。
+有效短时链接只保存在管理员账户的 ACL 保护目录。
+
 ## 6. 后续生产接入
 
 1. [x] 为 `download.hechao.world` 签发并绑定 HTTPS 证书，验证 TLS 与 CNAME。
@@ -348,6 +358,7 @@ releases/launcher/<version>/Hechao-Launcher-Setup-<version>-win-x64.exe
 15. [x] 发布启动器 `0.11.9`，修复特殊路径 Fabric 类路径并停止分发 `0.11.8`。
 16. [x] 发布启动器 `0.11.10`，统一运行配置的分段选择器并复验窄侧栏布局。
 17. [x] 发布启动器 `0.11.11`，完成玩家主动回滚、覆盖升级、私有对象不可变复验与短时整包下载。
+18. [x] 发布启动器 `0.11.12`，完成玩家确认诊断上传、干净安装、覆盖升级、卸载边界、私有对象不可变复验与短时整包下载。
 
 ## 7. 游戏数据目录
 

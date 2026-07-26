@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前启动器源码候选为 `0.11.12`，API 源码与生产版本为 `0.14.1`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话、双重验证、活动排期、玩家搜索和单服权限规则的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前启动器私有 OSS 灰度候选为 `0.11.12`，API 源码与生产版本为 `0.14.1`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、Velocity 服务端二次授权、只读实时状态采集，以及带独立浏览器会话、双重验证、活动排期、玩家搜索和单服权限规则的管理员控制台。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
@@ -82,7 +82,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、每档案 Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
 6. [已完成] 部署 API `0.14.1`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期和单服访问规则已验收。管理员 Web 已启用，但正式管理员 MFA 尚未登记。
-7. 启动器 `0.11.11` 已替换 `0.11.10` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.11.md`](docs/PRELAUNCH_PILOT_0.11.11.md) 复验玩家主动回滚与真实游戏启动。
+7. 启动器 `0.11.12` 已替换 `0.11.11` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.12.md`](docs/PRELAUNCH_PILOT_0.11.12.md) 验证玩家确认诊断上传，并回归登录、安装、修复、回滚与真实游戏启动。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 

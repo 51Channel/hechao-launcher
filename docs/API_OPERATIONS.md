@@ -2,7 +2,7 @@
 
 > 当前线上版本：`0.14.1-20260726T190856Z`
 > 本地 API 源码版本：`0.14.1`
-> 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期和单服访问规则已部署；启动器 `0.11.12` 为源码候选，管理员 Web 已启用但尚未登记 MFA
+> 当前阶段：统一社区账号、六份生产档案、并行分发、授权定向路由、诊断上传、服务器排期和单服访问规则已部署；启动器 `0.11.12` 已进入私有 OSS 灰度，管理员 Web 已启用但尚未登记 MFA
 
 ## 1. 运行边界
 
@@ -234,4 +234,4 @@ systemctl reload nginx
 | `0.13.0-20260726T173536Z` | `F2B7466A9AFAB142F110D7C2EB692DE1BA2FDD653F7CF42D4AE31D5BF7E8C811` | 诊断上传、失败路径、审计、14 天清理与旧业务回归通过；`0.14.1` 的直接回滚目标 |
 | `0.14.1-20260726T190856Z` | `F02CC7AAC3AE4FC8726548E3777D231D035B03E19487CAB32627333CEBBB8A3A` | 排期、公告、玩家搜索、访问预览、单服规则、迁移 10、启动预检与公网回归通过；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号、授权定向路由、诊断上传、服务器排期和单服规则已部署。API `0.14.1` 为当前线上版本，启动器 `0.11.12` 为源码候选；管理员 Web 已启用但尚未登记 MFA。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号、授权定向路由、诊断上传、服务器排期和单服规则已部署。API `0.14.1` 为当前线上版本，启动器 `0.11.12` 已进入私有 OSS 灰度；管理员 Web 已启用但尚未登记 MFA。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
