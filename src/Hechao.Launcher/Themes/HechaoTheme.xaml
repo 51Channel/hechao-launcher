@@ -481,6 +481,7 @@
     <Style x:Key="MemorySegmentItemStyle" TargetType="ListBoxItem">
         <Setter Property="Height" Value="38" />
         <Setter Property="Margin" Value="0,0,5,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="Segoe UI" />
