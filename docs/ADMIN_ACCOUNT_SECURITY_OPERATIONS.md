@@ -1,6 +1,6 @@
 # 管理员账号安全操作
 
-> 目标版本：API `0.15.0`
+> 目标版本：API `0.16.0`
 >
 > 当前状态：`0.15.0-20260726T202540Z` 已生产部署，隔离端到端验收通过；等待真实管理员 MFA 页面验收
 >
@@ -14,6 +14,7 @@
 - 查看并单独撤销仍有效的启动器设备会话。
 - 一次撤销启动器会话、后台会话、后台登录票据和未消费进服授权。
 - 对已绑定的 Minecraft UUID 建立长期或定时封禁，并按修订号解除封禁。
+- 通过大厅 LuckPerms 代理提交四级全局等级变更。
 - 查看每次操作产生的审计记录。
 
 所有写请求都要求管理域名、独立后台 Cookie、MFA、CSRF 和管理员等级。操作原因必须为
@@ -27,9 +28,10 @@
 - 现有启动器访问令牌、刷新令牌、后台会话、登录票据和未消费进服授权被事务内撤销。
 - 后续启动器认证、管理员认证和 Velocity 授权都会拒绝该账号。
 
-论坛已经签发的 Cookie 使用论坛 SQLite 中独立的 `sessionVersion`。API `0.15.0`
-不会跨数据库原子修改这个值，因此“停用账号”不宣称立即撤销既有论坛 Cookie。
-论坛现有会话联动失效仍是独立待办，不能用账号停用的生产验收代替。
+论坛已经签发的 Cookie 使用论坛 SQLite 中独立的 `sessionVersion`。API `0.16.0`
+在撤销全部认证状态的 PostgreSQL 事务中写入 outbox，再由后台投递器调用论坛本机
+幂等端点增加 `sessionVersion`。这不是跨数据库原子事务；投递失败会保留请求并指数退避
+重试，管理页面显示待投递数量。论坛端按请求 ID 去重，因此重复投递不会重复增加版本。
 
 UUID 封禁后：
 
@@ -48,6 +50,7 @@ UUID 封禁后：
 | `POST /v1/admin/users/{userId}/account/enable` | 恢复账号 |
 | `POST /v1/admin/users/{userId}/sessions/revoke-all` | 撤销全部平台认证状态 |
 | `POST /v1/admin/users/{userId}/sessions/{sessionId}/revoke` | 撤销一个启动器设备会话 |
+| `PUT /v1/admin/users/{userId}/access-tier` | 提交受控 LuckPerms 全局等级变更 |
 | `PUT /v1/admin/users/{userId}/minecraft-ban` | 新建或更新 UUID 封禁 |
 | `DELETE /v1/admin/users/{userId}/minecraft-ban` | 按修订号解除 UUID 封禁 |
 
@@ -56,8 +59,9 @@ UUID 封禁后：
 
 ## 4. 数据与审计
 
-迁移 `11` 新增 `launcher.minecraft_identity_bans`。记录保留创建、更新、撤销、到期、
-操作者、原因和修订号，不物理删除历史封禁。
+迁移 `11` 新增 `launcher.minecraft_identity_bans`，迁移 `12` 新增论坛会话撤销
+outbox，迁移 `13` 新增 LuckPerms 等级命令及租约。记录保留创建、更新、撤销、到期、
+操作者、原因和修订号，不物理删除历史封禁或等级命令。
 
 审计动作：
 
@@ -69,6 +73,8 @@ security.session.revoked
 security.minecraft_ban.created
 security.minecraft_ban.updated
 security.minecraft_ban.revoked
+luckperms.tier_change.queued
+luckperms.tier_change.completed
 ```
 
 审计数据不保存访问令牌、刷新令牌、Cookie、User-Agent 哈希或其他可复用凭据。
@@ -76,7 +82,7 @@ security.minecraft_ban.revoked
 ## 5. 部署验收
 
 1. 备份 PostgreSQL、当前 API 发布和环境文件，并验证转储可读。
-2. 在隔离数据库运行迁移 `11`，使用临时管理员完成账号停用/恢复、单设备撤销、
+2. 在隔离数据库运行迁移 `11` 至 `13`，使用临时管理员完成账号停用/恢复、单设备撤销、
    全部撤销、UUID 封禁/解除和修订冲突测试。
 3. 验证最后管理员与当前管理员自保护。
 4. 验证封禁 UUID 的目录、对象下载、Minecraft 绑定和 Velocity 授权均被拒绝。
@@ -84,11 +90,12 @@ security.minecraft_ban.revoked
 6. 原子部署 API，只重启 `hechao-launcher-api.service`，不操作 Minecraft 或 Velocity。
 7. 回归三个 HTTPS 入口、旧论坛、中转 API、目录、心跳和生产日志。
 8. 使用真实管理员 MFA 再执行一次只针对测试账号的页面验收，并核对审计。
+9. 使用测试账号完成 `default -> vip -> default`，并核对大厅代理与论坛 Cookie 撤销。
 
 2026-07-27 已从生产备份恢复唯一临时数据库，并在独立端口完成步骤 2 至 5 的自动化
 端到端验收；最终发布随后只重启 `hechao-launcher-api.service` 并通过公网与旧业务回归。
 完整发布 ID、制品哈希、备份和证据见 [`API_RELEASE_0.15.0.md`](API_RELEASE_0.15.0.md)。
-当前生产 MFA 凭据数仍为 `0`，因此第 8 步没有完成；论坛既有 Cookie 联动也仍是独立待办。
+当前生产 MFA 凭据数仍为 `0`，因此第 8、9 步的真实页面与游戏内验收仍待执行。
 
 ## 6. 回滚
 

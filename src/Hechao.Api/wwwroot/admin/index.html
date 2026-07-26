@@ -601,6 +601,41 @@
                 <section class="security-section">
                     <div class="security-section-heading">
                         <div>
+                            <span>LuckPerms 全局等级</span>
+                            <strong id="user-security-tier-name">—</strong>
+                        </div>
+                        <span id="user-security-tier-status"
+                              class="status-badge status-online">已同步</span>
+                    </div>
+                    <p id="user-security-tier-meta" class="security-copy"></p>
+                    <div class="security-tier-fields">
+                        <label class="security-action-field">
+                            目标等级
+                            <select id="user-security-target-tier">
+                                <option value="Member">普通成员</option>
+                                <option value="Participant">活动成员</option>
+                                <option value="Collaborator">协作者</option>
+                                <option value="Administrator">管理员</option>
+                            </select>
+                        </label>
+                        <label class="security-action-field">
+                            操作原因
+                            <input id="user-security-tier-reason"
+                                   type="text" minlength="4" maxlength="500"
+                                   placeholder="将写入管理员审计日志">
+                        </label>
+                    </div>
+                    <button id="user-security-tier-action"
+                            class="button button-primary security-full-button"
+                            type="button">
+                        <img src="/admin/assets/icons/arrow-right.svg" alt="">
+                        提交等级变更
+                    </button>
+                </section>
+
+                <section class="security-section">
+                    <div class="security-section-heading">
+                        <div>
                             <span>Minecraft 正版身份</span>
                             <strong id="user-security-minecraft-name">尚未绑定</strong>
                         </div>

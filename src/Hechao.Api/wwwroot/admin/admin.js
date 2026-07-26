@@ -82,6 +82,9 @@ function cacheElements() {
         "finish-user-security-button", "user-security-error",
         "user-security-account-name", "user-security-account-status",
         "user-security-account-meta", "user-security-account-action",
+        "user-security-tier-name", "user-security-tier-status",
+        "user-security-tier-meta", "user-security-target-tier",
+        "user-security-tier-reason", "user-security-tier-action",
         "user-security-minecraft-name", "user-security-minecraft-status",
         "user-security-minecraft-uuid", "user-security-ban-meta",
         "user-security-ban-action", "user-security-session-count",
@@ -160,6 +163,9 @@ function bindEvents() {
                     security.user.isDisabled ? "account-enable" : "account-disable");
             }
         });
+    elements["user-security-tier-action"].addEventListener(
+        "click",
+        submitUserTierChange);
     elements["user-security-ban-action"].addEventListener(
         "click",
         () => {
@@ -819,6 +825,51 @@ function renderUserSecurity() {
         ? "不能停用当前管理员自身"
         : "";
 
+    const pendingTierChange = security.pendingLuckPermsTierChange;
+    elements["user-security-tier-name"].textContent =
+        `${tierText(user.accessTier)} · ${user.luckPermsPrimaryGroup}`;
+    setStatusBadge(
+        elements["user-security-tier-status"],
+        pendingTierChange
+            ? pendingTierChange.status === "Claimed"
+                ? "正在执行"
+                : "等待执行"
+            : "已同步",
+        pendingTierChange ? "status-maintenance" : "status-online");
+    elements["user-security-tier-meta"].textContent = pendingTierChange
+        ? [
+            `目标 ${tierText(pendingTierChange.targetAccessTier)}`,
+            `主组 ${pendingTierChange.targetPrimaryGroup}`,
+            `尝试 ${pendingTierChange.attemptCount} 次`,
+            `申请于 ${formatDateTime(pendingTierChange.requestedAt)}`
+        ].join(" · ")
+        : [
+            `主组 ${user.luckPermsPrimaryGroup}`,
+            user.luckPermsSyncedAt
+                ? `同步于 ${formatDateTime(user.luckPermsSyncedAt)}`
+                : "尚无同步时间"
+        ].join(" · ");
+    elements["user-security-target-tier"].value =
+        pendingTierChange?.targetAccessTier || user.accessTier;
+    elements["user-security-tier-reason"].value =
+        pendingTierChange?.reason || "";
+    const tierChangeDisabled =
+        isSelf || !user.minecraftUuid || Boolean(pendingTierChange);
+    elements["user-security-target-tier"].disabled = tierChangeDisabled;
+    elements["user-security-tier-reason"].disabled = tierChangeDisabled;
+    elements["user-security-tier-action"].disabled = tierChangeDisabled;
+    setButtonContent(
+        elements["user-security-tier-action"],
+        pendingTierChange ? "clock" : "chevron-right",
+        pendingTierChange ? "等待大厅代理处理" : "提交等级变更");
+    elements["user-security-tier-action"].title = isSelf
+        ? "不能修改当前管理员自身的全局等级"
+        : !user.minecraftUuid
+            ? "玩家需要先绑定 Minecraft 正版身份"
+            : pendingTierChange
+                ? "已有等级变更正在处理"
+                : "";
+
     elements["user-security-minecraft-name"].textContent =
         user.minecraftName || "尚未绑定";
     elements["user-security-minecraft-uuid"].textContent =
@@ -907,6 +958,51 @@ function renderUserSecurity() {
     elements["user-security-forum-revocation-count"].textContent =
         String(security.pendingForumSessionRevocations);
     setInlineError(elements["user-security-error"], "");
+}
+
+async function submitUserTierChange() {
+    const security = state.selectedUserSecurity;
+    if (!security) return;
+    const reason = elements["user-security-tier-reason"].value.trim();
+    if (reason.length < 4 || reason.length > 500) {
+        setInlineError(
+            elements["user-security-error"],
+            "等级变更原因必须为 4 到 500 个字符。");
+        elements["user-security-tier-reason"].focus();
+        return;
+    }
+
+    setBusy(elements["user-security-tier-action"], true);
+    setInlineError(elements["user-security-error"], "");
+    try {
+        await api(
+            `/v1/admin/users/${encodeURIComponent(
+                security.user.userId)}/access-tier`,
+            {
+                method: "PUT",
+                body: {
+                    targetTier: elements["user-security-target-tier"].value,
+                    expectedPrimaryGroup:
+                        security.user.luckPermsPrimaryGroup,
+                    reason
+                }
+            });
+        state.selectedUserSecurity = await api(
+            `/v1/admin/users/${encodeURIComponent(
+                security.user.userId)}/security`);
+        state.users = await api(userSearchPath());
+        renderUsers();
+        renderUserSecurity();
+        if (state.selectedAccessPreview?.user?.userId ===
+            security.user.userId) {
+            closeAccessPreview();
+        }
+        showToast("全局等级变更已提交，等待大厅代理处理");
+    } catch (error) {
+        setInlineError(elements["user-security-error"], error.message);
+    } finally {
+        setBusy(elements["user-security-tier-action"], false);
+    }
 }
 
 function setStatusBadge(element, text, statusClassName) {

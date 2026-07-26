@@ -990,6 +990,17 @@ td:first-child {
     margin-top: 14px;
 }
 
+.security-tier-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.security-tier-fields .security-action-field {
+    margin: 0;
+}
+
 .security-session-list {
     margin-top: 14px;
     border-top: 1px solid var(--line);
@@ -1495,6 +1506,10 @@ dialog::backdrop {
 }
 
 @media (max-width: 680px) {
+    .security-tier-fields {
+        grid-template-columns: 1fr;
+    }
+
     .console-shell {
         display: block;
         overflow: auto;

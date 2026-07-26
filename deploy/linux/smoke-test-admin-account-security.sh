@@ -130,6 +130,8 @@ forum_token="$(openssl rand -hex 32)"
 forum_token_hash="$(printf '%s' "$forum_token" | sha256sum | awk '{print $1}')"
 velocity_token="$(openssl rand -hex 32)"
 velocity_token_hash="$(printf '%s' "$velocity_token" | sha256sum | awk '{print $1}')"
+sync_token="$(openssl rand -hex 32)"
+sync_token_hash="$(printf '%s' "$sync_token" | sha256sum | awk '{print $1}')"
 
 python3 - \
   /etc/hechao-launcher-api/environment \
@@ -138,6 +140,7 @@ python3 - \
   "$port" \
   "$forum_token_hash" \
   "$velocity_token_hash" \
+  "$sync_token_hash" \
   "$keys_path" \
   "$diagnostics_path" <<'PY'
 import re
@@ -150,6 +153,7 @@ import sys
     port,
     forum_hash,
     velocity_hash,
+    sync_hash,
     keys_path,
     diagnostics_path,
 ) = sys.argv[1:]
@@ -163,6 +167,7 @@ overrides = {
     "DiagnosticUploads__StorageRoot",
     "ForumAccountBridge__InternalTokenSha256",
     "VelocityAuthorization__InternalTokenSha256",
+    "Authentication__InternalSyncTokenSha256",
 }
 
 for line in lines:
@@ -195,6 +200,7 @@ updated.extend(
         f"DiagnosticUploads__StorageRoot={diagnostics_path}",
         f"ForumAccountBridge__InternalTokenSha256={forum_hash}",
         f"VelocityAuthorization__InternalTokenSha256={velocity_hash}",
+        f"Authentication__InternalSyncTokenSha256={sync_hash}",
     ]
 )
 open(destination, "w", encoding="utf-8", newline="\n").write("\n".join(updated) + "\n")
@@ -228,7 +234,7 @@ for _ in {1..40}; do
   sleep 1
 done
 [[ "$ready" == true ]] || fail "candidate did not become ready"
-[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.15.0" ]] ||
+[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.16.0" ]] ||
   fail "candidate reported an unexpected version"
 
 migration_count="$(
@@ -238,9 +244,12 @@ migration_count="$(
     --dbname="$database_name" \
     --tuples-only \
     --no-align \
-    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version = 11;"
+    --command="
+      SELECT count(*)
+      FROM launcher.schema_migrations
+      WHERE version IN (11, 12, 13);"
 )"
-[[ "$migration_count" == "1" ]] || fail "migration 11 was not applied"
+[[ "$migration_count" == "3" ]] || fail "migrations 11 through 13 were not applied"
 
 suffix="$(openssl rand -hex 4)"
 admin_username="smkadm${suffix}"
@@ -498,6 +507,110 @@ initial_sessions="$(json_value "${response_root}/security-initial.json" '.launch
 ((initial_sessions >= 2)) || fail "target device sessions were not created"
 session_id="$(json_value "${response_root}/security-initial.json" '.launcherSessions[0].sessionId')"
 
+tier_payload="$(
+  jq -cn \
+    --arg reason "isolated controlled tier change" \
+    '{
+      targetTier:"Participant",
+      expectedPrimaryGroup:"default",
+      reason:$reason
+    }'
+)"
+tier_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/tier-queue.json" \
+    --write-out '%{http_code}' \
+    --request PUT \
+    --header 'Content-Type: application/json' \
+    --header "$forwarded_proto_header" \
+    --header "Cookie: ${admin_cookie_header}" \
+    --header "X-CSRF-TOKEN: ${csrf_token}" \
+    --data "$tier_payload" \
+    "${base_url}/v1/admin/users/${target_user_id}/access-tier"
+)"
+assert_status 202 "$tier_status" "controlled LuckPerms tier queue"
+
+claim_payload='{"agentId":"security-smoke-lobby","limit":10}'
+claim_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/tier-claim.json" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --header "X-Hechao-Sync-Token: ${sync_token}" \
+    --data "$claim_payload" \
+    "${base_url}/v1/internal/luckperms/tier-commands/claim"
+)"
+assert_status 200 "$claim_status" "LuckPerms tier command claim"
+[[ "$(json_value "${response_root}/tier-claim.json" '.commands | length')" == "1" ]] ||
+  fail "LuckPerms tier claim did not return exactly one command"
+tier_command_id="$(json_value "${response_root}/tier-claim.json" '.commands[0].commandId')"
+tier_attempt_count="$(
+  json_value "${response_root}/tier-claim.json" '.commands[0].attemptCount'
+)"
+[[ "$(json_value "${response_root}/tier-claim.json" '.commands[0].targetPrimaryGroup')" == "vip" ]] ||
+  fail "LuckPerms tier command target group is incorrect"
+
+stale_attempt="$((tier_attempt_count + 1))"
+stale_completion="$(
+  jq -cn \
+    --argjson attemptCount "$stale_attempt" \
+    '{
+      agentId:"security-smoke-lobby",
+      attemptCount:$attemptCount,
+      outcome:"Applied",
+      observedPrimaryGroup:"vip",
+      failureCode:null
+    }'
+)"
+stale_completion_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/tier-stale-complete.json" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --header "X-Hechao-Sync-Token: ${sync_token}" \
+    --data "$stale_completion" \
+    "${base_url}/v1/internal/luckperms/tier-commands/${tier_command_id}/complete"
+)"
+assert_status 409 "$stale_completion_status" "stale LuckPerms tier completion"
+
+tier_completion="$(
+  jq -cn \
+    --argjson attemptCount "$tier_attempt_count" \
+    '{
+      agentId:"security-smoke-lobby",
+      attemptCount:$attemptCount,
+      outcome:"Applied",
+      observedPrimaryGroup:"vip",
+      failureCode:null
+    }'
+)"
+tier_completion_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/tier-complete.json" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --header "X-Hechao-Sync-Token: ${sync_token}" \
+    --data "$tier_completion" \
+    "${base_url}/v1/internal/luckperms/tier-commands/${tier_command_id}/complete"
+)"
+assert_status 200 "$tier_completion_status" "LuckPerms tier completion"
+
+tier_security_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/tier-security.json" \
+    --write-out '%{http_code}' \
+    --header "$forwarded_proto_header" \
+    --header "Cookie: ${admin_cookie_header}" \
+    "${base_url}/v1/admin/users/${target_user_id}/security"
+)"
+assert_status 200 "$tier_security_status" "post-tier account security query"
+[[ "$(json_value "${response_root}/tier-security.json" '.user.accessTier')" == "Participant" ]] ||
+  fail "API access tier was not updated after LuckPerms completion"
+[[ "$(json_value "${response_root}/tier-security.json" '.user.luckPermsPrimaryGroup')" == "vip" ]] ||
+  fail "API LuckPerms primary group was not updated after completion"
+[[ "$(jq -r '.pendingLuckPermsTierChange == null' "${response_root}/tier-security.json")" == "true" ]] ||
+  fail "completed LuckPerms tier command is still pending"
+
 reason_payload='{"reason":"isolated release smoke test"}'
 revoke_one_status="$(
   curl --silent --show-error \
@@ -528,6 +641,20 @@ assert_status 200 "$revoke_all_status" "all-session revocation"
   fail "all-session revocation left an active launcher session"
 [[ "$(json_value "${response_root}/revoke-all.json" '.revoked.velocityLaunchGrants')" == "1" ]] ||
   fail "all-session revocation did not revoke the pending Velocity grant"
+forum_revocation_count="$(
+  docker exec -u postgres "$container" \
+    psql \
+    --username="$database_admin" \
+    --dbname="$database_name" \
+    --tuples-only \
+    --no-align \
+    --command="
+      SELECT count(*)
+      FROM launcher.forum_session_revocation_outbox
+      WHERE user_id = '${target_user_id}' AND completed_at IS NULL;"
+)"
+((forum_revocation_count >= 1)) ||
+  fail "all-session revocation did not enqueue forum Cookie invalidation"
 
 revoked_me_status="$(
   curl --silent --show-error \
@@ -733,6 +860,7 @@ audit_count="$(
 )"
 [[ "$audit_count" == "6" ]] || fail "security audit actions are incomplete"
 
-echo "PASS: API 0.15.0 isolated account-security smoke test"
-echo "Evidence: migration=11, MFA=enrolled, session-revocation=verified, UUID-ban=verified"
+echo "PASS: API 0.16.0 isolated account-security smoke test"
+echo "Evidence: migrations=11-13, MFA=enrolled, session-revocation=verified, UUID-ban=verified"
 echo "Evidence: Velocity-ban=verified, revision-conflict=verified, disable-enable=verified"
+echo "Evidence: forum-revocation=queued, LuckPerms-tier-command=verified, stale-claim=blocked"

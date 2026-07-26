@@ -370,6 +370,7 @@ builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton<CatalogRepository>();
 builder.Services.AddSingleton<AdminCatalogRepository>();
 builder.Services.AddSingleton<AdminAccessRepository>();
+builder.Services.AddSingleton<LuckPermsTierCommandRepository>();
 builder.Services.AddSingleton<AdminAccountSecurityRepository>();
 builder.Services.AddSingleton<AdminWebTokenGenerator>();
 builder.Services.AddSingleton<AdminTotpService>();
@@ -518,6 +519,14 @@ app.MapPost("/v1/internal/velocity/authorize", AuthorizeVelocityConnectionAsync)
     .RequireRateLimiting("internal-velocity");
 app.MapPost("/v1/internal/luckperms/snapshot", ImportLuckPermsSnapshotAsync)
     .RequireRateLimiting("internal-sync");
+app.MapPost(
+        "/v1/internal/luckperms/tier-commands/claim",
+        ClaimLuckPermsTierCommandsAsync)
+    .RequireRateLimiting("internal-sync");
+app.MapPost(
+        "/v1/internal/luckperms/tier-commands/{commandId:guid}/complete",
+        CompleteLuckPermsTierCommandAsync)
+    .RequireRateLimiting("internal-sync");
 app.MapPost("/v1/internal/server-heartbeats", ImportServerHeartbeatsAsync)
     .RequireRateLimiting("internal-heartbeats");
 app.MapPost("/v1/internal/forum/accounts/register", RegisterForumAccountAsync)
@@ -559,6 +568,10 @@ adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibili
 adminApi.MapGet("/users", SearchAdminUsersAsync);
 adminApi.MapGet("/users/{userId:guid}/access-preview", GetAdminUserAccessPreviewAsync);
 adminApi.MapGet("/users/{userId:guid}/security", GetAdminUserSecurityAsync);
+adminApi.MapPut(
+        "/users/{userId:guid}/access-tier",
+        QueueAdminUserAccessTierChangeAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapPost("/users/{userId:guid}/account/disable", DisableAdminUserAccountAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapPost("/users/{userId:guid}/account/enable", EnableAdminUserAccountAsync)
@@ -1220,6 +1233,97 @@ async Task<IResult> ImportLuckPermsSnapshotAsync(
     return Results.Ok(response);
 }
 
+async Task<IResult> ClaimLuckPermsTierCommandsAsync(
+    LuckPermsTierCommandClaimRequest request,
+    InternalSyncTokenValidator tokenValidator,
+    LuckPermsTierCommandRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure = ValidateInternalSyncToken(tokenValidator, context);
+    if (authenticationFailure is not null)
+    {
+        return authenticationFailure;
+    }
+
+    var errors = AdminLuckPermsTierRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    return Results.Ok(await repository.ClaimAsync(
+        request.AgentId.Trim(),
+        request.Limit,
+        DateTimeOffset.UtcNow,
+        TimeSpan.FromSeconds(90),
+        cancellationToken));
+}
+
+async Task<IResult> CompleteLuckPermsTierCommandAsync(
+    Guid commandId,
+    LuckPermsTierCommandCompletionRequest request,
+    InternalSyncTokenValidator tokenValidator,
+    LuckPermsTierCommandRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure = ValidateInternalSyncToken(tokenValidator, context);
+    if (authenticationFailure is not null)
+    {
+        return authenticationFailure;
+    }
+
+    var errors = AdminLuckPermsTierRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var result = await repository.CompleteAsync(
+        commandId,
+        request,
+        DateTimeOffset.UtcNow,
+        cancellationToken);
+    return result.Status switch
+    {
+        LuckPermsTierCompletionStatus.Success => Results.Ok(result.Command),
+        LuckPermsTierCompletionStatus.CommandNotFound => Results.NotFound(),
+        LuckPermsTierCompletionStatus.ClaimConflict => Results.Conflict(new
+        {
+            message = "等级变更命令已由其他代理接管或已经完成。",
+            current = result.Command
+        }),
+        LuckPermsTierCompletionStatus.OutcomeMismatch => Results.Conflict(new
+        {
+            message = "代理回传结果与目标等级不一致。",
+            current = result.Command
+        }),
+        _ => Results.Problem(
+            title: "等级变更结果提交失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
+
+IResult? ValidateInternalSyncToken(
+    InternalSyncTokenValidator tokenValidator,
+    HttpContext context)
+{
+    if (!tokenValidator.IsConfigured)
+    {
+        return Results.Problem(
+            title: "LuckPerms 同步尚未配置",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var suppliedToken = context.Request.Headers["X-Hechao-Sync-Token"].ToString();
+    return tokenValidator.IsValid(suppliedToken)
+        ? null
+        : AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "内部同步凭据无效。");
+}
+
 async Task<IResult> ImportServerHeartbeatsAsync(
     ServerHeartbeatBatchRequest request,
     ServerHeartbeatTokenValidator tokenValidator,
@@ -1573,6 +1677,71 @@ async Task<IResult> GetAdminUserSecurityAsync(
 {
     var security = await repository.GetSecurityAsync(userId, cancellationToken);
     return security is null ? Results.NotFound() : Results.Ok(security);
+}
+
+async Task<IResult> QueueAdminUserAccessTierChangeAsync(
+    Guid userId,
+    AdminLuckPermsTierChangeRequest request,
+    LuckPermsTierCommandRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = AdminLuckPermsTierRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.QueueAsync(
+        userId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return result.Status switch
+    {
+        AdminLuckPermsTierMutationStatus.Success => Results.Accepted(
+            $"/v1/admin/users/{userId:D}/security",
+            result.Command),
+        AdminLuckPermsTierMutationStatus.UserNotFound => Results.NotFound(),
+        AdminLuckPermsTierMutationStatus.MinecraftIdentityNotLinked =>
+            Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["userId"] = ["该账号尚未绑定 Minecraft 正版身份。"]
+            }),
+        AdminLuckPermsTierMutationStatus.SelfProtection => Results.Conflict(new
+        {
+            message = "不能修改当前管理员自身的全局等级。"
+        }),
+        AdminLuckPermsTierMutationStatus.LastAdministrator => Results.Conflict(new
+        {
+            message = "不能降级最后一个可用管理员。"
+        }),
+        AdminLuckPermsTierMutationStatus.RevisionConflict => Results.Conflict(new
+        {
+            message = "LuckPerms 主组已变化，请刷新后重试。",
+            currentPrimaryGroup = result.CurrentPrimaryGroup
+        }),
+        AdminLuckPermsTierMutationStatus.CommandPending => Results.Conflict(new
+        {
+            message = "该玩家已有等级变更正在处理。",
+            current = result.Command
+        }),
+        AdminLuckPermsTierMutationStatus.NoChange => Results.Conflict(new
+        {
+            message = "目标等级与当前等级相同。",
+            currentPrimaryGroup = result.CurrentPrimaryGroup
+        }),
+        _ => Results.Problem(
+            title: "等级变更排队失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
 }
 
 Task<IResult> DisableAdminUserAccountAsync(

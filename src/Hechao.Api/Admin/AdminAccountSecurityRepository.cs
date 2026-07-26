@@ -28,7 +28,8 @@ public sealed record AdminAccountSecurityMutationResult(
 
 public sealed class AdminAccountSecurityRepository(
     NpgsqlDataSource dataSource,
-    ForumSessionRevocationRepository forumSessionRevocations)
+    ForumSessionRevocationRepository forumSessionRevocations,
+    LuckPermsTierCommandRepository tierCommands)
 {
     private static readonly JsonSerializerOptions AuditJsonOptions = CreateAuditJsonOptions();
 
@@ -505,7 +506,7 @@ public sealed class AdminAccountSecurityRepository(
             await GetSecurityAsync(userId, cancellationToken));
     }
 
-    private static async Task<AdminUserSecuritySummary?> ReadSecurityAsync(
+    private async Task<AdminUserSecuritySummary?> ReadSecurityAsync(
         NpgsqlConnection connection,
         Guid userId,
         CancellationToken cancellationToken)
@@ -529,6 +530,9 @@ public sealed class AdminAccountSecurityRepository(
                 user.MinecraftUuid.Value,
                 cancellationToken);
         }
+        var pendingTierChange = await tierCommands.GetPendingForUserAsync(
+            userId,
+            cancellationToken);
 
         return new AdminUserSecuritySummary(
             user,
@@ -537,6 +541,7 @@ public sealed class AdminAccountSecurityRepository(
             counts.AdminTickets,
             counts.VelocityLaunchGrants,
             counts.ForumSessionRevocations,
+            pendingTierChange,
             ban);
     }
 

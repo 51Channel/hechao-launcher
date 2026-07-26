@@ -1,0 +1,9 @@
+name: HechaoLuckPermsTierAgent
+version: '0.1.0'
+main: world.hechao.tieragent.HechaoLuckPermsTierAgent
+api-version: '1.21'
+depend:
+  - LuckPerms
+description: Applies fixed Hechao access tiers through the LuckPerms API.
+authors:
+  - Hechao

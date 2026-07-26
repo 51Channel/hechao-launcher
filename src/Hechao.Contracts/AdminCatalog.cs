@@ -133,6 +133,7 @@ public sealed record AdminUserSecuritySummary(
     int PendingAdminTickets,
     int PendingVelocityLaunchGrants,
     int PendingForumSessionRevocations,
+    AdminLuckPermsTierChangeRecord? PendingLuckPermsTierChange,
     AdminMinecraftIdentityBanRecord? MinecraftIdentityBan);
 
 public sealed record AdminSecurityReasonRequest(string Reason);
