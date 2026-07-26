@@ -69,6 +69,12 @@
 
 2026-07-25 已部署 API `0.12.0-20260725T203001Z` 与 Velocity 插件 `0.2.0`。生产合成授权验证了已绑定 owner 身份从初始 `lobby` 定向到 `pvp`，临时授权行已清理并保留审计。当前 22 个社区账号中只有 1 个绑定 Minecraft，LuckPerms 绑定快照也只有该 owner 身份可用于端到端验证；因此该结果不能替代普通、VIP、管理员和服主四级真实验收。
 
+2026-07-26 再次只读复核生产库：22 个社区账号均未禁用，仍只有 1 个
+Minecraft 绑定且主组为 `owner`；LuckPerms 快照共 115 名玩家，
+`default=100`、`vip=12`、`admin=1`、`owner=2`，接收延迟约 92 秒。
+因此 `Authentication__EnforceCatalogAuthentication=false` 和 Velocity
+`monitor` 继续保持不变。
+
 ## 3. Microsoft 应用注册
 
 赫朝自己的 Microsoft 公共客户端应用已于 2026-07-22 注册，不能借用其他启动器的 Client ID。

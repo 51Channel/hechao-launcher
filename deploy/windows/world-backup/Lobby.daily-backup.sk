@@ -1,0 +1,4 @@
+every minute:
+    if now formatted as "HH:mm" is "05:30":
+        broadcast "&7[备份] Lobby 凌晨例行备份开始..."
+        make console execute command "backup"

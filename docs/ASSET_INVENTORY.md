@@ -133,6 +133,19 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 
 2026-07-26 曾因两个每日任务并发创建约 3.4 GB 的不完整 ZIP，导致 `E:` 空间耗尽。两个损坏归档和一个 0 字节大厅归档已验证后清理；一份 `7,963,944,183` 字节的历史备份在核对文件名与大小后迁移到 `C:\manual-backups\E-drive-overflow`。新的世界备份引擎位于 `C:\ProgramData\Hechao\WorldBackup\Invoke-WorldBackup.ps1`，大小 `9,900` 字节，SHA-256 为 `C8166E8DE97AB3CCC03B6C652266C2B4541CA05F66E0FA271366C0845F9F1DB8`，会全局串行、按接近源文件总量做磁盘预检、写入 `.partial`、校验 ZIP 条目，并让 ZIP 与 SHA-256 旁车文件成对完成。远端双轮冒烟测试已通过；首次由 Essentials 正式计划任务生成的世界归档仍待验收。
 
+同日复核的世界源文件量为 Survival1 `6,401,231,920` 字节、Survival2
+`10,852,061,168` 字节、Lobby `11,556,833` 字节。磁盘上的计划已调整为
+Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
+30 分钟循环已设为 0；变更前文件保存在
+`E:\manual-backups\world-backup-schedule-20260726T062655Z`。本次没有热重载、
+停止或重启服务，三个 Paper 后端与 Velocity 的监听 PID 均保持不变。
+
+两个不参与运行的旧迁移 ZIP 共 `7,388,961,944` 字节已转存到管理机
+`H:\server-backups\owl5`。两份本地文件均按 VPS 原件重新验证大小和 SHA-256，
+并保存 `.sha256` 旁车文件后才删除远端原件。`E:` 当前可用
+`22,310,768,640` 字节，约 20.78 GiB；三服最坏空间门槛约 17.39 GiB，
+额外余量约 3.39 GiB。
+
 ## 3. 旧 Minecraft VPS：owl9
 
 最后已知信息：Windows 主机、SSH 外部端口 `19241`、RDP `19242`、Minecraft 外部端口 `19243`、服务根目录 `C:\mc\server`、Fabric 1.21.11。
@@ -142,7 +155,7 @@ LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 
 ## 4. 当前阻塞与风险
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；离机私钥恢复副本仍待建立。
-2. `owl5` 的 `E:` 已恢复到约 13.90 GiB，但世界备份仍会快速消耗空间；首次正式计划备份必须核对 ZIP、SHA-256、保留数量和剩余空间。
+2. `owl5` 的 `E:` 已恢复到约 20.78 GiB，最坏预检余量约 3.39 GiB；首次正式计划备份仍必须核对 ZIP、SHA-256、保留数量和剩余空间。
 3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
 4. 启动器数据库已有本机每日备份和同主机恢复演练，但所有业务仍缺少异地副本，网站与 Sub2API 也没有新的统一恢复演练。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。

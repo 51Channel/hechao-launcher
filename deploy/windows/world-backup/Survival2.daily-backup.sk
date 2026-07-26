@@ -1,0 +1,4 @@
+every minute:
+    if now formatted as "HH:mm" is "02:00":
+        broadcast "&7[备份] Survival2 凌晨例行备份开始..."
+        make console execute command "backup"

@@ -36,7 +36,7 @@
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复和维护状态，所有变更使用修订号并在同一事务中写入审计日志。
 - 启动器 API `0.12.0` 已通过 `https://launcher-api.hechao.world` 上线；对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 
-API `0.12.0-20260725T203001Z` 已完成部署前备份、哈希校验、原子切换和公网回归；旧官网与中转 API 均保持 200。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight，生产合成授权确认首次连接可从大厅定向到 `pvp`。当前解决方案测试为 `200/200`，Velocity 测试为 `11/11`。生产账号共有 22 个，但只有 1 个已绑定 Minecraft，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变，等待真实普通、VIP、管理员和服主账号验收。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.12.0-20260725T203001Z` 已完成部署前备份、哈希校验、原子切换和公网回归；旧官网与中转 API 均保持 200。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight，生产合成授权确认首次连接可从大厅定向到 `pvp`。当前解决方案测试为 `200/200`，Velocity 测试为 `11/11`。生产账号共有 22 个，但只有 1 个已绑定 Minecraft，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变，等待真实普通、VIP、管理员和服主账号验收。世界备份引擎已部署并通过夹具测试，三服错峰计划已写入磁盘，首次正式世界归档仍待验收。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
