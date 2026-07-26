@@ -52,6 +52,92 @@ public sealed class MinecraftLaunchBuildSmokeTests
             "javaw.exe",
             process.StartInfo.FileName,
             StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain('\u200c', GetArguments(process.StartInfo));
+    }
+
+    [Fact]
+    [Trait("Category", "Smoke")]
+    public async Task PerProfileRuntime_StartsJavaFromConfiguredDataRoot()
+    {
+        var dataRoot = Environment.GetEnvironmentVariable(
+            "HECHAO_PROFILE_RUNTIME_START_SMOKE_DATA_ROOT");
+        if (string.IsNullOrWhiteSpace(dataRoot))
+        {
+            return;
+        }
+
+        using var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(30)
+        };
+        var launcher = new MinecraftGameLauncherService(
+            httpClient,
+            MinecraftServerEndpoint.Parse("mc.hehe11.fun"),
+            microsoftClientId: null,
+            runtimeRootOverride: null);
+        var request = new MinecraftLaunchRequest(
+            dataRoot,
+            "base-1.21.11",
+            4096,
+            new MinecraftLaunchSession(
+                "HechaoSmokeTest",
+                Guid.Parse("12345678-1234-1234-1234-123456789abc"),
+                "not-a-real-minecraft-token",
+                DateTimeOffset.UtcNow.AddMinutes(10),
+                Xuid: null));
+
+        using var process = await launcher.BuildProcessAsync(request);
+        process.StartInfo.FileName = Path.Combine(
+            Path.GetDirectoryName(process.StartInfo.FileName)!,
+            "java.exe");
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.RedirectStandardOutput = true;
+        Assert.True(process.Start());
+
+        var standardError = process.StandardError.ReadToEndAsync();
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync();
+            var runningOutput = string.Join(
+                Environment.NewLine,
+                new[] { await standardError, await standardOutput }
+                    .Where(value => !string.IsNullOrWhiteSpace(value)));
+            Assert.DoesNotContain(
+                "ClassNotFoundException",
+                runningOutput,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                "Could not find or load main class",
+                runningOutput,
+                StringComparison.OrdinalIgnoreCase);
+            return;
+        }
+
+        var output = string.Join(
+            Environment.NewLine,
+            new[] { await standardError, await standardOutput }
+                .Where(value => !string.IsNullOrWhiteSpace(value)));
+        var arguments = GetArguments(process.StartInfo);
+        var loaderIndex = arguments.IndexOf(
+            "fabric-loader-0.19.2.jar",
+            StringComparison.OrdinalIgnoreCase);
+        var loaderContext = loaderIndex < 0
+            ? "<missing>"
+            : arguments.Substring(
+                Math.Max(0, loaderIndex - 160),
+                Math.Min(arguments.Length - Math.Max(0, loaderIndex - 160), 360));
+        Assert.Fail(
+            $"Java exited before the Minecraft client initialized. Exit code: {process.ExitCode}.{Environment.NewLine}" +
+            $"Arguments contain loader: {loaderIndex >= 0}; contain format character: {arguments.Contains('\u200c')}.{Environment.NewLine}" +
+            $"Loader context: {loaderContext}{Environment.NewLine}{output}");
     }
 
     [Fact]

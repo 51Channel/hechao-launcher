@@ -192,6 +192,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         progress?.Report(new MinecraftLaunchProgress(MinecraftLaunchPhase.LoadingProfile, 2));
 
         string gameDirectory;
+        string launchGameDirectory;
         string runtimeRoot;
         string launchRuntimeRoot;
         string? customJavaPath = null;
@@ -200,6 +201,9 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         {
             var layout = new ClientStorageLayout(request.DataRoot);
             gameDirectory = ResolveProfileGameDirectory(layout, request.ProfileId);
+            launchGameDirectory = ProfileRuntimePathResolver.GetLaunchRoot(
+                gameDirectory,
+                $"{request.ProfileId}-game");
             runtimeRoot = _runtimeRootOverride ?? layout.GetProfileRuntimeRoot(request.ProfileId);
             launchRuntimeRoot = ProfileRuntimePathResolver.GetLaunchRoot(
                 runtimeRoot,
@@ -234,7 +238,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         }
 
         Directory.CreateDirectory(runtimeRoot);
-        var minecraftPath = new MinecraftPath(gameDirectory)
+        var minecraftPath = new MinecraftPath(launchGameDirectory)
         {
             Runtime = launchRuntimeRoot
         };
