@@ -150,17 +150,48 @@ public static class LauncherPrincipalExtensions
 
     public static AuthenticatedPlayer? GetPlayer(this ClaimsPrincipal principal)
     {
-        var account = principal.GetAccount();
-        return account?.MinecraftUuid is { } minecraftUuid &&
-               !string.IsNullOrWhiteSpace(account.MinecraftName)
-            ? new AuthenticatedPlayer(
-                account.UserId,
-                minecraftUuid,
-                account.MinecraftName,
-                account.LuckPermsPrimaryGroup,
-                account.AccessTier,
-                account.LuckPermsSyncedAt)
-            : null;
+        if (principal.Identity?.IsAuthenticated != true ||
+            !Guid.TryParse(
+                principal.FindFirstValue(ClaimTypes.NameIdentifier),
+                out var userId) ||
+            !Guid.TryParse(
+                principal.FindFirstValue(LauncherClaimTypes.MinecraftUuid),
+                out var minecraftUuid) ||
+            !Enum.TryParse<AccessTier>(
+                principal.FindFirstValue(LauncherClaimTypes.AccessTier),
+                ignoreCase: true,
+                out var accessTier))
+        {
+            return null;
+        }
+
+        var minecraftName = principal.FindFirstValue(LauncherClaimTypes.MinecraftName);
+        var primaryGroup = principal.FindFirstValue(LauncherClaimTypes.LuckPermsPrimaryGroup);
+        if (string.IsNullOrWhiteSpace(minecraftName) ||
+            string.IsNullOrWhiteSpace(primaryGroup))
+        {
+            return null;
+        }
+
+        DateTimeOffset? syncedAt = null;
+        var rawSyncedAt = principal.FindFirstValue(LauncherClaimTypes.LuckPermsSyncedAt);
+        if (!string.IsNullOrWhiteSpace(rawSyncedAt) &&
+            DateTimeOffset.TryParse(
+                rawSyncedAt,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var parsedSyncedAt))
+        {
+            syncedAt = parsedSyncedAt;
+        }
+
+        return new AuthenticatedPlayer(
+            userId,
+            minecraftUuid,
+            minecraftName,
+            primaryGroup,
+            accessTier,
+            syncedAt);
     }
 }
 

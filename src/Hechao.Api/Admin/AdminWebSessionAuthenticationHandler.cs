@@ -41,6 +41,7 @@ public sealed class AdminWebSessionAuthenticationHandler(
             new(ClaimTypes.Name, player.MinecraftName),
             new(ClaimTypes.Role, nameof(AccessTier.Administrator)),
             new(LauncherClaimTypes.MinecraftUuid, player.MinecraftUuid.ToString("D")),
+            new(LauncherClaimTypes.MinecraftName, player.MinecraftName),
             new(LauncherClaimTypes.LuckPermsPrimaryGroup, player.LuckPermsPrimaryGroup),
             new(LauncherClaimTypes.AccessTier, player.AccessTier.ToString()),
             new(AdminWebClaimTypes.SessionId, state.SessionId.ToString("D"))
