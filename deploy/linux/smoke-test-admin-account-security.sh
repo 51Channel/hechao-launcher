@@ -20,7 +20,7 @@ database_admin="hechao_db_admin"
 database_owner="hechao_api"
 run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 database_name="hechao_security_smoke_$(printf '%s' "$run_id" | tr '[:upper:]-' '[:lower:]_')"
-work_root="/tmp/hechao-account-security-smoke-${run_id}"
+work_root="/opt/hechao-launcher-api/integration-tests/account-security-${run_id}"
 candidate_root="${work_root}/candidate"
 environment_file="${work_root}/environment"
 response_root="${work_root}/responses"
@@ -72,7 +72,16 @@ cleanup() {
     tail -n 80 "$log_file" >&2 || true
   fi
 
-  rm -rf -- "$work_root" "$keys_path" "$diagnostics_path"
+  case "$work_root" in
+    /opt/hechao-launcher-api/integration-tests/account-security-*)
+      rm -rf -- "$work_root"
+      ;;
+    *)
+      echo "refusing to remove unexpected integration-test directory" >&2
+      exit_code=1
+      ;;
+  esac
+  rm -rf -- "$keys_path" "$diagnostics_path"
   exit "$exit_code"
 }
 trap cleanup EXIT
@@ -80,6 +89,10 @@ trap cleanup EXIT
 for tool in curl docker jq openssl python3 sha256sum systemctl tar; do
   command -v "$tool" >/dev/null || fail "required tool is missing: $tool"
 done
+
+curl() {
+  command curl --header 'Host: admin.hechao.world' "$@"
+}
 
 [[ -f "$archive" ]] || fail "candidate archive does not exist"
 [[ -f "$database_backup" ]] || fail "database backup does not exist"
@@ -95,7 +108,9 @@ if ss -H -ltn "sport = :${port}" | grep -q .; then
   fail "candidate port ${port} is already in use"
 fi
 
-install -d -o root -g root -m 0755 "$work_root" "$candidate_root" "$response_root"
+install -d -o root -g root -m 0755 \
+  /opt/hechao-launcher-api/integration-tests \
+  "$work_root" "$candidate_root" "$response_root"
 while IFS= read -r entry; do
   case "$entry" in
     /*|..|../*|*/../*)
@@ -172,7 +187,7 @@ overrides = {
 
 for line in lines:
     key, separator, value = line.partition("=")
-    if key in overrides:
+    if key in overrides or key.startswith("ForumSessionRevocation__"):
         continue
     if key == "ConnectionStrings__LauncherDatabase":
         replaced, count = re.subn(
@@ -195,12 +210,13 @@ updated.extend(
         "ASPNETCORE_ENVIRONMENT=Production",
         f"ASPNETCORE_URLS=http://127.0.0.1:{port}",
         "AdminWeb__Enabled=true",
-        f"AdminWeb__PublicBaseUrl=http://127.0.0.1:{port}",
+        "AdminWeb__PublicBaseUrl=https://admin.hechao.world",
         f"AdminWeb__DataProtectionKeyPath={keys_path}",
         f"DiagnosticUploads__StorageRoot={diagnostics_path}",
         f"ForumAccountBridge__InternalTokenSha256={forum_hash}",
         f"VelocityAuthorization__InternalTokenSha256={velocity_hash}",
         f"Authentication__InternalSyncTokenSha256={sync_hash}",
+        "ForumSessionRevocation__Enabled=false",
     ]
 )
 open(destination, "w", encoding="utf-8", newline="\n").write("\n".join(updated) + "\n")
@@ -236,6 +252,35 @@ done
 [[ "$ready" == true ]] || fail "candidate did not become ready"
 [[ "$(json_value "${response_root}/ready.json" '.version')" == "0.16.0" ]] ||
   fail "candidate reported an unexpected version"
+
+admin_index_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/admin-index.html" \
+    --write-out '%{http_code}' \
+    --header "$forwarded_proto_header" \
+    "${base_url}/admin/index.html"
+)"
+assert_status 200 "$admin_index_status" "admin application index"
+grep -Fq 'user-security-tier-action' "${response_root}/admin-index.html" ||
+  fail "admin application does not contain the LuckPerms tier controls"
+admin_script_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/admin.js" \
+    --write-out '%{http_code}' \
+    --header "$forwarded_proto_header" \
+    "${base_url}/admin/admin.js"
+)"
+assert_status 200 "$admin_script_status" "admin application script"
+grep -Fq 'submitUserTierChange' "${response_root}/admin.js" ||
+  fail "admin application script does not contain the tier workflow"
+admin_page_status="$(
+  curl --silent --show-error \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    --header "$forwarded_proto_header" \
+    "${base_url}/admin/"
+)"
+assert_status 200 "$admin_page_status" "admin static application fallback"
 
 migration_count="$(
   docker exec -u postgres "$container" \

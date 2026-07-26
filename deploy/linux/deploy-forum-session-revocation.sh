@@ -20,6 +20,7 @@ site_service="hechao.service"
 database_relative="prisma/dev.db"
 migration_relative="prisma/migrations/20260727090000_forum_session_revocation_receipts/migration.sql"
 route_relative="src/app/api/internal/hechao/session-revoke/route.ts"
+proxy_relative="src/proxy.ts"
 previous_build="${backup_directory}/forum-next-before-session-revocation"
 build_log="${backup_directory}/forum-session-revocation-build.log"
 deployment_succeeded=false
@@ -42,6 +43,7 @@ esac
 
 test -f "${staged_directory}/${migration_relative}"
 test -f "${staged_directory}/${route_relative}"
+test -f "${staged_directory}/${proxy_relative}"
 test -d "$site_root"
 test -d "${site_root}/.next"
 test -f "${site_root}/${database_relative}"
@@ -94,7 +96,7 @@ install -o root -g root -m 0600 \
   "${backup_directory}/forum.sqlite"
 mv "${site_root}/.next" "$previous_build"
 
-for relative_path in "$migration_relative" "$route_relative"; do
+for relative_path in "$migration_relative" "$route_relative" "$proxy_relative"; do
   destination="${site_root}/${relative_path}"
   install -d -o ecs-user -g ecs-user -m 0755 "$(dirname "$destination")"
   install -o ecs-user -g ecs-user -m 0644 \
