@@ -38,7 +38,7 @@
 组件独立版本：
 
 ```text
-launcher-v0.11.6
+launcher-v0.11.7
 api-v0.12.0
 velocity-authorizer-v0.2.0
 publisher-v0.8.1
