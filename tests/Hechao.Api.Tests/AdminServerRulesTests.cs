@@ -81,6 +81,22 @@ public sealed class AdminServerRulesTests
     }
 
     [Fact]
+    public void ValidateCreate_RejectsInvalidScheduleAndAnnouncement()
+    {
+        var opensAt = DateTimeOffset.Parse("2026-07-27T12:00:00Z");
+        var errors = AdminServerRules.Validate(
+            CreateValidRequest() with
+            {
+                Announcement = new string('公', 281),
+                OpensAt = opensAt,
+                ClosesAt = opensAt
+            });
+
+        Assert.Contains("announcement", errors);
+        Assert.Contains("schedule", errors);
+    }
+
+    [Fact]
     public void ValidateUpdate_RequiresOptimisticConcurrencyRevision()
     {
         var request = new AdminServerUpdateRequest(
@@ -95,6 +111,9 @@ public sealed class AdminServerRulesTests
             "activity-neoforge-1.21.11",
             "activity",
             30,
+            "",
+            null,
+            null,
             ExpectedRevision: 0);
 
         var errors = AdminServerRules.Validate(request);
@@ -135,6 +154,9 @@ public sealed class AdminServerRulesTests
             "activity-neoforge-1.21.11",
             "activity",
             30,
-            IsVisible: true);
+            IsVisible: true,
+            Announcement: "",
+            OpensAt: null,
+            ClosesAt: null);
     }
 }

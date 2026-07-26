@@ -504,14 +504,17 @@ public sealed class MainWindowViewModel : ObservableObject
         "dollnight" => "特别企划",
         _ => "赫朝服务器"
     };
-    public string SelectedServerDescriptionText => SelectedServer?.Id switch
-    {
-        "lobby" => "从这里进入赫朝世界，并前往不同的服务器。",
-        "survival2" => "长期生存、建设与共同冒险的主世界。",
-        "activity" => "本期活动客户端会自动安装并匹配服务器版本。",
-        "dollnight" => "在夜幕与规则之间，完成这一场特别录制。",
-        _ => "与赫朝的伙伴们一起创造新的 Minecraft 故事。"
-    };
+    public string SelectedServerDescriptionText =>
+        !string.IsNullOrWhiteSpace(SelectedServer?.Announcement)
+            ? SelectedServer.Announcement
+            : SelectedServer?.Id switch
+            {
+                "lobby" => "从这里进入赫朝世界，并前往不同的服务器。",
+                "survival2" => "长期生存、建设与共同冒险的主世界。",
+                "activity" => "本期活动客户端会自动安装并匹配服务器版本。",
+                "dollnight" => "在夜幕与规则之间，完成这一场特别录制。",
+                _ => "与赫朝的伙伴们一起创造新的 Minecraft 故事。"
+            };
     public string SelectedServerVersionText => SelectedServer is null
         ? string.Empty
         : $"Minecraft {SelectedServer.MinecraftVersion} · {SelectedServer.Loader}";

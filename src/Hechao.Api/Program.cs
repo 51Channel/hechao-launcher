@@ -346,6 +346,7 @@ builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionStringBuilder.Co
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton<CatalogRepository>();
 builder.Services.AddSingleton<AdminCatalogRepository>();
+builder.Services.AddSingleton<AdminAccessRepository>();
 builder.Services.AddSingleton<AdminWebTokenGenerator>();
 builder.Services.AddSingleton<AdminTotpService>();
 builder.Services.AddSingleton<AdminWebSessionRepository>();
@@ -527,6 +528,16 @@ adminApi.MapPost("/catalog/servers", CreateAdminServerAsync)
 adminApi.MapPut("/catalog/servers/{serverId}", UpdateAdminServerAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapPut("/catalog/servers/{serverId}/visibility", SetAdminServerVisibilityAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapGet("/users", SearchAdminUsersAsync);
+adminApi.MapGet("/users/{userId:guid}/access-preview", GetAdminUserAccessPreviewAsync);
+adminApi.MapPut(
+        "/users/{userId:guid}/access-rules/{serverId}",
+        UpsertAdminServerAccessRuleAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
+adminApi.MapDelete(
+        "/users/{userId:guid}/access-rules/{serverId}",
+        DeleteAdminServerAccessRuleAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 app.MapDiagnosticUploads(adminApi);
@@ -1472,6 +1483,108 @@ async Task<IResult> GetAdminAuditLogsAsync(
         cancellationToken));
 }
 
+async Task<IResult> SearchAdminUsersAsync(
+    string? query,
+    int? limit,
+    AdminAccessRepository repository,
+    CancellationToken cancellationToken)
+{
+    var normalizedQuery = query?.Trim() ?? string.Empty;
+    var pageSize = limit ?? 50;
+    var errors = AdminAccessRules.ValidateSearch(normalizedQuery, pageSize);
+    return errors.Count > 0
+        ? Results.ValidationProblem(errors)
+        : Results.Ok(await repository.SearchUsersAsync(
+            normalizedQuery,
+            pageSize,
+            cancellationToken));
+}
+
+async Task<IResult> GetAdminUserAccessPreviewAsync(
+    Guid userId,
+    AdminAccessRepository repository,
+    CancellationToken cancellationToken)
+{
+    var preview = await repository.GetAccessPreviewAsync(userId, cancellationToken);
+    return preview is null ? Results.NotFound() : Results.Ok(preview);
+}
+
+async Task<IResult> UpsertAdminServerAccessRuleAsync(
+    Guid userId,
+    string serverId,
+    AdminServerAccessRuleUpsertRequest request,
+    AdminAccessRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminServerRules.IsValidServerId(serverId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["serverId"] = ["服务器 ID 无效。"]
+        });
+    }
+
+    var errors = AdminAccessRules.Validate(request, DateTimeOffset.UtcNow);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.UpsertRuleAsync(
+        userId,
+        serverId,
+        request,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccessMutationResult(result);
+}
+
+async Task<IResult> DeleteAdminServerAccessRuleAsync(
+    Guid userId,
+    string serverId,
+    AdminServerAccessRuleDeleteRequest request,
+    AdminAccessRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!AdminServerRules.IsValidServerId(serverId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["serverId"] = ["服务器 ID 无效。"]
+        });
+    }
+
+    var errors = AdminAccessRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await repository.DeleteRuleAsync(
+        userId,
+        serverId,
+        request.ExpectedRevision,
+        actor.UserId,
+        context.Connection.RemoteIpAddress,
+        cancellationToken);
+    return MapAdminAccessMutationResult(result);
+}
+
 IResult MapAdminMutationResult(AdminCatalogMutationResult result)
 {
     return result.Status switch
@@ -1490,6 +1603,35 @@ IResult MapAdminMutationResult(AdminCatalogMutationResult result)
             }),
         _ => Results.Problem(
             title: "服务器目录更新失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
+
+IResult MapAdminAccessMutationResult(AdminAccessMutationResult result)
+{
+    return result.Status switch
+    {
+        AdminAccessMutationStatus.Success => result.Rule is null
+            ? Results.NoContent()
+            : Results.Ok(result.Rule),
+        AdminAccessMutationStatus.NotFound => Results.NotFound(),
+        AdminAccessMutationStatus.UserNotFound => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["userId"] = ["玩家账号不存在。"]
+            }),
+        AdminAccessMutationStatus.ServerNotFound => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["serverId"] = ["服务器不存在。"]
+            }),
+        AdminAccessMutationStatus.RevisionConflict => Results.Conflict(new
+        {
+            message = "单服权限规则已被其他管理员修改，请刷新后重试。",
+            current = result.Rule
+        }),
+        _ => Results.Problem(
+            title: "单服权限规则更新失败",
             statusCode: StatusCodes.Status500InternalServerError)
     };
 }

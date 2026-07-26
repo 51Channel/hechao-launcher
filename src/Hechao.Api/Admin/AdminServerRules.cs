@@ -30,7 +30,10 @@ public static class AdminServerRules
             request.MinimumTier,
             request.ClientProfileId,
             request.VelocityTarget,
-            request.SortOrder);
+            request.SortOrder,
+            request.Announcement,
+            request.OpensAt,
+            request.ClosesAt);
 
         if (string.IsNullOrWhiteSpace(request.Id) || !IdPattern.IsMatch(request.Id))
         {
@@ -53,7 +56,10 @@ public static class AdminServerRules
             request.MinimumTier,
             request.ClientProfileId,
             request.VelocityTarget,
-            request.SortOrder);
+            request.SortOrder,
+            request.Announcement,
+            request.OpensAt,
+            request.ClosesAt);
 
         if (request.ExpectedRevision < 1)
         {
@@ -88,7 +94,10 @@ public static class AdminServerRules
         AccessTier minimumTier,
         string clientProfileId,
         string velocityTarget,
-        int sortOrder)
+        int sortOrder,
+        string announcement,
+        DateTimeOffset? opensAt,
+        DateTimeOffset? closesAt)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
@@ -137,6 +146,20 @@ public static class AdminServerRules
         if (sortOrder is < -100000 or > 100000)
         {
             errors["sortOrder"] = ["排序值必须在 -100000 到 100000 之间。"];
+        }
+
+        if (announcement is null ||
+            announcement.Length > 280 ||
+            announcement.Any(char.IsControl))
+        {
+            errors["announcement"] = ["公告最多 280 个字符，且不能包含控制字符。"];
+        }
+
+        if (opensAt is not null &&
+            closesAt is not null &&
+            opensAt >= closesAt)
+        {
+            errors["schedule"] = ["开放时间必须早于关闭时间。"];
         }
 
         return errors;

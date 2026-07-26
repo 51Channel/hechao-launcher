@@ -16,6 +16,10 @@ public sealed record AdminServerRecord(
     string VelocityTarget,
     int SortOrder,
     bool IsVisible,
+    string Announcement,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt,
+    ServerStatus EffectiveStatus,
     long Revision,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
@@ -33,7 +37,10 @@ public sealed record AdminServerCreateRequest(
     string ClientProfileId,
     string VelocityTarget,
     int SortOrder,
-    bool IsVisible);
+    bool IsVisible,
+    string Announcement,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt);
 
 public sealed record AdminServerUpdateRequest(
     string DisplayName,
@@ -47,6 +54,9 @@ public sealed record AdminServerUpdateRequest(
     string ClientProfileId,
     string VelocityTarget,
     int SortOrder,
+    string Announcement,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt,
     long ExpectedRevision);
 
 public sealed record AdminServerVisibilityRequest(
@@ -74,3 +84,69 @@ public sealed record AdminAuditLogEntry(
     JsonElement? BeforeData,
     JsonElement? AfterData,
     DateTimeOffset CreatedAt);
+
+public enum AdminServerAccessDecision
+{
+    Allow,
+    Deny
+}
+
+public sealed record AdminUserSummary(
+    Guid UserId,
+    string Username,
+    string DisplayName,
+    string? Email,
+    Guid? MinecraftUuid,
+    string? MinecraftName,
+    string LuckPermsPrimaryGroup,
+    AccessTier AccessTier,
+    DateTimeOffset? LuckPermsSyncedAt,
+    bool IsDisabled,
+    int ActiveRuleCount,
+    DateTimeOffset CreatedAt);
+
+public sealed record AdminServerAccessRuleRecord(
+    Guid UserId,
+    string ServerId,
+    AdminServerAccessDecision Decision,
+    string Reason,
+    DateTimeOffset? ExpiresAt,
+    long Revision,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt);
+
+public sealed record AdminServerAccessRuleUpsertRequest(
+    AdminServerAccessDecision Decision,
+    string Reason,
+    DateTimeOffset? ExpiresAt,
+    long? ExpectedRevision);
+
+public sealed record AdminServerAccessRuleDeleteRequest(long ExpectedRevision);
+
+public enum AdminEffectiveAccessReason
+{
+    AllowedByTier,
+    AllowedByRule,
+    PlayerNotLinked,
+    PlayerDisabled,
+    ServerArchived,
+    ServerUnavailable,
+    DeniedByRule,
+    InsufficientTier,
+    PermissionDataStale
+}
+
+public sealed record AdminServerAccessPreviewRecord(
+    string ServerId,
+    string ServerDisplayName,
+    ServerStatus ConfiguredStatus,
+    ServerStatus EffectiveStatus,
+    bool IsVisible,
+    AccessTier MinimumTier,
+    bool Allowed,
+    AdminEffectiveAccessReason Reason,
+    AdminServerAccessRuleRecord? Rule);
+
+public sealed record AdminUserAccessPreview(
+    AdminUserSummary User,
+    IReadOnlyList<AdminServerAccessPreviewRecord> Servers);

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Hechao.Api.Catalog;
 using Hechao.Contracts;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -299,7 +300,9 @@ public sealed class VelocityAuthorizationRepository(
                    server.velocity_target,
                    server.status,
                    server.minimum_tier,
-                   access_override.decision
+                   access_override.decision,
+                   server.opens_at,
+                   server.closes_at
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1::uuid
@@ -307,9 +310,12 @@ public sealed class VelocityAuthorizationRepository(
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             WHERE {{predicate}}
               AND server.is_visible
-            ORDER BY CASE server.status
-                         WHEN 'Online' THEN 0
-                         WHEN 'Maintenance' THEN 1
+            ORDER BY CASE
+                         WHEN server.status = 'Online'
+                              AND (server.opens_at IS NULL OR server.opens_at <= now())
+                              AND (server.closes_at IS NULL OR server.closes_at > now())
+                             THEN 0
+                         WHEN server.status = 'Maintenance' THEN 1
                          ELSE 2
                      END,
                      server.sort_order,
@@ -330,10 +336,22 @@ public sealed class VelocityAuthorizationRepository(
             return null;
         }
 
+        var configuredStatus =
+            Enum.Parse<ServerStatus>(reader.GetString(2), ignoreCase: true);
+        DateTimeOffset? opensAt = reader.IsDBNull(5)
+            ? null
+            : new DateTimeOffset(reader.GetDateTime(5));
+        DateTimeOffset? closesAt = reader.IsDBNull(6)
+            ? null
+            : new DateTimeOffset(reader.GetDateTime(6));
         return new VelocityServerAccess(
             reader.GetString(0),
             reader.GetString(1),
-            Enum.Parse<ServerStatus>(reader.GetString(2), ignoreCase: true),
+            ServerAvailabilityRules.ResolveStatus(
+                configuredStatus,
+                opensAt,
+                closesAt,
+                DateTimeOffset.UtcNow),
             Enum.Parse<AccessTier>(reader.GetString(3), ignoreCase: true),
             reader.IsDBNull(4)
                 ? ServerAccessOverride.None

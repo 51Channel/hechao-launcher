@@ -35,7 +35,10 @@ public sealed record ServerSummary(
     string MinecraftVersion,
     ModLoaderKind Loader,
     AccessTier MinimumTier,
-    string ClientProfileId);
+    string ClientProfileId,
+    string Announcement = "",
+    DateTimeOffset? OpensAt = null,
+    DateTimeOffset? ClosesAt = null);
 
 public sealed record ClientProfileSummary(
     string Id,

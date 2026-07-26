@@ -5,6 +5,7 @@ const state = {
     session: null,
     csrfToken: null,
     servers: [],
+    users: [],
     profiles: [],
     diagnostics: [],
     auditEntries: [],
@@ -12,7 +13,10 @@ const state = {
     activeView: "servers",
     serverFilter: "visible",
     serverSearch: "",
+    userSearch: "",
     editingServer: null,
+    selectedAccessPreview: null,
+    editingAccessServer: null,
     pendingVisibilityChange: null,
     recoveryCodes: [],
     toastTimer: null
@@ -47,7 +51,8 @@ function cacheElements() {
         "copy-secret-button", "enrollment-expiry", "console-view",
         "account-avatar", "account-name", "account-group", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
-        "servers-section", "profiles-section", "diagnostics-section", "audit-section",
+        "servers-section", "users-section", "profiles-section",
+        "diagnostics-section", "audit-section",
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
         "server-table-body", "server-empty-state", "profile-count",
@@ -61,6 +66,15 @@ function cacheElements() {
         "server-minecraft-version", "server-loader", "server-minimum-tier",
         "server-sort-order", "server-client-profile", "server-velocity-target",
         "server-is-visible", "server-visible-field", "server-revision-label",
+        "server-announcement", "server-opens-at", "server-closes-at",
+        "user-count", "user-search-form", "user-search", "user-search-button",
+        "user-table-body", "user-empty-state", "access-preview-panel",
+        "access-preview-title", "access-preview-subtitle", "access-preview-body",
+        "close-access-preview-button", "access-rule-drawer", "access-rule-form",
+        "access-rule-kicker", "access-rule-title", "close-access-rule-button",
+        "cancel-access-rule-button", "save-access-rule-button",
+        "delete-access-rule-button", "access-rule-error",
+        "access-rule-decision", "access-rule-reason", "access-rule-expires-at",
         "confirm-dialog", "confirm-icon", "confirm-title", "confirm-message",
         "cancel-confirm-button", "accept-confirm-button", "recovery-dialog",
         "recovery-code-list", "copy-recovery-button", "download-recovery-button",
@@ -99,6 +113,20 @@ function bindEvents() {
     elements["close-drawer-button"].addEventListener("click", closeServerDrawer);
     elements["cancel-server-button"].addEventListener("click", closeServerDrawer);
     elements["server-form"].addEventListener("submit", saveServer);
+    elements["user-search-form"].addEventListener("submit", searchUsers);
+    elements["close-access-preview-button"].addEventListener(
+        "click",
+        closeAccessPreview);
+    elements["close-access-rule-button"].addEventListener(
+        "click",
+        closeAccessRuleDrawer);
+    elements["cancel-access-rule-button"].addEventListener(
+        "click",
+        closeAccessRuleDrawer);
+    elements["access-rule-form"].addEventListener("submit", saveAccessRule);
+    elements["delete-access-rule-button"].addEventListener(
+        "click",
+        deleteAccessRule);
     elements["cancel-confirm-button"].addEventListener("click", () =>
         elements["confirm-dialog"].close());
     elements["accept-confirm-button"].addEventListener("click", applyVisibilityChange);
@@ -351,15 +379,18 @@ async function enterConsole() {
 async function loadConsoleData() {
     setBusy(elements["refresh-button"], true);
     try {
-        const [servers, profiles, diagnostics] = await Promise.all([
+        const [servers, profiles, diagnostics, users] = await Promise.all([
             api("/v1/admin/catalog/servers"),
             api("/v1/admin/catalog/client-profiles"),
-            api("/v1/admin/diagnostics?limit=200")
+            api("/v1/admin/diagnostics?limit=200"),
+            api(userSearchPath())
         ]);
         state.servers = servers;
         state.profiles = profiles;
         state.diagnostics = diagnostics;
+        state.users = users;
         renderServers();
+        renderUsers();
         renderProfiles();
         renderDiagnostics();
         populateProfileOptions();
@@ -388,7 +419,7 @@ async function refreshCurrentView() {
 }
 
 function switchView(view) {
-    if (!["servers", "profiles", "diagnostics", "audit"].includes(view)) {
+    if (!["servers", "users", "profiles", "diagnostics", "audit"].includes(view)) {
         return;
     }
     state.activeView = view;
@@ -396,6 +427,7 @@ function switchView(view) {
         button.classList.toggle("active", button.dataset.view === view));
     const labels = {
         servers: "服务器目录",
+        users: "玩家与权限",
         profiles: "客户端档案",
         diagnostics: "玩家诊断包",
         audit: "审计记录"
@@ -403,6 +435,7 @@ function switchView(view) {
     elements["breadcrumb-current"].textContent = labels[view];
     elements["view-title"].textContent = labels[view];
     elements["servers-section"].hidden = view !== "servers";
+    elements["users-section"].hidden = view !== "users";
     elements["profiles-section"].hidden = view !== "profiles";
     elements["diagnostics-section"].hidden = view !== "diagnostics";
     elements["audit-section"].hidden = view !== "audit";
@@ -428,7 +461,8 @@ function renderServers() {
 
     elements["server-total-count"].textContent = state.servers.length;
     elements["server-online-count"].textContent =
-        state.servers.filter(server => server.isVisible && server.status === "Online").length;
+        state.servers.filter(
+            server => server.isVisible && server.effectiveStatus === "Online").length;
     elements["server-maintenance-count"].textContent =
         state.servers.filter(server => server.isVisible && server.status === "Maintenance").length;
     elements["server-archived-count"].textContent =
@@ -473,7 +507,9 @@ function statusCell(server) {
     const cell = document.createElement("td");
     const badge = document.createElement("span");
     badge.className = `status-badge ${statusClass(server)}`;
-    badge.textContent = server.isVisible ? statusText(server.status) : "已归档";
+    badge.textContent = server.isVisible
+        ? effectiveStatusText(server)
+        : "已归档";
     cell.append(badge);
     return cell;
 }
@@ -543,9 +579,21 @@ function iconButton(icon, title, handler) {
 
 function statusClass(server) {
     if (!server.isVisible) return "status-archived";
-    if (server.status === "Online") return "status-online";
-    if (server.status === "Maintenance") return "status-maintenance";
+    if (server.effectiveStatus === "Online") return "status-online";
+    if (server.effectiveStatus === "Maintenance") return "status-maintenance";
     return "status-closed";
+}
+
+function effectiveStatusText(server) {
+    if (server.status === "Online" && server.effectiveStatus === "Closed") {
+        if (server.opensAt && new Date(server.opensAt) > new Date()) {
+            return "等待开放";
+        }
+        if (server.closesAt && new Date(server.closesAt) <= new Date()) {
+            return "计划已结束";
+        }
+    }
+    return statusText(server.effectiveStatus);
 }
 
 function statusText(status) {
@@ -563,6 +611,297 @@ function tierText(tier) {
         Collaborator: "协作者",
         Administrator: "管理员"
     }[tier] || tier;
+}
+
+function userSearchPath() {
+    const params = new URLSearchParams({ limit: "50" });
+    if (state.userSearch) params.set("query", state.userSearch);
+    return `/v1/admin/users?${params}`;
+}
+
+async function searchUsers(event) {
+    event.preventDefault();
+    state.userSearch = elements["user-search"].value.trim();
+    setBusy(elements["user-search-button"], true);
+    try {
+        state.users = await api(userSearchPath());
+        renderUsers();
+        closeAccessPreview();
+    } catch (error) {
+        showToast(error.message, true);
+    } finally {
+        setBusy(elements["user-search-button"], false);
+    }
+}
+
+function renderUsers() {
+    elements["user-table-body"].replaceChildren();
+    elements["user-count"].textContent = `${state.users.length} 个账号`;
+    state.users.forEach(user => {
+        const row = document.createElement("tr");
+
+        const account = document.createElement("td");
+        const accountCopy = document.createElement("div");
+        accountCopy.className = "profile-name";
+        const displayName = document.createElement("strong");
+        displayName.textContent = user.displayName;
+        const username = document.createElement("span");
+        username.textContent = `@${user.username}`;
+        accountCopy.append(displayName, username);
+        account.append(accountCopy);
+
+        const minecraft = document.createElement("td");
+        const minecraftCopy = document.createElement("div");
+        minecraftCopy.className = "meta-stack";
+        const minecraftName = document.createElement("strong");
+        minecraftName.textContent = user.minecraftName || "尚未绑定";
+        const minecraftMeta = document.createElement("span");
+        minecraftMeta.textContent = user.minecraftUuid
+            ? user.minecraftUuid
+            : "无 Minecraft 正版身份";
+        minecraftCopy.append(minecraftName, minecraftMeta);
+        minecraft.append(minecraftCopy);
+
+        const status = document.createElement("td");
+        const statusBadge = document.createElement("span");
+        statusBadge.className =
+            `status-badge ${user.isDisabled ? "status-closed" : "status-online"}`;
+        statusBadge.textContent = user.isDisabled ? "已停用" : "正常";
+        status.append(statusBadge);
+
+        const actions = document.createElement("td");
+        actions.className = "actions-column";
+        const actionGroup = document.createElement("div");
+        actionGroup.className = "row-actions";
+        actionGroup.append(iconButton(
+            "eye",
+            "预览最终权限",
+            () => openAccessPreview(user.userId)));
+        actions.append(actionGroup);
+
+        row.append(
+            account,
+            minecraft,
+            textCell(tierText(user.accessTier)),
+            status,
+            textCell(String(user.activeRuleCount)),
+            actions
+        );
+        elements["user-table-body"].append(row);
+    });
+    elements["user-empty-state"].hidden = state.users.length !== 0;
+    elements["user-table-body"].parentElement.hidden = state.users.length === 0;
+}
+
+async function openAccessPreview(userId) {
+    try {
+        const preview = await api(
+            `/v1/admin/users/${encodeURIComponent(userId)}/access-preview`);
+        state.selectedAccessPreview = preview;
+        renderAccessPreview();
+        elements["access-preview-panel"].hidden = false;
+        elements["access-preview-panel"].scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    } catch (error) {
+        showToast(error.message, true);
+    }
+}
+
+function closeAccessPreview() {
+    state.selectedAccessPreview = null;
+    state.editingAccessServer = null;
+    elements["access-preview-panel"].hidden = true;
+    elements["access-preview-body"].replaceChildren();
+}
+
+function renderAccessPreview() {
+    const preview = state.selectedAccessPreview;
+    if (!preview) return;
+    const user = preview.user;
+    elements["access-preview-title"].textContent =
+        `${user.displayName} 的有效权限`;
+    elements["access-preview-subtitle"].textContent = [
+        `@${user.username}`,
+        user.minecraftName || "未绑定 Minecraft",
+        tierText(user.accessTier),
+        `${user.activeRuleCount} 条有效规则`
+    ].join(" · ");
+    elements["access-preview-body"].replaceChildren();
+
+    preview.servers.forEach(server => {
+        const row = document.createElement("tr");
+        const identity = document.createElement("td");
+        const identityCopy = document.createElement("div");
+        identityCopy.className = "profile-name";
+        const displayName = document.createElement("strong");
+        displayName.textContent = server.serverDisplayName;
+        const id = document.createElement("span");
+        id.textContent = server.serverId;
+        identityCopy.append(displayName, id);
+        identity.append(identityCopy);
+
+        const status = document.createElement("td");
+        const statusBadge = document.createElement("span");
+        statusBadge.className =
+            `status-badge ${statusClass({
+                isVisible: server.isVisible,
+                effectiveStatus: server.effectiveStatus
+            })}`;
+        statusBadge.textContent = server.isVisible
+            ? statusText(server.effectiveStatus)
+            : "已归档";
+        status.append(statusBadge);
+
+        const rule = document.createElement("td");
+        const ruleCopy = document.createElement("div");
+        ruleCopy.className = "meta-stack";
+        const ruleDecision = document.createElement("strong");
+        ruleDecision.textContent = accessRuleText(server.rule);
+        const ruleExpiry = document.createElement("span");
+        ruleExpiry.textContent = server.rule?.expiresAt
+            ? `到期 ${formatDateTime(server.rule.expiresAt)}`
+            : server.rule ? "长期有效" : "按称号等级";
+        ruleCopy.append(ruleDecision, ruleExpiry);
+        rule.append(ruleCopy);
+
+        const result = document.createElement("td");
+        const resultText = document.createElement("span");
+        resultText.className =
+            `access-result ${server.allowed ? "allowed" : "denied"}`;
+        resultText.textContent =
+            `${server.allowed ? "允许" : "拒绝"} · ${accessReasonText(server.reason)}`;
+        result.append(resultText);
+
+        const actions = document.createElement("td");
+        actions.className = "actions-column";
+        const actionGroup = document.createElement("div");
+        actionGroup.className = "row-actions";
+        actionGroup.append(iconButton(
+            server.rule ? "pencil" : "plus",
+            server.rule ? "编辑单服规则" : "新增单服规则",
+            () => openAccessRuleDrawer(server)));
+        actions.append(actionGroup);
+
+        row.append(
+            identity,
+            status,
+            textCell(tierText(server.minimumTier)),
+            rule,
+            result,
+            actions
+        );
+        elements["access-preview-body"].append(row);
+    });
+}
+
+function accessRuleText(rule) {
+    if (!rule) return "无单服规则";
+    return rule.decision === "Allow" ? "单服允许" : "单服拒绝";
+}
+
+function accessReasonText(reason) {
+    return {
+        AllowedByTier: "称号等级满足",
+        AllowedByRule: "单服规则允许",
+        PlayerNotLinked: "未绑定正版身份",
+        PlayerDisabled: "账号已停用",
+        ServerArchived: "服务器已归档",
+        ServerUnavailable: "服务器未开放",
+        DeniedByRule: "单服规则拒绝",
+        InsufficientTier: "称号等级不足",
+        PermissionDataStale: "称号数据待同步"
+    }[reason] || reason;
+}
+
+function openAccessRuleDrawer(server) {
+    const preview = state.selectedAccessPreview;
+    if (!preview) return;
+    state.editingAccessServer = server;
+    elements["access-rule-kicker"].textContent =
+        `${preview.user.displayName} · ${server.serverDisplayName}`;
+    elements["access-rule-title"].textContent =
+        server.rule ? "编辑单服权限规则" : "新增单服权限规则";
+    elements["access-rule-decision"].value =
+        server.rule?.decision || "Allow";
+    elements["access-rule-reason"].value = server.rule?.reason || "";
+    elements["access-rule-expires-at"].value =
+        formatInputDateTime(server.rule?.expiresAt);
+    elements["delete-access-rule-button"].hidden = !server.rule;
+    setInlineError(elements["access-rule-error"], "");
+    elements["access-rule-drawer"].showModal();
+    elements["access-rule-decision"].focus();
+}
+
+function closeAccessRuleDrawer() {
+    elements["access-rule-drawer"].close();
+    state.editingAccessServer = null;
+}
+
+async function saveAccessRule(event) {
+    event.preventDefault();
+    const preview = state.selectedAccessPreview;
+    const server = state.editingAccessServer;
+    if (!preview || !server) return;
+    setBusy(elements["save-access-rule-button"], true);
+    setInlineError(elements["access-rule-error"], "");
+    try {
+        await api(
+            `/v1/admin/users/${encodeURIComponent(preview.user.userId)}` +
+            `/access-rules/${encodeURIComponent(server.serverId)}`,
+            {
+                method: "PUT",
+                body: {
+                    decision: elements["access-rule-decision"].value,
+                    reason: elements["access-rule-reason"].value.trim(),
+                    expiresAt: parseInputDateTime(
+                        elements["access-rule-expires-at"].value),
+                    expectedRevision: server.rule?.revision ?? null
+                }
+            });
+        const userId = preview.user.userId;
+        closeAccessRuleDrawer();
+        showToast("单服权限规则已保存");
+        await Promise.all([openAccessPreview(userId), reloadUsers()]);
+    } catch (error) {
+        if (error.status === 409) {
+            await openAccessPreview(preview.user.userId);
+        }
+        setInlineError(elements["access-rule-error"], error.message);
+    } finally {
+        setBusy(elements["save-access-rule-button"], false);
+    }
+}
+
+async function deleteAccessRule() {
+    const preview = state.selectedAccessPreview;
+    const server = state.editingAccessServer;
+    if (!preview || !server?.rule) return;
+    setBusy(elements["delete-access-rule-button"], true);
+    setInlineError(elements["access-rule-error"], "");
+    try {
+        await api(
+            `/v1/admin/users/${encodeURIComponent(preview.user.userId)}` +
+            `/access-rules/${encodeURIComponent(server.serverId)}`,
+            {
+                method: "DELETE",
+                body: { expectedRevision: server.rule.revision }
+            });
+        const userId = preview.user.userId;
+        closeAccessRuleDrawer();
+        showToast("单服权限规则已清除");
+        await Promise.all([openAccessPreview(userId), reloadUsers()]);
+    } catch (error) {
+        setInlineError(elements["access-rule-error"], error.message);
+    } finally {
+        setBusy(elements["delete-access-rule-button"], false);
+    }
+}
+
+async function reloadUsers() {
+    state.users = await api(userSearchPath());
+    renderUsers();
 }
 
 function renderProfiles() {
@@ -702,6 +1041,9 @@ function openCreateServer() {
     elements["server-loader"].value = "Paper";
     elements["server-minimum-tier"].value = "Member";
     elements["server-sort-order"].value = "100";
+    elements["server-announcement"].value = "";
+    elements["server-opens-at"].value = "";
+    elements["server-closes-at"].value = "";
     elements["server-is-visible"].checked = true;
     elements["server-visible-field"].hidden = false;
     elements["server-revision-label"].textContent = "新记录";
@@ -727,6 +1069,9 @@ function openEditServer(server) {
     elements["server-sort-order"].value = server.sortOrder;
     elements["server-client-profile"].value = server.clientProfileId;
     elements["server-velocity-target"].value = server.velocityTarget;
+    elements["server-announcement"].value = server.announcement || "";
+    elements["server-opens-at"].value = formatInputDateTime(server.opensAt);
+    elements["server-closes-at"].value = formatInputDateTime(server.closesAt);
     elements["server-visible-field"].hidden = true;
     elements["server-revision-label"].textContent = `修订号 r${server.revision}`;
     setInlineError(elements["form-error"], "");
@@ -756,7 +1101,10 @@ async function saveServer(event) {
         minimumTier: elements["server-minimum-tier"].value,
         clientProfileId: elements["server-client-profile"].value,
         velocityTarget: elements["server-velocity-target"].value.trim(),
-        sortOrder: Number(elements["server-sort-order"].value)
+        sortOrder: Number(elements["server-sort-order"].value),
+        announcement: elements["server-announcement"].value.trim(),
+        opensAt: parseInputDateTime(elements["server-opens-at"].value),
+        closesAt: parseInputDateTime(elements["server-closes-at"].value)
     };
     try {
         if (state.editingServer) {
@@ -898,6 +1246,7 @@ function auditMeta(primary, secondary) {
 }
 
 function auditIcon(action) {
+    if (action.includes("access.server_rule")) return "users";
     if (action.includes("created")) return "plus";
     if (action.includes("archived")) return "archive";
     if (action.includes("restored")) return "rotate-ccw";
@@ -913,6 +1262,9 @@ function auditActionText(action) {
         "catalog.server.updated": "编辑服务器",
         "catalog.server.archived": "归档服务器",
         "catalog.server.restored": "恢复服务器",
+        "access.server_rule.created": "新增单服权限规则",
+        "access.server_rule.updated": "编辑单服权限规则",
+        "access.server_rule.deleted": "清除单服权限规则",
         "admin.login_ticket.created": "创建后台登录票据",
         "admin.web_session.created": "登录管理后台",
         "admin.web_session.revoked": "退出管理后台",
@@ -992,4 +1344,18 @@ function formatDateTime(value) {
         hour: "2-digit",
         minute: "2-digit"
     });
+}
+
+function formatInputDateTime(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+}
+
+function parseInputDateTime(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }

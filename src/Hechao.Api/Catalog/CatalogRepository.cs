@@ -142,7 +142,8 @@ public sealed class CatalogRepository(
                    server.status, server.online_players, server.max_players,
                    server.minecraft_version, server.loader, server.minimum_tier,
                    server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
-                   heartbeat.max_players, heartbeat.received_at
+                   heartbeat.max_players, heartbeat.received_at, server.announcement,
+                   server.opens_at, server.closes_at
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
@@ -155,7 +156,8 @@ public sealed class CatalogRepository(
                    server.status, server.online_players, server.max_players,
                    server.minecraft_version, server.loader, server.minimum_tier,
                    server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
-                   heartbeat.max_players, heartbeat.received_at
+                   heartbeat.max_players, heartbeat.received_at, server.announcement,
+                   server.opens_at, server.closes_at
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
@@ -201,6 +203,17 @@ public sealed class CatalogRepository(
         while (await reader.ReadAsync(cancellationToken))
         {
             var configuredStatus = Enum.Parse<ServerStatus>(reader.GetString(4), ignoreCase: true);
+            DateTimeOffset? opensAt = reader.IsDBNull(16)
+                ? null
+                : new DateTimeOffset(reader.GetDateTime(16));
+            DateTimeOffset? closesAt = reader.IsDBNull(17)
+                ? null
+                : new DateTimeOffset(reader.GetDateTime(17));
+            var effectiveStatus = ServerAvailabilityRules.ResolveStatus(
+                configuredStatus,
+                opensAt,
+                closesAt,
+                now);
             ServerHeartbeatObservation? heartbeat = null;
             if (!reader.IsDBNull(11))
             {
@@ -212,7 +225,7 @@ public sealed class CatalogRepository(
             }
 
             var runtimeStatus = ServerRuntimeStatusResolver.Resolve(
-                configuredStatus,
+                effectiveStatus,
                 reader.GetInt32(5),
                 reader.GetInt32(6),
                 heartbeat,
@@ -229,7 +242,10 @@ public sealed class CatalogRepository(
                 reader.GetString(7),
                 Enum.Parse<ModLoaderKind>(reader.GetString(8), ignoreCase: true),
                 Enum.Parse<AccessTier>(reader.GetString(9), ignoreCase: true),
-                reader.GetString(10)));
+                reader.GetString(10),
+                reader.GetString(15),
+                opensAt,
+                closesAt));
         }
 
         return servers;

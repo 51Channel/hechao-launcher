@@ -124,6 +124,10 @@
                     <img src="/admin/assets/icons/server.svg" alt="">
                     <span>服务器目录</span>
                 </button>
+                <button class="nav-item" type="button" data-view="users">
+                    <img src="/admin/assets/icons/users.svg" alt="">
+                    <span>玩家与权限</span>
+                </button>
                 <button class="nav-item" type="button" data-view="profiles">
                     <img src="/admin/assets/icons/package.svg" alt="">
                     <span>客户端档案</span>
@@ -229,6 +233,77 @@
                             <img src="/admin/assets/icons/server.svg" alt="">
                             <strong>没有匹配的服务器</strong>
                             <span>调整搜索条件或目录范围。</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="users-section" class="view-section" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <h2>玩家与权限</h2>
+                            <p>搜索赫朝账号，并预览目录、开放状态、称号与单服规则共同产生的最终结果。</p>
+                        </div>
+                        <span id="user-count" class="count-label">0 个账号</span>
+                    </div>
+                    <form id="user-search-form" class="user-search-toolbar">
+                        <label class="search-control" for="user-search">
+                            <img src="/admin/assets/icons/search.svg" alt="">
+                            <input id="user-search" type="search"
+                                   placeholder="账号名、显示名、邮箱或 Minecraft 名称"
+                                   maxlength="80">
+                        </label>
+                        <button id="user-search-button" class="button button-primary" type="submit">
+                            <img src="/admin/assets/icons/search.svg" alt="">
+                            搜索玩家
+                        </button>
+                    </form>
+                    <div class="table-frame">
+                        <table class="user-table">
+                            <thead>
+                            <tr>
+                                <th>赫朝账号</th>
+                                <th>Minecraft 身份</th>
+                                <th>当前等级</th>
+                                <th>账号状态</th>
+                                <th>有效规则</th>
+                                <th class="actions-column">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                        <div id="user-empty-state" class="empty-state" hidden>
+                            <img src="/admin/assets/icons/users.svg" alt="">
+                            <strong>没有匹配的账号</strong>
+                            <span>可按赫朝账号、显示名、邮箱或 Minecraft 名称搜索。</span>
+                        </div>
+                    </div>
+
+                    <div id="access-preview-panel" class="access-preview" hidden>
+                        <div class="section-heading">
+                            <div>
+                                <h2 id="access-preview-title">有效权限预览</h2>
+                                <p id="access-preview-subtitle"></p>
+                            </div>
+                            <button id="close-access-preview-button"
+                                    class="button button-secondary" type="button">
+                                <img src="/admin/assets/icons/x.svg" alt="">
+                                关闭预览
+                            </button>
+                        </div>
+                        <div class="table-frame">
+                            <table class="access-table">
+                                <thead>
+                                <tr>
+                                    <th>服务器</th>
+                                    <th>开放状态</th>
+                                    <th>最低等级</th>
+                                    <th>单服规则</th>
+                                    <th>最终结果</th>
+                                    <th class="actions-column">操作</th>
+                                </tr>
+                                </thead>
+                                <tbody id="access-preview-body"></tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -391,6 +466,20 @@
                         Velocity 目标
                         <input id="server-velocity-target" name="velocityTarget" maxlength="64" required>
                     </label>
+                    <label class="form-span">
+                        玩家公告
+                        <textarea id="server-announcement" name="announcement" maxlength="280"
+                                  rows="3" placeholder="维护原因、活动说明或开放提示"></textarea>
+                        <span>公告会显示在启动器当前服务器说明中。</span>
+                    </label>
+                    <label>
+                        自动开放时间
+                        <input id="server-opens-at" name="opensAt" type="datetime-local">
+                    </label>
+                    <label>
+                        自动关闭时间
+                        <input id="server-closes-at" name="closesAt" type="datetime-local">
+                    </label>
                     <label id="server-visible-field" class="checkbox-field form-span">
                         <input id="server-is-visible" name="isVisible" type="checkbox" checked>
                         <span>
@@ -407,6 +496,66 @@
                     <button id="save-server-button" class="button button-primary" type="submit">
                         <img src="/admin/assets/icons/save.svg" alt="">
                         保存
+                    </button>
+                </div>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog id="access-rule-drawer" class="drawer">
+        <form id="access-rule-form" method="dialog">
+            <header class="drawer-header">
+                <div>
+                    <span id="access-rule-kicker">单服权限</span>
+                    <h2 id="access-rule-title">设置权限规则</h2>
+                </div>
+                <button id="close-access-rule-button" class="icon-button"
+                        type="button" title="关闭">
+                    <img src="/admin/assets/icons/x.svg" alt="">
+                </button>
+            </header>
+            <div class="drawer-body">
+                <div id="access-rule-error" class="inline-alert" hidden>
+                    <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                    <span></span>
+                </div>
+                <div class="form-grid single-column">
+                    <label>
+                        决定
+                        <select id="access-rule-decision" required>
+                            <option value="Allow">允许进入</option>
+                            <option value="Deny">拒绝进入</option>
+                        </select>
+                    </label>
+                    <label>
+                        原因
+                        <textarea id="access-rule-reason" maxlength="240" rows="4"
+                                  placeholder="记录临时授权或拒绝的原因"></textarea>
+                    </label>
+                    <label>
+                        到期时间
+                        <input id="access-rule-expires-at" type="datetime-local">
+                        <span>留空表示长期有效；到期后自动退回称号等级判定。</span>
+                    </label>
+                    <div class="rule-boundary-note">
+                        <img src="/admin/assets/icons/shield-check.svg" alt="">
+                        <span>单服允许不会绕过服务器维护、关闭、归档或账号停用状态。</span>
+                    </div>
+                </div>
+            </div>
+            <footer class="drawer-footer">
+                <button id="delete-access-rule-button"
+                        class="button button-secondary" type="button" hidden>
+                    <img src="/admin/assets/icons/archive.svg" alt="">
+                    清除规则
+                </button>
+                <div>
+                    <button id="cancel-access-rule-button"
+                            class="button button-secondary" type="button">取消</button>
+                    <button id="save-access-rule-button"
+                            class="button button-primary" type="submit">
+                        <img src="/admin/assets/icons/save.svg" alt="">
+                        保存规则
                     </button>
                 </div>
             </footer>
