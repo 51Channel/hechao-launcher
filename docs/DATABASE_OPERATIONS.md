@@ -1,7 +1,7 @@
 # 启动器数据库运维
 
 > 当前数据库：PostgreSQL 16
-> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳、诊断上传、单服访问规则和审计数据
+> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳、诊断上传、单服访问规则、客户端遥测和审计数据
 
 ## 1. 运行边界
 
@@ -49,6 +49,8 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `11` | `admin_account_security` | 平台账号状态、设备与平台会话撤销、Minecraft UUID 定时封禁 |
 | `12` | `forum_session_revocation_outbox` | 论坛 Cookie 撤销 outbox、租约、重试和幂等投递状态 |
 | `13` | `luckperms_tier_change_commands` | 固定四级全局等级命令、代理认领、完成状态与历史索引 |
+| `14` | `client_profile_release_channels` | 不可变签名发布、Test/Gray/Production 通道、暂停和修订号 |
+| `15` | `launcher_telemetry` | 30 天客户端运行事件、幂等主键和聚合索引 |
 
 ## 4. 自动备份
 
@@ -99,6 +101,15 @@ API `0.16.0` 发布前协调备份位于
 清单中的 PostgreSQL、论坛 SQLite、论坛源码、API 发布与配置共 8 项均通过校验。
 该备份完成隔离恢复与迁移 `11` 至 `13` 验收，生产部署后再次核对迁移记录为
 `1` 至 `13`。
+
+API `0.18.0` 发布前协调备份位于
+`/var/backups/hechao-unified-account/20260727T000015Z`。其中数据库 dump 为
+`119,611` 字节，SHA-256
+`2D85CB21711B8817202A5177FF3BC96E27B7AB2B4540B5ADD9B1FE0530815C75`；
+`pg_restore --list` 成功读取 145 个目录项。整份备份清单 SHA-256 为
+`068D90C8E21DC4F277E78FA09951C3587F9B7D9C57CBD731E8D23D97A7BC33E6`，
+API、数据库、论坛 SQLite、源码和环境文件共 8 项均通过校验。生产部署后迁移记录为
+`1` 至 `15`，目录和发布记录数量保持不变。
 
 ## 5. 恢复边界
 

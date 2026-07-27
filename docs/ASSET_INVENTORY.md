@@ -186,8 +186,8 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 
 ## 5. 当前 API 部署状态
 
-- 发布 ID：`0.16.0-20260726T222124Z`
-- API `0.16.0` 已部署；启动器 `0.11.12` 为私有 OSS 灰度候选。管理员 Web 已启用，但当前 MFA 凭据数为 `0`
+- 发布 ID：`0.18.0-20260726T234852Z`
+- API `0.18.0` 已部署；启动器 `0.11.12` 为私有 OSS 灰度版本，`0.11.13` 为遥测源码候选。管理员 Web 已启用，但当前 MFA 凭据数为 `0`
 - Git 标签：`launcher-v0.11.12` 指向 `2e21c5b93980bb62120e0f5cb9ee124658966d20`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
@@ -196,11 +196,12 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 - 公网入口：`https://launcher-api.hechao.world`
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
 - `GET /v1/catalog`：过渡阶段匿名请求返回目录，无效 Bearer 返回 401；正式强制开关待认证许可完成后启用
-- 数据库迁移：启动时迁移 `1` 至 `13` 校验全部通过，包括目录、认证、Velocity、心跳、管理员 Web、赫朝账号、诊断上传、服务器排期、单服规则、账号安全、论坛撤销 outbox 与 LuckPerms 等级命令
+- 数据库迁移：启动时迁移 `1` 至 `15` 校验全部通过，包括目录、认证、Velocity、心跳、管理员 Web、赫朝账号、诊断上传、服务器排期、单服规则、账号安全、论坛撤销 outbox、LuckPerms 等级命令、客户端发布通道与运行遥测
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
 - 状态心跳：错误凭据返回 401；真实五目标批次成功写入，活动服离线被隔离，目录实时人数与维护状态覆盖通过
+- 运行遥测：认证批次、幂等去重、30 天留存、三窗口聚合和后台页面已部署；真实启动器 `0.11.13` 与管理员 MFA 页面待验收
 - 数据库应用角色：非超级用户，无建库和建角色权限
 - 公网 `8.148.207.171:5433`：连接超时，符合预期
 - Nginx 站点：`/etc/nginx/sites-available/hechao-launcher.conf`

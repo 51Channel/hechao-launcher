@@ -1,8 +1,8 @@
 # API 0.18.0 发布记录
 
-> 状态：候选制品已完成隔离生产副本验收，尚未切换生产
+> 状态：已生产部署并完成公网回归
 >
-> 当前生产：`0.17.0-20260726T231515Z`
+> 当前生产：`0.18.0-20260726T234852Z`
 >
 > 候选发布 ID：`0.18.0-20260726T234852Z`
 
@@ -40,12 +40,36 @@
 - 临时数据库、目录和 systemd 单元已清理；生产链接仍指向
   `0.17.0-20260726T231515Z`，生产服务 `NRestarts=0`。
 
-## 4. 生产切换与回滚
+## 4. 生产切换
 
-生产切换前必须生成统一账号部署备份，验证数据库 dump 的 SHA-256 和
-`pg_restore --list`，再使用 [`install-release.sh`](../deploy/linux/install-release.sh)
-原子切换。切换后补记实际备份路径、当前链接、迁移、日志和公网回归证据。
+生产切换前统一备份位于：
+
+```text
+/var/backups/hechao-unified-account/20260727T000015Z
+```
+
+备份清单 SHA-256 为
+`068D90C8E21DC4F277E78FA09951C3587F9B7D9C57CBD731E8D23D97A7BC33E6`。
+其中 PostgreSQL custom dump 为 `119,611` 字节，SHA-256
+`2D85CB21711B8817202A5177FF3BC96E27B7AB2B4540B5ADD9B1FE0530815C75`，
+`pg_restore --list` 成功读取 145 个目录项。API 当前发布、环境文件、论坛 SQLite、
+论坛源码和环境文件的清单校验也全部通过。
+
+[`install-release.sh`](../deploy/linux/install-release.sh) 原子切换后：
+
+- `current` 指向
+  `/opt/hechao-launcher-api/releases/0.18.0-20260726T234852Z`。
+- 安装后的 `Hechao.Api` SHA-256 与候选制品一致。
+- `/healthz`、`/readyz` 和公网入口均报告 `0.18.0`、database ready。
+- 迁移最大值为 15，遥测表存在且初始记录数为 0。
+- 目录仍为 6 台服务器、6 个档案、6 个发布和 18 个通道。
+- 五个 Velocity 目标心跳继续更新，systemd `NRestarts=0`。
+- 部署后 journal 没有 warning/error。
+- `hechao.world`、`api.hechao.world` 与管理入口均为 200，
+  `launcher-api.hechao.world/admin/` 为 404。
+- 未认证遥测和管理员汇总分别返回 401，公网 `8090` 继续超时不可达。
+
+## 5. 回滚
 
 直接回滚目标为 `0.17.0-20260726T231515Z`。迁移 15 为加法变更，回滚时保留遥测表；
 旧 API 不读取该表。
-
