@@ -72,14 +72,20 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - 启动器 `0.11.6` 小范围测试前数据库基线 `/var/backups/hechao-launcher/database/hechao-launcher-20260726T084308Z.dump` 为 `85,620` 字节，SHA-256 为 `199e8811da08e9f9c2f1db88866f9dd51574ab9b043b6ba147b3092ad0413c36`；备份服务结果、校验和与 `pg_restore --list` 均通过。
 - `hechao-launcher-db-backup.timer` 已启用，每日生成 PostgreSQL custom-format 备份并保留 14 天；首份备份校验通过，`pg_restore --list` 可读取 36 个对象。
 - 首份备份已恢复到唯一命名的临时验证库，迁移版本、3 个客户端档案、4 个服务器和 0 个初始用户均与生产库一致，验证后只删除了临时库。
-- 网站与 Sub2API 仍缺少新的统一每日备份和异地副本；启动器数据库的 RSA/AES-GCM 异地加密、私有 OSS 往返复验、失败告警和隔离恢复工具已部署，首次真实 OSS 往返等待 RAM v4 保存。
+- 启动器数据库首份真实 OSS 异地备份为
+  `backups/database/2026/07/hechao-launcher-20260727T125652Z.hcbackup`，密文
+  `193,395` 字节、SHA-256
+  `3A336B50CE0A505E4CE3802385926B8C4CB17B0CB0AC97A3B2A0BCB4921CB8E2`；
+  上传、立即下载、逐字节复验、异地主机解密和隔离恢复均通过。
+- `hechao-offsite-database-backup.timer` 已启用，失败标记已清除，平台监控器已成功
+  投递恢复通知。网站与 Sub2API 仍缺少新的统一每日备份和异地副本。
 - 阿里云控制台快照状态尚未通过 API 或控制台复核。
 
 ### 1.4 客户端签名与发布资产
 
 - 生产签名 Key ID 为 `release-2026-07-primary`，算法为 `ECDSA_P256_SHA256`，公钥 SHA-256 为 `6D4ACA1E787CFEDA1C3A5D7B772FB1F0E03C298848538D272B12BCFAF1C94F9E`。
 - 私钥主副本由 Windows DPAPI `CurrentUser` 加密保存在 `%LocalAppData%\HechaoLauncherAdmin\secrets`，同一密文镜像位于 `H:\Hechao-SecureBackup`；两处 ACL 均仅允许当前管理员与 `SYSTEM`。
-- 私钥未进入源码、发布包、API 或游戏 VPS；临时 PEM 与恢复演练的二进制 PKCS#8 已清理。发布器 `0.9.0` 已把生产私钥导出为 RSA/AES-GCM 加密恢复包并完成解密、临时 DPAPI 恢复、真实清单签名和生产公钥验签。加密恢复包等待写入私有 OSS 恢复前缀，恢复口令副本已与密文分离保存在游戏 VPS。
+- 私钥未进入源码、发布包、API 或游戏 VPS；临时 PEM 与恢复演练的二进制 PKCS#8 已清理。发布器 `0.9.0` 已把生产私钥导出为 RSA/AES-GCM 加密恢复包并完成解密、临时 DPAPI 恢复、真实清单签名和生产公钥验签。加密恢复包已写入 `backups/recovery/signing-key-v1/distribution-signing-private.hcbackup` 并完成 OSS 回读逐字节复验；恢复口令副本与密文分离保存在游戏 VPS。
 - `0.6.0` 启动器已嵌入该公钥并完成程序集资源加载、真实清单签名/验签、篡改拒绝、全量安装、受管 Java 21、Fabric 进程构建和启动前授权验证；加入状态采集后解决方案测试为 `80/80` 通过。
 - `Hechao-Launcher-0.6.0-win-x64.zip` SHA-256 为 `9529C175A168EDE850D4A519E50EA71268BB8A809D128FC5076F18D48D90CC0C`，其中单文件 EXE SHA-256 为 `0DF28FD71DA34303C1FAAC11C1D041884C4AF664D192D3D2A719FAF9A602C2E7`；历史发布器 `Hechao-Publisher-0.5.0-win-x64.zip` SHA-256 为 `176EAF4B50C36A9254E90C8B3EB5F35FAC4089095C594B3A94932B395F46B696`。
 - 发布器 `0.6.0` 最终本机候选基于提交 `12432fb5772f365d79784eb141e1af104d20022c`。单文件 EXE 为 `74,018,082` 字节，SHA-256 为 `54B7BE1AD936D2420F54C7164973321B5C9BC59CA30C8C1CA8B9E5284FBF8303`；`Hechao-Publisher-0.6.0-win-x64.zip` 为 `32,088,917` 字节，SHA-256 为 `4B783D51C7F3DA8D71A98DE593042435029AE4F201C48DF3F57CA88F78D31DBF`，归档仅含该 EXE。EXE 为 `NotSigned`，从归档重新解压后已使用生产信任包完整验收活动档案 `1.0.10` 的 `4,754` 个对象。
@@ -116,7 +122,17 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 - Vanilla 正式档案为 `vanilla-1.21.11` / `1.0.0`，清单 SHA-256 为 `C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865`；包含 `4,671` 个文件与对象、`549,101,696` 字节，运行时为 Java `21`，已绑定 Survival1。
 - Forge 正式档案为 `forge-1.20.1` / `1.0.0`，清单 SHA-256 为 `D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C`；包含 `3,667` 个文件与对象、`725,771,107` 字节，加载器为 Forge `47.4.0`，运行时为 Java `17`。当前未绑定服务器，因此不会出现在玩家目录。
 - DollNight 正式档案为 `dollnight-1.21.11` / `1.0.0`，清单 SHA-256 为 `6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575`；包含 `4,902` 个逻辑文件、`4,900` 个去重对象和 `874,147,856` 字节，加载器为 Fabric `0.19.2`，运行时为 Java `21`，已绑定 DollNight。三份新增档案的生产信任验签、闭合校验、全量安装、逐文件复验、进程构建、权限和对象下载回归均通过；当前解决方案测试为 `251/251`。
-- 独立发布 RAM 用户 `hechao-launcher-publisher` 当前绑定 `HechaoLauncherOssObjectPublish` v3，仅可对 `hechaoworld/objects/*` 与 `hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；RAM v4 模板只额外加入 `hechaoworld/backups/database/*` 与 `hechaoworld/backups/recovery/*`，等待控制台保存。没有列举、其他前缀读取、删除或版本管理权限。AccessKey 仅以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，并以 `/etc/hechao-offsite-backup/environment` 的 root-only 独立环境提供给异地备份服务。API 继续使用 `hechao-launcher-distribution` 只读身份；两份生产 AccessKey ID 哈希均已与本机受保护凭据匹配，未重启 API。首批基础档案 `4,900` 个对象共 `874,147,706` 字节；活动档案随后提交 `4,754` 个对象和 `621,732,083` 字节；启动器 `0.10.0` 私有安装包为 `61,796,065` 字节。
+- 独立发布 RAM 用户 `hechao-launcher-publisher` 当前绑定
+  `HechaoLauncherOssObjectPublish` v4，只可对 `hechaoworld/objects/*`、
+  `hechaoworld/releases/launcher/*`、`hechaoworld/backups/database/*` 与
+  `hechaoworld/backups/recovery/*` 执行 `oss:GetObject` 与 `oss:PutObject`。
+  `ListPolicyVersions` 已确认 v4 为默认版本；没有列举、其他前缀读取、删除或版本管理
+  权限。AccessKey 仅以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，并以
+  `/etc/hechao-offsite-backup/environment` 的 root-only 独立环境提供给异地备份服务。
+  API 继续使用 `hechao-launcher-distribution` 只读身份；两份生产 AccessKey ID 哈希
+  均已与本机受保护凭据匹配，未重启 API。首批基础档案 `4,900` 个对象共
+  `874,147,706` 字节；活动档案随后提交 `4,754` 个对象和 `621,732,083` 字节；
+  启动器 `0.10.0` 私有安装包为 `61,796,065` 字节。
 - Bucket 版本控制已开启，OSS 会忽略 `x-oss-forbid-overwrite`。活动首次上传因此为 `4,551` 个共享摘要创建同内容新版本，真正新增 `203` 个摘要、`152,843,997` 字节。发布器 `0.7.0` 已改为先校验当前对象长度与 SHA-256 元数据，匹配则跳过，不匹配则硬失败；生产全量复验结果为 `0` 个上传、`4,754` 个跳过、`0` 上传字节。完整记录见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
 ## 2. 主 Minecraft VPS：owl5
@@ -189,10 +205,10 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 
 ## 4. 当前阻塞与风险
 
-1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名离线恢复演练已通过，加密恢复包等待 RAM v4 保存后写入私有 OSS。
+1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 的 `E:` 已恢复到约 20.78 GiB，最坏预检余量约 3.39 GiB；首次正式计划备份仍必须核对 ZIP、SHA-256、保留数量和剩余空间。
 3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
-4. 启动器数据库异地加密、上传/下载复验、告警和隔离恢复工具已部署，等待 RAM v4 保存后做首次真实往返；网站与 Sub2API 仍没有新的统一异地备份和恢复演练。
+4. 启动器数据库异地加密、真实 OSS 上传/下载、告警恢复和异地主机隔离恢复均已验收；网站与 Sub2API 仍没有新的统一异地备份和恢复演练。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 

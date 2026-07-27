@@ -61,7 +61,9 @@ release-2026-07-primary
 演练从生产 DPAPI 私钥导出加密恢复包，解密到受限临时目录，恢复为新的临时 DPAPI
 密文，并用恢复出的密钥签署 `signing-recovery-drill` 清单。生产信任包成功验证该清单
 为 `release-2026-07-primary`。随后已删除临时 PKCS#8、临时 DPAPI、测试清单和对象，
-只保留加密恢复包等待写入私有 OSS 恢复前缀。
+加密恢复包已写入私有 OSS
+`backups/recovery/signing-key-v1/distribution-signing-private.hcbackup`，并按上述
+SHA-256 完成回读逐字节复验。
 
 ## 4. 恢复边界
 

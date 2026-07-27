@@ -1,7 +1,7 @@
 # 数据库异地备份与恢复
 
-> 当前状态：加密、上传、下载复验、告警和隔离恢复工具已部署；
-> 等待发布 RAM v4 最小权限保存后完成首次真实 OSS 往返与恢复演练
+> 当前状态：RAM v4 最小权限、真实 OSS 上传/下载复验、定时任务、告警恢复、
+> 恢复材料回读和异地主机隔离恢复演练均已完成
 >
 > 更新日期：`2026-07-27`
 
@@ -104,12 +104,13 @@ jq . /var/lib/hechao-offsite-backup/latest.json
 
 6. 保存非秘密 JSON 证据，删除 API 主机和恢复端的明文 dump。
 
-## 6. 当前首次验收状态
+## 6. 首次生产验收
 
 加密工具 `0.1.0`、生产公钥、runner、service、timer、恢复校验脚本和统一告警已部署。
-首次手工运行在 OSS `HeadObject` 阶段收到预期的 RAM `403`，服务安全失败、写入
-`failure.json`、未留下 staging 明文，并触发统一 Critical 邮件。待 RAM v4 保存后，
-必须完成以下项目才可把本项改为“已完成”：
+RAM 策略 `HechaoLauncherOssObjectPublish` 的 v4 于 `2026-07-27T12:38:13Z`
+创建并设为默认版本。控制台二次查询确认它只允许对 `objects/*`、
+`releases/launcher/*`、`backups/database/*` 和 `backups/recovery/*` 执行
+`oss:GetObject` 与 `oss:PutObject`，没有 List、Delete、ACL、版本管理或整桶权限。
 
 2026-07-27 已先完成不依赖 OSS 权限的离线恢复预演：API 主机生成新的
 PostgreSQL custom dump，在主机上用生产恢复公钥加密，只把 `182,877` 字节密文传到
@@ -118,11 +119,31 @@ PostgreSQL custom dump，在主机上用生产恢复公钥加密，只把 `182,8
 与源 dump 一致。明文回传后，隔离恢复器验证迁移版本 `17`、客户端档案 `6`、
 服务器 `6`、用户 `22`、告警 `6` 和数据库大小 `12,336,151` 字节，并确认一次性
 数据库已删除。API 主机与恢复端的临时明文随后均已清理。该预演验证了
-“生成、加密、离机解密、隔离恢复”链，不替代下面的真实 OSS 上传、下载和回读。
+“生成、加密、离机解密、隔离恢复”链。
 
-- 首次上传与立即下载复验。
-- timer 启用并显示下一次运行时间。
-- 失败标记清除和告警恢复邮件。
-- 从 OSS 密文执行一次真实解密和隔离数据库恢复。
-- 加密恢复私钥与生产签名恢复包写入恢复前缀并回读复验。
-- 确认游戏 VPS 口令副本后删除管理员电脑上的临时口令文件。
+随后完成真实 OSS 闭环：
+
+- 首份对象为
+  `backups/database/2026/07/hechao-launcher-20260727T125652Z.hcbackup`，
+  密文 `193,395` 字节，SHA-256
+  `3A336B50CE0A505E4CE3802385926B8C4CB17B0CB0AC97A3B2A0BCB4921CB8E2`；
+  明文 `192,264` 字节，SHA-256
+  `BA32C3FBDCD4430B804CB573D3FB1537AB7B47F715161914CA5094BF56319F59`。
+  上传后立即下载并完成 SHA-256 与逐字节比对。
+- `hechao-offsite-database-backup.timer` 已启用；首次观察到的下一次执行时间为
+  `2026-07-28 03:40:39 CST`。失败标记已清除，平台监控器记录一次恢复转换并成功
+  投递恢复邮件。
+- 加密数据库恢复私钥已写入
+  `backups/recovery/database-backup-v1/database-recovery-private.p8`，生产签名恢复包
+  已写入
+  `backups/recovery/signing-key-v1/distribution-signing-private.hcbackup`；两者均从
+  OSS 回读并与本地密文逐字节一致。
+- 同一 OSS 数据库密文在游戏 VPS 使用独立口令解密后，隔离恢复器验证迁移版本
+  `17`、客户端档案 `6`、服务器 `6`、用户 `22`、告警 `6` 和数据库大小
+  `12,418,071` 字节。唯一命名的恢复数据库随后自动删除，剩余数量为 `0`。
+- API 主机、游戏 VPS 和管理员电脑上的本次临时明文及工具目录均已清理。游戏 VPS
+  的正式口令副本只允许 `SYSTEM` 与 `Administrator` 完全控制；确认后已删除管理员
+  电脑上的临时口令文件。
+
+非秘密机器可读证据见
+[`evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json`](evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json)。

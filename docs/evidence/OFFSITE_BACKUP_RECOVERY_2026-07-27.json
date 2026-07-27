@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-07-27T13:04:30Z",
+  "ramPolicy": {
+    "name": "HechaoLauncherOssObjectPublish",
+    "versionId": "v4",
+    "isDefault": true,
+    "actions": [
+      "oss:GetObject",
+      "oss:PutObject"
+    ],
+    "resources": [
+      "acs:oss:*:*:hechaoworld/objects/*",
+      "acs:oss:*:*:hechaoworld/releases/launcher/*",
+      "acs:oss:*:*:hechaoworld/backups/database/*",
+      "acs:oss:*:*:hechaoworld/backups/recovery/*"
+    ]
+  },
+  "databaseBackup": {
+    "completedAt": "2026-07-27T12:56:55Z",
+    "objectKey": "backups/database/2026/07/hechao-launcher-20260727T125652Z.hcbackup",
+    "encryptedBytes": 193395,
+    "encryptedSha256": "3A336B50CE0A505E4CE3802385926B8C4CB17B0CB0AC97A3B2A0BCB4921CB8E2",
+    "plaintextBytes": 192264,
+    "plaintextSha256": "BA32C3FBDCD4430B804CB573D3FB1537AB7B47F715161914CA5094BF56319F59",
+    "keyId": "517949CD3B80EB25D46C33A523429C099B809EEC256EB1CE7F240FE1BFE433CD",
+    "immediateDownloadVerified": true,
+    "byteForByteVerified": true
+  },
+  "timer": {
+    "enabled": true,
+    "active": true,
+    "firstObservedNextRun": "2026-07-28T03:40:39+08:00"
+  },
+  "alertRecovery": {
+    "failureMarkerCleared": true,
+    "transitionObservedAt": "2026-07-27T12:57:21.912338Z",
+    "transitionCount": 1,
+    "emailDelivered": true
+  },
+  "recoveryObjects": [
+    {
+      "objectKey": "backups/recovery/database-backup-v1/database-recovery-private.p8",
+      "bytes": 2490,
+      "sha256": "7C8F6E217A90A5DB72B43AB1562ED9811930B8A3FE769F5374F6D7A9DE1544EB",
+      "readbackVerified": true
+    },
+    {
+      "objectKey": "backups/recovery/signing-key-v1/distribution-signing-private.hcbackup",
+      "bytes": 1286,
+      "sha256": "271F2311F727D81E7C29D22B096681FC9F041C97636C7CF980129035AC61722E",
+      "readbackVerified": true
+    }
+  ],
+  "isolatedRestore": {
+    "migrationMax": 17,
+    "profileCount": 6,
+    "serverCount": 6,
+    "userCount": 22,
+    "alertCount": 6,
+    "databaseBytes": 12418071,
+    "droppedAfterVerification": true,
+    "remainingRestoreDatabases": 0,
+    "productionDatabaseOverwritten": false
+  },
+  "cleanup": {
+    "apiTemporaryPlaintextRemoved": true,
+    "recoveryHostTemporaryPlaintextRemoved": true,
+    "administratorTransitFilesRemoved": true,
+    "administratorTemporaryPassphraseRemoved": true,
+    "recoveryHostPermanentPassphrasePresent": true,
+    "recoveryHostPassphraseAclProtected": true
+  }
+}
