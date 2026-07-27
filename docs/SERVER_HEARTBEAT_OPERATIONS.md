@@ -1,6 +1,6 @@
 # Server heartbeat operations
 
-> Production state: API `0.20.1-20260727T145451Z` and collector `0.2.0` deployed.
+> Production state: API `0.20.2-20260727T225819Z` and collector `0.2.0` deployed.
 > Since 2026-07-28, `owl5` collects its four local targets and `owl9` collects `pvp`.
 > Both one-minute scheduled tasks are outbound-only and read-only.
 > The pre-hardening collector binary is retained in

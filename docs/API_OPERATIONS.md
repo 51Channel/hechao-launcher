@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.20.1-20260727T145451Z`
-> 本地 API 源码版本：`0.20.1`
-> 当前阶段：`0.20.1` 私有下载与 Nginx 日志脱敏已生产部署；启动器 `0.11.14` 已完成私有 OSS 灰度发布，管理员 Web 与真实 MFA 已启用
+> 当前线上版本：`0.20.2-20260727T225819Z`
+> 本地 API 源码版本：`0.20.2`
+> 当前阶段：客户端版本/模组档案服务端兼容保护已生产部署；启动器 `0.11.14` 为私有 OSS 灰度候选
 
 ## 1. 运行边界
 
@@ -204,6 +204,13 @@ Nginx server block 启用不含查询字符串和 Referer 的 `hechao_privacy` �
 reload 和五个公网入口回归。详见
 [`API_RELEASE_0.20.1.md`](API_RELEASE_0.20.1.md)。
 
+`0.20.2` 为 Velocity 后续转服增加会话来源档案判定。不同 Minecraft 版本返回
+`MinecraftVersionMismatch`，Forge/Fabric/NeoForge 目标档案不一致返回
+`ClientProfileMismatch`；同版本 Paper/Vanilla 互转保持兼容。生产发布
+`0.20.2-20260727T225819Z` 已通过 `360/360` .NET、`13/13` Velocity Java 和
+`8/8` 生产兼容矩阵，详见
+[`API_RELEASE_0.20.2.md`](API_RELEASE_0.20.2.md)。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
@@ -317,6 +324,7 @@ systemctl reload nginx
 | `0.18.0-20260726T234852Z` | `ED331D29E066AE1363F4A2E8B1D183272821E1E2E97E0ABC9FF27DA03807EB0F` | 隐私受限遥测、幂等批次、30 天留存、运行数据后台、迁移 15、隔离生产副本验收和公网回归通过；`0.19.0` 的直接回滚目标 |
 | `0.19.0-20260727T005013Z` | `29B351C33B6366BF2C3E9263275928D0F5C8329D05C14B1C7A138C0D81B279FA` | 进程、磁盘、TPS/MSPT/GC、30 天运行样本、服务状态后台、迁移 16、隔离生产副本验收和公网回归通过；`0.20.0` 的直接回滚目标 |
 | `0.20.0-20260727T011953Z` | `67C3E084D9E53509B283A4B39498219C33BF1676BB4F1805A916E83CFFABBDEB` | 请求指标、统一告警、后台告警页、迁移 17、平台监控器、隔离生产副本验收和公网回归通过；`0.20.1` 的直接回滚目标 |
-| `0.20.1-20260727T145451Z` | `94BC3831A4749A545968E90BD1ABD638BE26BD23B058091E2A91AF417D09AB54` | 私有签名 URL 不进入 journal，Nginx 查询参数/Referer 脱敏、`355/355` 测试、原子部署和平滑日志切换通过；当前线上版本 |
+| `0.20.1-20260727T145451Z` | `94BC3831A4749A545968E90BD1ABD638BE26BD23B058091E2A91AF417D09AB54` | 私有签名 URL 不进入 journal，Nginx 查询参数/Referer 脱敏、`355/355` 测试、原子部署和平滑日志切换通过；`0.20.2` 的直接回滚目标 |
+| `0.20.2-20260727T225819Z` | `327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6` | 会话来源、Minecraft 版本和模组档案兼容保护，`360/360` .NET、`13/13` Velocity、生产矩阵 `8/8`；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警和生产日志脱敏已部署。API `0.20.1` 为当前线上版本，启动器 `0.11.14` 已完成私有 OSS 灰度发布；真实管理员 MFA、首条真实启动遥测、诊断上传、管理员下载和对应审计均已完成，其他管理页面逐项验收仍在进行。大厅等级代理与三个 Paper/Purpur 指标代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏和客户端兼容保护均已部署。API `0.20.2` 为当前线上版本，启动器 `0.11.14` 为私有 OSS 灰度候选；真实管理员 MFA、基础客户端登录/转服、诊断上传、管理员下载和对应审计均已完成。五服指标代理已经加载，仍需 Activity/PVP 正确档案、四级真实账号和多人灰度。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

@@ -1,8 +1,8 @@
 # PVP Velocity modern 接入运维
 
 > 当前状态：FabricProxy-Lite `2.6.0` 已部署到 `owl9`，配置与
-> `owl5` Velocity 的 modern forwarding 密钥一致。PVP 仍由服主手动启动，
-> 本次部署没有启动、停止或重启任何游戏进程。真实路由尚待下一次手动开服验收。
+> `owl5` Velocity 的 modern forwarding 密钥一致。PVP 已于 2026-07-28 受控手动
+> 开服并加载 Fabric 指标代理；正确 1.20.1 档案的真实路由、身份转发和直连拒绝仍待验收。
 
 ## 1. 生产拓扑
 

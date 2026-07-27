@@ -2,7 +2,7 @@
 
 > 启动器源码版本：`0.11.14`
 > 发布器源码版本：`0.9.0`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.20.1` 托管，启动器 `0.11.14` 已完成启动检查控制、隐私受限运行遥测与私有 OSS 灰度发布闭环。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.20.2` 托管，启动器 `0.11.14` 已完成启动检查控制、隐私受限运行遥测与私有 OSS 灰度发布闭环。
 
 ## 1. 安全边界
 

@@ -1,7 +1,7 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.11.14`、API `0.20.1`
-> 生产状态：API `0.20.1-20260727T145451Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
+> 源码版本：启动器 `0.11.14`、API `0.20.2`
+> 生产状态：API `0.20.2-20260727T225819Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
 
@@ -95,7 +95,7 @@ location / {
 
 正式部署前：
 
-1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.20.1-20260727T145451Z`，启动器源码候选为 `0.11.14`。
+1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.20.2-20260727T225819Z`，启动器源码候选为 `0.11.14`。
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。

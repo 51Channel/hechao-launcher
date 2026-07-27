@@ -4,17 +4,21 @@
 >
 > RAM v5 增量验收更新时间：2026-07-28 03:49（Asia/Shanghai）
 >
+> 游戏服、客户端兼容与世界备份更新时间：2026-07-28 07:40（Asia/Shanghai）
+>
 > 本文记录生产门槛的当前状态，不把自动测试、静态部署或合成账号扩大解释为真实验收。
 
 ## 1. 已确认基线
 
-- GitHub `main` 与本机一致，提交为
-  `654b3f038ae7a7727965a3535d36d4fb65de3a74`。
-- API `0.20.1` 的 `healthz` 为 `ok`，`readyz` 为 `ready`，数据库迁移为
+- 客户端兼容保护源码提交为
+  `c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57`，世界恢复验证器提交为
+  `fb84eb69cfd3e03c9e1630dff325ed211a58e30b`。
+- API `0.20.2` 的 `healthz` 为 `ok`，`readyz` 为 `ready`，数据库迁移为
   `17/17`。
 - 六份生产档案都已绑定 production 通道，没有暂停版本。
-- 五个 Velocity 目标都有新鲜心跳；大厅、Survival1、Survival2 在线，活动服和
-  PVP 关闭。
+- 五个 Velocity 目标均已启动并产生 TPS/MSPT/GC；20 至 30 人负载仍未验收。
+- Velocity 授权插件 `0.3.0` 以 `monitor` 运行；客户端版本和模组档案不兼容会立即
+  拒绝，其他权限拒绝仍只记录。
 - 真实诊断上传 `1` 份、失败 `0`，管理员下载审计 `1` 条；本轮管理员下载
   ZIP 为 `707` 字节，SHA-256 为
   `1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92`，
@@ -23,18 +27,18 @@
 - 论坛统一账号共 `22` 个，均有论坛身份、邮箱和密码；待处理论坛会话撤销为 `0`。
 - LuckPerms 快照 `115` 条且全部新鲜，四个目标组都有样本。
 
-## 2. 当前不是故障的告警
+## 2. 历史告警说明
 
-生产中共有 `5` 条活跃告警：
+01:40 快照中共有 `5` 条活跃告警：
 
 | 严重度 | 数量 | 原因 |
 | --- | ---: | --- |
 | Critical | 2 | 活动服与 PVP 当前关闭，但目录仍配置为 Online |
 | Warning | 3 | 大厅、Survival1、Survival2 尚未加载 Paper/Purpur 指标代理 |
 
-这些告警与当前运行状态一致。活动窗口关闭时，应由管理员把对应目录切为
-Maintenance 或 Closed，避免把计划内停服长期显示成 Critical。这里没有自动修改目录
-状态，也没有代替管理员确认告警。
+这些是重启前的历史快照，不再代表 07:40 的五服运行状态。活动窗口关闭时，仍应由
+管理员把对应目录切为 Maintenance 或 Closed，避免把计划内停服长期显示成
+Critical。当前告警应以管理后台实时页和新的 API 聚合查询为准，不能继续引用旧计数。
 
 ## 3. 门槛状态
 
@@ -63,25 +67,30 @@ Resolved，触发与恢复邮件均成功投递。offsite timer 现为 `enabled/
 告警、档案、玩家和审计页面。任何暂停、回滚、账号停用、权限修改或告警确认都属于
 写操作，必须使用专门测试对象和明确回滚步骤，不能为验收而修改真实玩家。
 
-### 3.3 大厅和生存服手动重启窗口
+### 3.3 大厅、生存服、活动服与 PVP 指标：已完成单人基线
 
-三个进程仍创建于 2026-07-26 之前，因此磁盘上的新代理和备份计划尚未被当前实例
-加载。当前状态是：
+受控重启/启动窗口已经完成，代理均已加载：
 
-- `HechaoServerMetrics/metrics.json`：三服均不存在；
-- 大厅等级代理启用日志：不存在；
-- 正式世界 ZIP：`0`；
-- `.partial`、`active.json`、状态文件和 VSS 残留：均为 `0`。
+| 目标 | TPS | MSPT | GC 累计暂停 |
+| --- | ---: | ---: | ---: |
+| Survival1 | `19.996649` | `1.1225 ms` | `741 ms` |
+| Survival2 | `20.000241` | `1.0375 ms` | `512 ms` |
+| Lobby | `20.003904` | `1.8530 ms` | `394 ms` |
+| Activity | `20` | `5.7745 ms` | `253 ms` |
+| PVP | `20` | `12.7157 ms` | `1,413 ms` |
 
-这证明目前没有新失败，只是还没经过服主控制的重启窗口。服主手动重启后，需要等待
-错峰计划并验证 TPS/MSPT/GC、等级改回测试、正式 ZIP、SHA-256、条目数、剩余空间和
-隔离恢复。运维自动化不得代为启动或重启。
+这些是无真实负载的启动基线，不替代活动日容量测试。大厅 LuckPerms 代理也已加载，
+仍需使用专门测试账号完成四级改回。
 
-### 3.4 PVP 真实 Velocity 路由
+三份 Paper 世界正式归档、SHA、完整解压和隔离恢复已验收；当前远端三份状态均指向
+存在的 ZIP，`.partial`、`active.json`、孤立旁车和专属 VSS 均为 `0`。
 
-FabricProxy-Lite `2.6.0` 与 modern forwarding 密钥已经静态部署，PVP 仍关闭。
-服主手动开服后必须验证统一入口、UUID/名称/皮肤/权限、直连拒绝、`/hub` 和断线重连。
-完成前不得把 PVP 路由记为生产通过，也不得切换 Velocity `enforce`。
+### 3.4 PVP 真实 Velocity 路由：服务端已启动，档案进服待验收
+
+FabricProxy-Lite `2.6.0`、modern forwarding 和指标代理均已加载，PVP 监听正常。
+仍必须从正确赫朝客户端安装 PVP Fabric 档案，验证统一入口、UUID/名称/皮肤/权限、
+直连拒绝、`/hub` 和断线重连。完成前不得把 PVP 路由记为生产通过，也不得切换
+Velocity `enforce`。
 
 ### 3.5 四级真实账号
 
@@ -99,8 +108,9 @@ FabricProxy-Lite `2.6.0` 与 modern forwarding 密钥已经静态部署，PVP �
 
 ### 3.6 遥测与人数灰度
 
-生产遥测当前只有 `1` 条 `LauncherStarted/Success`。安装、修复、回滚、Launch 和
-GameExit 成功样本都是 `0`。应按以下顺序补齐：
+正确赫朝客户端已完成管理员正版登录、基础档案进入 Lobby、Survival1、Survival2
+和返回大厅。Activity/PVP 档案安装、Launch/GameExit、修复与回滚样本仍需按以下顺序
+补齐：
 
 1. 管理员本机完整安装、修复、回滚、进服和退出；
 2. 2 至 3 人内部灰度；
@@ -112,11 +122,12 @@ GameExit 成功样本都是 `0`。应按以下顺序补齐：
 
 ## 4. 最终强制顺序
 
-1. 真实四级账号与全部转服路径先在 Velocity `monitor` 下通过。
-2. 安排代理维护窗口，手动切换并重启到 `enforce`。
-3. 验证无授权、低等级、维护服、未知目标、过期授权和 API 故障均按设计拒绝。
-4. 稳定后再启用 `Authentication__EnforceCatalogAuthentication=true`。
-5. 完成 5 人和 20 人灰度及一次真实回滚。
+1. 用正确赫朝客户端完成 Activity/PVP 专用档案安装和真实拒绝/允许路径。
+2. 真实四级账号与全部转服路径在 Velocity `monitor` 下通过。
+3. 安排代理维护窗口，手动切换并重启到 `enforce`。
+4. 验证无授权、低等级、维护服、未知目标、过期授权和 API 故障均按设计拒绝。
+5. 稳定后再启用 `Authentication__EnforceCatalogAuthentication=true`。
+6. 完成 5 人和 20 人灰度及一次真实回滚。
 
 机器可读快照见
 [`evidence/PRODUCTION_ACCEPTANCE_GATE_AUDIT_2026-07-28.json`](evidence/PRODUCTION_ACCEPTANCE_GATE_AUDIT_2026-07-28.json)。

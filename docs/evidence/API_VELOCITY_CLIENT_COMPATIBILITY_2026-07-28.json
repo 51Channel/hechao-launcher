@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T23:16:00Z",
+  "sourceCommit": "c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57",
+  "api": {
+    "version": "0.20.2",
+    "releaseId": "0.20.2-20260727T225819Z",
+    "archive": {
+      "name": "hechao-api-0.20.2-20260727T225819Z.tar.gz",
+      "bytes": 45574298,
+      "sha256": "AE5561DFA85FB59476C22D66CB2AF0781112345B82BED8E9D7825DBC34559B32"
+    },
+    "binary": {
+      "bytes": 104444979,
+      "sha256": "327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6"
+    },
+    "predeploymentBackup": {
+      "directory": "/var/backups/hechao-unified-account/20260727T230119Z",
+      "manifestSha256": "2C9FDD49DCF30A0AE4C30AC770E6A2DFB928E0B87D14964522C335A12DB1024D",
+      "databaseSha256": "025061B836A02983FF0C376CD0D51A0760217B387F4E1ADB728864DDD2C6A6D8",
+      "pgRestoreEntries": 177
+    },
+    "health": {
+      "status": "ok",
+      "readiness": "ready",
+      "database": "ready",
+      "systemdRestarts": 0,
+      "postdeploymentWarnings": 0
+    }
+  },
+  "velocity": {
+    "version": "0.3.0",
+    "mode": "monitor",
+    "hardDeniedReasonsInMonitor": [
+      "MinecraftVersionMismatch",
+      "ClientProfileMismatch"
+    ],
+    "jar": {
+      "bytes": 21152,
+      "sha256": "289B13472AEAC4073895EF9BE7E630B4B5AACEC48A4D0FD849BBAFE0064E681D"
+    },
+    "backupDirectory": "E:\\manual-backups\\VelocityAuthorizer-0.3.0-20260727T231243Z",
+    "listenerPort": 25577,
+    "processId": 472,
+    "establishedConnectionsAtDeployment": 0,
+    "publicEndpointReachable": true
+  },
+  "tests": {
+    "dotnet": {
+      "passed": 360,
+      "failed": 0
+    },
+    "velocityJava": {
+      "passed": 13,
+      "failed": 0
+    },
+    "productionCompatibilityCases": {
+      "passed": 8,
+      "failed": 0,
+      "rows": [
+        {
+          "sessionServer": "lobby",
+          "targetServer": "survival2",
+          "reason": "Allowed"
+        },
+        {
+          "sessionServer": "lobby",
+          "targetServer": "survival1",
+          "reason": "Allowed"
+        },
+        {
+          "sessionServer": "lobby",
+          "targetServer": "activity",
+          "reason": "ClientProfileMismatch"
+        },
+        {
+          "sessionServer": "lobby",
+          "targetServer": "pvp",
+          "reason": "MinecraftVersionMismatch"
+        },
+        {
+          "sessionServer": "activity",
+          "targetServer": "lobby",
+          "reason": "Allowed"
+        },
+        {
+          "sessionServer": "activity",
+          "targetServer": "activity",
+          "reason": "Allowed"
+        },
+        {
+          "sessionServer": "pvp",
+          "targetServer": "pvp",
+          "reason": "Allowed"
+        },
+        {
+          "sessionServer": "pvp",
+          "targetServer": "lobby",
+          "reason": "MinecraftVersionMismatch"
+        }
+      ]
+    }
+  },
+  "gameServerProcessesUnchanged": {
+    "survival1": 5540,
+    "survival2": 9428,
+    "lobby": 5300,
+    "activity": 6112
+  },
+  "privacy": {
+    "minecraftUuidIncluded": false,
+    "minecraftNameIncluded": false,
+    "internalTokenIncluded": false,
+    "passwordIncluded": false
+  },
+  "remainingRealAcceptance": [
+    "Install and launch the Activity NeoForge profile from the correct Hechao launcher.",
+    "Install and launch the PVP Fabric profile from the correct Hechao launcher.",
+    "Verify NPC, hub command, reconnect and denial messages.",
+    "Complete four-tier real-account and multi-player pilots before enforce mode."
+  ]
+}

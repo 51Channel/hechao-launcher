@@ -1,9 +1,8 @@
 # 服务器运行指标运维
 
-> 当前生产：API `0.20.1-20260727T145451Z`、Windows 采集器 `0.2.0`
+> 当前生产：API `0.20.2-20260727T225819Z`、Windows 采集器 `0.2.0`
 >
-> 已部署待服务端下次自行重启加载：Paper/Purpur、NeoForge 与 Fabric 指标代理
-> `0.1.0`
+> 已加载：Paper/Purpur、NeoForge 与 Fabric 指标代理 `0.1.0`
 >
 > 安全边界：只读；不包含服务器启动、停止、重启、RCON 或控制台命令
 
@@ -45,11 +44,11 @@ API 迁移 `16` 扩展当前心跳，并建立
 
 | 目标 | 进程/磁盘 | TPS/MSPT/GC | 当前边界 |
 | --- | --- | --- | --- |
-| `lobby` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
-| `survival2` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
-| `survival1` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
-| `activity` | Windows 采集器 | NeoForge 1.21.11 代理 | JAR 已静态部署；关闭时报告进程未运行，等待服主下次自行开服加载 |
-| `pvp` | `owl9` Windows 采集器 | Fabric 1.20.1 代理 | JAR 已静态部署；停服时仍上报本机磁盘和固定问题代码，等待服主下次自行开服加载 |
+| `lobby` | Windows 采集器 | Paper/Purpur 代理 | 已加载并取得 TPS/MSPT/GC |
+| `survival2` | Windows 采集器 | Paper/Purpur 代理 | 已加载并取得 TPS/MSPT/GC |
+| `survival1` | Windows 采集器 | Paper/Purpur 代理 | 已加载并取得 TPS/MSPT/GC |
+| `activity` | Windows 采集器 | NeoForge 1.21.11 代理 | 已加载并取得 TPS/MSPT/GC |
+| `pvp` | `owl9` Windows 采集器 | Fabric 1.20.1 代理 | 已加载并取得 TPS/MSPT/GC |
 
 没有指标代理不会影响在线状态或其他目标上报，只显示固定的“未配置/文件缺失”问题。
 
@@ -83,7 +82,7 @@ src\Hechao.ModServerMetricsAgent\neoforge\build\libs\HechaoServerMetrics-NeoForg
 | `HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar` | `D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6` |
 | `HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar` | `49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E` |
 
-最新完整回归为 .NET `355/355`、Paper/Purpur 指标代理 `2/2`、模组指标公共逻辑
+最新完整回归为 .NET `360/360`、Paper/Purpur 指标代理 `2/2`、模组指标公共逻辑
 `6/6`。两个模组 JAR 连续干净构建的 SHA-256 一致。API 候选使用生产数据库副本在
 独立端口验证迁移 16、心跳和样本幂等、管理汇总及既有签名发布链路。
 
@@ -151,14 +150,21 @@ Get-ScheduledTaskInfo -TaskName 'Hechao Launcher Server Heartbeats'
 Get-Content -Raw 'E:\LobbyServer\plugins\HechaoServerMetrics\metrics.json'
 ```
 
-第二条命令以及活动服/PVP 的同路径文件，只有在服主自行启动并成功加载代理后才应
-存在。文件缺失不能作为擅自启动或重启服务器的理由。
+第二条命令以及活动服/PVP 的同路径文件只在对应服务端已加载代理时存在；停服时文件
+可以保留，但采集器会结合进程状态和新鲜度判断，不把旧快照当作在线指标。
 
-当前生产已确认大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量入库；
-活动服处于关闭状态。PVP 当前也处于关闭状态，但 `owl9` 本机磁盘容量已经入库，并准确
-显示 `ProcessNotRunning` 与 `MetricsFileMissing`。三个 Paper/Purpur 目标在下次服主
-自行重启前、活动服和 PVP 在下次服主自行开服前，应继续显示
-`MetricsFileMissing`，这是预期状态。
+2026-07-28 受控开服后的单用户空载基线：
+
+| 目标 | TPS | MSPT | 累计 GC |
+| --- | ---: | ---: | ---: |
+| `lobby` | `20.003904` | `1.8530` | `394 ms` |
+| `survival1` | `19.996649` | `1.1225` | `741 ms` |
+| `survival2` | `20.000241` | `1.0375` | `512 ms` |
+| `activity` | `20` | `5.7745` | `253 ms` |
+| `pvp` | `20` | `12.7157` | `1413 ms` |
+
+五个目标的进程、CPU、内存、启动时间、磁盘与 TPS/MSPT/GC 均已入库。该结果只证明
+空载链路和代理正确，不代替 5 人、20 人或正式活动负载验收。
 
 ## 6. 回滚
 

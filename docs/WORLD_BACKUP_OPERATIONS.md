@@ -2,7 +2,7 @@
 
 > 首次部署：2026-07-26
 > VSS 热备份升级：2026-07-27
-> 当前状态：锁文件、VSS、后台压缩、ZIP、SHA-256 与卷影清理闭环通过；三服错峰计划已写入磁盘，首次 Essentials 正式计划归档待验收
+> 当前状态：三服 Essentials 正式归档、远端保留、异机副本、完整解压与隔离恢复验收均已通过
 
 ## 1. 事故背景
 
@@ -133,8 +133,54 @@ Get-ChildItem E:\backups,E:\backups-lobby -File |
 Get-Content C:\ProgramData\Hechao\WorldBackup\logs\*.log -Tail 100
 ```
 
-对最新 ZIP 执行条目读取和 SHA-256 复核，并记录各盘剩余空间。完成这一步之前，只能写“备份引擎已部署并通过夹具测试”，不能写“生产世界备份已验收”。
+对最新 ZIP 执行条目读取和 SHA-256 复核，并记录各盘剩余空间。以上是首次正式
+验收前的历史门槛；2026-07-28 已完成，结果如下。
+
+### 5.1 正式归档与异机副本
+
+三个 Paper 服务端在玩家数为 `0` 时通过自身 Essentials
+`save-all`/`save-off`、VSS 快照和后台压缩链生成正式归档。第一组归档已转存到管理机
+`H:\server-backups\owl5\formal-world-acceptance\2026-07-28`：
+
+| 服务 | 本地归档 | ZIP 字节 | 解压文件 | SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| Lobby | `lobby-backup-20260728-040512.zip` | `3,352,746` | `481` | `0F49E9A3F40563124450AE5A1BA1357BA3477577585C6BD4D372431A455EC87E` |
+| Survival1 | `survival1-backup-20260728-040003.zip` | `3,668,228,973` | `3,293` | `59BBD1307D54D03DD7194EC4A47E726C018DA4FAE7113DEECF507BA3F00B99F5` |
+| Survival2 | `survival2-backup-20260728-041716.zip` | `4,946,045,967` | `6,573` | `470A37DEB34D596215EB4AD98B131A0701A39BC160642AE6EC989CEC78D1A626` |
+
+三份文件在下载后重新计算哈希，全部 ZIP 条目均完整解压到独立目录，没有
+`session.lock`。七个 `level.dat` 均可通过 GZip 解压，根标签均为
+`TAG_Compound`。
+
+区域文件验证采用确定性每 20 个抽 1 个的方式：总计 `9,049` 个 `.mca` 中检查
+`454` 个，验证 `152,365` 个区块的位置表、扇区边界、重叠、长度与压缩类型，问题
+为 `0`。这不是全量区域扫描，文档和证据不得把它扩大为 `9,049/9,049`。
+
+### 5.2 当前远端保留
+
+异机验收转存后曾留下两份状态指向已移走 ZIP，以及三个孤立 `.sha256`。2026-07-28
+在玩家数为 `0` 时，Survival1 与 Lobby 重新通过完整 Essentials/VSS 业务链生成当前
+远端归档；旧旁车先保存到 `E:\manual-backups\world-backup-state-repair-*`，再按精确
+路径清理：
+
+| 服务 | 当前远端归档 | ZIP 字节 | 条目 | SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| Lobby | `E:\backups-lobby\lobby-backup-20260728-073926.zip` | `3,355,990` | `481` | `F97108099068ECAD736F69C8724DF31A0CF0AC7C55FEEB662396B9267A95A987` |
+| Survival1 | `E:\backups\survival1-backup-20260728-073609.zip` | `3,668,231,421` | `3,293` | `3007759BA9F7E84799BD146B060FFC7DF1FA3B1EE7553FD47AB12725CB4F53AF` |
+| Survival2 | `E:\backups\survival2-backup-20260728-041716.zip` | `4,946,045,967` | `6,573` | `470A37DEB34D596215EB4AD98B131A0701A39BC160642AE6EC989CEC78D1A626` |
+
+三份状态均为 `Completed`，归档路径、重新计算哈希、条目数和旁车一致。
+`active.json`、`.partial`、孤立旁车和本引擎拥有的 VSS 卷影均为 `0`；`E:` 剩余
+`13,684,019,200` 字节。本轮没有停止或重启服务端。
+
+机器可读证据见
+[`evidence/WORLD_BACKUP_FORMAL_ACCEPTANCE_2026-07-28.json`](evidence/WORLD_BACKUP_FORMAL_ACCEPTANCE_2026-07-28.json)，
+恢复验证器见
+[`../tools/backup/Test-MinecraftWorldRestore.ps1`](../tools/backup/Test-MinecraftWorldRestore.ps1)。
 
 ## 6. 恢复
 
 生产恢复前先停止对应后端，额外保存当前世界，验证目标归档 SHA-256，并恢复到独立临时目录。核对 `level.dat`、维度目录和关键插件数据后，才允许在维护窗口切换世界目录。不得把 ZIP 直接覆盖到运行中的世界。
+
+2026-07-28 的演练只恢复到管理机隔离目录，没有覆盖或替换生产世界。这已经验证
+归档可读取、完整解压和关键结构，但不等于执行过一次生产世界切换。

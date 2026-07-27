@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T23:40:20Z",
+  "restoreVerifierCommit": "fb84eb69cfd3e03c9e1630dff325ed211a58e30b",
+  "offHostAcceptanceRoot": "H:\\server-backups\\owl5\\formal-world-acceptance\\2026-07-28",
+  "offHostArchives": [
+    {
+      "serverId": "lobby",
+      "name": "lobby-backup-20260728-040512.zip",
+      "bytes": 3352746,
+      "sha256": "0F49E9A3F40563124450AE5A1BA1357BA3477577585C6BD4D372431A455EC87E",
+      "archiveEntries": 481,
+      "extractedBytes": 11556777
+    },
+    {
+      "serverId": "survival1",
+      "name": "survival1-backup-20260728-040003.zip",
+      "bytes": 3668228973,
+      "sha256": "59BBD1307D54D03DD7194EC4A47E726C018DA4FAE7113DEECF507BA3F00B99F5",
+      "archiveEntries": 3293,
+      "extractedBytes": 6401231578
+    },
+    {
+      "serverId": "survival2",
+      "name": "survival2-backup-20260728-041716.zip",
+      "bytes": 4946045967,
+      "sha256": "470A37DEB34D596215EB4AD98B131A0701A39BC160642AE6EC989CEC78D1A626",
+      "archiveEntries": 6573,
+      "extractedBytes": 10852061158
+    }
+  ],
+  "isolatedRestore": {
+    "allArchivesFullyExtracted": true,
+    "sessionLockCount": 0,
+    "levelDatCount": 7,
+    "validLevelDatCount": 7,
+    "regionValidation": {
+      "method": "deterministic sample",
+      "sampleModulo": 20,
+      "totalRegionFiles": 9049,
+      "sampledRegionFiles": 454,
+      "validSampledRegionFiles": 454,
+      "validatedChunks": 152365,
+      "issues": 0,
+      "fullRegionScanClaimed": false
+    },
+    "passed": true
+  },
+  "currentOnHostRetention": [
+    {
+      "serverId": "lobby",
+      "archive": "E:\\backups-lobby\\lobby-backup-20260728-073926.zip",
+      "bytes": 3355990,
+      "sha256": "F97108099068ECAD736F69C8724DF31A0CF0AC7C55FEEB662396B9267A95A987",
+      "entries": 481,
+      "status": "Completed",
+      "sidecarExists": true
+    },
+    {
+      "serverId": "survival1",
+      "archive": "E:\\backups\\survival1-backup-20260728-073609.zip",
+      "bytes": 3668231421,
+      "sha256": "3007759BA9F7E84799BD146B060FFC7DF1FA3B1EE7553FD47AB12725CB4F53AF",
+      "entries": 3293,
+      "status": "Completed",
+      "sidecarExists": true
+    },
+    {
+      "serverId": "survival2",
+      "archive": "E:\\backups\\survival2-backup-20260728-041716.zip",
+      "bytes": 4946045967,
+      "sha256": "470A37DEB34D596215EB4AD98B131A0701A39BC160642AE6EC989CEC78D1A626",
+      "entries": 6573,
+      "status": "Completed",
+      "sidecarExists": true
+    }
+  ],
+  "currentOnHostState": {
+    "activeStateFiles": 0,
+    "partialArchives": 0,
+    "ownedVssSnapshots": 0,
+    "orphanSidecars": 0,
+    "eDriveFreeBytes": 13684019200
+  },
+  "repair": {
+    "reason": "Formal off-host transfer left stale status references and orphan checksum sidecars for two archives.",
+    "method": "Regenerated Survival1 and Lobby through their live Essentials save/freeze/VSS chain, verified hashes and ZIP entry counts, backed up then removed exact orphan sidecars.",
+    "serversStopped": false,
+    "serversRestarted": false,
+    "playersOnlineAtTrigger": 0,
+    "rollbackDirectories": [
+      "E:\\manual-backups\\world-backup-state-repair-20260727T233911Z",
+      "E:\\manual-backups\\world-backup-state-repair-lobby-20260727T233923Z"
+    ]
+  },
+  "limitations": [
+    "Restore acceptance used isolated directories and did not replace a production world.",
+    "Every archive entry was extracted, but region structural validation sampled 454 of 9049 region files.",
+    "The off-host accepted restore point and the current on-host latest archives are different snapshots for Lobby and Survival1."
+  ],
+  "passed": true
+}
