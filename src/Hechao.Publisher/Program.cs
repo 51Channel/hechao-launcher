@@ -41,6 +41,12 @@ internal static class PublisherProgram
                 case "upload-launcher-release":
                     await UploadLauncherReleaseAsync(options);
                     return 0;
+                case "export-signing-recovery":
+                    ExportSigningRecovery(options);
+                    return 0;
+                case "restore-signing-recovery":
+                    RestoreSigningRecovery(options);
+                    return 0;
                 default:
                     throw new PublisherUsageException($"Unknown command: {args[0]}");
             }
@@ -327,6 +333,39 @@ internal static class PublisherProgram
         Console.WriteLine(result.DownloadUrl);
     }
 
+    private static void ExportSigningRecovery(CommandOptions options)
+    {
+        var keyId = options.Required("key-id");
+        var signingKeyInput = SigningKeyInput.Parse(options);
+        using var signingKey = signingKeyInput.Load();
+        var result = SigningKeyRecovery.Export(
+            signingKey,
+            keyId,
+            Path.GetFullPath(options.Required("trust-bundle")),
+            Path.GetFullPath(options.Required("recovery-public-key")),
+            Path.GetFullPath(options.Required("output")));
+
+        Console.WriteLine($"Exported signing recovery envelope: {result.SigningKeyId}");
+        Console.WriteLine($"Signing public key SHA-256: {result.SigningPublicKeySha256}");
+        Console.WriteLine($"Recovery key ID: {result.RecoveryKeyId}");
+        Console.WriteLine($"Envelope SHA-256: {result.EnvelopeSha256}");
+    }
+
+    private static void RestoreSigningRecovery(CommandOptions options)
+    {
+        var metadata = SigningKeyRecovery.RestoreToDpapi(
+            Path.GetFullPath(options.Required("recovered-private-key")),
+            options.Required("key-id"),
+            Path.GetFullPath(options.Required("trust-bundle")),
+            Path.GetFullPath(options.Required("output-dpapi")),
+            Path.GetFullPath(options.Required("metadata-output")),
+            options.Required("dpapi-entropy-label"));
+
+        Console.WriteLine($"Restored signing key: {metadata.KeyId}");
+        Console.WriteLine($"Signing public key SHA-256: {metadata.PublicKeySha256}");
+        Console.WriteLine($"Encrypted blob SHA-256: {metadata.EncryptedBlobSha256}");
+    }
+
     private static IEnumerable<string> EnumerateSourceFiles(string sourceDirectory)
     {
         var pending = new Stack<DirectoryInfo>();
@@ -480,6 +519,18 @@ internal static class PublisherProgram
         Console.WriteLine("          --download-endpoint <https-custom-domain>");
         Console.WriteLine("          --credential-dpapi <path> --dpapi-entropy-label <label>");
         Console.WriteLine("          [--link-minutes <5-1440>]");
+        Console.WriteLine();
+        Console.WriteLine("Export a signing key into an encrypted recovery envelope:");
+        Console.WriteLine("  export-signing-recovery --key-id <id> --trust-bundle <path>");
+        Console.WriteLine("          --recovery-public-key <pem> --output <hcbackup>");
+        Console.WriteLine("          (--private-key <path> | --private-key-dpapi <path>");
+        Console.WriteLine("           --dpapi-entropy-label <label> [--dpapi-blob-sha256 <sha256>])");
+        Console.WriteLine();
+        Console.WriteLine("Restore a decrypted signing key into a new CurrentUser DPAPI blob:");
+        Console.WriteLine("  restore-signing-recovery --recovered-private-key <pkcs8>");
+        Console.WriteLine("          --key-id <id> --trust-bundle <path>");
+        Console.WriteLine("          --output-dpapi <path> --metadata-output <path>");
+        Console.WriteLine("          --dpapi-entropy-label <label>");
     }
 }
 

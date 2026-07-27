@@ -74,6 +74,52 @@ internal static class BackupEnvelope
         string publicKeyPath,
         int chunkSize = DefaultChunkSize)
     {
+        var input = RequireRegularInput(inputPath);
+        return EncryptCore(
+            input.OpenRead,
+            input.Length,
+            ComputeSha256(input.FullName),
+            outputPath,
+            publicKeyPath,
+            chunkSize);
+    }
+
+    internal static BackupEnvelopeHeader EncryptBytes(
+        ReadOnlySpan<byte> plaintext,
+        string outputPath,
+        string publicKeyPath,
+        int chunkSize = DefaultChunkSize)
+    {
+        var copy = plaintext.ToArray();
+        try
+        {
+            return EncryptCore(
+                () => new MemoryStream(
+                    copy,
+                    index: 0,
+                    count: copy.Length,
+                    writable: false,
+                    publiclyVisible: false),
+                copy.Length,
+                Convert.ToHexString(SHA256.HashData(copy)),
+                outputPath,
+                publicKeyPath,
+                chunkSize);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(copy);
+        }
+    }
+
+    private static BackupEnvelopeHeader EncryptCore(
+        Func<Stream> openSource,
+        long plaintextLength,
+        string plaintextSha256,
+        string outputPath,
+        string publicKeyPath,
+        int chunkSize)
+    {
         if (chunkSize is < 64 * 1024 or > 64 * 1024 * 1024)
         {
             throw new ArgumentOutOfRangeException(
@@ -81,7 +127,6 @@ internal static class BackupEnvelope
                 "Chunk size must be between 64 KiB and 64 MiB.");
         }
 
-        var input = RequireRegularInput(inputPath);
         var output = PrepareNewOutput(outputPath);
         var temporaryOutput = CreateTemporarySibling(output);
         var publicPem = File.ReadAllText(publicKeyPath, Encoding.UTF8);
@@ -95,19 +140,18 @@ internal static class BackupEnvelope
 
         var publicBytes = rsa.ExportSubjectPublicKeyInfo();
         var keyId = Convert.ToHexString(SHA256.HashData(publicBytes));
-        var plaintextSha256 = ComputeSha256(input.FullName);
         var aesKey = RandomNumberGenerator.GetBytes(32);
         var baseNonce = RandomNumberGenerator.GetBytes(8);
         var wrappedKey = rsa.Encrypt(aesKey, RSAEncryptionPadding.OaepSHA256);
-        var chunkCount = input.Length == 0
+        var chunkCount = plaintextLength == 0
             ? 0
-            : checked((input.Length + chunkSize - 1) / chunkSize);
+            : checked((plaintextLength + chunkSize - 1) / chunkSize);
         var header = new BackupEnvelopeHeader(
             1,
             Algorithm,
             keyId,
             DateTimeOffset.UtcNow,
-            input.Length,
+            plaintextLength,
             plaintextSha256,
             chunkSize,
             chunkCount,
@@ -138,11 +182,11 @@ internal static class BackupEnvelope
                 var ciphertext = new byte[chunkSize];
                 var tag = new byte[TagSize];
                 using var aes = new AesGcm(aesKey, TagSize);
-                using var source = input.OpenRead();
+                using var source = openSource();
                 for (uint index = 0; index < chunkCount; index++)
                 {
                     var expectedLength = ExpectedChunkLength(
-                        input.Length,
+                        plaintextLength,
                         chunkSize,
                         index,
                         chunkCount);

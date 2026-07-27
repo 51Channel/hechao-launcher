@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Hechao.Backup\Hechao.Backup.csproj" />
     <ProjectReference Include="..\..\src\Hechao.Publisher\Hechao.Publisher.csproj" />
   </ItemGroup>
 

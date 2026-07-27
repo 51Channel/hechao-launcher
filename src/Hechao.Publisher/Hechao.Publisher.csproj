@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\Hechao.Backup\Hechao.Backup.csproj" />
     <ProjectReference Include="..\Hechao.Distribution\Hechao.Distribution.csproj" />
   </ItemGroup>
 
@@ -16,7 +17,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Hechao.Publisher</AssemblyName>
     <RootNamespace>Hechao.Publisher</RootNamespace>
-    <Version>0.8.1</Version>
+    <Version>0.9.0</Version>
   </PropertyGroup>
 
 </Project>
