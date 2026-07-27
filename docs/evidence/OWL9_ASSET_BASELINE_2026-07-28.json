@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T16:34:52Z",
+  "host": {
+    "name": "owl9.vipi9.top",
+    "computerName": "WIN-802L81OVQVB",
+    "sshExternalPort": 19241,
+    "rdpExternalPort": 19242,
+    "keyAuthenticationVerified": true,
+    "hostKeyVerificationEnabled": true
+  },
+  "operatingSystem": {
+    "caption": "Microsoft Windows Server 2022 Standard",
+    "version": "10.0.20348",
+    "buildNumber": "20348",
+    "architecture": "64-bit",
+    "lastBootUpTimeUtc": "2026-06-28T15:54:14Z"
+  },
+  "compute": {
+    "processor": "AMD EPYC 7R13 48-Core Processor",
+    "physicalProcessors": 1,
+    "logicalProcessors": 4,
+    "totalMemoryBytes": 8589344768,
+    "freeMemoryBytes": 6536945664
+  },
+  "storage": [
+    {
+      "device": "C:",
+      "fileSystem": "NTFS",
+      "sizeBytes": 42011193344,
+      "freeBytes": 9539743744,
+      "model": "QEMU QEMU HARDDISK SCSI Disk Device"
+    },
+    {
+      "device": "E:",
+      "fileSystem": "NTFS",
+      "sizeBytes": 10734268416,
+      "freeBytes": 9937018880,
+      "model": "QEMU QEMU HARDDISK SCSI Disk Device"
+    }
+  ],
+  "minecraft": {
+    "serverRoot": "C:\\mc\\server",
+    "minecraftVersion": "1.20.1",
+    "loader": "Fabric Loader 0.16.14",
+    "javaRuntime": "C:\\mc\\jre\\jdk-21.0.11+10-jre\\bin\\java.exe",
+    "xms": "2G",
+    "xmx": "5G",
+    "internalPort": 25565,
+    "externalEndpoint": "owl9.vipi9.top:19243",
+    "voiceChatInternalUdpPort": 24454,
+    "voiceChatExternalEndpoint": "owl9.vipi9.top:19267",
+    "maxPlayers": 20,
+    "onlineMode": true,
+    "viewDistance": 8,
+    "simulationDistance": 6,
+    "javaProcessCount": 0,
+    "internalPortListening": false,
+    "startupMode": "manual",
+    "startupTask": {
+      "name": "HorrorPrank",
+      "exists": true,
+      "state": "Ready",
+      "triggerEnabled": false,
+      "action": "C:\\mc\\server\\start-headless.bat",
+      "lastTaskResult": 0,
+      "nextRunTime": null
+    },
+    "mods": [
+      "architectury-9.2.14-fabric.jar",
+      "cave_dweller-1.20.1.jar",
+      "cloth-config-11.1.136-fabric.jar",
+      "craftedcore-5.8.2.jar",
+      "fabric-api-0.92.9+1.20.1.jar",
+      "ferritecore-6.0.1-fabric.jar",
+      "geckolib-fabric-1.20.1-4.8.4.jar",
+      "immersive-portals-5.2.0-mc1.20.1-fabric.jar",
+      "midnightlurker-1.20.1-1.0.2.jar",
+      "remorphed-4.2.jar",
+      "TheManFromTheFog-1.1.1+fabric.mc.1.20.1.jar",
+      "voicechat-fabric-1.20.1-2.6.20.jar",
+      "walkers-5.8.11.jar",
+      "worldedit-mod-7.2.15.jar"
+    ]
+  },
+  "velocityCompatibility": {
+    "owl5Target": "pvp = \"owl9.vipi9.top:19243\"",
+    "owl5ForwardingMode": "modern",
+    "owl9DeclaredMode": "direct connection; no Velocity or lobby",
+    "owl9OnlineMode": true,
+    "forwardingSupportModObserved": false,
+    "status": "requires-real-route-validation-before-enforce",
+    "reason": "The current Fabric server is configured as a direct online-mode endpoint and no Fabric Velocity forwarding support mod was observed."
+  },
+  "safety": {
+    "minecraftProcessChanged": false,
+    "filesChanged": false,
+    "scheduledTaskChanged": false,
+    "firewallChanged": false
+  }
+}

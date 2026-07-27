@@ -233,17 +233,37 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 `22,302,515,200` 字节，约 20.77 GiB；三服最坏空间门槛约 17.39 GiB，
 额外余量约 3.39 GiB。
 
-## 3. 旧 Minecraft VPS：owl9
+## 3. 第二台 Minecraft VPS：owl9
 
-最后已知信息：Windows 主机、SSH 外部端口 `19241`、RDP `19242`、Minecraft 外部端口 `19243`、服务根目录 `C:\mc\server`、Fabric 1.21.11。
+2026-07-28 已使用现有运维公钥恢复实时管理基线，SSH 外部端口为 `19241`，
+RDP 为 `19242`，主机名为 `WIN-802L81OVQVB`。系统是 Windows Server 2022
+Standard `10.0.20348`，1 颗 AMD EPYC 7R13、4 个逻辑处理器、8.00 GiB 内存。
+`C:` 为 39.13 GiB，盘点时剩余 8.88 GiB；`E:` 为 10.00 GiB，剩余 9.25 GiB。
 
-2026-07-21 使用当前运维密钥验证失败，因此以上信息只能作为历史记录，不能作为上线依据。需要重新导入公钥或由管理员提供当前连接方式后再完成实时盘点。
+当前服务根目录是 `C:\mc\server`，实际版本为 Minecraft `1.20.1`、Fabric Loader
+`0.16.14`，不是历史记录中的 `1.21.11`。启动脚本使用随服 Java 21，参数为
+`-Xms2G -Xmx5G`；`server.properties` 为 `online-mode=true`、`max-players=20`、
+`view-distance=8`、`simulation-distance=6`、内部端口 `25565`。公网游戏入口为
+`owl9.vipi9.top:19243`，语音入口为 UDP `19267 -> 24454`。
+
+服务在本次盘点时处于关闭状态：Java 进程 `0`，内部 `25565` 没有监听。手动计划任务
+`HorrorPrank` 存在且状态为 `Ready`，触发器未启用、无下次运行时间；本轮没有执行该
+任务，也没有修改文件、计划任务、防火墙或进程。
+
+需单独处理的路由风险：owl5 的 Velocity 以 `modern` 转发模式把 `pvp` 指向
+`owl9.vipi9.top:19243`，但 owl9 自身声明为“直连、无 Velocity”，仍为
+`online-mode=true`，14 个现有模组中没有观察到 Fabric Velocity 转发支持模组。因此
+该目标不能在真实路由验收前视为可用，更不能据此切换 Velocity `enforce`。修正时还需
+同时解决后端端口来源限制，不能只把服务器改成离线模式。
+
+脱敏机器证据见
+[`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)。
 
 ## 4. 当前阻塞与风险
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 的 `E:` 当前约 20.77 GiB 可用，最坏预检余量约 3.38 GiB；当前运行中的 Java 进程早于新备份脚本部署，首次正式计划备份必须等服主自行重启后再核对 ZIP、SHA-256、保留数量和剩余空间。
-3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
+3. `owl9` 的密钥认证与实时规格盘点已完成；当前 PVP 服关闭，且直连 online-mode Fabric 配置与 owl5 Velocity `modern` 路由不兼容，必须在真实灰度前单独改造并限制后端来源。
 4. 启动器数据库异地加密、真实 OSS 上传/下载、告警恢复和异地主机隔离恢复均已验收；论坛与 Sub2API 的本地一致性备份、隔离恢复和 RAM v5 只读预检已通过，OSS 副本等待明确授权。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。

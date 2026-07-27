@@ -98,7 +98,7 @@
 | API、登录、下载和证书告警 | 已完成 | API `0.20.1`、迁移 17、平台监控器 `0.1.1`、后台告警页和 transition-only 邮件已生产验收 |
 | 发布前故障自动演练 | 已完成 | 断网、损坏文件、维护、权限变化和版本回滚五类定向集合 `45/45` 通过；完整 `.NET 355/355` 与三组服务端代理 `17/17` 同轮复验，见 [`PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md`](PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md) |
 | TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 需要活动窗口和真实玩家 |
-| 第二台 VPS `owl9` 管理基线 | 外部验收 | 当前密钥认证不可用 |
+| 第二台 VPS `owl9` 管理基线 | 已完成 | 现有公钥登录已恢复；Windows Server 2022、4 逻辑核、8 GiB、磁盘、停服状态和 `C:\mc\server` 实际结构均已只读盘点，见 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json) |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |
 

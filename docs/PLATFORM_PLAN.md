@@ -429,7 +429,7 @@ POST /v1/internal/luckperms/snapshot
 
 ### 阶段 0：资产盘点与保护现有业务
 
-- [ ] 补齐两台服务器和阿里云实例的无密码资产清单。
+- [x] 两台 Minecraft VPS 与阿里云实例均已完成无密码资产清单；`owl9` 已恢复公钥登录并记录 Windows、4 逻辑核、8 GiB、两卷磁盘和停服状态。
 - [x] 记录现有端口、进程、域名、DNS、反向代理和证书。
 - [ ] 完成快照、配置备份、数据库备份和回滚演练。
 - [x] 确认 `hechao.world` 与 `api.hechao.world` 健康检查基线。
@@ -490,7 +490,7 @@ POST /v1/internal/luckperms/snapshot
 
 按依赖关系，下一步只做以下事项：
 
-1. 完成两台服务器与阿里云的规格、端口、域名和服务盘点（阿里云和 `owl5` 已完成；`owl9` 的 PVP 端口可查询，但主机管理基线仍待恢复）。
+1. 完成两台服务器与阿里云的规格、端口、域名和服务盘点（已完成；`owl9` 的公钥管理基线已恢复，PVP 直连配置与 Velocity `modern` 路由兼容性另行灰度）。
 2. 确认现有 `hechao.world`、`api.hechao.world` 的监听方式和反向代理（已完成）。
 3. 确定新域名并部署不影响旧业务的 HTTPS 测试 API（已完成）。
 4. Minecraft Java API 访问许可已经通过；完成真实普通、VIP、管理员和服主账号验收。
@@ -504,7 +504,7 @@ POST /v1/internal/luckperms/snapshot
 
 ## 18. 待确认事项
 
-- [ ] 两台 VPS 与阿里云实例的实际规格和系统版本。
+- [x] 两台 VPS 与阿里云实例的实际规格和系统版本已记录；`owl9` 于 2026-07-28 复核为 Windows Server 2022、4 逻辑核、8 GiB。
 - [x] `hechao.world` 和 `api.hechao.world` 当前由哪个进程监听 `80/443`。
 - [x] 现有玩家称号和权限数据来自共享 MariaDB 中的 LuckPerms。
 - [x] 强制 Microsoft 正版登录；正式开关在 API 许可、真实账号验收和 Velocity `enforce` 完成后启用。
