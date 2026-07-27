@@ -74,6 +74,8 @@ HECHAO_MONITOR_TOKEN=${token}
 HECHAO_MONITOR_STATE_PATH=/var/lib/hechao-platform-monitor/state.json
 HECHAO_MONITOR_SMTP_ENV_FILE=/home/ecs-user/hechao/.env
 HECHAO_MONITOR_HTTP_TIMEOUT_SECONDS=10
+HECHAO_MONITOR_BACKUP_RECEIPT_PATH=/var/lib/hechao-offsite-backup/latest.json
+HECHAO_MONITOR_BACKUP_FAILURE_PATH=/var/lib/hechao-offsite-backup/failure.json
 EOF
 install -o root -g root -m 0600 \
   "$monitor_environment_next" "$monitor_environment"

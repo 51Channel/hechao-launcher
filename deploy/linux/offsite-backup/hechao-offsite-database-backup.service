@@ -1,0 +1,42 @@
+[Unit]
+Description=Encrypt and copy the Hechao launcher database backup to private OSS
+Wants=network-online.target docker.service
+After=network-online.target docker.service hechao-launcher-api.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=/etc/hechao-launcher-api/environment
+Environment=HECHAO_BACKUP_OSS_BUCKET=hechaoworld
+Environment=HECHAO_BACKUP_OSS_REGION=cn-shanghai
+Environment=HECHAO_BACKUP_OSS_ENDPOINT=https://oss-cn-shanghai.aliyuncs.com
+ExecStart=/usr/local/sbin/hechao-offsite-database-backup
+TimeoutStartSec=30min
+UMask=0077
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/hechao-launcher/database
+ReadWritePaths=/var/backups/hechao-launcher/offsite-staging
+ReadWritePaths=/var/lib/hechao-offsite-backup
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

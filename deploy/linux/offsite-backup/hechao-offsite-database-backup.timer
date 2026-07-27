@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Hechao encrypted offsite database backup daily
+
+[Timer]
+OnCalendar=*-*-* 03:35:00 Asia/Shanghai
+RandomizedDelaySec=20min
+Persistent=true
+Unit=hechao-offsite-database-backup.service
+
+[Install]
+WantedBy=timers.target

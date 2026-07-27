@@ -236,6 +236,88 @@ def latency_event(
     )
 
 
+def backup_event(
+    receipt_path: Path,
+    failure_path: Path,
+    observed_at: datetime,
+) -> dict[str, Any]:
+    fingerprint = "backup:database-offsite"
+    if failure_path.exists():
+        try:
+            failure = json.loads(failure_path.read_text(encoding="utf-8"))
+            failed_at = bounded(str(failure.get("failedAt", "unknown")), 40)
+            exit_code = int(failure.get("exitCode", -1))
+            summary = (
+                f"最近一次异地数据库备份失败，时间 {failed_at}，"
+                f"退出码 {exit_code}。"
+            )
+        except Exception as error:
+            summary = (
+                "异地数据库备份失败标记无法读取，分类 "
+                f"{type(error).__name__}。"
+            )
+        return make_event(
+            fingerprint,
+            "Backup.DatabaseOffsite",
+            "Infrastructure",
+            "Critical",
+            True,
+            "异地数据库备份失败",
+            summary,
+            observed_at,
+        )
+
+    if not receipt_path.exists():
+        return make_event(
+            fingerprint,
+            "Backup.DatabaseOffsite",
+            "Infrastructure",
+            "Warning",
+            True,
+            "尚无成功的异地数据库备份",
+            f"未找到成功凭据 {receipt_path}。",
+            observed_at,
+        )
+
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        completed_text = str(receipt["completedAt"])
+        completed_at = datetime.fromisoformat(
+            completed_text.replace("Z", "+00:00")
+        ).astimezone(timezone.utc)
+        object_key = bounded(str(receipt["objectKey"]), 240)
+        age_hours = (observed_at - completed_at).total_seconds() / 3600
+        if age_hours < -1:
+            raise ValueError("backup receipt timestamp is in the future")
+    except Exception as error:
+        return make_event(
+            fingerprint,
+            "Backup.DatabaseOffsite",
+            "Infrastructure",
+            "Critical",
+            True,
+            "异地数据库备份凭据无效",
+            f"{receipt_path} 无法验证，分类 {type(error).__name__}。",
+            observed_at,
+        )
+
+    active = age_hours >= 30
+    severity = "Critical" if age_hours >= 48 else "Warning" if active else "Info"
+    return make_event(
+        fingerprint,
+        "Backup.DatabaseOffsite",
+        "Infrastructure",
+        severity,
+        active,
+        "异地数据库备份已经过期",
+        (
+            f"最近成功备份 {object_key}，完成于 "
+            f"{iso_timestamp(completed_at)}，距今 {age_hours:.1f} 小时。"
+        ),
+        observed_at,
+    )
+
+
 def post_event(
     api_base_url: str,
     token: str,
@@ -472,6 +554,18 @@ def run() -> int:
         )
     )
     recipient = os.environ.get("HECHAO_MONITOR_ALERT_TO", "")
+    backup_receipt_path = Path(
+        os.environ.get(
+            "HECHAO_MONITOR_BACKUP_RECEIPT_PATH",
+            "/var/lib/hechao-offsite-backup/latest.json",
+        )
+    )
+    backup_failure_path = Path(
+        os.environ.get(
+            "HECHAO_MONITOR_BACKUP_FAILURE_PATH",
+            "/var/lib/hechao-offsite-backup/failure.json",
+        )
+    )
     if len(token) < 32:
         log("configuration_invalid", field="HECHAO_MONITOR_TOKEN")
         return 2
@@ -491,6 +585,13 @@ def run() -> int:
     synthetic_events.extend(
         certificate_event(host, observed_at, timeout_seconds)
         for host in TLS_HOSTS
+    )
+    synthetic_events.append(
+        backup_event(
+            backup_receipt_path,
+            backup_failure_path,
+            observed_at,
+        )
     )
 
     posted = sum(
@@ -566,6 +667,37 @@ def self_test() -> int:
     assert transitions(current, {"platform:test": escalated})[0][0] == "级别变更"
     assert transitions(current, {})[0][0] == "恢复"
     assert bounded("a  \n b", 10) == "a b"
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        receipt_path = Path(temporary_directory) / "latest.json"
+        failure_path = Path(temporary_directory) / "failure.json"
+        receipt_path.write_text(
+            json.dumps(
+                {
+                    "completedAt": iso_timestamp(now),
+                    "objectKey": "backups/database/test.hcbackup",
+                }
+            ),
+            encoding="utf-8",
+        )
+        assert not backup_event(
+            receipt_path,
+            failure_path,
+            now,
+        )["active"]
+        failure_path.write_text(
+            json.dumps(
+                {
+                    "failedAt": iso_timestamp(now),
+                    "exitCode": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+        assert backup_event(
+            receipt_path,
+            failure_path,
+            now,
+        )["severity"] == "Critical"
     print("PASS: platform monitor self-test")
     return 0
 
