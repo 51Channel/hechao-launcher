@@ -82,6 +82,8 @@ public sealed class BackupEnvelopeTests
 
     [Theory]
     [InlineData("backups/database/2026/07/example.hcbackup", true)]
+    [InlineData("backups/services/2026/07/platform-data.hcbackup", true)]
+    [InlineData("backups/recovery/signing-key-v1/key.hcbackup", true)]
     [InlineData("backups//database/example.hcbackup", false)]
     [InlineData("../backup.hcbackup", false)]
     [InlineData("/backups/database/example.hcbackup", false)]

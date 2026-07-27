@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-07-27T14:38:57Z",
+  "status": "preflight-verified-permission-change-pending",
+  "proposedPolicy": {
+    "targetVersion": 5,
+    "file": "deploy/aliyun/ram/hechao-launcher-publisher-policy.json",
+    "sha256": "24D26EBE01688FC6B508D7EB22ACE95975BB82636246EE150633678171417A9A",
+    "statementCount": 1,
+    "effect": "Allow",
+    "actions": [
+      "oss:GetObject",
+      "oss:PutObject"
+    ],
+    "resources": [
+      "acs:oss:*:*:hechaoworld/objects/*",
+      "acs:oss:*:*:hechaoworld/releases/launcher/*",
+      "acs:oss:*:*:hechaoworld/backups/database/*",
+      "acs:oss:*:*:hechaoworld/backups/services/*",
+      "acs:oss:*:*:hechaoworld/backups/recovery/*"
+    ],
+    "listDeleteAclAndBucketWidePermissionsAbsent": true
+  },
+  "currentPermissionProbe": {
+    "operation": "GetObject",
+    "key": "backups/services/preflight/permission-probe-does-not-exist.hcbackup",
+    "httpStatus": 403,
+    "errorCode": "AccessDenied",
+    "localOutputCreated": false,
+    "ossWriteAttempted": false
+  },
+  "deployedAssets": [
+    {
+      "path": "/usr/local/sbin/hechao-platform-data-backup",
+      "sha256": "6738FA01B6E521C642B3FB1115D1B8E682D0B64942AE26F85FF5B0A06122418C",
+      "matchesRepository": true
+    },
+    {
+      "path": "/usr/local/sbin/hechao-offsite-platform-data-backup",
+      "sha256": "AA222F4AD378D3D56A08B8AD5E7E20B93B15FE444C195B552C75BD7278D5E745",
+      "matchesRepository": true
+    },
+    {
+      "path": "/usr/local/sbin/hechao-verify-restored-platform-data",
+      "sha256": "8731D6400FBFE44B5528590FE340FBEB0E94732294E393A56BA497FFDFB48606",
+      "matchesRepository": true
+    },
+    {
+      "path": "/etc/systemd/system/hechao-offsite-platform-data-backup.service",
+      "sha256": "2C6EBC94F013C48C3B8BF4AD207AF3A54C8157F05312EECB12168831B6EF2CDD",
+      "matchesRepository": true
+    },
+    {
+      "path": "/etc/systemd/system/hechao-offsite-platform-data-backup.timer",
+      "sha256": "CE8DBA05E87318609FC7BCA7BAFE1AD3BB73DECA8F21906267F72B09FF29789D",
+      "matchesRepository": true
+    }
+  ],
+  "runtime": {
+    "shellSyntaxChecksPassed": 4,
+    "systemdVerifyPassed": true,
+    "systemdSecurityExposure": "4.7 OK",
+    "serviceActive": false,
+    "timerActive": false,
+    "timerEnabled": false,
+    "credentialFileMode": "0600",
+    "credentialFileOwner": "root",
+    "credentialFileGroup": "root",
+    "publicKeyFileMode": "0444",
+    "backupDirectoryMode": "0700",
+    "stateDirectoryMode": "0700",
+    "backupStagingEntryCount": 0,
+    "restoreStagingEntryCount": 0
+  },
+  "latestLocalArchive": {
+    "name": "hechao-platform-data-20260727T133030Z.tar.gz",
+    "bytes": 35576326,
+    "sha256": "E3142DD28E58A85B4732C096AF9A2281FC4B9AABB33EA5ED279DBE207EA1D629",
+    "sidecarVerified": true,
+    "mode": "0600",
+    "owner": "root",
+    "group": "root"
+  },
+  "tests": {
+    "backupTestsPassed": 12,
+    "backupTestsFailed": 0,
+    "solutionTestsPassed": 351,
+    "solutionTestsFailed": 0
+  },
+  "invariants": {
+    "ramPolicyChanged": false,
+    "ossObjectWritten": false,
+    "offsiteTimerEnabled": false,
+    "platformServicesRestarted": false,
+    "gameServerProcessesChanged": false,
+    "gameServerProcessesRestarted": false
+  }
+}

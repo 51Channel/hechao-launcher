@@ -1,7 +1,7 @@
 # 论坛与 Sub2API 备份恢复
 
 > 当前状态：在线一致性本地备份、systemd 沙箱和隔离恢复已验收；加密 OSS 上传、
-> 回读与异地主机恢复等待 RAM v5 开放 `backups/services/*`
+> 回读与异地主机恢复等待 RAM v5 开放 `backups/services/*`；上线前只读检查已完成
 >
 > 更新日期：`2026-07-27`
 
@@ -111,7 +111,25 @@ SHA-256 和逐字节一致，才允许原子写入 `latest.json`。
 机器可读证据见
 [`evidence/PLATFORM_DATA_BACKUP_LOCAL_2026-07-27.json`](evidence/PLATFORM_DATA_BACKUP_LOCAL_2026-07-27.json)。
 
-## 7. 尚未完成
+## 7. RAM v5 上线前检查
+
+2026-07-27 已在不修改 RAM、OSS、timer 或运行进程的前提下完成：
+
+- 四个 shell 入口全部通过 `bash -n`；
+- 线上三个 runner 与 service/timer 文件的 SHA-256 逐个匹配仓库；
+- service 为 `inactive`，timer 为 `disabled/inactive`；
+- 环境文件为 `0600 root:root`，本地、状态和 staging 目录保持 root-only；
+- `systemd-analyze verify` 通过，安全暴露评分仍为 `4.7 OK`；
+- 最新本地包旁车校验通过，备份和恢复 staging 均为空；
+- 当前 v4 对不存在的 `backups/services/*` 对象执行只读 GetObject 探针返回
+  `403 AccessDenied`，且没有创建本地输出，证明前缀尚未提前开放；
+- 新增策略自动测试精确锁定单个 `Allow` statement、`GetObject/PutObject` 两个动作和
+  五个批准前缀，完整解决方案为 `351/351`。
+
+机器可读证据见
+[`evidence/PLATFORM_DATA_BACKUP_RAM_V5_PREFLIGHT_2026-07-27.json`](evidence/PLATFORM_DATA_BACKUP_RAM_V5_PREFLIGHT_2026-07-27.json)。
+
+## 8. 尚未完成
 
 以下项目必须在 RAM v5 获得明确确认后执行，完成前不得把本链标记为生产完成：
 

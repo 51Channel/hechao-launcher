@@ -80,7 +80,7 @@
 - [x] 管理后台账号停用/恢复、单设备与全部会话撤销、Minecraft UUID 封禁及事务审计。
 - [x] 管理后台客户端档案创建、签名清单导入、Test/Gray/Production、稳定分桶、暂停与自动回滚。
 
-更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、PVP Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.0` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前解决方案 `.NET 348/348`、Velocity `11/11`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。Velocity `0.2.0` 已从启动日志确认以 `monitor` 模式加载，全部代理目标已登记；生产合成授权确认从初始 `lobby` 可定向到 `pvp`。真实普通、VIP、管理员、服主与 NPC/`/hub` 链路仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
+更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、PVP Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.0` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前解决方案 `.NET 351/351`、Velocity `11/11`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。Velocity `0.2.0` 已从启动日志确认以 `monitor` 模式加载，全部代理目标已登记；生产合成授权确认从初始 `lobby` 可定向到 `pvp`。真实普通、VIP、管理员、服主与 NPC/`/hub` 链路仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
 
 ## 4. 推荐总体架构
 
