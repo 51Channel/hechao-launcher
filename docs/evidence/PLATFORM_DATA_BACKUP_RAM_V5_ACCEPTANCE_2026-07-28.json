@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-07-27T20:01:59Z",
+  "status": "production-accepted",
+  "ramPolicy": {
+    "name": "HechaoLauncherOssObjectPublish",
+    "versionId": "v5",
+    "isDefault": true,
+    "policyFile": "deploy/aliyun/ram/hechao-launcher-publisher-policy.json",
+    "policySha256": "24D26EBE01688FC6B508D7EB22ACE95975BB82636246EE150633678171417A9A",
+    "statementCount": 1,
+    "effect": "Allow",
+    "actions": [
+      "oss:GetObject",
+      "oss:PutObject"
+    ],
+    "resources": [
+      "acs:oss:*:*:hechaoworld/objects/*",
+      "acs:oss:*:*:hechaoworld/releases/launcher/*",
+      "acs:oss:*:*:hechaoworld/backups/database/*",
+      "acs:oss:*:*:hechaoworld/backups/services/*",
+      "acs:oss:*:*:hechaoworld/backups/recovery/*"
+    ],
+    "listDeleteAclVersionAndBucketWidePermissionsAbsent": true
+  },
+  "restoreSourceBackup": {
+    "completedAt": "2026-07-27T19:09:59Z",
+    "objectKey": "backups/services/2026/07/hechao-platform-data-20260727T190948Z.hcbackup",
+    "encryptedBytes": 35918534,
+    "encryptedSha256": "33594D50C26E316849685D587C2FB0FB4F3ECB474514A773ABD65778DA859920",
+    "plaintextBytes": 35917251,
+    "plaintextSha256": "5DF5D5D3A112E637F956880AB37E77FC9A8EBF5469865BA1427ACB4FFC3C5744",
+    "keyId": "517949CD3B80EB25D46C33A523429C099B809EEC256EB1CE7F240FE1BFE433CD",
+    "components": [
+      "forum",
+      "sub2api"
+    ],
+    "immediateDownloadVerified": true,
+    "byteForByteVerified": true
+  },
+  "isolatedRestore": {
+    "recoveryHost": "owl5",
+    "envelopeVersion": 1,
+    "algorithm": "RSA-OAEP-SHA256+A256GCM-CHUNKED",
+    "chunkSize": 4194304,
+    "chunkCount": 9,
+    "encryptedPrivateKeyBytes": 2490,
+    "encryptedPrivateKeySha256": "7C8F6E217A90A5DB72B43AB1562ED9811930B8A3FE769F5374F6D7A9DE1544EB",
+    "forumDatabaseBytes": 221184,
+    "sub2apiTableCount": 77,
+    "sub2apiDatabaseBytes": 183901207,
+    "plaintextSha256Matched": true,
+    "droppedAfterVerification": true,
+    "remainingRestoreDatabases": 0,
+    "productionDatabaseOverwritten": false
+  },
+  "monitorRelease": {
+    "version": "0.1.2",
+    "tag": "platform-monitor-v0.1.2",
+    "releaseCommit": "a3af1f0862853ae50a5e22487c934a0d8fb17a2b",
+    "productionPath": "/opt/hechao-platform-monitor/hechao-platform-monitor.py",
+    "bytes": 22518,
+    "sha256": "0D81EACDF7E24FC891924907E50905D15D18F8E0CA31E819D8BD05D281171691",
+    "owner": "root",
+    "group": "root",
+    "mode": "0555",
+    "selfTestPassed": true,
+    "systemdVerifyPassed": true,
+    "timerEnabled": true,
+    "timerActive": true
+  },
+  "alertTransitionDrill": {
+    "fingerprint": "backup:platform-data-offsite",
+    "code": "Backup.PlatformDataOffsite",
+    "failureMarker": {
+      "failedAt": "2026-07-27T19:43:30Z",
+      "exitCode": 86,
+      "explicitDrillMarker": "ram-v5-platform-backup-alert-transition",
+      "mode": "0600",
+      "owner": "root",
+      "group": "root"
+    },
+    "trigger": {
+      "observedAt": "2026-07-27T19:47:05.866115Z",
+      "status": "Active",
+      "severity": "Critical",
+      "producer": "PlatformMonitor",
+      "transitionCount": 1,
+      "emailDelivered": true
+    },
+    "recovery": {
+      "observedAt": "2026-07-27T19:48:19.326144Z",
+      "status": "Resolved",
+      "transitionCount": 1,
+      "emailDelivered": true,
+      "failureMarkerClearedBySuccessfulBackup": true,
+      "alertHistoryDeleted": false
+    }
+  },
+  "postAlertRecoveryBackup": {
+    "completedAt": "2026-07-27T19:48:08Z",
+    "objectKey": "backups/services/2026/07/hechao-platform-data-20260727T194758Z.hcbackup",
+    "encryptedBytes": 35956208,
+    "encryptedSha256": "6BCAB735EE575404FF6944424B8FFFC5B0E66593337F35976E4D0C4495D12BA0",
+    "plaintextBytes": 35954895,
+    "plaintextSha256": "833A56EED68E4F3A37EBD3E3DEBD10F62B23339D7CF4DB5C0CE1C7545128954E",
+    "keyId": "517949CD3B80EB25D46C33A523429C099B809EEC256EB1CE7F240FE1BFE433CD",
+    "immediateDownloadVerified": true,
+    "byteForByteVerified": true,
+    "serviceResult": "success",
+    "serviceExitCode": 0
+  },
+  "timer": {
+    "unit": "hechao-offsite-platform-data-backup.timer",
+    "enabled": true,
+    "active": true,
+    "observedNextRun": "2026-07-28T04:29:40+08:00"
+  },
+  "healthAfterAcceptance": {
+    "apiHealthStatus": "ok",
+    "apiReadyStatus": "ready",
+    "apiDatabaseStatus": "ready",
+    "apiVersion": "0.20.1",
+    "forumHttpStatus": 200
+  },
+  "cleanup": {
+    "apiTemporaryEncryptedAndPlaintextRemoved": true,
+    "apiRestoreStagingEntryCount": 0,
+    "recoveryHostDrillDirectoryRemoved": true,
+    "recoveryHostTemporaryScheduledTaskRemoved": true,
+    "recoveryHostPermanentPassphrasePresent": true,
+    "recoveryHostPassphraseAclProtected": true,
+    "administratorTransitPayloadContentCleared": true,
+    "administratorTransitFileSizes": [
+      0,
+      0,
+      0
+    ],
+    "administratorTransitDirectoryShellsRemain": true
+  },
+  "securityChecks": {
+    "credentialFileMode": "0600",
+    "monitorEnvironmentMode": "0600",
+    "secretPatternMatchesInRelevantJournals": 0,
+    "ramCredentialValuesRecorded": false,
+    "recoveryPassphraseRecorded": false
+  },
+  "repositoryValidation": {
+    "releaseTestsPassed": 355,
+    "releaseTestsFailed": 0,
+    "platformMonitorSelfTestPassed": true,
+    "releaseProvenanceRecordCount": 16,
+    "releaseProvenanceValidationPassed": true,
+    "evidenceJsonParsed": true,
+    "gitDiffCheckPassed": true
+  },
+  "invariants": {
+    "apiServiceRestarted": false,
+    "forumServiceRestarted": false,
+    "minecraftProcessesChanged": false,
+    "minecraftProcessesStarted": false,
+    "velocityProcessesChanged": false
+  }
+}

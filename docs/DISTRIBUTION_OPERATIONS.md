@@ -234,13 +234,14 @@ Distribution__PresignedUrlSeconds=300
 截至 `2026-07-26`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.12.0` 已读取并使用该分发配置。
 
 上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略
-`HechaoLauncherOssObjectPublish`。当前默认 v4 只允许对
+`HechaoLauncherOssObjectPublish`。当前默认 v5 只允许对
 `acs:oss:*:*:hechaoworld/objects/*`、
 `acs:oss:*:*:hechaoworld/releases/launcher/*`、
-`acs:oss:*:*:hechaoworld/backups/database/*` 与
+`acs:oss:*:*:hechaoworld/backups/database/*`、
+`acs:oss:*:*:hechaoworld/backups/services/*` 与
 `acs:oss:*:*:hechaoworld/backups/recovery/*` 执行 `oss:GetObject` 与
 `oss:PutObject`；仍不允许列举 Bucket、读取其他前缀、删除对象或管理版本。
-`ListPolicyVersions` 已二次确认 v4 为默认版本。`oss:GetObject` 仅用于 `HeadObject`
+控制台二次回读已确认 v5 为默认版本。`oss:GetObject` 仅用于 `HeadObject`
 元数据校验、私有安装包链接和备份下载复验。AccessKey 只以 Windows DPAPI
 `CurrentUser` 密文保存在管理员电脑，并以 root-only 环境提供给异地备份服务；
 明文下载文件已清理。使用方式：
@@ -410,6 +411,7 @@ SHA-256 为 `82542FEBDD826AF4C40D8E0AFCD65990BE54A748734829FA7EC46214A27E5EDB`�
 19. [x] 发布启动器 `0.11.13`，完成隐私受限遥测、`0.11.12` 覆盖升级、干净安装、两轮卸载、私有对象不可变复验与短时整包下载。
 20. [x] 发布启动器 `0.11.14`，让启动检查开关真实生效并保留进服前强制检查，完成 `0.11.13` 覆盖升级、干净安装、两轮卸载、私有对象不可变复验与短时整包下载。
 21. [x] 将发布 RAM 权限模板应用为 v4，完成数据库异地备份、两份恢复材料上传回读、告警恢复与异地主机隔离恢复演练。
+22. [x] 将发布 RAM 权限模板应用为 v5，完成论坛与 Sub2API 加密 OSS 往返、异地主机隔离恢复、每日 timer 及失败/恢复告警验收。
 
 ## 7. 游戏数据目录
 

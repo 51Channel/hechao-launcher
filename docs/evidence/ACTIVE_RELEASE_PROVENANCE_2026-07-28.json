@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-27T16:11:06Z",
+  "generatedAtUtc": "2026-07-27T19:53:07Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -258,32 +258,33 @@
     },
     {
       "component": "platform-monitor",
-      "version": "0.1.1",
-      "releaseTag": "platform-monitor-v0.1.1",
-      "releaseCommit": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9",
-      "taggedAt": "2026-07-28T00:03:27+08:00",
+      "version": "0.1.2",
+      "releaseTag": "platform-monitor-v0.1.2",
+      "releaseCommit": "a3af1f0862853ae50a5e22487c934a0d8fb17a2b",
+      "taggedAt": "2026-07-28T03:53:07+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9"
+        "value": "a3af1f0862853ae50a5e22487c934a0d8fb17a2b"
       },
       "deploymentState": "production",
       "artifacts": [
         {
           "name": "hechao-platform-monitor.py",
           "location": "/opt/hechao-platform-monitor/hechao-platform-monitor.py",
-          "size": 21265,
-          "sha256": "564300F9DBA9B136A847AD985C40F2277B254FE7B76DF48C17F04674A30DF37B",
+          "size": 22518,
+          "sha256": "0D81EACDF7E24FC891924907E50905D15D18F8E0CA31E819D8BD05D281171691",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "release-tag",
-        "target": "platform-monitor-v0.1.0"
+        "target": "platform-monitor-v0.1.1"
       },
       "evidence": [
-        "docs/PLATFORM_MONITOR_RELEASE_0.1.1.md",
-        "docs/OPERATIONAL_ALERTS.md"
+        "docs/PLATFORM_MONITOR_RELEASE_0.1.2.md",
+        "docs/OPERATIONAL_ALERTS.md",
+        "docs/evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json"
       ]
     },
     {

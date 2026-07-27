@@ -1,9 +1,9 @@
 # 论坛与 Sub2API 备份恢复
 
-> 当前状态：在线一致性本地备份、systemd 沙箱和隔离恢复已验收；加密 OSS 上传、
-> 回读与异地主机恢复等待 RAM v5 开放 `backups/services/*`；上线前只读检查已完成
+> 当前状态：RAM v5 最小权限、在线一致性备份、加密 OSS 上传与立即回读、每日
+> timer、失败/恢复告警和异地主机隔离恢复均已完成生产验收
 >
-> 更新日期：`2026-07-27`
+> 更新日期：`2026-07-28`
 
 ## 1. 范围
 
@@ -48,8 +48,8 @@ SHA-256 旁车和原子改名。本机只保留最近 7 份，目录和文件均
 ```
 
 定时器计划在上海时间每日 `04:20` 运行，并增加最多 20 分钟随机延迟。它与
-`03:35` 的启动器数据库异地备份错开。首次 OSS 验收前，定时器保持
-`disabled/inactive`。
+`03:35` 的启动器数据库异地备份错开。首次 OSS 验收通过后，定时器已设为
+`enabled/active`。
 
 systemd 服务使用 `ProtectSystem=strict`、只读 Home、私有临时目录和设备、空闲 IO
 优先级，并只保留读取受限源配置所需的 `CAP_DAC_READ_SEARCH`。写权限仅开放给该备份
@@ -63,7 +63,7 @@ systemd 服务使用 `ProtectSystem=strict`、只读 Home、私有临时目录�
 backups/services/YYYY/MM/hechao-platform-data-YYYYMMDDTHHMMSSZ.hcbackup
 ```
 
-发布 RAM 的下一策略版本只新增该前缀的 `oss:GetObject` 和 `oss:PutObject`。不增加
+发布 RAM 的 v5 只为该前缀新增 `oss:GetObject` 和 `oss:PutObject`。它不包含
 List、Delete、ACL、版本管理或整桶权限。上传后必须立即下载同一对象，验证密文
 SHA-256 和逐字节一致，才允许原子写入 `latest.json`。
 
@@ -121,7 +121,7 @@ SHA-256 和逐字节一致，才允许原子写入 `latest.json`。
 - 环境文件为 `0600 root:root`，本地、状态和 staging 目录保持 root-only；
 - `systemd-analyze verify` 通过，安全暴露评分仍为 `4.7 OK`；
 - 最新本地包旁车校验通过，备份和恢复 staging 均为空；
-- 当前 v4 对不存在的 `backups/services/*` 对象执行只读 GetObject 探针返回
+- 预检时的 v4 对不存在的 `backups/services/*` 对象执行只读 GetObject 探针返回
   `403 AccessDenied`，且没有创建本地输出，证明前缀尚未提前开放；
 - 新增策略自动测试精确锁定单个 `Allow` statement、`GetObject/PutObject` 两个动作和
   五个批准前缀；预检证据基线为 `351/351`，当前完整解决方案为 `355/355`。
@@ -129,13 +129,30 @@ SHA-256 和逐字节一致，才允许原子写入 `latest.json`。
 机器可读证据见
 [`evidence/PLATFORM_DATA_BACKUP_RAM_V5_PREFLIGHT_2026-07-27.json`](evidence/PLATFORM_DATA_BACKUP_RAM_V5_PREFLIGHT_2026-07-27.json)。
 
-## 8. 尚未完成
+## 8. RAM v5 生产验收
 
-以下项目必须在 RAM v5 获得明确确认后执行，完成前不得把本链标记为生产完成：
+收到明确确认后，已按预检顺序完成：
 
-1. 创建并设为默认策略 v5。
-2. 运行首次真实加密 OSS 上传和立即下载复验。
-3. 启用并检查 systemd timer。
-4. 部署双备份监控并验证告警恢复邮件。
-5. 在持有恢复口令的异地主机解密，再回到隔离数据库完成一次真实恢复。
-6. 保存非秘密证据并清理所有临时明文。
+1. `HechaoLauncherOssObjectPublish` v5 已设为默认；控制台回读确认只有
+   `GetObject/PutObject` 和五个批准前缀。
+2. 首份真实对象
+   `backups/services/2026/07/hechao-platform-data-20260727T190948Z.hcbackup`
+   上传并立即回读，密文 SHA-256 与逐字节比对均通过。
+3. owl5 使用受限恢复材料解密同一对象；验证器确认论坛 SQLite 为
+   `221,184` 字节、Sub2API 为 `77` 张业务表和 `183,901,207` 字节，临时数据库
+   随后删除。
+4. `hechao-offsite-platform-data-backup.timer` 已设为 `enabled/active`；验收时
+   观察到的下一次运行时间为 `2026-07-28 04:29:40 CST`。
+5. 平台监控器升级到 `0.1.2`。受控失败标记产生 Critical 和触发邮件；随后一轮
+   真实成功备份自动清除标记，同一告警转为 Resolved 并发送恢复邮件。
+6. API、恢复主机的临时明文和一次性任务已清理；管理员中转文件内容已清零。受本机
+   工具安全策略限制，三个零字节文件壳和父目录保留，证据中明确记录，没有将其误报
+   为已删除。
+
+生产验收使用的恢复源明文 SHA-256 为
+`5DF5D5D3A112E637F956880AB37E77FC9A8EBF5469865BA1427ACB4FFC3C5744`。
+用于清除演练失败状态的第二轮真实备份完成于 `2026-07-27T19:48:08Z`，service
+结果为 `success`、退出码为 `0`。
+
+完整非秘密机器可读证据见
+[`evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json`](evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json)。

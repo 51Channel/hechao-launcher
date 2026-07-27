@@ -189,9 +189,9 @@ Minecraft UUID 封禁，以及目录、对象下载、Minecraft 绑定与 Veloci
 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)。
 
 `0.20.0` 增加 API 分钟请求指标、活动告警、告警历史、游戏服状态告警、内部合成事件
-端点和管理后台“运行告警”页。独立平台监控器 `0.1.1` 每分钟检查公网健康/就绪、
+端点和管理后台“运行告警”页。独立平台监控器 `0.1.2` 每分钟检查公网健康/就绪、
 管理入口、私有 OSS 匿名 `403`、旧官网/中转 API、五个 TLS 证书、API 延迟和异地
-数据库备份状态，并只在告警变化或恢复时发送邮件。最终发布
+数据库及平台数据备份状态，并只在告警变化或恢复时发送邮件。最终发布
 `0.20.0-20260727T011953Z` 已通过迁移 17、隔离生产副本、原子切换、公网回归和首次
 邮件验收。详见 [`API_RELEASE_0.20.0.md`](API_RELEASE_0.20.0.md) 与
 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)。

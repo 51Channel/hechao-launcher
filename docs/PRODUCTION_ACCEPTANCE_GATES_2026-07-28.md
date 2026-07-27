@@ -2,7 +2,9 @@
 
 > 只读快照时间：2026-07-28 01:40（Asia/Shanghai）
 >
-> 本文只记录尚缺的生产证据，不把自动测试、静态部署或合成账号扩大解释为真实验收。
+> RAM v5 增量验收更新时间：2026-07-28 03:49（Asia/Shanghai）
+>
+> 本文记录生产门槛的当前状态，不把自动测试、静态部署或合成账号扩大解释为真实验收。
 
 ## 1. 已确认基线
 
@@ -34,23 +36,23 @@
 Maintenance 或 Closed，避免把计划内停服长期显示成 Critical。这里没有自动修改目录
 状态，也没有代替管理员确认告警。
 
-## 3. 必须按顺序完成的门槛
+## 3. 门槛状态
 
-### 3.1 RAM v5 与平台数据异地备份
+### 3.1 RAM v5 与平台数据异地备份：已完成
 
-当前 RAM v5 策略文件 SHA-256 为
+RAM v5 策略文件 SHA-256 为
 `24D26EBE01688FC6B508D7EB22ACE95975BB82636246EE150633678171417A9A`，
-只增加 `backups/services/*` 和 `backups/recovery/*` 等既定前缀的
-`GetObject/PutObject`，不包含 List、Delete、ACL 或 Bucket 级权限。
+控制台回读确认默认版本为 v5。它只包含 `GetObject/PutObject` 和五个批准前缀，
+不包含 List、Delete、ACL、版本管理或 Bucket 级权限。
 
-当前 offsite service 与 timer 都是 inactive，timer 为 disabled，暂存和恢复目录均
-为空。只有收到精确确认 `确认创建并启用 RAM v5` 后，才允许：
+明确确认后已完成两轮真实加密上传和立即回读。第一轮在 owl5 解密后回到 API 主机
+隔离验证论坛 SQLite 与 Sub2API `77` 张表，临时数据库自动删除；第二轮真实成功备份
+用于清除受控失败标记。平台监控器 `0.1.2` 分别记录 Critical/Active 和
+Resolved，触发与恢复邮件均成功投递。offsite timer 现为 `enabled/active`，API 与
+论坛未重启，所有游戏服进程保持原状。
 
-1. 创建并启用 RAM v5；
-2. 执行真实加密 OSS 上传和立即回读；
-3. 在异地主机完成隔离恢复；
-4. 启用 timer；
-5. 验证失败与恢复告警。
+非秘密证据见
+[`evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json`](evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json)。
 
 ### 3.2 管理后台真实页面
 

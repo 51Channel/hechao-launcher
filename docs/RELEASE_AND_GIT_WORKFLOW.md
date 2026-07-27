@@ -45,7 +45,7 @@ publisher-v0.9.0
 status-collector-v0.2.0
 server-metrics-agent-v0.1.0
 luckperms-tier-agent-v0.1.0
-platform-monitor-v0.1.1
+platform-monitor-v0.1.2
 backup-v0.1.0
 world-backup-v0.1.0
 profile-base-1.21.11-v1.0.5

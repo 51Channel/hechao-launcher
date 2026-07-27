@@ -1,6 +1,6 @@
 # 统一运行告警
 
-> 当前状态：API `0.20.1`、平台监控器 `0.1.1` 已生产部署
+> 当前状态：API `0.20.1`、平台监控器 `0.1.2` 已生产部署
 >
 > 更新日期：`2026-07-28`
 
@@ -42,9 +42,10 @@ API 请求指标和告警历史保留 30 天。客户端遥测只接受固定事
 - 上述五个 HTTPS 主机的证书链与到期时间
 - API 公网健康检查延迟
 - 最近一次异地数据库备份成功凭据或失败标记
+- 最近一次论坛与 Sub2API 异地备份成功凭据或失败标记
 
-证书剩余 30 天进入 Warning，剩余 7 天进入 Critical。异地数据库备份超过 30 小时
-进入 Warning，超过 48 小时进入 Critical；失败标记立即进入 Critical。
+证书剩余 30 天进入 Warning，剩余 7 天进入 Critical。两类异地备份超过 30 小时
+进入 Warning，超过 48 小时进入 Critical；任一失败标记立即进入独立的 Critical。
 
 ## 3. 生产位置
 
@@ -57,9 +58,9 @@ API 请求指标和告警历史保留 30 天。客户端遥测只接受固定事
 ```
 
 当前生产脚本 SHA-256 为
-`564300F9DBA9B136A847AD985C40F2277B254FE7B76DF48C17F04674A30DF37B`，
-对应标签 `platform-monitor-v0.1.1`。版本记录见
-[`PLATFORM_MONITOR_RELEASE_0.1.1.md`](PLATFORM_MONITOR_RELEASE_0.1.1.md)。
+`0D81EACDF7E24FC891924907E50905D15D18F8E0CA31E819D8BD05D281171691`，
+对应标签 `platform-monitor-v0.1.2`。版本记录见
+[`PLATFORM_MONITOR_RELEASE_0.1.2.md`](PLATFORM_MONITOR_RELEASE_0.1.2.md)。
 
 环境文件保存内部告警令牌和 SMTP 凭据，必须保持 `root:root 600`。API 环境文件只保存
 内部令牌的 SHA-256，不保存原令牌。状态文件只包含固定告警字段，不包含凭据。
@@ -89,6 +90,9 @@ API `0.20.0` 原子切换后：
 - 当前活动告警与真实状态一致：活动服和 PVP 离线为 Critical；大厅、Survival1 和
   Survival2 尚未加载指标代理，因此 Tick 指标为 Warning。
 - 异地备份首次权限不足产生 Critical，证明失败标记、API 入库和邮件链路均生效。
+- RAM v5 上线后，论坛与 Sub2API 备份使用独立
+  `backup:platform-data-offsite` 指纹完成受控失败和真实成功恢复演练；API 分别记录
+  Active 与 Resolved，触发和恢复邮件均投递成功，告警历史未删除。
 
 ## 6. 回滚
 

@@ -1,9 +1,9 @@
 # 数据库异地备份与恢复
 
-> 当前状态：RAM v4 最小权限、真实 OSS 上传/下载复验、定时任务、告警恢复、
+> 当前状态：RAM v5 最小权限、真实 OSS 上传/下载复验、定时任务、告警恢复、
 > 恢复材料回读和异地主机隔离恢复演练均已完成
 >
-> 更新日期：`2026-07-27`
+> 更新日期：`2026-07-28`
 
 ## 1. 目标与边界
 
@@ -20,8 +20,9 @@ backups/database/YYYY/MM/hechao-launcher-YYYYMMDDTHHMMSSZ.hcbackup
 backups/recovery/*
 ```
 
-Bucket 保持私有并启用阻止公共访问。专用 RAM 只允许上述两个前缀以及既有发布前缀的
-`oss:GetObject`、`oss:PutObject`；没有 List、Delete、ACL、版本管理或整桶权限。
+Bucket 保持私有并启用阻止公共访问。专用 RAM 只允许上述两个前缀、平台数据备份
+前缀以及既有发布前缀的 `oss:GetObject`、`oss:PutObject`；没有 List、Delete、
+ACL、版本管理或整桶权限。
 
 ## 2. 加密与密钥托管
 
@@ -111,6 +112,8 @@ RAM 策略 `HechaoLauncherOssObjectPublish` 的 v4 于 `2026-07-27T12:38:13Z`
 创建并设为默认版本。控制台二次查询确认它只允许对 `objects/*`、
 `releases/launcher/*`、`backups/database/*` 和 `backups/recovery/*` 执行
 `oss:GetObject` 与 `oss:PutObject`，没有 List、Delete、ACL、版本管理或整桶权限。
+v5 随后只增加 `backups/services/*` 的相同两个对象动作并设为默认；数据库与恢复
+材料的权限边界没有扩大。
 
 2026-07-27 已先完成不依赖 OSS 权限的离线恢复预演：API 主机生成新的
 PostgreSQL custom dump，在主机上用生产恢复公钥加密，只把 `182,877` 字节密文传到
@@ -147,3 +150,5 @@ PostgreSQL custom dump，在主机上用生产恢复公钥加密，只把 `182,8
 
 非秘密机器可读证据见
 [`evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json`](evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json)。
+当前 RAM v5 的控制台回读和平台数据验收见
+[`evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json`](evidence/PLATFORM_DATA_BACKUP_RAM_V5_ACCEPTANCE_2026-07-28.json)。
