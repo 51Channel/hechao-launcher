@@ -1,6 +1,6 @@
 # 赫朝平台无密码资产清单
 
-> 核查时间：2026-07-27（Asia/Shanghai）
+> 核查时间：2026-07-28（Asia/Shanghai）
 > 用途：`PLATFORM_PLAN.md` 阶段 0 基线、部署前检查与回滚定位
 > 安全边界：本文不记录密码、私钥、数据库口令、令牌或云 AccessKey
 
@@ -251,7 +251,7 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 ## 5. 当前 API 部署状态
 
 - 发布 ID：`0.20.1-20260727T145451Z`
-- API `0.20.1`、日志脱敏与平台监控器 `0.1.0` 已部署；启动器 `0.11.14` 为私有 OSS 灰度版本。管理员 Web 已启用，真实 MFA 已登记：凭据 `1`、恢复码哈希 `8`、有效 MFA 会话 `1`
+- API `0.20.1`、日志脱敏与平台监控器 `0.1.1` 已部署；启动器 `0.11.14` 为私有 OSS 灰度版本。管理员 Web 已启用，真实 MFA 已登记：凭据 `1`、恢复码哈希 `8`、有效 MFA 会话 `1`
 - Git 标签：`launcher-v0.11.14` 指向制品源码提交 `6f337f337e15e4f7151d5df8a04db5fd40df98a7`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试

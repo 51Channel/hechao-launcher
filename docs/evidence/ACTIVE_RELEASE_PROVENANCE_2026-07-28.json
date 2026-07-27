@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-27T16:11:06Z",
+  "scope": "Active launcher platform releases and deployed operational components",
+  "records": [
+    {
+      "component": "launcher",
+      "version": "0.11.14",
+      "releaseTag": "launcher-v0.11.14",
+      "releaseCommit": "6f337f337e15e4f7151d5df8a04db5fd40df98a7",
+      "taggedAt": "2026-07-27T19:23:31+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "6f337f337e15e4f7151d5df8a04db5fd40df98a7"
+      },
+      "deploymentState": "private-oss-gray",
+      "artifacts": [
+        {
+          "name": "Hechao.Launcher.exe",
+          "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
+          "size": 68755863,
+          "sha256": "4F5B24E0DB08884851B8995619F026067F55DEA0A43713E64A3B24092C27869A",
+          "primary": false
+        },
+        {
+          "name": "Hechao-Launcher-Setup-0.11.14-win-x64.exe",
+          "location": "releases/launcher/0.11.14/Hechao-Launcher-Setup-0.11.14-win-x64.exe",
+          "size": 61866744,
+          "sha256": "82542FEBDD826AF4C40D8E0AFCD65990BE54A748734829FA7EC46214A27E5EDB",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "release-tag",
+        "target": "launcher-v0.11.13"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.11.14.md",
+        "docs/PRELAUNCH_PILOT_0.11.14.md"
+      ]
+    },
+    {
+      "component": "api",
+      "version": "0.20.1-20260727T145451Z",
+      "releaseTag": "api-v0.20.1",
+      "releaseCommit": "f90a2de9eae0fb6044f0fdf7571708b91da50b10",
+      "taggedAt": "2026-07-27T23:23:51+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "f90a2de9eae0fb6044f0fdf7571708b91da50b10"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "hechao-api-0.20.1-20260727T145451Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.20.1-20260727T145451Z",
+          "size": 45575206,
+          "sha256": "035C71CFCAB3ACF2986AE9936833CAD004B4B9087F08385F0FFC9DA39C46F6FC",
+          "primary": true
+        },
+        {
+          "name": "Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.20.1-20260727T145451Z/Hechao.Api",
+          "size": 104442419,
+          "sha256": "94BC3831A4749A545968E90BD1ABD638BE26BD23B058091E2A91AF417D09AB54",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "release-id",
+        "target": "0.20.0-20260727T011953Z"
+      },
+      "evidence": [
+        "docs/API_RELEASE_0.20.1.md",
+        "docs/evidence/API_0.20.1_LOG_PRIVACY_2026-07-27.json"
+      ]
+    },
+    {
+      "component": "velocity-authorizer",
+      "version": "0.2.0",
+      "releaseTag": "velocity-authorizer-v0.2.0",
+      "releaseCommit": "f0460d19383ecb30897a74de1fbac1cf541df4ed",
+      "taggedAt": "2026-07-26T05:29:30+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "1f8c76179e8c022cd2439715f8cf33218f58921a"
+      },
+      "deploymentState": "production-monitor-mode",
+      "artifacts": [
+        {
+          "name": "HechaoVelocityAuthorizer-0.2.0.jar",
+          "location": "E:\\Velocity\\plugins\\HechaoVelocityAuthorizer-0.2.0.jar",
+          "size": 20631,
+          "sha256": "9CBBB1453D7260CD8AAD48EDC6BE4E80B8A5E41374D5012E0DBA64ACC0188D37",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-directory",
+        "target": "E:\\manual-backups\\VelocityAuthorizer-0.2.0-20260726-044028"
+      },
+      "evidence": [
+        "docs/VELOCITY_AUTHORIZER_RELEASE_0.2.0.md",
+        "docs/VELOCITY_AUTHORIZATION_OPERATIONS.md"
+      ]
+    },
+    {
+      "component": "publisher",
+      "version": "0.9.0",
+      "releaseTag": "publisher-v0.9.0",
+      "releaseCommit": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9",
+      "taggedAt": "2026-07-27T18:56:06+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9"
+      },
+      "deploymentState": "administrator-tool",
+      "historicalNote": "The executable used for the first 0.9.0 recovery drill was not archived separately. The listed executable and ZIP are a provenance rebuild from the exact annotated tag; they are not claimed to be byte-identical to the first drill binary.",
+      "artifacts": [
+        {
+          "name": "Hechao-Publisher-0.9.0-win-x64-provenance-rebuild.zip",
+          "location": "artifacts/releases/Hechao-Publisher-0.9.0-win-x64-provenance-rebuild.zip",
+          "size": 32120425,
+          "sha256": "AA15C30694E1189DA684E297EF55C82C4FF9654FE3A35F4FB2C1AFF0976AF6C1",
+          "primary": true,
+          "reconstructedFromTag": true
+        },
+        {
+          "name": "Hechao.Publisher.exe",
+          "location": "artifacts/publish/publisher-win-x64-0.9.0-provenance-rebuild/Hechao.Publisher.exe",
+          "size": 74113791,
+          "sha256": "947480D3B3566542AECD84246B6C8C6CEE1128D7A3CE1675ED4C0D9089F60C93",
+          "primary": false,
+          "reconstructedFromTag": true
+        },
+        {
+          "name": "distribution-signing-private.hcbackup",
+          "location": "backups/recovery/signing-key-v1/distribution-signing-private.hcbackup",
+          "sha256": "271F2311F727D81E7C29D22B096681FC9F041C97636C7CF980129035AC61722E",
+          "primary": false
+        },
+        {
+          "name": "production-signing-public-key",
+          "location": "production trust bundle",
+          "sha256": "6D4ACA1E787CFEDA1C3A5D7B772FB1F0E03C298848538D272B12BCFAF1C94F9E",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "release-tag",
+        "target": "publisher-v0.8.1"
+      },
+      "evidence": [
+        "docs/PUBLISHER_RELEASE_0.9.0.md",
+        "docs/evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json"
+      ]
+    },
+    {
+      "component": "status-collector",
+      "version": "0.2.0",
+      "releaseTag": "status-collector-v0.2.0",
+      "releaseCommit": "3bec3704756ea79a5fab4c5bd1d26a359f466b7b",
+      "taggedAt": "2026-07-27T08:59:39+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "7ba2eba1ee7b6c6307948da9e4084ea6f6406fb7"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "Hechao.StatusCollector.exe",
+          "location": "C:\\ProgramData\\Hechao\\StatusCollector\\Hechao.StatusCollector.exe",
+          "size": 73807548,
+          "sha256": "354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424",
+          "primary": true
+        },
+        {
+          "name": "hechao-status-collector-0.2.0-win-x64.zip",
+          "location": "release archive",
+          "sha256": "30D9BC599B80FEF48D5FE02B340FE494BE8DE7B5D590828BED34F155D81F8167",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "backup-directory",
+        "target": "C:\\ProgramData\\Hechao\\StatusCollector\\backups\\collector-0.2.0-20260727T004750Z"
+      },
+      "evidence": [
+        "docs/SERVER_HEARTBEAT_OPERATIONS.md",
+        "docs/SERVER_RUNTIME_METRICS_OPERATIONS.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "server-metrics-agent",
+      "version": "0.1.0",
+      "releaseTag": "server-metrics-agent-v0.1.0",
+      "releaseCommit": "3bec3704756ea79a5fab4c5bd1d26a359f466b7b",
+      "taggedAt": "2026-07-27T08:59:39+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "7ba2eba1ee7b6c6307948da9e4084ea6f6406fb7"
+      },
+      "deploymentState": "deployed-pending-game-server-restart",
+      "artifacts": [
+        {
+          "name": "HechaoServerMetrics-0.1.0.jar",
+          "location": "E:\\{LobbyServer,Survival1,Survival2}\\plugins\\HechaoServerMetrics-0.1.0.jar",
+          "sha256": "BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-directory",
+        "target": "E:\\manual-backups\\server-metrics-20260727T004852Z"
+      },
+      "evidence": [
+        "docs/SERVER_RUNTIME_METRICS_OPERATIONS.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "luckperms-tier-agent",
+      "version": "0.1.0",
+      "releaseTag": "luckperms-tier-agent-v0.1.0",
+      "releaseCommit": "16ff9d64faccf52cc14b2a58775406e252a5524b",
+      "taggedAt": "2026-07-28T00:11:06+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "16ff9d64faccf52cc14b2a58775406e252a5524b"
+      },
+      "deploymentState": "deployed-pending-game-server-restart",
+      "artifacts": [
+        {
+          "name": "HechaoLuckPermsTierAgent-0.1.0.jar",
+          "location": "E:\\LobbyServer\\plugins\\HechaoLuckPermsTierAgent-0.1.0.jar",
+          "size": 324817,
+          "sha256": "35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-directory",
+        "target": "E:\\manual-backups\\luckperms-tier-agent-20260726T223127Z"
+      },
+      "evidence": [
+        "docs/LUCKPERMS_TIER_AGENT_OPERATIONS.md",
+        "docs/API_RELEASE_0.16.0.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "platform-monitor",
+      "version": "0.1.1",
+      "releaseTag": "platform-monitor-v0.1.1",
+      "releaseCommit": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9",
+      "taggedAt": "2026-07-28T00:03:27+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "hechao-platform-monitor.py",
+          "location": "/opt/hechao-platform-monitor/hechao-platform-monitor.py",
+          "size": 21265,
+          "sha256": "564300F9DBA9B136A847AD985C40F2277B254FE7B76DF48C17F04674A30DF37B",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "release-tag",
+        "target": "platform-monitor-v0.1.0"
+      },
+      "evidence": [
+        "docs/PLATFORM_MONITOR_RELEASE_0.1.1.md",
+        "docs/OPERATIONAL_ALERTS.md"
+      ]
+    },
+    {
+      "component": "offsite-database-backup",
+      "version": "0.1.0",
+      "releaseTag": "backup-v0.1.0",
+      "releaseCommit": "0f6404c2f9311b98a18d9706481e6b0d81cd1821",
+      "taggedAt": "2026-07-27T21:11:04+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "a4f5ed8cc384d3e0b5a4d42f894ba533f56eb0c2"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "Hechao.Backup",
+          "location": "/opt/hechao-backup/Hechao.Backup",
+          "size": 73934116,
+          "sha256": "3D40928D87AD25F5098CAC8A6B648C29B5C964E5611F50D7C68E515BC5C57F58",
+          "primary": true
+        },
+        {
+          "name": "hechao-offsite-database-backup",
+          "location": "/usr/local/sbin/hechao-offsite-database-backup",
+          "sha256": "19618CFEF90BEB1991BC08420D4E32F906F9877601E74FEE89EB622FCFA0E72B",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "first-release-disable",
+        "target": "disable hechao-offsite-database-backup.timer and retain local database backup service"
+      },
+      "evidence": [
+        "docs/OFFSITE_BACKUP_AND_RECOVERY.md",
+        "docs/evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json"
+      ]
+    },
+    {
+      "component": "world-backup",
+      "version": "0.1.0",
+      "releaseTag": "world-backup-v0.1.0",
+      "releaseCommit": "4ad90c8d4c843f8465166017653a307a92b1df3c",
+      "taggedAt": "2026-07-28T00:11:06+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "4ad90c8d4c843f8465166017653a307a92b1df3c"
+      },
+      "deploymentState": "deployed-pending-first-scheduled-archive",
+      "artifacts": [
+        {
+          "name": "Invoke-WorldBackup.ps1",
+          "location": "C:\\ProgramData\\Hechao\\WorldBackup\\Invoke-WorldBackup.ps1",
+          "size": 35370,
+          "sha256": "2CC7511C222FEE2D984FD49D150F89355D7C9C48FD7A705FDB3DB047C34CD691",
+          "primary": true
+        },
+        {
+          "name": "Survival1.backup.ps1",
+          "location": "E:\\Survival1\\backup.ps1",
+          "sha256": "E65D99ACB64895C857AB59FF25959327C1DE9DEFF389D093102A163F3125E811",
+          "primary": false
+        },
+        {
+          "name": "Survival2.backup.ps1",
+          "location": "E:\\Survival2\\backup.ps1",
+          "sha256": "DA466A7BA693DACDC882705F6B410FF19D8AD68CB1B99277A20F325C009F2F55",
+          "primary": false
+        },
+        {
+          "name": "Lobby.backup.ps1",
+          "location": "E:\\LobbyServer\\backup.ps1",
+          "sha256": "73D51164D27695CFA6135900DD79D9891A1AAC71DE4A7A6204AD262FDCCC1103",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "backup-directory",
+        "target": "E:\\manual-backups\\world-backup-scripts-20260727T103810Z"
+      },
+      "evidence": [
+        "docs/WORLD_BACKUP_OPERATIONS.md",
+        "docs/ASSET_INVENTORY.md",
+        "docs/evidence/INFRASTRUCTURE_CAPACITY_AND_WORLD_BACKUP_2026-07-27.json"
+      ]
+    },
+    {
+      "component": "profile-base-1.21.11",
+      "version": "1.0.5",
+      "releaseTag": "profile-base-1.21.11-v1.0.5",
+      "releaseCommit": "bd14cd695b9fe7cab073b52e2700ea9f43d6e829",
+      "taggedAt": "2026-07-23T19:59:57+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "base-1.21.11 signed manifest",
+          "location": "production manifest store",
+          "sha256": "65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "first-release-unbind",
+        "target": "remove the base profile from affected catalog bindings while retaining immutable objects"
+      },
+      "evidence": [
+        "docs/DISTRIBUTION_OPERATIONS.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "profile-activity-neoforge-1.21.11",
+      "version": "1.0.10",
+      "releaseTag": "profile-activity-neoforge-1.21.11-v1.0.10",
+      "releaseCommit": "a01cc1549bcc9a632ff386449fe0a23de28ee32b",
+      "taggedAt": "2026-07-24T20:37:53+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "activity-neoforge-1.21.11 signed manifest",
+          "location": "production manifest store",
+          "size": 2098066,
+          "sha256": "0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-snapshot",
+        "target": "/var/backups/hechao-launcher/profile-publications/pre-activity-neoforge-1.0.10-20260724T120517Z"
+      },
+      "evidence": [
+        "docs/ACTIVITY_PROFILE_RELEASE_1.0.10.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "profile-pvp-fabric-1.20.1",
+      "version": "1.0.0",
+      "releaseTag": "profile-pvp-fabric-1.20.1-v1.0.0",
+      "releaseCommit": "f0460d19383ecb30897a74de1fbac1cf541df4ed",
+      "taggedAt": "2026-07-26T05:29:30+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "pvp-fabric-1.20.1 signed manifest",
+          "location": "production manifest store",
+          "sha256": "A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-snapshot",
+        "target": "/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z"
+      },
+      "evidence": [
+        "docs/PVP_PROFILE_RELEASE_1.0.0.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "profile-vanilla-1.21.11",
+      "version": "1.0.0",
+      "releaseTag": "profile-vanilla-1.21.11-v1.0.0",
+      "releaseCommit": "1cfb2297e12ae4eb9a4e0a543c61948b6f12b063",
+      "taggedAt": "2026-07-27T02:36:59+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "vanilla-1.21.11 signed manifest",
+          "location": "production manifest store",
+          "sha256": "C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-snapshot",
+        "target": "/var/backups/hechao-launcher/profile-publication/20260726T182024Z"
+      },
+      "evidence": [
+        "docs/VANILLA_PROFILE_RELEASE_1.0.0.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "profile-forge-1.20.1",
+      "version": "1.0.0",
+      "releaseTag": "profile-forge-1.20.1-v1.0.0",
+      "releaseCommit": "1cfb2297e12ae4eb9a4e0a543c61948b6f12b063",
+      "taggedAt": "2026-07-27T02:36:59+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C"
+      },
+      "deploymentState": "production-unbound",
+      "artifacts": [
+        {
+          "name": "forge-1.20.1 signed manifest",
+          "location": "production manifest store",
+          "sha256": "D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-snapshot",
+        "target": "/var/backups/hechao-launcher/profile-publication/20260726T182024Z"
+      },
+      "evidence": [
+        "docs/FORGE_PROFILE_RELEASE_1.0.0.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "profile-dollnight-1.21.11",
+      "version": "1.0.0",
+      "releaseTag": "profile-dollnight-1.21.11-v1.0.0",
+      "releaseCommit": "1cfb2297e12ae4eb9a4e0a543c61948b6f12b063",
+      "taggedAt": "2026-07-27T02:36:59+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575"
+      },
+      "deploymentState": "production",
+      "artifacts": [
+        {
+          "name": "dollnight-1.21.11 signed manifest",
+          "location": "production manifest store",
+          "sha256": "6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-snapshot",
+        "target": "/var/backups/hechao-launcher/profile-publication/20260726T182024Z"
+      },
+      "evidence": [
+        "docs/DOLLNIGHT_PROFILE_RELEASE_1.0.0.md",
+        "docs/ASSET_INVENTORY.md"
+      ]
+    }
+  ]
+}

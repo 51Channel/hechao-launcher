@@ -10,6 +10,17 @@
 
 每次发布必须同时具备可追溯源码、自动测试、不可变发布物、SHA-256、部署前备份、部署后回归、明确回滚目标、Git 提交和组件标签。没有完成这些条件的文件只能称为测试构建，不能覆盖已有正式版本。
 
+当前活动发布的统一台账为
+[`evidence/ACTIVE_RELEASE_PROVENANCE_2026-07-28.json`](evidence/ACTIVE_RELEASE_PROVENANCE_2026-07-28.json)。
+发布前后都必须运行：
+
+```powershell
+.\tools\Test-ReleaseProvenanceLedger.ps1
+```
+
+校验必须确认标签为注释标签、标签落点存在、标签发布人与台账一致、构建来源可解析、
+主制品 SHA-256 唯一、回滚目标非空且所有证据路径位于仓库内。
+
 密码、私钥、AccessKey、数据库口令、Microsoft/Minecraft 令牌、赫朝会话和 VPS 凭据不得进入 Git、发布说明、命令行参数或玩家安装包。
 
 当前 Windows 安装包按已确认决策保持 `NotSigned`。内部和小范围灰度可以继续，但公告必须说明 SmartScreen 风险，并同时发布可信来源、文件大小和 SHA-256。以后增加 Authenticode 时应作为独立版本处理，不能覆盖既有安装包。
@@ -46,6 +57,7 @@
 ```powershell
 dotnet test Hechao.Launcher.sln -c Release
 .\tools\Build-WindowsInstaller.ps1 -SkipTests
+.\tools\Test-ReleaseProvenanceLedger.ps1
 git diff --check
 ```
 

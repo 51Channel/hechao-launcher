@@ -1,8 +1,8 @@
 # 统一运行告警
 
-> 当前状态：API `0.20.1`、平台监控器 `0.1.0` 已生产部署
+> 当前状态：API `0.20.1`、平台监控器 `0.1.1` 已生产部署
 >
-> 更新日期：`2026-07-27`
+> 更新日期：`2026-07-28`
 
 ## 1. 边界
 
@@ -49,12 +49,17 @@ API 请求指标和告警历史保留 30 天。客户端遥测只接受固定事
 ## 3. 生产位置
 
 ```text
-/usr/local/sbin/hechao-platform-monitor
+/opt/hechao-platform-monitor/hechao-platform-monitor.py
 /etc/hechao-platform-monitor/environment
 /var/lib/hechao-platform-monitor/state.json
 /etc/systemd/system/hechao-platform-monitor.service
 /etc/systemd/system/hechao-platform-monitor.timer
 ```
+
+当前生产脚本 SHA-256 为
+`564300F9DBA9B136A847AD985C40F2277B254FE7B76DF48C17F04674A30DF37B`，
+对应标签 `platform-monitor-v0.1.1`。版本记录见
+[`PLATFORM_MONITOR_RELEASE_0.1.1.md`](PLATFORM_MONITOR_RELEASE_0.1.1.md)。
 
 环境文件保存内部告警令牌和 SMTP 凭据，必须保持 `root:root 600`。API 环境文件只保存
 内部令牌的 SHA-256，不保存原令牌。状态文件只包含固定告警字段，不包含凭据。

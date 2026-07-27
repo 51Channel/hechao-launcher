@@ -20,7 +20,9 @@ Minecraft Server List Ping against loopback ports.
 - Windows state directory: `C:\ProgramData\Hechao\StatusCollector`
 - Collection interval: one minute
 - Collector executable SHA-256:
-  `D24201646D13CF0CA4F7261DC06C0EFAF2BC9B425A9B539BD3689095EFAD8DFF`
+  `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`
+- Collector ProductVersion:
+  `0.2.0+7ba2eba1ee7b6c6307948da9e4084ea6f6406fb7`
 
 Heartbeats are keyed by Velocity target rather than catalog server ID. This is required
 because replacement activities can share a Velocity target with another catalog entry.

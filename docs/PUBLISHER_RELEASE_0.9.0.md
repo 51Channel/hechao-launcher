@@ -72,3 +72,27 @@ SHA-256 完成回读逐字节复验。
 - 恢复时必须先验证对象 SHA-256，再解密到受限临时目录。
 - 恢复出的 ECDSA 私钥必须与仓库信任包核对，不能仅凭 Key ID 接受。
 - 演练结束必须删除明文 PKCS#8；生产 DPAPI 主文件不得被演练覆盖。
+
+## 5. 追溯重建
+
+首次恢复演练使用的 `0.9.0` 可执行文件当时没有单独归档。为补齐发布追溯，已从注释
+标签 `publisher-v0.9.0` 指向的精确提交
+`dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9` 建立隔离 worktree，完成解决方案
+`346/346` 测试后重新构建。
+
+该构建明确标记为“追溯重建”，不声称与首次演练二进制逐字节相同，也没有上传 OSS：
+
+| 项目 | 值 |
+| --- | --- |
+| EXE | `artifacts/publish/publisher-win-x64-0.9.0-provenance-rebuild/Hechao.Publisher.exe` |
+| EXE 大小 | `74,113,791` 字节 |
+| EXE SHA-256 | `947480D3B3566542AECD84246B6C8C6CEE1128D7A3CE1675ED4C0D9089F60C93` |
+| ProductVersion | `0.9.0+dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9` |
+| Authenticode | `NotSigned` |
+| ZIP | `artifacts/releases/Hechao-Publisher-0.9.0-win-x64-provenance-rebuild.zip` |
+| ZIP 大小 | `32,120,425` 字节 |
+| ZIP SHA-256 | `AA15C30694E1189DA684E297EF55C82C4FF9654FE3A35F4FB2C1AFF0976AF6C1` |
+
+ZIP 只包含一个 EXE，压缩包内 EXE 的 SHA-256 已重新计算并与构建原件一致。今后的
+发布器版本必须在发布台账校验通过前同时归档主制品，不能再依赖功能输出代替二进制
+归档。

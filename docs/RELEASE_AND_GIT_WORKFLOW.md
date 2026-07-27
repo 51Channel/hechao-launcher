@@ -43,8 +43,11 @@ api-v0.20.0
 velocity-authorizer-v0.2.0
 publisher-v0.9.0
 status-collector-v0.2.0
-platform-monitor-v0.1.0
+server-metrics-agent-v0.1.0
+luckperms-tier-agent-v0.1.0
+platform-monitor-v0.1.1
 backup-v0.1.0
+world-backup-v0.1.0
 profile-base-1.21.11-v1.0.5
 profile-pvp-fabric-1.20.1-v1.0.0
 ```
@@ -71,6 +74,7 @@ git diff --cached --stat
 git remote -v
 git config --get user.name
 git config --get user.email
+.\tools\Test-ReleaseProvenanceLedger.ps1
 ```
 
 至少复核以下内容没有进入暂存区：
@@ -81,6 +85,16 @@ git config --get user.email
 - VPS 密码、RDP 密码或只能保存在本机安全存储中的路径内容。
 
 `.gitignore` 是最后一道误操作保护，不是秘密管理方案。已经误提交的秘密必须立即吊销和轮换，不能只从后续提交删除。
+
+活动发布统一登记在
+[`docs/evidence/ACTIVE_RELEASE_PROVENANCE_2026-07-28.json`](evidence/ACTIVE_RELEASE_PROVENANCE_2026-07-28.json)。
+每条记录必须包含注释标签及其落点、实际构建来源、发布人、一个主制品 SHA-256、明确
+回滚目标和仓库内证据。代码制品的构建来源可以早于补齐发布记录的标签落点，两者必须
+分开记录，不能拿文档提交冒充构建提交。客户端档案以签名清单 SHA-256 作为内容来源。
+
+发布器或其他管理工具若进行追溯重建，必须标记 `reconstructedFromTag`，不得声称与
+历史未归档二进制逐字节一致。今后的正式版本必须在发布收口前更新台账并让校验脚本
+通过。
 
 ## 5. 发布提交模板
 
