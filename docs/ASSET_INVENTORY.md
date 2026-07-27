@@ -258,22 +258,32 @@ Standard `10.0.20348`，1 颗 AMD EPYC 7R13、4 个逻辑处理器、8.00 GiB �
 没有再被 `owl5` 覆盖。部署前后 Java 进程与 `25565` 监听均为空，没有启动、停止或
 重启游戏服。
 
-需单独处理的路由风险：owl5 的 Velocity 以 `modern` 转发模式把 `pvp` 指向
-`owl9.vipi9.top:19243`，但 owl9 自身声明为“直连、无 Velocity”，仍为
-`online-mode=true`，14 个现有模组中没有观察到 Fabric Velocity 转发支持模组。因此
-该目标不能在真实路由验收前视为可用，更不能据此切换 Velocity `enforce`。修正时还需
-同时解决后端端口来源限制，不能只把服务器改成离线模式。
+PVP 的静态 Velocity 兼容改造已完成。官方 FabricProxy-Lite `2.6.0` 已安装到
+`C:\mc\server\mods`，JAR SHA-256 为
+`D4719179353D790453061C14B4148994FF431AC57A126555B3009CE9A748D6C7`。
+原有配置在核对 `hackOnlineMode=true`、`hackEarlySend=true`、
+`hackMessageChain=true` 和转发密钥摘要后原样复用，配置内容与
+`server.properties`、启动脚本、计划任务定义均未改变。PVP 继续保持
+`online-mode=true`，没有有效 modern forwarding 数据的直连会被模组拒绝。
+owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本机管理员，
+密钥内容未改变，Velocity 进程也未重启。
+
+该改造目前是“已部署待生产验收”，不是“真实路由已通过”。PVP 仍关闭，必须等服主
+下次手动开服后验证模组加载、统一入口、UUID/名称/皮肤/权限、直连拒绝、`/hub` 和
+断线重连，再决定是否收窄后端防火墙来源并推进 Velocity `enforce`。
 
 脱敏机器证据见
 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)，
 状态采集部署证据见
-[`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)。
+[`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)，
+PVP modern forwarding 部署证据见
+[`evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json)。
 
 ## 4. 当前阻塞与风险
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 的 `E:` 当前约 20.77 GiB 可用，最坏预检余量约 3.38 GiB；当前运行中的 Java 进程早于新备份脚本部署，首次正式计划备份必须等服主自行重启后再核对 ZIP、SHA-256、保留数量和剩余空间。
-3. `owl9` 的密钥认证、实时规格盘点和只出站状态采集均已完成；当前 PVP 服关闭，且直连 online-mode Fabric 配置与 owl5 Velocity `modern` 路由不兼容，必须在真实灰度前单独改造并限制后端来源。
+3. `owl9` 的密钥认证、实时规格盘点、只出站状态采集和 PVP modern forwarding 静态改造均已完成；当前 PVP 服关闭，等待服主手动开服验证真实 Velocity 路由、直连拒绝与身份转发，之后再决定后端防火墙来源收窄。
 4. 启动器数据库异地加密、真实 OSS 上传/下载、告警恢复和异地主机隔离恢复均已验收；论坛与 Sub2API 的本地一致性备份、隔离恢复和 RAM v5 只读预检已通过，OSS 副本等待明确授权。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。

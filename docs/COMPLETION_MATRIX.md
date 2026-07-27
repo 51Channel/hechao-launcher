@@ -76,6 +76,7 @@
 | 能力 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | Velocity 异步授权和首次目标定向 | 已实现待生产验收 | 插件 `0.2.0` 为 `monitor`，合成 `lobby -> pvp` 通过 |
+| PVP Fabric 后端 modern forwarding | 已部署待生产验收 | owl9 已安装官方 FabricProxy-Lite `2.6.0`，复用匹配的受限配置并保持 `online-mode=true`；部署前后无 Java 进程与 `25565` 监听，等待服主手动开服验证真实路由、身份转发和直连拒绝 |
 | NPC、`/hub`、断线重连和 API 故障路径 | 外部验收 | 需要真实玩家与真实代理日志 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
@@ -98,7 +99,7 @@
 | API、登录、下载和证书告警 | 已完成 | API `0.20.1`、迁移 17、平台监控器 `0.1.1`、后台告警页和 transition-only 邮件已生产验收 |
 | 发布前故障自动演练 | 已完成 | 断网、损坏文件、维护、权限变化和版本回滚五类定向集合 `45/45` 通过；完整 `.NET 355/355` 与三组服务端代理 `17/17` 同轮复验，见 [`PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md`](PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md) |
 | TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 需要活动窗口和真实玩家 |
-| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB、磁盘、停服状态和 `C:\mc\server` 已盘点；独立只出站 PVP 采集器已部署且未触碰游戏进程，见 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json) 与 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json) |
+| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB、磁盘、停服状态和 `C:\mc\server` 已盘点；独立只出站 PVP 采集器与 modern forwarding 静态兼容已部署，均未触碰游戏进程，见 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)、[`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json) 与 [`evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json) |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |
 

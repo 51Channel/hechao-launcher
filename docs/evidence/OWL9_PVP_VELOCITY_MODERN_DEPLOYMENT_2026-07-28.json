@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T17:25:43Z",
+  "purpose": "Prepare the stopped owl9 Fabric 1.20.1 PVP backend for owl5 Velocity modern forwarding without starting, stopping, or restarting any game server.",
+  "officialArtifact": {
+    "project": "FabricProxy-Lite",
+    "version": "2.6.0",
+    "modrinthProjectUrl": "https://modrinth.com/mod/fabricproxy-lite",
+    "downloadUrl": "https://cdn.modrinth.com/data/8dI2tmqs/versions/XJmDAnj5/FabricProxy-Lite-2.6.0.jar",
+    "githubRepository": "https://github.com/OKTW-Network/FabricProxy-Lite",
+    "gitTag": "v2.6.0",
+    "gitCommit": "258d0ee20f618b94cfa65eb58fb3b84e32011648",
+    "sizeBytes": 209342,
+    "sha256": "D4719179353D790453061C14B4148994FF431AC57A126555B3009CE9A748D6C7",
+    "sha512": "365d29ebaeca55ffdaa4d066141559b00e3177437b0d9fabee3996fcdbd8e2fb8ae45c0c600cb357a042efe750caa2b6efaaffa439f5710cbb04deeae994b7dd",
+    "descriptor": {
+      "id": "fabricproxy-lite",
+      "environment": "server",
+      "minimumMinecraft": "1.20.1",
+      "minimumFabricLoader": "0.14.21",
+      "minimumJava": 17
+    }
+  },
+  "pvpBackend": {
+    "host": "owl9.vipi9.top",
+    "serverRoot": "C:\\mc\\server",
+    "minecraftVersion": "1.20.1",
+    "fabricLoaderVersion": "0.16.14",
+    "javaMajorVersion": 21,
+    "onlineMode": true,
+    "internalPort": 25565,
+    "publicEndpoint": "owl9.vipi9.top:19243",
+    "startupTask": {
+      "name": "HorrorPrank",
+      "principal": "Administrator",
+      "stateAfterDeployment": "Ready",
+      "definitionUnchanged": true
+    },
+    "dependencyChecks": {
+      "fabricLoaderSatisfied": true,
+      "javaSatisfied": true,
+      "fabricNetworkingApiPresent": true
+    }
+  },
+  "existingConfiguration": {
+    "path": "C:\\mc\\server\\config\\FabricProxy-Lite.toml",
+    "existedBeforeDeployment": true,
+    "sha256Before": "47B33719CE4CC18F0AE25C50859255CBD1A19853D45163882DDF5F8515E25EA5",
+    "sha256After": "47B33719CE4CC18F0AE25C50859255CBD1A19853D45163882DDF5F8515E25EA5",
+    "contentUnchanged": true,
+    "hackOnlineMode": true,
+    "hackEarlySend": true,
+    "hackMessageChain": true,
+    "secretLengthCharacters": 32,
+    "secretSha256": "F2D17C8E47076CC67478AC2ECAE1E0B393F76923F5938E3E4D70485C7D83D744",
+    "secretMatchesOwl5Velocity": true,
+    "aclInheritanceProtected": true,
+    "aclIdentities": [
+      "BUILTIN\\Administrators",
+      "NT AUTHORITY\\SYSTEM"
+    ]
+  },
+  "deployment": {
+    "installerRepositoryPath": "deploy/windows/pvp-velocity/Install-PvpVelocityForwarding.ps1",
+    "installerSha256": "012DB72C598E410EA5C75A5E90FE2D690082FBEE1E4BCD8056D508C0623C409F",
+    "installedModPath": "C:\\mc\\server\\mods\\FabricProxy-Lite-2.6.0.jar",
+    "installedModSha256": "D4719179353D790453061C14B4148994FF431AC57A126555B3009CE9A748D6C7",
+    "installedModSizeBytes": 209342,
+    "backupPath": "C:\\manual-backups\\pvp-velocity-modern-20260727T172218Z",
+    "backupPrechangeSha256": "7BDBCF8FB31606D1074EB19484A226DEC47F5889330F24CA7DCAF5F7A1DFB9A8",
+    "backupInstallerPath": "C:\\manual-backups\\pvp-velocity-modern-20260727T172218Z\\Install-PvpVelocityForwarding.ps1",
+    "backupInstallerSha256": "012DB72C598E410EA5C75A5E90FE2D690082FBEE1E4BCD8056D508C0623C409F",
+    "backupAclInheritanceProtected": true,
+    "backupAclIdentities": [
+      "BUILTIN\\Administrators",
+      "NT AUTHORITY\\SYSTEM"
+    ],
+    "stagingDirectoryRemoved": true,
+    "serverPropertiesUnchanged": true,
+    "startScriptUnchanged": true
+  },
+  "velocityProxy": {
+    "host": "owl5.vipi9.top",
+    "forwardingMode": "modern",
+    "pvpEndpoint": "owl9.vipi9.top:19243",
+    "secretPath": "E:\\Velocity\\forwarding.secret",
+    "secretSha256BeforeAclHardening": "F2D17C8E47076CC67478AC2ECAE1E0B393F76923F5938E3E4D70485C7D83D744",
+    "secretSha256AfterAclHardening": "F2D17C8E47076CC67478AC2ECAE1E0B393F76923F5938E3E4D70485C7D83D744",
+    "secretContentUnchanged": true,
+    "aclInheritanceProtected": true,
+    "aclOwner": "BUILTIN\\Administrators",
+    "aclIdentities": [
+      "BUILTIN\\Administrators",
+      "NT AUTHORITY\\SYSTEM"
+    ],
+    "aclBackupPath": "E:\\manual-backups\\velocity-forwarding-secret-acl-20260727T172500Z",
+    "aclBackupMetadataSha256": "82A572F8CBB54D379D59E1529997CA739ADF597C5431607C788FDAA1B49E3130",
+    "processIdBefore": 6068,
+    "processIdAfter": 6068,
+    "taskDefinitions": [
+      {
+        "name": "Codex-Velocity-Live",
+        "principal": "SYSTEM",
+        "state": "Running",
+        "xmlSha256Before": "0302FF140BC23C1F196BE0FA2EA507F20BB2073EF66FC6A46ADEC990ED6F1892",
+        "xmlSha256After": "0302FF140BC23C1F196BE0FA2EA507F20BB2073EF66FC6A46ADEC990ED6F1892"
+      },
+      {
+        "name": "Minecraft-Velocity",
+        "principal": "SYSTEM",
+        "state": "Disabled",
+        "xmlSha256Before": "264D7529CF73989117444F8A6E977976C3E35E89A9AA040F95E70EB7888D1710",
+        "xmlSha256After": "264D7529CF73989117444F8A6E977976C3E35E89A9AA040F95E70EB7888D1710"
+      }
+    ]
+  },
+  "heartbeatObservation": {
+    "velocityTarget": "pvp",
+    "collectorInstance": "owl9-pvp",
+    "isOnline": false,
+    "diskFreeBytes": 9464377344,
+    "diskTotalBytes": 42011193344,
+    "probeIssues": [
+      "StatusUnavailable",
+      "ProcessNotRunning",
+      "MetricsFileMissing"
+    ],
+    "capturedAtUtc": "2026-07-27T17:25:41.181Z",
+    "receivedAtUtc": "2026-07-27T17:25:43.910Z"
+  },
+  "safety": {
+    "secretTransferredThroughStandardInputOnly": true,
+    "secretCleartextStoredByDeployment": false,
+    "pvpJavaProcessesBefore": [],
+    "pvpJavaProcessesAfter": [],
+    "pvpInternalPortListeningBefore": false,
+    "pvpInternalPortListeningAfter": false,
+    "pvpServerStarted": false,
+    "pvpServerStopped": false,
+    "pvpServerRestarted": false,
+    "velocityRestarted": false
+  },
+  "remainingValidation": {
+    "userControlledPvpStartRequired": true,
+    "realVelocityRouteValidated": false,
+    "directBackendRejectionValidated": false,
+    "identityForwardingValidated": false,
+    "hubAndReconnectValidated": false,
+    "velocityEnforceAllowed": false
+  }
+}

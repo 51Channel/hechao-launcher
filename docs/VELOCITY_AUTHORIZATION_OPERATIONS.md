@@ -3,7 +3,7 @@
 > API：`0.16.0`（目标定向契约自 `0.12.0` 起保持兼容）
 > 启动器：`0.11.14` 私有 OSS 灰度候选
 > Velocity 插件：`0.2.0`
-> 当前状态：插件已加载为 `monitor`，全部生产目标已映射，授权定向路由自动验收通过；等待真实四级账号灰度
+> 当前状态：插件已加载为 `monitor`，全部生产目标已映射，授权定向路由自动验收通过；owl9 PVP modern forwarding 已静态部署，等待手动开服与真实四级账号灰度
 
 ## 1. 授权链路
 
@@ -91,6 +91,12 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 
 生产数据库与内部授权 API 已使用一次性合成授权做闭环验收：绑定账号 `51Channel` 以初始目标 `lobby` 请求授权后，API 返回 `Allowed=true`、`Reason=Allowed`、`ServerId=pvp`、`VelocityTarget=pvp`、`AccessTier=Administrator`、`LuckPermsPrimaryGroup=owner`。授权已消费，临时授权行已删除，审计记录保留。插件目标改写行为同时由 `11/11` 个 Java 测试覆盖；该自动验收不替代真实玩家连接、NPC 转服和 `/hub` 灰度。
 
+owl9 的 PVP Fabric `1.20.1` 后端已安装 FabricProxy-Lite `2.6.0`，保持
+`online-mode=true` 并使用与代理一致的 modern forwarding 密钥。部署前后 PVP
+Java 进程与内部 `25565` 监听均为空，Velocity PID 和任务定义也未改变。该结果只证明
+静态兼容与密钥边界正确，仍需服主手动开服验证真实代理路由、身份数据和直连拒绝。
+详细步骤见 [`PVP_VELOCITY_OPERATIONS.md`](PVP_VELOCITY_OPERATIONS.md)。
+
 ## 6. 从 monitor 切换到 enforce
 
 以下条件必须全部完成：
@@ -100,7 +106,7 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 3. [已完成] 管理员单独重启 Velocity，并从启动日志确认插件以 `monitor` 初始化。
 4. [已完成] Velocity 的 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight 对应目录都已登记；替换服共享目标关系已记录。
 5. 共享同一 Velocity 目标的替换服一次只能有一个目录项处于 `Online`。特别是 `survival2` 与 DollNight 的切换必须先更新目录状态。
-6. [部分完成] 自动化和生产合成授权已确认初始大厅到 `pvp` 的定向结果；仍需真实玩家验证普通入口、NPC 转服、`/hub`、断线重连和 API 短暂失败。
+6. [部分完成] 自动化和生产合成授权已确认初始大厅到 `pvp` 的定向结果，PVP 后端 modern forwarding 已静态部署；仍需服主手动开服并由真实玩家验证统一入口、身份转发、直连拒绝、NPC 转服、`/hub`、断线重连和 API 短暂失败。
 7. [已完成] 数据库已有可验证备份，API 和插件配置都有回滚副本。
 
 随后由管理员安排一次 Velocity 手动重启窗口：
