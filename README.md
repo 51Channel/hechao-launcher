@@ -41,7 +41,7 @@
 - 启动器 API `0.20.0` 已通过 `https://launcher-api.hechao.world` 上线；对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
-API `0.20.0-20260727T011953Z` 已完成隔离生产备份还原、迁移 17、哈希校验、原子切换和公网回归；账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。状态采集器 `0.2.0` 已实时上报大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量；三个 Paper/Purpur 指标代理文件已部署，安装未改变 Java PID，等待服主下一次自行重启后加载 TPS/MSPT/GC。大厅 LuckPerms 等级代理同样等待下次自行重启后做真实改回测试。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight。当前测试为 `.NET 346/346`、Velocity `11/11`、等级代理 `4/4`、指标代理 `2/2`。生产管理员 MFA 凭据数仍为 `0`，真实四级账号验收也尚未完成，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变。VSS 世界备份引擎已部署，锁文件读取、后台 ZIP、条目、SHA-256、状态与卷影清理闭环通过，三服错峰计划已写入磁盘，首次 Essentials 正式世界归档仍待验收。数据库异地加密备份与恢复链已部署，等待 RAM 最小权限保存后完成首次真实 OSS 往返。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.20.0-20260727T011953Z` 已完成隔离生产备份还原、迁移 17、哈希校验、原子切换和公网回归；账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。状态采集器 `0.2.0` 已实时上报大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量；三个 Paper/Purpur 指标代理文件已部署，安装未改变 Java PID，等待服主下一次自行重启后加载 TPS/MSPT/GC。大厅 LuckPerms 等级代理同样等待下次自行重启后做真实改回测试。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight。当前测试为 `.NET 346/346`、Velocity `11/11`、等级代理 `4/4`、指标代理 `2/2`。生产管理员 MFA 凭据数仍为 `0`，真实四级账号验收也尚未完成，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变。VSS 世界备份引擎已部署，锁文件读取、后台 ZIP、条目、SHA-256、状态与卷影清理闭环通过，三服错峰计划已写入磁盘，首次 Essentials 正式世界归档仍待验收。数据库异地加密链已完成离机解密与隔离恢复预演，等待 RAM 最小权限保存后完成首次真实 OSS 往返。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
