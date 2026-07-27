@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前启动器私有 OSS 灰度候选为 `0.11.13`，API 生产版本为 `0.20.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动和账号安全操作的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前启动器私有 OSS 灰度候选为 `0.11.14`，API 生产版本为 `0.20.0`。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动和账号安全操作的管理员控制台。
 
 由赫朝独立运营。非 Minecraft 官方产品。未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
 
@@ -20,6 +20,7 @@
 - Windows 安装包按当前用户安装到 `%LocalAppData%\Programs\Hechao Launcher`；升级和卸载均保留游戏数据。
 - 修复流程会重新检查本地文件；同档案的并发安装通过跨进程独占锁阻止。
 - 提供实时下载任务、持久化历史、取消任务、活动服目录、客户端修复入口和完整设置页。
+- “启动时检查客户端更新”可关闭首次本地扫描，但进入服务器前仍强制检查；重新开启时立即检查当前档案。
 - 将所选服务器、内存、游戏数据目录、默认页面、缓存与启动行为保存到 `%LocalAppData%\Hechao\Launcher\settings.json`。
 - 通过 `IServerCatalogClient` 从 HTTPS API 读取服务器目录，并按“在线 API、上次成功缓存、内置应急目录”顺序降级。
 - 使用赫朝账号建立社区会话；绑定游戏身份时使用系统浏览器执行 Microsoft OAuth 与 PKCE，再通过 Xbox/XSTS/Minecraft 验证 Java 正版权益。
@@ -41,7 +42,7 @@
 - 启动器 API `0.20.0` 已通过 `https://launcher-api.hechao.world` 上线；对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
-API `0.20.0-20260727T011953Z` 已完成隔离生产备份还原、迁移 17、哈希校验、原子切换和公网回归；账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。状态采集器 `0.2.0` 已实时上报大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量；三个 Paper/Purpur 指标代理文件已部署，安装未改变 Java PID，等待服主下一次自行重启后加载 TPS/MSPT/GC。大厅 LuckPerms 等级代理同样等待下次自行重启后做真实改回测试。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight。当前测试为 `.NET 346/346`、Velocity `11/11`、等级代理 `4/4`、指标代理 `2/2`。生产管理员 MFA 凭据数仍为 `0`，真实四级账号验收也尚未完成，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变。VSS 世界备份引擎已部署，锁文件读取、后台 ZIP、条目、SHA-256、状态与卷影清理闭环通过，三服错峰计划已写入磁盘，首次 Essentials 正式世界归档仍待验收。数据库异地加密链已完成离机解密与隔离恢复预演，等待 RAM 最小权限保存后完成首次真实 OSS 往返。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
+API `0.20.0-20260727T011953Z` 已完成隔离生产备份还原、迁移 17、哈希校验、原子切换和公网回归；账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。状态采集器 `0.2.0` 已实时上报大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量；三个 Paper/Purpur 指标代理文件已部署，安装未改变 Java PID，等待服主下一次自行重启后加载 TPS/MSPT/GC。大厅 LuckPerms 等级代理同样等待下次自行重启后做真实改回测试。Velocity 授权插件 `0.2.0` 已加载为 `monitor`，六个生产目录项覆盖 `lobby`、`survival1`、`survival2`、`activity`、`pvp` 与 DollNight。当前测试为 `.NET 348/348`、Velocity `11/11`、等级代理 `4/4`、指标代理 `2/2`。生产管理员 MFA 凭据数仍为 `0`，真实四级账号验收也尚未完成，因此 `Authentication__EnforceCatalogAuthentication=false` 与 Velocity `monitor` 暂时保持不变。VSS 世界备份引擎已部署，锁文件读取、后台 ZIP、条目、SHA-256、状态与卷影清理闭环通过，三服错峰计划已写入磁盘，首次 Essentials 正式世界归档仍待验收。数据库异地加密链已完成离机解密与隔离恢复预演，等待 RAM 最小权限保存后完成首次真实 OSS 往返。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
 ## 项目结构
 
@@ -89,7 +90,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、每档案 Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
 6. [已完成] 部署 API `0.20.0`、统一运行告警与状态采集器 `0.2.0`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期、单服访问规则、论坛会话联动、受控全局等级、运行遥测和服务器进程/磁盘指标已上线。管理员 Web 已启用，但正式管理员 MFA 尚未登记，大厅等级代理和三个指标代理仍需在下次手动重启后做真实验收。
-7. 启动器 `0.11.13` 已替换 `0.11.12` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.13.md`](docs/PRELAUNCH_PILOT_0.11.13.md) 验证隐私受限遥测，并回归登录、安装、修复、回滚、诊断上传与真实游戏启动。
+7. 启动器 `0.11.14` 已替换 `0.11.13` 进入私有 OSS 灰度；按 [`docs/PRELAUNCH_PILOT_0.11.14.md`](docs/PRELAUNCH_PILOT_0.11.14.md) 验证启动检查开关，并回归登录、安装、修复、回滚、诊断上传与真实游戏启动。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 
