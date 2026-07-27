@@ -109,7 +109,12 @@ admin.hechao.world                未启用时 404
 
 ## 7. 启动器灰度
 
-安装包只上传到私有 OSS 的版本固定路径，不覆盖同版本对象。管理员使用发布器 `0.8.1` 或更高版本先校验本地 SHA-256，再校验或写入远端对象，并生成最长 24 小时的内部下载链接。发布 RAM 只允许访问 `releases/launcher/*`，API 主机不持有该前缀写权限。
+安装包只上传到私有 OSS 的版本固定路径，不覆盖同版本对象。管理员使用发布器 `0.9.0`
+或更高版本先校验本地 SHA-256，再校验或写入远端对象，并生成最长 24 小时的内部下载
+链接。发布 RAM 在安装包流程中只访问 `releases/launcher/*`；备份服务额外使用独立的
+`backups/database/*` 与 `backups/recovery/*` 前缀，API 进程本身不持有这些前缀的
+写权限。生产 systemd 单元分别读取 `/etc/hechao-launcher-api/environment` 和
+`/etc/hechao-offsite-backup/environment`，禁止把发布 RAM AccessKey 写回 API 环境文件。
 
 开放给内部成员前：
 

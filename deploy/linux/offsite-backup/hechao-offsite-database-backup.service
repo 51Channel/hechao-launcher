@@ -7,7 +7,7 @@ After=network-online.target docker.service hechao-launcher-api.service
 Type=oneshot
 User=root
 Group=root
-EnvironmentFile=/etc/hechao-launcher-api/environment
+EnvironmentFile=/etc/hechao-offsite-backup/environment
 Environment=HECHAO_BACKUP_OSS_BUCKET=hechaoworld
 Environment=HECHAO_BACKUP_OSS_REGION=cn-shanghai
 Environment=HECHAO_BACKUP_OSS_ENDPOINT=https://oss-cn-shanghai.aliyuncs.com

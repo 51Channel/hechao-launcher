@@ -35,36 +35,43 @@ internal static class BackupEnvelope
         string passphrasePath)
     {
         var passphrase = ReadPassphrase(passphrasePath);
-        var publicPath = PrepareNewOutput(publicKeyPath);
-        var privatePath = PrepareNewOutput(privateKeyPath);
-
-        using var rsa = RSA.Create(4096);
-        var publicBytes = rsa.ExportSubjectPublicKeyInfo();
-        var privateBytes = rsa.ExportEncryptedPkcs8PrivateKey(
-            passphrase,
-            new PbeParameters(
-                PbeEncryptionAlgorithm.Aes256Cbc,
-                HashAlgorithmName.SHA256,
-                600_000));
         try
         {
-            File.WriteAllText(
-                publicPath,
-                rsa.ExportSubjectPublicKeyInfoPem(),
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            File.WriteAllBytes(privatePath, privateBytes);
-            RestrictPrivateFile(privatePath);
-            return Convert.ToHexString(SHA256.HashData(publicBytes));
-        }
-        catch
-        {
-            TryDelete(publicPath);
-            TryDelete(privatePath);
-            throw;
+            var publicPath = PrepareNewOutput(publicKeyPath);
+            var privatePath = PrepareNewOutput(privateKeyPath);
+
+            using var rsa = RSA.Create(4096);
+            var publicBytes = rsa.ExportSubjectPublicKeyInfo();
+            var privateBytes = rsa.ExportEncryptedPkcs8PrivateKey(
+                passphrase,
+                new PbeParameters(
+                    PbeEncryptionAlgorithm.Aes256Cbc,
+                    HashAlgorithmName.SHA256,
+                    600_000));
+            try
+            {
+                File.WriteAllText(
+                    publicPath,
+                    rsa.ExportSubjectPublicKeyInfoPem(),
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                File.WriteAllBytes(privatePath, privateBytes);
+                RestrictPrivateFile(privatePath);
+                return Convert.ToHexString(SHA256.HashData(publicBytes));
+            }
+            catch
+            {
+                TryDelete(publicPath);
+                TryDelete(privatePath);
+                throw;
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(privateBytes);
+            }
         }
         finally
         {
-            CryptographicOperations.ZeroMemory(privateBytes);
+            Array.Fill(passphrase, '\0');
         }
     }
 
@@ -349,6 +356,7 @@ internal static class BackupEnvelope
         finally
         {
             CryptographicOperations.ZeroMemory(privateBytes);
+            Array.Fill(passphrase, '\0');
         }
     }
 
@@ -460,17 +468,47 @@ internal static class BackupEnvelope
         return associatedData;
     }
 
-    private static string ReadPassphrase(string path)
+    private static char[] ReadPassphrase(string path)
     {
-        var passphrase = File.ReadAllText(path, Encoding.UTF8)
-            .TrimEnd('\r', '\n');
-        if (passphrase.Length < 32)
+        const int maximumPassphraseBytes = 16 * 1024;
+        var file = RequireRegularInput(path);
+        if (file.Length is <= 0 or > maximumPassphraseBytes)
         {
             throw new ArgumentException(
-                "The recovery passphrase must contain at least 32 characters.");
+                "The recovery passphrase file is invalid.");
         }
 
-        return passphrase;
+        var encoded = File.ReadAllBytes(file.FullName);
+        char[]? decoded = null;
+        try
+        {
+            decoded = new UTF8Encoding(
+                encoderShouldEmitUTF8Identifier: false,
+                throwOnInvalidBytes: true).GetChars(encoded);
+            var length = decoded.Length;
+            while (length > 0 && decoded[length - 1] is '\r' or '\n')
+            {
+                length--;
+            }
+
+            if (length < 32)
+            {
+                throw new ArgumentException(
+                    "The recovery passphrase must contain at least 32 characters.");
+            }
+
+            var passphrase = new char[length];
+            decoded.AsSpan(0, length).CopyTo(passphrase);
+            return passphrase;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(encoded);
+            if (decoded is not null)
+            {
+                Array.Fill(decoded, '\0');
+            }
+        }
     }
 
     private static FileInfo RequireRegularInput(string path)

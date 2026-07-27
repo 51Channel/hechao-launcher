@@ -9,7 +9,9 @@
       ],
       "Resource": [
         "acs:oss:*:*:hechaoworld/objects/*",
-        "acs:oss:*:*:hechaoworld/releases/launcher/*"
+        "acs:oss:*:*:hechaoworld/releases/launcher/*",
+        "acs:oss:*:*:hechaoworld/backups/database/*",
+        "acs:oss:*:*:hechaoworld/backups/recovery/*"
       ]
     }
   ]

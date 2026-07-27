@@ -1,7 +1,7 @@
 # 客户端分发与签名操作手册
 
 > 启动器源码版本：`0.11.12`
-> 发布器源码版本：`0.8.1`
+> 发布器源码版本：`0.9.0`
 > 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.16.0` 托管，启动器 `0.11.12` 已加入玩家确认诊断上传并完成私有 OSS 灰度发布闭环。
 
 ## 1. 安全边界
@@ -48,11 +48,19 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 - 主密文：`%LocalAppData%\HechaoLauncherAdmin\secrets\distribution-signing-private.dpapi`
 - 本机镜像：`H:\Hechao-SecureBackup\distribution-signing-private.dpapi`
 
-两份私钥副本均由 Windows DPAPI `CurrentUser` 保护，ACL 仅允许当前管理员与 `SYSTEM`，并已完成解密往返与密文一致性验证。`H:` 镜像仍依赖同一 Windows 用户配置，只属于本机冗余，不能代替离机恢复副本。
+两份日常私钥副本均由 Windows DPAPI `CurrentUser` 保护，ACL 仅允许当前管理员与
+`SYSTEM`，并已完成解密往返与密文一致性验证。发布器 `0.9.0` 已额外生成不依赖 DPAPI
+的 RSA/AES-GCM 加密恢复包，并完成解密、临时 DPAPI 恢复、真实签名和生产公钥验签；
+加密恢复包等待写入私有 OSS 恢复前缀，恢复口令保存在另一台主机。
 
 `0.6.0` 启动器已按 `win-x64` 单文件、自包含发布配置重建，文件版本、产品名、应用图标和内嵌信任包均已验证。发布 ZIP `artifacts/releases/Hechao-Launcher-0.6.0-win-x64.zip` 只包含 `Hechao.Launcher.exe`，SHA-256 为 `9529C175A168EDE850D4A519E50EA71268BB8A809D128FC5076F18D48D90CC0C`；EXE SHA-256 为 `0DF28FD71DA34303C1FAAC11C1D041884C4AF664D192D3D2A719FAF9A602C2E7`。历史管理端发布器 `0.5.0` 的 ZIP SHA-256 为 `176EAF4B50C36A9254E90C8B3EB5F35FAC4089095C594B3A94932B395F46B696`。
 
 管理端发布器 `0.7.0` 正式候选基于提交 `ac7bc8045c4c5f0b10b84987b8a8cb6f02bb3fca`。它在上传前对每个内容寻址键执行 `HeadObject`，只有远端对象不存在时才上传；远端存在时必须同时匹配 `Content-Length` 与 `x-oss-meta-sha256`，不匹配立即失败且绝不覆盖。上传成功后会再次读取元数据完成闭环校验。单文件 EXE 为 `74,022,178` 字节，SHA-256 为 `78C190972D00C40A1066A6ACB21BE1624E2AF7D08F2FB128D9768E662FEC7BAC`；发布归档 `artifacts/releases/Hechao-Publisher-0.7.0-win-x64.zip` 为 `32,090,108` 字节，SHA-256 为 `E05B589976D033015D1FC05D276FE4E19694B9BD7A359569A1AE0473AF1F2F18`，只包含该 EXE。EXE 按当前决定保持 `NotSigned`。上一份归档候选 `0.6.0` 保留不变，不被本版本覆盖。完整验收记录见 [`PUBLISHER_RELEASE_0.7.0.md`](PUBLISHER_RELEASE_0.7.0.md)。
+
+发布器 `0.9.0` 增加生产签名密钥加密导出和 DPAPI 恢复命令。导出和恢复都会先用
+`Assets/distribution-trust.json` 核对 P-256 公钥，拒绝错误 Key ID 或公钥；临时私钥
+字节和恢复口令字符在使用后清零。生产恢复演练与边界见
+[`PUBLISHER_RELEASE_0.9.0.md`](PUBLISHER_RELEASE_0.9.0.md)。
 
 启动器程序和游戏档案独立发布。`0.6.0` 只改变登录器与进服授权流程，没有修改 `base-1.21.11` / `1.0.5` 的 874 MB 游戏文件清单，因此玩家不应为本次启动器升级重新下载完整客户端。
 
@@ -223,7 +231,16 @@ Distribution__PresignedUrlSeconds=300
 
 截至 `2026-07-26`，API 专用 RAM 用户 `hechao-launcher-distribution` 已绑定自定义策略 `HechaoLauncherOssObjectRead`。策略仅允许对 `acs:oss:*:*:hechaoworld/objects/*` 执行 `oss:GetObject`；凭据已写入 API 主机环境文件，文件权限为 `root:root 600`。线上 API `0.12.0` 已读取并使用该分发配置。
 
-上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略 `HechaoLauncherOssObjectPublish`。策略 v3 只允许对 `acs:oss:*:*:hechaoworld/objects/*` 和 `acs:oss:*:*:hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与 `oss:PutObject`；不允许列举 Bucket、读取其他前缀、删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验和生成私有启动器下载链接。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，密文镜像位于 `H:\Hechao-SecureBackup`，明文下载文件已清理。使用方式：
+上传端使用独立 RAM 用户 `hechao-launcher-publisher` 和策略
+`HechaoLauncherOssObjectPublish`。当前 v3 只允许对
+`acs:oss:*:*:hechaoworld/objects/*` 和
+`acs:oss:*:*:hechaoworld/releases/launcher/*` 执行 `oss:GetObject` 与
+`oss:PutObject`。待保存的 v4 只额外加入
+`acs:oss:*:*:hechaoworld/backups/database/*` 与
+`acs:oss:*:*:hechaoworld/backups/recovery/*`；仍不允许列举 Bucket、读取其他前缀、
+删除对象或管理版本。`oss:GetObject` 仅用于 `HeadObject` 元数据校验、私有安装包链接
+和备份下载复验。AccessKey 只以 Windows DPAPI `CurrentUser` 密文保存在管理员电脑，
+并以 root-only 环境提供给异地备份服务；明文下载文件已清理。使用方式：
 
 ```powershell
 .\Hechao.Publisher.exe upload-oss `
@@ -360,7 +377,7 @@ SHA-256 为 `F54297318865995225CE8CB748C115EA4DCA8219E02AE09ABE266F783EC033D6`�
 3. [x] 生成离线生产签名密钥，将公钥信任包嵌入启动器，并完成签名、验签和篡改拒绝演练。
 4. [x] 从现有客户端制作干净源，生成并独立校验 `base-1.21.11` / `1.0.5` 正式签名档案。
 5. [x] 制作并发布 `activity-neoforge-1.21.11` / `1.0.10`、`pvp-fabric-1.20.1` / `1.0.0`、`vanilla-1.21.11` / `1.0.0`、`forge-1.20.1` / `1.0.0` 与 `dollnight-1.21.11` / `1.0.0`，保持独立 `.minecraft`、加载器和 Java 版本。
-6. [ ] 将生产签名密钥制作一份不依赖当前 Windows 用户配置的离机恢复副本。
+6. [ ] 发布器 `0.9.0` 已制作并真实验收不依赖当前 Windows 用户配置的加密恢复包；等待 RAM v4 保存后写入私有 OSS 并回读复验。
 7. [x] 明确首版不购买 Authenticode 证书，当前 EXE 保持 `NotSigned`；玩家公告必须提供官方来源、大小和 SHA-256，未来签名作为独立版本处理。它与客户端清单签名不是同一套密钥。
 8. [x] 创建仅具备 `hechaoworld/objects/*` 元数据读取与写入权限的独立发布 RAM 身份，并将 AccessKey 保存为本机 DPAPI 密文；没有列举或删除权限。
 9. [x] 发布器 `0.7.0` 对版本控制 Bucket 执行 `HeadObject` 长度与 SHA-256 元数据校验；匹配则跳过，不匹配则硬失败，不再依赖 `x-oss-forbid-overwrite` 单独保证不可变性。

@@ -1,0 +1,119 @@
+# 数据库异地备份与恢复
+
+> 当前状态：加密、上传、下载复验、告警和隔离恢复工具已部署；
+> 等待发布 RAM v4 最小权限保存后完成首次真实 OSS 往返与恢复演练
+>
+> 更新日期：`2026-07-27`
+
+## 1. 目标与边界
+
+本地每日 dump 不能作为唯一可靠副本。异地流程把 PostgreSQL custom dump 加密后写入
+私有 OSS：
+
+```text
+backups/database/YYYY/MM/hechao-launcher-YYYYMMDDTHHMMSSZ.hcbackup
+```
+
+恢复材料写入单独前缀：
+
+```text
+backups/recovery/*
+```
+
+Bucket 保持私有并启用阻止公共访问。专用 RAM 只允许上述两个前缀以及既有发布前缀的
+`oss:GetObject`、`oss:PutObject`；没有 List、Delete、ACL、版本管理或整桶权限。
+
+## 2. 加密与密钥托管
+
+- 数据：每个备份随机生成 AES-256 密钥，使用 AES-GCM 分块认证加密。
+- 密钥包装：4096 位 RSA、OAEP-SHA256。
+- 信封：固定 magic、受限 JSON header、每块独立 nonce、关联数据和认证标签。
+- 恢复 Key ID：
+  `517949CD3B80EB25D46C33A523429C099B809EEC256EB1CE7F240FE1BFE433CD`。
+- 公钥进入仓库和 API 主机；加密私钥进入私有 OSS 恢复前缀。
+- 私钥口令只保存在游戏 VPS 的受限恢复目录，不进入 API 主机、OSS、Git 或文档。
+
+口令和加密私钥分开保存，任一单点泄露都不能直接解密数据库。文档、日志和收据只保存
+对象键、大小、Key ID 与 SHA-256。
+
+## 3. 生产组件
+
+```text
+/opt/hechao-backup/Hechao.Backup
+/etc/hechao-offsite-backup/database-recovery-public.pem
+/etc/hechao-offsite-backup/environment
+/usr/local/sbin/hechao-configure-offsite-database-backup-credentials
+/usr/local/sbin/hechao-offsite-database-backup
+/usr/local/sbin/hechao-verify-restored-database
+/var/lib/hechao-offsite-backup/latest.json
+/var/lib/hechao-offsite-backup/failure.json
+```
+
+systemd timer 每天上海时间 `03:35` 触发，并增加最多 20 分钟随机延迟。服务使用
+`flock` 防止并发，低 IO 优先级运行，写权限只开放给备份、临时目录和状态目录。
+备份服务只读取权限为 `600 root:root` 的专用环境文件，不读取
+`/etc/hechao-launcher-api/environment`。生产核对确认 API 使用只读分发 RAM 身份，
+备份服务使用发布 RAM 身份；API 进程不持有备份前缀写权限。
+
+专用凭据从标准输入写入，不把 AccessKey 放入命令行、shell 历史或仓库：
+
+```bash
+printf '%s\n%s\n' "$OSS_ACCESS_KEY_ID" "$OSS_ACCESS_KEY_SECRET" |
+  /usr/local/sbin/hechao-configure-offsite-database-backup-credentials
+```
+
+## 4. 备份流程
+
+1. 调用现有本地备份脚本生成新的 custom dump。
+2. 验证同名 SHA-256 和 `pg_restore --list`。
+3. 加密到权限 `0700` 的一次性 staging 目录。
+4. 使用不可覆盖请求上传，远端已存在时必须长度与 SHA-256 元数据完全相同。
+5. 立即下载同一对象，复验 SHA-256 和逐字节一致。
+6. 原子写入 `latest.json`，删除旧失败标记。
+7. 无论成功或失败都删除 staging；失败原子写入 `failure.json` 并触发 Critical。
+
+手动检查：
+
+```bash
+systemctl start hechao-offsite-database-backup.service
+systemctl show hechao-offsite-database-backup.service \
+  -p Result -p ExecMainStatus
+systemctl list-timers hechao-offsite-database-backup.timer --no-pager
+jq . /var/lib/hechao-offsite-backup/latest.json
+```
+
+## 5. 隔离恢复演练
+
+不得覆盖生产数据库。恢复演练流程：
+
+1. 从收据取得对象键和 SHA-256。
+2. 下载到 root-only 临时目录并校验密文 SHA-256。
+3. 在持有口令与加密私钥的受控环境解密。
+4. 把明文 dump 临时传到 API 主机。
+5. 运行：
+
+```bash
+/usr/local/sbin/hechao-verify-restored-database \
+  /root/recovery-staging/database.dump \
+  <expected-plaintext-sha256>
+```
+
+脚本创建唯一的 `hechao_offsite_restore_*` 隔离数据库，恢复后核对迁移最大值、档案数、
+服务器数、用户数、告警数和数据库大小，并在退出 trap 中删除隔离数据库。它不会连接
+或覆盖 `hechao_launcher` 生产库。
+
+6. 保存非秘密 JSON 证据，删除 API 主机和恢复端的明文 dump。
+
+## 6. 当前首次验收状态
+
+加密工具 `0.1.0`、生产公钥、runner、service、timer、恢复校验脚本和统一告警已部署。
+首次手工运行在 OSS `HeadObject` 阶段收到预期的 RAM `403`，服务安全失败、写入
+`failure.json`、未留下 staging 明文，并触发统一 Critical 邮件。待 RAM v4 保存后，
+必须完成以下项目才可把本项改为“已完成”：
+
+- 首次上传与立即下载复验。
+- timer 启用并显示下一次运行时间。
+- 失败标记清除和告警恢复邮件。
+- 从 OSS 密文执行一次真实解密和隔离数据库恢复。
+- 加密恢复私钥与生产签名恢复包写入恢复前缀并回读复验。
+- 确认游戏 VPS 口令副本后删除管理员电脑上的临时口令文件。

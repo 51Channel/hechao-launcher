@@ -12,6 +12,7 @@
 - 数据库：`hechao_launcher`
 - 应用角色：`hechao_api`，非超级用户，无建库和建角色权限
 - API 环境文件：`/etc/hechao-launcher-api/environment`，权限 `600`
+- 异地备份环境文件：`/etc/hechao-offsite-backup/environment`，权限 `600`
 - 数据库秘密文件：`/opt/hechao-launcher-database/.env`，权限 `600`
 
 秘密文件不得复制到仓库、日志、启动器客户端或运维文档。数据库端口不得加入 UFW 公网规则。
@@ -52,6 +53,7 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `14` | `client_profile_release_channels` | 不可变签名发布、Test/Gray/Production 通道、暂停和修订号 |
 | `15` | `launcher_telemetry` | 30 天客户端运行事件、幂等主键和聚合索引 |
 | `16` | `server_runtime_metrics` | 进程、磁盘、TPS/MSPT/GC 当前值、30 天幂等分钟样本与问题分类 |
+| `17` | `operational_alerts` | API 分钟请求指标、当前运行告警、告警变化历史与查询索引 |
 
 ## 4. 自动备份
 
@@ -121,8 +123,23 @@ API `0.19.0` 最终切换前协调备份位于
 生产部署后迁移最大值为 16，服务器、档案、发布、通道和心跳目标数量分别保持
 `6`、`6`、`6`、`18`、`5`。
 
+API `0.20.0` 最终切换前协调备份位于
+`/var/backups/hechao-unified-account/20260727T021850Z`。数据库 dump SHA-256 为
+`A804B8C8B24377FD5B0E5E13D70463691B1A4C42D0B0D303E070B46ED37F5D07`，
+`pg_restore --list` 成功读取 `167` 个目录项；清单文件 SHA-256 为
+`116F86AB1DA4D2C65D92DECE3E684C8FB23F3E816095AABD3FB471AA1927AFDC`。
+生产部署后迁移最大值为 `17`，服务器与档案数量均保持 `6`。
+
+异地加密副本、密钥分离、私有 OSS 不可覆盖上传/下载复验和隔离恢复流程见
+[`OFFSITE_BACKUP_AND_RECOVERY.md`](OFFSITE_BACKUP_AND_RECOVERY.md)。异地 timer 只有在
+首次真实 OSS 往返、告警恢复和隔离恢复均通过后才算正式启用。
+API 与异地备份使用不同的 RAM 凭据和 systemd 环境文件；API 只持有私有对象读取能力。
+
 ## 5. 恢复边界
 
 不得直接把备份覆盖到正在运行的生产库。恢复演练应先创建独立临时数据库，导入最近备份，核对迁移记录、表数量、目录记录和权限，再删除临时数据库。生产恢复需要先停止 API 写入、额外生成一次备份、记录当前数据卷和发布 ID，然后在维护窗口切换。
 
-2026-07-22 已把首份备份恢复到唯一命名的临时验证库，核对迁移版本、3 个客户端档案、4 个服务器和 0 个初始用户后删除临时库，生产 API 全程保持就绪。仍未完成异地主机恢复和异地复制，因此不能把本机数据盘视为唯一可靠副本。
+2026-07-22 已把首份备份恢复到唯一命名的临时验证库，核对迁移版本、3 个客户端档案、
+4 个服务器和 0 个初始用户后删除临时库，生产 API 全程保持就绪。2026-07-27 已部署
+异地加密和隔离恢复工具；首次真实 OSS 副本与恢复演练仍在进行，因此当前仍不能把本机
+数据盘视为唯一可靠副本。

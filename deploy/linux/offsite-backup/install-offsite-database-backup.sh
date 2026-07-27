@@ -22,13 +22,13 @@ test -f "$public_key"
 test -f "$runner"
 test -f "$service_file"
 test -f "$timer_file"
-test -f /etc/hechao-launcher-api/environment
-
 install -d -o root -g root -m 0755 /opt/hechao-backup
 install -d -o root -g root -m 0700 \
   /etc/hechao-offsite-backup \
   /var/lib/hechao-offsite-backup \
   /var/backups/hechao-launcher/offsite-staging
+test -f /etc/hechao-offsite-backup/environment
+test "$(stat -c '%a:%U:%G' /etc/hechao-offsite-backup/environment)" = "600:root:root"
 install -o root -g root -m 0555 "$binary" /opt/hechao-backup/Hechao.Backup
 install -o root -g root -m 0444 \
   "$public_key" \

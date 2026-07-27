@@ -38,11 +38,13 @@
 组件独立版本：
 
 ```text
-launcher-v0.11.7
-api-v0.12.0
+launcher-v0.11.12
+api-v0.20.0
 velocity-authorizer-v0.2.0
-publisher-v0.8.1
-status-collector-v0.1.0
+publisher-v0.9.0
+status-collector-v0.2.0
+platform-monitor-v0.1.0
+backup-v0.1.0
 profile-base-1.21.11-v1.0.5
 profile-pvp-fabric-1.20.1-v1.0.0
 ```
