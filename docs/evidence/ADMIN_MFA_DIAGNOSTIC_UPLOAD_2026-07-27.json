@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-07-27T14:09:00Z",
-  "status": "mfa-and-upload-verified-admin-download-pending",
+  "verifiedAt": "2026-07-27T14:34:00Z",
+  "status": "verified",
   "launcher": {
     "installedVersion": "0.11.14",
     "telemetryEventCount": 1,
@@ -68,8 +68,14 @@
       }
     ],
     "adminDownload": {
-      "status": "pending",
-      "requiredAuditAction": "diagnostic.admin.downloaded"
+      "status": "verified",
+      "auditAction": "diagnostic.admin.downloaded",
+      "auditCreatedAt": "2026-07-27T14:33:46.196241Z",
+      "downloadedAt": "2026-07-27T14:33:46.1940745Z",
+      "localFileName": "Hechao-Diagnostic-1e707520606c49c896d53e0464b8c3c7.zip",
+      "localBytes": 707,
+      "localSha256": "1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92",
+      "matchedOriginal": true
     }
   },
   "invariants": {

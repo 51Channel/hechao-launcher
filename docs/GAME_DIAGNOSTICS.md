@@ -144,7 +144,8 @@ Minecraft 进程成功启动后，启动器订阅进程退出事件：
 - 数据库状态为 `uploaded`，到期时间为 2026-08-10；
 - `diagnostic.upload.authorized` 与 `diagnostic.upload.completed` 两条审计均存在。
 
-管理员 MFA 已完成真实登记。当前唯一未闭环项是管理员在后台实际下载该编号并核对
-`diagnostic.admin.downloaded` 审计；在该记录出现前，完成矩阵仍保持“待生产验收”。
+管理员 MFA 已完成真实登记。2026-07-27 14:33:46 UTC，管理员在生产后台下载该编号，
+`diagnostic.admin.downloaded` 审计随即写入。本机下载文件仍为 `707` 字节，SHA-256
+与上传原件完全一致；至此玩家确认、上传、服务端保存、管理员下载和审计闭环全部完成。
 无秘密证据见
 [`evidence/ADMIN_MFA_DIAGNOSTIC_UPLOAD_2026-07-27.json`](evidence/ADMIN_MFA_DIAGNOSTIC_UPLOAD_2026-07-27.json)。

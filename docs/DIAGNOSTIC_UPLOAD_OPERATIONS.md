@@ -102,6 +102,10 @@ sudo ./configure-diagnostic-uploads.sh
 后台任务将记录改为 `expired`、写入 `diagnostic.upload.expired` 并删除物理 ZIP。
 合成账号、会话、上传和文件已精确清理。
 
-管理员 MFA 凭据尚未登记，因此生产环境尚未执行真实管理员下载。该项完成前，
-不能把 `diagnostic.admin.downloaded` 标记为生产验收通过。详细制品、备份和哈希见
-[`API_RELEASE_0.13.0.md`](API_RELEASE_0.13.0.md)。
+2026-07-27 已由真实 `0.11.14` 上传编号 `1e707520`，管理员完成 MFA 后在生产后台
+实际下载。上传端、生产端和下载文件均为 `707` 字节，SHA-256 均为
+`1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92`；
+`diagnostic.upload.authorized`、`diagnostic.upload.completed` 和
+`diagnostic.admin.downloaded` 审计全部存在。详细制品、备份和哈希见
+[`API_RELEASE_0.13.0.md`](API_RELEASE_0.13.0.md) 与
+[`evidence/ADMIN_MFA_DIAGNOSTIC_UPLOAD_2026-07-27.json`](evidence/ADMIN_MFA_DIAGNOSTIC_UPLOAD_2026-07-27.json)。
