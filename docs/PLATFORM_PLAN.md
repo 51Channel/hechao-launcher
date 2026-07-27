@@ -480,7 +480,7 @@ POST /v1/internal/luckperms/snapshot
 
 - [ ] 管理员和内部成员先测试。
 - [ ] 选择 5 人、20 人两档灰度。
-- [ ] 模拟断网、损坏文件、服务器维护、权限变化和版本回滚。
+- [x] 断网、损坏文件、服务器维护、权限变化和版本回滚已完成可重复自动化故障演练；完整 `.NET 355/355`、五类定向集合 `45/45` 与三组服务端代理 `17/17` 通过，真实玩家表现继续在分档灰度验收。
 - [x] 每次生产切换均回归旧网站与中转 API；本轮游戏 Java PID、启动时间和监听保持不变。
 - [x] 编写玩家安装说明和管理员发布手册；见 [`PLAYER_INSTALLATION_GUIDE.md`](PLAYER_INSTALLATION_GUIDE.md) 与 [`ADMIN_RELEASE_RUNBOOK.md`](ADMIN_RELEASE_RUNBOOK.md)。
 

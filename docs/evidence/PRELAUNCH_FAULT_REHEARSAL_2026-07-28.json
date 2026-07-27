@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T16:29:45Z",
+  "testedCommit": "154d07de3d9b3257ddc9c6e230a645141b09c2ce",
+  "productionMutationPerformed": false,
+  "results": {
+    "dotnetFull": {
+      "passed": 355,
+      "failed": 0,
+      "skipped": 0,
+      "command": "dotnet test Hechao.Launcher.sln -c Release --nologo"
+    },
+    "dotnetTargetedFaultSet": {
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0
+    },
+    "velocityAuthorizer": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "luckPermsTierAgent": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "serverMetricsAgent": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "faults": [
+    {
+      "id": "network-interruption",
+      "status": "passed",
+      "testCases": [
+        "ResumableFileDownloaderTests.DownloadAsync_ResumesExistingPartialFileWithRangeRequest",
+        "ResumableFileDownloaderTests.DownloadAsync_RefreshesExpiredRedirectWithoutLeakingBearerToken",
+        "ResumableFileDownloaderTests.DownloadAsync_RetriesTransientOperationCancellation",
+        "ClientProfileInstallerTests.InstallAsync_KeepsActiveProfileWhenObjectServiceIsUnavailable",
+        "MainWindowViewModelMinecraftRefreshTests.EnterServer_WhenInteractiveRefreshIsCanceled_DoesNotLaunchOrCrash",
+        "LauncherTelemetryServiceTests.RecordAsync_PersistsWhileOfflineAndFlushesIdempotentBatch"
+      ],
+      "expectedBoundary": "Keep the active client usable, resume or retry safely, and do not crash on canceled sign-in."
+    },
+    {
+      "id": "corrupted-file",
+      "status": "passed",
+      "testCases": [
+        "ResumableFileDownloaderTests.DownloadAsync_RejectsContentWithWrongDigest",
+        "ClientProfileInstallerTests.InstallAsync_RepairsTamperedManagedFileAndRetainsPreviousVersion",
+        "SignedManifestCodecTests.ReadDigestAnchored_RejectsEnvelopeNotMatchingCatalogDigest"
+      ],
+      "expectedBoundary": "Reject unverifiable bytes, repair managed files, and retain a valid previous version."
+    },
+    {
+      "id": "server-maintenance",
+      "status": "passed",
+      "testCases": [
+        "ServerAvailabilityRulesTests.ResolveStatus_ManualNonOnlineStatusTakesPriority",
+        "ServerRuntimeStatusResolverTests.Resolve_ConfiguredUnavailableStatusOverridesHeartbeat",
+        "VelocityAuthorizationRulesTests.Evaluate_MaintenanceServerCannotUseExplicitAllow"
+      ],
+      "expectedBoundary": "A maintenance or manually closed server stays unavailable even when heartbeat or an allow rule would otherwise permit entry."
+    },
+    {
+      "id": "permission-change",
+      "status": "passed",
+      "testCases": [
+        "VelocityAuthorizationRulesTests.Evaluate_DisabledPlayerCannotUseExplicitAllow",
+        "VelocityAuthorizationRulesTests.Evaluate_ExplicitDenyWins",
+        "VelocityAuthorizationRulesTests.Evaluate_RequiresFreshSnapshotForElevatedServer",
+        "VelocityAuthorizationRulesTests.Evaluate_RejectsInsufficientTier",
+        "AdminAccessRulesTests.Evaluate_ExpiredRuleFallsBackToTier"
+      ],
+      "expectedBoundary": "The API and Velocity make a fresh server-side decision; disabled, denied, stale, or insufficient identities cannot rely on client state."
+    },
+    {
+      "id": "version-rollback",
+      "status": "passed",
+      "testCases": [
+        "ClientProfileInstallerTests.RollbackAsync_ActivatesPreviousVersionAndPreservesCurrentPlayerData",
+        "ClientProfileInstallerTests.RollbackAsync_RejectsConcurrentInstallerForSameProfile",
+        "ClientProfileInstallerTests.RollbackAsync_RejectsMissingOrInvalidPreviousInstallation",
+        "ClientProfileInstallerTests.RollbackAsync_RestoresBothVersionsWhenActivationFails",
+        "MainWindowViewModelMinecraftRefreshTests.RollbackVersion_ActivatesCandidateAndOffersCatalogUpdate",
+        "MainWindowViewModelMinecraftRefreshTests.RollbackVersion_IsDisabledWhileProfileIsRunning",
+        "ClientProfileReleaseResolverTests.Resolve_SkipsPausedCandidate"
+      ],
+      "expectedBoundary": "Rollback is atomic, preserves player data, refuses unsafe concurrency, and does not select a paused release."
+    }
+  ],
+  "remainingExternalValidation": [
+    "Run the same user-visible paths in the 2-3, 5, and 20-player pilots.",
+    "Validate NPC transfer, /hub, reconnect, and API failure behavior with real Velocity logs.",
+    "Switch Velocity from monitor to enforce only after all four real access tiers pass."
+  ]
+}
