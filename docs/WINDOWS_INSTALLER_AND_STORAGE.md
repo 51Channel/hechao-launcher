@@ -1,6 +1,6 @@
 # Windows 安装包与游戏数据目录
 
-> 启动器源码版本：`0.11.12`
+> 启动器源码版本：`0.11.13`
 > 存储结构版本：`2`
 > 更新日期：`2026-07-27`
 
@@ -190,6 +190,12 @@ Get-FileHash .\artifacts\installer\Hechao-Launcher-Setup-*-win-x64.exe -Algorith
 `0.11.11` 增加玩家主动回滚入口。只有存在有效 `.previous`、当前没有安装任务且对应 Minecraft 进程未运行时才允许回滚；确认后先把上一版硬链接优先克隆到独立暂存目录，再用当前版玩家数据替换暂存中的存档、截图、资源包、光影、日志、设置和服务器列表，最后沿用安装器的原子交换器切换。切换失败会恢复当前版与上一版，Java 运行时随后按回滚档案重新检查；若 Java 补齐失败，已切换版本会保留并提示使用“修复客户端”继续。该版本已从 `0.11.10` 静默覆盖升级，设置与 DPAPI 会话哈希保持一致；安装后的 EXE ProductVersion 为 `0.11.11+acb2415f7deb391114c8b24d5839ae1928087e74`。完整记录见 [`LAUNCHER_RELEASE_0.11.11.md`](LAUNCHER_RELEASE_0.11.11.md)。
 
 `0.11.12` 在隔离目录完成从 `0.11.11` 覆盖升级、干净安装和两轮静默卸载。升级与安装后的 ProductVersion 均为 `0.11.12`，IconPark 授权文件和开始菜单目标正确；安装前后的 `settings.json` 与 DPAPI `session.dat` SHA-256 保持一致。测试未关闭或覆盖本机正在运行的 `D:\Hechao Launcher`，结束后注册表与开始菜单恢复为原 `0.11.11` 安装。完整记录见 [`LAUNCHER_RELEASE_0.11.12.md`](LAUNCHER_RELEASE_0.11.12.md)。
+
+`0.11.13` 使用仓库内可重复执行的 `tools/Test-WindowsInstaller.ps1` 完成从
+`0.11.12` 覆盖升级、干净安装和两轮静默卸载。升级后注册表版本、开始菜单目标、
+IconPark 许可、安装目录清理、`settings.json` 与 DPAPI `session.dat` 哈希以及原有
+启动器进程均通过；测试结束后恢复原 `0.11.11` 安装登记。完整记录见
+[`LAUNCHER_RELEASE_0.11.13.md`](LAUNCHER_RELEASE_0.11.13.md)。
 
 ## 7. 第三方构建资产
 
