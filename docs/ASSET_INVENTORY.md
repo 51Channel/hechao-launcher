@@ -198,12 +198,12 @@ SHA-256 为 `35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B`�
 `E:\manual-backups\luckperms-tier-agent-20260726T223127Z`。安装前后 Java PID
 不变且没有重启大厅；插件等待服主下次自行重启后加载。
 
-状态采集器 `0.2.0` 位于 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 为 `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`。计划任务 `Hechao Launcher Server Heartbeats` 以 `SYSTEM` 身份每分钟查询 `lobby`、`survival2`、`survival1`、`pvp` 和 `activity`，令牌使用 `LocalMachine` DPAPI 加密。大厅、Survival2、Survival1 已上报进程工作集、CPU、启动时间和 E 盘容量；活动服关闭、PVP 不可达时使用固定问题代码，单个目标失败不会中断其余心跳。旧采集器、配置和计划任务备份位于 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`。采集器不包含 RCON 或进程启停能力。
+状态采集器 `0.2.0` 位于两台游戏 VPS 的 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 均为 `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`。两台计划任务 `Hechao Launcher Server Heartbeats` 都以 `SYSTEM` 身份每分钟运行：`owl5` 的 `mc-vps-primary` 查询 `lobby`、`survival2`、`survival1` 和 `activity`，`owl9` 的 `owl9-pvp` 只查询本机 `pvp`。令牌使用 `LocalMachine` DPAPI 加密。大厅、Survival2、Survival1 已上报进程工作集、CPU、启动时间和 E 盘容量；活动服和 PVP 关闭时使用固定问题代码，PVP 仍上报 `owl9` 磁盘容量。旧主采集器备份位于 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`，拆分前五目标配置备份位于 `backups\server-heartbeats-before-owl9-split-20260727T165932Z.json`。采集器不包含 RCON 或进程启停能力。
 
 状态链路为游戏 VPS 主动向 `launcher-api.hechao.world` 发起 HTTPS POST，API 使用
-独立心跳令牌认证；游戏 VPS 不暴露 HTTP、指标或采集器监听端口。2026-07-27
-只读枚举全部 TCP 监听时没有发现 `Hechao.StatusCollector` 监听器，采集器仅查询
-本机 Minecraft 端口并向外上报。因此不需要为状态接口开放入站防火墙规则，也不存在
+独立心跳令牌认证；两台游戏 VPS 都不暴露 HTTP、指标或采集器监听端口。只读枚举
+TCP 监听时没有发现 `Hechao.StatusCollector` 监听器，采集器仅查询各自主机上的
+Minecraft 端口并向外上报。因此不需要为状态接口开放入站防火墙规则，也不存在
 “只允许阿里云来源访问状态接口”的公网攻击面。
 
 2026-07-27 的只读容量快照记录了四个 Java 进程的 `Xms/Xmx`、当前及峰值工作集、
@@ -250,6 +250,14 @@ Standard `10.0.20348`，1 颗 AMD EPYC 7R13、4 个逻辑处理器、8.00 GiB �
 `HorrorPrank` 存在且状态为 `Ready`，触发器未启用、无下次运行时间；本轮没有执行该
 任务，也没有修改文件、计划任务、防火墙或进程。
 
+只出站状态采集器 `0.2.0` 已于 2026-07-28 部署到
+`C:\ProgramData\Hechao\StatusCollector`。目录 ACL 仅允许 `SYSTEM` 和本机管理员，
+一分钟计划任务以 `SYSTEM` 运行并连续返回 `0`。API 的 `pvp` 行现由
+`collector_instance=owl9-pvp` 独占，停服状态准确报告
+`ProcessNotRunning`、`MetricsFileMissing` 和 C 盘容量；跨过两台采集器的完整周期后
+没有再被 `owl5` 覆盖。部署前后 Java 进程与 `25565` 监听均为空，没有启动、停止或
+重启游戏服。
+
 需单独处理的路由风险：owl5 的 Velocity 以 `modern` 转发模式把 `pvp` 指向
 `owl9.vipi9.top:19243`，但 owl9 自身声明为“直连、无 Velocity”，仍为
 `online-mode=true`，14 个现有模组中没有观察到 Fabric Velocity 转发支持模组。因此
@@ -257,13 +265,15 @@ Standard `10.0.20348`，1 颗 AMD EPYC 7R13、4 个逻辑处理器、8.00 GiB �
 同时解决后端端口来源限制，不能只把服务器改成离线模式。
 
 脱敏机器证据见
-[`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)。
+[`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)，
+状态采集部署证据见
+[`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)。
 
 ## 4. 当前阻塞与风险
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 的 `E:` 当前约 20.77 GiB 可用，最坏预检余量约 3.38 GiB；当前运行中的 Java 进程早于新备份脚本部署，首次正式计划备份必须等服主自行重启后再核对 ZIP、SHA-256、保留数量和剩余空间。
-3. `owl9` 的密钥认证与实时规格盘点已完成；当前 PVP 服关闭，且直连 online-mode Fabric 配置与 owl5 Velocity `modern` 路由不兼容，必须在真实灰度前单独改造并限制后端来源。
+3. `owl9` 的密钥认证、实时规格盘点和只出站状态采集均已完成；当前 PVP 服关闭，且直连 online-mode Fabric 配置与 owl5 Velocity `modern` 路由不兼容，必须在真实灰度前单独改造并限制后端来源。
 4. 启动器数据库异地加密、真实 OSS 上传/下载、告警恢复和异地主机隔离恢复均已验收；论坛与 Sub2API 的本地一致性备份、隔离恢复和 RAM v5 只读预检已通过，OSS 副本等待明确授权。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
@@ -284,7 +294,7 @@ Standard `10.0.20348`，1 颗 AMD EPYC 7R13、4 个逻辑处理器、8.00 GiB �
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
-- 状态心跳：错误凭据返回 401；真实五目标批次成功写入，活动服离线被隔离，目录实时人数与维护状态覆盖通过
+- 状态心跳：错误凭据返回 401；五个目标由 `owl5` 四目标与 `owl9-pvp` 单目标分布式写入，活动服与 PVP 离线被隔离，目录实时人数与维护状态覆盖通过
 - 运行遥测：认证批次、幂等去重、30 天留存、三窗口聚合和后台页面已部署；生产已收到一条 `0.11.14` 的 `LauncherStarted/Success`，仍待三个窗口与更多事件类型验收
 - 诊断上传：编号 `1e707520` 已由真实 `0.11.14` 主动确认上传；上传端、生产端与管理员下载文件均为 `707` 字节且 SHA-256 为 `1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92`，上传授权、上传完成与管理员下载审计均存在
 - 数据库应用角色：非超级用户，无建库和建角色权限

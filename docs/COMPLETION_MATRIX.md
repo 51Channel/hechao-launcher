@@ -79,8 +79,8 @@
 | NPC、`/hub`、断线重连和 API 故障路径 | 外部验收 | 需要真实玩家与真实代理日志 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
-| 在线、人数、协议和软件版本心跳 | 已完成 | Windows 只读采集器每分钟上报 |
-| TPS、MSPT、进程内存和启动时间 | 已实现待生产验收 | API `0.19.0` 与采集器 `0.2.0` 已生产上线，进程内存、CPU、启动时间和磁盘已实时入库；Paper/Purpur 代理 `0.1.0` 已部署到大厅、Survival1、Survival2，等待服主下次自行重启后加载并验证 TPS/MSPT/GC。活动 NeoForge 与远端 PVP 暂无深度指标 |
+| 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 `owl9-pvp` 单目标只读采集器每分钟上报；跨周期所有权和离线隔离已验证 |
+| TPS、MSPT、进程内存和启动时间 | 已实现待生产验收 | API `0.19.0` 与采集器 `0.2.0` 已生产上线，进程内存、CPU、启动时间和磁盘已实时入库；PVP 停服时也由 `owl9` 上报磁盘与固定问题代码。Paper/Purpur 代理 `0.1.0` 已部署到大厅、Survival1、Survival2，等待服主下次自行重启后加载并验证 TPS/MSPT/GC；活动 NeoForge 与 PVP Fabric 暂无深度指标代理 |
 | 管理后台状态与错误摘要 | 已实现待生产验收 | “服务状态”和“运行告警”页面、30 天样本、24 小时固定问题摘要与告警历史保留在 API `0.20.1`，真实管理员 MFA 已登记；仍待用生产会话完成页面、样本和告警详情验收 |
 | 远程启动、停止、重启 | 不在首版范围 | 若增加，必须使用最小权限代理、命令白名单、双确认和审计 |
 
@@ -98,7 +98,7 @@
 | API、登录、下载和证书告警 | 已完成 | API `0.20.1`、迁移 17、平台监控器 `0.1.1`、后台告警页和 transition-only 邮件已生产验收 |
 | 发布前故障自动演练 | 已完成 | 断网、损坏文件、维护、权限变化和版本回滚五类定向集合 `45/45` 通过；完整 `.NET 355/355` 与三组服务端代理 `17/17` 同轮复验，见 [`PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md`](PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md) |
 | TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 需要活动窗口和真实玩家 |
-| 第二台 VPS `owl9` 管理基线 | 已完成 | 现有公钥登录已恢复；Windows Server 2022、4 逻辑核、8 GiB、磁盘、停服状态和 `C:\mc\server` 实际结构均已只读盘点，见 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json) |
+| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB、磁盘、停服状态和 `C:\mc\server` 已盘点；独立只出站 PVP 采集器已部署且未触碰游戏进程，见 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json) 与 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json) |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |
 
@@ -108,7 +108,7 @@
 2. [已完成] 管理员 MFA、真实客户端诊断上传、管理员下载、三段 SHA-256 一致性和全部对应审计均已核对。
 3. [已完成] 发布 Vanilla、Forge 与 DollNight 正式签名档案。
 4. [已实现待生产验收] 目录高级规则、玩家搜索、访问预览、单服权限、平台账号/UUID 安全、论坛既有会话联动、受控全局等级及客户端三通道发布已生产部署；真实管理员 MFA 已登记，仍待各管理页面和大厅代理加载验收。
-5. [已实现待生产验收] 下载/失败/版本遥测、服务器进程/磁盘指标、统一告警及数据库异地备份恢复均已生产上线；TPS/MSPT 等待下次计划重启加载代理。
+5. [已实现待生产验收] 下载/失败/版本遥测、两台游戏 VPS 的服务器进程/磁盘指标、统一告警及数据库异地备份恢复均已生产上线；TPS/MSPT 等待下次计划重启加载代理。
 6. 使用四级真实账号完成 `monitor` 灰度。
 7. 验证 NPC、`/hub`、断线重连和 API 故障，切换 Velocity `enforce`。
 8. 启用目录强制登录，完成 5 人和 20 人灰度及真实回滚。

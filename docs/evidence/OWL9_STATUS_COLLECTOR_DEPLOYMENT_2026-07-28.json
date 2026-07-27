@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T17:04:04Z",
+  "purpose": "Move the PVP heartbeat probe from the primary game VPS to an outbound-only collector on owl9 without starting or changing the PVP server.",
+  "collectorArtifact": {
+    "version": "0.2.0+7ba2eba1ee7b6c6307948da9e4084ea6f6406fb7",
+    "sha256": "354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424",
+    "sizeBytes": 73807548
+  },
+  "primaryGameVps": {
+    "host": "owl5.vipi9.top",
+    "collectorInstance": "mc-vps-primary",
+    "configurationPath": "C:\\ProgramData\\Hechao\\StatusCollector\\server-heartbeats.json",
+    "configurationBeforeSha256": "8B613CFC63E6B21941AEA975DA8297481B5D0A60DCC8F7ACC9CEC069A3E212A2",
+    "configurationAfterSha256": "5862D6A3D248DBFBBD226FB88C7C62114481E21BC4DA116E73DBD59CA44A58A2",
+    "backupPath": "C:\\ProgramData\\Hechao\\StatusCollector\\backups\\server-heartbeats-before-owl9-split-20260727T165932Z.json",
+    "backupSha256": "8B613CFC63E6B21941AEA975DA8297481B5D0A60DCC8F7ACC9CEC069A3E212A2",
+    "targetsBefore": [
+      "lobby",
+      "survival2",
+      "survival1",
+      "pvp",
+      "activity"
+    ],
+    "targetsAfter": [
+      "lobby",
+      "survival2",
+      "survival1",
+      "activity"
+    ],
+    "scheduledTaskLastResult": 0
+  },
+  "pvpGameVps": {
+    "host": "owl9.vipi9.top",
+    "collectorInstance": "owl9-pvp",
+    "installDirectory": "C:\\ProgramData\\Hechao\\StatusCollector",
+    "configurationSha256": "C225848BA6F88542029FBA4F82FEB051F6CF25BD345A8CC74F229979FC3E75B7",
+    "target": {
+      "velocityTarget": "pvp",
+      "host": "127.0.0.1",
+      "port": 25565,
+      "fallbackMaxPlayers": 20,
+      "dataPath": "C:\\mc\\server"
+    },
+    "protectedToken": {
+      "storage": "DPAPI LocalMachine",
+      "cleartextStored": false,
+      "fileLengthBytes": 294
+    },
+    "directoryAcl": {
+      "inheritanceProtected": true,
+      "identities": [
+        "BUILTIN\\Administrators",
+        "NT AUTHORITY\\SYSTEM"
+      ]
+    },
+    "scheduledTask": {
+      "name": "Hechao Launcher Server Heartbeats",
+      "principal": "SYSTEM",
+      "intervalSeconds": 60,
+      "lastResult": 0,
+      "lastRunUtc": "2026-07-27T17:04:04Z"
+    }
+  },
+  "apiObservation": {
+    "velocityTarget": "pvp",
+    "collectorInstance": "owl9-pvp",
+    "isOnline": false,
+    "diskFreeBytes": 9466130432,
+    "diskTotalBytes": 42011193344,
+    "probeIssues": [
+      "StatusUnavailable",
+      "ProcessNotRunning",
+      "MetricsFileMissing"
+    ],
+    "capturedAtUtc": "2026-07-27T17:03:42.102Z",
+    "receivedAtUtc": "2026-07-27T17:03:44.774Z",
+    "remainedOwnedByOwl9AfterBothCollectorsCrossedAFullScheduleCycle": true
+  },
+  "safety": {
+    "minecraftProcessStarted": false,
+    "minecraftProcessStopped": false,
+    "minecraftProcessRestarted": false,
+    "pvpJavaProcessCountBefore": 0,
+    "pvpJavaProcessCountAfter": 0,
+    "pvpInternalPortListeningBefore": false,
+    "pvpInternalPortListeningAfter": false,
+    "inboundCollectorPortOpened": false,
+    "rconOrConsoleControlPresent": false
+  }
+}

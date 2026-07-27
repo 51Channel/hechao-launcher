@@ -1,13 +1,14 @@
 # Server heartbeat operations
 
 > Production state: API `0.20.1-20260727T145451Z` and collector `0.2.0` deployed.
-> The five-target configuration was verified on 2026-07-26 and the scheduled task remains read-only.
+> Since 2026-07-28, `owl5` collects its four local targets and `owl9` collects `pvp`.
+> Both one-minute scheduled tasks are outbound-only and read-only.
 > The pre-hardening collector binary is retained in
 > `C:\ProgramData\Hechao\StatusCollector\backups\redirect-hardening-20260723T125705Z`.
 
 The server heartbeat pipeline reports live Minecraft status to the launcher API without
-starting, stopping, or restarting any game process. The collector only performs the
-Minecraft Server List Ping against loopback ports.
+starting, stopping, or restarting any game process. Each collector probes only Minecraft
+ports on its own host and sends an outbound HTTPS request to the API.
 
 ## Runtime model
 
@@ -17,7 +18,8 @@ Minecraft Server List Ping against loopback ports.
   - `ServerHeartbeats__InternalTokenSha256`
   - `ServerHeartbeats__FreshnessSeconds` (default `180`)
 - Windows task: `Hechao Launcher Server Heartbeats`
-- Windows state directory: `C:\ProgramData\Hechao\StatusCollector`
+- Windows state directory on both game VPS hosts:
+  `C:\ProgramData\Hechao\StatusCollector`
 - Collection interval: one minute
 - Collector executable SHA-256:
   `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`
@@ -69,15 +71,15 @@ $token | powershell.exe -NoProfile -File .\Protect-HeartbeatToken.ps1 `
 6. Run the collector executable once and verify a successful API response.
 7. Confirm the task's last result is `0`.
 
-The production target list is:
+The production target ownership is:
 
-| Velocity target | Endpoint | Fallback maximum | Notes |
-| --- | --- | --- | --- |
-| `lobby` | `127.0.0.1:25566` | `300` | Lobby |
-| `survival2` | `127.0.0.1:25565` | `100` | Survival2 or its active replacement |
-| `survival1` | `127.0.0.1:19228` | `20` | Survival1 |
-| `pvp` | `owl9.vipi9.top:19243` | `20` | External PVP Fabric backend |
-| `activity` | `127.0.0.1:25568` | `30` | NeoForge activity server |
+| Collector instance | Velocity target | Local endpoint | Fallback maximum | Notes |
+| --- | --- | --- | --- | --- |
+| `mc-vps-primary` | `lobby` | `127.0.0.1:25566` | `300` | Lobby |
+| `mc-vps-primary` | `survival2` | `127.0.0.1:25565` | `100` | Survival2 or its active replacement |
+| `mc-vps-primary` | `survival1` | `127.0.0.1:19228` | `20` | Survival1 |
+| `mc-vps-primary` | `activity` | `127.0.0.1:25568` | `30` | NeoForge activity server |
+| `owl9-pvp` | `pvp` | `127.0.0.1:25565` | `20` | PVP Fabric backend on `owl9` |
 
 Only add a target after it exists in `launcher.servers`; the API rejects unknown targets
 atomically.
@@ -86,9 +88,10 @@ The pre-change configuration is retained at:
 
 ```text
 C:\ProgramData\Hechao\StatusCollector\backups\server-heartbeats-before-targets-20260726-042625.json
+C:\ProgramData\Hechao\StatusCollector\backups\server-heartbeats-before-owl9-split-20260727T165932Z.json
 ```
 
-The manual production run observed:
+The first five-target manual production run observed:
 
 | Target | Observation |
 | --- | --- |
@@ -99,6 +102,28 @@ The manual production run observed:
 | `activity` | offline; connection failure isolated to this target |
 
 One offline target does not abort the remaining batch and is not a reason to start that server.
+
+## Owl9 collector split
+
+On 2026-07-28 the `pvp` probe was moved from `mc-vps-primary` to a dedicated
+`owl9-pvp` collector. The clear heartbeat token was transferred through standard input,
+protected immediately with machine-scope DPAPI, and was never placed in arguments,
+configuration, logs, or repository files.
+
+The `owl9` installation passed all of the following checks:
+
+- collector and configuration hashes match the reviewed artifacts;
+- the directory ACL allows only `SYSTEM` and local administrators;
+- the one-minute task runs as `SYSTEM` and returns `0`;
+- the API row remains owned by `owl9-pvp` after both collectors crossed a full schedule
+  cycle;
+- the stopped PVP server is reported with `ProcessNotRunning` and
+  `MetricsFileMissing`, while the local disk capacity is still reported;
+- Java process count and the local `25565` listener remained zero before and after
+  deployment.
+
+Machine-readable evidence is in
+[`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json).
 
 ## Verification
 
@@ -127,16 +152,22 @@ Get-NetTCPConnection -State Listen |
     Where-Object LocalPort -In 19228,25565,25566,25568
 ```
 
-The final command is read-only. A missing listener is reported as offline; it must not be
-used as a reason to start a server automatically.
+Run the task checks separately on `owl5` and `owl9`. The final command is read-only. A
+missing listener is reported as offline; it must not be used as a reason to start a server
+automatically.
 
 ## Rollback
 
-Disable or remove only the heartbeat task and leave all Minecraft processes untouched:
+To roll back only the `owl9` collector, remove its heartbeat task and leave all Minecraft
+processes untouched:
 
 ```powershell
 Unregister-ScheduledTask -TaskName 'Hechao Launcher Server Heartbeats' -Confirm:$false
 ```
+
+Restore the backed-up five-target JSON on `owl5` with a validated atomic replacement
+before removing the `owl9` task, so the API does not lose the PVP heartbeat. Never run
+both PVP probes long-term because the last writer owns the row.
 
 If the API is rolled back to a release before migration 4, the heartbeat table can remain.
 Database migrations are forward-only and must not be deleted manually.

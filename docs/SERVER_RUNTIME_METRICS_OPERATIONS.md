@@ -46,7 +46,7 @@ API 迁移 `16` 扩展当前心跳，并建立
 | `survival2` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
 | `survival1` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
 | `activity` | Windows 采集器 | 尚无 NeoForge 指标代理 | 关闭时报告进程未运行 |
-| `pvp` | 仅状态协议 | 尚无远端主机指标 | `owl9` 管理密钥已恢复；待单独部署只出站采集器，且不控制游戏进程 |
+| `pvp` | `owl9` Windows 采集器 | 尚无 Fabric 指标代理 | 只出站采集器已部署；停服时仍上报本机磁盘和固定问题代码，不控制游戏进程 |
 
 没有指标代理不会影响在线状态或其他目标上报，只显示固定的“未配置/文件缺失”问题。
 
@@ -74,7 +74,7 @@ src\Hechao.ServerMetricsAgent\build\libs\HechaoServerMetrics-0.1.0.jar
 | `hechao-status-collector-0.2.0-win-x64.zip` | `30D9BC599B80FEF48D5FE02B340FE494BE8DE7B5D590828BED34F155D81F8167` |
 | `HechaoServerMetrics-0.1.0.jar` | `BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C` |
 
-生产前自动回归为 .NET `325/325`、指标代理 `2/2`。API 候选使用生产数据库副本在
+最新完整回归为 .NET `355/355`、指标代理 `2/2`。API 候选使用生产数据库副本在
 独立端口验证迁移 16、心跳和样本幂等、管理汇总及既有签名发布链路。
 
 ## 4. 部署顺序
@@ -99,6 +99,13 @@ server_restart=not_performed
 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`，
 指标代理备份位于 `E:\manual-backups\server-metrics-20260727T004852Z`。部署前后 Java
 PID 均为同一组，计划任务手工与自动运行均返回成功。
+
+2026-07-28 又将 `pvp` 从 `owl5` 的远端状态探针拆到 `owl9` 本机只出站采集器。
+`owl5` 配置现保留四个本机目标，`owl9-pvp` 只查询
+`127.0.0.1:25565` 和 `C:\mc\server`。跨过两边完整计划周期后，API 中该行仍由
+`owl9-pvp` 写入，任务返回 `0`，磁盘容量入库；部署前后 PVP Java 进程与端口监听
+均为空。证据见
+[`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)。
 
 ## 5. 验证
 
@@ -128,8 +135,9 @@ Get-Content -Raw 'E:\LobbyServer\plugins\HechaoServerMetrics\metrics.json'
 器的理由。
 
 当前生产已确认大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量入库；
-活动服处于关闭状态，PVP 远端不可达。三个 Paper/Purpur 目标在下次服主自行重启前应
-继续显示 `MetricsFileMissing`，这是预期状态。
+活动服处于关闭状态。PVP 当前也处于关闭状态，但 `owl9` 本机磁盘容量已经入库，并准确
+显示 `ProcessNotRunning` 与 `MetricsFileMissing`。三个 Paper/Purpur 目标在下次服主
+自行重启前应继续显示 `MetricsFileMissing`，这是预期状态。
 
 ## 6. 回滚
 
