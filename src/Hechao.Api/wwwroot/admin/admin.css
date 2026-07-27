@@ -1894,6 +1894,76 @@ dialog::backdrop {
     width: 60%;
 }
 
+.alert-heading,
+.alert-summary {
+    margin-bottom: 16px;
+}
+
+.alert-table {
+    min-width: 1180px;
+}
+
+.alert-table th:nth-child(1),
+.alert-table td:nth-child(1) {
+    width: 8%;
+}
+
+.alert-table th:nth-child(2),
+.alert-table td:nth-child(2) {
+    width: 28%;
+}
+
+.alert-table th:nth-child(3),
+.alert-table td:nth-child(3) {
+    width: 16%;
+}
+
+.alert-severity {
+    min-width: 50px;
+    min-height: 25px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.alert-severity-critical {
+    border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+    background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    color: var(--danger);
+}
+
+.alert-severity-warning {
+    border-color: color-mix(in srgb, var(--warning) 45%, var(--line));
+    background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+    color: var(--warning);
+}
+
+.alert-severity-info {
+    background: var(--surface-muted);
+    color: var(--ink-secondary);
+}
+
+.alert-resolved {
+    opacity: 0.64;
+}
+
+.alert-action .button {
+    min-height: 32px;
+    padding: 0 11px;
+}
+
+.alert-action .count-label {
+    display: block;
+    max-width: 150px;
+    white-space: normal;
+    line-height: 1.45;
+}
+
 @media (max-width: 980px) {
     .console-shell {
         grid-template-columns: 78px minmax(0, 1fr);

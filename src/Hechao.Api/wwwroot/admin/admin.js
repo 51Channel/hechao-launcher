@@ -10,6 +10,7 @@ const state = {
     telemetry: null,
     telemetryHours: 24,
     runtime: null,
+    alerts: null,
     diagnostics: [],
     auditEntries: [],
     auditBeforeId: null,
@@ -61,7 +62,7 @@ function cacheElements() {
         "account-avatar", "account-name", "account-group", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
         "servers-section", "users-section", "profiles-section",
-        "telemetry-section", "runtime-section",
+        "telemetry-section", "runtime-section", "alerts-section",
         "diagnostics-section", "audit-section",
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
@@ -80,6 +81,9 @@ function cacheElements() {
         "runtime-generated-at", "runtime-fresh-count", "runtime-online-count",
         "runtime-player-count", "runtime-issue-count", "runtime-table-body",
         "runtime-empty-state", "runtime-issue-body", "runtime-issue-empty",
+        "alert-generated-at", "alert-active-count", "alert-critical-count",
+        "alert-warning-count", "alert-unacknowledged-count",
+        "alert-table-body", "alert-empty-state",
         "diagnostic-count", "diagnostic-table-body",
         "diagnostic-empty-state", "audit-list", "audit-empty-state",
         "load-more-audit-button", "server-drawer", "server-form",
@@ -542,14 +546,23 @@ async function enterConsole() {
 async function loadConsoleData() {
     setBusy(elements["refresh-button"], true);
     try {
-        const [servers, profiles, diagnostics, users, telemetry, runtime] =
+        const [
+            servers,
+            profiles,
+            diagnostics,
+            users,
+            telemetry,
+            runtime,
+            alerts
+        ] =
             await Promise.all([
             api("/v1/admin/catalog/servers"),
             api("/v1/admin/catalog/client-profiles"),
             api("/v1/admin/diagnostics?limit=200"),
             api(userSearchPath()),
             api(`/v1/admin/telemetry/summary?hours=${state.telemetryHours}`),
-            api("/v1/admin/server-runtime/summary")
+            api("/v1/admin/server-runtime/summary"),
+            api("/v1/admin/operational-alerts")
             ]);
         state.servers = servers;
         state.profiles = profiles;
@@ -557,11 +570,13 @@ async function loadConsoleData() {
         state.users = users;
         state.telemetry = telemetry;
         state.runtime = runtime;
+        state.alerts = alerts;
         renderServers();
         renderUsers();
         renderProfiles();
         renderTelemetry();
         renderRuntime();
+        renderAlerts();
         renderDiagnostics();
         populateProfileOptions();
         if (state.activeView === "audit" && state.auditEntries.length === 0) {
@@ -595,6 +610,7 @@ function switchView(view) {
         "profiles",
         "telemetry",
         "runtime",
+        "alerts",
         "diagnostics",
         "audit"
     ].includes(view)) {
@@ -609,6 +625,7 @@ function switchView(view) {
         profiles: "客户端档案",
         telemetry: "运行数据",
         runtime: "服务状态",
+        alerts: "告警中心",
         diagnostics: "玩家诊断包",
         audit: "审计记录"
     };
@@ -619,6 +636,7 @@ function switchView(view) {
     elements["profiles-section"].hidden = view !== "profiles";
     elements["telemetry-section"].hidden = view !== "telemetry";
     elements["runtime-section"].hidden = view !== "runtime";
+    elements["alerts-section"].hidden = view !== "alerts";
     elements["diagnostics-section"].hidden = view !== "diagnostics";
     elements["audit-section"].hidden = view !== "audit";
     if (view === "audit" && state.auditEntries.length === 0) {
@@ -1005,6 +1023,126 @@ function formatRelativeTime(value) {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours} 小时前`;
     return `${Math.floor(hours / 24)} 天前`;
+}
+
+function renderAlerts() {
+    const summary = state.alerts;
+    if (!summary) return;
+
+    elements["alert-generated-at"].textContent =
+        `评估于 ${formatDateTime(summary.generatedAt)}`;
+    elements["alert-active-count"].textContent =
+        summary.activeCount.toLocaleString("zh-CN");
+    elements["alert-critical-count"].textContent =
+        summary.criticalCount.toLocaleString("zh-CN");
+    elements["alert-warning-count"].textContent =
+        summary.warningCount.toLocaleString("zh-CN");
+    elements["alert-unacknowledged-count"].textContent =
+        summary.unacknowledgedCount.toLocaleString("zh-CN");
+
+    const alerts = summary.alerts || [];
+    const body = elements["alert-table-body"];
+    body.replaceChildren();
+    alerts.forEach(alert => {
+        const row = document.createElement("tr");
+        if (alert.status === "Resolved") {
+            row.classList.add("alert-resolved");
+        }
+        row.append(
+            alertSeverityCell(alert),
+            identityTextCell(alert.title, alert.summary),
+            identityTextCell(
+                operationalAlertSourceText(alert.source),
+                alert.code),
+            alertStatusCell(alert),
+            identityTextCell(
+                formatRelativeTime(alert.openedAt),
+                formatDateTime(alert.openedAt)),
+            identityTextCell(
+                formatRelativeTime(alert.lastSeenAt),
+                `${formatDateTime(alert.lastSeenAt)} · ${alert.observationCount} 次`),
+            alertActionCell(alert));
+        body.append(row);
+    });
+    elements["alert-empty-state"].hidden = alerts.length !== 0;
+}
+
+function alertSeverityCell(alert) {
+    const cell = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className =
+        `alert-severity alert-severity-${alert.severity.toLowerCase()}`;
+    badge.textContent = {
+        Critical: "严重",
+        Warning: "警告",
+        Info: "提示"
+    }[alert.severity] || alert.severity;
+    cell.append(badge);
+    return cell;
+}
+
+function alertStatusCell(alert) {
+    const cell = document.createElement("td");
+    const badge = document.createElement("span");
+    if (alert.status === "Resolved") {
+        badge.className = "status-badge status-archived";
+        badge.textContent = "已恢复";
+    } else if (alert.acknowledgedAt) {
+        badge.className = "status-badge status-maintenance";
+        badge.textContent = "已确认";
+    } else {
+        badge.className = "status-badge status-online";
+        badge.textContent = "活动";
+    }
+    cell.append(badge);
+    return cell;
+}
+
+function alertActionCell(alert) {
+    const cell = document.createElement("td");
+    cell.className = "alert-action";
+    if (alert.status === "Active" && !alert.acknowledgedAt) {
+        const button = actionButton(
+            "check",
+            "确认",
+            () => acknowledgeAlert(alert, button));
+        cell.append(button);
+    } else {
+        const text = document.createElement("span");
+        text.className = "count-label";
+        text.textContent = alert.status === "Resolved"
+            ? `恢复于 ${formatDateTime(alert.resolvedAt)}`
+            : `确认于 ${formatDateTime(alert.acknowledgedAt)}`;
+        cell.append(text);
+    }
+    return cell;
+}
+
+async function acknowledgeAlert(alert, button) {
+    setBusy(button, true);
+    try {
+        await api(
+            `/v1/admin/operational-alerts/${encodeURIComponent(alert.fingerprint)}/acknowledge`,
+            { method: "POST" });
+        state.alerts = await api("/v1/admin/operational-alerts");
+        renderAlerts();
+        showToast("告警已确认；异常恢复前仍会保持活动状态");
+    } catch (error) {
+        showToast(error.message, true);
+    } finally {
+        setBusy(button, false);
+    }
+}
+
+function operationalAlertSourceText(source) {
+    return {
+        Api: "启动器 API",
+        Authentication: "账号认证",
+        Distribution: "内容分发",
+        Server: "游戏服务",
+        Certificate: "HTTPS 证书",
+        Infrastructure: "基础设施"
+    }[source] || source;
 }
 
 function renderServers() {

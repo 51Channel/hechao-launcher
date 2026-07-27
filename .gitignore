@@ -9,6 +9,8 @@ TestResults/
 **/obj/
 **/build/
 **/node_modules/
+**/__pycache__/
+*.py[cod]
 .gradle/
 *.user
 *.suo

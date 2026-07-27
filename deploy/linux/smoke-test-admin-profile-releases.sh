@@ -157,6 +157,10 @@ heartbeat_token="$(openssl rand -hex 32)"
 heartbeat_token_hash="$(
   printf '%s' "$heartbeat_token" | sha256sum | awk '{print $1}'
 )"
+alert_token="$(openssl rand -hex 32)"
+alert_token_hash="$(
+  printf '%s' "$alert_token" | sha256sum | awk '{print $1}'
+)"
 
 python3 - \
   /etc/hechao-launcher-api/environment \
@@ -167,6 +171,7 @@ python3 - \
   "$velocity_token_hash" \
   "$sync_token_hash" \
   "$heartbeat_token_hash" \
+  "$alert_token_hash" \
   "$keys_root" \
   "$diagnostics_root" \
   "$manifest_root" <<'PY'
@@ -182,6 +187,7 @@ import sys
     velocity_hash,
     sync_hash,
     heartbeat_hash,
+    alert_hash,
     keys_path,
     diagnostics_path,
     manifest_path,
@@ -199,6 +205,7 @@ overrides = {
     "VelocityAuthorization__InternalTokenSha256",
     "Authentication__InternalSyncTokenSha256",
     "ServerHeartbeats__InternalTokenSha256",
+    "OperationalAlerts__InternalTokenSha256",
 }
 
 for line in lines:
@@ -234,6 +241,7 @@ updated.extend(
         f"VelocityAuthorization__InternalTokenSha256={velocity_hash}",
         f"Authentication__InternalSyncTokenSha256={sync_hash}",
         f"ServerHeartbeats__InternalTokenSha256={heartbeat_hash}",
+        f"OperationalAlerts__InternalTokenSha256={alert_hash}",
         "ForumSessionRevocation__Enabled=false",
     ]
 )
@@ -271,16 +279,16 @@ for _ in {1..40}; do
   sleep 1
 done
 [[ "$ready" == true ]] || fail "candidate did not become ready"
-[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.19.0" ]] ||
+[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.20.0" ]] ||
   fail "candidate reported an unexpected version"
 
 migration_count="$(
   docker exec -u postgres "$container" \
     psql --username="$database_admin" --dbname="$database_name" \
     --tuples-only --no-align \
-    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version IN (15, 16);"
+    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version IN (15, 16, 17);"
 )"
-[[ "$migration_count" == "2" ]] || fail "migrations 15 and 16 were not applied"
+[[ "$migration_count" == "3" ]] || fail "migrations 15 through 17 were not applied"
 
 for asset in index.html admin.js admin.css; do
   status="$(
@@ -304,6 +312,10 @@ grep -Fq 'runtime-section' "${response_root}/index.html" ||
   fail "admin page does not contain server runtime status"
 grep -Fq 'renderRuntime' "${response_root}/admin.js" ||
   fail "admin script does not contain server runtime rendering"
+grep -Fq 'alerts-section' "${response_root}/index.html" ||
+  fail "admin page does not contain operational alerts"
+grep -Fq 'renderAlerts' "${response_root}/admin.js" ||
+  fail "admin script does not contain operational alert rendering"
 
 suffix="$(openssl rand -hex 4)"
 admin_username="profadm${suffix}"
@@ -660,6 +672,101 @@ assert_status 200 "$runtime_summary_status" "server runtime summary"
 [[ "$(json_value "${response_root}/runtime-summary.json" '.issues[] | select(.issue == "DiskProbeFailed") | .samples')" == "1" ]] ||
   fail "runtime summary did not include fixed issue history"
 
+alert_observed_at="$(date --utc +'%Y-%m-%dT%H:%M:%SZ')"
+alert_payload="$(
+  jq -cn \
+    --arg observedAt "$alert_observed_at" \
+    '{
+      fingerprint:"platform:smoke",
+      code:"Infrastructure.Smoke",
+      source:"Infrastructure",
+      severity:"Critical",
+      active:true,
+      title:"隔离告警链路测试",
+      summary:"用于验证外部巡检、统一收件箱和确认审计。",
+      observedAt:$observedAt
+    }'
+)"
+alert_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/alert-active.json" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --header "X-Hechao-Monitor-Token: ${alert_token}" \
+    --data "$alert_payload" \
+    "${base_url}/v1/internal/operational-alerts/events"
+)"
+assert_status 202 "$alert_status" "operational alert activation"
+
+wrong_alert_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/alert-wrong-token.json" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --header 'X-Hechao-Monitor-Token: wrong-token' \
+    --data "$alert_payload" \
+    "${base_url}/v1/internal/operational-alerts/events"
+)"
+assert_status 401 "$wrong_alert_status" "operational alert token rejection"
+
+active_snapshot_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/alert-snapshot.json" \
+    --write-out '%{http_code}' \
+    --header "X-Hechao-Monitor-Token: ${alert_token}" \
+    "${base_url}/v1/internal/operational-alerts/active"
+)"
+assert_status 200 "$active_snapshot_status" "active operational alert snapshot"
+[[ "$(json_value "${response_root}/alert-snapshot.json" '.alerts[] | select(.fingerprint == "platform:smoke") | .severity')" == "Critical" ]] ||
+  fail "internal alert snapshot did not include the active event"
+
+alert_summary_status="$(
+  admin_get \
+    "/v1/admin/operational-alerts" \
+    "${response_root}/alert-summary-active.json"
+)"
+assert_status 200 "$alert_summary_status" "admin operational alert summary"
+[[ "$(json_value "${response_root}/alert-summary-active.json" '.alerts[] | select(.fingerprint == "platform:smoke") | .status')" == "Active" ]] ||
+  fail "admin alert summary did not include the active event"
+
+ack_status="$(
+  admin_json_write POST \
+    "/v1/admin/operational-alerts/platform%3Asmoke/acknowledge" \
+    '{}' \
+    "${response_root}/alert-acknowledged.json"
+)"
+assert_status 204 "$ack_status" "operational alert acknowledgement"
+alert_summary_status="$(
+  admin_get \
+    "/v1/admin/operational-alerts" \
+    "${response_root}/alert-summary-acknowledged.json"
+)"
+assert_status 200 "$alert_summary_status" "acknowledged alert summary"
+[[ "$(json_value "${response_root}/alert-summary-acknowledged.json" '.alerts[] | select(.fingerprint == "platform:smoke") | .acknowledgedAt != null')" == "true" ]] ||
+  fail "operational alert acknowledgement was not persisted"
+
+resolved_payload="$(
+  jq -c '.active = false' <<<"$alert_payload"
+)"
+resolved_status="$(
+  curl --silent --show-error \
+    --output "${response_root}/alert-resolved.json" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --header "X-Hechao-Monitor-Token: ${alert_token}" \
+    --data "$resolved_payload" \
+    "${base_url}/v1/internal/operational-alerts/events"
+)"
+assert_status 202 "$resolved_status" "operational alert recovery"
+alert_summary_status="$(
+  admin_get \
+    "/v1/admin/operational-alerts" \
+    "${response_root}/alert-summary-resolved.json"
+)"
+assert_status 200 "$alert_summary_status" "resolved alert summary"
+[[ "$(json_value "${response_root}/alert-summary-resolved.json" '.alerts[] | select(.fingerprint == "platform:smoke") | .status')" == "Resolved" ]] ||
+  fail "operational alert recovery was not persisted"
+
 create_payload="$(
   jq -cn \
     --arg id "smoke-profile-${suffix}" \
@@ -875,9 +982,10 @@ audit_count="$(
 )"
 ((audit_count >= 8)) || fail "release audit trail is incomplete"
 
-echo "PASS: API 0.19.0 isolated profile, telemetry and server-runtime smoke test"
-echo "Evidence: migrations=15-16, telemetry-idempotency=verified, telemetry-summary=verified"
+echo "PASS: API 0.20.0 isolated profile, telemetry, runtime and alert smoke test"
+echo "Evidence: migrations=15-17, telemetry-idempotency=verified, telemetry-summary=verified"
 echo "Evidence: runtime-idempotency=verified, process-tick-disk-summary=verified"
+echo "Evidence: alert-auth-lifecycle-acknowledgement=verified"
 echo "Evidence: signed-import=verified, immutable-storage=verified"
 echo "Evidence: test-gray-production=verified, rollback=verified, pause-auto-rollback=verified"
 echo "Evidence: resume-no-promote=verified, catalog-cohort=verified, revision-conflict=verified"

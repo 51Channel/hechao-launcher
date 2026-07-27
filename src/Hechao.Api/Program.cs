@@ -182,6 +182,24 @@ builder.Services.AddOptions<LauncherTelemetryOptions>()
         options => options.CleanupHours is >= 1 and <= 24,
         "LauncherTelemetry:CleanupHours must be between 1 and 24.")
     .ValidateOnStart();
+builder.Services.AddOptions<OperationalAlertOptions>()
+    .Bind(builder.Configuration.GetSection(OperationalAlertOptions.SectionName))
+    .Validate(
+        options => string.IsNullOrEmpty(options.InternalTokenSha256) ||
+                   Regex.IsMatch(
+                       options.InternalTokenSha256,
+                       "^[0-9a-fA-F]{64}$"),
+        "OperationalAlerts:InternalTokenSha256 must be empty or a SHA-256 hex digest.")
+    .Validate(
+        options => options.EvaluationSeconds is >= 30 and <= 300,
+        "OperationalAlerts:EvaluationSeconds must be between 30 and 300.")
+    .Validate(
+        options => options.EvaluationWindowMinutes is >= 5 and <= 60,
+        "OperationalAlerts:EvaluationWindowMinutes must be between 5 and 60.")
+    .Validate(
+        options => options.RequestMetricsRetentionDays is >= 7 and <= 90,
+        "OperationalAlerts:RequestMetricsRetentionDays must be between 7 and 90.")
+    .ValidateOnStart();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
@@ -245,6 +263,16 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1)
             }));
     options.AddPolicy("internal-heartbeats", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 120,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    options.AddPolicy("internal-alerts", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
             _ => new FixedWindowRateLimiterOptions
@@ -423,6 +451,11 @@ builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
 builder.Services.AddSingleton<ServerHeartbeatRepository>();
 builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
 builder.Services.AddHostedService<ServerRuntimeSampleCleanupService>();
+builder.Services.AddSingleton<ApiRequestMetricsCollector>();
+builder.Services.AddSingleton<OperationalAlertTokenValidator>();
+builder.Services.AddSingleton<OperationalAlertRepository>();
+builder.Services.AddHostedService<ApiRequestMetricsFlushService>();
+builder.Services.AddHostedService<OperationalAlertEvaluationService>();
 builder.Services.AddSingleton(serviceProvider =>
     serviceProvider.GetRequiredService<IOptions<DiagnosticUploadOptions>>().Value);
 builder.Services.AddSingleton<DiagnosticUploadStorage>();
@@ -476,6 +509,7 @@ var adminWebOptions = app.Services
     .Value;
 
 app.UseForwardedHeaders();
+app.UseMiddleware<ApiRequestMetricsMiddleware>();
 app.UseExceptionHandler();
 app.Use(async (context, next) =>
 {
@@ -567,6 +601,14 @@ app.MapPost(
     .RequireRateLimiting("internal-sync");
 app.MapPost("/v1/internal/server-heartbeats", ImportServerHeartbeatsAsync)
     .RequireRateLimiting("internal-heartbeats");
+app.MapPost(
+        "/v1/internal/operational-alerts/events",
+        ImportOperationalAlertEventAsync)
+    .RequireRateLimiting("internal-alerts");
+app.MapGet(
+        "/v1/internal/operational-alerts/active",
+        GetActiveOperationalAlertsAsync)
+    .RequireRateLimiting("internal-alerts");
 app.MapPost("/v1/internal/forum/accounts/register", RegisterForumAccountAsync)
     .RequireRateLimiting("internal-forum");
 app.MapPost("/v1/internal/forum/accounts/authenticate", AuthenticateForumAccountAsync)
@@ -662,6 +704,11 @@ adminApi.MapDelete(
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 adminApi.MapGet("/telemetry/summary", GetAdminLauncherTelemetrySummaryAsync);
 adminApi.MapGet("/server-runtime/summary", GetAdminServerRuntimeSummaryAsync);
+adminApi.MapGet("/operational-alerts", GetAdminOperationalAlertsAsync);
+adminApi.MapPost(
+        "/operational-alerts/{fingerprint}/acknowledge",
+        AcknowledgeAdminOperationalAlertAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
 app.MapDiagnosticUploads(adminApi);
 
 app.MapAdminWebEndpoints();
@@ -1465,6 +1512,72 @@ async Task<IResult> ImportServerHeartbeatsAsync(
     }
 }
 
+async Task<IResult> ImportOperationalAlertEventAsync(
+    InternalOperationalAlertEventRequest request,
+    OperationalAlertTokenValidator tokenValidator,
+    OperationalAlertRepository repository,
+    TimeProvider timeProvider,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure =
+        ValidateOperationalAlertMonitor(tokenValidator, context);
+    if (authenticationFailure is not null)
+    {
+        return authenticationFailure;
+    }
+
+    var errors = OperationalAlertRules.Validate(
+        request,
+        timeProvider.GetUtcNow());
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    await repository.ApplyExternalEventAsync(request, cancellationToken);
+    return Results.Accepted();
+}
+
+async Task<IResult> GetActiveOperationalAlertsAsync(
+    OperationalAlertTokenValidator tokenValidator,
+    OperationalAlertRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure =
+        ValidateOperationalAlertMonitor(tokenValidator, context);
+    return authenticationFailure ??
+           Results.Ok(await repository.GetActiveSnapshotAsync(
+               cancellationToken));
+}
+
+IResult? ValidateOperationalAlertMonitor(
+    OperationalAlertTokenValidator tokenValidator,
+    HttpContext context)
+{
+    if (context.Connection.RemoteIpAddress is not { } remoteAddress ||
+        !IPAddress.IsLoopback(remoteAddress))
+    {
+        return Results.NotFound();
+    }
+
+    if (!tokenValidator.IsConfigured)
+    {
+        return Results.Problem(
+            title: "Operational alert monitor is not configured.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var suppliedToken =
+        context.Request.Headers["X-Hechao-Monitor-Token"].ToString();
+    return tokenValidator.IsValid(suppliedToken)
+        ? null
+        : Results.Problem(
+            title: "Operational alert monitor authentication failed.",
+            statusCode: StatusCodes.Status401Unauthorized);
+}
+
 async Task<IResult> GetCatalogAsync(
     CatalogRepository repository,
     IOptions<LauncherAuthenticationOptions> authenticationOptions,
@@ -2089,6 +2202,39 @@ async Task<IResult> GetAdminServerRuntimeSummaryAsync(
     ServerRuntimeStatusRepository repository,
     CancellationToken cancellationToken) =>
     Results.Ok(await repository.GetSummaryAsync(cancellationToken));
+
+async Task<IResult> GetAdminOperationalAlertsAsync(
+    OperationalAlertRepository repository,
+    CancellationToken cancellationToken) =>
+    Results.Ok(await repository.GetAdminSummaryAsync(cancellationToken));
+
+async Task<IResult> AcknowledgeAdminOperationalAlertAsync(
+    string fingerprint,
+    OperationalAlertRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    if (!OperationalAlertRules.IsValidFingerprint(fingerprint))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["fingerprint"] = ["告警指纹格式无效。"]
+        });
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    return await repository.AcknowledgeAsync(
+        fingerprint,
+        actor.UserId,
+        cancellationToken)
+        ? Results.NoContent()
+        : Results.NotFound();
+}
 
 async Task<IResult> SearchAdminUsersAsync(
     string? query,

@@ -140,6 +140,10 @@
                     <img src="/admin/assets/icons/monitor.svg" alt="">
                     <span>服务状态</span>
                 </button>
+                <button class="nav-item" type="button" data-view="alerts">
+                    <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                    <span>告警中心</span>
+                </button>
                 <button class="nav-item" type="button" data-view="diagnostics">
                     <img src="/admin/assets/icons/activity.svg" alt="">
                     <span>诊断包</span>
@@ -551,6 +555,57 @@
                             </div>
                         </div>
                     </section>
+                </section>
+
+                <section id="alerts-section" class="view-section" hidden>
+                    <div class="section-heading alert-heading">
+                        <div>
+                            <h2>统一告警中心</h2>
+                            <p>自动归并 API、登录、下载、服务器、OSS 入口和证书异常；恢复后保留最近记录。</p>
+                        </div>
+                        <span id="alert-generated-at" class="count-label"></span>
+                    </div>
+
+                    <div class="summary-strip alert-summary" aria-label="告警摘要">
+                        <div>
+                            <span>活动告警</span>
+                            <strong id="alert-active-count">0</strong>
+                        </div>
+                        <div>
+                            <span>严重</span>
+                            <strong id="alert-critical-count">0</strong>
+                        </div>
+                        <div>
+                            <span>警告</span>
+                            <strong id="alert-warning-count">0</strong>
+                        </div>
+                        <div>
+                            <span>未确认</span>
+                            <strong id="alert-unacknowledged-count">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-frame alert-table-frame">
+                        <table class="alert-table">
+                            <thead>
+                            <tr>
+                                <th>级别</th>
+                                <th>告警</th>
+                                <th>来源 / 代码</th>
+                                <th>状态</th>
+                                <th>首次出现</th>
+                                <th>最近观测</th>
+                                <th class="actions-column">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="alert-table-body"></tbody>
+                        </table>
+                        <div id="alert-empty-state" class="empty-state" hidden>
+                            <img src="/admin/assets/icons/shield-check.svg" alt="">
+                            <strong>当前没有告警记录</strong>
+                            <span>独立巡检器和 API 规则开始运行后，异常与恢复会显示在这里。</span>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="diagnostics-section" class="view-section" hidden>

@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Hechao platform monitor every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=5s
+RandomizedDelaySec=5s
+Persistent=true
+Unit=hechao-platform-monitor.service
+
+[Install]
+WantedBy=timers.target
