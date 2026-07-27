@@ -1,18 +1,20 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-07-27T15:25:49Z",
+  "checkedAt": "2026-07-27T15:41:46Z",
   "status": "capacity-verified-world-backup-trigger-pending",
   "apiHost": {
     "logicalCpuCount": 2,
     "visibleMemoryBytes": 3669319680,
     "availableMemoryBytes": 2331938816,
     "rootVolumeBytes": 52448063488,
-    "rootVolumeFreeBytes": 34990034944,
+    "rootVolumeFreeBytes": 34749734912,
     "loadAverage": [
-      0.15,
-      0.11,
-      0.09
+      0.59,
+      0.29,
+      0.21
     ],
+    "publicBandwidthPeakMbps": 200,
+    "publicBandwidthEvidence": "Alibaba Cloud SWAS console for the same public IP",
     "publicApplicationPorts": [
       80,
       443
@@ -34,6 +36,35 @@
       "maximumDurationMs": 389,
       "clientErrors": 14,
       "serverErrors": 0
+    },
+    "relayApiRequestMetrics": {
+      "source": "query-string-free Nginx access log",
+      "firstRequest": "2026-07-27T15:09:42Z",
+      "lastRequest": "2026-07-27T15:41:46Z",
+      "requestCount": 269,
+      "successfulResponses": 269,
+      "peakRequestsPerMinute": 16,
+      "peakApproximateQps": 0.267,
+      "responseBodyBytes": 31696165,
+      "peakResponseBodyBytesPerMinute": 2313574,
+      "peakApproximateResponseMbps": 0.308,
+      "averageRequestTimeSeconds": 17.197353,
+      "maximumRequestTimeSeconds": 88.274,
+      "requestTimeInterpretation": "The dominant /responses endpoint streams model output, so request duration is end-to-end stream lifetime rather than ordinary API compute latency."
+    },
+    "resourceSnapshot": {
+      "checkedAt": "2026-07-27T15:40:26Z",
+      "availableMemoryBytes": 2402623488,
+      "swapTotalBytes": 2147479552,
+      "swapFreeBytes": 2147479552,
+      "launcherApiMemoryCurrentBytes": 120111104,
+      "launcherApiMemoryPeakBytes": 122191872,
+      "launcherApiRestarts": 0,
+      "sub2ApiCpuPercent": 1.57,
+      "sub2ApiMemoryMiB": 139.7,
+      "sub2ApiPostgresCpuPercent": 1.39,
+      "sub2ApiPostgresMemoryMiB": 203.5,
+      "establishedHttpsConnections": 5
     }
   },
   "gameHost": {
