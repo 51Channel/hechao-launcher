@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-07-27T15:10:00Z",
+  "status": "verified",
+  "source": {
+    "version": "0.20.1",
+    "commit": "f90a2de9eae0fb6044f0fdf7571708b91da50b10",
+    "solutionTestsPassed": 355,
+    "solutionTestsFailed": 0,
+    "apiTestsPassed": 170,
+    "apiTestsFailed": 0
+  },
+  "artifact": {
+    "releaseId": "0.20.1-20260727T145451Z",
+    "binaryBytes": 104442419,
+    "binarySha256": "94BC3831A4749A545968E90BD1ABD638BE26BD23B058091E2A91AF417D09AB54",
+    "archiveBytes": 45575206,
+    "archiveSha256": "035C71CFCAB3ACF2986AE9936833CAD004B4B9087F08385F0FFC9DA39C46F6FC",
+    "publishFileCount": 99,
+    "pdbCount": 0
+  },
+  "deployment": {
+    "releasePath": "/opt/hechao-launcher-api/releases/0.20.1-20260727T145451Z",
+    "backupDirectory": "/var/backups/hechao-unified-account/20260727T145731Z",
+    "backupManifestSha256": "A95A941E7EA3E9F8C1C42E5004C47CED4515A3ED86B856F22662179693B1935D",
+    "databaseDumpSha256": "D148A14E6108B7D800557CF73FC05D8BC5D4F8F2F5B34B01AEB7E6AC358B41CB",
+    "pgRestoreEntries": 177,
+    "migrationMaximum": 17,
+    "serverCount": 6,
+    "clientProfileCount": 6,
+    "serviceActive": true,
+    "serviceRestartCount": 0,
+    "warningsOrErrorsAfterDeploy": 0
+  },
+  "privateDownloadRegression": {
+    "manifestHttpStatus": 200,
+    "objectRedirectHttpStatus": 302,
+    "locationWasHttps": true,
+    "locationContainedShortLivedSignature": true,
+    "responseBodyBytes": 0,
+    "newJournalAccessKeyIdLines": 0,
+    "newJournalSignatureLines": 0,
+    "temporarySessionDeleted": true
+  },
+  "nginxPrivacyLogging": {
+    "backupDirectory": "/var/backups/hechao-nginx-privacy/20260727T150915Z",
+    "configurationTestPassed": true,
+    "reloadPassed": true,
+    "legacySiteServerBlocksCovered": 2,
+    "launcherServerBlocksCovered": 3,
+    "forumResetProbeHttpStatus": 200,
+    "syntheticTokenLogMatches": 0,
+    "sensitiveQueryMarkerMatches": 0,
+    "forumPathLogMatches": 1,
+    "healthPathLogMatches": 1,
+    "accessLogMode": "0640",
+    "nginxActive": true,
+    "forumActive": true
+  },
+  "publicRegression": {
+    "launcherHealthz": 200,
+    "launcherReadyz": 200,
+    "adminWeb": 200,
+    "forum": 200,
+    "legacyApi": 200,
+    "anonymousPrivateObject": 403,
+    "invalidBearerCatalog": 401
+  },
+  "invariants": {
+    "signedUrlLoggedAfterFix": false,
+    "queryStringLoggedAfterFix": false,
+    "refererLoggedAfterFix": false,
+    "historicalAuditLogsDeleted": false,
+    "gameServerProcessesChanged": false,
+    "gameServerProcessesRestarted": false
+  }
+}

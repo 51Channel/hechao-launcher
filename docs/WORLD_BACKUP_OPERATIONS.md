@@ -114,6 +114,15 @@ Lobby 的 Essentials 内建循环间隔已经从 `30` 改为 `0`，避免它与 
 以上证明 VSS 锁文件读取和后台完成链可用，但隔离测试没有冒充服务器内
 `save-all`/`save-off` 的正式业务触发，因此生产世界归档状态仍保持“待验收”。
 
+2026-07-27 22:47（Asia/Shanghai）再次只读核查时，`E:\backups` 与
+`E:\backups-lobby` 的正式归档数仍为 `0`，`.partial`、`active.json`、状态 JSON
+和残留 VSS 卷影均为 `0`。日志中的最后失败仍是 VSS 升级前读取 Java 锁定 `.mca`
+的旧记录；四个 Java 进程都早于 VSS 引擎和新计划脚本部署。因此问题不是新引擎
+再次失败，而是当前运行实例尚未加载磁盘上的新触发脚本。按既定边界不热重载、
+不代替服主重启，下一验收点是服主下一次正常重启后的首个错峰计划窗口。
+本次容量与状态快照见
+[`evidence/INFRASTRUCTURE_CAPACITY_AND_WORLD_BACKUP_2026-07-27.json`](evidence/INFRASTRUCTURE_CAPACITY_AND_WORLD_BACKUP_2026-07-27.json)。
+
 首次正式计划任务完成后还必须核对：
 
 ```powershell

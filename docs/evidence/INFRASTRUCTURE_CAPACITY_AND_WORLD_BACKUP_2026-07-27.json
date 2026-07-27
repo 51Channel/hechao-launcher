@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-07-27T14:49:48Z",
+  "status": "capacity-verified-world-backup-trigger-pending",
+  "apiHost": {
+    "logicalCpuCount": 2,
+    "visibleMemoryBytes": 3669319680,
+    "availableMemoryBytes": 2331938816,
+    "rootVolumeBytes": 52448063488,
+    "rootVolumeFreeBytes": 34990034944,
+    "loadAverage": [
+      0.15,
+      0.11,
+      0.09
+    ],
+    "publicApplicationPorts": [
+      80,
+      443
+    ],
+    "applicationPortsBoundToLoopback": [
+      3000,
+      5433,
+      8080,
+      8090
+    ]
+  },
+  "gameHost": {
+    "allocatedProcessorCount": 6,
+    "visibleMemoryBytes": 19326763008,
+    "freeMemoryBytes": 12388392960,
+    "systemVolumeBytes": 42011193344,
+    "systemVolumeFreeBytes": 8503496704,
+    "dataVolumeBytes": 75158777856,
+    "dataVolumeFreeBytes": 22302515200,
+    "velocityXmxGiB": 1,
+    "paperBackendCount": 3,
+    "paperBackendXmxGiBEach": 2,
+    "observedJavaProcessCount": 4
+  },
+  "worldBackup": {
+    "checkedAt": "2026-07-27T14:47:17Z",
+    "formalArchiveCount": 0,
+    "partialArchiveCount": 0,
+    "activeStatePresent": false,
+    "vssSnapshotCount": 0,
+    "statusFilePresent": false,
+    "existingLogFailuresPredateVssDeployment": true,
+    "currentJavaProcessesPredateVssDeployment": true,
+    "nextRequiredEvent": "owner-controlled normal game-server restart",
+    "automaticStartOrRestartAttempted": false
+  },
+  "invariants": {
+    "gameServerProcessesChanged": false,
+    "gameServerProcessesRestarted": false,
+    "worldBackupClaimedAsProductionVerified": false
+  }
+}

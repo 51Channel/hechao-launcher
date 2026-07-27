@@ -124,7 +124,7 @@ SHA-256 和逐字节一致，才允许原子写入 `latest.json`。
 - 当前 v4 对不存在的 `backups/services/*` 对象执行只读 GetObject 探针返回
   `403 AccessDenied`，且没有创建本地输出，证明前缀尚未提前开放；
 - 新增策略自动测试精确锁定单个 `Allow` statement、`GetObject/PutObject` 两个动作和
-  五个批准前缀，完整解决方案为 `351/351`。
+  五个批准前缀；预检证据基线为 `351/351`，当前完整解决方案为 `355/355`。
 
 机器可读证据见
 [`evidence/PLATFORM_DATA_BACKUP_RAM_V5_PREFLIGHT_2026-07-27.json`](evidence/PLATFORM_DATA_BACKUP_RAM_V5_PREFLIGHT_2026-07-27.json)。
