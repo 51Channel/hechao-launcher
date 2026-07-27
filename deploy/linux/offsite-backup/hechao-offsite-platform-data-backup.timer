@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the encrypted Hechao forum and Sub2API backup daily
+
+[Timer]
+OnCalendar=*-*-* 04:20:00 Asia/Shanghai
+RandomizedDelaySec=20min
+Persistent=true
+Unit=hechao-offsite-platform-data-backup.service
+
+[Install]
+WantedBy=timers.target

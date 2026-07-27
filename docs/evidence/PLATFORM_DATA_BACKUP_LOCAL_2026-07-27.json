@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-07-27T13:31:00Z",
+  "status": "local-verified-offsite-pending",
+  "archive": {
+    "name": "hechao-platform-data-20260727T133030Z.tar.gz",
+    "bytes": 35576326,
+    "sha256": "E3142DD28E58A85B4732C096AF9A2281FC4B9AABB33EA5ED279DBE207EA1D629",
+    "mode": "0600",
+    "owner": "root",
+    "group": "root"
+  },
+  "forum": {
+    "databaseBytes": 221184,
+    "quickCheck": "ok"
+  },
+  "sub2apiRestore": {
+    "tableCount": 77,
+    "databaseBytes": 179674135,
+    "droppedAfterVerification": true
+  },
+  "invariants": {
+    "forumProcessRestarted": false,
+    "sub2apiContainerRestarted": false,
+    "databaseContainerRestarted": false,
+    "backupStagingEntries": 0,
+    "restoreStagingEntries": 0,
+    "temporaryRestoreDatabases": 0,
+    "wrongShaRejected": true
+  },
+  "systemd": {
+    "securityExposure": "4.7 OK",
+    "timerEnabled": false,
+    "timerActive": false
+  },
+  "pending": [
+    "RAM v5 backups/services prefix",
+    "encrypted OSS upload and readback",
+    "offsite decryption and isolated recovery",
+    "timer activation",
+    "monitor transition"
+  ]
+}

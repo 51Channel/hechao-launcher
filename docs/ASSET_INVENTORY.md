@@ -78,7 +78,12 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
   `3A336B50CE0A505E4CE3802385926B8C4CB17B0CB0AC97A3B2A0BCB4921CB8E2`；
   上传、立即下载、逐字节复验、异地主机解密和隔离恢复均通过。
 - `hechao-offsite-database-backup.timer` 已启用，失败标记已清除，平台监控器已成功
-  投递恢复通知。网站与 Sub2API 仍缺少新的统一每日备份和异地副本。
+  投递恢复通知。
+- 论坛与 Sub2API 在线一致性备份已部署：论坛使用 SQLite 在线快照，Sub2API 使用
+  PostgreSQL custom dump，源码、Compose 和运行配置进入同一 root-only 包。本地
+  systemd 沙箱生成 `35,576,326` 字节包，隔离恢复出 `77` 张 Sub2API 业务表并自动
+  删除临时库；OSS 加密副本、定时器和双备份监控等待 RAM v5 开放
+  `backups/services/*` 后验收。
 - 阿里云控制台快照状态尚未通过 API 或控制台复核。
 
 ### 1.4 客户端签名与发布资产
@@ -208,7 +213,7 @@ Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 的 `E:` 已恢复到约 20.78 GiB，最坏预检余量约 3.39 GiB；首次正式计划备份仍必须核对 ZIP、SHA-256、保留数量和剩余空间。
 3. `owl9` 当前无法通过密钥认证，第二台 VPS 的实时规格与服务状态未完成。
-4. 启动器数据库异地加密、真实 OSS 上传/下载、告警恢复和异地主机隔离恢复均已验收；网站与 Sub2API 仍没有新的统一异地备份和恢复演练。
+4. 启动器数据库异地加密、真实 OSS 上传/下载、告警恢复和异地主机隔离恢复均已验收；论坛与 Sub2API 的本地一致性备份和隔离恢复已通过，OSS 副本等待 RAM v5。
 5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.2.0` 已加载为 `monitor`，全部目标映射和合成定向路由已通过。真实四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 

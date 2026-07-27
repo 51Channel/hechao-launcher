@@ -240,29 +240,32 @@ def backup_event(
     receipt_path: Path,
     failure_path: Path,
     observed_at: datetime,
+    *,
+    fingerprint: str = "backup:database-offsite",
+    code: str = "Backup.DatabaseOffsite",
+    subject: str = "异地数据库备份",
 ) -> dict[str, Any]:
-    fingerprint = "backup:database-offsite"
     if failure_path.exists():
         try:
             failure = json.loads(failure_path.read_text(encoding="utf-8"))
             failed_at = bounded(str(failure.get("failedAt", "unknown")), 40)
             exit_code = int(failure.get("exitCode", -1))
             summary = (
-                f"最近一次异地数据库备份失败，时间 {failed_at}，"
+                f"最近一次{subject}失败，时间 {failed_at}，"
                 f"退出码 {exit_code}。"
             )
         except Exception as error:
             summary = (
-                "异地数据库备份失败标记无法读取，分类 "
+                f"{subject}失败标记无法读取，分类 "
                 f"{type(error).__name__}。"
             )
         return make_event(
             fingerprint,
-            "Backup.DatabaseOffsite",
+            code,
             "Infrastructure",
             "Critical",
             True,
-            "异地数据库备份失败",
+            f"{subject}失败",
             summary,
             observed_at,
         )
@@ -270,11 +273,11 @@ def backup_event(
     if not receipt_path.exists():
         return make_event(
             fingerprint,
-            "Backup.DatabaseOffsite",
+            code,
             "Infrastructure",
             "Warning",
             True,
-            "尚无成功的异地数据库备份",
+            f"尚无成功的{subject}",
             f"未找到成功凭据 {receipt_path}。",
             observed_at,
         )
@@ -292,11 +295,11 @@ def backup_event(
     except Exception as error:
         return make_event(
             fingerprint,
-            "Backup.DatabaseOffsite",
+            code,
             "Infrastructure",
             "Critical",
             True,
-            "异地数据库备份凭据无效",
+            f"{subject}凭据无效",
             f"{receipt_path} 无法验证，分类 {type(error).__name__}。",
             observed_at,
         )
@@ -305,11 +308,11 @@ def backup_event(
     severity = "Critical" if age_hours >= 48 else "Warning" if active else "Info"
     return make_event(
         fingerprint,
-        "Backup.DatabaseOffsite",
+        code,
         "Infrastructure",
         severity,
         active,
-        "异地数据库备份已经过期",
+        f"{subject}已经过期",
         (
             f"最近成功备份 {object_key}，完成于 "
             f"{iso_timestamp(completed_at)}，距今 {age_hours:.1f} 小时。"
@@ -566,6 +569,18 @@ def run() -> int:
             "/var/lib/hechao-offsite-backup/failure.json",
         )
     )
+    platform_backup_receipt_path = Path(
+        os.environ.get(
+            "HECHAO_MONITOR_PLATFORM_BACKUP_RECEIPT_PATH",
+            "/var/lib/hechao-offsite-platform-backup/latest.json",
+        )
+    )
+    platform_backup_failure_path = Path(
+        os.environ.get(
+            "HECHAO_MONITOR_PLATFORM_BACKUP_FAILURE_PATH",
+            "/var/lib/hechao-offsite-platform-backup/failure.json",
+        )
+    )
     if len(token) < 32:
         log("configuration_invalid", field="HECHAO_MONITOR_TOKEN")
         return 2
@@ -591,6 +606,16 @@ def run() -> int:
             backup_receipt_path,
             backup_failure_path,
             observed_at,
+        )
+    )
+    synthetic_events.append(
+        backup_event(
+            platform_backup_receipt_path,
+            platform_backup_failure_path,
+            observed_at,
+            fingerprint="backup:platform-data-offsite",
+            code="Backup.PlatformDataOffsite",
+            subject="论坛与 Sub2API 异地备份",
         )
     )
 
@@ -698,6 +723,18 @@ def self_test() -> int:
             failure_path,
             now,
         )["severity"] == "Critical"
+        failure_path.unlink()
+        platform_event = backup_event(
+            receipt_path,
+            failure_path,
+            now,
+            fingerprint="backup:platform-data-offsite",
+            code="Backup.PlatformDataOffsite",
+            subject="论坛与 Sub2API 异地备份",
+        )
+        assert platform_event["fingerprint"] == "backup:platform-data-offsite"
+        assert platform_event["code"] == "Backup.PlatformDataOffsite"
+        assert not platform_event["active"]
     print("PASS: platform monitor self-test")
     return 0
 

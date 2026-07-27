@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tool="/opt/hechao-backup/Hechao.Backup"
+public_key="/etc/hechao-offsite-backup/database-recovery-public.pem"
+local_backup="/usr/local/sbin/hechao-platform-data-backup"
+state_root="/var/lib/hechao-offsite-platform-backup"
+staging_root="/var/backups/hechao-platform-data/offsite-staging"
+failure_path="${state_root}/failure.json"
+receipt_path="${state_root}/latest.json"
+bucket="${HECHAO_BACKUP_OSS_BUCKET:-hechaoworld}"
+region="${HECHAO_BACKUP_OSS_REGION:-cn-shanghai}"
+endpoint="${HECHAO_BACKUP_OSS_ENDPOINT:-https://oss-cn-shanghai.aliyuncs.com}"
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+year="$(date -u +%Y)"
+month="$(date -u +%m)"
+object_key="backups/services/${year}/${month}/hechao-platform-data-${timestamp}.hcbackup"
+work_root="${staging_root}/${timestamp}-$$"
+completed=false
+
+install -d -o root -g root -m 0700 "$state_root" "$staging_root"
+umask 077
+exec 9>/run/lock/hechao-offsite-platform-data-backup.lock
+if ! flock -n 9; then
+  echo "An offsite platform data backup is already running."
+  exit 0
+fi
+
+cleanup() {
+  local exit_code="$?"
+  trap - EXIT
+  rm -rf -- "$work_root"
+  if [[ "$completed" != true && "$exit_code" -ne 0 ]]; then
+    local failure_next
+    failure_next="$(mktemp "${state_root}/failure.next.XXXXXX")"
+    jq -n \
+      --arg failedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      --argjson exitCode "$exit_code" \
+      '{failedAt: $failedAt, exitCode: $exitCode}' \
+      > "$failure_next"
+    install -o root -g root -m 0600 "$failure_next" "$failure_path"
+    rm -f -- "$failure_next"
+  fi
+  exit "$exit_code"
+}
+trap cleanup EXIT
+
+test -x "$tool"
+test -f "$public_key"
+test -x "$local_backup"
+test -n "${OSS_ACCESS_KEY_ID:-}"
+test -n "${OSS_ACCESS_KEY_SECRET:-}"
+
+install -d -o root -g root -m 0700 "$work_root"
+bundle_path="$("$local_backup")"
+test -s "$bundle_path"
+test -f "${bundle_path}.sha256"
+(
+  cd "$(dirname "$bundle_path")"
+  sha256sum -c "$(basename "${bundle_path}.sha256")" >/dev/null
+)
+tar -tzf "$bundle_path" >/dev/null
+
+encrypted_path="${work_root}/platform-data.hcbackup"
+verified_path="${work_root}/platform-data-verified.hcbackup"
+"$tool" encrypt \
+  --input "$bundle_path" \
+  --output "$encrypted_path" \
+  --public-key "$public_key" \
+  > "${work_root}/envelope.json"
+
+encrypted_sha256="$(sha256sum "$encrypted_path" | awk '{print toupper($1)}')"
+plaintext_sha256="$(jq -er '.plaintextSha256' "${work_root}/envelope.json")"
+key_id="$(jq -er '.keyId' "${work_root}/envelope.json")"
+plaintext_bytes="$(stat -c '%s' "$bundle_path")"
+encrypted_bytes="$(stat -c '%s' "$encrypted_path")"
+
+"$tool" upload \
+  --input "$encrypted_path" \
+  --bucket "$bucket" \
+  --region "$region" \
+  --endpoint "$endpoint" \
+  --key "$object_key" \
+  > "${work_root}/upload.json"
+
+"$tool" download \
+  --output "$verified_path" \
+  --bucket "$bucket" \
+  --region "$region" \
+  --endpoint "$endpoint" \
+  --key "$object_key" \
+  --expected-sha256 "$encrypted_sha256" \
+  > "${work_root}/download.json"
+cmp --silent "$encrypted_path" "$verified_path"
+
+receipt_next="$(mktemp "${state_root}/latest.next.XXXXXX")"
+jq -n \
+  --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg objectKey "$object_key" \
+  --arg encryptedSha256 "$encrypted_sha256" \
+  --arg plaintextSha256 "$plaintext_sha256" \
+  --arg keyId "$key_id" \
+  --argjson encryptedBytes "$encrypted_bytes" \
+  --argjson plaintextBytes "$plaintext_bytes" \
+  '{
+    completedAt: $completedAt,
+    objectKey: $objectKey,
+    encryptedSha256: $encryptedSha256,
+    plaintextSha256: $plaintextSha256,
+    keyId: $keyId,
+    encryptedBytes: $encryptedBytes,
+    plaintextBytes: $plaintextBytes,
+    components: ["forum", "sub2api"]
+  }' \
+  > "$receipt_next"
+install -o root -g root -m 0600 "$receipt_next" "$receipt_path"
+rm -f -- "$receipt_next" "$failure_path"
+completed=true
+
+echo "$object_key"

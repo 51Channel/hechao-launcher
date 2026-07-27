@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${EUID}" -ne 0 ]]; then
+  echo "hechao-platform-data-backup must run as root" >&2
+  exit 1
+fi
+
+backup_root="${HECHAO_PLATFORM_BACKUP_ROOT:-/var/backups/hechao-platform-data/local}"
+staging_root="${HECHAO_PLATFORM_BACKUP_STAGING_ROOT:-/var/backups/hechao-platform-data/staging}"
+forum_root="${HECHAO_FORUM_ROOT:-/home/ecs-user/hechao}"
+sub2api_root="${HECHAO_SUB2API_ROOT:-/opt/sub2api-hechao}"
+sub2api_database_container="${HECHAO_SUB2API_DATABASE_CONTAINER:-sub2api-postgres}"
+sub2api_database_user="${HECHAO_SUB2API_DATABASE_USER:-sub2api}"
+sub2api_database_name="${HECHAO_SUB2API_DATABASE_NAME:-sub2api}"
+retention_count="${HECHAO_PLATFORM_BACKUP_RETENTION_COUNT:-7}"
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+archive_name="hechao-platform-data-${timestamp}.tar.gz"
+archive_path="${backup_root}/${archive_name}"
+partial_path="${archive_path}.partial"
+work_root="${staging_root}/${timestamp}-$$"
+bundle_root="${work_root}/bundle"
+
+for configured_path in "$backup_root" "$staging_root" "$forum_root" "$sub2api_root"; do
+  if [[ "$configured_path" != /* ]]; then
+    echo "Backup paths must be absolute: ${configured_path}" >&2
+    exit 1
+  fi
+done
+if [[ ! "$retention_count" =~ ^[1-9][0-9]*$ ]] ||
+   (( retention_count > 90 )); then
+  echo "HECHAO_PLATFORM_BACKUP_RETENTION_COUNT must be between 1 and 90." >&2
+  exit 1
+fi
+
+for command_name in docker flock jq sha256sum sqlite3 tar; do
+  command -v "$command_name" >/dev/null
+done
+test -d "$forum_root"
+test -f "${forum_root}/prisma/dev.db"
+test -f "${forum_root}/.env"
+test -d "$sub2api_root"
+test -f "${sub2api_root}/.env"
+test -f "${sub2api_root}/docker-compose.yml"
+test -d "${sub2api_root}/data"
+
+install -d -o root -g root -m 0700 \
+  "$backup_root" \
+  "$staging_root"
+umask 077
+exec 9>/run/lock/hechao-platform-data-backup.lock
+if ! flock -n 9; then
+  echo "A platform data backup is already running."
+  exit 0
+fi
+
+cleanup() {
+  local exit_code="$?"
+  trap - EXIT
+  rm -rf -- "$work_root"
+  if [[ "$exit_code" -ne 0 ]]; then
+    rm -f -- "$partial_path"
+  fi
+  exit "$exit_code"
+}
+trap cleanup EXIT
+
+install -d -o root -g root -m 0700 \
+  "${bundle_root}/forum" \
+  "${bundle_root}/sub2api"
+
+forum_snapshot="${bundle_root}/forum/forum.sqlite"
+sqlite3 "${forum_root}/prisma/dev.db" \
+  ".timeout 30000" \
+  ".backup '${forum_snapshot}'"
+test "$(sqlite3 "$forum_snapshot" 'PRAGMA quick_check;')" = "ok"
+
+tar -czf "${bundle_root}/forum/source.tar.gz" \
+  --exclude='./.git' \
+  --exclude='./.next' \
+  --exclude='./.venv' \
+  --exclude='./node_modules' \
+  --exclude='./venv' \
+  --exclude='./.env' \
+  --exclude='./prisma/dev.db' \
+  -C "$forum_root" .
+tar -tzf "${bundle_root}/forum/source.tar.gz" >/dev/null
+install -o root -g root -m 0600 \
+  "${forum_root}/.env" \
+  "${bundle_root}/forum/environment"
+
+sub2api_dump="${bundle_root}/sub2api/database.dump"
+docker exec "$sub2api_database_container" \
+  pg_dump \
+  -U "$sub2api_database_user" \
+  -d "$sub2api_database_name" \
+  -Fc > "$sub2api_dump"
+test -s "$sub2api_dump"
+docker exec -i "$sub2api_database_container" \
+  pg_restore --list < "$sub2api_dump" >/dev/null
+
+tar -czf "${bundle_root}/sub2api/configuration.tar.gz" \
+  --exclude='./postgres_data' \
+  --exclude='./redis_data' \
+  --exclude='./builds' \
+  --exclude='./data/logs' \
+  --exclude='*.log' \
+  --exclude='*.result' \
+  -C "$sub2api_root" .
+tar -tzf "${bundle_root}/sub2api/configuration.tar.gz" >/dev/null
+
+forum_bytes="$(stat -c '%s' "$forum_snapshot")"
+sub2api_bytes="$(stat -c '%s' "$sub2api_dump")"
+sub2api_database_bytes="$(
+  docker exec "$sub2api_database_container" \
+    psql \
+    -U "$sub2api_database_user" \
+    -d "$sub2api_database_name" \
+    -Atc 'SELECT pg_database_size(current_database());'
+)"
+sub2api_image="$(
+  docker inspect \
+    --format '{{.Config.Image}}' \
+    "$sub2api_database_container"
+)"
+
+jq -n \
+  --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg forumDatabase "prisma/dev.db" \
+  --arg sub2apiDatabase "$sub2api_database_name" \
+  --arg sub2apiDatabaseImage "$sub2api_image" \
+  --argjson forumDatabaseBytes "$forum_bytes" \
+  --argjson sub2apiDumpBytes "$sub2api_bytes" \
+  --argjson sub2apiDatabaseBytes "$sub2api_database_bytes" \
+  '{
+    schemaVersion: 1,
+    createdAt: $createdAt,
+    components: {
+      forum: {
+        database: $forumDatabase,
+        databaseBytes: $forumDatabaseBytes,
+        sourceIncluded: true,
+        environmentIncluded: true
+      },
+      sub2api: {
+        database: $sub2apiDatabase,
+        databaseImage: $sub2apiDatabaseImage,
+        databaseBytes: $sub2apiDatabaseBytes,
+        dumpBytes: $sub2apiDumpBytes,
+        configurationIncluded: true
+      }
+    }
+  }' > "${bundle_root}/metadata.json"
+
+(
+  cd "$bundle_root"
+  sha256sum \
+    metadata.json \
+    forum/forum.sqlite \
+    forum/source.tar.gz \
+    forum/environment \
+    sub2api/database.dump \
+    sub2api/configuration.tar.gz \
+    > manifest.sha256
+  sha256sum -c manifest.sha256 >/dev/null
+)
+
+tar -czf "$partial_path" -C "$bundle_root" .
+tar -tzf "$partial_path" >/dev/null
+mv -f -- "$partial_path" "$archive_path"
+(
+  cd "$backup_root"
+  sha256sum "$archive_name" > "${archive_name}.sha256"
+  sha256sum -c "${archive_name}.sha256" >/dev/null
+)
+chmod 0600 "$archive_path" "${archive_path}.sha256"
+
+mapfile -t expired_archives < <(
+  find "$backup_root" -maxdepth 1 -type f \
+    -name 'hechao-platform-data-*.tar.gz' \
+    -printf '%T@ %p\n' |
+    sort -nr |
+    tail -n "+$((retention_count + 1))" |
+    cut -d' ' -f2-
+)
+for expired_archive in "${expired_archives[@]}"; do
+  case "$expired_archive" in
+    "${backup_root}/hechao-platform-data-"*.tar.gz)
+      rm -f -- "$expired_archive" "${expired_archive}.sha256"
+      ;;
+    *)
+      echo "Refusing to remove an unexpected backup path." >&2
+      exit 1
+      ;;
+  esac
+done
+
+echo "$archive_path"
