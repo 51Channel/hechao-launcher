@@ -2,7 +2,7 @@
 
 > 当前线上版本：`0.20.0-20260727T011953Z`
 > 本地 API 源码版本：`0.20.0`
-> 当前阶段：`0.20.0` 统一运行告警已生产部署；启动器 `0.11.14` 已完成私有 OSS 灰度发布，管理员 Web 已启用但尚未登记 MFA
+> 当前阶段：`0.20.0` 统一运行告警已生产部署；启动器 `0.11.14` 已完成私有 OSS 灰度发布，管理员 Web 与真实 MFA 已启用
 
 ## 1. 运行边界
 
@@ -143,7 +143,8 @@ Velocity 配置使用 [`configure-velocity-authorization.sh`](../deploy/linux/co
 发布归档为 `45,339,427` 字节，SHA-256
 `E7C8DECAFD8A3B47EB63987F8542C8BB034AB86C831F32B242F741FE26ABC728`。
 迁移 9、上传成功和错误路径、审计、强制到期清理、公网健康及旧业务均已通过；
-生产管理员 MFA 下载仍待真实 TOTP 登记后验收。完整记录见
+真实 TOTP 已于 2026-07-27 登记，编号 `1e707520` 的生产上传与上传审计已完成；
+管理员实际下载和下载审计仍待验收。完整记录见
 [`API_RELEASE_0.13.0.md`](API_RELEASE_0.13.0.md) 与
 [`DIAGNOSTIC_UPLOAD_OPERATIONS.md`](DIAGNOSTIC_UPLOAD_OPERATIONS.md)。
 
@@ -237,10 +238,10 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 ```text
 https://hechao.world/      -> HTTP 200
 https://api.hechao.world/  -> HTTP 200
-https://admin.hechao.world/ -> 当前 `AdminWeb__Enabled=true`；必须确认 Host 锁定与登录页正常，MFA 登记前不得执行管理写入
+https://admin.hechao.world/ -> 当前 `AdminWeb__Enabled=true`；Host 锁定与真实 MFA 已验收，管理写入仍按逐项清单执行
 ```
 
-每次部署还必须确认 `launcher-api.hechao.world/admin/` 不能作为管理入口、管理域名 Host 锁定生效、Data Protection key ring 可写且已加密备份。随后按 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md) 完成真实管理员 TOTP 和审计验收，并按 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md) 验证赫朝账号与旧身份接管。当前没有 MFA 凭据，不得把“AdminWeb 已启用”写成“管理后台已完成安全验收”。
+每次部署还必须确认 `launcher-api.hechao.world/admin/` 不能作为管理入口、管理域名 Host 锁定生效、Data Protection key ring 可写且已加密备份。真实管理员 TOTP 已完成，生产凭据 `1`、恢复码哈希 `8`、有效 MFA 会话 `1`；仍需按 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md) 逐页执行管理功能与审计验收，并按 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md) 验证四级真实账号。不得把“MFA 已登记”扩大写成“整个管理后台已完成生产验收”。
 
 ## 4. 原子回滚
 
@@ -290,4 +291,4 @@ systemctl reload nginx
 | `0.19.0-20260727T005013Z` | `29B351C33B6366BF2C3E9263275928D0F5C8329D05C14B1C7A138C0D81B279FA` | 进程、磁盘、TPS/MSPT/GC、30 天运行样本、服务状态后台、迁移 16、隔离生产副本验收和公网回归通过；`0.20.0` 的直接回滚目标 |
 | `0.20.0-20260727T011953Z` | `67C3E084D9E53509B283A4B39498219C33BF1676BB4F1805A916E83CFFABBDEB` | 请求指标、统一告警、后台告警页、迁移 17、平台监控器、隔离生产副本验收和公网回归通过；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标和统一告警已部署。API `0.20.0` 为当前线上版本，启动器 `0.11.14` 已完成私有 OSS 灰度发布；管理员 Web 已启用但尚未登记 MFA，大厅等级代理与三个 Paper/Purpur 指标代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标和统一告警已部署。API `0.20.0` 为当前线上版本，启动器 `0.11.14` 已完成私有 OSS 灰度发布；真实管理员 MFA、首条真实启动遥测及诊断上传已完成，诊断下载审计与管理页面逐项验收仍在进行。大厅等级代理与三个 Paper/Purpur 指标代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

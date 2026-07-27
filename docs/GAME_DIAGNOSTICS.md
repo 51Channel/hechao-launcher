@@ -129,3 +129,22 @@ Minecraft 进程成功启动后，启动器订阅进程退出事件：
 - 账号每日次数、每日总大小和有效文件数量配额；
 - 完成 MFA 的管理员下载权限与逐次审计；
 - 14 天到期标记、文件删除和孤立临时文件清理。
+
+## 10. 真实生产验证
+
+2026-07-27 使用已安装的启动器 `0.11.14` 和真实已登录赫朝账号完成一次玩家确认上传：
+
+- 档案：`base-1.21.11` / `1.0.5`；
+- 诊断编号：`1e707520`；
+- ZIP：`707` 字节，仅包含 `diagnostic.json` 与 `README.txt`；
+- SHA-256：`1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92`；
+- 本地扫描未命中 Bearer、JWT、IPv4、Windows 用户路径、访问/刷新令牌或世界数据；
+- 生产端保存字节数和 SHA-256 与本地完全一致，文件权限为 `0640`，
+  所有者与组均为 `hechao-api`；
+- 数据库状态为 `uploaded`，到期时间为 2026-08-10；
+- `diagnostic.upload.authorized` 与 `diagnostic.upload.completed` 两条审计均存在。
+
+管理员 MFA 已完成真实登记。当前唯一未闭环项是管理员在后台实际下载该编号并核对
+`diagnostic.admin.downloaded` 审计；在该记录出现前，完成矩阵仍保持“待生产验收”。
+无秘密证据见
+[`evidence/ADMIN_MFA_DIAGNOSTIC_UPLOAD_2026-07-27.json`](evidence/ADMIN_MFA_DIAGNOSTIC_UPLOAD_2026-07-27.json)。

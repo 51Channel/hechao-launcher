@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-07-27T14:09:00Z",
+  "status": "mfa-and-upload-verified-admin-download-pending",
+  "launcher": {
+    "installedVersion": "0.11.14",
+    "telemetryEventCount": 1,
+    "observedEvent": {
+      "type": "LauncherStarted",
+      "outcome": "Success",
+      "failureCode": "None",
+      "launcherVersion": "0.11.14",
+      "occurredAt": "2026-07-27T13:51:06.674982Z"
+    }
+  },
+  "adminMfa": {
+    "credentialCount": 1,
+    "recoveryCodeHashCount": 8,
+    "activeEnrollmentCount": 0,
+    "activeVerifiedSessionCount": 1,
+    "audit": [
+      {
+        "action": "admin.mfa.enrollment.started",
+        "occurredAt": "2026-07-27T13:53:48.094947Z"
+      },
+      {
+        "action": "admin.mfa.enabled",
+        "occurredAt": "2026-07-27T13:55:24.389361Z"
+      }
+    ]
+  },
+  "diagnosticUpload": {
+    "uploadId": "1e707520-606c-49c8-96d5-3e0464b8c3c7",
+    "profileId": "base-1.21.11",
+    "launcherVersion": "0.11.14",
+    "installedProfileVersion": "1.0.5",
+    "bytes": 707,
+    "sha256": "1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92",
+    "entries": [
+      "diagnostic.json",
+      "README.txt"
+    ],
+    "sensitivePatternScan": {
+      "bearer": false,
+      "jwt": false,
+      "ipv4": false,
+      "windowsUserPath": false,
+      "refreshToken": false,
+      "accessToken": false,
+      "worldData": false
+    },
+    "serverStatus": "uploaded",
+    "serverBytes": 707,
+    "serverSha256Matched": true,
+    "storageMode": "0640",
+    "storageOwner": "hechao-api",
+    "storageGroup": "hechao-api",
+    "uploadedAt": "2026-07-27T14:08:32.957929Z",
+    "expiresAt": "2026-08-10T14:08:32.957929Z",
+    "audit": [
+      {
+        "action": "diagnostic.upload.authorized",
+        "occurredAt": "2026-07-27T14:08:32.032498Z"
+      },
+      {
+        "action": "diagnostic.upload.completed",
+        "occurredAt": "2026-07-27T14:08:32.958700Z"
+      }
+    ],
+    "adminDownload": {
+      "status": "pending",
+      "requiredAuditAction": "diagnostic.admin.downloaded"
+    }
+  },
+  "invariants": {
+    "diagnosticUploadedOnlyAfterUserConfirmation": true,
+    "localAndServerHashesMatched": true,
+    "worldDataIncluded": false,
+    "accessTokensIncluded": false,
+    "gameServerProcessesChanged": false,
+    "gameServerProcessesRestarted": false
+  }
+}
