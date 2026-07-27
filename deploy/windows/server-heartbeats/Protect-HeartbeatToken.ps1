@@ -9,6 +9,26 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Security
 $token = if ($ReadFromStandardInput) {
     $standardInput = [Console]::In.ReadToEnd()
+    $standardInputBytes = [Console]::InputEncoding.GetBytes($standardInput)
+    try {
+        if ($standardInputBytes.Length -ge 3 -and
+            $standardInputBytes[0] -eq 0xEF -and
+            $standardInputBytes[1] -eq 0xBB -and
+            $standardInputBytes[2] -eq 0xBF) {
+            $standardInput = (New-Object System.Text.UTF8Encoding($false, $true)).
+                GetString(
+                    $standardInputBytes,
+                    3,
+                    $standardInputBytes.Length - 3)
+        }
+    }
+    finally {
+        [Array]::Clear(
+            $standardInputBytes,
+            0,
+            $standardInputBytes.Length)
+    }
+
     $tokenMatch = [regex]::Match(
         $standardInput,
         '^[^A-Za-z0-9_-]*([A-Za-z0-9_-]{32,256})[^A-Za-z0-9_-]*$')
