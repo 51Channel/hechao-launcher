@@ -31,6 +31,11 @@
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
+启动器 API 自迁移 17 生效至 2026-07-27 23:26（Asia/Shanghai）的 `784` 个分钟桶
+共记录 `10,967` 次请求，峰值 `27` 次/分钟（约 `0.45 QPS`），平均耗时
+`5.248 ms`、单请求最大耗时 `389 ms`、服务端错误 `0`。这是当前低负载基线，
+不替代 20 至 30 人活动窗口的容量测试。
+
 ### 1.2 域名与证书基线
 
 | 域名 | 当前状态 |
@@ -151,8 +156,8 @@ Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留�
 | 系统 | Windows Server 2022 Standard | 已实时读取 |
 | CPU 配额 | 6 核 / 6 逻辑处理器，宿主型号 Ryzen 9 9950X | 已实时读取 |
 | 内存 | `19,326,763,008` 字节，核查时空闲 `12,388,392,960` 字节 | 2026-07-27 实时读取 |
-| `C:` | `42,011,193,344` 字节，剩余 `8,503,496,704` 字节 | 2026-07-27 实时读取 |
-| `E:` | `75,158,777,856` 字节，剩余 `22,302,515,200` 字节 | 2026-07-27 实时读取 |
+| `C:` | `42,011,193,344` 字节，剩余 `8,503,496,704` 字节；虚拟 SSD / SAS，健康 | 2026-07-27 实时读取 |
+| `E:` | `75,158,777,856` 字节，剩余 `22,302,515,200` 字节；虚拟 SSD / SAS，健康 | 2026-07-27 实时读取 |
 | SSH | 外部端口 `15152`，Windows 内部 `22` | 已验证密钥登录 |
 | RDP | 外部端口 `15153`，Windows 内部 `3389` | 连接方式已记录，未在本轮登录 |
 
@@ -184,6 +189,12 @@ SHA-256 为 `35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B`�
 不变且没有重启大厅；插件等待服主下次自行重启后加载。
 
 状态采集器 `0.2.0` 位于 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 为 `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`。计划任务 `Hechao Launcher Server Heartbeats` 以 `SYSTEM` 身份每分钟查询 `lobby`、`survival2`、`survival1`、`pvp` 和 `activity`，令牌使用 `LocalMachine` DPAPI 加密。大厅、Survival2、Survival1 已上报进程工作集、CPU、启动时间和 E 盘容量；活动服关闭、PVP 不可达时使用固定问题代码，单个目标失败不会中断其余心跳。旧采集器、配置和计划任务备份位于 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`。采集器不包含 RCON 或进程启停能力。
+
+2026-07-27 的只读容量快照记录了四个 Java 进程的 `Xms/Xmx`、当前及峰值工作集、
+累计 CPU 时间和读写传输量。Velocity 峰值工作集约 `653 MiB`；三个 Paper 后端
+峰值分别约 `1.66 GiB`、`1.67 GiB`、`1.59 GiB`，均未触及各自 `2G` 上限。
+机器可读数值见
+[`evidence/INFRASTRUCTURE_CAPACITY_AND_WORLD_BACKUP_2026-07-27.json`](evidence/INFRASTRUCTURE_CAPACITY_AND_WORLD_BACKUP_2026-07-27.json)。
 
 Paper/Purpur 指标代理 `HechaoServerMetrics-0.1.0.jar` 已复制到大厅、Survival2、
 Survival1 的 `plugins` 目录，三份 SHA-256 均为
