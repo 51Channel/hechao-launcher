@@ -2,7 +2,8 @@
 
 > 当前生产：API `0.20.1-20260727T145451Z`、Windows 采集器 `0.2.0`
 >
-> 已部署待服务端下次自行重启加载：Paper/Purpur 指标代理 `0.1.0`
+> 已部署待服务端下次自行重启加载：Paper/Purpur、NeoForge 与 Fabric 指标代理
+> `0.1.0`
 >
 > 安全边界：只读；不包含服务器启动、停止、重启、RCON 或控制台命令
 
@@ -17,7 +18,9 @@ Windows 采集器每分钟按监听端口定位本机 Java 进程，读取：
 - Minecraft 状态、在线人数、协议和软件版本。
 
 Paper/Purpur 指标代理每 5 秒在主线程读取 Paper 自带的 1/5/15 分钟 TPS 与平均
-MSPT，并读取 JVM 累计 GC 时间。它只把固定结构写入：
+MSPT，并读取 JVM 累计 GC 时间。NeoForge/Fabric 代理只在服务端 tick 事件中记录
+时间戳，每 100 tick 生成一次 1/5/15 分钟 TPS、1 分钟滚动 MSPT 和 JVM 累计 GC
+快照；文件 IO 在单个守护线程完成。三种代理只把相同固定结构写入：
 
 ```text
 plugins/HechaoServerMetrics/metrics.json
@@ -45,8 +48,8 @@ API 迁移 `16` 扩展当前心跳，并建立
 | `lobby` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
 | `survival2` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
 | `survival1` | Windows 采集器 | Paper/Purpur 代理 | JAR 加载需要服主下一次自行重启 |
-| `activity` | Windows 采集器 | 尚无 NeoForge 指标代理 | 关闭时报告进程未运行 |
-| `pvp` | `owl9` Windows 采集器 | 尚无 Fabric 指标代理 | 只出站采集器已部署；停服时仍上报本机磁盘和固定问题代码，不控制游戏进程 |
+| `activity` | Windows 采集器 | NeoForge 1.21.11 代理 | JAR 已静态部署；关闭时报告进程未运行，等待服主下次自行开服加载 |
+| `pvp` | `owl9` Windows 采集器 | Fabric 1.20.1 代理 | JAR 已静态部署；停服时仍上报本机磁盘和固定问题代码，等待服主下次自行开服加载 |
 
 没有指标代理不会影响在线状态或其他目标上报，只显示固定的“未配置/文件缺失”问题。
 
@@ -56,6 +59,8 @@ API 迁移 `16` 扩展当前心跳，并建立
 dotnet test Hechao.Launcher.sln -c Release
 .\src\Hechao.VelocityAuthorizer\gradlew.bat `
     -p .\src\Hechao.ServerMetricsAgent clean test jar --no-daemon
+& 'C:\Users\Administrator\.gradle\wrapper\dists\gradle-8.12-bin\53bzr39g899nuhyyt338y4z0e\gradle-8.12\bin\gradle.bat' `
+    -p .\src\Hechao.ModServerMetricsAgent clean build --no-daemon
 dotnet publish .\src\Hechao.StatusCollector\Hechao.StatusCollector.csproj `
     -c Release -r win-x64 --self-contained true `
     -p:PublishSingleFile=true -o .\artifacts\publish\status-collector-win-x64
@@ -65,6 +70,8 @@ dotnet publish .\src\Hechao.StatusCollector\Hechao.StatusCollector.csproj `
 
 ```text
 src\Hechao.ServerMetricsAgent\build\libs\HechaoServerMetrics-0.1.0.jar
+src\Hechao.ModServerMetricsAgent\fabric\build\libs\HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar
+src\Hechao.ModServerMetricsAgent\neoforge\build\libs\HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar
 ```
 
 当前制品：
@@ -73,8 +80,11 @@ src\Hechao.ServerMetricsAgent\build\libs\HechaoServerMetrics-0.1.0.jar
 | --- | --- |
 | `hechao-status-collector-0.2.0-win-x64.zip` | `30D9BC599B80FEF48D5FE02B340FE494BE8DE7B5D590828BED34F155D81F8167` |
 | `HechaoServerMetrics-0.1.0.jar` | `BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C` |
+| `HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar` | `D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6` |
+| `HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar` | `49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E` |
 
-最新完整回归为 .NET `355/355`、指标代理 `2/2`。API 候选使用生产数据库副本在
+最新完整回归为 .NET `355/355`、Paper/Purpur 指标代理 `2/2`、模组指标公共逻辑
+`6/6`。两个模组 JAR 连续干净构建的 SHA-256 一致。API 候选使用生产数据库副本在
 独立端口验证迁移 16、心跳和样本幂等、管理汇总及既有签名发布链路。
 
 ## 4. 部署顺序
@@ -87,7 +97,10 @@ src\Hechao.ServerMetricsAgent\build\libs\HechaoServerMetrics-0.1.0.jar
 5. 更新一分钟计划任务；不得启动任何 Minecraft 或 Velocity 进程。
 6. 使用 `deploy/windows/server-metrics/Install-ServerMetricsAgent.ps1` 备份并复制
    JAR 到三个 Paper/Purpur `plugins` 目录。
-7. 保持游戏服原状态。服主以后自行重启对应服务端后，才验证插件加载和 JSON 新鲜度。
+7. 仅在活动服和 PVP 已关闭时，使用
+   `deploy/windows/mod-server-metrics/Install-ModServerMetricsAgent.ps1` 校验端口、
+   Loader 元数据和 SHA-256，再把对应 JAR 原子部署到 `mods`。
+8. 保持游戏服原状态。服主以后自行启动对应服务端后，才验证代理加载和 JSON 新鲜度。
 
 部署脚本最终必须输出：
 
@@ -106,6 +119,13 @@ PID 均为同一组，计划任务手工与自动运行均返回成功。
 `owl9-pvp` 写入，任务返回 `0`，磁盘容量入库；部署前后 PVP Java 进程与端口监听
 均为空。证据见
 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)。
+
+2026-07-28 已在停服状态把 NeoForge 代理静态部署到
+`E:\ActivityNeoForge\mods`，把 Fabric 代理静态部署到 `C:\mc\server\mods`。
+安装器复核目标端口、Loader 元数据和制品 SHA-256；每服只保留一个启用 JAR，部署
+记录目录 ACL 已收紧，上传暂存已清理。活动服目标进程、PVP 全部 Java 进程和两个
+监听端口在部署后仍为空，没有启动或重启游戏服。证据见
+[`evidence/MOD_SERVER_METRICS_DEPLOYMENT_2026-07-28.json`](evidence/MOD_SERVER_METRICS_DEPLOYMENT_2026-07-28.json)。
 
 ## 5. 验证
 
@@ -131,17 +151,20 @@ Get-ScheduledTaskInfo -TaskName 'Hechao Launcher Server Heartbeats'
 Get-Content -Raw 'E:\LobbyServer\plugins\HechaoServerMetrics\metrics.json'
 ```
 
-第二条命令只有在服主自行重启并成功加载代理后才应存在。文件缺失不能作为擅自重启服务
-器的理由。
+第二条命令以及活动服/PVP 的同路径文件，只有在服主自行启动并成功加载代理后才应
+存在。文件缺失不能作为擅自启动或重启服务器的理由。
 
 当前生产已确认大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量入库；
 活动服处于关闭状态。PVP 当前也处于关闭状态，但 `owl9` 本机磁盘容量已经入库，并准确
 显示 `ProcessNotRunning` 与 `MetricsFileMissing`。三个 Paper/Purpur 目标在下次服主
-自行重启前应继续显示 `MetricsFileMissing`，这是预期状态。
+自行重启前、活动服和 PVP 在下次服主自行开服前，应继续显示
+`MetricsFileMissing`，这是预期状态。
 
 ## 6. 回滚
 
 - API 可回滚到 `0.18.0`；迁移 16 和历史表保留，不手工删除。
 - 采集器可从备份恢复 `0.1.0`；新字段会被旧 API 忽略前必须先回滚 API。
 - 指标代理回滚只在服务器关闭状态下移出 JAR，或等待下一次服主计划重启生效。
+- NeoForge/Fabric 代理分别从本次受限备份目录恢复；回滚前必须再次确认目标端口和
+  对应 Java 进程均已停止。
 - 回滚不启动、停止或重启任何游戏进程。

@@ -1,0 +1,19 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        maven {
+            name = 'NeoForged'
+            url = 'https://maven.neoforged.net/releases/'
+        }
+    }
+}
+
+rootProject.name = 'HechaoModServerMetricsAgent'
+
+include 'common'
+include 'fabric'
+include 'neoforge'

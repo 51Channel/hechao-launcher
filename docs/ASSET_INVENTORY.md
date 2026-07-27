@@ -218,6 +218,18 @@ Survival1 的 `plugins` 目录，三份 SHA-256 均为
 `E:\manual-backups\server-metrics-20260727T004852Z`。部署前后 Java PID 未改变，
 没有重启服务端；TPS/MSPT/GC 等待服主下次自行重启后加载。
 
+NeoForge 1.21.11 指标代理
+`E:\ActivityNeoForge\mods\HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar`
+为 `12,684` 字节，SHA-256 为
+`49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E`，部署记录在
+`E:\manual-backups\mod-server-metrics-20260727T183833Z`。Fabric 1.20.1 指标代理
+`C:\mc\server\mods\HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar` 为 `13,183`
+字节，SHA-256 为
+`D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6`，部署记录在
+`C:\manual-backups\mod-server-metrics-20260727T183834Z`。两个受限备份目录均已
+禁止继承，暂存目录已清理；活动服目标进程、PVP 全部 Java 进程和对应监听端口在部署后
+仍为空，没有启动或重启游戏服。
+
 2026-07-26 曾因两个每日任务并发创建约 3.4 GB 的不完整 ZIP，导致 `E:` 空间耗尽。两个损坏归档和一个 0 字节大厅归档已验证后清理；一份 `7,963,944,183` 字节的历史备份在核对文件名与大小后迁移到 `C:\manual-backups\E-drive-overflow`。2026-07-27 部署的 VSS 世界备份引擎位于 `C:\ProgramData\Hechao\WorldBackup\Invoke-WorldBackup.ps1`，大小 `35,370` 字节，SHA-256 为 `2CC7511C222FEE2D984FD49D150F89355D7C9C48FD7A705FDB3DB047C34CD691`。它会在 Essentials 短暂冻结期间创建 VSS 一致快照，握手后后台压缩，按源文件最坏情况做磁盘预检，使用全局状态锁、`.partial`、ZIP 条目复核、SHA-256 旁车、原子完成、独立保留和精确卷影清理。部署后的锁文件测试读取 `481` 个文件并完成 `3,352,747` 字节 ZIP，任务返回 `0`，卷影和活动状态均无残留；四个 Java PID 未改变。最新只读复核仍为正式归档 `0`、`.partial` `0`、活动状态 `0`、VSS 卷影 `0`；现有 Java 进程早于 VSS/计划脚本部署，必须等待服主下一次自行重启后加载并验收首份正式归档。
 
 同日复核的世界源文件量为 Survival1 `6,401,231,920` 字节、Survival2

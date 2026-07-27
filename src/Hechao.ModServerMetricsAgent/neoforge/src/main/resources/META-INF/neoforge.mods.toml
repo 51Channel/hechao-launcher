@@ -1,0 +1,26 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "All Rights Reserved"
+
+[[mods]]
+modId = "hechao_server_metrics"
+version = "${version}"
+displayName = "Hechao Server Metrics"
+authors = "Hechao"
+description = '''
+Writes read-only local TPS, MSPT and GC metrics for the Hechao status collector.
+'''
+
+[[dependencies.hechao_server_metrics]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.11.42,21.12)"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.hechao_server_metrics]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.11,1.22)"
+ordering = "NONE"
+side = "SERVER"

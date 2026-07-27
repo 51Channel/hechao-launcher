@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "hechao_server_metrics",
+  "version": "${version}",
+  "name": "Hechao Server Metrics",
+  "description": "Writes read-only local TPS, MSPT and GC metrics for the Hechao status collector.",
+  "authors": [
+    "Hechao"
+  ],
+  "license": "All Rights Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "world.hechao.metricsmod.fabric.HechaoFabricServerMetricsMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  }
+}

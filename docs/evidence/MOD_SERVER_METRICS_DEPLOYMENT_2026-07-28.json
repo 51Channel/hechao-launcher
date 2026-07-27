@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-07-27T18:38:34Z",
+  "status": "statically-deployed-awaiting-owner-start",
+  "build": {
+    "version": "0.1.0",
+    "commonTestsPassed": 6,
+    "commonTestsFailed": 0,
+    "cleanBuildPassed": true,
+    "reproducibleHashesVerified": true
+  },
+  "targets": [
+    {
+      "target": "activity",
+      "host": "owl5",
+      "loader": "NeoForge",
+      "minecraftVersion": "1.21.11",
+      "loaderVersion": "21.11.42",
+      "serverDirectory": "E:\\ActivityNeoForge",
+      "serverPort": 25568,
+      "artifact": "HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar",
+      "bytes": 12684,
+      "sha256": "49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E",
+      "enabledAgentCount": 1,
+      "backupDirectory": "E:\\manual-backups\\mod-server-metrics-20260727T183833Z",
+      "backupAclProtected": true,
+      "targetPortListeningAfter": false,
+      "targetJavaProcessCountAfter": 0
+    },
+    {
+      "target": "pvp",
+      "host": "owl9",
+      "loader": "Fabric",
+      "minecraftVersion": "1.20.1",
+      "loaderVersion": "0.16.14",
+      "serverDirectory": "C:\\mc\\server",
+      "serverPort": 25565,
+      "artifact": "HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar",
+      "bytes": 13183,
+      "sha256": "D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6",
+      "enabledAgentCount": 1,
+      "backupDirectory": "C:\\manual-backups\\mod-server-metrics-20260727T183834Z",
+      "backupAclProtected": true,
+      "targetPortListeningAfter": false,
+      "allJavaProcessCountAfter": 0
+    }
+  ],
+  "collector": {
+    "metricsPathDerivedFromDataPath": true,
+    "relativeMetricsPath": "plugins\\HechaoServerMetrics\\metrics.json",
+    "configurationChanged": false
+  },
+  "cleanup": {
+    "owl5StagingRemoved": true,
+    "owl9StagingRemoved": true
+  },
+  "invariants": {
+    "gameServerStarted": false,
+    "gameServerRestarted": false,
+    "velocityChanged": false,
+    "unrelatedMinecraftFilesChanged": false
+  },
+  "remainingAcceptance": [
+    "Owner starts each target server manually.",
+    "Verify loader log and fresh metrics.json after manual start.",
+    "Verify API receives TPS, MSPT and GC samples."
+  ]
+}
