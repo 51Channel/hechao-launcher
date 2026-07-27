@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -58,5 +59,55 @@ final class AuthorizationDecisionTest {
                 () -> AuthorizationDecision.fromJson(
                         "{\"allowed\":true,\"reason\":\"Allowed\","
                                 + "\"message\":\"ok\",\"serverId\":\"lobby\"}"));
+    }
+
+    @Test
+    void identifiesCompatibilityFailuresAsImmediateDenials() {
+        AuthorizationDecision profileMismatch = AuthorizationDecision.fromJson("""
+                {
+                  "allowed": false,
+                  "reason": "ClientProfileMismatch",
+                  "message": "wrong profile",
+                  "serverId": "activity",
+                  "velocityTarget": "activity"
+                }
+                """);
+        AuthorizationDecision tierFailure = AuthorizationDecision.fromJson("""
+                {
+                  "allowed": false,
+                  "reason": "InsufficientTier",
+                  "message": "tier",
+                  "serverId": "activity",
+                  "velocityTarget": "activity"
+                }
+                """);
+
+        assertTrue(profileMismatch.requiresImmediateDenial());
+        assertFalse(tierFailure.requiresImmediateDenial());
+    }
+
+    @Test
+    void validatesInitialSessionServerId() {
+        AuthorizationDecision complete = AuthorizationDecision.fromJson("""
+                {
+                  "allowed": true,
+                  "reason": "Allowed",
+                  "message": "ok",
+                  "serverId": "lobby",
+                  "velocityTarget": "lobby"
+                }
+                """);
+        AuthorizationDecision missing = AuthorizationDecision.fromJson("""
+                {
+                  "allowed": true,
+                  "reason": "Allowed",
+                  "message": "ok",
+                  "serverId": null,
+                  "velocityTarget": "lobby"
+                }
+                """);
+
+        assertTrue(complete.hasSessionServerId());
+        assertFalse(missing.hasSessionServerId());
     }
 }

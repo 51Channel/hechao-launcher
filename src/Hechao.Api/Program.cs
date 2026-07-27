@@ -2833,6 +2833,15 @@ IResult? ValidateVelocityAuthorizationRequest(
         });
     }
 
+    if (request.SessionServerId is not null &&
+        !Regex.IsMatch(request.SessionServerId, "^[a-z0-9][a-z0-9._-]{1,63}$"))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["sessionServerId"] = ["会话来源服务器 ID 无效。"]
+        });
+    }
+
     return null;
 }
 

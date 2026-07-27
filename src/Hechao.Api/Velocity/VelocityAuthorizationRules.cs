@@ -72,9 +72,45 @@ internal static class VelocityAuthorizationRules
             VelocityAuthorizationReason.PermissionDataStale => "称号权限数据暂未同步，请稍后再试。",
             VelocityAuthorizationReason.LaunchGrantRequired => "请从赫朝启动器重新进入服务器。",
             VelocityAuthorizationReason.LaunchGrantIpMismatch => "启动器授权与当前网络不一致，请重新启动游戏。",
+            VelocityAuthorizationReason.MinecraftVersionMismatch => "当前客户端版本与目标服务器不一致，请从赫朝启动器选择该服务器后重新进入。",
+            VelocityAuthorizationReason.ClientProfileMismatch => "当前客户端档案与目标模组服不兼容，请从赫朝启动器安装并选择对应客户端。",
             _ => "暂时无法验证服务器权限。"
         };
     }
+
+    public static VelocityAuthorizationReason EvaluateClientCompatibility(
+        VelocityServerAccess? sessionServer,
+        VelocityServerAccess targetServer)
+    {
+        if (sessionServer is null)
+        {
+            return VelocityAuthorizationReason.LaunchGrantRequired;
+        }
+
+        if (!string.Equals(
+                sessionServer.MinecraftVersion,
+                targetServer.MinecraftVersion,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return VelocityAuthorizationReason.MinecraftVersionMismatch;
+        }
+
+        if (RequiresMatchingClientProfile(targetServer.Loader) &&
+            !string.Equals(
+                sessionServer.ClientProfileId,
+                targetServer.ClientProfileId,
+                StringComparison.Ordinal))
+        {
+            return VelocityAuthorizationReason.ClientProfileMismatch;
+        }
+
+        return VelocityAuthorizationReason.Allowed;
+    }
+
+    private static bool RequiresMatchingClientProfile(string loader) =>
+        loader.Equals("Fabric", StringComparison.OrdinalIgnoreCase) ||
+        loader.Equals("Forge", StringComparison.OrdinalIgnoreCase) ||
+        loader.Equals("NeoForge", StringComparison.OrdinalIgnoreCase);
 }
 
 internal sealed record VelocityPlayerAccess(
@@ -91,7 +127,10 @@ internal sealed record VelocityServerAccess(
     string VelocityTarget,
     ServerStatus Status,
     AccessTier MinimumTier,
-    ServerAccessOverride OverrideDecision);
+    ServerAccessOverride OverrideDecision,
+    string MinecraftVersion,
+    string Loader,
+    string ClientProfileId);
 
 internal enum ServerAccessOverride
 {

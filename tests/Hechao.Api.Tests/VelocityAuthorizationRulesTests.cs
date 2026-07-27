@@ -119,6 +119,85 @@ public sealed class VelocityAuthorizationRulesTests
         Assert.Equal(VelocityAuthorizationReason.Allowed, result);
     }
 
+    [Fact]
+    public void EvaluateClientCompatibility_RequiresLaunchSession()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            sessionServer: null,
+            Server(AccessTier.Member));
+
+        Assert.Equal(VelocityAuthorizationReason.LaunchGrantRequired, result);
+    }
+
+    [Fact]
+    public void EvaluateClientCompatibility_AllowsSameVersionPaperTransfer()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            Server(
+                AccessTier.Member,
+                serverId: "lobby",
+                clientProfileId: "base-1.21.11"),
+            Server(
+                AccessTier.Member,
+                serverId: "survival1",
+                clientProfileId: "vanilla-1.21.11"));
+
+        Assert.Equal(VelocityAuthorizationReason.Allowed, result);
+    }
+
+    [Fact]
+    public void EvaluateClientCompatibility_AllowsModdedClientToSameVersionPaperServer()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            Server(
+                AccessTier.Member,
+                serverId: "activity",
+                loader: "NeoForge",
+                clientProfileId: "activity-neoforge-1.21.11"),
+            Server(
+                AccessTier.Member,
+                serverId: "lobby",
+                loader: "Paper",
+                clientProfileId: "base-1.21.11"));
+
+        Assert.Equal(VelocityAuthorizationReason.Allowed, result);
+    }
+
+    [Fact]
+    public void EvaluateClientCompatibility_RejectsWrongProfileForModdedTarget()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            Server(
+                AccessTier.Member,
+                serverId: "lobby",
+                clientProfileId: "base-1.21.11"),
+            Server(
+                AccessTier.Member,
+                serverId: "activity",
+                loader: "NeoForge",
+                clientProfileId: "activity-neoforge-1.21.11"));
+
+        Assert.Equal(VelocityAuthorizationReason.ClientProfileMismatch, result);
+    }
+
+    [Fact]
+    public void EvaluateClientCompatibility_RejectsDifferentMinecraftVersion()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            Server(
+                AccessTier.Member,
+                serverId: "lobby",
+                minecraftVersion: "1.21.11"),
+            Server(
+                AccessTier.Member,
+                serverId: "pvp",
+                minecraftVersion: "1.20.1",
+                loader: "Fabric",
+                clientProfileId: "pvp-fabric-1.20.1"));
+
+        Assert.Equal(VelocityAuthorizationReason.MinecraftVersionMismatch, result);
+    }
+
     private static VelocityPlayerAccess Player(
         AccessTier tier,
         bool disabled = false,
@@ -139,13 +218,20 @@ public sealed class VelocityAuthorizationRulesTests
     private static VelocityServerAccess Server(
         AccessTier minimumTier,
         ServerAccessOverride accessOverride = ServerAccessOverride.None,
-        ServerStatus status = ServerStatus.Online)
+        ServerStatus status = ServerStatus.Online,
+        string serverId = "activity",
+        string minecraftVersion = "1.21.11",
+        string loader = "Paper",
+        string clientProfileId = "base-1.21.11")
     {
         return new VelocityServerAccess(
-            "activity",
-            "activity",
+            serverId,
+            serverId,
             status,
             minimumTier,
-            accessOverride);
+            accessOverride,
+            minecraftVersion,
+            loader,
+            clientProfileId);
     }
 }

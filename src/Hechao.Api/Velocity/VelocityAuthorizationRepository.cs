@@ -80,6 +80,7 @@ public sealed class VelocityAuthorizationRepository(
             VelocityAuthorizationReason.Allowed,
             initialConnection: true,
             proxyInstance: null,
+            sessionServerId: null,
             sourceIp,
             cancellationToken);
 
@@ -179,6 +180,20 @@ public sealed class VelocityAuthorizationRepository(
                 server,
                 now,
                 TimeSpan.FromMinutes(_options.MaximumLuckPermsAgeMinutes));
+            if (reason == VelocityAuthorizationReason.Allowed)
+            {
+                var sessionServer = string.IsNullOrWhiteSpace(request.SessionServerId)
+                    ? null
+                    : await ReadServerByIdAsync(
+                        connection,
+                        transaction,
+                        userId: null,
+                        request.SessionServerId,
+                        cancellationToken);
+                reason = VelocityAuthorizationRules.EvaluateClientCompatibility(
+                    sessionServer,
+                    server!);
+            }
         }
 
         if (request.InitialConnection || reason != VelocityAuthorizationReason.Allowed)
@@ -194,6 +209,7 @@ public sealed class VelocityAuthorizationRepository(
                 reason,
                 request.InitialConnection,
                 request.ProxyInstance,
+                request.SessionServerId,
                 remoteAddress,
                 cancellationToken);
         }
@@ -310,7 +326,10 @@ public sealed class VelocityAuthorizationRepository(
                    server.minimum_tier,
                    access_override.decision,
                    server.opens_at,
-                   server.closes_at
+                   server.closes_at,
+                   server.minecraft_version,
+                   server.loader,
+                   server.client_profile_id
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1::uuid
@@ -363,7 +382,10 @@ public sealed class VelocityAuthorizationRepository(
             Enum.Parse<AccessTier>(reader.GetString(3), ignoreCase: true),
             reader.IsDBNull(4)
                 ? ServerAccessOverride.None
-                : Enum.Parse<ServerAccessOverride>(reader.GetString(4), ignoreCase: true));
+                : Enum.Parse<ServerAccessOverride>(reader.GetString(4), ignoreCase: true),
+            reader.GetString(7),
+            reader.GetString(8),
+            reader.GetString(9));
     }
 
     private static async Task<PendingLaunchGrant?> ReadPendingLaunchGrantAsync(
@@ -508,6 +530,7 @@ public sealed class VelocityAuthorizationRepository(
         VelocityAuthorizationReason reason,
         bool initialConnection,
         string? proxyInstance,
+        string? sessionServerId,
         IPAddress? sourceIp,
         CancellationToken cancellationToken)
     {
@@ -523,7 +546,8 @@ public sealed class VelocityAuthorizationRepository(
             VelocityTarget = server?.VelocityTarget,
             Reason = reason.ToString(),
             InitialConnection = initialConnection,
-            ProxyInstance = proxyInstance
+            ProxyInstance = proxyInstance,
+            SessionServerId = sessionServerId
         });
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);

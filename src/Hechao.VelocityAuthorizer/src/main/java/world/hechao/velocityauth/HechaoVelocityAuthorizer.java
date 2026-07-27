@@ -14,8 +14,8 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 @Plugin(
         id = "hechao-velocity-authorizer",
         name = "Hechao Velocity Authorizer",
-        version = "0.2.0",
+        version = "0.3.0",
         description = "Server-side Microsoft UUID and LuckPerms authorization for Hechao",
         authors = {"Hechao"})
 public final class HechaoVelocityAuthorizer {
@@ -36,7 +36,7 @@ public final class HechaoVelocityAuthorizer {
     private final Logger logger;
     private final Path dataDirectory;
     private final ProxyServer proxyServer;
-    private final Set<UUID> authorizedConnections = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, String> authorizedSessions = new ConcurrentHashMap<>();
     private volatile PluginConfiguration configuration;
     private volatile AuthorizationApiClient apiClient;
 
@@ -97,9 +97,10 @@ public final class HechaoVelocityAuthorizer {
 
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
-        boolean initialConnection = !authorizedConnections.contains(playerId);
+        boolean initialConnection = !authorizedSessions.containsKey(playerId);
         String target = event.getOriginalServer().getServerInfo().getName().toLowerCase();
         String remoteAddress = getRemoteAddress(player);
+        String sessionServerId = authorizedSessions.get(playerId);
         AuthorizationApiClient client = apiClient;
 
         return EventTask.withContinuation(continuation -> {
@@ -111,7 +112,8 @@ public final class HechaoVelocityAuthorizer {
                             player.getUsername(),
                             target,
                             initialConnection,
-                            remoteAddress);
+                            remoteAddress,
+                            sessionServerId);
 
             authorization.whenComplete((decision, failure) -> {
                 try {
@@ -131,7 +133,7 @@ public final class HechaoVelocityAuthorizer {
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        authorizedConnections.remove(event.getPlayer().getUniqueId());
+        authorizedSessions.remove(event.getPlayer().getUniqueId());
     }
 
     private void applyDecision(
@@ -151,7 +153,7 @@ public final class HechaoVelocityAuthorizer {
                         target,
                         rootMessage(failure));
             } else {
-                authorizedConnections.add(player.getUniqueId());
+                authorizedSessions.put(player.getUniqueId(), target);
                 logger.warn(
                         "[monitor] Authorization API unavailable for {} -> {}: {}",
                         player.getUsername(),
@@ -162,13 +164,39 @@ public final class HechaoVelocityAuthorizer {
         }
 
         if (decision.allowed()) {
-            if (initialConnection &&
-                    !routeInitialConnection(event, mode, target, decision)) {
-                return;
-            }
             if (initialConnection) {
-                authorizedConnections.add(player.getUniqueId());
+                if (!decision.hasSessionServerId()) {
+                    if (mode == AuthorizationMode.ENFORCE) {
+                        deny(event, true, SERVICE_UNAVAILABLE_MESSAGE);
+                        logger.error(
+                                "Denied {} because the initial authorization omitted a server ID.",
+                                player.getUsername());
+                    } else {
+                        authorizedSessions.put(player.getUniqueId(), target);
+                        logger.warn(
+                                "[monitor] Initial authorization for {} omitted a server ID.",
+                                player.getUsername());
+                    }
+                    return;
+                }
+                if (!routeInitialConnection(event, mode, target, decision)) {
+                    return;
+                }
+                authorizedSessions.put(
+                        player.getUniqueId(),
+                        decision.serverId().toLowerCase(Locale.ROOT));
             }
+            return;
+        }
+
+        if (decision.requiresImmediateDenial()) {
+            deny(event, initialConnection, safeMessage(decision.message()));
+            logger.info(
+                    "Denied incompatible client {} -> {} with reason {} in {} mode.",
+                    player.getUsername(),
+                    target,
+                    decision.reason(),
+                    mode.name().toLowerCase(Locale.ROOT));
             return;
         }
 
@@ -181,7 +209,7 @@ public final class HechaoVelocityAuthorizer {
                     decision.reason());
         } else {
             if (initialConnection) {
-                authorizedConnections.add(player.getUniqueId());
+                authorizedSessions.put(player.getUniqueId(), target);
             }
             logger.warn(
                     "[monitor] Would deny {} -> {} with reason {}.",

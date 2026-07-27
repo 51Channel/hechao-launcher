@@ -32,21 +32,23 @@ final class AuthorizationApiClient {
             String minecraftName,
             String velocityTarget,
             boolean initialConnection,
-            String remoteAddress) {
+            String remoteAddress,
+            String sessionServerId) {
         String body = "{"
                 + "\"minecraftUuid\":" + JsonStrings.quote(minecraftUuid.toString()) + ","
                 + "\"minecraftName\":" + JsonStrings.quote(minecraftName) + ","
                 + "\"velocityTarget\":" + JsonStrings.quote(velocityTarget) + ","
                 + "\"initialConnection\":" + initialConnection + ","
                 + "\"remoteAddress\":" + nullableString(remoteAddress) + ","
-                + "\"proxyInstance\":" + JsonStrings.quote(proxyInstance)
+                + "\"proxyInstance\":" + JsonStrings.quote(proxyInstance) + ","
+                + "\"sessionServerId\":" + nullableString(sessionServerId)
                 + "}";
 
         HttpRequest request = HttpRequest.newBuilder(endpoint)
                 .timeout(requestTimeout)
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json; charset=utf-8")
-                .header("User-Agent", "HechaoVelocityAuthorizer/0.2.0")
+                .header("User-Agent", "HechaoVelocityAuthorizer/0.3.0")
                 .header("X-Hechao-Velocity-Token", token)
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .build();

@@ -219,7 +219,9 @@ public enum VelocityAuthorizationReason
     InsufficientTier,
     PermissionDataStale,
     LaunchGrantRequired,
-    LaunchGrantIpMismatch
+    LaunchGrantIpMismatch,
+    MinecraftVersionMismatch,
+    ClientProfileMismatch
 }
 
 public sealed record VelocityLaunchGrantRequest(string ServerId);
@@ -235,7 +237,8 @@ public sealed record VelocityAuthorizationRequest(
     string VelocityTarget,
     bool InitialConnection,
     string? RemoteAddress,
-    string ProxyInstance);
+    string ProxyInstance,
+    string? SessionServerId = null);
 
 public sealed record VelocityAuthorizationResponse(
     bool Allowed,

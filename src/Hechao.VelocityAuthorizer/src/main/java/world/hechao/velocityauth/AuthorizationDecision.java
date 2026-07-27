@@ -16,4 +16,13 @@ record AuthorizationDecision(
                 object.nullableString("serverId"),
                 object.requiredString("velocityTarget"));
     }
+
+    boolean hasSessionServerId() {
+        return serverId != null && !serverId.isBlank();
+    }
+
+    boolean requiresImmediateDenial() {
+        return "MinecraftVersionMismatch".equals(reason)
+                || "ClientProfileMismatch".equals(reason);
+    }
 }
