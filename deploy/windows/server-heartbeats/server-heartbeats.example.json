@@ -3,23 +3,40 @@
   "collectorInstance": "mc-vps-primary",
   "tokenPath": "heartbeat-token.dat",
   "probeTimeoutSeconds": 3,
+  "metricsMaxAgeSeconds": 30,
   "servers": [
     {
       "velocityTarget": "lobby",
       "host": "127.0.0.1",
       "port": 25566,
-      "fallbackMaxPlayers": 300
+      "fallbackMaxPlayers": 300,
+      "dataPath": "E:\\LobbyServer"
     },
     {
       "velocityTarget": "survival2",
       "host": "127.0.0.1",
       "port": 25565,
-      "fallbackMaxPlayers": 100
+      "fallbackMaxPlayers": 100,
+      "dataPath": "E:\\Survival2"
+    },
+    {
+      "velocityTarget": "survival1",
+      "host": "127.0.0.1",
+      "port": 19228,
+      "fallbackMaxPlayers": 20,
+      "dataPath": "E:\\Survival1"
     },
     {
       "velocityTarget": "activity",
       "host": "127.0.0.1",
       "port": 25568,
+      "fallbackMaxPlayers": 30,
+      "dataPath": "E:\\ActivityNeoForge"
+    },
+    {
+      "velocityTarget": "pvp",
+      "host": "owl9.vipi9.top",
+      "port": 19243,
       "fallbackMaxPlayers": 30
     }
   ]

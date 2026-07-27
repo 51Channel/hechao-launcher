@@ -20,7 +20,11 @@ public static class Program
                 cancellationSource.Cancel();
             };
 
-            var collector = new ServerHeartbeatCollector(new MinecraftStatusClient());
+            var collector = new ServerHeartbeatCollector(
+                new MinecraftStatusClient(),
+                new WindowsServerProcessMetricsProvider(),
+                new JsonServerAgentMetricsReader(),
+                TimeProvider.System);
             var heartbeat = await collector.CollectAsync(
                 configuration,
                 cancellationSource.Token);

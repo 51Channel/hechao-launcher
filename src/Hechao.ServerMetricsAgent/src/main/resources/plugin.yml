@@ -1,0 +1,7 @@
+name: HechaoServerMetrics
+version: '0.1.0'
+main: world.hechao.metrics.HechaoServerMetricsPlugin
+api-version: '1.21'
+description: Writes privacy-safe, read-only Paper runtime metrics for the Hechao collector.
+authors:
+  - Hechao

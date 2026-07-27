@@ -153,6 +153,10 @@ forum_token="$(openssl rand -hex 32)"
 forum_token_hash="$(printf '%s' "$forum_token" | sha256sum | awk '{print $1}')"
 velocity_token_hash="$(openssl rand -hex 32 | sha256sum | awk '{print $1}')"
 sync_token_hash="$(openssl rand -hex 32 | sha256sum | awk '{print $1}')"
+heartbeat_token="$(openssl rand -hex 32)"
+heartbeat_token_hash="$(
+  printf '%s' "$heartbeat_token" | sha256sum | awk '{print $1}'
+)"
 
 python3 - \
   /etc/hechao-launcher-api/environment \
@@ -162,6 +166,7 @@ python3 - \
   "$forum_token_hash" \
   "$velocity_token_hash" \
   "$sync_token_hash" \
+  "$heartbeat_token_hash" \
   "$keys_root" \
   "$diagnostics_root" \
   "$manifest_root" <<'PY'
@@ -176,6 +181,7 @@ import sys
     forum_hash,
     velocity_hash,
     sync_hash,
+    heartbeat_hash,
     keys_path,
     diagnostics_path,
     manifest_path,
@@ -192,6 +198,7 @@ overrides = {
     "ForumAccountBridge__InternalTokenSha256",
     "VelocityAuthorization__InternalTokenSha256",
     "Authentication__InternalSyncTokenSha256",
+    "ServerHeartbeats__InternalTokenSha256",
 }
 
 for line in lines:
@@ -226,6 +233,7 @@ updated.extend(
         f"ForumAccountBridge__InternalTokenSha256={forum_hash}",
         f"VelocityAuthorization__InternalTokenSha256={velocity_hash}",
         f"Authentication__InternalSyncTokenSha256={sync_hash}",
+        f"ServerHeartbeats__InternalTokenSha256={heartbeat_hash}",
         "ForumSessionRevocation__Enabled=false",
     ]
 )
@@ -263,16 +271,16 @@ for _ in {1..40}; do
   sleep 1
 done
 [[ "$ready" == true ]] || fail "candidate did not become ready"
-[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.18.0" ]] ||
+[[ "$(json_value "${response_root}/ready.json" '.version')" == "0.19.0" ]] ||
   fail "candidate reported an unexpected version"
 
 migration_count="$(
   docker exec -u postgres "$container" \
     psql --username="$database_admin" --dbname="$database_name" \
     --tuples-only --no-align \
-    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version = 15;"
+    --command="SELECT count(*) FROM launcher.schema_migrations WHERE version IN (15, 16);"
 )"
-[[ "$migration_count" == "1" ]] || fail "migration 15 was not applied"
+[[ "$migration_count" == "2" ]] || fail "migrations 15 and 16 were not applied"
 
 for asset in index.html admin.js admin.css; do
   status="$(
@@ -292,6 +300,10 @@ grep -Fq 'telemetry-section' "${response_root}/index.html" ||
   fail "admin page does not contain launcher telemetry"
 grep -Fq 'renderTelemetry' "${response_root}/admin.js" ||
   fail "admin script does not contain launcher telemetry rendering"
+grep -Fq 'runtime-section' "${response_root}/index.html" ||
+  fail "admin page does not contain server runtime status"
+grep -Fq 'renderRuntime' "${response_root}/admin.js" ||
+  fail "admin script does not contain server runtime rendering"
 
 suffix="$(openssl rand -hex 4)"
 admin_username="profadm${suffix}"
@@ -572,6 +584,82 @@ assert_status 200 "$telemetry_summary_status" "launcher telemetry summary"
 [[ "$(json_value "${response_root}/telemetry-summary.json" '.failures[0].failureCode')" == "NetworkUnavailable" ]] ||
   fail "telemetry summary did not include the fixed failure code"
 
+heartbeat_now="$(date --utc +'%Y-%m-%dT%H:%M:%SZ')"
+heartbeat_started_at="$(
+  date --utc --date='3 hours ago' +'%Y-%m-%dT%H:%M:%SZ'
+)"
+heartbeat_payload="$(
+  jq -cn \
+    --arg capturedAt "$heartbeat_now" \
+    --arg processStartedAt "$heartbeat_started_at" \
+    '{
+      capturedAt:$capturedAt,
+      collectorInstance:"smoke-runtime-collector",
+      servers:[
+        {
+          velocityTarget:"lobby",
+          online:true,
+          onlinePlayers:12,
+          maxPlayers:300,
+          softwareVersion:"Paper 1.21.11",
+          protocolVersion:774,
+          processWorkingSetBytes:4294967296,
+          processPrivateBytes:5368709120,
+          processCpuPercent:37.5,
+          processStartedAt:$processStartedAt,
+          diskFreeBytes:214748364800,
+          diskTotalBytes:536870912000,
+          tps1m:19.98,
+          tps5m:19.97,
+          tps15m:19.96,
+          msptAverage:18.4,
+          gcCollectionTimeMilliseconds:12345,
+          metricsCapturedAt:$capturedAt,
+          issues:["DiskProbeFailed"]
+        }
+      ]
+    }'
+)"
+for attempt in first duplicate; do
+  heartbeat_status="$(
+    curl --silent --show-error \
+      --output "${response_root}/heartbeat-${attempt}.json" \
+      --write-out '%{http_code}' \
+      --header 'Content-Type: application/json' \
+      --header "X-Hechao-Heartbeat-Token: ${heartbeat_token}" \
+      --data "$heartbeat_payload" \
+      "${base_url}/v1/internal/server-heartbeats"
+  )"
+  assert_status 200 "$heartbeat_status" "server runtime heartbeat ${attempt}"
+done
+runtime_sample_count="$(
+  docker exec -u postgres "$container" \
+    psql --username="$database_admin" --dbname="$database_name" \
+    --tuples-only --no-align \
+    --command="
+      SELECT count(*)
+      FROM launcher.server_runtime_samples
+      WHERE velocity_target = 'lobby'
+        AND collector_instance = 'smoke-runtime-collector';"
+)"
+[[ "$runtime_sample_count" == "1" ]] ||
+  fail "duplicate heartbeat inserted more than one runtime sample"
+
+runtime_summary_status="$(
+  admin_get \
+    "/v1/admin/server-runtime/summary" \
+    "${response_root}/runtime-summary.json"
+)"
+assert_status 200 "$runtime_summary_status" "server runtime summary"
+[[ "$(json_value "${response_root}/runtime-summary.json" '.targets[] | select(.velocityTarget == "lobby") | .isFresh')" == "true" ]] ||
+  fail "runtime summary did not mark lobby heartbeat fresh"
+[[ "$(json_value "${response_root}/runtime-summary.json" '.targets[] | select(.velocityTarget == "lobby") | .processWorkingSetBytes')" == "4294967296" ]] ||
+  fail "runtime summary did not include process memory"
+[[ "$(json_value "${response_root}/runtime-summary.json" '.targets[] | select(.velocityTarget == "lobby") | .tps1m')" == "19.98" ]] ||
+  fail "runtime summary did not include TPS"
+[[ "$(json_value "${response_root}/runtime-summary.json" '.issues[] | select(.issue == "DiskProbeFailed") | .samples')" == "1" ]] ||
+  fail "runtime summary did not include fixed issue history"
+
 create_payload="$(
   jq -cn \
     --arg id "smoke-profile-${suffix}" \
@@ -787,8 +875,9 @@ audit_count="$(
 )"
 ((audit_count >= 8)) || fail "release audit trail is incomplete"
 
-echo "PASS: API 0.18.0 isolated client-profile release and telemetry smoke test"
-echo "Evidence: migration=15, telemetry-idempotency=verified, telemetry-summary=verified"
+echo "PASS: API 0.19.0 isolated profile, telemetry and server-runtime smoke test"
+echo "Evidence: migrations=15-16, telemetry-idempotency=verified, telemetry-summary=verified"
+echo "Evidence: runtime-idempotency=verified, process-tick-disk-summary=verified"
 echo "Evidence: signed-import=verified, immutable-storage=verified"
 echo "Evidence: test-gray-production=verified, rollback=verified, pause-auto-rollback=verified"
 echo "Evidence: resume-no-promote=verified, catalog-cohort=verified, revision-conflict=verified"

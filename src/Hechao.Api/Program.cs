@@ -125,6 +125,12 @@ builder.Services.AddOptions<ServerHeartbeatOptions>()
     .Validate(
         options => options.FreshnessSeconds is >= 60 and <= 900,
         "ServerHeartbeats:FreshnessSeconds must be between 60 and 900.")
+    .Validate(
+        options => options.RuntimeHistoryRetentionDays is >= 7 and <= 90,
+        "ServerHeartbeats:RuntimeHistoryRetentionDays must be between 7 and 90.")
+    .Validate(
+        options => options.RuntimeHistoryCleanupHours is >= 1 and <= 24,
+        "ServerHeartbeats:RuntimeHistoryCleanupHours must be between 1 and 24.")
     .ValidateOnStart();
 builder.Services.AddOptions<DistributionOptions>()
     .Bind(builder.Configuration.GetSection(DistributionOptions.SectionName))
@@ -415,6 +421,8 @@ builder.Services.AddSingleton<VelocityAuthorizationTokenValidator>();
 builder.Services.AddSingleton<VelocityAuthorizationRepository>();
 builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
 builder.Services.AddSingleton<ServerHeartbeatRepository>();
+builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
+builder.Services.AddHostedService<ServerRuntimeSampleCleanupService>();
 builder.Services.AddSingleton(serviceProvider =>
     serviceProvider.GetRequiredService<IOptions<DiagnosticUploadOptions>>().Value);
 builder.Services.AddSingleton<DiagnosticUploadStorage>();
@@ -653,6 +661,7 @@ adminApi.MapDelete(
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 adminApi.MapGet("/telemetry/summary", GetAdminLauncherTelemetrySummaryAsync);
+adminApi.MapGet("/server-runtime/summary", GetAdminServerRuntimeSummaryAsync);
 app.MapDiagnosticUploads(adminApi);
 
 app.MapAdminWebEndpoints();
@@ -2075,6 +2084,11 @@ async Task<IResult> GetAdminLauncherTelemetrySummaryAsync(
         windowHours,
         cancellationToken));
 }
+
+async Task<IResult> GetAdminServerRuntimeSummaryAsync(
+    ServerRuntimeStatusRepository repository,
+    CancellationToken cancellationToken) =>
+    Results.Ok(await repository.GetSummaryAsync(cancellationToken));
 
 async Task<IResult> SearchAdminUsersAsync(
     string? query,

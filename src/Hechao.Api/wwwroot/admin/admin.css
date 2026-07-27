@@ -1828,6 +1828,72 @@ dialog::backdrop {
     width: 30%;
 }
 
+.runtime-heading,
+.runtime-summary {
+    margin-bottom: 16px;
+}
+
+.runtime-table {
+    min-width: 1260px;
+}
+
+.runtime-table th:first-child,
+.runtime-table td:first-child {
+    width: 16%;
+}
+
+.runtime-table th:nth-child(2),
+.runtime-table td:nth-child(2) {
+    width: 11%;
+}
+
+.runtime-table th:nth-child(8),
+.runtime-table td:nth-child(8) {
+    width: 18%;
+}
+
+.runtime-status-stack {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.runtime-status-stack > span:last-child {
+    color: var(--ink-muted);
+    font-size: 9px;
+}
+
+.runtime-warning strong,
+.runtime-warning span,
+.runtime-issues {
+    color: var(--warning);
+}
+
+.runtime-ok {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.runtime-issues,
+.runtime-ok {
+    display: block;
+    line-height: 1.55;
+}
+
+.runtime-issue-section {
+    margin-top: 22px;
+}
+
+.runtime-issue-table {
+    min-width: 620px;
+}
+
+.runtime-issue-table th:first-child,
+.runtime-issue-table td:first-child {
+    width: 60%;
+}
+
 @media (max-width: 980px) {
     .console-shell {
         grid-template-columns: 78px minmax(0, 1fr);

@@ -136,6 +136,10 @@
                     <img src="/admin/assets/icons/activity.svg" alt="">
                     <span>运行数据</span>
                 </button>
+                <button class="nav-item" type="button" data-view="runtime">
+                    <img src="/admin/assets/icons/monitor.svg" alt="">
+                    <span>服务状态</span>
+                </button>
                 <button class="nav-item" type="button" data-view="diagnostics">
                     <img src="/admin/assets/icons/activity.svg" alt="">
                     <span>诊断包</span>
@@ -471,6 +475,79 @@
                             <div id="telemetry-failure-empty" class="empty-state" hidden>
                                 <img src="/admin/assets/icons/shield-check.svg" alt="">
                                 <strong>当前窗口没有失败事件</strong>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+                <section id="runtime-section" class="view-section" hidden>
+                    <div class="section-heading runtime-heading">
+                        <div>
+                            <h2>服务器运行状态</h2>
+                            <p>只读汇总状态心跳、Java 进程、磁盘与服务端性能指标，不提供启停操作。</p>
+                        </div>
+                        <span id="runtime-generated-at" class="count-label"></span>
+                    </div>
+
+                    <div class="summary-strip runtime-summary" aria-label="服务器运行状态摘要">
+                        <div>
+                            <span>新鲜心跳</span>
+                            <strong id="runtime-fresh-count">0</strong>
+                        </div>
+                        <div>
+                            <span>在线目标</span>
+                            <strong id="runtime-online-count">0</strong>
+                        </div>
+                        <div>
+                            <span>当前玩家</span>
+                            <strong id="runtime-player-count">0</strong>
+                        </div>
+                        <div>
+                            <span>需处理目标</span>
+                            <strong id="runtime-issue-count">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-frame runtime-table-frame">
+                        <table class="runtime-table">
+                            <thead>
+                            <tr>
+                                <th>Velocity 目标</th>
+                                <th>状态 / 玩家</th>
+                                <th>TPS / MSPT</th>
+                                <th>Java 进程</th>
+                                <th>磁盘余量</th>
+                                <th>运行时长</th>
+                                <th>最近心跳</th>
+                                <th>探针摘要</th>
+                            </tr>
+                            </thead>
+                            <tbody id="runtime-table-body"></tbody>
+                        </table>
+                        <div id="runtime-empty-state" class="empty-state" hidden>
+                            <img src="/admin/assets/icons/monitor.svg" alt="">
+                            <strong>还没有服务器心跳</strong>
+                            <span>部署只读采集器后，运行状态会出现在这里。</span>
+                        </div>
+                    </div>
+
+                    <section class="runtime-issue-section">
+                        <div class="telemetry-table-heading">
+                            <div>
+                                <h3>最近 24 小时探针摘要</h3>
+                                <p>仅使用固定分类，不保存异常正文、命令行或服务器文件内容。</p>
+                            </div>
+                        </div>
+                        <div class="table-frame">
+                            <table class="runtime-issue-table">
+                                <thead>
+                                <tr><th>问题分类</th><th>样本数</th><th>涉及目标</th></tr>
+                                </thead>
+                                <tbody id="runtime-issue-body"></tbody>
+                            </table>
+                            <div id="runtime-issue-empty" class="empty-state" hidden>
+                                <img src="/admin/assets/icons/shield-check.svg" alt="">
+                                <strong>最近 24 小时没有探针问题</strong>
                             </div>
                         </div>
                     </section>

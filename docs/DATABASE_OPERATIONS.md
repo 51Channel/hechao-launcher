@@ -1,7 +1,7 @@
 # 启动器数据库运维
 
 > 当前数据库：PostgreSQL 16
-> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳、诊断上传、单服访问规则、客户端遥测和审计数据
+> 当前用途：服务器目录、客户端档案、Minecraft 身份、会话、LuckPerms 权限、一次性进服授权、Velocity 目标心跳、运行指标、诊断上传、单服访问规则、客户端遥测和审计数据
 
 ## 1. 运行边界
 
@@ -51,6 +51,7 @@ journalctl -u hechao-launcher-api.service -p warning --since today --no-pager
 | `13` | `luckperms_tier_change_commands` | 固定四级全局等级命令、代理认领、完成状态与历史索引 |
 | `14` | `client_profile_release_channels` | 不可变签名发布、Test/Gray/Production 通道、暂停和修订号 |
 | `15` | `launcher_telemetry` | 30 天客户端运行事件、幂等主键和聚合索引 |
+| `16` | `server_runtime_metrics` | 进程、磁盘、TPS/MSPT/GC 当前值、30 天幂等分钟样本与问题分类 |
 
 ## 4. 自动备份
 

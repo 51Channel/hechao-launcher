@@ -9,6 +9,7 @@ const state = {
     profiles: [],
     telemetry: null,
     telemetryHours: 24,
+    runtime: null,
     diagnostics: [],
     auditEntries: [],
     auditBeforeId: null,
@@ -60,7 +61,7 @@ function cacheElements() {
         "account-avatar", "account-name", "account-group", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
         "servers-section", "users-section", "profiles-section",
-        "telemetry-section",
+        "telemetry-section", "runtime-section",
         "diagnostics-section", "audit-section",
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
@@ -76,6 +77,9 @@ function cacheElements() {
         "telemetry-profile-version-body", "telemetry-profile-version-empty",
         "telemetry-failure-body", "telemetry-failure-empty",
         "telemetry-period-label",
+        "runtime-generated-at", "runtime-fresh-count", "runtime-online-count",
+        "runtime-player-count", "runtime-issue-count", "runtime-table-body",
+        "runtime-empty-state", "runtime-issue-body", "runtime-issue-empty",
         "diagnostic-count", "diagnostic-table-body",
         "diagnostic-empty-state", "audit-list", "audit-empty-state",
         "load-more-audit-button", "server-drawer", "server-form",
@@ -538,22 +542,26 @@ async function enterConsole() {
 async function loadConsoleData() {
     setBusy(elements["refresh-button"], true);
     try {
-        const [servers, profiles, diagnostics, users, telemetry] = await Promise.all([
+        const [servers, profiles, diagnostics, users, telemetry, runtime] =
+            await Promise.all([
             api("/v1/admin/catalog/servers"),
             api("/v1/admin/catalog/client-profiles"),
             api("/v1/admin/diagnostics?limit=200"),
             api(userSearchPath()),
-            api(`/v1/admin/telemetry/summary?hours=${state.telemetryHours}`)
-        ]);
+            api(`/v1/admin/telemetry/summary?hours=${state.telemetryHours}`),
+            api("/v1/admin/server-runtime/summary")
+            ]);
         state.servers = servers;
         state.profiles = profiles;
         state.diagnostics = diagnostics;
         state.users = users;
         state.telemetry = telemetry;
+        state.runtime = runtime;
         renderServers();
         renderUsers();
         renderProfiles();
         renderTelemetry();
+        renderRuntime();
         renderDiagnostics();
         populateProfileOptions();
         if (state.activeView === "audit" && state.auditEntries.length === 0) {
@@ -581,7 +589,15 @@ async function refreshCurrentView() {
 }
 
 function switchView(view) {
-    if (!["servers", "users", "profiles", "telemetry", "diagnostics", "audit"].includes(view)) {
+    if (![
+        "servers",
+        "users",
+        "profiles",
+        "telemetry",
+        "runtime",
+        "diagnostics",
+        "audit"
+    ].includes(view)) {
         return;
     }
     state.activeView = view;
@@ -592,6 +608,7 @@ function switchView(view) {
         users: "玩家与权限",
         profiles: "客户端档案",
         telemetry: "运行数据",
+        runtime: "服务状态",
         diagnostics: "玩家诊断包",
         audit: "审计记录"
     };
@@ -601,6 +618,7 @@ function switchView(view) {
     elements["users-section"].hidden = view !== "users";
     elements["profiles-section"].hidden = view !== "profiles";
     elements["telemetry-section"].hidden = view !== "telemetry";
+    elements["runtime-section"].hidden = view !== "runtime";
     elements["diagnostics-section"].hidden = view !== "diagnostics";
     elements["audit-section"].hidden = view !== "audit";
     if (view === "audit" && state.auditEntries.length === 0) {
@@ -764,6 +782,229 @@ function telemetryFailureText(code) {
         Unexpected: "未预期错误"
     };
     return labels[code] || code;
+}
+
+function renderRuntime() {
+    const summary = state.runtime;
+    if (!summary) return;
+
+    const targets = summary.targets || [];
+    const freshTargets = targets.filter(target =>
+        target.hasHeartbeat && target.isFresh);
+    const onlineTargets = freshTargets.filter(target => target.online);
+    const issueTargets = targets.filter(target =>
+        !target.hasHeartbeat ||
+        !target.isFresh ||
+        (target.issues || []).length > 0);
+    const players = onlineTargets.reduce(
+        (total, target) => total + target.onlinePlayers,
+        0);
+
+    elements["runtime-generated-at"].textContent =
+        `生成于 ${formatDateTime(summary.generatedAt)}`;
+    elements["runtime-fresh-count"].textContent =
+        `${freshTargets.length} / ${targets.length}`;
+    elements["runtime-online-count"].textContent =
+        onlineTargets.length.toLocaleString("zh-CN");
+    elements["runtime-player-count"].textContent =
+        players.toLocaleString("zh-CN");
+    elements["runtime-issue-count"].textContent =
+        issueTargets.length.toLocaleString("zh-CN");
+
+    const body = elements["runtime-table-body"];
+    body.replaceChildren();
+    targets.forEach(target => {
+        const row = document.createElement("tr");
+        row.append(
+            runtimeTargetCell(target),
+            runtimeStatusCell(target),
+            runtimeTickCell(target),
+            runtimeProcessCell(target),
+            runtimeDiskCell(target),
+            textCell(formatRuntimeUptime(target.processStartedAt)),
+            identityTextCell(
+                target.receivedAt ? formatRelativeTime(target.receivedAt) : "从未",
+                target.receivedAt ? formatDateTime(target.receivedAt) : "没有心跳"),
+            runtimeIssueCell(target));
+        body.append(row);
+    });
+    elements["runtime-empty-state"].hidden = targets.length !== 0;
+    body.parentElement.hidden = false;
+
+    const issueBody = elements["runtime-issue-body"];
+    issueBody.replaceChildren();
+    (summary.issues || []).forEach(issue => {
+        const row = document.createElement("tr");
+        row.append(
+            textCell(runtimeIssueText(issue.issue)),
+            textCell(issue.samples.toLocaleString("zh-CN")),
+            textCell(issue.targets.toLocaleString("zh-CN")));
+        issueBody.append(row);
+    });
+    toggleTelemetryTable(
+        issueBody,
+        elements["runtime-issue-empty"],
+        (summary.issues || []).length > 0);
+}
+
+function runtimeTargetCell(target) {
+    const names = (target.servers || []).map(server => server.displayName);
+    return identityTextCell(
+        target.velocityTarget,
+        names.length > 0 ? names.join(" / ") : "未绑定目录项");
+}
+
+function runtimeStatusCell(target) {
+    const cell = document.createElement("td");
+    const stack = document.createElement("div");
+    stack.className = "runtime-status-stack";
+    const badge = document.createElement("span");
+    let status = "未上报";
+    let badgeClass = "status-archived";
+    if (target.hasHeartbeat && !target.isFresh) {
+        status = "心跳过期";
+        badgeClass = "status-maintenance";
+    } else if (target.isFresh && target.online) {
+        status = "在线";
+        badgeClass = "status-online";
+    } else if (target.isFresh) {
+        status = "离线";
+        badgeClass = "status-closed";
+    }
+    badge.className = `status-badge ${badgeClass}`;
+    badge.textContent = status;
+    const players = document.createElement("span");
+    players.textContent = target.isFresh
+        ? `${target.onlinePlayers} / ${target.maxPlayers} 人`
+        : "人数不可用";
+    stack.append(badge, players);
+    cell.append(stack);
+    return cell;
+}
+
+function runtimeTickCell(target) {
+    const cell = document.createElement("td");
+    const stack = document.createElement("div");
+    stack.className = "meta-stack";
+    const tps = document.createElement("strong");
+    tps.textContent = target.tps1m === null || target.tps1m === undefined
+        ? "等待指标代理"
+        : `TPS ${Number(target.tps1m).toFixed(2)}`;
+    const mspt = document.createElement("span");
+    mspt.textContent =
+        target.msptAverage === null || target.msptAverage === undefined
+            ? "MSPT —"
+            : `MSPT ${Number(target.msptAverage).toFixed(1)} ms`;
+    if (target.msptAverage >= 50 || target.tps1m < 18) {
+        stack.classList.add("runtime-warning");
+    }
+    stack.append(tps, mspt);
+    cell.append(stack);
+    return cell;
+}
+
+function runtimeProcessCell(target) {
+    const cell = document.createElement("td");
+    const stack = document.createElement("div");
+    stack.className = "meta-stack";
+    const memory = document.createElement("strong");
+    memory.textContent = target.processWorkingSetBytes === null ||
+        target.processWorkingSetBytes === undefined
+        ? "进程不可用"
+        : formatBytes(target.processWorkingSetBytes);
+    const cpu = document.createElement("span");
+    cpu.textContent = target.processCpuPercent === null ||
+        target.processCpuPercent === undefined
+        ? "CPU —"
+        : `CPU ${Number(target.processCpuPercent).toFixed(1)}%`;
+    stack.append(memory, cpu);
+    cell.append(stack);
+    return cell;
+}
+
+function runtimeDiskCell(target) {
+    const cell = document.createElement("td");
+    const stack = document.createElement("div");
+    stack.className = "meta-stack";
+    const free = document.createElement("strong");
+    const hasDisk = Number.isFinite(target.diskFreeBytes) &&
+        Number.isFinite(target.diskTotalBytes) &&
+        target.diskTotalBytes > 0;
+    free.textContent = hasDisk
+        ? formatBytes(target.diskFreeBytes)
+        : "磁盘不可用";
+    const ratio = document.createElement("span");
+    ratio.textContent = hasDisk
+        ? `${(target.diskFreeBytes * 100 / target.diskTotalBytes).toFixed(1)}% 可用`
+        : "余量 —";
+    if (hasDisk && target.diskFreeBytes / target.diskTotalBytes < 0.1) {
+        stack.classList.add("runtime-warning");
+    }
+    stack.append(free, ratio);
+    cell.append(stack);
+    return cell;
+}
+
+function runtimeIssueCell(target) {
+    const cell = document.createElement("td");
+    const issues = [];
+    if (!target.hasHeartbeat) {
+        issues.push("尚无心跳");
+    } else if (!target.isFresh) {
+        issues.push("心跳已过期");
+    }
+    (target.issues || []).forEach(issue =>
+        issues.push(runtimeIssueText(issue)));
+    const text = document.createElement("span");
+    text.className = issues.length > 0
+        ? "runtime-issues"
+        : "runtime-ok";
+    text.textContent = issues.length > 0
+        ? [...new Set(issues)].join("、")
+        : "正常";
+    cell.append(text);
+    return cell;
+}
+
+function runtimeIssueText(issue) {
+    return {
+        StatusTimeout: "状态查询超时",
+        StatusUnavailable: "状态查询不可用",
+        ProcessProbeNotConfigured: "未配置本机进程探针",
+        ProcessNotRunning: "监听进程未运行",
+        ProcessAccessDenied: "进程访问被拒绝",
+        ProcessProbeFailed: "进程探针失败",
+        DiskProbeFailed: "磁盘探针失败",
+        MetricsNotConfigured: "未配置性能指标",
+        MetricsFileMissing: "性能指标文件缺失",
+        MetricsFileStale: "性能指标已过期",
+        MetricsFileInvalid: "性能指标无效"
+    }[issue] || issue;
+}
+
+function formatRuntimeUptime(startedAt) {
+    if (!startedAt) return "—";
+    const milliseconds = Date.now() - new Date(startedAt).getTime();
+    if (!Number.isFinite(milliseconds) || milliseconds < 0) return "—";
+    const totalMinutes = Math.floor(milliseconds / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    if (days > 0) return `${days} 天 ${hours} 小时`;
+    if (hours > 0) return `${hours} 小时 ${minutes} 分`;
+    return `${minutes} 分钟`;
+}
+
+function formatRelativeTime(value) {
+    const milliseconds = Date.now() - new Date(value).getTime();
+    if (!Number.isFinite(milliseconds)) return "—";
+    const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+    if (seconds < 60) return `${seconds} 秒前`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} 分钟前`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} 小时前`;
+    return `${Math.floor(hours / 24)} 天前`;
 }
 
 function renderServers() {

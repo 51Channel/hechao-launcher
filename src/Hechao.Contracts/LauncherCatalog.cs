@@ -119,13 +119,41 @@ public sealed record LuckPermsSnapshotResponse(
     int UpdatedIdentities,
     DateTimeOffset ReceivedAt);
 
+public enum ServerMetricIssueCode
+{
+    StatusTimeout,
+    StatusUnavailable,
+    ProcessProbeNotConfigured,
+    ProcessNotRunning,
+    ProcessAccessDenied,
+    ProcessProbeFailed,
+    DiskProbeFailed,
+    MetricsNotConfigured,
+    MetricsFileMissing,
+    MetricsFileStale,
+    MetricsFileInvalid
+}
+
 public sealed record VelocityTargetHeartbeat(
     string VelocityTarget,
     bool Online,
     int OnlinePlayers,
     int MaxPlayers,
     string? SoftwareVersion,
-    int? ProtocolVersion);
+    int? ProtocolVersion,
+    long? ProcessWorkingSetBytes = null,
+    long? ProcessPrivateBytes = null,
+    double? ProcessCpuPercent = null,
+    DateTimeOffset? ProcessStartedAt = null,
+    long? DiskFreeBytes = null,
+    long? DiskTotalBytes = null,
+    double? Tps1m = null,
+    double? Tps5m = null,
+    double? Tps15m = null,
+    double? MsptAverage = null,
+    long? GcCollectionTimeMilliseconds = null,
+    DateTimeOffset? MetricsCapturedAt = null,
+    IReadOnlyList<ServerMetricIssueCode>? Issues = null);
 
 public sealed record ServerHeartbeatBatchRequest(
     DateTimeOffset CapturedAt,
@@ -135,6 +163,49 @@ public sealed record ServerHeartbeatBatchRequest(
 public sealed record ServerHeartbeatBatchResponse(
     int ImportedServers,
     DateTimeOffset ReceivedAt);
+
+public sealed record AdminServerRuntimeBinding(
+    string ServerId,
+    string DisplayName,
+    bool IsVisible);
+
+public sealed record AdminServerRuntimeRecord(
+    string VelocityTarget,
+    IReadOnlyList<AdminServerRuntimeBinding> Servers,
+    bool HasHeartbeat,
+    bool IsFresh,
+    bool Online,
+    int OnlinePlayers,
+    int MaxPlayers,
+    string? SoftwareVersion,
+    int? ProtocolVersion,
+    long? ProcessWorkingSetBytes,
+    long? ProcessPrivateBytes,
+    double? ProcessCpuPercent,
+    DateTimeOffset? ProcessStartedAt,
+    long? DiskFreeBytes,
+    long? DiskTotalBytes,
+    double? Tps1m,
+    double? Tps5m,
+    double? Tps15m,
+    double? MsptAverage,
+    long? GcCollectionTimeMilliseconds,
+    DateTimeOffset? MetricsCapturedAt,
+    IReadOnlyList<ServerMetricIssueCode> Issues,
+    string? CollectorInstance,
+    DateTimeOffset? CapturedAt,
+    DateTimeOffset? ReceivedAt);
+
+public sealed record AdminServerRuntimeIssueSummary(
+    ServerMetricIssueCode Issue,
+    long Samples,
+    int Targets);
+
+public sealed record AdminServerRuntimeSummary(
+    DateTimeOffset GeneratedAt,
+    int FreshnessSeconds,
+    IReadOnlyList<AdminServerRuntimeRecord> Targets,
+    IReadOnlyList<AdminServerRuntimeIssueSummary> Issues);
 
 public enum VelocityAuthorizationReason
 {

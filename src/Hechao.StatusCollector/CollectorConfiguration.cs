@@ -21,6 +21,8 @@ public sealed class CollectorConfiguration
 
     public int ProbeTimeoutSeconds { get; init; } = 3;
 
+    public int MetricsMaxAgeSeconds { get; init; } = 30;
+
     public IReadOnlyList<ServerProbeConfiguration> Servers { get; init; } = [];
 
     public static CollectorConfiguration Load(string path)
@@ -52,7 +54,10 @@ public sealed class CollectorConfiguration
             CollectorInstance = configuration.CollectorInstance,
             TokenPath = Path.GetFullPath(tokenPath),
             ProbeTimeoutSeconds = configuration.ProbeTimeoutSeconds,
-            Servers = configuration.Servers ?? []
+            MetricsMaxAgeSeconds = configuration.MetricsMaxAgeSeconds,
+            Servers = (configuration.Servers ?? [])
+                .Select(server => NormalizeServerPaths(server, baseDirectory))
+                .ToArray()
         };
         configuration.Validate();
         return configuration;
@@ -81,6 +86,12 @@ public sealed class CollectorConfiguration
             throw new InvalidDataException("ProbeTimeoutSeconds must be between 1 and 15.");
         }
 
+        if (MetricsMaxAgeSeconds is < 10 or > 300)
+        {
+            throw new InvalidDataException(
+                "MetricsMaxAgeSeconds must be between 10 and 300.");
+        }
+
         if (Servers.Count is < 1 or > 64)
         {
             throw new InvalidDataException("Servers must contain between 1 and 64 targets.");
@@ -100,13 +111,65 @@ public sealed class CollectorConfiguration
                 server.Host.Length > 253 ||
                 server.Host.Any(character => char.IsWhiteSpace(character) || char.IsControl(character)) ||
                 server.Port is < 1 or > 65535 ||
-                server.FallbackMaxPlayers is < 0 or > 10000)
+                server.FallbackMaxPlayers is < 0 or > 10000 ||
+                HasInvalidPath(server.DataPath) ||
+                HasInvalidPath(server.MetricsPath))
             {
                 throw new InvalidDataException(
                     $"Server probe configuration is invalid for '{server.VelocityTarget}'.");
             }
         }
     }
+
+    private static ServerProbeConfiguration NormalizeServerPaths(
+        ServerProbeConfiguration server,
+        string baseDirectory)
+    {
+        var dataPath = NormalizeOptionalPath(server.DataPath, baseDirectory);
+        var metricsPath = NormalizeOptionalPath(
+            server.MetricsPath,
+            baseDirectory);
+        if (metricsPath is null && dataPath is not null)
+        {
+            metricsPath = Path.Combine(
+                dataPath,
+                "plugins",
+                "HechaoServerMetrics",
+                "metrics.json");
+        }
+
+        return new ServerProbeConfiguration
+        {
+            VelocityTarget = server.VelocityTarget,
+            Host = server.Host,
+            Port = server.Port,
+            FallbackMaxPlayers = server.FallbackMaxPlayers,
+            DataPath = dataPath,
+            MetricsPath = metricsPath
+        };
+    }
+
+    private static string? NormalizeOptionalPath(
+        string? path,
+        string baseDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var candidate = path.Trim();
+        return Path.GetFullPath(
+            Path.IsPathRooted(candidate)
+                ? candidate
+                : Path.Combine(baseDirectory, candidate));
+    }
+
+    private static bool HasInvalidPath(string? path) =>
+        path is not null &&
+        (path.Length > 1024 ||
+         !Path.IsPathFullyQualified(path) ||
+         path.Any(char.IsControl));
 }
 
 public sealed class ServerProbeConfiguration
@@ -118,4 +181,8 @@ public sealed class ServerProbeConfiguration
     public int Port { get; init; }
 
     public int FallbackMaxPlayers { get; init; }
+
+    public string? DataPath { get; init; }
+
+    public string? MetricsPath { get; init; }
 }
