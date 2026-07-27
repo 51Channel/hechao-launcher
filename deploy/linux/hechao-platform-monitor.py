@@ -20,6 +20,9 @@ from pathlib import Path
 from typing import Any
 
 
+MONITOR_VERSION = "0.1.2"
+USER_AGENT = f"Hechao-Platform-Monitor/{MONITOR_VERSION}"
+
 DEFAULT_CHECKS = (
     ("platform:api-health", "Api.Health", "Api",
      "启动器 API 健康检查失败",
@@ -109,7 +112,7 @@ def check_http(
     try:
         request = urllib.request.Request(
             url,
-            headers={"User-Agent": "Hechao-Platform-Monitor/0.1.0"},
+            headers={"User-Agent": USER_AGENT},
         )
         with urllib.request.urlopen(
             request,
@@ -335,7 +338,7 @@ def post_event(
             "Accept": "application/json",
             "Content-Type": "application/json",
             "X-Hechao-Monitor-Token": token,
-            "User-Agent": "Hechao-Platform-Monitor/0.1.0",
+            "User-Agent": USER_AGENT,
         },
     )
     try:
@@ -359,7 +362,7 @@ def fetch_active_alerts(
         headers={
             "Accept": "application/json",
             "X-Hechao-Monitor-Token": token,
-            "User-Agent": "Hechao-Platform-Monitor/0.1.0",
+            "User-Agent": USER_AGENT,
         },
     )
     try:
@@ -662,6 +665,7 @@ def run() -> int:
         write_state(state_path, current)
     log(
         "check_complete",
+        version=MONITOR_VERSION,
         checks=len(synthetic_events),
         posted=posted,
         active=len(current),
