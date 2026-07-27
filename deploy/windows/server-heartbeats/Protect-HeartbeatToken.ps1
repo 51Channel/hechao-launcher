@@ -8,7 +8,16 @@ param(
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Security
 $token = if ($ReadFromStandardInput) {
-    [Console]::In.ReadToEnd().Trim()
+    $standardInput = [Console]::In.ReadToEnd()
+    $tokenMatch = [regex]::Match(
+        $standardInput,
+        '^[^A-Za-z0-9_-]*([A-Za-z0-9_-]{32,256})[^A-Za-z0-9_-]*$')
+    if ($tokenMatch.Success) {
+        $tokenMatch.Groups[1].Value
+    }
+    else {
+        $standardInput.Trim()
+    }
 }
 else {
     Read-Host 'Paste the server heartbeat token'
