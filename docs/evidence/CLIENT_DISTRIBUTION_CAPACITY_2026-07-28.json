@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T16:16:11Z",
+  "productionAccountSnapshot": {
+    "totalUsers": 22,
+    "activeUsers": 22,
+    "disabledUsers": 0,
+    "minecraftIdentities": 1,
+    "activeTierCounts": {
+      "Administrator": 1,
+      "Member": 21,
+      "Participant": 0,
+      "Collaborator": 0
+    }
+  },
+  "profiles": [
+    {
+      "profileId": "pvp-fabric-1.20.1",
+      "version": "1.0.0",
+      "downloadBytes": 885821291,
+      "manifestSha256": "A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6"
+    },
+    {
+      "profileId": "base-1.21.11",
+      "version": "1.0.5",
+      "downloadBytes": 874147856,
+      "manifestSha256": "65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E"
+    },
+    {
+      "profileId": "dollnight-1.21.11",
+      "version": "1.0.0",
+      "downloadBytes": 874147856,
+      "manifestSha256": "6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575"
+    },
+    {
+      "profileId": "forge-1.20.1",
+      "version": "1.0.0",
+      "downloadBytes": 725771107,
+      "manifestSha256": "D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C"
+    },
+    {
+      "profileId": "activity-neoforge-1.21.11",
+      "version": "1.0.10",
+      "downloadBytes": 621732083,
+      "manifestSha256": "0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F"
+    },
+    {
+      "profileId": "vanilla-1.21.11",
+      "version": "1.0.0",
+      "downloadBytes": 549101696,
+      "manifestSha256": "C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865"
+    }
+  ],
+  "planningEnvelope": {
+    "dailyUpdateUsers": 30,
+    "nominalConcurrentDownloads": 20,
+    "capacityTargetConcurrentDownloads": 30,
+    "coldInstallBytesPerUser": 885821291,
+    "protocolAndVarianceHeadroomPercent": 15,
+    "scenarios": [
+      {
+        "users": 20,
+        "completionMinutes": 30,
+        "transferBytes": 17716425820,
+        "transferGiB": 16.5,
+        "requiredMbps": 78.74,
+        "requiredMbpsWithHeadroom": 90.55
+      },
+      {
+        "users": 20,
+        "completionMinutes": 15,
+        "transferBytes": 17716425820,
+        "transferGiB": 16.5,
+        "requiredMbps": 157.48,
+        "requiredMbpsWithHeadroom": 181.1
+      },
+      {
+        "users": 20,
+        "completionMinutes": 10,
+        "transferBytes": 17716425820,
+        "transferGiB": 16.5,
+        "requiredMbps": 236.22,
+        "requiredMbpsWithHeadroom": 271.65
+      },
+      {
+        "users": 22,
+        "completionMinutes": 30,
+        "transferBytes": 19488068402,
+        "transferGiB": 18.15,
+        "requiredMbps": 86.61,
+        "requiredMbpsWithHeadroom": 99.61
+      },
+      {
+        "users": 22,
+        "completionMinutes": 15,
+        "transferBytes": 19488068402,
+        "transferGiB": 18.15,
+        "requiredMbps": 173.23,
+        "requiredMbpsWithHeadroom": 199.21
+      },
+      {
+        "users": 22,
+        "completionMinutes": 10,
+        "transferBytes": 19488068402,
+        "transferGiB": 18.15,
+        "requiredMbps": 259.84,
+        "requiredMbpsWithHeadroom": 298.82
+      },
+      {
+        "users": 30,
+        "completionMinutes": 30,
+        "transferBytes": 26574638730,
+        "transferGiB": 24.75,
+        "requiredMbps": 118.11,
+        "requiredMbpsWithHeadroom": 135.83
+      },
+      {
+        "users": 30,
+        "completionMinutes": 15,
+        "transferBytes": 26574638730,
+        "transferGiB": 24.75,
+        "requiredMbps": 236.22,
+        "requiredMbpsWithHeadroom": 271.65
+      },
+      {
+        "users": 30,
+        "completionMinutes": 10,
+        "transferBytes": 26574638730,
+        "transferGiB": 24.75,
+        "requiredMbps": 354.33,
+        "requiredMbpsWithHeadroom": 407.48
+      }
+    ]
+  },
+  "routingBoundary": {
+    "authorizationPath": "launcher -> launcher API -> short-lived 302",
+    "contentPath": "launcher -> private OSS custom or origin endpoint",
+    "apiHostCarriesObjectBytes": false,
+    "gameVpsCarriesObjectBytes": false,
+    "cdnEnabled": false
+  },
+  "caveats": [
+    "The scenario is a worst-case cold install with no shared-object cache hits.",
+    "Content-addressed cache hits and incremental profile changes reduce real update traffic.",
+    "The 200 Mbps API host console peak is not used as OSS capacity evidence.",
+    "Actual OSS throughput, player last-mile throughput and retry rates require the 20-person pilot."
+  ]
+}
