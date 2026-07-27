@@ -127,15 +127,64 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         Assert.Equal(0, installation.RollbackRequestCount);
     }
 
+    [Fact]
+    public async Task StartupUpdateCheckDisabled_DefersScanUntilPrimaryAction()
+    {
+        var authentication = new StubAuthenticationService();
+        var gameLauncher = new StubGameLauncherService();
+        var installation = new StubInstallationService();
+        var viewModel = CreateViewModel(
+            authentication,
+            gameLauncher,
+            installation,
+            new LauncherSettings(CheckForUpdates: false));
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "启动检查已关闭");
+
+        Assert.Equal(0, installation.LocalStateRequestCount);
+        Assert.Equal("检查客户端", viewModel.PrimaryActionText);
+
+        await viewModel.PrimaryActionCommand.ExecuteAsync();
+
+        Assert.Equal(1, installation.LocalStateRequestCount);
+        Assert.Equal(1, gameLauncher.LaunchRequestCount);
+        Assert.Equal("游戏已启动", viewModel.ClientStatusText);
+    }
+
+    [Fact]
+    public async Task EnablingStartupUpdateCheck_RunsDeferredScanImmediately()
+    {
+        var authentication = new StubAuthenticationService();
+        var gameLauncher = new StubGameLauncherService();
+        var installation = new StubInstallationService();
+        var viewModel = CreateViewModel(
+            authentication,
+            gameLauncher,
+            installation,
+            new LauncherSettings(CheckForUpdates: false));
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "启动检查已关闭");
+
+        viewModel.CheckForUpdates = true;
+
+        await WaitUntilAsync(() =>
+            installation.LocalStateRequestCount == 1 &&
+            viewModel.ClientStatusText == "客户端已就绪");
+        Assert.Equal("进入服务器", viewModel.PrimaryActionText);
+    }
+
     private static MainWindowViewModel CreateViewModel(
         StubAuthenticationService authentication,
         StubGameLauncherService gameLauncher,
-        StubInstallationService? installation = null)
+        StubInstallationService? installation = null,
+        LauncherSettings? settings = null)
     {
         return new MainWindowViewModel(
             new StubCatalogClient(),
             authentication,
-            new StubSettingsStore(),
+            new StubSettingsStore(settings ?? new LauncherSettings()),
             installation ?? new StubInstallationService(),
             gameLauncher,
             new StubDownloadHistoryStore(),
@@ -301,7 +350,14 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
 
     private sealed class StubSettingsStore : ILauncherSettingsStore
     {
-        public LauncherSettings Load() => new();
+        private readonly LauncherSettings _settings;
+
+        public StubSettingsStore(LauncherSettings settings)
+        {
+            _settings = settings;
+        }
+
+        public LauncherSettings Load() => _settings;
 
         public void Save(LauncherSettings settings)
         {
@@ -320,13 +376,17 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     private sealed class StubInstallationService : IClientInstallationService
     {
         public InstalledProfileState? RollbackCandidate { get; set; }
+        public int LocalStateRequestCount { get; private set; }
         public int RollbackRequestCount { get; private set; }
 
         public Task<LocalProfileState> GetLocalStateAsync(
             ClientProfileSummary profile,
             string dataRoot,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(LocalProfileState.Ready);
+            CancellationToken cancellationToken = default)
+        {
+            LocalStateRequestCount++;
+            return Task.FromResult(LocalProfileState.Ready);
+        }
 
         public Task<InstalledProfileState?> GetRollbackCandidateAsync(
             ClientProfileSummary profile,

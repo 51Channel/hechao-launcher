@@ -30,6 +30,9 @@ public sealed class MainWindowViewModel : ObservableObject
     private LauncherPage _activePage = LauncherPage.Servers;
     private ServerSummary? _selectedServer;
     private LocalProfileState _selectedProfileState = LocalProfileState.Missing;
+    private bool _selectedProfileStateChecked;
+    private bool _suppressNextAutomaticProfileCheck;
+    private bool _hasLoadedCatalog;
     private InstalledProfileState? _rollbackCandidate;
     private double _updateProgress;
     private string _clientStatusText = "正在检查客户端";
@@ -484,12 +487,20 @@ public sealed class MainWindowViewModel : ObservableObject
             if (value is not null)
             {
                 _selectedProfileState = LocalProfileState.Missing;
+                _selectedProfileStateChecked = false;
                 CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
                 UpdateProgress = 0;
-                ClientStatusText = "正在检查客户端";
+                var shouldCheckProfile = !_suppressNextAutomaticProfileCheck;
+                _suppressNextAutomaticProfileCheck = false;
+                ClientStatusText = shouldCheckProfile
+                    ? "正在检查客户端"
+                    : "启动检查已关闭";
                 UpdatePrimaryActionForState();
                 SaveSettings();
-                _ = RefreshClientStateAsync();
+                if (shouldCheckProfile)
+                {
+                    _ = RefreshClientStateAsync();
+                }
             }
         }
     }
@@ -716,6 +727,15 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _checkForUpdates, value))
             {
                 SaveSettings();
+                if (value &&
+                    !_selectedProfileStateChecked &&
+                    SelectedServer is not null &&
+                    !IsProgressActive)
+                {
+                    ClientStatusText = "正在检查客户端";
+                    UpdatePrimaryActionForState();
+                    _ = RefreshClientStateAsync();
+                }
             }
         }
     }
@@ -807,7 +827,15 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(ActivityServerCount));
             OnPropertyChanged(nameof(HasActivityServers));
 
-            SelectedServer = Servers.FirstOrDefault(server => server.Id == _settings.SelectedServerId) ?? Servers.FirstOrDefault();
+            var selectedServer =
+                Servers.FirstOrDefault(server => server.Id == _settings.SelectedServerId) ??
+                Servers.FirstOrDefault();
+            _suppressNextAutomaticProfileCheck =
+                !_hasLoadedCatalog &&
+                !CheckForUpdates &&
+                selectedServer is not null;
+            SelectedServer = selectedServer;
+            _hasLoadedCatalog = true;
 
             if (_catalogClient is ICatalogSourceState sourceState)
             {
@@ -887,6 +915,17 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
+        if (!_selectedProfileStateChecked)
+        {
+            ClientStatusText = "正在检查客户端";
+            UpdatePrimaryActionForState();
+            if (!await RefreshClientStateAsync())
+            {
+                ShowToast("客户端状态检查未完成，请重试");
+                return;
+            }
+        }
+
         if (_selectedProfileState != LocalProfileState.Ready)
         {
             if (!await InstallSelectedProfileAsync(isRepair: false))
@@ -939,6 +978,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 progress,
                 _activeInstallCancellation.Token);
             _selectedProfileState = LocalProfileState.Ready;
+            _selectedProfileStateChecked = true;
             await RefreshRollbackCandidateAsync(profile, SelectedServer?.Id);
             NotifySelectedProfileJavaPropertiesChanged();
             CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
@@ -1105,6 +1145,7 @@ public sealed class MainWindowViewModel : ObservableObject
                     StringComparison.Ordinal)
                 ? LocalProfileState.Ready
                 : LocalProfileState.UpdateRequired;
+            _selectedProfileStateChecked = true;
             UpdateProgress = 100;
             ClientStatusText = $"已回滚到 v{activatedState.Version}";
             NotifySelectedProfileJavaPropertiesChanged();
@@ -1118,6 +1159,7 @@ public sealed class MainWindowViewModel : ObservableObject
             telemetryFailure = LauncherTelemetryFailureCode.RuntimePreparationFailed;
             switched = true;
             _selectedProfileState = LocalProfileState.UpdateRequired;
+            _selectedProfileStateChecked = true;
             NotifySelectedProfileJavaPropertiesChanged();
             ClientStatusText = $"已回滚到 v{exception.ActivatedState.Version}，Java 待修复";
             ShowToast("版本已回滚，但配套 Java 未准备完成；点击修复客户端即可补齐");
@@ -1769,48 +1811,68 @@ public sealed class MainWindowViewModel : ObservableObject
         _uiContext.Post(_ => action(), null);
     }
 
-    private async Task RefreshClientStateAsync()
+    private async Task<bool> RefreshClientStateAsync()
     {
         var selectedServer = SelectedServer;
         if (selectedServer is null || IsProgressActive ||
             !_clientProfiles.TryGetValue(selectedServer.ClientProfileId, out var profile))
         {
-            return;
+            return false;
         }
 
-        var stateTask = _installationService.GetLocalStateAsync(
-            profile,
-            ClientDirectory);
-        var rollbackTask = _installationService.GetRollbackCandidateAsync(
-            profile,
-            ClientDirectory);
-        await Task.WhenAll(stateTask, rollbackTask);
-        var state = await stateTask;
-        var rollbackCandidate = await rollbackTask;
-        if (SelectedServer?.Id != selectedServer.Id || IsProgressActive)
+        try
         {
-            return;
-        }
+            var stateTask = _installationService.GetLocalStateAsync(
+                profile,
+                ClientDirectory);
+            var rollbackTask = _installationService.GetRollbackCandidateAsync(
+                profile,
+                ClientDirectory);
+            await Task.WhenAll(stateTask, rollbackTask);
+            var state = await stateTask;
+            var rollbackCandidate = await rollbackTask;
+            if (SelectedServer?.Id != selectedServer.Id || IsProgressActive)
+            {
+                return false;
+            }
 
-        _selectedProfileState = state;
-        SetRollbackCandidate(rollbackCandidate);
-        CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
-        switch (state)
-        {
-            case LocalProfileState.Ready:
-                UpdateProgress = 100;
-                ClientStatusText = "客户端已就绪";
-                break;
-            case LocalProfileState.UpdateRequired:
-                UpdateProgress = 0;
-                ClientStatusText = "发现新版本";
-                break;
-            default:
-                UpdateProgress = 0;
-                ClientStatusText = "尚未安装";
-                break;
+            _selectedProfileState = state;
+            _selectedProfileStateChecked = true;
+            SetRollbackCandidate(rollbackCandidate);
+            CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
+            switch (state)
+            {
+                case LocalProfileState.Ready:
+                    UpdateProgress = 100;
+                    ClientStatusText = "客户端已就绪";
+                    break;
+                case LocalProfileState.UpdateRequired:
+                    UpdateProgress = 0;
+                    ClientStatusText = "发现新版本";
+                    break;
+                default:
+                    UpdateProgress = 0;
+                    ClientStatusText = "尚未安装";
+                    break;
+            }
+            UpdatePrimaryActionForState();
+            return true;
         }
-        UpdatePrimaryActionForState();
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Client state check failed for profile {0}: {1}",
+                profile.Id,
+                exception);
+            if (SelectedServer?.Id == selectedServer.Id && !IsProgressActive)
+            {
+                _selectedProfileStateChecked = false;
+                UpdateProgress = 0;
+                ClientStatusText = "客户端检查未完成";
+                UpdatePrimaryActionForState();
+            }
+            return false;
+        }
     }
 
     private async Task RefreshRollbackCandidateAsync(
@@ -1871,6 +1933,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         _clientDirectory = normalized;
         _selectedProfileState = LocalProfileState.Missing;
+        _selectedProfileStateChecked = false;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
         NotifySelectedProfileJavaPropertiesChanged();
@@ -1889,6 +1952,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _clientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory;
         _profileJavaPaths.Clear();
         _selectedProfileState = LocalProfileState.Missing;
+        _selectedProfileStateChecked = false;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
         NotifySelectedProfileJavaPropertiesChanged();
@@ -2414,13 +2478,15 @@ public sealed class MainWindowViewModel : ObservableObject
 
         PrimaryActionText = !IsAuthenticated
             ? "登录赫朝账号"
-            : _selectedProfileState == LocalProfileState.UpdateRequired
-                ? "更新客户端"
-                : _selectedProfileState != LocalProfileState.Ready
-                    ? "安装客户端"
-                    : !IsMinecraftLinked
-                        ? "绑定正版身份"
-                        : "进入服务器";
+            : !_selectedProfileStateChecked
+                ? "检查客户端"
+                : _selectedProfileState == LocalProfileState.UpdateRequired
+                    ? "更新客户端"
+                    : _selectedProfileState != LocalProfileState.Ready
+                        ? "安装客户端"
+                        : !IsMinecraftLinked
+                            ? "绑定正版身份"
+                            : "进入服务器";
         OnPropertyChanged(nameof(PrimaryActionGlyph));
     }
 

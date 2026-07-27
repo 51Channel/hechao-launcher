@@ -3102,8 +3102,8 @@
                                                            VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="启动时检查更新" FontSize="14" FontWeight="SemiBold" />
-                                    <TextBlock Text="保持客户端与服务器版本一致"
+                                    <TextBlock Text="启动时检查客户端更新" FontSize="14" FontWeight="SemiBold" />
+                                    <TextBlock Text="进入服务器前比较客户端档案与最新发布清单。"
                                                FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
