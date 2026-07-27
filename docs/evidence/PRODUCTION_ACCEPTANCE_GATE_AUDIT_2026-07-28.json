@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-27T17:40:14.692Z",
+  "purpose": "Record the remaining production acceptance gates using anonymous read-only evidence without changing RAM permissions or starting, stopping, or restarting any game server.",
+  "sourceRevision": {
+    "commit": "654b3f038ae7a7727965a3535d36d4fb65de3a74",
+    "localMatchesGithubMain": true,
+    "worktreeCleanBeforeAudit": true
+  },
+  "api": {
+    "version": "0.20.1",
+    "healthStatus": "ok",
+    "readinessStatus": "ready",
+    "databaseStatus": "ready",
+    "checkedAtUtc": "2026-07-27T17:41:21.708827Z",
+    "databaseMigrationCount": 17,
+    "databaseMaximumMigration": 17
+  },
+  "accounts": {
+    "total": 22,
+    "disabled": 0,
+    "tiers": {
+      "Member": 21,
+      "Participant": 0,
+      "Collaborator": 0,
+      "Administrator": 1
+    },
+    "minecraftBound": 1,
+    "minecraftLuckPermsSynced": 1,
+    "forumLinked": 22,
+    "withEmail": 22,
+    "withPassword": 22,
+    "personalDataIncludedInEvidence": false
+  },
+  "luckPerms": {
+    "snapshotTotal": 115,
+    "snapshotFreshTenMinutes": 115,
+    "requiredGroupCounts": {
+      "default": 100,
+      "vip": 12,
+      "admin": 1,
+      "owner": 2
+    },
+    "pendingOrClaimedTierCommands": 0,
+    "appliedTierCommands": 0
+  },
+  "administratorSecurity": {
+    "mfaCredentials": 1,
+    "pendingMfaEnrollments": 0,
+    "activeAdminSessions": 0,
+    "activeMfaSessions": 0,
+    "activeLoginTickets": 0,
+    "browserReadOnlyObservation": "The production admin page displayed the expected administrator identity requirement.",
+    "authenticationBypassAttempted": false
+  },
+  "diagnostics": {
+    "uploaded": 1,
+    "failed": 0,
+    "administratorDownloadAudits": 1,
+    "administratorDownloadConfirmedByUser": true,
+    "downloadedArtifact": {
+      "verifiedAtUtc": "2026-07-27T17:45:53.9614641Z",
+      "bytes": 707,
+      "sha256": "1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92",
+      "entries": [
+        {
+          "name": "diagnostic.json",
+          "bytes": 477
+        },
+        {
+          "name": "README.txt",
+          "bytes": 209
+        }
+      ],
+      "privacyPatternMatches": {
+        "bearerTokens": 0,
+        "accessOrRefreshTokens": 0,
+        "passwordsOrSecrets": 0,
+        "emailAddresses": 0,
+        "publicIpv4": 0,
+        "absoluteUserPaths": 0
+      }
+    }
+  },
+  "telemetry": {
+    "total": 1,
+    "failures": 0,
+    "successCounts": {
+      "LauncherStarted": 1,
+      "Install": 0,
+      "Repair": 0,
+      "Rollback": 0,
+      "Launch": 0,
+      "GameExit": 0
+    }
+  },
+  "distribution": {
+    "activeProfiles": 6,
+    "releases": 6,
+    "pausedReleases": 0,
+    "productionChannelsAssigned": 6,
+    "grayChannelsAssigned": 0,
+    "testChannelsAssigned": 0
+  },
+  "catalog": {
+    "visibleServers": 6,
+    "configuredOnline": 5,
+    "configuredMaintenance": 1,
+    "configuredClosed": 0
+  },
+  "serverRuntime": {
+    "heartbeatTargets": 5,
+    "freshHeartbeatTargets": 5,
+    "onlineHeartbeatTargets": 3,
+    "targetsWithTickMetrics": 0,
+    "samplesLast24Hours": 5086,
+    "sampleTargetsLast24Hours": 5,
+    "rows": [
+      {
+        "target": "activity",
+        "collector": "mc-vps-primary",
+        "online": false,
+        "issues": [
+          "StatusUnavailable",
+          "ProcessNotRunning",
+          "MetricsFileMissing"
+        ]
+      },
+      {
+        "target": "lobby",
+        "collector": "mc-vps-primary",
+        "online": true,
+        "issues": [
+          "MetricsFileMissing"
+        ]
+      },
+      {
+        "target": "pvp",
+        "collector": "owl9-pvp",
+        "online": false,
+        "issues": [
+          "StatusUnavailable",
+          "ProcessNotRunning",
+          "MetricsFileMissing"
+        ]
+      },
+      {
+        "target": "survival1",
+        "collector": "mc-vps-primary",
+        "online": true,
+        "issues": [
+          "MetricsFileMissing"
+        ]
+      },
+      {
+        "target": "survival2",
+        "collector": "mc-vps-primary",
+        "online": true,
+        "issues": [
+          "MetricsFileMissing"
+        ]
+      }
+    ],
+    "owl5ReadOnlyObservation": {
+      "capturedAtUtc": "2026-07-27T17:37:48.4725394Z",
+      "processes": [
+        {
+          "target": "lobby",
+          "pid": 10696,
+          "createdAtUtc": "2026-07-25T19:07:30.0658280Z",
+          "metricsFileExists": false
+        },
+        {
+          "target": "survival1",
+          "pid": 7188,
+          "createdAtUtc": "2026-07-25T19:07:19.8929196Z",
+          "metricsFileExists": false
+        },
+        {
+          "target": "survival2",
+          "pid": 7236,
+          "createdAtUtc": "2026-07-25T19:07:13.4906457Z",
+          "metricsFileExists": false
+        }
+      ],
+      "luckPermsTierAgentJarSha256": "35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B",
+      "luckPermsTierAgentLoadSignalPresent": false,
+      "formalWorldArchives": 0,
+      "partialWorldArchives": 0,
+      "activeWorldBackupStatePresent": false,
+      "worldBackupStatusFiles": 0,
+      "vssShadowCopies": 0
+    }
+  },
+  "activeAlerts": {
+    "total": 5,
+    "critical": 2,
+    "warning": 3,
+    "unexpectedAlerts": 0,
+    "rows": [
+      {
+        "code": "Server.Heartbeat",
+        "severity": "Critical",
+        "target": "activity",
+        "reason": "Configured online while the status probe reports the intentionally stopped activity backend."
+      },
+      {
+        "code": "Server.Heartbeat",
+        "severity": "Critical",
+        "target": "pvp",
+        "reason": "Configured online while the status probe reports the intentionally stopped PVP backend."
+      },
+      {
+        "code": "Server.TickMetrics",
+        "severity": "Warning",
+        "target": "lobby",
+        "reason": "Metrics agent has not loaded in the current pre-deployment process."
+      },
+      {
+        "code": "Server.TickMetrics",
+        "severity": "Warning",
+        "target": "survival1",
+        "reason": "Metrics agent has not loaded in the current pre-deployment process."
+      },
+      {
+        "code": "Server.TickMetrics",
+        "severity": "Warning",
+        "target": "survival2",
+        "reason": "Metrics agent has not loaded in the current pre-deployment process."
+      }
+    ]
+  },
+  "platformDataBackup": {
+    "ramV5PolicySha256": "24D26EBE01688FC6B508D7EB22ACE95975BB82636246EE150633678171417A9A",
+    "permissionChangePerformed": false,
+    "serviceActive": false,
+    "timerActive": false,
+    "timerEnabled": false,
+    "localRunnerSha256": "6738FA01B6E521C642B3FB1115D1B8E682D0B64942AE26F85FF5B0A06122418C",
+    "offsiteRunnerSha256": "AA222F4AD378D3D56A08B8AD5E7E20B93B15FE444C195B552C75BD7278D5E745",
+    "restoreVerifierSha256": "8731D6400FBFE44B5528590FE340FBEB0E94732294E393A56BA497FFDFB48606",
+    "offsiteStagingEntries": 0,
+    "restoreStagingEntries": 0,
+    "latestLocalArchive": {
+      "name": "hechao-platform-data-20260727T133030Z.tar.gz",
+      "bytes": 35576326
+    },
+    "requiredConfirmation": "确认创建并启用 RAM v5"
+  },
+  "remainingGates": [
+    {
+      "id": "ram-v5-offsite-platform-data",
+      "owner": "administrator-confirmation",
+      "status": "pending"
+    },
+    {
+      "id": "admin-production-pages",
+      "owner": "fresh-admin-ticket-and-mfa",
+      "status": "pending"
+    },
+    {
+      "id": "paper-agents-and-first-formal-world-backup",
+      "owner": "user-controlled-game-server-restart",
+      "status": "pending"
+    },
+    {
+      "id": "pvp-real-velocity-route",
+      "owner": "user-controlled-pvp-start-and-real-player",
+      "status": "pending"
+    },
+    {
+      "id": "four-tier-real-accounts",
+      "owner": "real-microsoft-minecraft-accounts",
+      "status": "pending"
+    },
+    {
+      "id": "telemetry-and-2-3-5-20-player-pilots",
+      "owner": "real-client-operations-and-players",
+      "status": "pending"
+    },
+    {
+      "id": "velocity-enforce-and-catalog-enforcement",
+      "owner": "post-pilot-maintenance-window",
+      "status": "pending"
+    }
+  ],
+  "invariants": {
+    "databaseWritesPerformed": false,
+    "ramPolicyChanged": false,
+    "adminSessionCreated": false,
+    "catalogStateChanged": false,
+    "gameServerStarted": false,
+    "gameServerStopped": false,
+    "gameServerRestarted": false
+  }
+}
