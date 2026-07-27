@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.18.0-20260726T234852Z`
-> 本地 API 源码版本：`0.18.0`
-> 当前阶段：`0.18.0` 遥测与运行数据后台已生产部署；启动器 `0.11.13` 待构建和私有灰度，管理员 Web 已启用但尚未登记 MFA
+> 当前线上版本：`0.19.0-20260727T005013Z`
+> 本地 API 源码版本：`0.19.0`
+> 当前阶段：`0.19.0` 服务器运行指标已生产部署；启动器 `0.11.13` 待构建和私有灰度，管理员 Web 已启用但尚未登记 MFA
 
 ## 1. 运行边界
 
@@ -179,6 +179,14 @@ Minecraft UUID 封禁，以及目录、对象下载、Minecraft 绑定与 Veloci
 [`API_RELEASE_0.18.0.md`](API_RELEASE_0.18.0.md) 与
 [`LAUNCHER_TELEMETRY_OPERATIONS.md`](LAUNCHER_TELEMETRY_OPERATIONS.md)。
 
+`0.19.0` 增加服务器进程、磁盘、TPS、MSPT、GC 和固定探针问题的当前值与 30 天
+幂等样本，以及管理后台“服务状态”页。迁移 16 为加法变更，清理任务每 6 小时删除
+超过 30 天的样本。最终发布 `0.19.0-20260727T005013Z` 已通过 `325/325` 个 .NET
+测试、生产数据库副本隔离验收、无 PDB 候选复验、原子生产切换和公网回归。Windows
+采集器 `0.2.0` 已生产运行；Paper/Purpur 代理文件已部署但没有重启游戏服。详见
+[`API_RELEASE_0.19.0.md`](API_RELEASE_0.19.0.md) 与
+[`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
@@ -270,6 +278,7 @@ systemctl reload nginx
 | `0.15.0-20260726T202540Z` | `42ACC44468989A567E936993934046266A9D2B22B43758322E693BC23A089FD6` | 账号与设备会话安全、UUID 封禁、迁移 11、隔离端到端验收、原子部署与公网回归通过；`0.16.0` 的直接回滚目标 |
 | `0.16.0-20260726T222124Z` | `8B932BC0BFE5C0D3D2A97460555695AD33544CC2814A96B8AF16E672F8B5CDB5` | 论坛 Cookie 联动、受控 LuckPerms 等级、迁移 12 至 13、生产 worker 投递和公网回归通过；`0.17.0` 的直接回滚目标 |
 | `0.17.0-20260726T231515Z` | `80CBE367AE39B46B855DAC31A060E6DC7C50FF80135A4040982429068B674C5B` | 签名发布导入、不可变清单、Test/Gray/Production、稳定分桶、暂停自动回滚、迁移 14、隔离生产副本演练和公网回归通过；`0.18.0` 的直接回滚目标 |
-| `0.18.0-20260726T234852Z` | `ED331D29E066AE1363F4A2E8B1D183272821E1E2E97E0ABC9FF27DA03807EB0F` | 隐私受限遥测、幂等批次、30 天留存、运行数据后台、迁移 15、隔离生产副本验收和公网回归通过；当前线上版本 |
+| `0.18.0-20260726T234852Z` | `ED331D29E066AE1363F4A2E8B1D183272821E1E2E97E0ABC9FF27DA03807EB0F` | 隐私受限遥测、幂等批次、30 天留存、运行数据后台、迁移 15、隔离生产副本验收和公网回归通过；`0.19.0` 的直接回滚目标 |
+| `0.19.0-20260727T005013Z` | `29B351C33B6366BF2C3E9263275928D0F5C8329D05C14B1C7A138C0D81B279FA` | 进程、磁盘、TPS/MSPT/GC、30 天运行样本、服务状态后台、迁移 16、隔离生产副本验收和公网回归通过；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布和隐私受限遥测已部署。API `0.18.0` 为当前线上版本，启动器 `0.11.12` 仍在私有 OSS 灰度，`0.11.13` 待构建；管理员 Web 已启用但尚未登记 MFA，大厅代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测和服务器进程/磁盘运行指标已部署。API `0.19.0` 为当前线上版本，启动器 `0.11.12` 仍在私有 OSS 灰度，`0.11.13` 待构建；管理员 Web 已启用但尚未登记 MFA，大厅等级代理与三个 Paper/Purpur 指标代理等待下次手动重启后加载。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

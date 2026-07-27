@@ -1,8 +1,8 @@
 # 服务器运行指标运维
 
-> 源码候选：API `0.19.0`、Windows 采集器 `0.2.0`、Paper/Purpur 指标代理 `0.1.0`
+> 当前生产：API `0.19.0-20260727T005013Z`、Windows 采集器 `0.2.0`
 >
-> 当前生产基线：API `0.18.0`、Windows 采集器 `0.1.0`
+> 已部署待服务端下次自行重启加载：Paper/Purpur 指标代理 `0.1.0`
 >
 > 安全边界：只读；不包含服务器启动、停止、重启、RCON 或控制台命令
 
@@ -67,6 +67,16 @@ dotnet publish .\src\Hechao.StatusCollector\Hechao.StatusCollector.csproj `
 src\Hechao.ServerMetricsAgent\build\libs\HechaoServerMetrics-0.1.0.jar
 ```
 
+当前制品：
+
+| 制品 | SHA-256 |
+| --- | --- |
+| `hechao-status-collector-0.2.0-win-x64.zip` | `30D9BC599B80FEF48D5FE02B340FE494BE8DE7B5D590828BED34F155D81F8167` |
+| `HechaoServerMetrics-0.1.0.jar` | `BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C` |
+
+生产前自动回归为 .NET `325/325`、指标代理 `2/2`。API 候选使用生产数据库副本在
+独立端口验证迁移 16、心跳和样本幂等、管理汇总及既有签名发布链路。
+
 ## 4. 部署顺序
 
 1. 备份生产 API、数据库、采集器目录和当前采集配置。
@@ -84,6 +94,11 @@ src\Hechao.ServerMetricsAgent\build\libs\HechaoServerMetrics-0.1.0.jar
 ```text
 server_restart=not_performed
 ```
+
+本轮生产部署已按上述顺序完成。采集器备份位于
+`C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`，
+指标代理备份位于 `E:\manual-backups\server-metrics-20260727T004852Z`。部署前后 Java
+PID 均为同一组，计划任务手工与自动运行均返回成功。
 
 ## 5. 验证
 
@@ -111,6 +126,10 @@ Get-Content -Raw 'E:\LobbyServer\plugins\HechaoServerMetrics\metrics.json'
 
 第二条命令只有在服主自行重启并成功加载代理后才应存在。文件缺失不能作为擅自重启服务
 器的理由。
+
+当前生产已确认大厅、Survival1、Survival2 的进程内存、CPU、启动时间和磁盘容量入库；
+活动服处于关闭状态，PVP 远端不可达。三个 Paper/Purpur 目标在下次服主自行重启前应
+继续显示 `MetricsFileMissing`，这是预期状态。
 
 ## 6. 回滚
 
