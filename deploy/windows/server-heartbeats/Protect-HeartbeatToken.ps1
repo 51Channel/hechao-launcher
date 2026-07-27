@@ -1,12 +1,18 @@
 [CmdletBinding()]
 param(
     [string]$StateDirectory = "$env:ProgramData\Hechao\StatusCollector",
-    [string]$TokenFileName = 'heartbeat-token.dat'
+    [string]$TokenFileName = 'heartbeat-token.dat',
+    [switch]$ReadFromStandardInput
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Security
-$token = Read-Host 'Paste the server heartbeat token'
+$token = if ($ReadFromStandardInput) {
+    [Console]::In.ReadToEnd().Trim()
+}
+else {
+    Read-Host 'Paste the server heartbeat token'
+}
 if ($token -notmatch '^[A-Za-z0-9_-]{32,256}$') {
     throw 'The heartbeat token must be 32-256 URL-safe characters.'
 }
@@ -23,6 +29,7 @@ try {
 }
 finally {
     [Array]::Clear($clearBytes, 0, $clearBytes.Length)
+    $token = $null
 }
 
 $acl = Get-Acl -LiteralPath $StateDirectory

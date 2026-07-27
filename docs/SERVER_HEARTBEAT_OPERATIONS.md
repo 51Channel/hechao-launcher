@@ -50,6 +50,15 @@ to `SYSTEM` and local administrators.
 Never place the clear token in the repository, command history, task arguments, or
 configuration JSON.
 
+For a non-interactive deployment, pass the token only through standard input and add
+`-ReadFromStandardInput`. The script never accepts the clear token as a command-line
+parameter:
+
+```powershell
+$token | powershell.exe -NoProfile -File .\Protect-HeartbeatToken.ps1 `
+    -ReadFromStandardInput
+```
+
 ## Collector installation
 
 1. Publish `Hechao.StatusCollector` as self-contained `win-x64`.
