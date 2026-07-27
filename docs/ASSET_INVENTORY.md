@@ -200,6 +200,12 @@ SHA-256 为 `35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B`�
 
 状态采集器 `0.2.0` 位于 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 为 `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`。计划任务 `Hechao Launcher Server Heartbeats` 以 `SYSTEM` 身份每分钟查询 `lobby`、`survival2`、`survival1`、`pvp` 和 `activity`，令牌使用 `LocalMachine` DPAPI 加密。大厅、Survival2、Survival1 已上报进程工作集、CPU、启动时间和 E 盘容量；活动服关闭、PVP 不可达时使用固定问题代码，单个目标失败不会中断其余心跳。旧采集器、配置和计划任务备份位于 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`。采集器不包含 RCON 或进程启停能力。
 
+状态链路为游戏 VPS 主动向 `launcher-api.hechao.world` 发起 HTTPS POST，API 使用
+独立心跳令牌认证；游戏 VPS 不暴露 HTTP、指标或采集器监听端口。2026-07-27
+只读枚举全部 TCP 监听时没有发现 `Hechao.StatusCollector` 监听器，采集器仅查询
+本机 Minecraft 端口并向外上报。因此不需要为状态接口开放入站防火墙规则，也不存在
+“只允许阿里云来源访问状态接口”的公网攻击面。
+
 2026-07-27 的只读容量快照记录了四个 Java 进程的 `Xms/Xmx`、当前及峰值工作集、
 累计 CPU 时间和读写传输量。Velocity 峰值工作集约 `653 MiB`；三个 Paper 后端
 峰值分别约 `1.66 GiB`、`1.67 GiB`、`1.59 GiB`，均未触及各自 `2G` 上限。

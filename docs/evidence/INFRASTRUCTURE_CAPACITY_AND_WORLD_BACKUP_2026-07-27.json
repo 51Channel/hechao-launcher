@@ -79,6 +79,18 @@
     "paperBackendCount": 3,
     "paperBackendXmxGiBEach": 2,
     "observedJavaProcessCount": 4,
+    "statusCollection": {
+      "direction": "outbound-only",
+      "publicStatusInterfacePresent": false,
+      "collectorListenerPresent": false,
+      "localMinecraftProbeTargets": [
+        "127.0.0.1:19228",
+        "127.0.0.1:25565",
+        "127.0.0.1:25566",
+        "127.0.0.1:25568"
+      ],
+      "remoteApiTransport": "HTTPS POST with a separately provisioned heartbeat token"
+    },
     "physicalDisks": [
       {
         "mediaType": "SSD",
