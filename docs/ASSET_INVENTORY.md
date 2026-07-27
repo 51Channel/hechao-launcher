@@ -165,7 +165,7 @@ Survival1 的 `plugins` 目录，三份 SHA-256 均为
 `E:\manual-backups\server-metrics-20260727T004852Z`。部署前后 Java PID 未改变，
 没有重启服务端；TPS/MSPT/GC 等待服主下次自行重启后加载。
 
-2026-07-26 曾因两个每日任务并发创建约 3.4 GB 的不完整 ZIP，导致 `E:` 空间耗尽。两个损坏归档和一个 0 字节大厅归档已验证后清理；一份 `7,963,944,183` 字节的历史备份在核对文件名与大小后迁移到 `C:\manual-backups\E-drive-overflow`。新的世界备份引擎位于 `C:\ProgramData\Hechao\WorldBackup\Invoke-WorldBackup.ps1`，大小 `9,900` 字节，SHA-256 为 `C8166E8DE97AB3CCC03B6C652266C2B4541CA05F66E0FA271366C0845F9F1DB8`，会全局串行、按接近源文件总量做磁盘预检、写入 `.partial`、校验 ZIP 条目，并让 ZIP 与 SHA-256 旁车文件成对完成。远端双轮冒烟测试已通过；首次由 Essentials 正式计划任务生成的世界归档仍待验收。
+2026-07-26 曾因两个每日任务并发创建约 3.4 GB 的不完整 ZIP，导致 `E:` 空间耗尽。两个损坏归档和一个 0 字节大厅归档已验证后清理；一份 `7,963,944,183` 字节的历史备份在核对文件名与大小后迁移到 `C:\manual-backups\E-drive-overflow`。2026-07-27 部署的 VSS 世界备份引擎位于 `C:\ProgramData\Hechao\WorldBackup\Invoke-WorldBackup.ps1`，大小 `35,370` 字节，SHA-256 为 `2CC7511C222FEE2D984FD49D150F89355D7C9C48FD7A705FDB3DB047C34CD691`。它会在 Essentials 短暂冻结期间创建 VSS 一致快照，握手后后台压缩，按源文件最坏情况做磁盘预检，使用全局状态锁、`.partial`、ZIP 条目复核、SHA-256 旁车、原子完成、独立保留和精确卷影清理。部署后的锁文件测试读取 `481` 个文件并完成 `3,352,747` 字节 ZIP，任务返回 `0`，卷影和活动状态均无残留；四个 Java PID 未改变。首次由 Essentials 正式计划任务生成的生产世界归档仍待验收。
 
 同日复核的世界源文件量为 Survival1 `6,401,231,920` 字节、Survival2
 `10,852,061,168` 字节、Lobby `11,556,833` 字节。磁盘上的计划已调整为
