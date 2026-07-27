@@ -1683,7 +1683,7 @@ async Task<IResult> GetProfileObjectAsync(
         ? Results.Problem(
             title: "下载分发服务尚未就绪",
             statusCode: StatusCodes.Status503ServiceUnavailable)
-        : Results.Redirect(downloadUrl);
+        : new PrivateDownloadRedirectResult(downloadUrl);
 }
 
 async Task<IResult> GetAdminServersAsync(
