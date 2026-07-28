@@ -2,7 +2,7 @@
 
 > 当前线上版本：`0.20.2-20260727T225819Z`
 > 本地 API 源码候选：`0.21.0`（隔离验收通过，未部署生产）
-> 当前阶段：客户端版本/模组档案服务端兼容保护已生产部署；启动器 `0.11.15` 为私有 OSS 灰度候选
+> 当前阶段：客户端版本/模组档案服务端兼容保护已生产部署；启动器 `0.11.16` 为私有 OSS 灰度候选
 
 ## 1. 运行边界
 
@@ -351,4 +351,4 @@ systemctl reload nginx
 | `0.20.1-20260727T145451Z` | `94BC3831A4749A545968E90BD1ABD638BE26BD23B058091E2A91AF417D09AB54` | 私有签名 URL 不进入 journal，Nginx 查询参数/Referer 脱敏、`355/355` 测试、原子部署和平滑日志切换通过；`0.20.2` 的直接回滚目标 |
 | `0.20.2-20260727T225819Z` | `327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6` | 会话来源、Minecraft 版本和模组档案兼容保护，`360/360` .NET、`13/13` Velocity、生产矩阵 `8/8`；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏和客户端兼容保护均已部署。API `0.20.2` 为当前线上版本，启动器 `0.11.15` 为私有 OSS 灰度候选；真实管理员 MFA、基础客户端登录/转服、诊断上传、管理员下载和对应审计均已完成。五服指标代理已经加载，Activity 单账号路由已通过，PVP 服务端兼容修复已部署但仍待真实复测；四级真实账号和多人灰度仍未完成。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏和客户端兼容保护均已部署。API `0.20.2` 为当前线上版本，启动器 `0.11.16` 为私有 OSS 灰度候选；真实管理员 MFA、基础客户端登录/转服、诊断上传、管理员下载和对应审计均已完成。五服指标代理已经加载，Activity 单账号路由已通过，PVP 服务端兼容修复已部署但仍待真实复测；四级真实账号和多人灰度仍未完成。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
