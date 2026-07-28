@@ -6,7 +6,9 @@ param(
     [string]$OutputPath,
 
     [ValidateRange(1, 1000)]
-    [int]$RegionSampleModulo = 1
+    [int]$RegionSampleModulo = 1,
+
+    [string[]]$AllowedEmptyAuxiliaryRegionRelativePaths = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -88,9 +90,25 @@ function Test-LevelDat {
 }
 
 function Test-RegionFile {
-    param([System.IO.FileInfo]$File)
+    param(
+        [System.IO.FileInfo]$File,
+
+        [switch]$AllowEmptyAuxiliaryPlaceholder
+    )
 
     if ($File.Length -lt $regionHeaderBytes) {
+        if ($File.Length -eq 0 -and
+            $AllowEmptyAuxiliaryPlaceholder -and
+            $File.Directory.Name -in @('entities', 'poi')) {
+            return [pscustomobject]@{
+                Path = $File.FullName
+                Bytes = 0
+                Chunks = 0
+                ExternalChunks = 0
+                EmptyAuxiliaryPlaceholder = $true
+                Valid = $true
+            }
+        }
         throw "Region file is shorter than $regionHeaderBytes bytes."
     }
 
@@ -162,6 +180,7 @@ function Test-RegionFile {
             Bytes = $File.Length
             Chunks = $chunks
             ExternalChunks = $externalChunks
+            EmptyAuxiliaryPlaceholder = $false
             Valid = $true
         }
     }
@@ -171,6 +190,36 @@ function Test-RegionFile {
 }
 
 $resolvedRoot = (Resolve-Path -LiteralPath $RestoreRoot).Path
+$allowedEmptyAuxiliaryRegions =
+    [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+$usedAllowedEmptyAuxiliaryRegions =
+    [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+foreach ($relativePath in $AllowedEmptyAuxiliaryRegionRelativePaths) {
+    if ([string]::IsNullOrWhiteSpace($relativePath) -or
+        [System.IO.Path]::IsPathRooted($relativePath)) {
+        throw "Allowed empty auxiliary region path is invalid: $relativePath"
+    }
+
+    $candidatePath = [System.IO.Path]::GetFullPath(
+        (Join-Path $resolvedRoot ($relativePath -replace '/', '\')))
+    $rootPrefix = $resolvedRoot.TrimEnd('\') + '\'
+    if (-not $candidatePath.StartsWith(
+            $rootPrefix,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Allowed empty auxiliary region path escapes restore root: $relativePath"
+    }
+
+    $normalizedRelativePath = $candidatePath.Substring($rootPrefix.Length)
+    if ([System.IO.Path]::GetExtension($normalizedRelativePath) -ine '.mca') {
+        throw "Allowed empty auxiliary region is not an .mca file: $relativePath"
+    }
+    if (-not $allowedEmptyAuxiliaryRegions.Add($normalizedRelativePath)) {
+        throw "Allowed empty auxiliary region is duplicated: $relativePath"
+    }
+}
+
 $worldResults = foreach ($worldDirectory in Get-ChildItem -LiteralPath $resolvedRoot -Directory) {
     $files = @(Get-ChildItem -LiteralPath $worldDirectory.FullName -File -Recurse)
     $levelFiles = @($files | Where-Object Name -eq 'level.dat')
@@ -200,7 +249,17 @@ $worldResults = foreach ($worldDirectory in Get-ChildItem -LiteralPath $resolved
     }
     foreach ($regionFile in $regionFilesToValidate) {
         try {
-            $validRegions.Add((Test-RegionFile -File $regionFile))
+            $relativeRegionPath = $regionFile.FullName.Substring(
+                $resolvedRoot.TrimEnd('\').Length + 1)
+            $allowEmptyAuxiliaryPlaceholder =
+                $allowedEmptyAuxiliaryRegions.Contains($relativeRegionPath)
+            $regionResult = Test-RegionFile `
+                -File $regionFile `
+                -AllowEmptyAuxiliaryPlaceholder:$allowEmptyAuxiliaryPlaceholder
+            $validRegions.Add($regionResult)
+            if ($regionResult.EmptyAuxiliaryPlaceholder) {
+                [void]$usedAllowedEmptyAuxiliaryRegions.Add($relativeRegionPath)
+            }
         }
         catch {
             $issues.Add("$($regionFile.FullName): $($_.Exception.Message)")
@@ -219,6 +278,9 @@ $worldResults = foreach ($worldDirectory in Get-ChildItem -LiteralPath $resolved
         RegionSampleModulo = $RegionSampleModulo
         SampledRegionFileCount = $regionFilesToValidate.Count
         ValidRegionFileCount = $validRegions.Count
+        EmptyAuxiliaryRegionPlaceholderCount = @(
+            $validRegions | Where-Object EmptyAuxiliaryPlaceholder
+        ).Count
         ChunkCount = ($validRegions | Measure-Object Chunks -Sum).Sum
         ExternalChunkCount = ($validRegions | Measure-Object ExternalChunks -Sum).Sum
         IssueCount = $issues.Count
@@ -231,13 +293,29 @@ $worldResults = foreach ($worldDirectory in Get-ChildItem -LiteralPath $resolved
     }
 }
 
+$unusedAllowedEmptyAuxiliaryRegions = @(
+    $allowedEmptyAuxiliaryRegions |
+        Where-Object {
+            -not $usedAllowedEmptyAuxiliaryRegions.Contains($_)
+        } |
+        Sort-Object
+)
 $result = [pscustomobject]@{
     SchemaVersion = 1
     VerifiedAt = (Get-Date).ToUniversalTime().ToString('o')
     RestoreRoot = $resolvedRoot
+    AllowedEmptyAuxiliaryRegionRelativePaths = @(
+        $allowedEmptyAuxiliaryRegions | Sort-Object
+    )
+    UsedAllowedEmptyAuxiliaryRegionRelativePaths = @(
+        $usedAllowedEmptyAuxiliaryRegions | Sort-Object
+    )
+    UnusedAllowedEmptyAuxiliaryRegionRelativePaths =
+        $unusedAllowedEmptyAuxiliaryRegions
     Worlds = @($worldResults)
     Passed = @($worldResults).Count -gt 0 -and
-        @($worldResults | Where-Object { -not $_.Passed }).Count -eq 0
+        @($worldResults | Where-Object { -not $_.Passed }).Count -eq 0 -and
+        $unusedAllowedEmptyAuxiliaryRegions.Count -eq 0
 }
 $json = $result | ConvertTo-Json -Depth 6
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
