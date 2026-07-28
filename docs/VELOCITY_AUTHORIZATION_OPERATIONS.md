@@ -111,8 +111,11 @@ Survival2 和活动服 PID 保持 `5300`、`5540`、`9428`、`6112`，均未重�
 生产 API 已使用匿名化的真实已绑定身份完成 `8/8` 客户端兼容矩阵：同版本 Paper
 互转允许，Lobby 基础档案转 Activity 被 `ClientProfileMismatch` 拒绝，跨
 1.21.11/1.20.1 被 `MinecraftVersionMismatch` 拒绝，Activity/PVP 原档案自连允许。
-插件目标改写和硬拒绝行为由 `13/13` 个 Java 测试覆盖。该自动验收不替代真实玩家
-连接、NPC 转服和 `/hub` 灰度。
+生产 `0.3.0` 的目标改写和硬拒绝行为在发布时由 `13/13` 个 Java 测试覆盖。
+隔离候选 `0.3.1` 进一步修复成功转服后的会话来源跟踪，并把当前开发测试扩展到
+`20/20`；生产 JAR 尚未替换。自动验收不替代真实玩家连接、NPC 转服和 `/hub`
+灰度。候选记录见
+[`VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md`](VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md)。
 
 owl9 的 PVP Fabric `1.20.1` 后端已安装 FabricProxy-Lite `2.6.0`，保持
 `online-mode=true` 并使用与代理一致的 modern forwarding 密钥。部署前后 PVP

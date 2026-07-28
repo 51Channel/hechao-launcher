@@ -60,4 +60,6 @@ ViaVersion/ViaBackwards 与目录开关没有启用。
 该候选只证明迁移和授权门槛在生产数据副本上正确，不证明真实协议转换。发布生产前
 仍需使用正确 PVP 1.20.1 客户端连接回环隔离代理并完成 `/hub`，核对 UUID、皮肤、
 权限、物品栏、命令、移动、重连和正常退出。真实会话通过前不发布 API `0.21.0`，
-不启用生产 Via JAR，也不切换 Velocity `enforce`。
+不启用生产 Via JAR，也不切换 Velocity `enforce`。隔离代理使用会话来源修复候选
+Authorizer `0.3.1`，记录见
+[`VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md`](VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md)。

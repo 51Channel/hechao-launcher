@@ -101,12 +101,16 @@ API 管理器把生产备份恢复到独立数据库，只监听 `127.0.0.1:1809
 
 2026-07-28 已在 `E:\Velocity-PvpReturn-Staging` 启动只监听
 `127.0.0.1:25579` 的隔离代理。ViaVersion/ViaBackwards `5.11.0` 与
-HubCommand、Authorizer `0.3.0` 均正常加载，错误日志为 `0`。隔离 Authorizer
+HubCommand、Authorizer `0.3.1` 候选均正常加载，错误日志为 `0`。`0.3.1` 会在
+每次实际放行后更新会话来源，避免 PVP -> Lobby 后仍以 PVP 作为下一次兼容判定来源；
+生产 Authorizer 仍为 `0.3.0`。隔离 Authorizer
 保持 `monitor`，凭据认证探针返回预期的 `PlayerNotLinked`。通过 SSH 本地转发执行
 [`Test-MinecraftProtocolStatus.ps1`](../tools/acceptance/Test-MinecraftProtocolStatus.ps1)，
 协议 `393`、`763` 和 `774` 分别协商为相同协议号。它证明最低支持边界、PVP 版本和
 大厅版本的 Via 状态链可用，不替代真实正版登录与后端转服。机器可读证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)。
+候选修复与隔离部署见
+[`VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md`](VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md)。
 
 API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据库，只监听
 `127.0.0.1:18093` 完成授权验收。迁移 018 将全部既有目标初始化为关闭；PVP 到大厅

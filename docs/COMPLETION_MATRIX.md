@@ -28,7 +28,7 @@
 | 启动器 `0.11.15` 源码与标签 | 已完成 | 制品源码提交 `5e0943ae291f1e0eb48bf7e1e07809e62a4972dc`，标签 `launcher-v0.11.15` |
 | Windows 安装、覆盖升级与卸载 | 已完成 | 可重复验证脚本完成隔离目录干净安装、`0.11.14 -> 0.11.15`、双轮卸载、设置与 DPAPI 会话哈希、ProductVersion 和快捷方式验证 |
 | 私有 OSS 发布 | 已完成 | 不可变对象、二次跳过、匿名 `403`、签名下载 `200`、`61,867,426` 字节和 SHA-256 复验 |
-| 自动测试 | 已完成 | 当前开发分支 .NET `368/368`，Velocity `13/13`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2`；日志配置恢复、私有重定向日志边界、客户端兼容判定、协议转换默认关闭及 RAM 最小权限断言均已覆盖 |
+| 自动测试 | 已完成 | 当前开发分支 .NET `368/368`，Velocity `20/20`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2`；日志配置恢复、私有重定向日志边界、客户端兼容判定、协议转换默认关闭、转服会话来源和 RAM 最小权限断言均已覆盖 |
 | 2 至 3 人真实灰度 | 外部验收 | 按 [`PRELAUNCH_PILOT_0.11.15.md`](PRELAUNCH_PILOT_0.11.15.md) 执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -79,7 +79,7 @@
 | --- | --- | --- |
 | Velocity 异步授权、首次目标与客户端兼容 | 已实现待生产验收 | API `0.20.2` + 插件 `0.3.0` 以 `monitor` 运行；生产兼容矩阵 `8/8`，Lobby/Survival1/Survival2、Activity 与 PVP 的单账号真实首次目标均通过；仍缺四级账号、兼容转服、重连和故障路径 |
 | PVP Fabric 后端 modern forwarding | 已完成 | owl9 持久任务加载 FabricProxy-Lite `2.6.0` 与官方 CrossStitch `0.1.6`；真实会话稳定 `586` 秒、启动/后端身份一致、解码错误为 `0`、公网直连被 `velocity:player_info` 明确拒绝、正常退出码为 `0` |
-| PVP 跨版本返回大厅授权 | 已实现待隔离实机验收 | 迁移 018、目标服级后台开关和授权规则已实现；API `0.21.0` 已在生产数据库副本上验证全部既有目标默认关闭、只开启大厅后 PVP 回程允许、反向仍拒绝且 NeoForge 档案保护不能绕过。回环隔离代理已用协议 `393/763/774` 完成 status 协商，受限凭据 API 探针返回预期 `PlayerNotLinked`，Via 错误为 `0`；仍待真实登录与 `/hub`。候选未部署，现网 Via JAR 仍禁用，证据见 `API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json` 与 `PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json` |
+| PVP 跨版本返回大厅授权 | 已实现待隔离实机验收 | 迁移 018、目标服级后台开关和授权规则已实现；API `0.21.0` 已在生产数据库副本上验证全部既有目标默认关闭、只开启大厅后 PVP 回程允许、反向仍拒绝且 NeoForge 档案保护不能绕过。回环隔离代理已用协议 `393/763/774` 完成 status 协商，受限凭据 API 探针返回预期 `PlayerNotLinked`，Via 错误为 `0`；Authorizer `0.3.1` 修复转服后会话来源并通过 `20/20` 测试，仅在隔离代理加载。仍待真实登录与 `/hub`；API 候选未部署，生产 Authorizer 仍为 `0.3.0`，现网 Via JAR 仍禁用，证据见 `API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`、`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json` 与 `VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md` |
 | NPC、`/hub`、断线重连和 API 故障路径 | 外部验收 | 一次 PVP 重连在 Velocity 认证前超时，仍需成功样本。PVP `1.20.1` 与大厅 `1.21.11` 不兼容，当前 `/hub` 不能算通过，需先完成专用回程的隔离验证与上线；其余路径需要真实玩家与真实代理日志 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |

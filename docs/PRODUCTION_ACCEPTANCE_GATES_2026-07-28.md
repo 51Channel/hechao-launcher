@@ -106,7 +106,9 @@ Resolved，触发与恢复邮件均成功投递。offsite timer 现为 `enabled/
 均能完成 status 协商，受限凭据的 API 认证探针返回预期 `PlayerNotLinked`，Via
 错误为 `0`；API `0.21.0` 也已在生产数据库副本上通过迁移默认关闭、只开启大厅后的
 PVP 回程授权、反向隔离和模组档案防绕过验收。候选没有部署，生产数据库仍为迁移
-17。这些结果仍不包含正版登录或后端转服，不能替代真实 `/hub`。
+17。隔离 Authorizer `0.3.1` 已修复成功转服后会话来源不更新的问题并通过
+`20/20` 测试，生产仍为 `0.3.0`。这些结果仍不包含正版登录或后端转服，不能替代
+真实 `/hub`。
 证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)
 与

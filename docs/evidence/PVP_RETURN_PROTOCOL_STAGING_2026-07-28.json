@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T03:37:55.5060380+00:00",
+  "capturedAt": "2026-07-28T04:13:24.5837444+00:00",
   "scope": "PVP 1.20.1 to Lobby 1.21.11 protocol-translation staging",
   "result": "authenticated-probe-and-protocol-status-passed-real-session-pending",
   "probe": {
@@ -36,7 +36,7 @@
     "root": "E:\\Velocity-PvpReturn-Staging",
     "task": "Hechao-Velocity-PvpReturn-Staging",
     "taskState": "Running",
-    "processIdAtCapture": 11140,
+    "processIdAtCapture": 8464,
     "listener": "127.0.0.1:25579",
     "velocitySha256": "CCC49F71751ECE26568D3476392D6130C8B43F2E5F3A88313325B9278A52BABD",
     "viaVersion": {
@@ -62,10 +62,22 @@
   },
   "authorization": {
     "plugin": {
-      "version": "0.3.0",
-      "sha256": "289B13472AEAC4073895EF9BE7E630B4B5AACEC48A4D0FD849BBAFE0064E681D",
+      "version": "0.3.1",
+      "sha256": "2FC06C2DBE6F01AFAC2C5AA016C902A10B4B1675C876C5850630B726BB041E75",
+      "sizeBytes": 21215,
       "mode": "monitor",
       "proxyInstance": "owl5-pvp-return-staging"
+    },
+    "sessionTrackingCandidate": {
+      "sourceCommit": "6d98fabf11960aa3ed790f5f7cc004cb0866fd62",
+      "testsPassed": 20,
+      "testsFailed": 0,
+      "updatesSourceAfterAllowedTransfer": true,
+      "tracksActualMonitorFailOpenTarget": true,
+      "enforceApiFailureRemainsClosed": true,
+      "enabledJarCount": 1,
+      "deploymentBackup": "E:\\manual-backups\\PvpReturnAuthorizerStaging-20260728T040947Z",
+      "stagingOnly": true
     },
     "apiCandidate": {
       "version": "0.21.0",
@@ -79,8 +91,8 @@
       "writtenToLocalDisk": false,
       "disclosed": false,
       "configurationAclRestricted": true,
-      "authorizationBackupCount": 4,
-      "securedBackupObjectCount": 17,
+      "authorizationBackupCount": 5,
+      "securedBackupObjectCount": 22,
       "invalidBackupAclCount": 0,
       "backupCredentialContentInspected": false,
       "allowedAclPrincipals": [
@@ -99,12 +111,14 @@
     "script": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
     "sha256": "B8407D8690F058EA3CB824BB46D99922020E08AC51917DA6A407D558B093072F",
     "authorizationScript": "deploy/windows/velocity-staging/Set-PvpReturnStagingAuthorization.ps1",
-    "authorizationScriptSha256": "6680E0243F96A485EE48CBFA7321390DA21F24271CA3C0DBA896CBF771C4ED4C",
+    "authorizationScriptSha256": "E5C304CDD3AB6F445AC7E0B6976DC97C0C9B2A7EBDF16D1A8C2FAF13CF166D60",
+    "authorizerCandidateInstaller": "deploy/windows/velocity-staging/Install-PvpReturnStagingAuthorizer.ps1",
+    "authorizerCandidateInstallerSha256": "40C22E85458A42E10F4993398D8179F79B433CA399F915A1886900DF73BC2790",
     "credentialInstaller": "deploy/windows/velocity-staging/Install-PvpReturnStagingCredential.ps1",
     "credentialInstallerSha256": "A39EC798E1CB684694154ABA1877E847D27ADEF3D42199DB912F7E31C5C3B6A7",
     "apiStagingManager": "deploy/linux/manage-protocol-translation-staging.sh",
     "apiStagingManagerSha256": "D8B506A18861757941FD252D70CF6F894799E4D9F8818A2A7219DC2AC73A0A61",
-    "validatedAt": "2026-07-28T02:46:56.1878284+00:00",
+    "validatedAt": "2026-07-28T04:12:51.2239642+00:00",
     "parserPassed": true,
     "statusBeforePassed": true,
     "removeWithoutConfirmationRejected": true,
@@ -113,6 +127,8 @@
   "production": {
     "velocityProcessIdAtCapture": 472,
     "velocityConfigSha256": "A300E7CBE190B42E434763CFCCAFB9D821F894B02E72A594ED72B340C3E22C70",
+    "authorizerVersion": "0.3.0",
+    "authorizerSha256": "289B13472AEAC4073895EF9BE7E630B4B5AACEC48A4D0FD849BBAFE0064E681D",
     "enabledViaJarCount": 0,
     "changed": false
   },
@@ -126,6 +142,8 @@
     "stagingCredentialAclRestricted": true,
     "lobbyBackendTcpReachable": true,
     "pvpBackendTcpReachable": true,
+    "stagingAuthorizerSessionTrackingFixed": true,
+    "productionAuthorizerUnchanged": true,
     "productionVelocityUnchanged": true
   },
   "limitations": [
