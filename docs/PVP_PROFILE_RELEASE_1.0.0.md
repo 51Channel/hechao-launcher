@@ -49,6 +49,19 @@
 
 心跳采集器已登记 `owl9.vipi9.top:19243`，生产观测为 Minecraft `1.20.1`、协议 `763`、`0/20`。
 
+## 本机运行时复核
+
+管理机的客户端数据根包含一个不可见 Unicode Format 字符。Windows 原生 Java
+启动器不能直接从该长路径定位同目录 `java.dll`，赫朝启动器 `0.11.16` 会为档案游戏
+目录和运行时分别建立 `%LocalAppData%\Hechao\Launcher\runtime-links` 下的 ASCII
+Junction。2026-07-28 使用实际 `pvp-fabric-1.20.1` 档案完成以下复核：
+
+- Junction 路径下 `java.exe -version` 返回 Microsoft OpenJDK `17.0.15`；
+- 无启动构建生成 `javaw.exe`，可执行路径和全部参数均不含该不可见字符；
+- 构建参数包含 Fabric Loader，目标仅为回环隔离代理 `127.0.0.1:25589`；
+- 专项真实档案测试 `1/1`、启动器测试 `97/97`、完整 `.NET` 测试 `370/370` 通过；
+- 测试只构建 `ProcessStartInfo`，没有启动 Minecraft、连接代理或消费真实授权。
+
 ## 备份与回滚
 
 - 数据库备份：`/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`

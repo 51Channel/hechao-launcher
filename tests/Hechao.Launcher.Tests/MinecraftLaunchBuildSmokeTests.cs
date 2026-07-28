@@ -7,6 +7,56 @@ public sealed class MinecraftLaunchBuildSmokeTests
 {
     [Fact]
     [Trait("Category", "Smoke")]
+    public async Task HorrorPrankProfile_BuildsFromFormatCharacterDataRoot()
+    {
+        var dataRoot = Environment.GetEnvironmentVariable(
+            "HECHAO_HORROR_PROFILE_SMOKE_DATA_ROOT");
+        if (string.IsNullOrWhiteSpace(dataRoot))
+        {
+            return;
+        }
+
+        const string profileId = "pvp-fabric-1.20.1";
+        Assert.True(ProfileRuntimePathResolver.ContainsFormatCharacters(dataRoot));
+
+        using var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(30)
+        };
+        var runtimeService = new ProfileJavaRuntimeService(httpClient);
+        Assert.True(await runtimeService.IsReadyAsync(dataRoot, profileId));
+
+        var launcher = new MinecraftGameLauncherService(
+            httpClient,
+            MinecraftServerEndpoint.Parse("127.0.0.1:25589"),
+            microsoftClientId: null,
+            runtimeRootOverride: null);
+        var request = new MinecraftLaunchRequest(
+            dataRoot,
+            profileId,
+            4096,
+            new MinecraftLaunchSession(
+                "HechaoSmokeTest",
+                Guid.Parse("12345678-1234-1234-1234-123456789abc"),
+                "not-a-real-minecraft-token",
+                DateTimeOffset.UtcNow.AddMinutes(10),
+                Xuid: null));
+
+        using var process = await launcher.BuildProcessAsync(request);
+        var arguments = GetArguments(process.StartInfo);
+
+        Assert.True(File.Exists(process.StartInfo.FileName));
+        Assert.DoesNotContain('\u200c', process.StartInfo.FileName);
+        Assert.DoesNotContain('\u200c', arguments);
+        Assert.Contains(
+            "fabric-loader",
+            arguments,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.False(process.StartInfo.UseShellExecute);
+    }
+
+    [Fact]
+    [Trait("Category", "Smoke")]
     public async Task PerProfileRuntime_InstallsAndBuildsFromConfiguredDataRoot()
     {
         var dataRoot = Environment.GetEnvironmentVariable(

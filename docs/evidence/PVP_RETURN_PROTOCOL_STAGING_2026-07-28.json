@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T04:13:24.5837444+00:00",
+  "capturedAt": "2026-07-28T08:11:09.8091467+00:00",
   "scope": "PVP 1.20.1 to Lobby 1.21.11 protocol-translation staging",
   "result": "authenticated-probe-and-protocol-status-passed-real-session-pending",
   "probe": {
@@ -31,6 +31,32 @@
         "passed": true
       }
     ]
+  },
+  "clientRuntimeReadiness": {
+    "profileId": "pvp-fabric-1.20.1",
+    "profileVersion": "1.0.0",
+    "minecraftVersion": "1.20.1",
+    "loader": "Fabric 0.16.14",
+    "javaMajorVersion": 17,
+    "javaRuntimeVersion": "17.0.15",
+    "dataRootContainsUnicodeFormatCharacter": true,
+    "directLongPathNativeJavaBootstrapUnsupported": true,
+    "asciiCompatibilityJunctionPresent": true,
+    "javaVersionProbePassedThroughJunction": true,
+    "buildProcessPassed": true,
+    "builtProcessStarted": false,
+    "serverConnectionAttempted": false,
+    "executableContainsFormatCharacter": false,
+    "argumentsContainFormatCharacter": false,
+    "buildTarget": "127.0.0.1:25589",
+    "testFile": "tests/Hechao.Launcher.Tests/MinecraftLaunchBuildSmokeTests.cs",
+    "testFileSha256": "7B02715F188D4B854B92A235E4A593E956ADB8687B0167889E902B27DD2E1F1C",
+    "focusedTestsPassed": 1,
+    "focusedTestsFailed": 0,
+    "launcherTestsPassed": 97,
+    "launcherTestsFailed": 0,
+    "solutionTestsPassed": 370,
+    "solutionTestsFailed": 0
   },
   "staging": {
     "root": "E:\\Velocity-PvpReturn-Staging",
@@ -203,6 +229,7 @@
     "stagingAuthorizerSessionTrackingFixed": true,
     "candidateCatalogHeartbeatRefreshPassed": true,
     "candidateCatalogHeartbeatTimerPassed": true,
+    "horrorProfileRuntimeBuildPassed": true,
     "candidateCatalogHorrorMeaningVerified": true,
     "truePvpBackendUntouched": true,
     "productionAuthorizerUnchanged": true,
