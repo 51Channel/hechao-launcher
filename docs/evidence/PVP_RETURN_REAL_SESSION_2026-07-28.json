@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T12:57:21.3595205Z",
+  "capturedAt": "2026-07-28T15:56:10.0000000Z",
   "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
-  "result": "protocol-failure-remediated-real-session-retest-pending",
+  "result": "first-real-session-passed-reconnect-and-visual-checks-pending",
   "privacy": {
     "playerNameStored": false,
     "minecraftUuidStored": false,
@@ -50,6 +50,45 @@
       "luckPermsFailure": false
     }
   },
+  "velocity4SingleLayerRetest": {
+    "freshCandidateGrantCreated": true,
+    "clientConnectedToIsolatedEndpoint": true,
+    "initialTargetRoutedToHorrorPrank": true,
+    "horrorPrankBackendLoginPassed": true,
+    "hubCommandReachedLobbyBackend": true,
+    "horrorPrankBackendDisconnectedAfterTransfer": true,
+    "lobbyBackendLoginPassed": true,
+    "lobbyJoinCompleted": true,
+    "lobbyConnectionStable": true,
+    "observedStableSeconds": 591,
+    "proxyDecoderErrorCount": 0,
+    "lobbyDecoderErrorCount": 0,
+    "horrorPrankDecoderErrorCount": 0,
+    "unexpectedDisconnectCount": 0,
+    "voiceChatReauthenticatedOnLobby": true,
+    "identity": {
+      "bothBackendIdentityRecordsFound": true,
+      "nameAndUuidMatchAcrossBackends": true,
+      "identityMaterialStored": false
+    },
+    "permissionsAndInteraction": {
+      "roleWelcomeSeen": true,
+      "luckPermsCommandSucceeded": true,
+      "permissionDeniedMessageCount": 0,
+      "chatMessageRoundTripPassed": true,
+      "skinVisualCheckPending": true,
+      "inventoryVisualCheckPending": true,
+      "movementVisualCheckPending": true
+    },
+    "performance": {
+      "lobbyTps1m": 20.000821380266547,
+      "lobbyMsptAverage": 0.756879108910891,
+      "lobbyGcDeltaMilliseconds": 65,
+      "horrorPrankTps1m": 20.0,
+      "horrorPrankMsptAverage": 12.262409974999999,
+      "horrorPrankGcDeltaMilliseconds": 0
+    }
+  },
   "remediation": {
     "scope": "loopback-only staging proxy",
     "gameServersRestarted": false,
@@ -84,7 +123,8 @@
       "runtime": "E:\\server-artifacts\\java\\temurin-jre-25.0.4+7",
       "runtimeArchiveSha256": "5B0D58F043F762FA3EE6CC12B6774B59B245CAFDCB357E45CE61F822AA9A56CB",
       "started": true,
-      "realSessionRetestPending": true
+      "firstRealSessionPassed": true,
+      "reconnectRetestPending": true
     },
     "translationOwnershipCorrection": {
       "duplicateTranslationDetected": true,
@@ -100,7 +140,7 @@
       "gameServersRestarted": false,
       "productionVelocityRestarted": false,
       "backup": "E:\\manual-backups\\velocity-pvp-return-staging-backend-via-20260728-205242",
-      "realSessionRetestPending": true
+      "firstRealSessionPassed": true
     },
     "staging": {
       "root": "E:\\Velocity-PvpReturn-Staging",
@@ -169,9 +209,8 @@
     }
   },
   "remainingRealSessionChecks": [
-    "use a fresh candidate launch grant to enter HorrorPrank through Velocity 4",
-    "execute /hub and remain connected to Lobby",
-    "verify identity, skin, LuckPerms permissions, inventory, chat, command tree and movement",
+    "visually verify skin, inventory and movement in Lobby",
+    "verify the reverse incompatible transfer is rejected while the player remains in Lobby",
     "use another fresh grant to re-enter HorrorPrank",
     "verify reconnect and normal client exit",
     "capture post-session proxy, backend and performance evidence"

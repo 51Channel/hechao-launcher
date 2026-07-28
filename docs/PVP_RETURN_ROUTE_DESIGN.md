@@ -142,7 +142,14 @@ Temurin Java `25.0.4+7`，核心 SHA-256 为
 隔离核心、隔离 Java 与大厅 Via 哈希，并拒绝隔离代理启用 Via，避免重建环境时恢复
 重复翻译；
 缓存制品位于 `E:\server-artifacts\velocity\velocity-4.0.0-6.jar`。生产 Velocity、
-API、游戏服和 owl9 真正 PVP 均未修改。Velocity 4 的真实 `/hub` 仍待复测，机器证据见
+API、游戏服和 owl9 真正 PVP 均未修改。
+
+修正后的真实恐怖整蛊 -> `/hub` -> Lobby 会话已成功：客户端连接隔离入口，先进入
+恐怖整蛊，再于 `23:46:17` 完成后端切换；Lobby 登录完成并稳定超过 `591` 秒。
+代理、恐怖整蛊、大厅和客户端解码错误均为 `0`，两个后端的名称与 UUID 内存比对
+一致，聊天和 LuckPerms 命令通过。大厅采样约 `20 TPS / 0.76 MSPT`、GC 短窗口增加
+`65 ms`；恐怖整蛊约 `20 TPS / 12.26 MSPT`、GC 增量 `0 ms`。该结果证明首条真实
+回程通过，仍不替代皮肤/背包/移动目视、反向拒绝、再次进入、重连与正常退出。机器证据见
 [`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
 
 API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据库，只监听

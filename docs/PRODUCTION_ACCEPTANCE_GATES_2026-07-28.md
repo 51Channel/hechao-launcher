@@ -104,7 +104,7 @@ Resolved，触发与恢复邮件均成功投递。offsite timer 现为 `enabled/
 验证器默认仍严格拒绝，只有完整匹配源端清单时才接受。真正 PVP 未触碰。详见
 [`evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json`](evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json)。
 
-### 3.4 恐怖整蛊真实 Velocity 路由：核心链路已通过，重连与回程仍待完成
+### 3.4 恐怖整蛊真实 Velocity 路由：首条回程已通过，完整重连仍待完成
 
 正确赫朝客户端已完成恐怖整蛊 Fabric `1.0.0` 档案、独立 Java 17 和全部清单文件安装。
 第一次真实启动已由 Velocity 通过历史目标 `pvp` 正确路由到恐怖整蛊服，但后端自定义包解码失败并立即断开。
@@ -128,7 +128,10 @@ ViaVersion/ViaBackwards，已调整为代理 Via `0`、大厅 Via `2` 的后端�
 启动均通过。API `0.21.0` 也已在生产数据库副本上通过迁移默认关闭、只开启大厅后的
 恐怖整蛊回程授权、反向隔离和模组档案防绕过验收。候选没有部署，生产数据库仍为迁移
 17。隔离 Authorizer `0.3.1` 已修复成功转服后会话来源不更新的问题并通过
-`20/20` 测试，生产仍为 `0.3.0`。Velocity 4 单层翻译候选仍须真实 `/hub` 复测。
+`20/20` 测试，生产仍为 `0.3.0`。Velocity 4 单层翻译候选的首条真实
+恐怖整蛊 -> `/hub` -> Lobby 已通过并稳定超过 `591` 秒；四段日志解码错误为 `0`，
+两个后端的名称与 UUID 内存比对一致，聊天、LuckPerms、TPS/MSPT 与短窗口 GC 均
+通过。仍须完成皮肤/背包/移动目视、反向拒绝、再次进入、重连和正常退出。
 证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)
 与

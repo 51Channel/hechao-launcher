@@ -75,6 +75,8 @@ Via JAR 数量。
 所有游戏服未重启。机器证据见
 [`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
 
-当前仍须完成 Velocity 4 的 PVP -> `/hub` -> Lobby、反向转服拒绝、
-再次签发进入 PVP、断线重连、身份/皮肤/权限和正常退出。真实会话通过前不得替换
-生产 `0.3.0`，不得启用生产 Via，也不得切换 `enforce`。
+修正后的首条 PVP -> `/hub` -> Lobby 真实会话已通过并稳定超过 `591` 秒。四段日志
+解码错误为 `0`，两个后端的名称与 UUID 内存比对一致，聊天、LuckPerms、TPS/MSPT
+和短窗口 GC 均通过。当前仍须完成皮肤/背包/移动目视、反向转服拒绝、再次签发进入
+PVP、断线重连和正常退出。完整验收前不得替换生产 `0.3.0`，不得启用生产 Via，也
+不得切换 `enforce`。
