@@ -43,12 +43,16 @@
 - 首轮自动验收清理后，又由 `manage-protocol-translation-staging.sh` 重建同构持久
   隔离副本供真实会话使用；Authorizer 受限凭据探针返回预期 `PlayerNotLinked`，
   证明 API 认证链可达，但不等同于真实玩家授权或转服。
-- 持久副本通过 `refresh-heartbeats` 只读复制生产数据库中 60 秒内新鲜且在线的
+- 持久副本通过 `refresh-heartbeats` 只读复制生产数据库中 120 秒内新鲜且在线的
   `lobby` 和 `pvp` 心跳。`pvp` 是恐怖整蛊的历史目录 ID，对应
   `C:\mc\server`；真正 PVP `E:\MinecraftServer` 未启动、未访问。同步后匿名目录
   实测大厅和恐怖整蛊均为 `Online`，Activity 因未同步新鲜心跳保持 `Closed`。
-- 心跳复制前后均执行生产发布、迁移和进程基线断言；任一必需心跳缺失、超过 60 秒或
+- 候选 API 的目录新鲜窗口为 180 秒，120 秒同步门槛保留 60 秒失败关闭余量。
+  心跳复制前后均执行生产发布、迁移和进程基线断言；任一必需心跳缺失、超过 120 秒或
   离线时失败关闭。生产数据库只读，隔离候选数据库是唯一写入目标。
+- 真实登录期间由 transient systemd timer 每 20 秒执行一次相同刷新；候选 API
+  `stop` 或隔离环境 `remove` 会先停止定时器。多轮实测连续成功 10 次、失败 0 次，
+  `heartbeatTargetState` 持续为 `2|2|2`。
 
 验收使用临时合成身份，不读取或记录真实玩家 UUID、名称、令牌或数据库凭据。机器可读
 证据见

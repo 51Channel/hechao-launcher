@@ -23,8 +23,11 @@ production_service="hechao-launcher-api.service"
 production_environment="/etc/hechao-launcher-api/environment"
 production_current="/opt/hechao-launcher-api/current"
 unit_name="hechao-api-protocol-translation-staging"
+heartbeat_sync_unit="${unit_name}-heartbeat-sync"
+manager_path="$(readlink -f -- "$0")"
 port=18093
 base_url="http://127.0.0.1:${port}"
+heartbeat_sync_freshness_seconds=120
 prepare_complete=false
 database_created=false
 
@@ -104,7 +107,7 @@ production_snapshot() {
 
 require_tools() {
   local tool
-  for tool in curl docker jq openssl pg_restore python3 sha256sum ss systemctl tar; do
+  for tool in curl docker flock jq openssl pg_restore python3 readlink sha256sum ss systemctl tar; do
     command -v "$tool" >/dev/null || fail "required tool is missing: $tool"
   done
 }
@@ -140,6 +143,7 @@ assert_production_baseline() {
 }
 
 stop_candidate() {
+  stop_heartbeat_sync
   if systemctl is-active --quiet "${unit_name}.service"; then
     systemctl stop "${unit_name}.service" >/dev/null
   fi
@@ -459,6 +463,8 @@ status() {
   local listener_count
   local non_loopback_count
   local log_error_count
+  local heartbeat_sync_running=false
+  local heartbeat_state
   if systemctl is-active --quiet "${unit_name}.service"; then
     active=true
     if curl --fail --silent --show-error --max-time 2 \
@@ -487,6 +493,22 @@ status() {
     grep -Eic '(^|[[:space:]])(fail(ed|ure)?|error|critical|fatal|unhandled)([[:space:]:]|$)' \
       "$log_file" 2>/dev/null || true
   )"
+  if systemctl is-active --quiet "${heartbeat_sync_unit}.timer"; then
+    heartbeat_sync_running=true
+  fi
+  heartbeat_state="$(
+    database_scalar \
+      "$database_name" \
+      "SELECT count(*)::text
+           || '|' ||
+           count(*) FILTER (
+             WHERE received_at >= now() - interval '${heartbeat_sync_freshness_seconds} seconds'
+           )::text
+           || '|' ||
+           count(*) FILTER (WHERE is_online)::text
+       FROM launcher.velocity_target_heartbeats
+       WHERE velocity_target IN ('lobby', 'pvp');"
+  )"
 
   cat <<EOF
 {
@@ -497,6 +519,9 @@ status() {
   "listener": "127.0.0.1:${port}",
   "listenerCount": ${listener_count},
   "translationTarget": "lobby",
+  "heartbeatSyncRunning": ${heartbeat_sync_running},
+  "heartbeatSyncFreshnessSeconds": ${heartbeat_sync_freshness_seconds},
+  "heartbeatTargetState": "${heartbeat_state}",
   "candidateLogErrorCount": ${log_error_count},
   "productionReleaseUnchanged": true,
   "productionMigrationStateUnchanged": true
@@ -514,6 +539,10 @@ refresh_heartbeats() {
   local production_state
   local candidate_state
   local sync_file="${state_root}/heartbeat-sync.csv"
+  local lock_file="${state_root}/heartbeat-sync.lock"
+  umask 077
+  exec 9>"$lock_file"
+  flock -n 9 || fail "another heartbeat refresh is already running"
   production_database="$(production_database_name)"
   production_state="$(
     database_scalar \
@@ -521,7 +550,7 @@ refresh_heartbeats() {
       "SELECT count(*)::text
            || '|' ||
            count(*) FILTER (
-             WHERE received_at >= now() - interval '60 seconds'
+             WHERE received_at >= now() - interval '${heartbeat_sync_freshness_seconds} seconds'
            )::text
            || '|' ||
            count(*) FILTER (WHERE is_online)::text
@@ -531,8 +560,7 @@ refresh_heartbeats() {
   [[ "$production_state" == "2|2|2" ]] ||
     fail "lobby and horror-prank production heartbeats must both be fresh and online"
 
-  umask 077
-  trap 'rm -f -- "$sync_file"' RETURN
+  trap 'rm -f -- "${state_root}/heartbeat-sync.csv"; trap - RETURN' RETURN
   docker exec -u postgres "$container" \
     psql \
     --username="$database_admin" \
@@ -581,7 +609,7 @@ SQL
       "SELECT count(*)::text
            || '|' ||
            count(*) FILTER (
-             WHERE received_at >= now() - interval '60 seconds'
+             WHERE received_at >= now() - interval '${heartbeat_sync_freshness_seconds} seconds'
            )::text
            || '|' ||
            count(*) FILTER (WHERE is_online)::text
@@ -596,7 +624,56 @@ SQL
   "refreshed": true,
   "targets": ["lobby", "pvp"],
   "pvpCatalogMeaning": "horror-prank",
+  "freshnessSeconds": ${heartbeat_sync_freshness_seconds},
   "source": "production heartbeat read-only copy",
+  "productionUnchanged": true
+}
+EOF
+}
+
+stop_heartbeat_sync() {
+  systemctl stop \
+    "${heartbeat_sync_unit}.timer" \
+    "${heartbeat_sync_unit}.service" \
+    >/dev/null 2>&1 || true
+  systemctl reset-failed \
+    "${heartbeat_sync_unit}.timer" \
+    "${heartbeat_sync_unit}.service" \
+    >/dev/null 2>&1 || true
+}
+
+start_heartbeat_sync() {
+  assert_production_baseline
+  assert_clone_state
+  systemctl is-active --quiet "${unit_name}.service" ||
+    fail "candidate API must be running before starting heartbeat sync"
+  if systemctl is-active --quiet "${heartbeat_sync_unit}.timer"; then
+    fail "candidate heartbeat sync is already running"
+  fi
+
+  stop_heartbeat_sync
+  refresh_heartbeats
+  systemd-run \
+    --unit="$heartbeat_sync_unit" \
+    --description="Hechao protocol staging heartbeat refresh" \
+    --on-active=20s \
+    --on-unit-active=20s \
+    --timer-property=AccuracySec=1s \
+    --property=Type=oneshot \
+    --collect \
+    "$manager_path" refresh-heartbeats \
+    >/dev/null
+  systemctl is-active --quiet "${heartbeat_sync_unit}.timer" ||
+    fail "candidate heartbeat sync timer did not become active"
+
+  cat <<EOF
+{
+  "started": true,
+  "timer": "${heartbeat_sync_unit}.timer",
+  "intervalSeconds": 20,
+  "freshnessSeconds": ${heartbeat_sync_freshness_seconds},
+  "targets": ["lobby", "pvp"],
+  "pvpCatalogMeaning": "horror-prank",
   "productionUnchanged": true
 }
 EOF
@@ -759,6 +836,15 @@ case "$action" in
     [[ "$#" -eq 1 ]] || fail "refresh-heartbeats does not accept additional arguments"
     refresh_heartbeats
     ;;
+  start-heartbeat-sync)
+    [[ "$#" -eq 1 ]] || fail "start-heartbeat-sync does not accept additional arguments"
+    start_heartbeat_sync
+    ;;
+  stop-heartbeat-sync)
+    [[ "$#" -eq 1 ]] || fail "stop-heartbeat-sync does not accept additional arguments"
+    stop_heartbeat_sync
+    status
+    ;;
   issue-grant)
     [[ "$#" -eq 1 ]] || fail "issue-grant does not accept additional arguments"
     issue_grant
@@ -774,7 +860,7 @@ case "$action" in
     remove_staging "$@"
     ;;
   *)
-    echo "usage: manage-protocol-translation-staging.sh {prepare|start|status|refresh-heartbeats|issue-grant|stop|remove}" >&2
+    echo "usage: manage-protocol-translation-staging.sh {prepare|start|status|refresh-heartbeats|start-heartbeat-sync|stop-heartbeat-sync|issue-grant|stop|remove}" >&2
     exit 1
     ;;
 esac

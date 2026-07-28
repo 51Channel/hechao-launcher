@@ -127,12 +127,18 @@ Via JAR 和目录均未变化。初次自动验收资源已经删除；为真实
 真实会话副本不会自行接收生产状态采集器的心跳。验收前执行
 `manage-protocol-translation-staging.sh refresh-heartbeats`，只读复制生产数据库中
 最新的 `lobby` 与历史 ID `pvp` 两条心跳到隔离数据库；两条记录必须同时存在、
-60 秒内新鲜且在线，否则命令失败关闭。这里的 `pvp` 只表示
+120 秒内新鲜且在线，否则命令失败关闭。候选 API 自身的新鲜窗口为 180 秒，
+同步门槛保留 60 秒失败关闭余量。这里的 `pvp` 只表示
 `C:\mc\server` 的恐怖整蛊服，不表示已停机的真正 PVP
 `E:\MinecraftServer`。2026-07-28 实测复制后候选目录分别返回
 `大厅 / Online / 1.21.11 / Paper` 与
 `恐怖整蛊 / Online / 1.20.1 / Fabric`，Activity 的过期副本心跳仍保持
 `Closed`。该动作不更新生产表、不启动或重启任何游戏服。
+真实登录期间使用 `start-heartbeat-sync` 创建 20 秒周期的 transient systemd
+定时器；`stop-heartbeat-sync` 可独立停止，API `stop` 和隔离环境 `remove` 也会先
+停止该定时器。定时任务每轮重新执行相同的生产基线与新鲜/在线断言，失败时不写候选
+心跳，目录会在 180 秒 API 新鲜窗口后自动关闭。2026-07-28 实测连续 10 次刷新成功、
+失败 0 次，定时器保持 `active/waiting`。
 证据见
 [`API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`](evidence/API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json)。
 
