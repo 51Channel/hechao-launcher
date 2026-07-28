@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 @Plugin(
         id = "hechao-velocity-authorizer",
         name = "Hechao Velocity Authorizer",
-        version = "0.3.0",
+        version = "0.3.1",
         description = "Server-side Microsoft UUID and LuckPerms authorization for Hechao",
         authors = {"Hechao"})
 public final class HechaoVelocityAuthorizer {
@@ -136,7 +136,7 @@ public final class HechaoVelocityAuthorizer {
         authorizedSessions.remove(event.getPlayer().getUniqueId());
     }
 
-    private void applyDecision(
+    void applyDecision(
             ServerPreConnectEvent event,
             AuthorizationMode mode,
             boolean initialConnection,
@@ -164,28 +164,31 @@ public final class HechaoVelocityAuthorizer {
         }
 
         if (decision.allowed()) {
-            if (initialConnection) {
-                if (!decision.hasSessionServerId()) {
-                    if (mode == AuthorizationMode.ENFORCE) {
-                        deny(event, true, SERVICE_UNAVAILABLE_MESSAGE);
-                        logger.error(
-                                "Denied {} because the initial authorization omitted a server ID.",
-                                player.getUsername());
-                    } else {
-                        authorizedSessions.put(player.getUniqueId(), target);
-                        logger.warn(
-                                "[monitor] Initial authorization for {} omitted a server ID.",
-                                player.getUsername());
-                    }
-                    return;
+            if (!decision.hasSessionServerId()) {
+                if (mode == AuthorizationMode.ENFORCE) {
+                    deny(event, initialConnection, SERVICE_UNAVAILABLE_MESSAGE);
+                    logger.error(
+                            "Denied {} -> {} because an allowed authorization omitted a server ID.",
+                            player.getUsername(),
+                            target);
+                } else {
+                    authorizedSessions.put(player.getUniqueId(), target);
+                    logger.warn(
+                            "[monitor] Allowed authorization for {} -> {} omitted a server ID.",
+                            player.getUsername(),
+                            target);
                 }
-                if (!routeInitialConnection(event, mode, target, decision)) {
-                    return;
-                }
-                authorizedSessions.put(
-                        player.getUniqueId(),
-                        decision.serverId().toLowerCase(Locale.ROOT));
+                return;
             }
+            String authorizedServerId = decision.serverId().toLowerCase(Locale.ROOT);
+            if (initialConnection) {
+                authorizedServerId =
+                        routeInitialConnection(event, mode, target, decision);
+                if (authorizedServerId == null) {
+                    return;
+                }
+            }
+            authorizedSessions.put(player.getUniqueId(), authorizedServerId);
             return;
         }
 
@@ -208,9 +211,7 @@ public final class HechaoVelocityAuthorizer {
                     target,
                     decision.reason());
         } else {
-            if (initialConnection) {
-                authorizedSessions.put(player.getUniqueId(), target);
-            }
+            authorizedSessions.put(player.getUniqueId(), target);
             logger.warn(
                     "[monitor] Would deny {} -> {} with reason {}.",
                     player.getUsername(),
@@ -219,14 +220,18 @@ public final class HechaoVelocityAuthorizer {
         }
     }
 
-    boolean routeInitialConnection(
+    String authorizedServer(UUID playerId) {
+        return authorizedSessions.get(playerId);
+    }
+
+    String routeInitialConnection(
             ServerPreConnectEvent event,
             AuthorizationMode mode,
             String originalTarget,
             AuthorizationDecision decision) {
         String grantedTarget = decision.velocityTarget().toLowerCase(Locale.ROOT);
         if (grantedTarget.equals(originalTarget)) {
-            return true;
+            return decision.serverId().toLowerCase(Locale.ROOT);
         }
 
         Optional<RegisteredServer> destination = proxyServer.getServer(grantedTarget);
@@ -237,7 +242,7 @@ public final class HechaoVelocityAuthorizer {
                     event.getPlayer().getUsername(),
                     originalTarget,
                     grantedTarget);
-            return true;
+            return decision.serverId().toLowerCase(Locale.ROOT);
         }
 
         if (mode == AuthorizationMode.ENFORCE) {
@@ -246,7 +251,7 @@ public final class HechaoVelocityAuthorizer {
                     "Denied {} because granted target {} is not registered on this proxy.",
                     event.getPlayer().getUsername(),
                     grantedTarget);
-            return false;
+            return null;
         }
 
         logger.warn(
@@ -254,7 +259,7 @@ public final class HechaoVelocityAuthorizer {
                 grantedTarget,
                 event.getPlayer().getUsername(),
                 originalTarget);
-        return true;
+        return originalTarget;
     }
 
     private static void deny(

@@ -1,7 +1,7 @@
 package world.hechao.velocityauth;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -34,7 +34,7 @@ final class InitialConnectionRoutingTest {
                 "pvp",
                 "PVP");
 
-        assertTrue(plugin.routeInitialConnection(
+        assertEquals("pvp", plugin.routeInitialConnection(
                 event,
                 AuthorizationMode.MONITOR,
                 "lobby",
@@ -54,7 +54,7 @@ final class InitialConnectionRoutingTest {
                 "lobby",
                 "lobby");
 
-        assertTrue(plugin.routeInitialConnection(
+        assertEquals("lobby", plugin.routeInitialConnection(
                 event,
                 AuthorizationMode.MONITOR,
                 "lobby",
@@ -77,13 +77,35 @@ final class InitialConnectionRoutingTest {
                 "missing",
                 "missing");
 
-        assertFalse(plugin.routeInitialConnection(
+        assertNull(plugin.routeInitialConnection(
                 event,
                 AuthorizationMode.ENFORCE,
                 "lobby",
                 decision));
         verify(event).setResult(any(ServerPreConnectEvent.ServerResult.class));
         verify(event.getPlayer()).disconnect(any(Component.class));
+    }
+
+    @Test
+    void monitorModeTracksOriginalTargetWhenGrantedTargetIsMissing() {
+        ProxyServer proxy = mock(ProxyServer.class);
+        when(proxy.getServer("missing")).thenReturn(Optional.empty());
+
+        ServerPreConnectEvent event = eventFor("Player");
+        var plugin = plugin(proxy);
+        var decision = new AuthorizationDecision(
+                true,
+                "Allowed",
+                "ok",
+                "missing",
+                "missing");
+
+        assertEquals("lobby", plugin.routeInitialConnection(
+                event,
+                AuthorizationMode.MONITOR,
+                "lobby",
+                decision));
+        verify(event, never()).setResult(any());
     }
 
     private static HechaoVelocityAuthorizer plugin(ProxyServer proxy) {
