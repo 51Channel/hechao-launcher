@@ -33,6 +33,8 @@ param(
 
     [string]$BackupRoot = 'E:\manual-backups',
 
+    [switch]$ProbeApi,
+
     [switch]$ConfirmRemoval
 )
 
@@ -167,7 +169,8 @@ function Get-AuthorizationStatus {
     param(
         [Parameter(Mandatory = $true)][string]$JarPath,
         [Parameter(Mandatory = $true)][string]$ConfigPath,
-        [Parameter(Mandatory = $true)][pscustomobject]$Production
+        [Parameter(Mandatory = $true)][pscustomobject]$Production,
+        [switch]$ProbeApi
     )
 
     $jarInstalled = Test-Path -LiteralPath $JarPath -PathType Leaf
@@ -175,6 +178,7 @@ function Get-AuthorizationStatus {
     $jarHashValid = $false
     $configurationValid = $false
     $tokenConfigured = $false
+    $apiProbeReason = $null
 
     if ($jarInstalled) {
         $jarHashValid =
@@ -191,6 +195,33 @@ function Get-AuthorizationStatus {
             [string]$configuration['proxy-instance'] -eq $ProxyInstance -and
             [string]$configuration['request-timeout-millis'] -eq '5000' -and
             $tokenConfigured
+
+        if ($ProbeApi) {
+            if (-not $configurationValid) {
+                throw 'Cannot probe the staging API with an invalid configuration.'
+            }
+            $probeSuffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
+            $probeBody = @{
+                minecraftUuid = [Guid]::NewGuid()
+                minecraftName = "Prb$probeSuffix"
+                velocityTarget = 'lobby'
+                initialConnection = $false
+                remoteAddress = '127.0.0.1'
+                proxyInstance = $ProxyInstance
+                sessionServerId = 'pvp'
+            } | ConvertTo-Json -Compress
+            $probeResponse = Invoke-RestMethod `
+                -Uri $ApiUrl `
+                -Method Post `
+                -ContentType 'application/json' `
+                -Headers @{ 'X-Hechao-Velocity-Token' = $token } `
+                -Body $probeBody `
+                -TimeoutSec 8
+            $apiProbeReason = [string]$probeResponse.reason
+            if ($apiProbeReason -ne 'PlayerNotLinked') {
+                throw "Unexpected staging API probe result: $apiProbeReason"
+            }
+        }
     }
 
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
@@ -205,6 +236,8 @@ function Get-AuthorizationStatus {
         TokenDisclosed = $false
         ApiUrl = $ApiUrl
         Mode = 'monitor'
+        ApiProbePerformed = [bool]$ProbeApi
+        ApiProbeReason = $apiProbeReason
         TaskState = if ($null -eq $task) { 'Missing' } else { [string]$task.State }
         ListenerCount = $listeners.Count
         ProductionProcessId = $Production.ProcessId
@@ -375,7 +408,8 @@ request-timeout-millis=5000
         Get-AuthorizationStatus `
             -JarPath $stagingAuthorizerJar `
             -ConfigPath $stagingConfigPath `
-            -Production $productionBefore |
+            -Production $productionBefore `
+            -ProbeApi:$ProbeApi |
             ConvertTo-Json
     }
     'Remove' {
