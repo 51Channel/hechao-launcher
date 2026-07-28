@@ -220,7 +220,8 @@ function Get-ProductionBaseline {
     return [pscustomobject]@{
         ProcessId = $productionListeners[0].OwningProcess
         ConfigSha256 = $ExpectedProductionConfigSha256.ToUpperInvariant()
-        AuthorizerSha256 = $ExpectedAuthorizerSha256.ToUpperInvariant()
+        AuthorizerSha256 =
+            $ExpectedProductionAuthorizerSha256.ToUpperInvariant()
         EnabledViaJarCount = 0
     }
 }
