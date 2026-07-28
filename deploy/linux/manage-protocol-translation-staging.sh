@@ -504,6 +504,104 @@ status() {
 EOF
 }
 
+refresh_heartbeats() {
+  assert_production_baseline
+  assert_clone_state
+  systemctl is-active --quiet "${unit_name}.service" ||
+    fail "candidate API must be running before refreshing heartbeats"
+
+  local production_database
+  local production_state
+  local candidate_state
+  local sync_file="${state_root}/heartbeat-sync.csv"
+  production_database="$(production_database_name)"
+  production_state="$(
+    database_scalar \
+      "$production_database" \
+      "SELECT count(*)::text
+           || '|' ||
+           count(*) FILTER (
+             WHERE received_at >= now() - interval '60 seconds'
+           )::text
+           || '|' ||
+           count(*) FILTER (WHERE is_online)::text
+       FROM launcher.velocity_target_heartbeats
+       WHERE velocity_target IN ('lobby', 'pvp');"
+  )"
+  [[ "$production_state" == "2|2|2" ]] ||
+    fail "lobby and horror-prank production heartbeats must both be fresh and online"
+
+  umask 077
+  trap 'rm -f -- "$sync_file"' RETURN
+  docker exec -u postgres "$container" \
+    psql \
+    --username="$database_admin" \
+    --dbname="$production_database" \
+    --quiet \
+    --command="COPY (
+      SELECT *
+      FROM launcher.velocity_target_heartbeats
+      WHERE velocity_target IN ('lobby', 'pvp')
+      ORDER BY velocity_target
+    ) TO STDOUT WITH (FORMAT csv);" \
+    > "$sync_file"
+  [[ "$(wc -l < "$sync_file" | tr -d '[:space:]')" == "2" ]] ||
+    fail "production heartbeat copy did not contain exactly two targets"
+
+  {
+    cat <<'SQL'
+BEGIN;
+CREATE TEMP TABLE staging_heartbeat_sync
+    (LIKE launcher.velocity_target_heartbeats INCLUDING DEFAULTS)
+    ON COMMIT DROP;
+COPY staging_heartbeat_sync FROM STDIN WITH (FORMAT csv);
+SQL
+    cat "$sync_file"
+    cat <<'SQL'
+\.
+DELETE FROM launcher.velocity_target_heartbeats
+WHERE velocity_target IN ('lobby', 'pvp');
+INSERT INTO launcher.velocity_target_heartbeats
+SELECT *
+FROM staging_heartbeat_sync;
+COMMIT;
+SQL
+  } |
+    docker exec -i -u postgres "$container" \
+      psql \
+      --username="$database_admin" \
+      --dbname="$database_name" \
+      --quiet \
+      --set=ON_ERROR_STOP=1 \
+      >/dev/null
+
+  candidate_state="$(
+    database_scalar \
+      "$database_name" \
+      "SELECT count(*)::text
+           || '|' ||
+           count(*) FILTER (
+             WHERE received_at >= now() - interval '60 seconds'
+           )::text
+           || '|' ||
+           count(*) FILTER (WHERE is_online)::text
+       FROM launcher.velocity_target_heartbeats
+       WHERE velocity_target IN ('lobby', 'pvp');"
+  )"
+  [[ "$candidate_state" == "2|2|2" ]] ||
+    fail "candidate heartbeat verification failed"
+
+  cat <<EOF
+{
+  "refreshed": true,
+  "targets": ["lobby", "pvp"],
+  "pvpCatalogMeaning": "horror-prank",
+  "source": "production heartbeat read-only copy",
+  "productionUnchanged": true
+}
+EOF
+}
+
 issue_grant() {
   assert_production_baseline
   assert_clone_state
@@ -657,6 +755,10 @@ case "$action" in
     [[ "$#" -eq 1 ]] || fail "status does not accept additional arguments"
     status
     ;;
+  refresh-heartbeats)
+    [[ "$#" -eq 1 ]] || fail "refresh-heartbeats does not accept additional arguments"
+    refresh_heartbeats
+    ;;
   issue-grant)
     [[ "$#" -eq 1 ]] || fail "issue-grant does not accept additional arguments"
     issue_grant
@@ -672,7 +774,7 @@ case "$action" in
     remove_staging "$@"
     ;;
   *)
-    echo "usage: manage-protocol-translation-staging.sh {prepare|start|status|issue-grant|stop|remove}" >&2
+    echo "usage: manage-protocol-translation-staging.sh {prepare|start|status|refresh-heartbeats|issue-grant|stop|remove}" >&2
     exit 1
     ;;
 esac

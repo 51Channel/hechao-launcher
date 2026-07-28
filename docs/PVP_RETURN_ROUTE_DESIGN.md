@@ -123,6 +123,16 @@ API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据�
 `ClientProfileMismatch` 拒绝。开关重置后再次恢复版本拒绝。生产 API、数据库、
 Via JAR 和目录均未变化。初次自动验收资源已经删除；为真实会话准备的同构隔离副本
 随后重新创建并保持回环监听，测试完成后必须执行 `stop` 和显式确认的 `remove`。
+
+真实会话副本不会自行接收生产状态采集器的心跳。验收前执行
+`manage-protocol-translation-staging.sh refresh-heartbeats`，只读复制生产数据库中
+最新的 `lobby` 与历史 ID `pvp` 两条心跳到隔离数据库；两条记录必须同时存在、
+60 秒内新鲜且在线，否则命令失败关闭。这里的 `pvp` 只表示
+`C:\mc\server` 的恐怖整蛊服，不表示已停机的真正 PVP
+`E:\MinecraftServer`。2026-07-28 实测复制后候选目录分别返回
+`大厅 / Online / 1.21.11 / Paper` 与
+`恐怖整蛊 / Online / 1.20.1 / Fabric`，Activity 的过期副本心跳仍保持
+`Closed`。该动作不更新生产表、不启动或重启任何游戏服。
 证据见
 [`API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`](evidence/API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json)。
 

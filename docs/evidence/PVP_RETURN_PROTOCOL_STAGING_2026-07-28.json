@@ -84,7 +84,52 @@
       "listener": "127.0.0.1:18093",
       "databaseMigration": 18,
       "productionRelease": "0.20.2-20260727T225819Z",
-      "productionDatabaseMigration": 17
+      "productionDatabaseMigration": 17,
+      "heartbeatRefresh": {
+        "performed": true,
+        "sourceDatabaseReadOnly": true,
+        "candidateDatabaseOnlyWriteTarget": true,
+        "requiredFreshnessSeconds": 60,
+        "requiredOnlineTargets": [
+          "lobby",
+          "pvp"
+        ],
+        "pvpCatalogMeaning": "horror-prank",
+        "horrorPrankBackendRoot": "C:\\mc\\server",
+        "truePvpBackendRoot": "E:\\MinecraftServer",
+        "truePvpTouched": false,
+        "owl9BoundaryVerification": {
+          "capturedAtUtc": "2026-07-28T07:41:12.9259760+00:00",
+          "listenerPort": 25565,
+          "listenerOwnerPid": 7216,
+          "listenerOwnerExecutable": "C:\\mc\\jre\\jdk-21.0.11+10-jre\\bin\\java.exe",
+          "horrorPrankTaskAction": "C:\\mc\\server\\start-headless.bat",
+          "horrorPrankTaskWorkingDirectory": "C:\\mc\\server",
+          "truePvpProcessCount": 0
+        },
+        "catalogAfterRefresh": [
+          {
+            "id": "lobby",
+            "name": "大厅",
+            "status": "Online",
+            "minecraftVersion": "1.21.11",
+            "loader": "Paper"
+          },
+          {
+            "id": "pvp",
+            "name": "恐怖整蛊",
+            "status": "Online",
+            "minecraftVersion": "1.20.1",
+            "loader": "Fabric"
+          },
+          {
+            "id": "activity",
+            "name": "海绵小镇躲猫猫",
+            "status": "Closed",
+            "reason": "not refreshed for this isolated route acceptance"
+          }
+        ]
+      }
     },
     "credentialTransfer": {
       "rawBytes": 64,
@@ -117,8 +162,9 @@
     "credentialInstaller": "deploy/windows/velocity-staging/Install-PvpReturnStagingCredential.ps1",
     "credentialInstallerSha256": "A39EC798E1CB684694154ABA1877E847D27ADEF3D42199DB912F7E31C5C3B6A7",
     "apiStagingManager": "deploy/linux/manage-protocol-translation-staging.sh",
-    "apiStagingManagerSha256": "D8B506A18861757941FD252D70CF6F894799E4D9F8818A2A7219DC2AC73A0A61",
-    "validatedAt": "2026-07-28T04:12:51.2239642+00:00",
+    "apiStagingManagerSha256": "6B00E543229E6B8F2DC6660BA12DCE63284894E4905764C856C063E79FC555B5",
+    "apiStagingManagerRollbackBackup": "/var/backups/hechao-launcher/protocol-staging-manager-20260728T154000/manage-protocol-translation-staging.sh",
+    "validatedAt": "2026-07-28T07:39:56.9394339+00:00",
     "parserPassed": true,
     "statusBeforePassed": true,
     "removeWithoutConfirmationRejected": true,
@@ -143,6 +189,9 @@
     "lobbyBackendTcpReachable": true,
     "pvpBackendTcpReachable": true,
     "stagingAuthorizerSessionTrackingFixed": true,
+    "candidateCatalogHeartbeatRefreshPassed": true,
+    "candidateCatalogHorrorMeaningVerified": true,
+    "truePvpBackendUntouched": true,
     "productionAuthorizerUnchanged": true,
     "productionVelocityUnchanged": true
   },
