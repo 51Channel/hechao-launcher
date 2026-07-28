@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T16:27:21.4567731Z",
+  "capturedAt": "2026-07-28T18:11:40.6017961Z",
   "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
-  "result": "first-session-return-reverse-denial-and-normal-exit-passed-second-grant-issued",
+  "result": "first-return-reverse-denial-normal-exit-and-second-entry-passed",
   "privacy": {
     "playerNameStored": false,
     "minecraftUuidStored": false,
@@ -121,9 +121,22 @@
       "identityDisclosed": false,
       "apiTunnelReady": true,
       "minecraftTunnelReady": true,
-      "gameLaunchPending": true,
-      "horrorPrankEntryPending": true,
-      "reconnectPending": true
+      "gameLaunchPending": false,
+      "gameProcessStarted": true,
+      "isolatedEndpointConnected": true,
+      "horrorPrankEntryPending": false,
+      "horrorPrankEntryPassed": true,
+      "observedStableSeconds": 410,
+      "proxyDecoderErrorCount": 0,
+      "authorizationApiUnavailableCount": 0,
+      "unexpectedDisconnectCount": 0,
+      "performanceBeforeSecondHub": {
+        "tps1m": 20.0,
+        "msptAverage": 14.639124933333333,
+        "gcDeltaMilliseconds": 0
+      },
+      "secondHubTransferPending": true,
+      "finalNormalExitPending": true
     }
   },
   "remediation": {
@@ -247,8 +260,8 @@
   },
   "remainingRealSessionChecks": [
     "confirm that the rendered skin and inventory are correct and verify movement in Lobby",
-    "use the issued second fresh grant to re-enter HorrorPrank",
-    "verify reconnect and normal client exit",
+    "execute /hub during the successful second HorrorPrank entry",
+    "verify the second Lobby connection and final normal client exit",
     "capture post-session proxy, backend and performance evidence"
   ]
 }

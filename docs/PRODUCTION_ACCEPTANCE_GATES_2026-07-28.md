@@ -133,7 +133,9 @@ ViaVersion/ViaBackwards，已调整为代理 Via `0`、大厅 Via `2` 的后端�
 两个后端的名称与 UUID 内存比对一致，聊天、LuckPerms、TPS/MSPT 与短窗口 GC 均
 通过。大厅反向请求 `pvp` 已被 Authorizer 以客户端不兼容正确拒绝，目标后端连接数
 为 `0`，玩家仍在线；首次会话随后以启动器退出码 `0` 正常结束。第二枚 fresh grant
-已签发但尚未由玩家启动。仍须完成皮肤/背包/移动内容确认、再次进入和成功重连。
+已由真实客户端消费并再次进入恐怖整蛊，稳定超过 `410` 秒；`20 TPS`、约
+`14.64 MSPT`、短窗口 GC 增量 `0 ms`，客户端、代理和 API 错误均为 `0`。
+仍须完成皮肤/背包/移动内容确认、第二次 `/hub` 和最终正常退出。
 证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)
 与
