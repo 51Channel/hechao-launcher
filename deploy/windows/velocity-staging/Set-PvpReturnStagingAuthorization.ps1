@@ -66,6 +66,90 @@ function Assert-ChildPath {
     return $childPath
 }
 
+function Get-AllowedAclSids {
+    return @(
+        'S-1-5-18',
+        'S-1-5-32-544',
+        [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    )
+}
+
+function Set-RestrictedAcl {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [switch]$Recurse
+    )
+
+    $targets = @(
+        Get-Item -LiteralPath $Path -Force
+        if ($Recurse) {
+            Get-ChildItem -LiteralPath $Path -Force -Recurse
+        }
+    )
+    foreach ($target in $targets) {
+        if (($target.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Refusing to secure a reparse point: $($target.FullName)"
+        }
+
+        $acl = Get-Acl -LiteralPath $target.FullName
+        $acl.SetAccessRuleProtection($true, $false)
+        foreach ($rule in @($acl.Access)) {
+            [void]$acl.RemoveAccessRuleSpecific($rule)
+        }
+
+        $inheritance = if ($target.PSIsContainer) {
+            [Security.AccessControl.InheritanceFlags](
+                [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+                [Security.AccessControl.InheritanceFlags]::ObjectInherit)
+        }
+        else {
+            [Security.AccessControl.InheritanceFlags]::None
+        }
+        foreach ($sidValue in Get-AllowedAclSids) {
+            $sid = [Security.Principal.SecurityIdentifier]::new($sidValue)
+            $rule = [Security.AccessControl.FileSystemAccessRule]::new(
+                $sid,
+                [Security.AccessControl.FileSystemRights]::FullControl,
+                $inheritance,
+                [Security.AccessControl.PropagationFlags]::None,
+                [Security.AccessControl.AccessControlType]::Allow)
+            [void]$acl.AddAccessRule($rule)
+        }
+        Set-Acl -LiteralPath $target.FullName -AclObject $acl
+    }
+}
+
+function Test-RestrictedAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $false
+    }
+
+    $allowedSids = @(Get-AllowedAclSids | Sort-Object -Unique)
+    $actualRules = @((Get-Acl -LiteralPath $Path).Access)
+    if ($actualRules.Count -ne $allowedSids.Count) {
+        return $false
+    }
+
+    $actualSids = @()
+    foreach ($rule in $actualRules) {
+        if ($rule.IsInherited -or
+            $rule.AccessControlType -ne
+                [Security.AccessControl.AccessControlType]::Allow -or
+            $rule.FileSystemRights -ne
+                [Security.AccessControl.FileSystemRights]::FullControl) {
+            return $false
+        }
+        $actualSids += $rule.IdentityReference.Translate(
+            [Security.Principal.SecurityIdentifier]).Value
+    }
+
+    return (Compare-Object `
+            -ReferenceObject $allowedSids `
+            -DifferenceObject @($actualSids | Sort-Object -Unique)).Count -eq 0
+}
+
 function Assert-FileHash {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -178,6 +262,7 @@ function Get-AuthorizationStatus {
     $jarHashValid = $false
     $configurationValid = $false
     $tokenConfigured = $false
+    $configurationAclRestricted = $false
     $apiProbeReason = $null
 
     if ($jarInstalled) {
@@ -190,12 +275,14 @@ function Get-AuthorizationStatus {
         $token = [string]$configuration['token']
         $tokenConfigured =
             $token -cmatch '^[A-Za-z0-9._~-]{24,256}$'
+        $configurationAclRestricted = Test-RestrictedAcl -Path $ConfigPath
         $configurationValid =
             [string]$configuration['mode'] -eq 'monitor' -and
             [string]$configuration['api-url'] -eq $ApiUrl -and
             [string]$configuration['proxy-instance'] -eq $ProxyInstance -and
             [string]$configuration['request-timeout-millis'] -eq '5000' -and
-            $tokenConfigured
+            $tokenConfigured -and
+            $configurationAclRestricted
 
         if ($ProbeApi) {
             if (-not $configurationValid) {
@@ -235,6 +322,7 @@ function Get-AuthorizationStatus {
         ConfigurationValid = $configurationValid
         TokenConfigured = $tokenConfigured
         TokenDisclosed = $false
+        ConfigurationAclRestricted = $configurationAclRestricted
         ApiUrl = $ApiUrl
         Mode = 'monitor'
         ApiProbePerformed = [bool]$ProbeApi
@@ -275,17 +363,8 @@ function New-Backup {
         "Isolated PVP return authorizer staging only.`n",
         [Text.UTF8Encoding]::new($false))
 
-    $currentUserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    $currentUserGrant = "*${currentUserSid}:(F)"
-    & icacls.exe $backupDirectory `
-        '/inheritance:r' `
-        '/grant:r' `
-        '*S-1-5-18:(F)' `
-        '*S-1-5-32-544:(F)' `
-        $currentUserGrant `
-        '/t' `
-        '/c' | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    Set-RestrictedAcl -Path $backupDirectory -Recurse
+    if (-not (Test-RestrictedAcl -Path $backupDirectory)) {
         throw "Unable to secure staging authorization backup: $backupDirectory"
     }
     return $backupDirectory
@@ -330,6 +409,15 @@ switch ($Action) {
                 'through standard input.')
         }
 
+        if (Test-Path -LiteralPath $BackupRoot -PathType Container) {
+            foreach ($existingBackup in @(
+                    Get-ChildItem `
+                        -LiteralPath $BackupRoot `
+                        -Directory `
+                        -Filter 'PvpReturnAuthorizationStaging-*')) {
+                Set-RestrictedAcl -Path $existingBackup.FullName -Recurse
+            }
+        }
         $backupDirectory = New-Backup `
             -JarPath $stagingAuthorizerJar `
             -ConfigDirectory $stagingConfigDirectory
@@ -369,16 +457,9 @@ request-timeout-millis=5000
             -Destination $stagingConfigPath `
             -Force
 
-        $currentUserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-        $currentUserGrant = "*${currentUserSid}:(F)"
+        Set-RestrictedAcl -Path $stagingConfigDirectory -Recurse
         foreach ($path in @($stagingConfigDirectory, $stagingConfigPath)) {
-            & icacls.exe $path `
-                '/inheritance:r' `
-                '/grant:r' `
-                '*S-1-5-18:(F)' `
-                '*S-1-5-32-544:(F)' `
-                $currentUserGrant | Out-Null
-            if ($LASTEXITCODE -ne 0) {
+            if (-not (Test-RestrictedAcl -Path $path)) {
                 throw "Unable to secure staging authorization path: $path"
             }
         }
