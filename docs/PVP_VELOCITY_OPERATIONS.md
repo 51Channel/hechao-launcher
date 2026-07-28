@@ -4,8 +4,9 @@
 > `owl9`，配置与 `owl5` Velocity 的 modern forwarding 密钥一致。正确 1.20.1
 > 档案第一次真实路由暴露后端自定义包解码失败；CrossStitch 修复后的持久任务已完成
 > 真实统一入口、身份转发、直连拒绝、稳定连接和正常退出验收。一次后续重连在进入
-> Velocity 认证前超时，仍须补做干净重连；跨版本返回大厅已完成默认关闭的代码设计，
-> 仍待隔离代理验证和生产灰度。
+> Velocity 认证前超时，仍须补做干净重连；跨版本返回大厅已完成默认关闭的代码设计。
+> 回环隔离代理已完成 1.20.1/1.21.11 status 协议协商，仍待真实登录、`/hub`
+> 和生产灰度。
 
 ## 1. 生产拓扑
 
@@ -106,8 +107,9 @@ deploy/windows/pvp-velocity/Install-PvpVelocityForwarding.ps1
 3. 验证 API 短暂失败以及与当前档案兼容的 NPC/命令转服路径。
 4. PVP 为 `1.20.1`，大厅为 `1.21.11`；当前 ViaVersion/ViaBackwards 禁用，
    授权层也会硬拒绝版本不匹配。目标服级协议转换开关已在开发分支实现且默认关闭，
-   仍须按 [`PVP_RETURN_ROUTE_DESIGN.md`](PVP_RETURN_ROUTE_DESIGN.md) 完成隔离验证
-   和真实灰度，现有 `/hub` 仍不得记为通过。
+   回环隔离代理的协议状态握手已通过，仍须按
+   [`PVP_RETURN_ROUTE_DESIGN.md`](PVP_RETURN_ROUTE_DESIGN.md) 完成真实登录、
+   `/hub` 和生产灰度，现有 `/hub` 仍不得记为通过。
 
 只有剩余步骤全部通过后，才可把 PVP 全路径记为“生产验收完成”。在此之前，
 Velocity 继续保持 `monitor`，不得因为静态文件已部署就切换 `enforce`。

@@ -102,7 +102,11 @@ Resolved，触发与恢复邮件均成功投递。offsite timer 现为 `enabled/
 停留在主菜单并正常关闭。因此核心 modern forwarding、身份与直连拒绝已经通过，
 但重连仍须补做成功样本，皮肤和有效游戏内权限仍须专用账号目视核对。PVP 为
 `1.20.1`、大厅为 `1.21.11`，当前不能把不兼容的 `/hub` 当成可用回程，必须先完成
-专用回程的隔离验证与生产灰度。完成这些门槛前不得切换 Velocity `enforce`。
+专用回程的隔离验证与生产灰度。回环隔离代理现已确认协议 `763` 与 `774` 均能完成
+status 协商，Via 错误为 `0`，但该结果不包含正版登录或后端转服，不能替代真实
+`/hub`。证据见
+[`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)。
+完成这些门槛前不得切换 Velocity `enforce`。
 
 ### 3.5 四级真实账号
 

@@ -1,6 +1,7 @@
 # PVP 跨版本返回大厅设计
 
-> 状态：代码已实现、默认关闭，尚未部署生产。
+> 状态：代码已实现、默认关闭；回环隔离代理的 1.20.1/1.21.11 status 协议协商已通过，
+> 真实登录、`/hub` 和生产灰度仍待完成。
 >
 > 生产 Velocity 的 ViaVersion/ViaBackwards 仍为 `.disabled`，大厅目录开关仍为关闭，
 > 本阶段没有重启代理或游戏服。
@@ -65,6 +66,14 @@ ViaVersion。实际类目录包含从 `1.20` 到 `1.21.11` 的完整逆向协议
 7. 停止临时代理并删除临时监听；确认生产 Velocity、游戏服进程和配置未变化。
 
 任何解码错误、物品错位、命令异常、身份变化或后端断线都算失败。
+
+2026-07-28 已在 `E:\Velocity-PvpReturn-Staging` 启动只监听
+`127.0.0.1:25579` 的隔离代理。ViaVersion/ViaBackwards `5.11.0` 与
+HubCommand 均正常加载，错误日志为 `0`。通过 SSH 本地转发执行
+[`Test-MinecraftProtocolStatus.ps1`](../tools/acceptance/Test-MinecraftProtocolStatus.ps1)，
+协议 `763` 和 `774` 分别协商为 `763` 和 `774`。这证明 Via 协议链和状态握手可用，
+不替代真实正版登录与后端转服。机器可读证据见
+[`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)。
 
 ## 5. 生产启用顺序
 

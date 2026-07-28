@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-28T02:31:43.5888202+00:00",
+  "scope": "PVP 1.20.1 to Lobby 1.21.11 protocol-translation staging",
+  "result": "protocol-status-passed-real-session-pending",
+  "probe": {
+    "script": "tools/acceptance/Test-MinecraftProtocolStatus.ps1",
+    "sha256": "99BB1C3D31D1B3774FDC307A1DD3795060ABA019439C6FEE2CB8712E92DEE450",
+    "transport": "SSH local forwarding to an owl5 loopback-only listener",
+    "publicListenerCreated": false,
+    "results": [
+      {
+        "requestedProtocol": 763,
+        "clientVersion": "Minecraft 1.20.1",
+        "responseVersion": "Velocity 1.7.2-1.21.11",
+        "responseProtocol": 763,
+        "passed": true
+      },
+      {
+        "requestedProtocol": 774,
+        "clientVersion": "Minecraft 1.21.11",
+        "responseVersion": "Velocity 1.7.2-1.21.11",
+        "responseProtocol": 774,
+        "passed": true
+      }
+    ]
+  },
+  "staging": {
+    "root": "E:\\Velocity-PvpReturn-Staging",
+    "task": "Hechao-Velocity-PvpReturn-Staging",
+    "taskState": "Running",
+    "processIdAtCapture": 7512,
+    "listener": "127.0.0.1:25579",
+    "velocitySha256": "CCC49F71751ECE26568D3476392D6130C8B43F2E5F3A88313325B9278A52BABD",
+    "viaVersion": {
+      "version": "5.11.0",
+      "sha256": "89DB76C8E3E674238F5EEE2BB7A9E9A2BEEBA0760BBD1B86494778E8A5A52F70"
+    },
+    "viaBackwards": {
+      "version": "5.11.0",
+      "sha256": "41085A59D784C9A0D14917FE7487EF5E201A9DA7825FD047F08D328FF33EECDC"
+    },
+    "hubCommandSha256": "D785BB379CA8DCE8CA778D220183D9370C74A6B25EC75276A98228818C7968C2",
+    "fatalOrErrorLogMatches": 0
+  },
+  "production": {
+    "velocityProcessIdAtCapture": 472,
+    "velocityConfigSha256": "A300E7CBE190B42E434763CFCCAFB9D821F894B02E72A594ED72B340C3E22C70",
+    "enabledViaJarCount": 0,
+    "changed": false
+  },
+  "assertions": {
+    "stagingBoundToLoopbackOnly": true,
+    "minecraft1201StatusNegotiated": true,
+    "minecraft12111StatusNegotiated": true,
+    "stagingStartedWithoutViaErrors": true,
+    "productionVelocityUnchanged": true
+  },
+  "limitations": [
+    "A status handshake does not authenticate a Microsoft account or enter a backend server.",
+    "A real PVP 1.20.1 session must still execute /hub into the 1.21.11 lobby.",
+    "UUID, skin, permissions, inventory, chat, command tree, movement, reconnect and normal exit remain real-client gates.",
+    "Production Via JARs and the lobby protocol-translation catalog flag remain disabled."
+  ]
+}
