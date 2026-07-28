@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-28T00:57:03Z",
+  "component": "launcher",
+  "version": "0.11.15",
+  "buildSourceCommit": "5e0943ae291f1e0eb48bf7e1e07809e62a4972dc",
+  "releaseTag": "launcher-v0.11.15",
+  "tests": {
+    "solutionPassed": 365,
+    "solutionFailed": 0,
+    "launcherPassed": 95,
+    "launcherFailed": 0,
+    "loggingConfigurationTests": 5
+  },
+  "realProfileSmoke": {
+    "profileId": "activity-neoforge-1.21.11",
+    "profileVersion": "1.0.10",
+    "minecraftProcessStarted": false,
+    "abortPoint": "beforeStart",
+    "loggingConfiguration": {
+      "relativePath": "assets/log_configs/client-1.21.2.xml",
+      "bytes": 1073,
+      "sha1": "39384bd14c0606d812afec88d8aff595b2587dd9",
+      "temporaryFilesRemaining": 0
+    }
+  },
+  "artifacts": {
+    "launcherExe": {
+      "bytes": 68763203,
+      "sha256": "5BF250BF7E11806B1A81AFB335BA589B7C33F6791009DF161FE2273D46AD1433",
+      "fileVersion": "0.11.15.0",
+      "productVersion": "0.11.15+5e0943ae291f1e0eb48bf7e1e07809e62a4972dc",
+      "authenticode": "NotSigned"
+    },
+    "installer": {
+      "bytes": 61867426,
+      "sha256": "3C9139F8F7853C370C83A14537916D73258123A8E1CB26FDBA0B0EECD3219E44",
+      "authenticode": "NotSigned"
+    }
+  },
+  "installerValidation": {
+    "upgradeFrom": "0.11.14",
+    "upgradeTo": "0.11.15",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "privateDistribution": {
+    "objectKey": "releases/launcher/0.11.15/Hechao-Launcher-Setup-0.11.15-win-x64.exe",
+    "secondPublishVerifiedAndSkipped": true,
+    "anonymousStatus": 403,
+    "signedStatus": 200,
+    "downloadedBytes": 61867426,
+    "downloadedSha256": "3C9139F8F7853C370C83A14537916D73258123A8E1CB26FDBA0B0EECD3219E44",
+    "elapsedSeconds": 1.46,
+    "privateLinkIncluded": false
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "minecraftAccessTokenIncluded": false
+  }
+}

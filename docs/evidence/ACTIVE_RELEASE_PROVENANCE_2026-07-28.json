@@ -1,43 +1,44 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-27T23:55:05Z",
+  "generatedAtUtc": "2026-07-28T01:00:14Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.11.14",
-      "releaseTag": "launcher-v0.11.14",
-      "releaseCommit": "6f337f337e15e4f7151d5df8a04db5fd40df98a7",
-      "taggedAt": "2026-07-27T19:23:31+08:00",
+      "version": "0.11.15",
+      "releaseTag": "launcher-v0.11.15",
+      "releaseCommit": "5e0943ae291f1e0eb48bf7e1e07809e62a4972dc",
+      "taggedAt": "2026-07-28T09:00:14+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "6f337f337e15e4f7151d5df8a04db5fd40df98a7"
+        "value": "5e0943ae291f1e0eb48bf7e1e07809e62a4972dc"
       },
       "deploymentState": "private-oss-gray",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 68755863,
-          "sha256": "4F5B24E0DB08884851B8995619F026067F55DEA0A43713E64A3B24092C27869A",
+          "size": 68763203,
+          "sha256": "5BF250BF7E11806B1A81AFB335BA589B7C33F6791009DF161FE2273D46AD1433",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.11.14-win-x64.exe",
-          "location": "releases/launcher/0.11.14/Hechao-Launcher-Setup-0.11.14-win-x64.exe",
-          "size": 61866744,
-          "sha256": "82542FEBDD826AF4C40D8E0AFCD65990BE54A748734829FA7EC46214A27E5EDB",
+          "name": "Hechao-Launcher-Setup-0.11.15-win-x64.exe",
+          "location": "releases/launcher/0.11.15/Hechao-Launcher-Setup-0.11.15-win-x64.exe",
+          "size": 61867426,
+          "sha256": "3C9139F8F7853C370C83A14537916D73258123A8E1CB26FDBA0B0EECD3219E44",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "release-tag",
-        "target": "launcher-v0.11.13"
+        "target": "launcher-v0.11.14"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.11.14.md",
-        "docs/PRELAUNCH_PILOT_0.11.14.md"
+        "docs/LAUNCHER_RELEASE_0.11.15.md",
+        "docs/PRELAUNCH_PILOT_0.11.15.md",
+        "docs/evidence/LAUNCHER_0.11.15_RELEASE_ACCEPTANCE_2026-07-28.json"
       ]
     },
     {

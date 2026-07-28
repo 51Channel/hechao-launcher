@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-28T00:59:55Z",
+  "purpose": "Record production Activity routing, the first PVP route failure, and the scoped CrossStitch compatibility deployment without claiming the pending PVP retest.",
+  "activity": {
+    "profileId": "activity-neoforge-1.21.11",
+    "profileVersion": "1.0.10",
+    "velocityRouteObservedAtLocal": "2026-07-28T08:06:29+08:00",
+    "backendJoinObserved": true,
+    "backendDisconnectObservedAtLocal": "2026-07-28T08:26:53+08:00",
+    "gameExitCode": 0,
+    "routeAcceptance": "passed-single-account"
+  },
+  "pvpFirstAttempt": {
+    "profileId": "pvp-fabric-1.20.1",
+    "profileVersion": "1.0.0",
+    "velocityRouteObservedAtLocal": "2026-07-28T08:04:17+08:00",
+    "backendLoginObserved": true,
+    "backendDisconnectImmediate": true,
+    "velocityFailure": "backend packet did not decode successfully",
+    "gameExitCode": 1,
+    "routeAcceptance": "failed-before-server-compatibility-fix"
+  },
+  "pvpCompatibilityDeployment": {
+    "hostAlias": "owl9",
+    "serverRoot": "C:\\mc\\server",
+    "playerCountBeforeMaintenance": 0,
+    "saveAllFlushConfirmed": true,
+    "gracefulStopConfirmed": true,
+    "backup": {
+      "directory": "C:\\mc\\manual-backups\\pvp-crossstitch-20260728T003311Z",
+      "files": 23,
+      "bytes": 52688774,
+      "manifestSha256": "B704653C0456397F78F0E821C37682BDDCA02CAA89742AC3EC891E9028AB09C1"
+    },
+    "installedMod": {
+      "name": "CrossStitch",
+      "version": "0.1.6",
+      "file": "mods\\crossstitch-0.1.6.jar",
+      "bytes": 5321,
+      "sha1": "aba735301c683ed43d5f3361f532bf38f28116f2",
+      "sha512": "434396c8a939eefe1b502d796dcc7fb6758c0664159da9f423bcf9103ee30e6ce4e4e1ef54924d65644d4c3f3873331786b87aa7d5fa8b206acdbb3551e7ecaf",
+      "officialSource": "https://modrinth.com/mod/crossstitch/version/0.1.6"
+    },
+    "startupEvidence": {
+      "crossstitchLoaded": "0.1.6",
+      "fabricProxyLiteLoaded": "2.6.0",
+      "doneSeconds": 12.293
+    },
+    "currentAudit": {
+      "port25565Listening": false,
+      "gracefulStopMarkerAfterStartup": false,
+      "interpretation": "The deployment is present and loaded in the last startup, but sustained service and the repaired player route are not yet accepted."
+    }
+  },
+  "remainingAcceptance": [
+    "Start the PVP backend in the administrator-controlled persistent server window.",
+    "Repeat the real PVP client route and verify identity, permissions, stable join, return to hub, reconnect and normal exit.",
+    "Keep Velocity in monitor mode until four-tier accounts and all transfer paths pass."
+  ],
+  "privacy": {
+    "minecraftUuidIncluded": false,
+    "accessTokenIncluded": false,
+    "credentialIncluded": false,
+    "signedUrlIncluded": false
+  }
+}

@@ -131,6 +131,7 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 - 启动器 `0.11.12` 基于提交 `2e21c5b93980bb62120e0f5cb9ee124658966d20`，增加玩家确认诊断上传、上传前本地 ZIP 复验、鉴权刷新和独立流式上传客户端。单文件 EXE 为 `68,711,016` 字节，SHA-256 为 `BD02D3352271B53D829D543DDE35A216205508330D468E34DF151056EC7AE6DF`；NSIS 安装包为 `61,833,814` 字节，SHA-256 为 `F54297318865995225CE8CB748C115EA4DCA8219E02AE09ABE266F783EC033D6`。Debug 与 Release 完整测试均为 `251/251`；隔离目录干净安装、从 `0.11.11` 覆盖升级、两轮卸载、设置与 DPAPI 会话保留均通过。安装包已上传私有 OSS 固定键，二次发布校验后跳过，匿名访问 `403`、24 小时签名下载 `200`，远端长度和 SHA-256 一致，当前替换 `0.11.11` 进入内部灰度。
 - 启动器 `0.11.13` 制品基于提交 `dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9`，增加隐私受限运行遥测、离线队列、幂等批次和固定失败分类。单文件 EXE 为 `68,755,358` 字节，SHA-256 为 `985D4EEA3340D3AC0312DD90954729A348DB04471B947CA1AE52E361ABEAD1DD`；NSIS 安装包为 `61,868,113` 字节，SHA-256 为 `E6BF44D9971CEF6D874368E9912158BC60B88A886C652318E94F9D4BE0FFCFE7`。完整解决方案 `346/346`；可重复验证脚本完成干净安装、从 `0.11.12` 覆盖升级、两轮卸载、设置与 DPAPI 会话保留。安装包已上传私有 OSS 固定键，二次发布校验后跳过，匿名访问 `403`、24 小时签名下载 `200`，当前替换 `0.11.12` 进入内部灰度。
 - 启动器 `0.11.14` 制品基于提交 `6f337f337e15e4f7151d5df8a04db5fd40df98a7`，让“启动时检查客户端更新”真实控制首次扫描，同时保留进服前强制检查。单文件 EXE 为 `68,755,863` 字节，SHA-256 为 `4F5B24E0DB08884851B8995619F026067F55DEA0A43713E64A3B24092C27869A`；NSIS 安装包为 `61,866,744` 字节，SHA-256 为 `82542FEBDD826AF4C40D8E0AFCD65990BE54A748734829FA7EC46214A27E5EDB`。完整解决方案 `348/348`；可重复验证脚本完成干净安装、从 `0.11.13` 覆盖升级、两轮卸载、设置与 DPAPI 会话保留。安装包已上传私有 OSS 固定键，二次发布校验后跳过，匿名访问 `403`、24 小时签名下载 `200`，当前替换 `0.11.13` 进入内部灰度。
+- 启动器 `0.11.15` 制品基于提交 `5e0943ae291f1e0eb48bf7e1e07809e62a4972dc`，在启动前补齐并校验 Mojang 日志配置。单文件 EXE 为 `68,763,203` 字节，SHA-256 为 `5BF250BF7E11806B1A81AFB335BA589B7C33F6791009DF161FE2273D46AD1433`；NSIS 安装包为 `61,867,426` 字节，SHA-256 为 `3C9139F8F7853C370C83A14537916D73258123A8E1CB26FDBA0B0EECD3219E44`。完整解决方案 `365/365`；可重复验证脚本完成干净安装、从 `0.11.14` 覆盖升级、两轮卸载、设置与 DPAPI 会话保留。安装包已上传私有 OSS 固定键，二次发布校验后跳过，匿名访问 `403`、24 小时签名下载 `200`，当前替换 `0.11.14` 进入内部灰度。
 - API `0.11.1-20260725T165050Z` 基于提交 `3f17cba`。单文件为 `103,711,283` 字节，SHA-256 为 `0336CBE79E02F2E9F7F7C37490120FAA840CF083C84B02537ACFEA5266B75F45`；归档为 `45,309,559` 字节，SHA-256 为 `E727E9B840E81CDEFE5D45586AEF874B6E082D29562F797F45ECC8C98589E587`。生产健康、数据库、旧网站、中转 API、管理员入口和 journal 回归均通过，现保留为历史版本。
 - API `0.12.0-20260725T203001Z` 单文件为 `103,716,915` 字节，SHA-256 为 `B46A22280243BA9801EB66FD628ED598CD27F0FED7995788C4452D222C3B27D1`；归档为 `45,382,027` 字节，SHA-256 为 `C76DA133466A4D609F8009A5206FDAFCDDE72DC0CB7D78FBC8E8C8B473DA5D41`。授权定向路由、健康/就绪、旧业务与生产合成授权回归通过，现保留为历史版本。
 - API `0.13.0-20260726T173536Z` 单文件为 `103,796,275` 字节，SHA-256 为 `F2B7466A9AFAB142F110D7C2EB692DE1BA2FDD653F7CF42D4AE31D5BF7E8C811`；归档为 `45,339,427` 字节，SHA-256 为 `E7C8DECAFD8A3B47EB63987F8542C8BB034AB86C831F32B242F741FE26ABC728`。诊断上传、清理、生产错误路径和旧业务回归通过，现保留为历史版本。
@@ -299,33 +300,39 @@ PVP 的静态 Velocity 兼容改造已完成。官方 FabricProxy-Lite `2.6.0` �
 owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本机管理员，
 密钥内容未改变，Velocity 进程也未重启。
 
-PVP 已在 2026-07-28 受控开服并确认 Fabric 指标代理加载，空载基线为
-`20 TPS / 12.7157 MSPT`。Velocity 静态兼容矩阵已通过，但正确 PVP 客户端的真实
-统一入口、UUID/名称/皮肤/权限、直连拒绝、断线重连仍待验收；PVP 为 1.20.1，而大厅
-为 1.21.11，不能把不兼容的 `/hub` 当作可用回程。完成专用回程设计与真实客户端灰度
-后，再决定是否收窄后端防火墙来源并推进 Velocity `enforce`。
+第一次正确 PVP 客户端真实路由在 Velocity 与后端之间出现自定义包解码失败。已在
+`save-all flush`、优雅停服和独立备份后安装官方 CrossStitch `0.1.6`；JAR 为
+`5,321` 字节，SHA-1 为 `aba735301c683ed43d5f3361f532bf38f28116f2`。修复后的
+启动日志同时列出 CrossStitch `0.1.6`、FabricProxy-Lite `2.6.0` 并完成启动，但
+当前 `25565` 未监听，不能声称真实路由已修复。PVP 先前空载基线为
+`20 TPS / 12.7157 MSPT`；下一次必须在管理员控制的持久开服窗口复测统一入口、
+UUID/名称/皮肤/权限、直连拒绝和断线重连。PVP 为 1.20.1，而大厅为 1.21.11，
+不能把不兼容的 `/hub` 当作可用回程。完成专用回程设计与真实客户端灰度后，再决定
+是否收窄后端防火墙来源并推进 Velocity `enforce`。
 
 脱敏机器证据见
 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)，
 状态采集部署证据见
 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)，
 PVP modern forwarding 部署证据见
-[`evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json)。
+[`evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json)，
+首次真实路由与 CrossStitch 修复见
+[`evidence/CLIENT_ACTIVITY_PVP_ROUTE_AND_PVP_FIX_2026-07-28.json`](evidence/CLIENT_ACTIVITY_PVP_ROUTE_AND_PVP_FIX_2026-07-28.json)。
 
 ## 4. 当前阻塞与风险
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 三份正式世界归档均为 `Completed`，远端 ZIP、SHA-256 旁车和条目数一致，异机完整解压与恢复检查已通过；当前 `E:` 仍保留约 12.74 GiB，后续继续按保留策略监控空间。
-3. `owl9` 的密钥认证、实时规格盘点、只出站状态采集和 PVP modern forwarding 静态改造均已完成；PVP 已受控开服并取得空载指标，正确 1.20.1 客户端真实路由、直连拒绝与身份转发仍待灰度，之后再决定后端防火墙来源收窄。
+3. `owl9` 的密钥认证、实时规格盘点、只出站状态采集和 PVP modern forwarding 静态改造均已完成；首次真实路由暴露的后端解码问题已部署 CrossStitch 修复，仍需持久开服窗口下的 1.20.1 客户端复测、直连拒绝与身份转发验收，之后再决定后端防火墙来源收窄。
 4. 启动器数据库、论坛与 Sub2API 的异地加密、真实 OSS 上传/下载、定时任务、告警恢复和异地主机隔离恢复均已验收；当前不再存在 RAM v5 或平台数据异地副本阻塞。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。真实四级账号、正确 Activity/PVP 档案、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。Activity 单账号真实路由已通过；PVP 修复后真实路由、四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态
 
 - 发布 ID：`0.20.2-20260727T225819Z`
-- API `0.20.2`、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.11.14` 为私有 OSS 灰度版本。管理员 Web 已启用，真实 MFA 已登记。
-- Git 标签：`launcher-v0.11.14` 指向制品源码提交 `6f337f337e15e4f7151d5df8a04db5fd40df98a7`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
+- API `0.20.2`、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.11.15` 为私有 OSS 灰度版本。管理员 Web 已启用，真实 MFA 已登记。
+- Git 标签：`launcher-v0.11.15` 指向制品源码提交 `5e0943ae291f1e0eb48bf7e1e07809e62a4972dc`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`

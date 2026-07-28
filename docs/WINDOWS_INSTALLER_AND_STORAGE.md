@@ -1,6 +1,6 @@
 # Windows 安装包与游戏数据目录
 
-> 启动器源码版本：`0.11.14`
+> 启动器源码版本：`0.11.15`
 > 存储结构版本：`2`
 > 更新日期：`2026-07-27`
 
@@ -207,6 +207,11 @@ IconPark 许可、安装目录清理、`settings.json` 与 DPAPI `session.dat` �
 设置与 DPAPI 会话哈希保持一致，现有 `0.11.11` 进程未被关闭或覆盖；安装后
 ProductVersion 为 `0.11.14+6f337f337e15e4f7151d5df8a04db5fd40df98a7`。
 完整记录见 [`LAUNCHER_RELEASE_0.11.14.md`](LAUNCHER_RELEASE_0.11.14.md)。
+
+`0.11.15` 使用同一脚本完成从 `0.11.14` 覆盖升级、干净安装和两轮静默卸载。
+设置与 DPAPI 会话哈希保持一致，原有启动器进程未被关闭；安装后 ProductVersion
+为 `0.11.15+5e0943ae291f1e0eb48bf7e1e07809e62a4972dc`。完整记录见
+[`LAUNCHER_RELEASE_0.11.15.md`](LAUNCHER_RELEASE_0.11.15.md)。
 
 ## 7. 第三方构建资产
 
