@@ -167,6 +167,19 @@
             "reason": "not refreshed for this isolated route acceptance"
           }
         ]
+      },
+      "realSessionGrantSafety": {
+        "acceptanceMarkerPresent": true,
+        "acceptanceMarkerMode": "0600",
+        "acceptanceMarkerOwner": "root:root",
+        "requiresSessionCreatedAfterMarker": true,
+        "requiresSessionActiveAndUnexpired": true,
+        "requiresLinkedUnbannedMinecraftIdentity": true,
+        "requiresExactlyOneEligibleIdentity": true,
+        "preLoginIssueGrantExitCode": 1,
+        "preLoginIssueGrantRejected": true,
+        "grantsCreatedInNegativeTest": 0,
+        "identityDisclosed": false
       }
     },
     "credentialTransfer": {
@@ -200,9 +213,9 @@
     "credentialInstaller": "deploy/windows/velocity-staging/Install-PvpReturnStagingCredential.ps1",
     "credentialInstallerSha256": "A39EC798E1CB684694154ABA1877E847D27ADEF3D42199DB912F7E31C5C3B6A7",
     "apiStagingManager": "deploy/linux/manage-protocol-translation-staging.sh",
-    "apiStagingManagerSha256": "166A48FFB7FAE1B7A66C2AE548FBEACF4DA732814C4B3C6D4C435489BEE68F82",
-    "apiStagingManagerRollbackBackup": "/var/backups/hechao-launcher/protocol-staging-manager-20260728T075330Z/manage-protocol-translation-staging.sh",
-    "validatedAt": "2026-07-28T07:57:43.6508788+00:00",
+    "apiStagingManagerSha256": "B734F6E15C6DC736A55F98DF297850E31920AC3285D5BCC17AEC41E22EA81E55",
+    "apiStagingManagerRollbackBackup": "/var/backups/hechao-launcher/protocol-staging-manager-20260728T081751Z/manage-protocol-translation-staging.sh",
+    "validatedAt": "2026-07-28T08:20:51.8843574+00:00",
     "parserPassed": true,
     "statusBeforePassed": true,
     "removeWithoutConfirmationRejected": true,
@@ -231,6 +244,7 @@
     "candidateCatalogHeartbeatTimerPassed": true,
     "horrorProfileRuntimeBuildPassed": true,
     "candidateCatalogHorrorMeaningVerified": true,
+    "preLoginGrantFailsClosed": true,
     "truePvpBackendUntouched": true,
     "productionAuthorizerUnchanged": true,
     "productionVelocityUnchanged": true

@@ -25,6 +25,7 @@ production_current="/opt/hechao-launcher-api/current"
 unit_name="hechao-api-protocol-translation-staging"
 heartbeat_sync_unit="${unit_name}-heartbeat-sync"
 manager_path="$(readlink -f -- "$0")"
+acceptance_session_marker="${state_root}/real-session-started-at"
 port=18093
 base_url="http://127.0.0.1:${port}"
 heartbeat_sync_freshness_seconds=120
@@ -107,7 +108,7 @@ production_snapshot() {
 
 require_tools() {
   local tool
-  for tool in curl docker flock jq openssl pg_restore python3 readlink sha256sum ss systemctl tar; do
+  for tool in curl date docker flock jq openssl pg_restore python3 readlink sha256sum ss systemctl tar; do
     command -v "$tool" >/dev/null || fail "required tool is missing: $tool"
   done
 }
@@ -464,6 +465,7 @@ status() {
   local non_loopback_count
   local log_error_count
   local heartbeat_sync_running=false
+  local acceptance_session_marker_present=false
   local heartbeat_state
   if systemctl is-active --quiet "${unit_name}.service"; then
     active=true
@@ -496,6 +498,9 @@ status() {
   if systemctl is-active --quiet "${heartbeat_sync_unit}.timer"; then
     heartbeat_sync_running=true
   fi
+  if [[ -f "$acceptance_session_marker" ]]; then
+    acceptance_session_marker_present=true
+  fi
   heartbeat_state="$(
     database_scalar \
       "$database_name" \
@@ -522,6 +527,7 @@ status() {
   "heartbeatSyncRunning": ${heartbeat_sync_running},
   "heartbeatSyncFreshnessSeconds": ${heartbeat_sync_freshness_seconds},
   "heartbeatTargetState": "${heartbeat_state}",
+  "acceptanceSessionMarkerPresent": ${acceptance_session_marker_present},
   "candidateLogErrorCount": ${log_error_count},
   "productionReleaseUnchanged": true,
   "productionMigrationStateUnchanged": true
@@ -652,6 +658,8 @@ start_heartbeat_sync() {
   fi
 
   stop_heartbeat_sync
+  install -o root -g root -m 0600 /dev/null "$acceptance_session_marker"
+  date -u +%Y-%m-%dT%H:%M:%SZ > "$acceptance_session_marker"
   refresh_heartbeats
   systemd-run \
     --unit="$heartbeat_sync_unit" \
@@ -674,6 +682,7 @@ start_heartbeat_sync() {
   "freshnessSeconds": ${heartbeat_sync_freshness_seconds},
   "targets": ["lobby", "pvp"],
   "pvpCatalogMeaning": "horror-prank",
+  "acceptanceSessionMarkerCreated": true,
   "productionUnchanged": true
 }
 EOF
@@ -686,8 +695,14 @@ issue_grant() {
     fail "candidate API must be running before issuing a grant"
 
   local eligible_count
+  local acceptance_started_at
   local grant_id
   local expires_at
+  [[ -f "$acceptance_session_marker" ]] ||
+    fail "real-session acceptance has not been started"
+  acceptance_started_at="$(tr -d '[:space:]' < "$acceptance_session_marker")"
+  [[ "$acceptance_started_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] ||
+    fail "real-session acceptance marker is invalid"
   eligible_count="$(
     database_scalar \
       "$database_name" \
@@ -695,6 +710,14 @@ issue_grant() {
        FROM launcher.minecraft_identities identity
        JOIN launcher.users account ON account.id = identity.user_id
        WHERE NOT account.is_disabled
+         AND EXISTS (
+           SELECT 1
+           FROM launcher.auth_sessions session
+           WHERE session.user_id = account.id
+             AND session.created_at >= '${acceptance_started_at}'::timestamptz
+             AND session.revoked_at IS NULL
+             AND session.refresh_expires_at > now()
+         )
          AND NOT EXISTS (
            SELECT 1
            FROM launcher.minecraft_identity_bans ban
@@ -704,7 +727,7 @@ issue_grant() {
          );"
   )"
   [[ "$eligible_count" == "1" ]] ||
-    fail "expected exactly one eligible linked Minecraft identity in the backup clone"
+    fail "expected exactly one newly authenticated eligible Minecraft identity"
 
   grant_id="$(python3 -c 'import uuid; print(uuid.uuid4())')"
   expires_at="$(
@@ -715,6 +738,14 @@ issue_grant() {
          FROM launcher.minecraft_identities identity
          JOIN launcher.users account ON account.id = identity.user_id
          WHERE NOT account.is_disabled
+           AND EXISTS (
+             SELECT 1
+             FROM launcher.auth_sessions session
+             WHERE session.user_id = account.id
+               AND session.created_at >= '${acceptance_started_at}'::timestamptz
+               AND session.revoked_at IS NULL
+               AND session.refresh_expires_at > now()
+           )
            AND NOT EXISTS (
              SELECT 1
              FROM launcher.minecraft_identity_bans ban
@@ -778,6 +809,7 @@ issue_grant() {
   "grantCreated": true,
   "targetServer": "pvp",
   "eligibleIdentityCount": 1,
+  "newlyAuthenticatedIdentityRequired": true,
   "expiresAtUtc": "${expires_at}",
   "identityDisclosed": false
 }
