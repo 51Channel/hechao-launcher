@@ -221,6 +221,10 @@ prepare_cleanup() {
   trap - EXIT
 
   if [[ "$prepare_complete" != true ]]; then
+    if [[ "$exit_code" -ne 0 && -f "$log_file" ]]; then
+      echo "Candidate log tail:" >&2
+      tail -n 80 "$log_file" >&2 || true
+    fi
     stop_candidate || true
     if [[ "$database_created" == true ]] || database_exists; then
       docker exec -u postgres "$container" \
@@ -272,7 +276,7 @@ prepare() {
     fail "production database is not on the expected pre-018 baseline"
 
   trap prepare_cleanup EXIT
-  install -d -o root -g root -m 0700 \
+  install -d -o root -g root -m 0755 \
     "$state_root" "$candidate_root"
   while IFS= read -r entry; do
     case "$entry" in
