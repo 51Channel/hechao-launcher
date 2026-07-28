@@ -240,6 +240,20 @@ function New-Backup {
         (Join-Path $backupDirectory 'scope.txt'),
         "Isolated PVP return authorizer staging only.`n",
         [Text.UTF8Encoding]::new($false))
+
+    $currentUserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $currentUserGrant = "*${currentUserSid}:(F)"
+    & icacls.exe $backupDirectory `
+        '/inheritance:r' `
+        '/grant:r' `
+        '*S-1-5-18:(F)' `
+        '*S-1-5-32-544:(F)' `
+        $currentUserGrant `
+        '/t' `
+        '/c' | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to secure staging authorization backup: $backupDirectory"
+    }
     return $backupDirectory
 }
 
@@ -320,13 +334,14 @@ request-timeout-millis=5000
             -Force
 
         $currentUserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $currentUserGrant = "*${currentUserSid}:(F)"
         foreach ($path in @($stagingConfigDirectory, $stagingConfigPath)) {
             & icacls.exe $path `
                 '/inheritance:r' `
                 '/grant:r' `
                 '*S-1-5-18:(F)' `
                 '*S-1-5-32-544:(F)' `
-                "${currentUserSid}:(F)" | Out-Null
+                $currentUserGrant | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Unable to secure staging authorization path: $path"
             }
