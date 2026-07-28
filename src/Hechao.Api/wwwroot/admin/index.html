@@ -741,6 +741,15 @@
                         Velocity 目标
                         <input id="server-velocity-target" name="velocityTarget" maxlength="64" required>
                     </label>
+                    <label class="checkbox-field form-span">
+                        <input id="server-allows-protocol-translation"
+                               name="allowsProtocolTranslation"
+                               type="checkbox">
+                        <span>
+                            <strong>允许跨版本协议转换</strong>
+                            <small>仅在 Velocity 已部署并验收兼容转换插件时开启。</small>
+                        </span>
+                    </label>
                     <label class="form-span">
                         玩家公告
                         <textarea id="server-announcement" name="announcement" maxlength="280"

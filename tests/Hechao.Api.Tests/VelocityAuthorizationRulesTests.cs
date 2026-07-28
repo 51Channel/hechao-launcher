@@ -198,6 +198,45 @@ public sealed class VelocityAuthorizationRulesTests
         Assert.Equal(VelocityAuthorizationReason.MinecraftVersionMismatch, result);
     }
 
+    [Fact]
+    public void EvaluateClientCompatibility_AllowsDifferentVersionForTranslatedTarget()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            Server(
+                AccessTier.Member,
+                serverId: "pvp",
+                minecraftVersion: "1.20.1",
+                loader: "Fabric",
+                clientProfileId: "pvp-fabric-1.20.1"),
+            Server(
+                AccessTier.Member,
+                serverId: "lobby",
+                minecraftVersion: "1.21.11",
+                allowsProtocolTranslation: true));
+
+        Assert.Equal(VelocityAuthorizationReason.Allowed, result);
+    }
+
+    [Fact]
+    public void EvaluateClientCompatibility_TranslationDoesNotBypassModdedProfile()
+    {
+        var result = VelocityAuthorizationRules.EvaluateClientCompatibility(
+            Server(
+                AccessTier.Member,
+                serverId: "lobby",
+                minecraftVersion: "1.21.11",
+                clientProfileId: "base-1.21.11"),
+            Server(
+                AccessTier.Member,
+                serverId: "pvp",
+                minecraftVersion: "1.20.1",
+                loader: "Fabric",
+                clientProfileId: "pvp-fabric-1.20.1",
+                allowsProtocolTranslation: true));
+
+        Assert.Equal(VelocityAuthorizationReason.ClientProfileMismatch, result);
+    }
+
     private static VelocityPlayerAccess Player(
         AccessTier tier,
         bool disabled = false,
@@ -222,7 +261,8 @@ public sealed class VelocityAuthorizationRulesTests
         string serverId = "activity",
         string minecraftVersion = "1.21.11",
         string loader = "Paper",
-        string clientProfileId = "base-1.21.11")
+        string clientProfileId = "base-1.21.11",
+        bool allowsProtocolTranslation = false)
     {
         return new VelocityServerAccess(
             serverId,
@@ -232,6 +272,7 @@ public sealed class VelocityAuthorizationRulesTests
             accessOverride,
             minecraftVersion,
             loader,
-            clientProfileId);
+            clientProfileId,
+            allowsProtocolTranslation);
     }
 }

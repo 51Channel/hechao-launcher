@@ -31,8 +31,8 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         const string sql = """
             SELECT id, display_name, short_name, icon_glyph, status, max_players,
                    minecraft_version, loader, minimum_tier, client_profile_id,
-                   velocity_target, sort_order, is_visible, announcement, opens_at,
-                   closes_at, revision, created_at, updated_at
+                   velocity_target, allow_protocol_translation, sort_order, is_visible,
+                   announcement, opens_at, closes_at, revision, created_at, updated_at
             FROM launcher.servers
             ORDER BY sort_order, id;
             """;
@@ -56,8 +56,8 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         const string sql = """
             SELECT id, display_name, short_name, icon_glyph, status, max_players,
                    minecraft_version, loader, minimum_tier, client_profile_id,
-                   velocity_target, sort_order, is_visible, announcement, opens_at,
-                   closes_at, revision, created_at, updated_at
+                   velocity_target, allow_protocol_translation, sort_order, is_visible,
+                   announcement, opens_at, closes_at, revision, created_at, updated_at
             FROM launcher.servers
             WHERE id = $1;
             """;
@@ -79,15 +79,15 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
             INSERT INTO launcher.servers
                 (id, display_name, short_name, icon_glyph, status, online_players,
                  max_players, minecraft_version, loader, minimum_tier,
-                 client_profile_id, velocity_target, sort_order, is_visible,
-                 announcement, opens_at, closes_at)
+                 client_profile_id, velocity_target, allow_protocol_translation,
+                 sort_order, is_visible, announcement, opens_at, closes_at)
             VALUES
                 ($1, $2, $3, $4, $5, 0, $6, $7, $8, $9, $10, $11, $12, $13,
-                 $14, $15, $16)
+                 $14, $15, $16, $17)
             RETURNING id, display_name, short_name, icon_glyph, status, max_players,
                       minecraft_version, loader, minimum_tier, client_profile_id,
-                      velocity_target, sort_order, is_visible, announcement, opens_at,
-                      closes_at, revision, created_at, updated_at;
+                      velocity_target, allow_protocol_translation, sort_order, is_visible,
+                      announcement, opens_at, closes_at, revision, created_at, updated_at;
             """;
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -117,6 +117,7 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
             command.Parameters.AddWithValue(request.MinimumTier.ToString());
             command.Parameters.AddWithValue(request.ClientProfileId);
             command.Parameters.AddWithValue(request.VelocityTarget);
+            command.Parameters.AddWithValue(request.AllowsProtocolTranslation);
             command.Parameters.AddWithValue(request.SortOrder);
             command.Parameters.AddWithValue(request.IsVisible);
             command.Parameters.AddWithValue(request.Announcement.Trim());
@@ -173,17 +174,18 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
                 minimum_tier = $8,
                 client_profile_id = $9,
                 velocity_target = $10,
-                sort_order = $11,
-                announcement = $12,
-                opens_at = $13,
-                closes_at = $14,
+                allow_protocol_translation = $11,
+                sort_order = $12,
+                announcement = $13,
+                opens_at = $14,
+                closes_at = $15,
                 revision = revision + 1,
                 updated_at = now()
-            WHERE id = $15
+            WHERE id = $16
             RETURNING id, display_name, short_name, icon_glyph, status, max_players,
                       minecraft_version, loader, minimum_tier, client_profile_id,
-                      velocity_target, sort_order, is_visible, announcement, opens_at,
-                      closes_at, revision, created_at, updated_at;
+                      velocity_target, allow_protocol_translation, sort_order, is_visible,
+                      announcement, opens_at, closes_at, revision, created_at, updated_at;
             """;
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -225,6 +227,7 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         command.Parameters.AddWithValue(request.MinimumTier.ToString());
         command.Parameters.AddWithValue(request.ClientProfileId);
         command.Parameters.AddWithValue(request.VelocityTarget);
+        command.Parameters.AddWithValue(request.AllowsProtocolTranslation);
         command.Parameters.AddWithValue(request.SortOrder);
         command.Parameters.AddWithValue(request.Announcement.Trim());
         AdminPostgresParameters.AddPositional(
@@ -272,8 +275,8 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
             WHERE id = $2
             RETURNING id, display_name, short_name, icon_glyph, status, max_players,
                       minecraft_version, loader, minimum_tier, client_profile_id,
-                      velocity_target, sort_order, is_visible, announcement, opens_at,
-                      closes_at, revision, created_at, updated_at;
+                      velocity_target, allow_protocol_translation, sort_order, is_visible,
+                      announcement, opens_at, closes_at, revision, created_at, updated_at;
             """;
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -392,8 +395,8 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         const string sql = """
             SELECT id, display_name, short_name, icon_glyph, status, max_players,
                    minecraft_version, loader, minimum_tier, client_profile_id,
-                   velocity_target, sort_order, is_visible, announcement, opens_at,
-                   closes_at, revision, created_at, updated_at
+                   velocity_target, allow_protocol_translation, sort_order, is_visible,
+                   announcement, opens_at, closes_at, revision, created_at, updated_at
             FROM launcher.servers
             WHERE id = $1
             FOR UPDATE;
@@ -467,12 +470,12 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
     {
         var configuredStatus =
             Enum.Parse<ServerStatus>(reader.GetString(4), ignoreCase: true);
-        DateTimeOffset? opensAt = reader.IsDBNull(14)
-            ? null
-            : new DateTimeOffset(reader.GetDateTime(14));
-        DateTimeOffset? closesAt = reader.IsDBNull(15)
+        DateTimeOffset? opensAt = reader.IsDBNull(15)
             ? null
             : new DateTimeOffset(reader.GetDateTime(15));
+        DateTimeOffset? closesAt = reader.IsDBNull(16)
+            ? null
+            : new DateTimeOffset(reader.GetDateTime(16));
         return new AdminServerRecord(
             reader.GetString(0),
             reader.GetString(1),
@@ -485,9 +488,10 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
             Enum.Parse<AccessTier>(reader.GetString(8), ignoreCase: true),
             reader.GetString(9),
             reader.GetString(10),
-            reader.GetInt32(11),
-            reader.GetBoolean(12),
-            reader.GetString(13),
+            reader.GetBoolean(11),
+            reader.GetInt32(12),
+            reader.GetBoolean(13),
+            reader.GetString(14),
             opensAt,
             closesAt,
             ServerAvailabilityRules.ResolveStatus(
@@ -495,9 +499,9 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
                 opensAt,
                 closesAt,
                 DateTimeOffset.UtcNow),
-            reader.GetInt64(16),
-            new DateTimeOffset(reader.GetDateTime(17)),
-            new DateTimeOffset(reader.GetDateTime(18)));
+            reader.GetInt64(17),
+            new DateTimeOffset(reader.GetDateTime(18)),
+            new DateTimeOffset(reader.GetDateTime(19)));
     }
 
     private static JsonElement ParseJson(string value)

@@ -329,7 +329,8 @@ public sealed class VelocityAuthorizationRepository(
                    server.closes_at,
                    server.minecraft_version,
                    server.loader,
-                   server.client_profile_id
+                   server.client_profile_id,
+                   server.allow_protocol_translation
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1::uuid
@@ -385,7 +386,8 @@ public sealed class VelocityAuthorizationRepository(
                 : Enum.Parse<ServerAccessOverride>(reader.GetString(4), ignoreCase: true),
             reader.GetString(7),
             reader.GetString(8),
-            reader.GetString(9));
+            reader.GetString(9),
+            reader.GetBoolean(10));
     }
 
     private static async Task<PendingLaunchGrant?> ReadPendingLaunchGrantAsync(

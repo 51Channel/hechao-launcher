@@ -90,7 +90,8 @@ internal static class VelocityAuthorizationRules
         if (!string.Equals(
                 sessionServer.MinecraftVersion,
                 targetServer.MinecraftVersion,
-                StringComparison.OrdinalIgnoreCase))
+                StringComparison.OrdinalIgnoreCase) &&
+            !targetServer.AllowsProtocolTranslation)
         {
             return VelocityAuthorizationReason.MinecraftVersionMismatch;
         }
@@ -130,7 +131,8 @@ internal sealed record VelocityServerAccess(
     ServerAccessOverride OverrideDecision,
     string MinecraftVersion,
     string Loader,
-    string ClientProfileId);
+    string ClientProfileId,
+    bool AllowsProtocolTranslation);
 
 internal enum ServerAccessOverride
 {

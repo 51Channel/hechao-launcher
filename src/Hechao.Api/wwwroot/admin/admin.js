@@ -93,6 +93,7 @@ function cacheElements() {
         "server-icon-glyph", "server-status", "server-max-players",
         "server-minecraft-version", "server-loader", "server-minimum-tier",
         "server-sort-order", "server-client-profile", "server-velocity-target",
+        "server-allows-protocol-translation",
         "server-is-visible", "server-visible-field", "server-revision-label",
         "server-announcement", "server-opens-at", "server-closes-at",
         "user-count", "user-search-form", "user-search", "user-search-button",
@@ -1222,7 +1223,8 @@ function runtimeCell(server) {
     const loader = document.createElement("strong");
     loader.textContent = `${server.minecraftVersion} · ${server.loader}`;
     const target = document.createElement("span");
-    target.textContent = `Velocity: ${server.velocityTarget}`;
+    target.textContent = `Velocity: ${server.velocityTarget}` +
+        (server.allowsProtocolTranslation ? " · 协议转换" : "");
     stack.append(loader, target);
     cell.append(stack);
     return cell;
@@ -2806,6 +2808,7 @@ function openCreateServer() {
     elements["server-minimum-tier"].value = "Member";
     elements["server-sort-order"].value = "100";
     elements["server-announcement"].value = "";
+    elements["server-allows-protocol-translation"].checked = false;
     elements["server-opens-at"].value = "";
     elements["server-closes-at"].value = "";
     elements["server-is-visible"].checked = true;
@@ -2833,6 +2836,8 @@ function openEditServer(server) {
     elements["server-sort-order"].value = server.sortOrder;
     elements["server-client-profile"].value = server.clientProfileId;
     elements["server-velocity-target"].value = server.velocityTarget;
+    elements["server-allows-protocol-translation"].checked =
+        server.allowsProtocolTranslation;
     elements["server-announcement"].value = server.announcement || "";
     elements["server-opens-at"].value = formatInputDateTime(server.opensAt);
     elements["server-closes-at"].value = formatInputDateTime(server.closesAt);
@@ -2865,6 +2870,8 @@ async function saveServer(event) {
         minimumTier: elements["server-minimum-tier"].value,
         clientProfileId: elements["server-client-profile"].value,
         velocityTarget: elements["server-velocity-target"].value.trim(),
+        allowsProtocolTranslation:
+            elements["server-allows-protocol-translation"].checked,
         sortOrder: Number(elements["server-sort-order"].value),
         announcement: elements["server-announcement"].value.trim(),
         opensAt: parseInputDateTime(elements["server-opens-at"].value),

@@ -35,7 +35,8 @@ public sealed class DatabaseMigrator(NpgsqlDataSource dataSource, ILogger<Databa
         new(14, "client_profile_release_channels", "Hechao.Api.Database.Migrations.014_client_profile_release_channels.sql"),
         new(15, "launcher_telemetry", "Hechao.Api.Database.Migrations.015_launcher_telemetry.sql"),
         new(16, "server_runtime_metrics", "Hechao.Api.Database.Migrations.016_server_runtime_metrics.sql"),
-        new(17, "operational_alerts", "Hechao.Api.Database.Migrations.017_operational_alerts.sql")
+        new(17, "operational_alerts", "Hechao.Api.Database.Migrations.017_operational_alerts.sql"),
+        new(18, "protocol_translation_routes", "Hechao.Api.Database.Migrations.018_protocol_translation_routes.sql")
     ];
 
     public async Task ApplyAsync(CancellationToken cancellationToken = default)

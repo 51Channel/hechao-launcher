@@ -110,10 +110,11 @@ public sealed class AdminServerRulesTests
             AccessTier.Participant,
             "activity-neoforge-1.21.11",
             "activity",
-            30,
-            "",
-            null,
-            null,
+            AllowsProtocolTranslation: false,
+            SortOrder: 30,
+            Announcement: "",
+            OpensAt: null,
+            ClosesAt: null,
             ExpectedRevision: 0);
 
         var errors = AdminServerRules.Validate(request);
@@ -153,7 +154,8 @@ public sealed class AdminServerRulesTests
             AccessTier.Participant,
             "activity-neoforge-1.21.11",
             "activity",
-            30,
+            AllowsProtocolTranslation: false,
+            SortOrder: 30,
             IsVisible: true,
             Announcement: "",
             OpensAt: null,
