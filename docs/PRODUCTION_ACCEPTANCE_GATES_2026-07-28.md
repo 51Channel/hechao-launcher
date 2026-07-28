@@ -119,17 +119,22 @@ Resolved，触发与恢复邮件均成功投递。offsite timer 现为 `enabled/
 停留在主菜单并正常关闭。因此核心 modern forwarding、身份与直连拒绝已经通过，
 但重连仍须补做成功样本，皮肤和有效游戏内权限仍须专用账号目视核对。恐怖整蛊服为
 `1.20.1`、大厅为 `1.21.11`，当前不能把不兼容的 `/hub` 当成可用回程，必须先完成
-专用回程的隔离验证与生产灰度。回环隔离代理现已确认协议 `393`、`763` 与 `774`
-均能完成 status 协商，受限凭据的 API 认证探针返回预期 `PlayerNotLinked`，Via
-错误为 `0`；API `0.21.0` 也已在生产数据库副本上通过迁移默认关闭、只开启大厅后的
+专用回程的隔离验证与生产灰度。真实正版前两次 `/hub` 已通过命令、授权和 Lobby
+登录链，但分别在 Velocity `3.4.0-SNAPSHOT` 与 `3.5.1` 因
+`accept_teleportation` 多余 `131` / `16` 字节断开，不能记为成功。回环隔离核心现为
+Velocity `4.0.0` build `6` 和独立 Java 25；核对后发现代理与大厅曾重复加载相同
+ViaVersion/ViaBackwards，已调整为代理 Via `0`、大厅 Via `2` 的后端单层翻译。
+协议 `393`、`763` 与 `774` status 协商、受限凭据探针、管理脚本防回归断言及零错误
+启动均通过。API `0.21.0` 也已在生产数据库副本上通过迁移默认关闭、只开启大厅后的
 恐怖整蛊回程授权、反向隔离和模组档案防绕过验收。候选没有部署，生产数据库仍为迁移
 17。隔离 Authorizer `0.3.1` 已修复成功转服后会话来源不更新的问题并通过
-`20/20` 测试，生产仍为 `0.3.0`。这些结果仍不包含正版登录或后端转服，不能替代
-真实 `/hub`。
+`20/20` 测试，生产仍为 `0.3.0`。Velocity 4 单层翻译候选仍须真实 `/hub` 复测。
 证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)
 与
 [`API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`](evidence/API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json)。
+实机会话与当前单层翻译状态见
+[`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
 完成这些门槛前不得切换 Velocity `enforce`。
 
 ### 3.5 四级真实账号

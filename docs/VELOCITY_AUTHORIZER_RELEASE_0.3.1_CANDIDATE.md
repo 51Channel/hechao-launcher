@@ -48,7 +48,8 @@ Via JAR 数量。
   `4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70`
 - 隔离运行时：Temurin Java `25.0.4+7`，仅供隔离任务使用
 - 隔离进程：仅监听 `127.0.0.1:25579`
-- Authorizer、ViaVersion `5.11.0`、ViaBackwards `5.11.0` 加载成功
+- 隔离代理只加载 Authorizer 与 HubCommand；代理启用 Via 数量为 `0`
+- 大厅后端加载 ViaVersion/ViaBackwards `5.11.0`，启用数量为 `2`，哈希受管理脚本固定
 - API 受限凭据探针：`PlayerNotLinked`
 - 协议 `393`、`763`、`774` 状态握手全部通过
 - 启动日志 fatal/error：`0`
@@ -66,9 +67,12 @@ Via JAR 数量。
 
 隔离核心随后先升级为 Velocity `3.5.1` build `615`。真实复测能够进入 Lobby 并收到
 权限与欢迎信息，但仍因 `accept_teleportation` 多出 `16` 字节而断开。隔离任务现已
-使用独立 Java 25 启用 Velocity `4.0.0` build `6`；五个插件、回环监听和
-`393/763/774` 状态探测均通过，管理脚本远端 `Status` 也通过。生产 Velocity 和所有
-游戏服未重启。机器证据见
+使用独立 Java 25 启用 Velocity `4.0.0` build `6`。进一步核对发现隔离代理与大厅
+后端同时加载了同一组 ViaVersion/ViaBackwards，违反 ViaVersion 只在代理或后端
+其中一处安装的要求。隔离代理的 Via JAR 已改为 `.disabled`，统一由大厅后端承担
+转换；代理现加载三个插件、启用 Via 数量为 `0`，大厅启用 Via 数量为 `2`。
+回环监听、`393/763/774` 状态探测与管理脚本远端 `Status` 均通过。生产 Velocity 和
+所有游戏服未重启。机器证据见
 [`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
 
 当前仍须完成 Velocity 4 的 PVP -> `/hub` -> Lobby、反向转服拒绝、

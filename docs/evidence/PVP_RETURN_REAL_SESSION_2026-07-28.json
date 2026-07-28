@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T12:37:54.0997620Z",
+  "capturedAt": "2026-07-28T12:57:21.3595205Z",
   "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
   "result": "protocol-failure-remediated-real-session-retest-pending",
   "privacy": {
@@ -86,18 +86,46 @@
       "started": true,
       "realSessionRetestPending": true
     },
+    "translationOwnershipCorrection": {
+      "duplicateTranslationDetected": true,
+      "previousProxyViaEnabled": true,
+      "lobbyViaAlreadyEnabled": true,
+      "matchingArtifactHashes": true,
+      "classification": "ViaVersion and ViaBackwards were active on both the staging proxy and Lobby backend",
+      "officialDeploymentRule": "install ViaVersion on either the proxy or backend servers, not both",
+      "selectedOwner": "lobby-backend",
+      "stagingProxyViaEnabledAfterCorrection": false,
+      "lobbyViaEnabledAfterCorrection": true,
+      "lobbyRestarted": false,
+      "gameServersRestarted": false,
+      "productionVelocityRestarted": false,
+      "backup": "E:\\manual-backups\\velocity-pvp-return-staging-backend-via-20260728-205242",
+      "realSessionRetestPending": true
+    },
     "staging": {
       "root": "E:\\Velocity-PvpReturn-Staging",
       "task": "Hechao-Velocity-PvpReturn-Staging",
       "taskState": "Running",
       "listener": "127.0.0.1:25579",
       "loopbackOnly": true,
-      "loadedPluginCount": 5,
+      "loadedPluginCount": 3,
       "fatalOrErrorLogMatches": 0,
       "authorizerVersion": "0.3.1",
       "authorizerMode": "monitor",
+      "translationLayer": "lobby-backend-only",
+      "enabledViaJarCount": 0,
+      "disabledViaArtifactsRetained": true
+    },
+    "lobbyTranslationLayer": {
+      "listener": "127.0.0.1:25566",
+      "enabledViaJarCount": 2,
       "viaVersion": "5.11.0",
-      "viaBackwards": "5.11.0"
+      "viaVersionSha256": "89DB76C8E3E674238F5EEE2BB7A9E9A2BEEBA0760BBD1B86494778E8A5A52F70",
+      "viaBackwards": "5.11.0",
+      "viaBackwardsSha256": "41085A59D784C9A0D14917FE7487EF5E201A9DA7825FD047F08D328FF33EECDC",
+      "serverVersion": "1.21.11",
+      "serverProtocol": 774,
+      "restartPerformed": false
     },
     "protocolStatusProbes": [
       {
@@ -118,13 +146,17 @@
     ],
     "managementScript": {
       "path": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
-      "sha256": "63521C0EF489D3CEDB451A12ED36A1A5ED88F0B224B33E5D14923AB6FC7B7FD0",
+      "sha256": "4CCE692254540AC40CBBC0191A5D5925C43CC1270B721350A35E0A5548C0E69E",
       "parserErrors": 0,
       "remoteStatusPassed": true,
       "productionAndStagingCoreHashesSeparated": true,
       "velocity4ArtifactPinned": true,
       "java25RuntimePinned": true,
-      "velocity4ConfigRewriteAccepted": true
+      "velocity4ConfigRewriteAccepted": true,
+      "singleTranslationLayerEnforced": true,
+      "stagingEnabledViaJarCount": 0,
+      "lobbyEnabledViaJarCount": 2,
+      "lobbyViaHashesPinned": true
     },
     "candidateApi": {
       "version": "0.21.0",

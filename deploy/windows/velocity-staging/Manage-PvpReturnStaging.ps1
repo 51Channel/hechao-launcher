@@ -8,6 +8,8 @@ param(
 
     [string]$StagingRoot = 'E:\Velocity-PvpReturn-Staging',
 
+    [string]$LobbyRoot = 'E:\LobbyServer',
+
     [string]$TaskName = 'Hechao-Velocity-PvpReturn-Staging',
 
     [string]$JavaExecutable =
@@ -21,6 +23,9 @@ param(
 
     [ValidateRange(1, 65535)]
     [int]$StagingPort = 25579,
+
+    [ValidateRange(1, 65535)]
+    [int]$LobbyPort = 25566,
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string]$ExpectedProductionConfigSha256 =
@@ -65,11 +70,14 @@ function Get-NormalizedPath {
 function Assert-SafeRoots {
     $production = Get-NormalizedPath -Path $ProductionRoot
     $staging = Get-NormalizedPath -Path $StagingRoot
+    $lobby = Get-NormalizedPath -Path $LobbyRoot
     $driveRoot = [IO.Path]::GetPathRoot($staging).TrimEnd(
         [IO.Path]::DirectorySeparatorChar,
         [IO.Path]::AltDirectorySeparatorChar)
 
     if ([string]::Equals($production, $staging, [StringComparison]::OrdinalIgnoreCase) -or
+        [string]::Equals($production, $lobby, [StringComparison]::OrdinalIgnoreCase) -or
+        [string]::Equals($staging, $lobby, [StringComparison]::OrdinalIgnoreCase) -or
         [string]::Equals($staging, $driveRoot, [StringComparison]::OrdinalIgnoreCase)) {
         throw 'The staging root is unsafe.'
     }
@@ -77,6 +85,7 @@ function Assert-SafeRoots {
     return [pscustomobject]@{
         Production = $production
         Staging = $staging
+        Lobby = $lobby
     }
 }
 
@@ -192,6 +201,46 @@ function Assert-ProductionBaseline {
     }
 }
 
+function Assert-LobbyTranslationBaseline {
+    param([Parameter(Mandatory = $true)][pscustomobject]$Roots)
+
+    if (-not (Test-Path -LiteralPath $Roots.Lobby -PathType Container)) {
+        throw "The Lobby root is missing: $($Roots.Lobby)"
+    }
+
+    $viaVersionHash = Assert-FileHash `
+        -Path (Join-Path $Roots.Lobby 'plugins\ViaVersion-5.11.0.jar') `
+        -ExpectedSha256 $ExpectedViaVersionSha256 `
+        -Label 'Lobby ViaVersion JAR'
+    $viaBackwardsHash = Assert-FileHash `
+        -Path (Join-Path $Roots.Lobby 'plugins\ViaBackwards-5.11.0.jar') `
+        -ExpectedSha256 $ExpectedViaBackwardsSha256 `
+        -Label 'Lobby ViaBackwards JAR'
+
+    $enabledViaJars = @(
+        Get-ChildItem -LiteralPath (Join-Path $Roots.Lobby 'plugins') -File |
+            Where-Object {
+                $_.Extension -eq '.jar' -and
+                $_.Name -match '^Via(?:Version|Backwards)'
+            }
+    )
+    if ($enabledViaJars.Count -ne 2) {
+        throw 'Lobby must contain exactly one enabled ViaVersion and ViaBackwards JAR.'
+    }
+
+    $listeners = @(Get-PortListeners -Port $LobbyPort)
+    if ($listeners.Count -ne 1) {
+        throw "Expected exactly one Lobby listener on port $LobbyPort."
+    }
+
+    return [pscustomobject]@{
+        ProcessId = $listeners[0].OwningProcess
+        ViaVersionSha256 = $viaVersionHash
+        ViaBackwardsSha256 = $viaBackwardsHash
+        EnabledViaJarCount = 2
+    }
+}
+
 function Assert-StagingFiles {
     param([Parameter(Mandatory = $true)][pscustomobject]$Roots)
 
@@ -204,13 +253,24 @@ function Assert-StagingFiles {
         -ExpectedSha256 $ExpectedHubCommandSha256 `
         -Label 'Staging HubCommand JAR' | Out-Null
     Assert-FileHash `
-        -Path (Join-Path $Roots.Staging 'plugins\ViaVersion-5.11.0.jar') `
+        -Path (Join-Path $Roots.Staging 'plugins\ViaVersion-5.11.0.jar.disabled') `
         -ExpectedSha256 $ExpectedViaVersionSha256 `
-        -Label 'Staging ViaVersion JAR' | Out-Null
+        -Label 'Disabled staging ViaVersion JAR' | Out-Null
     Assert-FileHash `
-        -Path (Join-Path $Roots.Staging 'plugins\ViaBackwards-5.11.0.jar') `
+        -Path (Join-Path $Roots.Staging 'plugins\ViaBackwards-5.11.0.jar.disabled') `
         -ExpectedSha256 $ExpectedViaBackwardsSha256 `
-        -Label 'Staging ViaBackwards JAR' | Out-Null
+        -Label 'Disabled staging ViaBackwards JAR' | Out-Null
+
+    $enabledViaJars = @(
+        Get-ChildItem -LiteralPath (Join-Path $Roots.Staging 'plugins') -File |
+            Where-Object {
+                $_.Extension -eq '.jar' -and
+                $_.Name -match '^Via(?:Version|Backwards)'
+            }
+    )
+    if ($enabledViaJars.Count -ne 0) {
+        throw 'Staging Via JARs must remain disabled because Lobby owns translation.'
+    }
 
     $configPath = Join-Path $Roots.Staging 'velocity.toml'
     if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
@@ -234,7 +294,8 @@ function Assert-StagingFiles {
 function Get-StagingStatus {
     param(
         [Parameter(Mandatory = $true)][pscustomobject]$Roots,
-        [Parameter(Mandatory = $true)][pscustomobject]$Production
+        [Parameter(Mandatory = $true)][pscustomobject]$Production,
+        [Parameter(Mandatory = $true)][pscustomobject]$Lobby
     )
 
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
@@ -262,6 +323,12 @@ function Get-StagingStatus {
         LoopbackOnly = $unexpectedListeners.Count -eq 0
         FatalOrErrorLogMatches = $fatalMatchCount
         StagingVelocitySha256 = $ExpectedStagingVelocitySha256.ToUpperInvariant()
+        TranslationLayer = 'lobby-backend-only'
+        StagingEnabledViaJarCount = 0
+        LobbyProcessId = $Lobby.ProcessId
+        LobbyEnabledViaJarCount = $Lobby.EnabledViaJarCount
+        LobbyViaVersionSha256 = $Lobby.ViaVersionSha256
+        LobbyViaBackwardsSha256 = $Lobby.ViaBackwardsSha256
         ProductionProcessId = $Production.ProcessId
         ProductionConfigSha256 = $Production.ConfigSha256
         ProductionVelocitySha256 = $ExpectedVelocitySha256.ToUpperInvariant()
@@ -345,10 +412,10 @@ function Prepare-Staging {
             -Destination (Join-Path $temporaryRoot 'plugins\HubCommand-1.0.0.jar')
         Copy-Item `
             -LiteralPath (Join-Path $Roots.Production 'plugins\ViaVersion-5.11.0.jar.disabled') `
-            -Destination (Join-Path $temporaryRoot 'plugins\ViaVersion-5.11.0.jar')
+            -Destination (Join-Path $temporaryRoot 'plugins\ViaVersion-5.11.0.jar.disabled')
         Copy-Item `
             -LiteralPath (Join-Path $Roots.Production 'plugins\ViaBackwards-5.11.0.jar.disabled') `
-            -Destination (Join-Path $temporaryRoot 'plugins\ViaBackwards-5.11.0.jar')
+            -Destination (Join-Path $temporaryRoot 'plugins\ViaBackwards-5.11.0.jar.disabled')
         New-StagingConfiguration `
             -Source (Join-Path $Roots.Production 'velocity.toml') `
             -Destination (Join-Path $temporaryRoot 'velocity.toml')
@@ -427,7 +494,7 @@ function Start-Staging {
         throw "The staging proxy did not bind only to 127.0.0.1:$StagingPort."
     }
 
-        $latestLog = Join-Path $Roots.Staging 'logs\latest.log'
+    $latestLog = Join-Path $Roots.Staging 'logs\latest.log'
     do {
         Start-Sleep -Milliseconds 500
         $logText = if (Test-Path -LiteralPath $latestLog) {
@@ -437,8 +504,10 @@ function Start-Staging {
             ''
         }
         $ready = $logText -match 'Done \(' -and
-            $logText -match 'ViaVersion' -and
-            $logText -match 'ViaBackwards'
+            $logText -match 'Loaded plugin hechao-velocity-authorizer' -and
+            $logText -match 'Loaded plugin hubcommand' -and
+            $logText -notmatch 'Loaded plugin viaversion' -and
+            $logText -notmatch 'Loaded plugin viabackwards'
     } while (-not $ready -and [DateTimeOffset]::UtcNow -lt $deadline)
 
     if (-not $ready -or $logText -match '(?i)ERROR|FATAL|Exception') {
@@ -466,6 +535,7 @@ function Stop-Staging {
 
 $roots = Assert-SafeRoots
 $production = Assert-ProductionBaseline -Roots $roots
+$lobby = Assert-LobbyTranslationBaseline -Roots $roots
 
 switch ($Action) {
     'Prepare' {
@@ -509,4 +579,8 @@ switch ($Action) {
     }
 }
 
-Get-StagingStatus -Roots $roots -Production $production | ConvertTo-Json -Depth 4
+Get-StagingStatus `
+    -Roots $roots `
+    -Production $production `
+    -Lobby $lobby |
+    ConvertTo-Json -Depth 4
