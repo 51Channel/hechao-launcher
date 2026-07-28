@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T02:31:43.5888202+00:00",
+  "capturedAt": "2026-07-28T03:37:55.5060380+00:00",
   "scope": "PVP 1.20.1 to Lobby 1.21.11 protocol-translation staging",
-  "result": "protocol-status-passed-real-session-pending",
+  "result": "authenticated-probe-and-protocol-status-passed-real-session-pending",
   "probe": {
     "script": "tools/acceptance/Test-MinecraftProtocolStatus.ps1",
     "sha256": "99BB1C3D31D1B3774FDC307A1DD3795060ABA019439C6FEE2CB8712E92DEE450",
@@ -22,6 +22,13 @@
         "responseVersion": "Velocity 1.7.2-1.21.11",
         "responseProtocol": 774,
         "passed": true
+      },
+      {
+        "requestedProtocol": 393,
+        "clientVersion": "Minecraft 1.13",
+        "responseVersion": "Velocity 1.7.2-1.21.11",
+        "responseProtocol": 393,
+        "passed": true
       }
     ]
   },
@@ -29,7 +36,7 @@
     "root": "E:\\Velocity-PvpReturn-Staging",
     "task": "Hechao-Velocity-PvpReturn-Staging",
     "taskState": "Running",
-    "processIdAtCapture": 7512,
+    "processIdAtCapture": 11140,
     "listener": "127.0.0.1:25579",
     "velocitySha256": "CCC49F71751ECE26568D3476392D6130C8B43F2E5F3A88313325B9278A52BABD",
     "viaVersion": {
@@ -43,9 +50,46 @@
     "hubCommandSha256": "D785BB379CA8DCE8CA778D220183D9370C74A6B25EC75276A98228818C7968C2",
     "fatalOrErrorLogMatches": 0
   },
+  "authorization": {
+    "plugin": {
+      "version": "0.3.0",
+      "sha256": "289B13472AEAC4073895EF9BE7E630B4B5AACEC48A4D0FD849BBAFE0064E681D",
+      "mode": "monitor",
+      "proxyInstance": "owl5-pvp-return-staging"
+    },
+    "apiCandidate": {
+      "version": "0.21.0",
+      "listener": "127.0.0.1:18093",
+      "databaseMigration": 18,
+      "productionRelease": "0.20.2-20260727T225819Z",
+      "productionDatabaseMigration": 17
+    },
+    "credentialTransfer": {
+      "rawBytes": 64,
+      "writtenToLocalDisk": false,
+      "disclosed": false,
+      "configurationAclRestricted": true,
+      "allowedAclPrincipals": [
+        "SYSTEM",
+        "BUILTIN\\Administrators",
+        "local Administrator"
+      ]
+    },
+    "apiProbe": {
+      "performed": true,
+      "reason": "PlayerNotLinked",
+      "passed": true
+    }
+  },
   "management": {
     "script": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
     "sha256": "B8407D8690F058EA3CB824BB46D99922020E08AC51917DA6A407D558B093072F",
+    "authorizationScript": "deploy/windows/velocity-staging/Set-PvpReturnStagingAuthorization.ps1",
+    "authorizationScriptSha256": "6680E0243F96A485EE48CBFA7321390DA21F24271CA3C0DBA896CBF771C4ED4C",
+    "credentialInstaller": "deploy/windows/velocity-staging/Install-PvpReturnStagingCredential.ps1",
+    "credentialInstallerSha256": "A39EC798E1CB684694154ABA1877E847D27ADEF3D42199DB912F7E31C5C3B6A7",
+    "apiStagingManager": "deploy/linux/manage-protocol-translation-staging.sh",
+    "apiStagingManagerSha256": "D8B506A18861757941FD252D70CF6F894799E4D9F8818A2A7219DC2AC73A0A61",
     "validatedAt": "2026-07-28T02:46:56.1878284+00:00",
     "parserPassed": true,
     "statusBeforePassed": true,
@@ -60,15 +104,18 @@
   },
   "assertions": {
     "stagingBoundToLoopbackOnly": true,
+    "minecraft113StatusNegotiated": true,
     "minecraft1201StatusNegotiated": true,
     "minecraft12111StatusNegotiated": true,
     "stagingStartedWithoutViaErrors": true,
+    "stagingApiCredentialAccepted": true,
+    "stagingCredentialAclRestricted": true,
     "productionVelocityUnchanged": true
   },
   "limitations": [
     "A status handshake does not authenticate a Microsoft account or enter a backend server.",
     "A real PVP 1.20.1 session must still execute /hub into the 1.21.11 lobby.",
     "UUID, skin, permissions, inventory, chat, command tree, movement, reconnect and normal exit remain real-client gates.",
-    "Production Via JARs and the lobby protocol-translation catalog flag remain disabled."
+    "Production Via JARs and the production lobby protocol-translation catalog flag remain disabled."
   ]
 }

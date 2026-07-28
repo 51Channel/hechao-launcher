@@ -40,6 +40,9 @@
   `ClientProfileMismatch`。
 - 重置开关后 PVP 到大厅再次返回 `MinecraftVersionMismatch`。
 - 候选日志错误数为 `0`。
+- 首轮自动验收清理后，又由 `manage-protocol-translation-staging.sh` 重建同构持久
+  隔离副本供真实会话使用；Authorizer 受限凭据探针返回预期 `PlayerNotLinked`，
+  证明 API 认证链可达，但不等同于真实玩家授权或转服。
 
 验收使用临时合成身份，不读取或记录真实玩家 UUID、名称、令牌或数据库凭据。机器可读
 证据见
@@ -48,7 +51,8 @@
 ## 4. 生产不变性
 
 测试前后生产 API 软链、进程状态和 systemd 重启计数保持不变，生产数据库迁移均为
-`17`。测试结束后临时数据库、transient systemd 单元和工作目录均已删除。生产
+`17`。首轮自动测试结束后临时数据库、transient systemd 单元和工作目录均已删除；
+随后重建的真实会话隔离副本只监听回环地址，测试结束后须单独清理。生产
 ViaVersion/ViaBackwards 与目录开关没有启用。
 
 ## 5. 发布门槛

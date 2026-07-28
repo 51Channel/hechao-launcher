@@ -1,10 +1,11 @@
 # PVP 跨版本返回大厅设计
 
-> 状态：代码已实现、默认关闭；回环隔离代理的 1.20.1/1.21.11 status 协议协商及
-> API `0.21.0` 生产数据库副本验收均已通过，真实登录、`/hub` 和生产灰度仍待完成。
+> 状态：代码已实现、默认关闭；回环隔离代理的 1.13/1.20.1/1.21.11 status
+> 协议协商、受限凭据探针及 API `0.21.0` 生产数据库副本验收均已通过，真实登录、
+> `/hub` 和生产灰度仍待完成。
 >
 > 生产 Velocity 的 ViaVersion/ViaBackwards 仍为 `.disabled`，大厅目录开关仍为关闭，
-> 本阶段没有重启代理或游戏服。
+> 本阶段没有重启生产代理或游戏服。
 
 ## 1. 问题
 
@@ -58,7 +59,8 @@ ViaVersion。实际类目录包含从 `1.20` 到 `1.21.11` 的完整逆向协议
 先在 owl5 建立仅监听回环地址的临时 Velocity 实例，不占用生产端口：
 
 1. 复制生产 Velocity 核心和最小配置到独立目录，保留生产目录只读。
-2. 临时代理只加载 HubCommand、ViaVersion 与 ViaBackwards，不加载生产授权凭据。
+2. 临时代理加载 HubCommand、ViaVersion、ViaBackwards 与独立 Authorizer；只使用
+   隔离 API 生成的短时凭据，不读取生产授权凭据。
 3. 通过 SSH 本地端口转发连接临时代理，不开放新的公网端口。
 4. 使用正确 PVP 1.20.1 档案进入 PVP，再执行 `/hub` 进入 1.21.11 大厅。
 5. 核对 UUID、皮肤、权限、物品栏、聊天、命令树、移动和正常退出。
@@ -83,12 +85,27 @@ ViaVersion。实际类目录包含从 `1.20` 到 `1.21.11` 的完整逆向协议
 哈希、生产 Via 禁用状态、制品哈希、回环绑定和启动日志。`Remove` 必须显式传入
 `-ConfirmRemoval`，且只允许删除核对后的隔离根目录。
 
+API 候选与授权凭据分别由以下脚本管理：
+
+```text
+deploy/linux/manage-protocol-translation-staging.sh
+deploy/windows/velocity-staging/Set-PvpReturnStagingAuthorization.ps1
+deploy/windows/velocity-staging/Install-PvpReturnStagingCredential.ps1
+```
+
+API 管理器把生产备份恢复到独立数据库，只监听 `127.0.0.1:18093`；`issue-grant`
+只签发隔离数据库中的短时授权。凭据安装器通过两个 SSH 进程的标准流复制 64 字节
+原始数据，不写本机磁盘、不放进命令参数，也不输出凭据。Velocity 配置和同前缀历史
+备份的 ACL 会从零重建，只允许 `SYSTEM`、本机 `Administrators` 与本机
+`Administrator` 完全控制。
+
 2026-07-28 已在 `E:\Velocity-PvpReturn-Staging` 启动只监听
 `127.0.0.1:25579` 的隔离代理。ViaVersion/ViaBackwards `5.11.0` 与
-HubCommand 均正常加载，错误日志为 `0`。通过 SSH 本地转发执行
+HubCommand、Authorizer `0.3.0` 均正常加载，错误日志为 `0`。隔离 Authorizer
+保持 `monitor`，凭据认证探针返回预期的 `PlayerNotLinked`。通过 SSH 本地转发执行
 [`Test-MinecraftProtocolStatus.ps1`](../tools/acceptance/Test-MinecraftProtocolStatus.ps1)，
-协议 `763` 和 `774` 分别协商为 `763` 和 `774`。这证明 Via 协议链和状态握手可用，
-不替代真实正版登录与后端转服。机器可读证据见
+协议 `393`、`763` 和 `774` 分别协商为相同协议号。它证明最低支持边界、PVP 版本和
+大厅版本的 Via 状态链可用，不替代真实正版登录与后端转服。机器可读证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)。
 
 API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据库，只监听
@@ -96,7 +113,9 @@ API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据�
 在关闭时返回 `MinecraftVersionMismatch`，只为大厅开启后返回 `Allowed`，大厅到
 PVP 仍拒绝。即使临时为 Activity 开启协议转换，PVP 档案仍被
 `ClientProfileMismatch` 拒绝。开关重置后再次恢复版本拒绝。生产 API、数据库、
-Via JAR 和目录均未变化，临时资源已删除。证据见
+Via JAR 和目录均未变化。初次自动验收资源已经删除；为真实会话准备的同构隔离副本
+随后重新创建并保持回环监听，测试完成后必须执行 `stop` 和显式确认的 `remove`。
+证据见
 [`API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`](evidence/API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json)。
 
 ## 5. 生产启用顺序

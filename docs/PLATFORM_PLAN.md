@@ -42,7 +42,7 @@
 
 ## 3. 当前已完成内容
 
-当前 `hechao-launcher` 启动器 `0.11.15` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，API `0.21.0` 为未部署的隔离候选，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，Velocity 授权插件为 `0.3.0`。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity/PVP 单账号首次路由；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。PVP CrossStitch 修复后的身份转发、直连拒绝、稳定连接和正常退出也已通过。默认关闭、目标服级的协议转换授权开关已通过 API 生产数据库副本验收，ViaVersion/ViaBackwards 回环代理也已完成 `763/774` status 协商；仍待真实 `/hub`、成功重连和皮肤/权限目视核对。五个游戏目标均已加载指标代理，三份 Paper 世界正式归档、异机完整解压和隔离恢复通过。仍未完成的是四级真实账号、兼容 NPC 转服、PVP 专用回程/重连、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
+当前 `hechao-launcher` 启动器 `0.11.15` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，API `0.21.0` 为未部署的隔离候选，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，Velocity 授权插件为 `0.3.0`。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity/PVP 单账号首次路由；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。PVP CrossStitch 修复后的身份转发、直连拒绝、稳定连接和正常退出也已通过。默认关闭、目标服级的协议转换授权开关已通过 API 生产数据库副本验收，ViaVersion/ViaBackwards 回环代理也已完成 `393/763/774` status 协商，受限凭据 API 探针返回预期 `PlayerNotLinked`；仍待真实 `/hub`、成功重连和皮肤/权限目视核对。五个游戏目标均已加载指标代理，三份 Paper 世界正式归档、异机完整解压和隔离恢复通过。仍未完成的是四级真实账号、兼容 NPC 转服、PVP 专用回程/重连、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
 
 owl9 的 PVP Fabric `1.20.1` 后端已经安装官方 FabricProxy-Lite `2.6.0`，
 并与 owl5 Velocity 的 modern forwarding 密钥完成摘要核对和 ACL 加固。

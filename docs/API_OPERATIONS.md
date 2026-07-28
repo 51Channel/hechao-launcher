@@ -218,6 +218,23 @@ reload 和五个公网入口回归。详见
 后才可进入生产发布流程。详见
 [`API_RELEASE_0.21.0_CANDIDATE.md`](API_RELEASE_0.21.0_CANDIDATE.md)。
 
+真实会话前可用
+[`manage-protocol-translation-staging.sh`](../deploy/linux/manage-protocol-translation-staging.sh)
+重新建立持久隔离副本：
+
+```bash
+./manage-protocol-translation-staging.sh prepare
+./manage-protocol-translation-staging.sh start
+./manage-protocol-translation-staging.sh status
+./manage-protocol-translation-staging.sh issue-grant
+./manage-protocol-translation-staging.sh stop
+./manage-protocol-translation-staging.sh remove --confirm-remove
+```
+
+该单元只监听 `127.0.0.1:18093`，使用独立数据库和迁移 018；`issue-grant` 只输出
+数量与到期时间，不输出玩家身份或 token。2026-07-28 的隔离 Authorizer 认证探针
+已得到预期 `PlayerNotLinked`，生产 API 仍是 `0.20.2-20260727T225819Z`、迁移 17。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
