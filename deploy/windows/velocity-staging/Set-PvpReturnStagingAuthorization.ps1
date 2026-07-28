@@ -188,7 +188,8 @@ function Get-AuthorizationStatus {
     if ($configInstalled) {
         $configuration = Read-Configuration -Path $ConfigPath
         $token = [string]$configuration['token']
-        $tokenConfigured = $token.Length -ge 24 -and $token.Length -le 256
+        $tokenConfigured =
+            $token -cmatch '^[A-Za-z0-9._~-]{24,256}$'
         $configurationValid =
             [string]$configuration['mode'] -eq 'monitor' -and
             [string]$configuration['api-url'] -eq $ApiUrl -and
@@ -323,8 +324,10 @@ switch ($Action) {
     'Install' {
         Assert-StagingStopped
         $token = [Console]::In.ReadToEnd().Trim()
-        if ($token.Length -lt 24 -or $token.Length -gt 256) {
-            throw 'A 24 to 256 character staging token must be supplied through standard input.'
+        if ($token -cnotmatch '^[A-Za-z0-9._~-]{24,256}$') {
+            throw (
+                'A 24 to 256 character ASCII staging token must be supplied ' +
+                'through standard input.')
         }
 
         $backupDirectory = New-Backup `
