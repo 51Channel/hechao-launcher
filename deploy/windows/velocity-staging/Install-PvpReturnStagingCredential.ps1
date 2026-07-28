@@ -85,7 +85,15 @@ $destinationArguments = @(
 
 $source = $null
 $destination = $null
+$originalInputEncoding = [Console]::InputEncoding
 try {
+    # Windows PowerShell 5.1 otherwise prefixes Process.StandardInput with
+    # an UTF-8 BOM even when callers write directly to its BaseStream.
+    [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
+    if ([Console]::InputEncoding.GetPreamble().Length -ne 0) {
+        throw 'Unable to configure a BOM-free credential pipe.'
+    }
+
     $source = New-SshProcess -Arguments $sourceArguments
     $destination = New-SshProcess -Arguments $destinationArguments
     $sourceErrorTask = $source.StandardError.ReadToEndAsync()
@@ -136,6 +144,7 @@ try {
     } | ConvertTo-Json
 }
 finally {
+    [Console]::InputEncoding = $originalInputEncoding
     foreach ($process in @($source, $destination)) {
         if ($null -eq $process) {
             continue
