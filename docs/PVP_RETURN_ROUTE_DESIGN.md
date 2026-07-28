@@ -67,6 +67,22 @@ ViaVersion。实际类目录包含从 `1.20` 到 `1.21.11` 的完整逆向协议
 
 任何解码错误、物品错位、命令异常、身份变化或后端断线都算失败。
 
+隔离代理使用
+[`Manage-PvpReturnStaging.ps1`](../deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1)
+管理：
+
+```powershell
+.\Manage-PvpReturnStaging.ps1 -Action Prepare
+.\Manage-PvpReturnStaging.ps1 -Action Start
+.\Manage-PvpReturnStaging.ps1 -Action Status
+.\Manage-PvpReturnStaging.ps1 -Action Stop
+.\Manage-PvpReturnStaging.ps1 -Action Remove -ConfirmRemoval
+```
+
+`Prepare` 只注册无自动触发器的任务，不会启动代理；`Start` 会在监听前后复核生产配置
+哈希、生产 Via 禁用状态、制品哈希、回环绑定和启动日志。`Remove` 必须显式传入
+`-ConfirmRemoval`，且只允许删除核对后的隔离根目录。
+
 2026-07-28 已在 `E:\Velocity-PvpReturn-Staging` 启动只监听
 `127.0.0.1:25579` 的隔离代理。ViaVersion/ViaBackwards `5.11.0` 与
 HubCommand 均正常加载，错误日志为 `0`。通过 SSH 本地转发执行

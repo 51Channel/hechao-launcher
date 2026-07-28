@@ -43,6 +43,15 @@
     "hubCommandSha256": "D785BB379CA8DCE8CA778D220183D9370C74A6B25EC75276A98228818C7968C2",
     "fatalOrErrorLogMatches": 0
   },
+  "management": {
+    "script": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
+    "sha256": "B8407D8690F058EA3CB824BB46D99922020E08AC51917DA6A407D558B093072F",
+    "validatedAt": "2026-07-28T02:46:56.1878284+00:00",
+    "parserPassed": true,
+    "statusBeforePassed": true,
+    "removeWithoutConfirmationRejected": true,
+    "statusAfterPassed": true
+  },
   "production": {
     "velocityProcessIdAtCapture": 472,
     "velocityConfigSha256": "A300E7CBE190B42E434763CFCCAFB9D821F894B02E72A594ED72B340C3E22C70",
