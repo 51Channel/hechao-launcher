@@ -122,15 +122,16 @@ HubCommand、Authorizer `0.3.1` 候选均正常加载，错误日志为 `0`。`0
 `accept_teleportation` 多余 `131` 字节的协议状态解码错误。因此这次样本只证明
 命令、授权、网络和 Lobby 登录链可达，不能记为回大厅成功。
 
-修复只作用于回环隔离代理：当前核心为 PaperMC 推荐通道 Velocity `3.5.1` build
-`615`，使用现有 Java 21，SHA-256 为
-`B4E3164DF5377346854DC6CB9E6A78022B1946FF69E89676313F5F6F1C6F0FB3`。
-Velocity `4.0.0` build `6` 因需要 Java 25 未启用并已留档。五个插件重新加载，
-`393/763/774` 状态探测再次通过，启动错误为 `0`。管理脚本现在分别固定生产核心和
-隔离核心的来源与哈希，避免重建环境时退回旧版；缓存制品位于
-`E:\server-artifacts\velocity\velocity-3.5.1-615.jar`。生产 Velocity、API、
-游戏服和 owl9 真正 PVP 均未修改。修复后的真实 `/hub` 仍待关闭旧客户端后复测，
-机器证据见
+修复只作用于回环隔离代理。Velocity `3.5.1` build `615` 的真实复测已再次完成：
+玩家进入 Lobby 并收到欢迎与权限信息，但随后仍因同一
+`accept_teleportation` 错误断开，多余数据从 `131` 字节降为 `16` 字节，不能记为
+成功。隔离核心现已进一步切换为官方稳定通道 Velocity `4.0.0` build `6`，使用独立
+Temurin Java `25.0.4+7`，核心 SHA-256 为
+`4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70`。
+五个插件重新加载，`393/763/774` 状态探测再次通过，启动错误为 `0`。管理脚本现在
+分别固定生产核心、隔离核心和隔离 Java 的来源与哈希，避免重建环境时退回旧版；
+缓存制品位于 `E:\server-artifacts\velocity\velocity-4.0.0-6.jar`。生产 Velocity、
+API、游戏服和 owl9 真正 PVP 均未修改。Velocity 4 的真实 `/hub` 仍待复测，机器证据见
 [`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
 
 API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据库，只监听

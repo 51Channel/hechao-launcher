@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T10:57:41.4651608+00:00",
+  "capturedAt": "2026-07-28T12:37:54.0997620Z",
   "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
   "result": "protocol-failure-remediated-real-session-retest-pending",
   "privacy": {
@@ -31,6 +31,25 @@
       "luckPermsFailure": false
     }
   },
+  "velocity351Retest": {
+    "freshCandidateGrantCreated": true,
+    "initialTargetRoutedToHorrorPrank": true,
+    "horrorPrankBackendLoginPassed": true,
+    "hubCommandReachedLobbyBackend": true,
+    "horrorPrankBackendDisconnectedAfterTransfer": true,
+    "lobbyBackendLoginPassed": true,
+    "lobbyJoinMessagesReachedClient": true,
+    "lobbyConnectionStable": false,
+    "failure": {
+      "backend": "lobby",
+      "packet": "play/serverbound/minecraft:accept_teleportation",
+      "decoderReportedExtraBytes": 16,
+      "classification": "cross-version proxy protocol-state failure",
+      "authorizationFailure": false,
+      "lobbyReachabilityFailure": false,
+      "luckPermsFailure": false
+    }
+  },
   "remediation": {
     "scope": "loopback-only staging proxy",
     "gameServersRestarted": false,
@@ -38,15 +57,7 @@
     "productionApiChanged": false,
     "productionDatabaseChanged": false,
     "truePvpTouched": false,
-    "attemptedVelocity": {
-      "version": "4.0.0",
-      "build": 6,
-      "sha256": "4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70",
-      "activated": false,
-      "reason": "class file version 69 requires Java 25 while the isolated task intentionally uses Java 21",
-      "backup": "E:\\manual-backups\\velocity-pvp-return-staging-20260728-184440\\velocity-4.0.0-6.jar"
-    },
-    "activeVelocity": {
+    "previousVelocity": {
       "version": "3.5.1",
       "build": 615,
       "channel": "RECOMMENDED",
@@ -55,7 +66,25 @@
       "sizeBytes": 18932366,
       "classFileVersion": 65,
       "javaMajor": 21,
-      "artifactCache": "E:\\server-artifacts\\velocity\\velocity-3.5.1-615.jar"
+      "artifactCache": "E:\\server-artifacts\\velocity\\velocity-3.5.1-615.jar",
+      "realSessionRetestCompleted": true,
+      "decoderReportedExtraBytes": 16,
+      "accepted": false
+    },
+    "activeVelocity": {
+      "version": "4.0.0",
+      "build": 6,
+      "channel": "STABLE",
+      "releasedAt": "2026-07-14T14:13:05.541Z",
+      "sha256": "4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70",
+      "sizeBytes": 18821048,
+      "classFileVersion": 69,
+      "javaMajor": 25,
+      "artifactCache": "E:\\server-artifacts\\velocity\\velocity-4.0.0-6.jar",
+      "runtime": "E:\\server-artifacts\\java\\temurin-jre-25.0.4+7",
+      "runtimeArchiveSha256": "5B0D58F043F762FA3EE6CC12B6774B59B245CAFDCB357E45CE61F822AA9A56CB",
+      "started": true,
+      "realSessionRetestPending": true
     },
     "staging": {
       "root": "E:\\Velocity-PvpReturn-Staging",
@@ -89,12 +118,13 @@
     ],
     "managementScript": {
       "path": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
-      "sha256": "53C6B0A4DAF899493895A3CE93588D10572677534A539ACD83113CE6B6916FB4",
+      "sha256": "63521C0EF489D3CEDB451A12ED36A1A5ED88F0B224B33E5D14923AB6FC7B7FD0",
       "parserErrors": 0,
       "remoteStatusPassed": true,
       "productionAndStagingCoreHashesSeparated": true,
-      "velocity351ArtifactPinned": true,
-      "velocity351ConfigRewriteAccepted": true
+      "velocity4ArtifactPinned": true,
+      "java25RuntimePinned": true,
+      "velocity4ConfigRewriteAccepted": true
     },
     "candidateApi": {
       "version": "0.21.0",
@@ -107,8 +137,7 @@
     }
   },
   "remainingRealSessionChecks": [
-    "close the disconnected 1.20.1 client normally",
-    "use a fresh candidate launch grant to enter HorrorPrank",
+    "use a fresh candidate launch grant to enter HorrorPrank through Velocity 4",
     "execute /hub and remain connected to Lobby",
     "verify identity, skin, LuckPerms permissions, inventory, chat, command tree and movement",
     "use another fresh grant to re-enter HorrorPrank",

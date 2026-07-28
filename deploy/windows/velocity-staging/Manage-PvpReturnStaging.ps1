@@ -10,10 +10,11 @@ param(
 
     [string]$TaskName = 'Hechao-Velocity-PvpReturn-Staging',
 
-    [string]$JavaExecutable = 'E:\jdk\bin\java.exe',
+    [string]$JavaExecutable =
+        'E:\server-artifacts\java\temurin-jre-25.0.4+7\bin\java.exe',
 
     [string]$StagingVelocitySource =
-        'E:\server-artifacts\velocity\velocity-3.5.1-615.jar',
+        'E:\server-artifacts\velocity\velocity-4.0.0-6.jar',
 
     [ValidateRange(1, 65535)]
     [int]$ProductionPort = 25577,
@@ -31,7 +32,7 @@ param(
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string]$ExpectedStagingVelocitySha256 =
-        'B4E3164DF5377346854DC6CB9E6A78022B1946FF69E89676313F5F6F1C6F0FB3',
+        '4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70',
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string]$ExpectedHubCommandSha256 =
