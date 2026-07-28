@@ -4,11 +4,13 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
 using CmlLib.Core.FileExtractors;
+using CmlLib.Core.Files;
 using CmlLib.Core.ProcessBuilder;
 using CmlLib.Core.VersionLoader;
 using Hechao.Distribution;
@@ -62,6 +64,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private const string ProfileMetadataFileName = "hechao-profile.json";
     private const int MaximumMetadataBytes = 16 * 1024;
     private const int MaximumVersionJsonBytes = 4 * 1024 * 1024;
+    private const int MaximumLoggingConfigurationBytes = 2 * 1024 * 1024;
     private const string DefaultServerEndpoint = "mc.hehe11.fun";
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
@@ -288,6 +291,11 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             progress?.Report(new MinecraftLaunchProgress(MinecraftLaunchPhase.PreparingRuntime, 5));
             version = await launcher.GetVersionAsync(metadata.VersionId, cancellationToken);
             await launcher.InstallAsync(version, fileProgress, byteProgress, cancellationToken);
+            await EnsureLoggingConfigurationAsync(
+                _httpClient,
+                launchGameDirectory,
+                version.Logging,
+                cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -342,6 +350,202 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 "Unable to build the Minecraft process.",
                 exception);
         }
+    }
+
+    internal static async Task EnsureLoggingConfigurationAsync(
+        HttpClient httpClient,
+        string gameDirectory,
+        MLogFileMetadata? logging,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        if (logging?.LogFile is not { } metadata)
+        {
+            return;
+        }
+
+        var relativePath = metadata.Path;
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            relativePath = metadata.Name ?? metadata.Id;
+        }
+
+        if (string.IsNullOrWhiteSpace(relativePath) ||
+            string.IsNullOrWhiteSpace(metadata.Url) ||
+            string.IsNullOrWhiteSpace(metadata.Sha1) ||
+            metadata.Size is <= 0 or > MaximumLoggingConfigurationBytes)
+        {
+            throw new InvalidDataException("The Minecraft logging configuration metadata is invalid.");
+        }
+
+        var normalizedRelativePath = relativePath
+            .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        if (Path.IsPathRooted(normalizedRelativePath))
+        {
+            throw new InvalidDataException(
+                "The Minecraft logging configuration path must be relative.");
+        }
+
+        var fullGameDirectory = Path.GetFullPath(gameDirectory);
+        var loggingRoot = Path.Combine(fullGameDirectory, "assets", "log_configs");
+        var managedPrefix = Path.Combine("assets", "log_configs") +
+                            Path.DirectorySeparatorChar;
+        string destinationPath;
+        if (normalizedRelativePath.Contains(Path.DirectorySeparatorChar))
+        {
+            if (!normalizedRelativePath.StartsWith(
+                    managedPrefix,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(
+                    "The Minecraft logging configuration path is outside the managed log directory.");
+            }
+
+            destinationPath = Path.GetFullPath(
+                Path.Combine(fullGameDirectory, normalizedRelativePath));
+        }
+        else
+        {
+            destinationPath = Path.GetFullPath(
+                Path.Combine(loggingRoot, normalizedRelativePath));
+        }
+
+        if (!IsWithin(loggingRoot, destinationPath))
+        {
+            throw new InvalidDataException(
+                "The Minecraft logging configuration path is outside the managed log directory.");
+        }
+
+        if (!Uri.TryCreate(metadata.Url, UriKind.Absolute, out var sourceUri) ||
+            sourceUri.Scheme != Uri.UriSchemeHttps ||
+            !string.IsNullOrEmpty(sourceUri.UserInfo))
+        {
+            throw new InvalidDataException("The Minecraft logging configuration URL is invalid.");
+        }
+
+        var expectedSha1 = metadata.Sha1.ToLowerInvariant();
+        if (expectedSha1.Length != 40 || expectedSha1.Any(value => !Uri.IsHexDigit(value)))
+        {
+            throw new InvalidDataException("The Minecraft logging configuration hash is invalid.");
+        }
+
+        if (await IsMatchingLoggingConfigurationAsync(
+                destinationPath,
+                metadata.Size,
+                expectedSha1,
+                cancellationToken))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+        var temporaryPath = destinationPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            using var response = await httpClient.GetAsync(
+                sourceUri,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+            if (response.Content.Headers.ContentLength is { } contentLength &&
+                contentLength != metadata.Size)
+            {
+                throw new InvalidDataException(
+                    "The Minecraft logging configuration length is invalid.");
+            }
+
+            await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var destination = new FileStream(
+                temporaryPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                81920,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA1);
+            var buffer = new byte[81920];
+            long totalBytes = 0;
+            while (true)
+            {
+                var read = await source.ReadAsync(buffer, cancellationToken);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                totalBytes += read;
+                if (totalBytes > metadata.Size ||
+                    totalBytes > MaximumLoggingConfigurationBytes)
+                {
+                    throw new InvalidDataException(
+                        "The Minecraft logging configuration is larger than expected.");
+                }
+
+                hasher.AppendData(buffer, 0, read);
+                await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            }
+
+            await destination.FlushAsync(cancellationToken);
+            var actualSha1 = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
+            if (totalBytes != metadata.Size ||
+                !string.Equals(actualSha1, expectedSha1, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "The Minecraft logging configuration failed integrity verification.");
+            }
+
+            destination.Close();
+            File.Move(temporaryPath, destinationPath, overwrite: true);
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(temporaryPath);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    private static async Task<bool> IsMatchingLoggingConfigurationAsync(
+        string path,
+        long expectedSize,
+        string expectedSha1,
+        CancellationToken cancellationToken)
+    {
+        var file = new FileInfo(path);
+        if (!file.Exists || file.Length != expectedSize)
+        {
+            return false;
+        }
+
+        await using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA1);
+        var buffer = new byte[81920];
+        while (true)
+        {
+            var read = await stream.ReadAsync(buffer, cancellationToken);
+            if (read == 0)
+            {
+                break;
+            }
+
+            hasher.AppendData(buffer, 0, read);
+        }
+
+        var actualSha1 = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
+        return string.Equals(actualSha1, expectedSha1, StringComparison.Ordinal);
     }
 
     private static void ValidateRequest(MinecraftLaunchRequest request)
