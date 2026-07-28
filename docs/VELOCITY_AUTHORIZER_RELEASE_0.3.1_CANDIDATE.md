@@ -48,8 +48,10 @@ Via JAR 数量。
   `4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70`
 - 隔离运行时：Temurin Java `25.0.4+7`，仅供隔离任务使用
 - 隔离进程：仅监听 `127.0.0.1:25579`
-- 隔离代理只加载 Authorizer 与 HubCommand；代理启用 Via 数量为 `0`
-- 大厅后端加载 ViaVersion/ViaBackwards `5.11.0`，启用数量为 `2`，哈希受管理脚本固定
+- 最终隔离代理加载 Authorizer、HubCommand、ViaVersion 与 ViaBackwards；代理启用
+  Via 数量为 `2`
+- 独立隔离 Lobby 禁用 ViaVersion/ViaBackwards `5.11.0`，监听
+  `127.0.0.1:25580`
 - API 受限凭据探针：`PlayerNotLinked`
 - 协议 `393`、`763`、`774` 状态握手全部通过
 - 启动日志 fatal/error：`0`
@@ -69,16 +71,21 @@ Via JAR 数量。
 权限与欢迎信息，但仍因 `accept_teleportation` 多出 `16` 字节而断开。隔离任务现已
 使用独立 Java 25 启用 Velocity `4.0.0` build `6`。进一步核对发现隔离代理与大厅
 后端同时加载了同一组 ViaVersion/ViaBackwards，违反 ViaVersion 只在代理或后端
-其中一处安装的要求。隔离代理的 Via JAR 已改为 `.disabled`，统一由大厅后端承担
-转换；代理现加载三个插件、启用 Via 数量为 `0`，大厅启用 Via 数量为 `2`。
-回环监听、`393/763/774` 状态探测与管理脚本远端 `Status` 均通过。生产 Velocity 和
-所有游戏服未重启。机器证据见
+其中一处安装的要求。先改为大厅后端单层转换后，首条回程曾成功，但第二次 `/hub`
+仍在 Lobby 收到 `accept_teleportation` 时出现多余 `17` 字节，证明该结构存在
+间歇性故障。
+
+最终环境改为代理单层转换：隔离 Velocity 启用两枚 Via JAR，独立隔离 Lobby 禁用，
+生产 Lobby 保持不变。回环监听、`393/763/774` 状态探测与管理脚本远端状态均通过。
+生产 Velocity 和所有生产游戏服未重启。机器证据见
 [`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
 
-修正后的首条 PVP -> `/hub` -> Lobby 真实会话已通过并稳定超过 `591` 秒。四段日志
+后端单层结构的首条 PVP -> `/hub` -> Lobby 真实会话曾通过并稳定超过 `591` 秒。四段日志
 解码错误为 `0`，两个后端的名称与 UUID 内存比对一致，聊天、LuckPerms、TPS/MSPT
 和短窗口 GC 均通过。大厅反向请求 `pvp` 已被客户端不兼容策略真实拒绝，目标后端
 连接 `0`、玩家保持在线；首次会话随后以启动器退出码 `0` 正常结束。第二枚 fresh
-grant 已被真实客户端消费并再次进入 PVP，稳定超过 `410` 秒；客户端、代理和 API
-错误均为 `0`。当前仍须完成皮肤/背包/移动内容确认、第二次 `/hub` 和最终正常退出。
-完整验收前不得替换生产 `0.3.0`，不得启用生产 Via，也不得切换 `enforce`。
+grant 已被真实客户端消费并再次进入 PVP，稳定超过 `410` 秒；随后第二次 `/hub`
+暴露上述 `17` 字节错误。代理单层结构再使用 fresh grant 连续完成五轮
+PVP -> `/hub` -> 隔离 Lobby -> 正常退出，代理、两个后端、客户端和候选 API
+协议错误均为 `0`。隔离验收已完成，下一门槛是受控发布生产 API、Authorizer 和
+代理单层 Via；发布后仍保持 `monitor`，不得直接切换 `enforce`。

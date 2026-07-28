@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T18:11:40.6017961Z",
+  "capturedAt": "2026-07-28T18:46:00Z",
   "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
-  "result": "first-return-reverse-denial-normal-exit-and-second-entry-passed",
+  "result": "proxy-only-five-round-return-and-reconnect-passed",
   "privacy": {
     "playerNameStored": false,
     "minecraftUuidStored": false,
@@ -135,9 +135,63 @@
         "msptAverage": 14.639124933333333,
         "gcDeltaMilliseconds": 0
       },
-      "secondHubTransferPending": true,
-      "finalNormalExitPending": true
+      "secondHubTransferPending": false,
+      "secondHubTransferPassed": false,
+      "secondHubFailure": {
+        "backend": "production-lobby",
+        "packet": "play/serverbound/minecraft:accept_teleportation",
+        "decoderReportedExtraBytes": 17,
+        "classification": "intermittent backend-only translation failure",
+        "proxyDecoderErrorCount": 0,
+        "authorizationFailure": false
+      },
+      "finalNormalExitPending": false
     }
+  },
+  "proxyOnlyFiveRoundRetest": {
+    "translationOwner": "staging-proxy-only",
+    "velocityVersion": "4.0.0",
+    "velocityBuild": 6,
+    "javaMajor": 25,
+    "viaVersion": "5.11.0",
+    "viaBackwards": "5.11.0",
+    "isolatedLobbyVersion": "1.21.11",
+    "isolatedLobbyViaEnabledJarCount": 0,
+    "roundsAttempted": 5,
+    "roundsPassed": 5,
+    "eachRound": [
+      "fresh candidate grant",
+      "real Microsoft-authenticated client connection",
+      "initial HorrorPrank 1.20.1 entry",
+      "hub command transfer",
+      "isolated Lobby 1.21.11 join",
+      "normal disconnect"
+    ],
+    "proxy": {
+      "clientConnectCount": 5,
+      "horrorPrankBackendConnectCount": 5,
+      "horrorPrankBackendDisconnectCount": 5,
+      "lobbyBackendConnectCount": 5,
+      "lobbyBackendDisconnectCount": 5,
+      "clientDisconnectCount": 5,
+      "protocolOrDecoderErrorCount": 0
+    },
+    "isolatedLobby": {
+      "joinCount": 5,
+      "normalExitCount": 5,
+      "protocolOrDecoderErrorCount": 0,
+      "acceptTeleportationExtraBytesErrorCount": 0
+    },
+    "horrorPrank": {
+      "stageSessionCount": 5,
+      "normalTransferExitCount": 5,
+      "protocolOrDecoderErrorCount": 0,
+      "generalErrorCount": 0
+    },
+    "clientProtocolOrDecoderErrorCount": 0,
+    "candidateApiErrorCount": 0,
+    "productionServicesChanged": false,
+    "truePvpTouched": false
   },
   "remediation": {
     "scope": "loopback-only staging proxy",
@@ -174,7 +228,8 @@
       "runtimeArchiveSha256": "5B0D58F043F762FA3EE6CC12B6774B59B245CAFDCB357E45CE61F822AA9A56CB",
       "started": true,
       "firstRealSessionPassed": true,
-      "reconnectRetestPending": true
+      "reconnectRetestPending": false,
+      "proxyOnlyFiveRoundRetestPassed": true
     },
     "translationOwnershipCorrection": {
       "duplicateTranslationDetected": true,
@@ -183,14 +238,17 @@
       "matchingArtifactHashes": true,
       "classification": "ViaVersion and ViaBackwards were active on both the staging proxy and Lobby backend",
       "officialDeploymentRule": "install ViaVersion on either the proxy or backend servers, not both",
-      "selectedOwner": "lobby-backend",
-      "stagingProxyViaEnabledAfterCorrection": false,
-      "lobbyViaEnabledAfterCorrection": true,
-      "lobbyRestarted": false,
+      "backendOnlyFirstRealReturnPassed": true,
+      "backendOnlySecondHubFailed": true,
+      "backendOnlySecondHubExtraBytes": 17,
+      "selectedOwner": "staging-proxy-only",
+      "stagingProxyViaEnabledAfterCorrection": true,
+      "isolatedLobbyViaEnabledAfterCorrection": false,
+      "productionLobbyViaStateChanged": false,
+      "isolatedLobbyRestarted": true,
       "gameServersRestarted": false,
       "productionVelocityRestarted": false,
-      "backup": "E:\\manual-backups\\velocity-pvp-return-staging-backend-via-20260728-205242",
-      "firstRealSessionPassed": true
+      "fiveRoundRealSessionRetestPassed": true
     },
     "staging": {
       "root": "E:\\Velocity-PvpReturn-Staging",
@@ -198,24 +256,28 @@
       "taskState": "Running",
       "listener": "127.0.0.1:25579",
       "loopbackOnly": true,
-      "loadedPluginCount": 3,
+      "loadedPluginCount": 5,
       "fatalOrErrorLogMatches": 0,
       "authorizerVersion": "0.3.1",
       "authorizerMode": "monitor",
-      "translationLayer": "lobby-backend-only",
-      "enabledViaJarCount": 0,
-      "disabledViaArtifactsRetained": true
+      "translationLayer": "staging-proxy-only",
+      "enabledViaJarCount": 2,
+      "fiveRoundRetestPassed": true
     },
     "lobbyTranslationLayer": {
-      "listener": "127.0.0.1:25566",
-      "enabledViaJarCount": 2,
+      "root": "E:\\Lobby-PvpReturn-Staging",
+      "task": "Hechao-Lobby-PvpReturn-Staging",
+      "listener": "127.0.0.1:25580",
+      "enabledViaJarCount": 0,
+      "disabledViaJarCount": 2,
       "viaVersion": "5.11.0",
       "viaVersionSha256": "89DB76C8E3E674238F5EEE2BB7A9E9A2BEEBA0760BBD1B86494778E8A5A52F70",
       "viaBackwards": "5.11.0",
       "viaBackwardsSha256": "41085A59D784C9A0D14917FE7487EF5E201A9DA7825FD047F08D328FF33EECDC",
       "serverVersion": "1.21.11",
       "serverProtocol": 774,
-      "restartPerformed": false
+      "restartPerformed": true,
+      "productionLobbyChanged": false
     },
     "protocolStatusProbes": [
       {
@@ -238,15 +300,16 @@
       "path": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
       "sha256": "4CCE692254540AC40CBBC0191A5D5925C43CC1270B721350A35E0A5548C0E69E",
       "parserErrors": 0,
-      "remoteStatusPassed": true,
+      "initialBackendOnlyStatusPassed": true,
       "productionAndStagingCoreHashesSeparated": true,
       "velocity4ArtifactPinned": true,
       "java25RuntimePinned": true,
       "velocity4ConfigRewriteAccepted": true,
       "singleTranslationLayerEnforced": true,
-      "stagingEnabledViaJarCount": 0,
-      "lobbyEnabledViaJarCount": 2,
-      "lobbyViaHashesPinned": true
+      "finalStagingEnabledViaJarCount": 2,
+      "finalIsolatedLobbyEnabledViaJarCount": 0,
+      "productionLobbyChanged": false,
+      "viaHashesPinned": true
     },
     "candidateApi": {
       "version": "0.21.0",
@@ -259,9 +322,9 @@
     }
   },
   "remainingRealSessionChecks": [
-    "confirm that the rendered skin and inventory are correct and verify movement in Lobby",
-    "execute /hub during the successful second HorrorPrank entry",
-    "verify the second Lobby connection and final normal client exit",
-    "capture post-session proxy, backend and performance evidence"
+    "promote API 0.21.0 with migration 018 defaulting every target to false",
+    "migrate production Velocity to proxy-only translation with automatic rollback",
+    "enable protocol translation only for lobby with an audit record",
+    "repeat the route against production and capture sanitized post-session evidence"
   ]
 }

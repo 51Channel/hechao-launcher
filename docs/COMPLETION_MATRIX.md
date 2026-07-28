@@ -34,7 +34,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 启动器 `0.11.16` 源码与标签 | 已完成 | 制品源码提交 `ca71962dd17ac4ed79282fd33cc16500f45fbdd0`，标签 `launcher-v0.11.16` |
 | Windows 安装、覆盖升级与卸载 | 已完成 | 可重复验证脚本完成隔离目录干净安装、`0.11.15 -> 0.11.16`、双轮卸载、设置与 DPAPI 会话哈希、ProductVersion 和快捷方式验证；本机覆盖安装也已独立复核 |
 | 私有 OSS 发布 | 已完成 | 不可变对象、二次跳过、受保护结果 ACL、匿名 `403`、签名下载 `200`、`61,866,222` 字节和 SHA-256 复验 |
-| 自动测试 | 已完成 | 当前开发分支 .NET `369/369`，Velocity `20/20`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2`；退出状态刷新、日志配置恢复、私有重定向日志边界、客户端兼容判定、协议转换默认关闭、转服会话来源和 RAM 最小权限断言均已覆盖 |
+| 自动测试 | 已完成 | 当前开发分支 .NET `370/370`，Velocity `20/20`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2`；退出状态刷新、日志配置恢复、私有重定向日志边界、客户端兼容判定、协议转换默认关闭、转服会话来源和 RAM 最小权限断言均已覆盖 |
 | 2 至 3 人真实灰度 | 外部验收 | 按 [`PRELAUNCH_PILOT_0.11.16.md`](PRELAUNCH_PILOT_0.11.16.md) 执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -86,8 +86,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | Velocity 异步授权、首次目标与客户端兼容 | 已实现待生产验收 | API `0.20.2` + 插件 `0.3.0` 以 `monitor` 运行；生产兼容矩阵 `8/8`，Lobby/Survival1/Survival2、Activity 与恐怖整蛊的单账号真实首次目标均通过；仍缺四级账号、兼容转服、重连和故障路径 |
 | 恐怖整蛊 Fabric 后端 modern forwarding | 已完成 | owl9 的 `HorrorPrank` 持久任务加载 FabricProxy-Lite `2.6.0` 与官方 CrossStitch `0.1.6`；真实会话稳定 `586` 秒、启动/后端身份一致、解码错误为 `0`、公网直连被 `velocity:player_info` 明确拒绝、正常退出码为 `0` |
-| 恐怖整蛊跨版本返回大厅授权 | 首条回程、反向拒绝与再次进入已通过 | 迁移 018、目标服级后台开关和授权规则已实现；API `0.21.0` 已在生产数据库副本上验证默认关闭、只开启大厅后恐怖整蛊回程允许、反向仍拒绝且模组档案保护不能绕过。旧隔离 Velocity `3.4.0-SNAPSHOT` / `3.5.1` 分别因多余 `131` / `16` 字节失败；当前 Velocity `4.0.0` build `6` + Java 25 已改为代理 Via `0`、大厅 Via `2` 的单层翻译。首条真实恐怖整蛊 -> `/hub` -> Lobby 稳定超过 `591` 秒，身份、聊天、LuckPerms、TPS/MSPT 与 GC 通过；反向 `pvp` 被真实不兼容策略拒绝，目标后端连接 `0`、玩家保持在线，随后启动器退出码 `0`。第二枚 fresh grant 又真实进入恐怖整蛊并稳定超过 `410` 秒，`20 TPS`、约 `14.64 MSPT`、GC 增量 `0 ms`，客户端、代理和 API 错误均为 `0`。生产 Velocity、API、游戏服和真正 PVP 均未改动。仍待目视内容确认、第二次 `/hub` 与最终正常退出；证据见 `API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`、`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`、`PVP_RETURN_REAL_SESSION_2026-07-28.json` 与 `VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md` |
-| NPC、`/hub`、断线重连和 API 故障路径 | 外部验收 | 前两次跨版本 `/hub` 分别在 Velocity `3.4.0-SNAPSHOT` 和 `3.5.1` 发生协议状态解码错误；修正为 Velocity 4 后端单层 Via 后，首条真实恐怖整蛊 -> `/hub` -> Lobby、反向不兼容拒绝、正常退出和第二枚 fresh grant 再次进入均通过。仍需第二次 `/hub` 和最终正常退出；NPC 与其余路径需要真实玩家和真实代理日志 |
+| 恐怖整蛊跨版本返回大厅授权 | 隔离五轮已通过，待生产发布 | 迁移 018、目标服级后台开关和授权规则已实现；API `0.21.0` 已在生产数据库副本上验证默认关闭、只开启大厅后恐怖整蛊回程允许、反向仍拒绝且模组档案保护不能绕过。旧隔离 Velocity `3.4.0-SNAPSHOT` / `3.5.1` 分别因多余 `131` / `16` 字节失败；Velocity 4 的后端单层 Via 虽有一条成功样本，第二次 `/hub` 又因多余 `17` 字节失败。最终隔离结构固定为 Velocity `4.0.0` build `6` + Java 25、代理 Via `2`、独立 Lobby Via `0`，真实正版客户端连续五轮完成恐怖整蛊 -> `/hub` -> 隔离 Lobby -> 正常退出，代理、两个后端、客户端和候选 API 协议错误均为 `0`。生产 Velocity、API、游戏服和真正 PVP 尚未改动；待发布 API `0.21.0`、Authorizer `0.3.1` 和可回滚的代理单层翻译后做生产复测。证据见 `API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`、`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`、`PVP_RETURN_REAL_SESSION_2026-07-28.json` 与 `VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md` |
+| NPC、`/hub`、断线重连和 API 故障路径 | 隔离 `/hub` 与重连已通过，其他外部验收 | 代理单层 Via 的真实客户端已连续五轮通过 fresh grant、恐怖整蛊登录、`/hub`、隔离大厅登录和正常退出；生产 `/hub`、NPC 路径、API 故障降级及多人并发仍需要真实代理日志 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
 | 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊的历史 `owl9-pvp` 单目标只读采集器每分钟上报；跨周期所有权和离线隔离已验证。真正 PVP 未接入该心跳 |

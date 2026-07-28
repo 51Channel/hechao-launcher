@@ -49,15 +49,15 @@
 
 当前 `hechao-launcher` 启动器 `0.11.16` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，API `0.21.0` 为未部署的隔离候选，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，生产 Velocity 授权插件为 `0.3.0`，会话来源修复 `0.3.1` 仅在隔离代理。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity/恐怖整蛊单账号首次路由；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。恐怖整蛊 CrossStitch 修复后的身份转发、直连拒绝、稳定连接和正常退出也已通过。默认关闭、目标服级的协议转换授权开关已通过 API 生产数据库副本验收。
 
-旧隔离 Velocity `3.4.0-SNAPSHOT` 与 `3.5.1` 的真实 `/hub` 分别因 `accept_teleportation` 多出 `131` / `16` 字节断开。隔离核心现为稳定版 Velocity `4.0.0` build `6` 和独立 Temurin Java `25.0.4+7`；核对后确认代理与大厅曾重复加载同一组 ViaVersion/ViaBackwards，现已改为代理 Via `0`、大厅 Via `2` 的后端单层翻译。修正后的真实恐怖整蛊 -> `/hub` -> Lobby 首条会话已成功并稳定超过 `591` 秒；四段日志解码错误为 `0`，后端名称与 UUID 内存比对一致，聊天、LuckPerms、TPS/MSPT 和短窗口 GC 均通过。大厅反向请求 `pvp` 又被不兼容策略正确拒绝，目标后端没有连接、玩家保持在线；首次会话以启动器退出码 `0` 正常结束。第二枚 fresh grant 又真实进入恐怖整蛊并稳定超过 `410` 秒，`20 TPS`、约 `14.64 MSPT`、短窗口 GC 增量 `0 ms`，客户端、代理与 API 均无错误。生产环境未改动。仍待皮肤/背包/移动内容确认、第二次 `/hub` 和最终正常退出。五个游戏目标均已加载指标代理；三份 Paper 世界正式归档、异机完整解压和隔离恢复通过，owl9 恐怖整蛊也完成正式归档、逐文件哈希和区域文件全量恢复验收，真正 PVP 未触碰。仍未完成的是四级真实账号、兼容 NPC 转服、恐怖整蛊专用回程完整验收、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
+旧隔离 Velocity `3.4.0-SNAPSHOT` 与 `3.5.1` 的真实 `/hub` 分别因 `accept_teleportation` 多出 `131` / `16` 字节断开。隔离核心现为稳定版 Velocity `4.0.0` build `6` 和独立 Temurin Java `25.0.4+7`；核对后确认代理与大厅曾重复加载同一组 ViaVersion/ViaBackwards。后端单层翻译虽有一条稳定超过 `591` 秒的成功样本，第二次 `/hub` 又出现多余 `17` 字节，不能作为生产选型。最终隔离结构改为代理 Via `2`、独立 Lobby Via `0`，真实正版客户端连续五轮完成 fresh grant、恐怖整蛊登录、`/hub`、隔离大厅登录和正常退出，代理、两个后端、客户端及候选 API 协议错误均为 `0`。生产环境尚未改动。五个游戏目标均已加载指标代理；三份 Paper 世界正式归档、异机完整解压和隔离恢复通过，owl9 恐怖整蛊也完成正式归档、逐文件哈希和区域文件全量恢复验收，真正 PVP 未触碰。仍未完成的是 API/代理生产发布与生产回程、四级真实账号、兼容 NPC 转服、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
 
 owl9 的恐怖整蛊 Fabric `1.20.1` 后端已经安装官方 FabricProxy-Lite `2.6.0`，
 并与 owl5 Velocity 的 modern forwarding 密钥完成摘要核对和 ACL 加固。
 恐怖整蛊保持 `online-mode=true`，部署全程没有启动或重启游戏服；当前仍需服主下次
 手动开服完成真实统一入口、身份转发和直连拒绝的说明已被后续持久任务验收取代。
-恐怖整蛊 `1.20.1` 与大厅 `1.21.11` 当前不能直接 `/hub`。专用回程已选定为
-ViaVersion/ViaBackwards 加目标服级授权开关，代码默认关闭，必须先按
-[`PVP_RETURN_ROUTE_DESIGN.md`](PVP_RETURN_ROUTE_DESIGN.md) 完成隔离验证与重连复测。
+恐怖整蛊 `1.20.1` 与大厅 `1.21.11` 的专用回程已选定为 Velocity 代理单层
+ViaVersion/ViaBackwards 加目标服级授权开关。代码默认关闭，隔离五轮已通过，下一步
+按 [`PVP_RETURN_ROUTE_DESIGN.md`](PVP_RETURN_ROUTE_DESIGN.md) 执行可回滚生产发布。
 
 2026-07-28 的生产剩余门槛审计确认：22 个社区账号中只有 1 个完成 Minecraft
 绑定，生产遥测也只有 1 条启动器启动成功；当前有效后台会话为 0。随后五个游戏目标
@@ -103,7 +103,7 @@ ViaVersion/ViaBackwards 加目标服级授权开关，代码默认关闭，必�
 - [x] 管理后台账号停用/恢复、单设备与全部会话撤销、Minecraft UUID 封禁及事务审计。
 - [x] 管理后台客户端档案创建、签名清单导入、Test/Gray/Production、稳定分桶、暂停与自动回滚。
 
-更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、恐怖整蛊 Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.2` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前开发分支 `.NET 369/369`、Velocity `20/20`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。生产 Velocity `0.3.0` 以 `monitor` 加载，`0.3.1` 仅在隔离代理，生产客户端兼容矩阵 `8/8`；基础、Activity 与恐怖整蛊专用档案的单账号真实首次路由已通过。真实普通、VIP、管理员、服主、兼容 NPC 转服、恐怖整蛊专用回程和成功重连仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
+更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、恐怖整蛊 Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.2` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前开发分支 `.NET 370/370`、Velocity `20/20`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。生产 Velocity `0.3.0` 以 `monitor` 加载，`0.3.1` 仅在隔离代理，生产客户端兼容矩阵 `8/8`；基础、Activity 与恐怖整蛊专用档案的单账号真实首次路由已通过。真实普通、VIP、管理员、服主、兼容 NPC 转服、恐怖整蛊专用回程和成功重连仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
 
 ## 4. 推荐总体架构
 
