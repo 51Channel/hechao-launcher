@@ -47,6 +47,16 @@
       "version": "5.11.0",
       "sha256": "41085A59D784C9A0D14917FE7487EF5E201A9DA7825FD047F08D328FF33EECDC"
     },
+    "backends": {
+      "lobby": {
+        "endpoint": "127.0.0.1:25566",
+        "tcpReachable": true
+      },
+      "pvp": {
+        "endpoint": "owl9.vipi9.top:19243",
+        "tcpReachable": true
+      }
+    },
     "hubCommandSha256": "D785BB379CA8DCE8CA778D220183D9370C74A6B25EC75276A98228818C7968C2",
     "fatalOrErrorLogMatches": 0
   },
@@ -114,6 +124,8 @@
     "stagingStartedWithoutViaErrors": true,
     "stagingApiCredentialAccepted": true,
     "stagingCredentialAclRestricted": true,
+    "lobbyBackendTcpReachable": true,
+    "pvpBackendTcpReachable": true,
     "productionVelocityUnchanged": true
   },
   "limitations": [
