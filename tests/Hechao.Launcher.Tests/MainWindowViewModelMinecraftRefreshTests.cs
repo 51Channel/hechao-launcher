@@ -28,6 +28,25 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
+    public async Task GameExit_RefreshesSelectedProfileStatusAndAction()
+    {
+        var authentication = new StubAuthenticationService();
+        var gameLauncher = new StubGameLauncherService();
+        var viewModel = CreateViewModel(authentication, gameLauncher);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        await viewModel.PrimaryActionCommand.ExecuteAsync();
+        Assert.Equal("游戏已启动", viewModel.ClientStatusText);
+
+        gameLauncher.RaiseProcessExited(exitCode: 0);
+
+        await WaitUntilAsync(() => viewModel.ClientStatusText == "游戏已退出");
+        Assert.Equal("进入服务器", viewModel.PrimaryActionText);
+    }
+
+    [Fact]
     public async Task EnterServer_WhenInteractiveRefreshIsCanceled_DoesNotLaunchOrCrash()
     {
         var authentication = new StubAuthenticationService
@@ -423,14 +442,10 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
 
     private sealed class StubGameLauncherService : IMinecraftGameLauncherService
     {
-        public event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited
-        {
-            add { }
-            remove { }
-        }
+        public event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
 
         public int LaunchRequestCount { get; private set; }
-        public bool ProfileRunning { get; init; }
+        public bool ProfileRunning { get; set; }
 
         public bool IsProfileRunning(string profileId) => ProfileRunning;
 
@@ -446,7 +461,22 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                 await beforeStart(cancellationToken);
             }
 
+            ProfileRunning = true;
             return new MinecraftLaunchResult(1234);
+        }
+
+        public void RaiseProcessExited(int? exitCode)
+        {
+            ProfileRunning = false;
+            var exitedAt = DateTimeOffset.UtcNow;
+            ProcessExited?.Invoke(
+                this,
+                new MinecraftProcessExitedEventArgs(
+                    "base-1.21.11",
+                    1234,
+                    exitCode,
+                    exitedAt.AddMinutes(-1),
+                    exitedAt));
         }
     }
 

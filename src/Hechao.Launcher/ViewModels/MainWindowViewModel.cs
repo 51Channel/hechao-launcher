@@ -1642,6 +1642,16 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(LatestGameExitText));
             OnPropertyChanged(nameof(CanRollbackSelectedProfile));
             OnPropertyChanged(nameof(RollbackProfileToolTip));
+            if (SelectedServer?.ClientProfileId == record.ProfileId &&
+                !IsProgressActive &&
+                !_gameLauncherService.IsProfileRunning(record.ProfileId))
+            {
+                ClientStatusText = record.ExitCode == 0
+                    ? "游戏已退出"
+                    : "游戏异常退出";
+                UpdatePrimaryActionForState();
+            }
+
             if (record.ExitCode != 0)
             {
                 ShowToast("Minecraft 异常退出，可在设置页生成脱敏诊断包");
