@@ -252,6 +252,21 @@ Activity 为 `20 TPS / 5.7745 MSPT`，恐怖整蛊为 `20 TPS / 12.7157 MSPT`。
 `13,684,019,200` 字节。详细证据见
 [`evidence/WORLD_BACKUP_FORMAL_ACCEPTANCE_2026-07-28.json`](evidence/WORLD_BACKUP_FORMAL_ACCEPTANCE_2026-07-28.json)。
 
+同日 owl9 恐怖整蛊 `C:\mc\server` 通过独立控制台保存/VSS 包装脚本生成
+`E:\backups\horrorprank-backup-20260728-142039.zip`，大小 `4,149,156,327`
+字节、`2,493` 个条目，SHA-256 为
+`50FBC949071EB08D828D4A53F8AF001C8AC5AAF9A42443083A28714B8D32975A`。
+管理机异机副本完成 `2,493/2,493` 文件长度与 SHA-256 比对、`level.dat` 校验和
+`2,370/2,370` 区域文件全量检查。源端与恢复副本同有 `22` 个历史零字节
+`entities`/`poi` 占位文件，路径完全一致且地形空文件为 `0`。备份前后 PID 均为
+`7216`，真正 PVP `E:\MinecraftServer` 未触碰。包装脚本 SHA-256 为
+`A3D25AAF6E6C58ADD16492EEEB095006EC8FF41449216ACB3716D50B55A3752F`，
+回滚目录为
+`E:\manual-backups\horrorprank-world-backup-wrapper-20260728T150500`。
+`E:` 当前剩余 `5,787,840,512` 字节，再次完整备份前需计划异机复核和扩容或
+精确回收。证据见
+[`evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json`](evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json)。
+
 同日复核的世界源文件量为 Survival1 `6,401,231,920` 字节、Survival2
 `10,852,061,168` 字节、Lobby `11,556,833` 字节。磁盘上的计划已调整为
 Survival2 02:00、Survival1 04:00、Lobby 05:30，Lobby Essentials 的旧

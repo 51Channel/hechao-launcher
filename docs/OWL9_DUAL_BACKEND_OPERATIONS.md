@@ -1,6 +1,6 @@
 # owl9 双服务端边界
 
-> 只读复核时间：2026-07-28 13:24（Asia/Shanghai）
+> 只读复核时间：2026-07-28 15:20（Asia/Shanghai）
 >
 > 这是一条强制运维边界。owl9 上的“恐怖整蛊服”和“PVP 服”是两个不同的
 > Minecraft 服务端，任何启停、部署、备份、监控或验收都必须先按本表核对。
@@ -64,5 +64,38 @@ Velocity / 启动器逻辑目标
 `C:\mc\server`。真正 PVP 服 `E:\MinecraftServer` 是独立服务端，本轮只完成
 只读识别，不修改、不启动、不停止。
 
+## 5. 恐怖整蛊运行与备份验收
+
+2026-07-28 在玩家数为 `0` 时，恐怖整蛊服通过控制台
+`save-all flush`、`save-off`、VSS 快照和 `save-on` 生成正式世界归档：
+
+- 归档：`E:\backups\horrorprank-backup-20260728-142039.zip`
+- 字节：`4,149,156,327`
+- 条目：`2,493`
+- SHA-256：
+  `50FBC949071EB08D828D4A53F8AF001C8AC5AAF9A42443083A28714B8D32975A`
+- Java PID 在备份前后均为 `7216`，没有停止或重启服务端。
+- `active.json`、`.partial` 和 VSS 卷影均已清理。
+
+异机副本已完整恢复到
+`H:\server-backups\owl9\formal-world-acceptance\2026-07-28\horrorprank`。
+本地重新计算归档哈希一致，全部 `2,493` 个条目完成长度与 SHA-256 逐文件比对，
+无缺失或额外文件；`level.dat` 有效且没有 `session.lock`。
+
+全量扫描 `2,370` 个 `.mca` 时发现源世界本身有 `22` 个零字节辅助占位文件，
+其中 `entities` 为 `14` 个、`poi` 为 `8` 个，地形 `region` 为 `0` 个。
+恢复副本与 `C:\mc\server\world` 的相对路径清单完全一致。验证器默认仍拒绝空区域
+文件；本次只有在显式提供这 `22` 个源端路径后才接受，且全部白名单项必须被使用。
+其余 `2,348` 个非空区域文件和共 `1,403,353` 个区块记录全部通过结构检查。
+
+15 秒备份后运行样本为 `20/20/20 TPS`、`12.591603775 MSPT`、GC 增量
+`0 ms`；PID 和 `25565` 监听均为 `7216`，真正 PVP 进程数为 `0`。
+
+`E:` 当前只剩 `5,787,840,512` 字节，不能安全同时保留当前归档和下一份最坏情况
+临时归档。当前归档继续保留；再次完整备份前必须先验证异机副本并计划扩容或精确回收
+当前远端归档，不能让脚本提前删除唯一可用备份。
+
 机器可读盘点见
-[`evidence/OWL9_DUAL_BACKEND_MAPPING_2026-07-28.json`](evidence/OWL9_DUAL_BACKEND_MAPPING_2026-07-28.json)。
+[`evidence/OWL9_DUAL_BACKEND_MAPPING_2026-07-28.json`](evidence/OWL9_DUAL_BACKEND_MAPPING_2026-07-28.json)，
+运行与备份证据见
+[`evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json`](evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json)。

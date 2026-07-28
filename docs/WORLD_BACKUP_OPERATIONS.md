@@ -2,7 +2,7 @@
 
 > 首次部署：2026-07-26
 > VSS 热备份升级：2026-07-27
-> 当前状态：三服 Essentials 正式归档、远端保留、异机副本、完整解压与隔离恢复验收均已通过
+> 当前状态：owl5 三服 Essentials 与 owl9 恐怖整蛊正式归档、异机副本、完整解压与隔离恢复验收均已通过
 
 ## 1. 事故背景
 
@@ -177,6 +177,40 @@ Get-Content C:\ProgramData\Hechao\WorldBackup\logs\*.log -Tail 100
 [`evidence/WORLD_BACKUP_FORMAL_ACCEPTANCE_2026-07-28.json`](evidence/WORLD_BACKUP_FORMAL_ACCEPTANCE_2026-07-28.json)，
 恢复验证器见
 [`../tools/backup/Test-MinecraftWorldRestore.ps1`](../tools/backup/Test-MinecraftWorldRestore.ps1)。
+
+### 5.3 owl9 恐怖整蛊正式归档
+
+恐怖整蛊 Fabric `1.20.1` 使用独立包装脚本
+`C:\ProgramData\Hechao\WorldBackup\Invoke-HorrorPrankWorldBackup.ps1`。脚本硬锁
+`C:\mc\server`、专用 Java、`world`、`online-mode=true` 和 `25565` 监听 PID；
+若 `E:\MinecraftServer` 的真正 PVP Java 正在运行则立即拒绝。两个后端共享
+`25565`，不得把历史逻辑 ID `pvp` 当成真正 PVP 服务端。
+
+2026-07-28 玩家数为 `0` 时，控制台依次记录：
+
+```text
+[14:20:33] Saved the game
+[14:20:35] Automatic saving is now disabled
+[14:20:40] Automatic saving is now enabled
+```
+
+最终归档为 `E:\backups\horrorprank-backup-20260728-142039.zip`，大小
+`4,149,156,327` 字节，共 `2,493` 个条目，SHA-256 为
+`50FBC949071EB08D828D4A53F8AF001C8AC5AAF9A42443083A28714B8D32975A`。
+PID 前后均为 `7216`，服务端未重启；任务最终为 `Ready`，活动状态、临时归档和
+VSS 卷影均为 `0`。
+
+异机副本完成全量解压，`2,493/2,493` 个文件逐一比较长度和 SHA-256，问题为 `0`。
+全量扫描 `2,370` 个区域文件时，默认严格模式识别出源世界既有的 `22` 个零字节
+`entities`/`poi` 占位文件；远端实时源与恢复副本的相对路径清单完全一致，且地形
+`region` 空文件为 `0`。验证器只有在显式传入这份精确清单后才接受，空白名单、
+多余白名单和非零短文件仍失败。最终验证 `2,370/2,370` 个区域文件与
+`1,403,353` 个区块记录，问题为 `0`。
+
+`E:` 验收后可用 `5,787,840,512` 字节，当前归档已保留但无法与下一份最坏情况
+临时归档并存。下一次完整备份前必须先完成异机复核，再扩容或按精确路径回收当前远端
+归档。机器证据见
+[`evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json`](evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json)。
 
 ## 6. 恢复
 

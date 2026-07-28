@@ -91,7 +91,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
 | 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊的历史 `owl9-pvp` 单目标只读采集器每分钟上报；跨周期所有权和离线隔离已验证。真正 PVP 未接入该心跳 |
-| TPS、MSPT、进程内存和启动时间 | 已完成 | 五个启动器目标代理均已加载：Survival1 `19.996649 TPS / 1.1225 MSPT`、Survival2 `20.000241 / 1.0375`、Lobby `20.003904 / 1.8530`、Activity `20 / 5.7745`、恐怖整蛊 `20 / 12.7157`；20 至 30 人负载仍是独立外部门槛 |
+| TPS、MSPT、进程内存和启动时间 | 已完成 | 五个启动器目标代理均已加载：Survival1 `19.996649 TPS / 1.1225 MSPT`、Survival2 `20.000241 / 1.0375`、Lobby `20.003904 / 1.8530`、Activity `20 / 5.7745`；恐怖整蛊在正式备份后 15 秒复核为 `20 / 12.5916`、GC 增量 `0 ms`，PID 与监听未变化。20 至 30 人负载仍是独立外部门槛 |
 | 管理后台状态与错误摘要 | 已实现待生产验收 | “服务状态”和“运行告警”页面、30 天样本、24 小时固定问题摘要与告警历史保留在 API `0.20.2`；真实管理员 MFA 已登记，仍待从正确启动器创建新票据并逐页复核当前五服数据 |
 | 远程启动、停止、重启 | 不在首版范围 | 若增加，必须使用最小权限代理、命令白名单、双确认和审计 |
 
@@ -104,13 +104,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 数据库每日备份 | 已完成 | 本机恢复演练已做 |
 | 数据库异地副本与异地主机恢复 | 已完成 | 当前 RAM v5 保留数据库和恢复前缀的最小权限；真实 OSS 上传、立即下载复验、定时任务、告警恢复、异地主机解密和隔离恢复均通过 |
 | 论坛与 Sub2API 每日及异地备份 | 已完成 | RAM v5 默认生效；在线一致性包、加密 OSS 上传与立即回读、owl5 解密、77 表隔离恢复、每日 timer，以及 `backup:platform-data-offsite` 的失败/恢复邮件均通过 |
-| Minecraft 世界串行原子备份 | 已完成 | Lobby、Survival1、Survival2 正式 Essentials/VSS 归档均完成；当前远端三份状态、ZIP、SHA、条目和旁车一致，活动状态、partial、孤立旁车与专属 VSS 均为 0 |
-| 世界恢复演练 | 已完成 | 三份正式归档已转存管理机、重算 SHA、完整解压；7 个 `level.dat` 有效，确定性抽检 `454/9,049` 个区域文件、`152,365` 个区块无问题；未宣称全量区域扫描或生产覆盖切换 |
+| Minecraft 世界串行原子备份 | 已完成 | Lobby、Survival1、Survival2 正式 Essentials/VSS 归档均完成；owl9 恐怖整蛊也已通过 `save-all flush`/`save-off`/VSS/`save-on` 生成 `4,149,156,327` 字节正式归档，PID 未变化。真正 PVP 未触碰；恐怖整蛊远端 `E:` 只剩约 5.39 GiB，再次完整备份前需异机复核后扩容或计划回收当前归档 |
+| 世界恢复演练 | 已完成 | owl5 三份正式归档已转存管理机、重算 SHA、完整解压；7 个 `level.dat` 有效，确定性抽检 `454/9,049` 个区域文件、`152,365` 个区块无问题。恐怖整蛊另完成 `2,493/2,493` 文件长度与 SHA-256 比对及 `2,370/2,370` 区域全量扫描；源端既有的 22 个零字节 `entities`/`poi` 占位文件通过精确清单审计，地形空文件为 0。所有演练均未覆盖生产世界 |
 | API、登录、下载和证书告警 | 已完成 | API `0.20.2`、迁移 17、平台监控器 `0.1.2`、双备份检查、后台告警页和 transition-only 邮件已生产验收 |
 | 发布前故障自动演练 | 已完成 | 断网、损坏文件、维护、权限变化和版本回滚五类定向集合 `45/45` 通过；完整 `.NET 355/355` 与三组服务端代理 `17/17` 同轮复验，见 [`PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md`](PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md) |
 | 生产剩余门槛只读审计 | 已完成 | 账号、MFA、诊断、遥测、档案、心跳、告警、代理加载、世界归档与 RAM v5 当前状态已做匿名聚合核对；证据和执行顺序见 [`PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md`](PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md) |
 | TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 需要活动窗口和真实玩家 |
-| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB 与双服务端边界已盘点：恐怖整蛊为 `C:\mc\server` Fabric，真正 PVP 为 `E:\MinecraftServer` Purpur，两者共享 `25565` 且禁止同时启动。恐怖整蛊只出站采集器与 modern forwarding 已部署；见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md) 及其机器证据 |
+| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB 与双服务端边界已盘点：恐怖整蛊为 `C:\mc\server` Fabric，真正 PVP 为 `E:\MinecraftServer` Purpur，两者共享 `25565` 且禁止同时启动。恐怖整蛊只出站采集器、modern forwarding、运行基线和正式世界备份/异机恢复已验收；真正 PVP 未接入、未启动、未修改。见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md) 及其机器证据 |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |
 

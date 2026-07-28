@@ -170,6 +170,12 @@ Get-Content -Raw 'E:\LobbyServer\plugins\HechaoServerMetrics\metrics.json'
 五个目标的进程、CPU、内存、启动时间、磁盘与 TPS/MSPT/GC 均已入库。该结果只证明
 空载链路和代理正确，不代替 5 人、20 人或正式活动负载验收。
 
+2026-07-28 15:20 在恐怖整蛊正式世界备份和异机恢复后又连续采样 15 秒：
+PID 与 `25565` 监听均保持 `7216`，`20/20/20 TPS`，平均
+`12.591603775 MSPT`，GC 从 `9,176 ms` 到 `9,176 ms`，窗口增量为 `0 ms`。
+真正 PVP `E:\MinecraftServer` 的进程数为 `0`。机器证据见
+[`evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json`](evidence/OWL9_HORRORPRANK_RUNTIME_AND_WORLD_BACKUP_2026-07-28.json)。
+
 ## 6. 回滚
 
 - API 可回滚到 `0.18.0`；迁移 16 和历史表保留，不手工删除。
