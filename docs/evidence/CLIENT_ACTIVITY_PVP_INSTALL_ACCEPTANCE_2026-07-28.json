@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-28T00:11:33.4179041Z",
+  "purpose": "Record installation and offline integrity acceptance for the production Activity and PVP profiles in the correct Hechao launcher data root.",
+  "launcher": {
+    "version": "0.11.14",
+    "executable": "D:\\Hechao Launcher\\Hechao.Launcher.exe",
+    "dataRoot": "H:\\hechao \u200cLauncher",
+    "accountDisplayName": "51",
+    "accountTier": "owner"
+  },
+  "profiles": [
+    {
+      "profileId": "activity-neoforge-1.21.11",
+      "version": "1.0.10",
+      "minecraftVersion": "1.21.11",
+      "loader": "NeoForge",
+      "javaMajorVersion": 21,
+      "downloadHistory": {
+        "status": "completed",
+        "displayedBytes": "592.9 MB",
+        "completedAtLocal": "2026-07-28 08:06"
+      },
+      "installation": {
+        "profileExists": true,
+        "minecraftDirectoryExists": true,
+        "runtimeExists": true,
+        "javaExecutable": "instances\\activity-neoforge-1.21.11\\runtime\\windows-x64\\java-runtime-delta\\bin\\java.exe",
+        "profileFileCountIncludingRuntime": 5184,
+        "profileBytesIncludingRuntime": 726605836
+      },
+      "manifestVerification": {
+        "expectedFiles": 4754,
+        "exactMatches": 4753,
+        "missingFiles": 0,
+        "sizeMismatches": 1,
+        "hashMismatches": 0,
+        "runtimeMutableDifferences": [
+          {
+            "path": "config/sodium-options.json",
+            "difference": "notifications.has_seen_donation_prompt changed from true to false",
+            "classification": "client-owned mutable preference"
+          }
+        ]
+      },
+      "launchAcceptance": "pending explicit first-run confirmation"
+    },
+    {
+      "profileId": "pvp-fabric-1.20.1",
+      "version": "1.0.0",
+      "minecraftVersion": "1.20.1",
+      "loader": "Fabric",
+      "javaMajorVersion": 17,
+      "downloadHistory": {
+        "status": "completed",
+        "displayedBytes": "844.8 MB",
+        "completedAtLocal": "2026-07-28 08:03"
+      },
+      "installation": {
+        "profileExists": true,
+        "minecraftDirectoryExists": true,
+        "runtimeExists": true,
+        "javaExecutable": "instances\\pvp-fabric-1.20.1\\runtime\\windows-x64\\java-runtime-gamma\\bin\\java.exe",
+        "profileFileCountIncludingRuntime": 4235,
+        "profileBytesIncludingRuntime": 1010198281
+      },
+      "manifestVerification": {
+        "expectedFiles": 3749,
+        "exactMatches": 3748,
+        "missingFiles": 0,
+        "sizeMismatches": 0,
+        "hashMismatches": 1,
+        "runtimeMutableDifferences": [
+          {
+            "path": "config/fabric/indigo-renderer.properties",
+            "difference": "generated timestamp comment changed on first client initialization",
+            "classification": "client-owned mutable generated metadata"
+          }
+        ]
+      },
+      "observedInitialization": {
+        "latestLogExists": true,
+        "crashReports": 0,
+        "minecraftUserInitialized": true,
+        "proxyConnectionAttempt": "mc.hehe11.fun:25565",
+        "routeAndIdentityAcceptance": "not yet claimed"
+      }
+    }
+  ],
+  "aggregate": {
+    "manifestFiles": 8503,
+    "exactMatches": 8501,
+    "missingFiles": 0,
+    "runtimeMutableDifferences": 2,
+    "partialOrPreviousDirectories": 0,
+    "matchingMinecraftProcessesAtAudit": 0
+  },
+  "remainingAcceptance": [
+    "Explicitly launch the Activity profile and verify the Activity route, identity, permissions, exit and reconnect.",
+    "Explicitly launch the PVP profile and verify the PVP route, identity, permissions, exit and reconnect.",
+    "Verify repair and rollback against both production profiles.",
+    "Complete real-account and multi-player pilots before Velocity enforce mode."
+  ],
+  "privacy": {
+    "minecraftUuidIncluded": false,
+    "accessTokenIncluded": false,
+    "internalTokenIncluded": false,
+    "passwordIncluded": false
+  }
+}
