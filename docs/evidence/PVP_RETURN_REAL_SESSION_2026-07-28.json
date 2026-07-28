@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-28T15:56:10.0000000Z",
+  "capturedAt": "2026-07-28T16:27:21.4567731Z",
   "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
-  "result": "first-real-session-passed-reconnect-and-visual-checks-pending",
+  "result": "first-session-return-reverse-denial-and-normal-exit-passed-second-grant-issued",
   "privacy": {
     "playerNameStored": false,
     "minecraftUuidStored": false,
@@ -87,6 +87,43 @@
       "horrorPrankTps1m": 20.0,
       "horrorPrankMsptAverage": 12.262409974999999,
       "horrorPrankGcDeltaMilliseconds": 0
+    },
+    "reverseTransferPolicy": {
+      "requestedFromLobby": true,
+      "requestedTarget": "pvp",
+      "clientCompatibilityMessageObserved": true,
+      "authorizerIncompatibleDenialCount": 1,
+      "targetBackendConnectCountAfterAttempt": 0,
+      "playerRemainedConnectedToLobby": true,
+      "playerDisconnectCountAfterAttempt": 0,
+      "authorizationApiUnavailableCount": 0,
+      "decoderErrorCount": 0,
+      "userScreenshotProvided": true,
+      "skinRenderedInScreenshot": true,
+      "hotbarRenderedInScreenshot": true,
+      "skinCorrectnessConfirmationPending": true,
+      "inventoryCorrectnessConfirmationPending": true,
+      "movementConfirmationPending": true
+    },
+    "firstSessionNormalExit": {
+      "lobbyBackendDisconnectObserved": true,
+      "isolatedEndpointConnectionClosed": true,
+      "minecraftProcessExited": true,
+      "launcherExitRecordCreated": true,
+      "launcherExitCode": 0,
+      "unexpectedDisconnectObserved": false,
+      "crashObserved": false
+    },
+    "secondSession": {
+      "freshGrantCreated": true,
+      "targetServer": "pvp",
+      "eligibleIdentityCount": 1,
+      "identityDisclosed": false,
+      "apiTunnelReady": true,
+      "minecraftTunnelReady": true,
+      "gameLaunchPending": true,
+      "horrorPrankEntryPending": true,
+      "reconnectPending": true
     }
   },
   "remediation": {
@@ -209,9 +246,8 @@
     }
   },
   "remainingRealSessionChecks": [
-    "visually verify skin, inventory and movement in Lobby",
-    "verify the reverse incompatible transfer is rejected while the player remains in Lobby",
-    "use another fresh grant to re-enter HorrorPrank",
+    "confirm that the rendered skin and inventory are correct and verify movement in Lobby",
+    "use the issued second fresh grant to re-enter HorrorPrank",
     "verify reconnect and normal client exit",
     "capture post-session proxy, backend and performance evidence"
   ]

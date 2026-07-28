@@ -131,7 +131,9 @@ ViaVersion/ViaBackwards，已调整为代理 Via `0`、大厅 Via `2` 的后端�
 `20/20` 测试，生产仍为 `0.3.0`。Velocity 4 单层翻译候选的首条真实
 恐怖整蛊 -> `/hub` -> Lobby 已通过并稳定超过 `591` 秒；四段日志解码错误为 `0`，
 两个后端的名称与 UUID 内存比对一致，聊天、LuckPerms、TPS/MSPT 与短窗口 GC 均
-通过。仍须完成皮肤/背包/移动目视、反向拒绝、再次进入、重连和正常退出。
+通过。大厅反向请求 `pvp` 已被 Authorizer 以客户端不兼容正确拒绝，目标后端连接数
+为 `0`，玩家仍在线；首次会话随后以启动器退出码 `0` 正常结束。第二枚 fresh grant
+已签发但尚未由玩家启动。仍须完成皮肤/背包/移动内容确认、再次进入和成功重连。
 证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)
 与
