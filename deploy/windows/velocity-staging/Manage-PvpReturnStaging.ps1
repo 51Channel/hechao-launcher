@@ -12,6 +12,9 @@ param(
 
     [string]$JavaExecutable = 'E:\jdk\bin\java.exe',
 
+    [string]$StagingVelocitySource =
+        'E:\server-artifacts\velocity\velocity-3.5.1-615.jar',
+
     [ValidateRange(1, 65535)]
     [int]$ProductionPort = 25577,
 
@@ -25,6 +28,10 @@ param(
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string]$ExpectedVelocitySha256 =
         'CCC49F71751ECE26568D3476392D6130C8B43F2E5F3A88313325B9278A52BABD',
+
+    [ValidatePattern('^[A-Fa-f0-9]{64}$')]
+    [string]$ExpectedStagingVelocitySha256 =
+        'B4E3164DF5377346854DC6CB9E6A78022B1946FF69E89676313F5F6F1C6F0FB3',
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string]$ExpectedHubCommandSha256 =
@@ -189,7 +196,7 @@ function Assert-StagingFiles {
 
     Assert-FileHash `
         -Path (Join-Path $Roots.Staging 'velocity.jar') `
-        -ExpectedSha256 $ExpectedVelocitySha256 `
+        -ExpectedSha256 $ExpectedStagingVelocitySha256 `
         -Label 'Staging Velocity JAR' | Out-Null
     Assert-FileHash `
         -Path (Join-Path $Roots.Staging 'plugins\HubCommand-1.0.0.jar') `
@@ -211,14 +218,14 @@ function Assert-StagingFiles {
 
     $configText = [IO.File]::ReadAllText($configPath)
     $expectedBind = 'bind = "127.0.0.1:' + $StagingPort + '"'
-    if ($configText -notmatch "(?m)^$([regex]::Escape($expectedBind))\s*$") {
+    if ($configText -notmatch "(?m)^\s*$([regex]::Escape($expectedBind))\s*$") {
         throw "The staging Velocity bind must be 127.0.0.1:$StagingPort."
     }
 
-    if ($configText -notmatch '(?m)^online-mode\s*=\s*true\s*$' -or
-        $configText -notmatch '(?m)^player-info-forwarding-mode\s*=\s*"modern"\s*$' -or
-        $configText -notmatch '(?m)^enabled\s*=\s*false\s*$' -or
-        $configText -notmatch "(?m)^port\s*=\s*$StagingPort\s*$") {
+    if ($configText -notmatch '(?m)^\s*online-mode\s*=\s*true\s*$' -or
+        $configText -notmatch '(?m)^\s*player-info-forwarding-mode\s*=\s*"modern"\s*$' -or
+        $configText -notmatch '(?m)^\s*enabled\s*=\s*false\s*$' -or
+        $configText -notmatch "(?m)^\s*port\s*=\s*$StagingPort\s*$") {
         throw 'The staging Velocity safety settings are incomplete.'
     }
 }
@@ -253,8 +260,10 @@ function Get-StagingStatus {
         ProcessIds = @($listeners | ForEach-Object { $_.OwningProcess })
         LoopbackOnly = $unexpectedListeners.Count -eq 0
         FatalOrErrorLogMatches = $fatalMatchCount
+        StagingVelocitySha256 = $ExpectedStagingVelocitySha256.ToUpperInvariant()
         ProductionProcessId = $Production.ProcessId
         ProductionConfigSha256 = $Production.ConfigSha256
+        ProductionVelocitySha256 = $ExpectedVelocitySha256.ToUpperInvariant()
         ProductionEnabledViaJarCount = $Production.EnabledViaJarCount
     }
 }
@@ -306,6 +315,10 @@ function Prepare-Staging {
     if (-not (Test-Path -LiteralPath $JavaExecutable -PathType Leaf)) {
         throw "The Java executable is missing: $JavaExecutable"
     }
+    Assert-FileHash `
+        -Path $StagingVelocitySource `
+        -ExpectedSha256 $ExpectedStagingVelocitySha256 `
+        -Label 'Staging Velocity source JAR' | Out-Null
     if ($null -ne (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)) {
         throw "The staging task already exists: $TaskName"
     }
@@ -318,7 +331,7 @@ function Prepare-Staging {
         [IO.Directory]::CreateDirectory((Join-Path $temporaryRoot 'plugins')) | Out-Null
 
         Copy-Item `
-            -LiteralPath (Join-Path $Roots.Production 'velocity.jar') `
+            -LiteralPath $StagingVelocitySource `
             -Destination (Join-Path $temporaryRoot 'velocity.jar')
         Copy-Item `
             -LiteralPath (Join-Path $Roots.Production 'forwarding.secret') `

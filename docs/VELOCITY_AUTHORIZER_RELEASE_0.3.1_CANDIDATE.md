@@ -44,7 +44,9 @@ Via JAR 数量。
 - 旧隔离 JAR 备份：
   `E:\manual-backups\PvpReturnAuthorizerStaging-20260728T040947Z`
 - 候选启用 JAR 数量：`1`
-- 隔离进程：PID `8464`，仅监听 `127.0.0.1:25579`
+- 隔离核心：Velocity `3.5.1` build `615`，SHA-256
+  `B4E3164DF5377346854DC6CB9E6A78022B1946FF69E89676313F5F6F1C6F0FB3`
+- 隔离进程：PID `9340`，仅监听 `127.0.0.1:25579`
 - Authorizer、ViaVersion `5.11.0`、ViaBackwards `5.11.0` 加载成功
 - API 受限凭据探针：`PlayerNotLinked`
 - 协议 `393`、`763`、`774` 状态握手全部通过
@@ -56,6 +58,17 @@ Via JAR 数量。
 
 ## 4. 剩余门槛
 
-该候选仍须用正确 PVP 1.20.1 正版客户端完成 PVP -> `/hub` -> Lobby、反向转服
-拒绝、再次签发进入 PVP、断线重连、身份/皮肤/权限和正常退出。真实会话通过前不得
-替换生产 `0.3.0`，不得启用生产 Via，也不得切换 `enforce`。
+正确恐怖整蛊 1.20.1 正版客户端已完成首次授权、代理路由和后端登录。第一次
+`/hub` 已连接 Lobby 后端，但旧隔离 Velocity `3.4.0-SNAPSHOT` 在切服时发生
+`accept_teleportation` 协议状态解码错误；命令、API 授权、网络可达性和 Lobby
+登录均不是失败点。
+
+隔离核心随后单独升级为 Velocity `3.5.1` build `615`。Velocity `4.0.0` build
+`6` 因 class file version `69` 需要 Java 25，没有在现有 Java 21 任务中启用，JAR
+已保留在回滚目录。`3.5.1` 的 class file version 为 `65`，五个插件、回环监听和
+`393/763/774` 状态探测均通过。生产 Velocity 和所有游戏服未重启。机器证据见
+[`PVP_RETURN_REAL_SESSION_2026-07-28.json`](evidence/PVP_RETURN_REAL_SESSION_2026-07-28.json)。
+
+当前仍须在关闭断线客户端后完成修复版 PVP -> `/hub` -> Lobby、反向转服拒绝、
+再次签发进入 PVP、断线重连、身份/皮肤/权限和正常退出。真实会话通过前不得替换
+生产 `0.3.0`，不得启用生产 Via，也不得切换 `enforce`。

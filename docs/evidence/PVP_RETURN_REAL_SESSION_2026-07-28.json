@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-28T10:57:41.4651608+00:00",
+  "scope": "HorrorPrank 1.20.1 to Lobby 1.21.11 real-session return-route acceptance",
+  "result": "protocol-failure-remediated-real-session-retest-pending",
+  "privacy": {
+    "playerNameStored": false,
+    "minecraftUuidStored": false,
+    "sourceAddressStored": false,
+    "accessTokenStored": false,
+    "sessionIdentifierStored": false,
+    "identityFingerprintStored": false
+  },
+  "initialRealSession": {
+    "freshCandidateGrantCreated": true,
+    "eligibleIdentityCount": 1,
+    "initialProxyAuthenticationPassed": true,
+    "initialTargetRoutedToHorrorPrank": true,
+    "horrorPrankBackendLoginPassed": true,
+    "hubCommandReachedLobbyBackend": true,
+    "horrorPrankBackendDisconnectedAfterTransfer": true,
+    "lobbyBackendLoginPassed": true,
+    "lobbyJoinCompleted": false,
+    "failure": {
+      "backend": "lobby",
+      "packet": "play/serverbound/minecraft:accept_teleportation",
+      "decoderReportedExtraBytes": 131,
+      "classification": "cross-version proxy protocol-state failure",
+      "authorizationFailure": false,
+      "lobbyReachabilityFailure": false,
+      "luckPermsFailure": false
+    }
+  },
+  "remediation": {
+    "scope": "loopback-only staging proxy",
+    "gameServersRestarted": false,
+    "productionVelocityRestarted": false,
+    "productionApiChanged": false,
+    "productionDatabaseChanged": false,
+    "truePvpTouched": false,
+    "attemptedVelocity": {
+      "version": "4.0.0",
+      "build": 6,
+      "sha256": "4540289F48C83E305FC2F2C495A84D1F4D0B7F360830251E169DD5A208740E70",
+      "activated": false,
+      "reason": "class file version 69 requires Java 25 while the isolated task intentionally uses Java 21",
+      "backup": "E:\\manual-backups\\velocity-pvp-return-staging-20260728-184440\\velocity-4.0.0-6.jar"
+    },
+    "activeVelocity": {
+      "version": "3.5.1",
+      "build": 615,
+      "channel": "RECOMMENDED",
+      "releasedAt": "2026-07-11T15:59:56.494Z",
+      "sha256": "B4E3164DF5377346854DC6CB9E6A78022B1946FF69E89676313F5F6F1C6F0FB3",
+      "sizeBytes": 18932366,
+      "classFileVersion": 65,
+      "javaMajor": 21,
+      "artifactCache": "E:\\server-artifacts\\velocity\\velocity-3.5.1-615.jar"
+    },
+    "staging": {
+      "root": "E:\\Velocity-PvpReturn-Staging",
+      "task": "Hechao-Velocity-PvpReturn-Staging",
+      "taskState": "Running",
+      "listener": "127.0.0.1:25579",
+      "loopbackOnly": true,
+      "loadedPluginCount": 5,
+      "fatalOrErrorLogMatches": 0,
+      "authorizerVersion": "0.3.1",
+      "authorizerMode": "monitor",
+      "viaVersion": "5.11.0",
+      "viaBackwards": "5.11.0"
+    },
+    "protocolStatusProbes": [
+      {
+        "requestedProtocol": 393,
+        "responseProtocol": 393,
+        "passed": true
+      },
+      {
+        "requestedProtocol": 763,
+        "responseProtocol": 763,
+        "passed": true
+      },
+      {
+        "requestedProtocol": 774,
+        "responseProtocol": 774,
+        "passed": true
+      }
+    ],
+    "managementScript": {
+      "path": "deploy/windows/velocity-staging/Manage-PvpReturnStaging.ps1",
+      "sha256": "53C6B0A4DAF899493895A3CE93588D10572677534A539ACD83113CE6B6916FB4",
+      "parserErrors": 0,
+      "remoteStatusPassed": true,
+      "productionAndStagingCoreHashesSeparated": true,
+      "velocity351ArtifactPinned": true,
+      "velocity351ConfigRewriteAccepted": true
+    },
+    "candidateApi": {
+      "version": "0.21.0",
+      "listener": "127.0.0.1:18093",
+      "ready": true,
+      "heartbeatTargetState": "2|2|2",
+      "candidateLogErrorCount": 0,
+      "productionReleaseUnchanged": true,
+      "productionMigrationStateUnchanged": true
+    }
+  },
+  "remainingRealSessionChecks": [
+    "close the disconnected 1.20.1 client normally",
+    "use a fresh candidate launch grant to enter HorrorPrank",
+    "execute /hub and remain connected to Lobby",
+    "verify identity, skin, LuckPerms permissions, inventory, chat, command tree and movement",
+    "use another fresh grant to re-enter HorrorPrank",
+    "verify reconnect and normal client exit",
+    "capture post-session proxy, backend and performance evidence"
+  ]
+}

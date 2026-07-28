@@ -86,8 +86,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | Velocity 异步授权、首次目标与客户端兼容 | 已实现待生产验收 | API `0.20.2` + 插件 `0.3.0` 以 `monitor` 运行；生产兼容矩阵 `8/8`，Lobby/Survival1/Survival2、Activity 与恐怖整蛊的单账号真实首次目标均通过；仍缺四级账号、兼容转服、重连和故障路径 |
 | 恐怖整蛊 Fabric 后端 modern forwarding | 已完成 | owl9 的 `HorrorPrank` 持久任务加载 FabricProxy-Lite `2.6.0` 与官方 CrossStitch `0.1.6`；真实会话稳定 `586` 秒、启动/后端身份一致、解码错误为 `0`、公网直连被 `velocity:player_info` 明确拒绝、正常退出码为 `0` |
-| 恐怖整蛊跨版本返回大厅授权 | 已实现待隔离实机验收 | 迁移 018、目标服级后台开关和授权规则已实现；API `0.21.0` 已在生产数据库副本上验证全部既有目标默认关闭、只开启大厅后恐怖整蛊回程允许、反向仍拒绝且 NeoForge 档案保护不能绕过。回环隔离代理已用协议 `393/763/774` 完成 status 协商，受限凭据 API 探针返回预期 `PlayerNotLinked`，Via 错误为 `0`；Authorizer `0.3.1` 修复转服后会话来源并通过 `20/20` 测试，仅在隔离代理加载。仍待真实登录与 `/hub`；API 候选未部署，生产 Authorizer 仍为 `0.3.0`，现网 Via JAR 仍禁用，证据保留历史文件名 `API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`、`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json` 与 `VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md` |
-| NPC、`/hub`、断线重连和 API 故障路径 | 外部验收 | 一次恐怖整蛊重连在 Velocity 认证前超时，仍需成功样本。恐怖整蛊 `1.20.1` 与大厅 `1.21.11` 不兼容，当前 `/hub` 不能算通过，需先完成专用回程的隔离验证与上线；其余路径需要真实玩家与真实代理日志 |
+| 恐怖整蛊跨版本返回大厅授权 | 已实现待隔离实机复测 | 迁移 018、目标服级后台开关和授权规则已实现；API `0.21.0` 已在生产数据库副本上验证全部既有目标默认关闭、只开启大厅后恐怖整蛊回程允许、反向仍拒绝且 NeoForge 档案保护不能绕过。真实正版首次路由已进入恐怖整蛊；第一次 `/hub` 已通过授权并连接大厅，但旧隔离 Velocity `3.4.0-SNAPSHOT` 在后端切换时触发 `accept_teleportation` 多余字节解码错误。隔离核心已单独升级到官方推荐 Velocity `3.5.1` build `615`，五个插件正常加载，协议 `393/763/774` 再次通过且错误日志为 `0`；生产 Velocity、API、游戏服和真正 PVP 均未改动。仍待修复后的真实 `/hub`、权限与重连复测；证据见 `API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`、`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`、`PVP_RETURN_REAL_SESSION_2026-07-28.json` 与 `VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md` |
+| NPC、`/hub`、断线重连和 API 故障路径 | 外部验收 | 一次恐怖整蛊重连在 Velocity 认证前超时，仍需成功样本。第一次跨版本 `/hub` 已证明命令、授权和大厅可达，但在旧代理核心发生协议状态解码错误；隔离代理已修复，仍需关闭断线客户端后完成真实回大厅、权限核对、再次进入和正常退出。NPC 与其余路径需要真实玩家和真实代理日志 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
 | 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊的历史 `owl9-pvp` 单目标只读采集器每分钟上报；跨周期所有权和离线隔离已验证。真正 PVP 未接入该心跳 |
