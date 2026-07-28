@@ -69,6 +69,10 @@
       "writtenToLocalDisk": false,
       "disclosed": false,
       "configurationAclRestricted": true,
+      "authorizationBackupCount": 4,
+      "securedBackupObjectCount": 17,
+      "invalidBackupAclCount": 0,
+      "backupCredentialContentInspected": false,
       "allowedAclPrincipals": [
         "SYSTEM",
         "BUILTIN\\Administrators",
