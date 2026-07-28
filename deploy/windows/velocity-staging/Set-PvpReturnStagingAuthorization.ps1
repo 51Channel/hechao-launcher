@@ -21,8 +21,16 @@ param(
         'A300E7CBE190B42E434763CFCCAFB9D821F894B02E72A594ED72B340C3E22C70',
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
-    [string]$ExpectedAuthorizerSha256 =
+    [string]$ExpectedProductionAuthorizerSha256 =
         '289B13472AEAC4073895EF9BE7E630B4B5AACEC48A4D0FD849BBAFE0064E681D',
+
+    [ValidatePattern('^HechaoVelocityAuthorizer-[0-9]+\.[0-9]+\.[0-9]+\.jar$')]
+    [string]$StagingAuthorizerFileName =
+        'HechaoVelocityAuthorizer-0.3.1.jar',
+
+    [ValidatePattern('^[A-Fa-f0-9]{64}$')]
+    [string]$ExpectedStagingAuthorizerSha256 =
+        '2FC06C2DBE6F01AFAC2C5AA016C902A10B4B1675C876C5850630B726BB041E75',
 
     [ValidatePattern('^http://127\.0\.0\.1:[0-9]{1,5}/v1/internal/velocity/authorize$')]
     [string]$ApiUrl =
@@ -190,7 +198,7 @@ function Get-ProductionBaseline {
         -Label 'Production Velocity configuration' | Out-Null
     Assert-FileHash `
         -Path $AuthorizerJar `
-        -ExpectedSha256 $ExpectedAuthorizerSha256 `
+        -ExpectedSha256 $ExpectedProductionAuthorizerSha256 `
         -Label 'Production Hechao authorizer JAR' | Out-Null
 
     $productionListeners = @(Get-PortListeners -Port $ProductionPort)
@@ -268,7 +276,7 @@ function Get-AuthorizationStatus {
     if ($jarInstalled) {
         $jarHashValid =
             (Get-FileHash -LiteralPath $JarPath -Algorithm SHA256).Hash -eq
-            $ExpectedAuthorizerSha256.ToUpperInvariant()
+            $ExpectedStagingAuthorizerSha256.ToUpperInvariant()
     }
     if ($configInstalled) {
         $configuration = Read-Configuration -Path $ConfigPath
@@ -388,7 +396,7 @@ $productionAuthorizerJar = Join-Path `
     'plugins\HechaoVelocityAuthorizer-0.3.0.jar'
 $stagingAuthorizerJar = Assert-ChildPath `
     -Parent $staging `
-    -Child (Join-Path $staging 'plugins\HechaoVelocityAuthorizer-0.3.0.jar')
+    -Child (Join-Path $staging "plugins\$StagingAuthorizerFileName")
 $stagingConfigDirectory = Assert-ChildPath `
     -Parent $staging `
     -Child (Join-Path $staging 'plugins\hechao-velocity-authorizer')
@@ -427,14 +435,21 @@ switch ($Action) {
             return
         }
 
-        Copy-Item `
-            -LiteralPath $productionAuthorizerJar `
-            -Destination $stagingAuthorizerJar `
-            -Force
         Assert-FileHash `
             -Path $stagingAuthorizerJar `
-            -ExpectedSha256 $ExpectedAuthorizerSha256 `
+            -ExpectedSha256 $ExpectedStagingAuthorizerSha256 `
             -Label 'Staging Hechao authorizer JAR' | Out-Null
+        $enabledAuthorizers = @(
+            Get-ChildItem -LiteralPath (Join-Path $staging 'plugins') -File |
+                Where-Object {
+                    $_.Name -match
+                        '^HechaoVelocityAuthorizer-[0-9]+\.[0-9]+\.[0-9]+\.jar$'
+                }
+        )
+        if ($enabledAuthorizers.Count -ne 1 -or
+            $enabledAuthorizers[0].FullName -ne $stagingAuthorizerJar) {
+            throw 'The staging proxy must have exactly one candidate authorizer JAR.'
+        }
 
         New-Item `
             -ItemType Directory `
