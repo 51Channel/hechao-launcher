@@ -655,6 +655,66 @@ function Copy-BackupFile {
     }
 }
 
+function Copy-SharedSnapshotFile {
+    param(
+        [Parameter(Mandatory)][string]$Source,
+        [Parameter(Mandatory)][string]$Destination
+    )
+
+    if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
+        throw "A required snapshot source is missing: $Source"
+    }
+
+    $parent = Split-Path -Parent $Destination
+    [IO.Directory]::CreateDirectory($parent) | Out-Null
+
+    $sourceStream = [IO.FileStream]::new(
+        $Source,
+        [IO.FileMode]::Open,
+        [IO.FileAccess]::Read,
+        [IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete)
+    try {
+        $snapshotLength = $sourceStream.Length
+        $destinationStream = [IO.FileStream]::new(
+            $Destination,
+            [IO.FileMode]::CreateNew,
+            [IO.FileAccess]::Write,
+            [IO.FileShare]::None)
+        try {
+            $buffer = [byte[]]::new(1MB)
+            $remaining = $snapshotLength
+            while ($remaining -gt 0) {
+                $requested = [int][Math]::Min($buffer.Length, $remaining)
+                $read = $sourceStream.Read($buffer, 0, $requested)
+                if ($read -le 0) {
+                    throw "The live snapshot source was truncated: $Source"
+                }
+                $destinationStream.Write($buffer, 0, $read)
+                $remaining -= $read
+            }
+            $destinationStream.Flush($true)
+        }
+        finally {
+            $destinationStream.Dispose()
+        }
+    }
+    finally {
+        $sourceStream.Dispose()
+    }
+
+    $destinationLength = (Get-Item -LiteralPath $Destination).Length
+    if ($destinationLength -ne $snapshotLength) {
+        throw "Live snapshot length verification failed for $Source."
+    }
+
+    return [pscustomobject]@{
+        Length = $destinationLength
+        Sha256 = (
+            Get-FileHash -LiteralPath $Destination -Algorithm SHA256
+        ).Hash
+    }
+}
+
 function New-MigrationBackup {
     param(
         [Parameter(Mandatory)][pscustomobject]$Roots,
@@ -671,7 +731,8 @@ function New-MigrationBackup {
     [IO.Directory]::CreateDirectory($path) | Out-Null
     Set-RestrictedDirectoryAcl -Path $path
 
-    $files = [ordered]@{
+    try {
+        $files = [ordered]@{
         VelocityJar = @(
             (Join-Path $Roots.Velocity 'velocity.jar'),
             (Join-Path $path 'velocity\velocity.jar')
@@ -741,11 +802,11 @@ function New-MigrationBackup {
             )
         )
     }
-    foreach ($entry in $files.GetEnumerator()) {
-        Copy-BackupFile `
-            -Source $entry.Value[0] `
-            -Destination $entry.Value[1]
-    }
+        foreach ($entry in $files.GetEnumerator()) {
+            Copy-BackupFile `
+                -Source $entry.Value[0] `
+                -Destination $entry.Value[1]
+        }
 
     $authorizerConfig = Join-Path `
         $Roots.Velocity `
@@ -763,7 +824,7 @@ function New-MigrationBackup {
             -Recurse
     }
 
-    foreach ($log in @(
+        foreach ($log in @(
             @(
                 (Join-Path $Roots.Velocity 'logs\latest.log'),
                 (Join-Path $path 'logs\velocity-before.log')
@@ -773,19 +834,21 @@ function New-MigrationBackup {
                 (Join-Path $path 'logs\lobby-before.log')
             )
         )) {
-        if (Test-Path -LiteralPath $log[0] -PathType Leaf) {
-            Copy-BackupFile -Source $log[0] -Destination $log[1]
+            if (Test-Path -LiteralPath $log[0] -PathType Leaf) {
+                Copy-SharedSnapshotFile `
+                    -Source $log[0] `
+                    -Destination $log[1] | Out-Null
+            }
         }
-    }
 
-    $taskXmlPath = Join-Path $path 'tasks\velocity.xml'
-    [IO.Directory]::CreateDirectory(
-        (Split-Path -Parent $taskXmlPath)
-    ) | Out-Null
-    [IO.File]::WriteAllText(
-        $taskXmlPath,
-        (Export-ScheduledTask -TaskName $VelocityTaskName),
-        [Text.UTF8Encoding]::new($false))
+        $taskXmlPath = Join-Path $path 'tasks\velocity.xml'
+        [IO.Directory]::CreateDirectory(
+            (Split-Path -Parent $taskXmlPath)
+        ) | Out-Null
+        [IO.File]::WriteAllText(
+            $taskXmlPath,
+            (Export-ScheduledTask -TaskName $VelocityTaskName),
+            [Text.UTF8Encoding]::new($false))
 
     $prechange = [ordered]@{
         schemaVersion = 1
@@ -805,12 +868,25 @@ function New-MigrationBackup {
             viaBackwardsSha256 = $ExpectedViaBackwardsSha256.ToUpperInvariant()
         }
     }
-    [IO.File]::WriteAllText(
-        (Join-Path $path 'prechange.json'),
-        ($prechange | ConvertTo-Json -Depth 6) + [Environment]::NewLine,
-        [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText(
+            (Join-Path $path 'prechange.json'),
+            ($prechange | ConvertTo-Json -Depth 6) + [Environment]::NewLine,
+            [Text.UTF8Encoding]::new($false))
 
-    return $path
+        return $path
+    }
+    catch {
+        $expectedPrefix = $Roots.Backup +
+            [IO.Path]::DirectorySeparatorChar +
+            $script:MigrationPrefix
+        if ((Test-Path -LiteralPath $path -PathType Container) -and
+            $path.StartsWith(
+                $expectedPrefix,
+                [StringComparison]::OrdinalIgnoreCase)) {
+            Remove-Item -LiteralPath $path -Recurse -Force
+        }
+        throw
+    }
 }
 
 function Invoke-LobbyConsoleCommand {
