@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-28T02:58:38Z",
+  "scope": "API 0.21.0 protocol-translation gate on a production database backup clone",
+  "result": "isolated-api-gate-passed-real-session-pending",
+  "sourceCommit": "86b9912ca56db42a1d509d282a2000cf643c4a90",
+  "candidate": {
+    "version": "0.21.0",
+    "releaseId": "0.21.0-20260728T025512Z",
+    "deployedToProduction": false,
+    "archive": {
+      "name": "hechao-api-0.21.0-20260728T025512Z.tar.gz",
+      "bytes": 45574718,
+      "sha256": "5FFE55E5905B2BBB08B3564E7B16AE952B4B5DF26ABC99C4988334114B4EE3B9"
+    },
+    "binary": {
+      "bytes": 104448051,
+      "sha256": "4725BD6CB5556B8F8353F5C8D9F295E671B5110A797C93E6886BFC7C6D74239E"
+    },
+    "smokeScript": {
+      "path": "deploy/linux/smoke-test-protocol-translation.sh",
+      "sha256": "5C4044B18B9F375B1FAF9E030B5349AF0D9D654D1687EF53075071EF6B685FC5",
+      "bashParserPassed": true
+    }
+  },
+  "databaseClone": {
+    "sourceBackup": "/var/backups/hechao-unified-account/20260727T230119Z/launcher-database.dump",
+    "sourceBackupSha256": "025061B836A02983FF0C376CD0D51A0760217B387F4E1ADB728864DDD2C6A6D8",
+    "pgRestoreEntries": 177,
+    "migration018Applied": true,
+    "existingTargetCountWithTranslationEnabledAfterMigration": 0,
+    "existingTargetCountWithNullTranslationFlagAfterMigration": 0,
+    "syntheticIdentityUsed": true,
+    "realPlayerIdentityIncluded": false
+  },
+  "isolatedRuntime": {
+    "listener": "127.0.0.1:18093",
+    "publicListenerCreated": false,
+    "candidateLogErrorCount": 0,
+    "checks": [
+      {
+        "sessionServer": "pvp",
+        "targetServer": "lobby",
+        "targetTranslationEnabled": false,
+        "reason": "MinecraftVersionMismatch"
+      },
+      {
+        "sessionServer": "pvp",
+        "targetServer": "lobby",
+        "targetTranslationEnabled": true,
+        "reason": "Allowed"
+      },
+      {
+        "sessionServer": "lobby",
+        "targetServer": "pvp",
+        "targetTranslationEnabled": false,
+        "reason": "MinecraftVersionMismatch"
+      },
+      {
+        "sessionServer": "pvp",
+        "targetServer": "pvp",
+        "targetTranslationEnabled": false,
+        "reason": "Allowed"
+      },
+      {
+        "sessionServer": "pvp",
+        "targetServer": "activity",
+        "targetTranslationEnabled": true,
+        "reason": "ClientProfileMismatch"
+      },
+      {
+        "sessionServer": "pvp",
+        "targetServer": "lobby",
+        "targetTranslationEnabled": false,
+        "reason": "MinecraftVersionMismatch",
+        "phase": "after-reset"
+      }
+    ]
+  },
+  "automatedTests": {
+    "dotnet": {
+      "passed": 368,
+      "failed": 0
+    },
+    "api": {
+      "passed": 178,
+      "failed": 0
+    }
+  },
+  "production": {
+    "release": "0.20.2-20260727T225819Z",
+    "serviceActiveAfterTest": true,
+    "systemdRestartsAfterTest": 0,
+    "releaseSymlinkUnchangedDuringTest": true,
+    "processStateUnchangedDuringTest": true,
+    "databaseMigrationStateBefore": 17,
+    "databaseMigrationStateAfter": 17,
+    "enabledInCatalog": false
+  },
+  "cleanup": {
+    "temporaryDatabaseRemoved": true,
+    "temporarySystemdUnitRemoved": true,
+    "temporaryWorkDirectoryRemoved": true
+  },
+  "privacy": {
+    "minecraftUuidIncluded": false,
+    "minecraftNameIncluded": false,
+    "internalTokenIncluded": false,
+    "databaseCredentialIncluded": false
+  },
+  "limitations": [
+    "The candidate has not been deployed to production.",
+    "The production catalog and production Via JAR state were not changed.",
+    "A cloned-database authorization check does not authenticate a real Microsoft account or transfer a Minecraft session.",
+    "A real PVP 1.20.1 client must still execute /hub into the 1.21.11 lobby and verify identity, skin, permissions, inventory, commands, movement, reconnect and normal exit."
+  ]
+}

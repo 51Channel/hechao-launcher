@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.11.15`、API `0.20.2`
+> 源码版本：启动器 `0.11.15`、API `0.21.0` 候选（未部署）
 > 生产状态：API `0.20.2-20260727T225819Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程

@@ -1,7 +1,7 @@
 # PVP 跨版本返回大厅设计
 
-> 状态：代码已实现、默认关闭；回环隔离代理的 1.20.1/1.21.11 status 协议协商已通过，
-> 真实登录、`/hub` 和生产灰度仍待完成。
+> 状态：代码已实现、默认关闭；回环隔离代理的 1.20.1/1.21.11 status 协议协商及
+> API `0.21.0` 生产数据库副本验收均已通过，真实登录、`/hub` 和生产灰度仍待完成。
 >
 > 生产 Velocity 的 ViaVersion/ViaBackwards 仍为 `.disabled`，大厅目录开关仍为关闭，
 > 本阶段没有重启代理或游戏服。
@@ -90,6 +90,14 @@ HubCommand 均正常加载，错误日志为 `0`。通过 SSH 本地转发执行
 协议 `763` 和 `774` 分别协商为 `763` 和 `774`。这证明 Via 协议链和状态握手可用，
 不替代真实正版登录与后端转服。机器可读证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)。
+
+API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据库，只监听
+`127.0.0.1:18093` 完成授权验收。迁移 018 将全部既有目标初始化为关闭；PVP 到大厅
+在关闭时返回 `MinecraftVersionMismatch`，只为大厅开启后返回 `Allowed`，大厅到
+PVP 仍拒绝。即使临时为 Activity 开启协议转换，PVP 档案仍被
+`ClientProfileMismatch` 拒绝。开关重置后再次恢复版本拒绝。生产 API、数据库、
+Via JAR 和目录均未变化，临时资源已删除。证据见
+[`API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`](evidence/API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json)。
 
 ## 5. 生产启用顺序
 

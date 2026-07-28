@@ -1,0 +1,59 @@
+# API 0.21.0 候选记录
+
+> 状态：隔离验收通过，未部署生产。
+>
+> 源码提交：`86b9912ca56db42a1d509d282a2000cf643c4a90`
+>
+> 当前生产仍为：`0.20.2-20260727T225819Z`
+
+## 1. 变更
+
+- 迁移 018 为 `launcher.servers` 增加
+  `allow_protocol_translation boolean NOT NULL DEFAULT false`。
+- 管理后台可按目标服务器启用协议转换授权；迁移不会自动开放任何现有目标。
+- 非首次转服仍先执行账号、停服、等级和单服规则，再检查来源档案与目标档案。
+- 只有目标服开关启用时才跳过 Minecraft 版本一致性检查。
+- Fabric、Forge 与 NeoForge 目标仍要求客户端档案匹配，协议转换开关不能绕过。
+
+## 2. 候选制品
+
+| 制品 | 大小 | SHA-256 |
+| --- | ---: | --- |
+| `hechao-api-0.21.0-20260728T025512Z.tar.gz` | `45,574,718` | `5FFE55E5905B2BBB08B3564E7B16AE952B4B5DF26ABC99C4988334114B4EE3B9` |
+| `Hechao.Api` | `104,448,051` | `4725BD6CB5556B8F8353F5C8D9F295E671B5110A797C93E6886BFC7C6D74239E` |
+
+发布物为 `linux-x64` 自包含单文件及管理后台静态资源，不含 PDB、环境文件或凭据。
+
+## 3. 自动与隔离验收
+
+- 完整 `.NET` 测试 `368/368`，其中 API `178/178`。
+- 远端 `bash -n` 通过；API 主机没有安装 ShellCheck，因此未声称执行 ShellCheck。
+- 使用生产备份
+  `/var/backups/hechao-unified-account/20260727T230119Z/launcher-database.dump`
+  恢复独立临时数据库，备份 SHA-256 与生产发布记录一致，`pg_restore` 可读
+  `177` 个目录项。
+- 候选只监听 `127.0.0.1:18093`，迁移 018 只应用到临时数据库。
+- 所有既有目标迁移后均为 `false`，空值为 `0`。
+- PVP 到大厅默认返回 `MinecraftVersionMismatch`；只为大厅开启后返回 `Allowed`。
+- 大厅到 PVP 仍返回 `MinecraftVersionMismatch`，证明开关按目标服生效。
+- 即使临时为 Activity 开启协议转换，PVP 档案进入 NeoForge Activity 仍返回
+  `ClientProfileMismatch`。
+- 重置开关后 PVP 到大厅再次返回 `MinecraftVersionMismatch`。
+- 候选日志错误数为 `0`。
+
+验收使用临时合成身份，不读取或记录真实玩家 UUID、名称、令牌或数据库凭据。机器可读
+证据见
+[`API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json`](evidence/API_PROTOCOL_TRANSLATION_CANDIDATE_2026-07-28.json)。
+
+## 4. 生产不变性
+
+测试前后生产 API 软链、进程状态和 systemd 重启计数保持不变，生产数据库迁移均为
+`17`。测试结束后临时数据库、transient systemd 单元和工作目录均已删除。生产
+ViaVersion/ViaBackwards 与目录开关没有启用。
+
+## 5. 发布门槛
+
+该候选只证明迁移和授权门槛在生产数据副本上正确，不证明真实协议转换。发布生产前
+仍需使用正确 PVP 1.20.1 客户端连接回环隔离代理并完成 `/hub`，核对 UUID、皮肤、
+权限、物品栏、命令、移动、重连和正常退出。真实会话通过前不发布 API `0.21.0`，
+不启用生产 Via JAR，也不切换 Velocity `enforce`。
