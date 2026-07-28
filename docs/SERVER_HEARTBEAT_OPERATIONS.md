@@ -1,7 +1,8 @@
 # Server heartbeat operations
 
 > Production state: API `0.20.2-20260727T225819Z` and collector `0.2.0` deployed.
-> Since 2026-07-28, `owl5` collects its four local targets and `owl9` collects `pvp`.
+> Since 2026-07-28, `owl5` collects its four local targets and `owl9` collects the
+> HorrorPrank backend through the legacy Velocity target `pvp`.
 > Both one-minute scheduled tasks are outbound-only and read-only.
 > The pre-hardening collector binary is retained in
 > `C:\ProgramData\Hechao\StatusCollector\backups\redirect-hardening-20260723T125705Z`.
@@ -79,7 +80,14 @@ The production target ownership is:
 | `mc-vps-primary` | `survival2` | `127.0.0.1:25565` | `100` | Survival2 or its active replacement |
 | `mc-vps-primary` | `survival1` | `127.0.0.1:19228` | `20` | Survival1 |
 | `mc-vps-primary` | `activity` | `127.0.0.1:25568` | `30` | NeoForge activity server |
-| `owl9-pvp` | `pvp` | `127.0.0.1:25565` | `20` | PVP Fabric backend on `owl9` |
+| `owl9-pvp` | `pvp` | `127.0.0.1:25565` | `20` | HorrorPrank Fabric backend on `owl9`; `pvp` is a legacy target name |
+
+The row above does not describe the separate Purpur PVP backend at
+`E:\MinecraftServer`. Both owl9 backends bind local port `25565`, so the collector's
+configured `dataPath=C:\mc\server` and target `pvp` are valid only while HorrorPrank is
+the selected backend. Before starting the Purpur PVP server, the operator must take the
+HorrorPrank catalog/heartbeat route out of service. See
+[`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md).
 
 Only add a target after it exists in `launcher.servers`; the API rejects unknown targets
 atomically.
@@ -105,7 +113,7 @@ One offline target does not abort the remaining batch and is not a reason to sta
 
 ## Owl9 collector split
 
-On 2026-07-28 the `pvp` probe was moved from `mc-vps-primary` to a dedicated
+On 2026-07-28 the HorrorPrank probe, under the legacy target `pvp`, was moved from `mc-vps-primary` to a dedicated
 `owl9-pvp` collector. The clear heartbeat token was transferred through standard input,
 protected immediately with machine-scope DPAPI, and was never placed in arguments,
 configuration, logs, or repository files.
@@ -117,7 +125,7 @@ The `owl9` installation passed all of the following checks:
 - the one-minute task runs as `SYSTEM` and returns `0`;
 - the API row remains owned by `owl9-pvp` after both collectors crossed a full schedule
   cycle;
-- the stopped PVP server is reported with `ProcessNotRunning` and
+- the stopped HorrorPrank server is reported with `ProcessNotRunning` and
   `MetricsFileMissing`, while the local disk capacity is still reported;
 - Java process count and the local `25565` listener remained zero before and after
   deployment.
@@ -166,8 +174,9 @@ Unregister-ScheduledTask -TaskName 'Hechao Launcher Server Heartbeats' -Confirm:
 ```
 
 Restore the backed-up five-target JSON on `owl5` with a validated atomic replacement
-before removing the `owl9` task, so the API does not lose the PVP heartbeat. Never run
-both PVP probes long-term because the last writer owns the row.
+before removing the `owl9` task, so the API does not lose the HorrorPrank heartbeat
+stored under the legacy target `pvp`. Never run both probes long-term because the last
+writer owns the row.
 
 If the API is rolled back to a release before migration 4, the heartbeat table can remain.
 Database migrations are forward-only and must not be deleted manually.

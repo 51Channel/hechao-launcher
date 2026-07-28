@@ -2,7 +2,10 @@
 
 > 启动器源码版本：`0.11.16`
 > 发布器源码版本：`0.9.0`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份档案已由 API `0.20.2` 托管，启动器 `0.11.16` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测与私有 OSS 灰度发布闭环。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案已由 API `0.20.2` 托管，启动器 `0.11.16` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测与私有 OSS 灰度发布闭环。
+>
+> owl9 边界：上述恐怖整蛊档案只对应 `C:\mc\server`，不对应
+> `E:\MinecraftServer` 的真正 PVP 服。
 
 ## 1. 安全边界
 
@@ -165,7 +168,7 @@ NeoForge 活动档案已于 `2026-07-24` 正式发布：
 - 已使用生产信任包验签，从本地对象全新安装后逐文件复验，并成功构建 `net.neoforged.fml.startup.Client`、NeoForge `21.11.42` 与 `mc.hehe11.fun` 参数；没有启动 Minecraft。
 - 生产验收确认 Member 无权取得活动清单、Participant 可以取得签名清单；全部 `203` 个新增对象和 `12` 个共享对象样本均从 OSS 下载并重算 SHA-256。活动服始终保持 `Closed 0/30`。完整证据见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
-PVP Fabric 档案已于 `2026-07-25` 正式发布：
+恐怖整蛊 Fabric 档案（历史 ID `pvp-fabric-1.20.1`）已于 `2026-07-25` 正式发布：
 
 - 干净源：`artifacts/client-sources/pvp-fabric-1.20.1-1.0.0`，来自 `H:\MC\Minecraft 1.20.1 Fabric - 玩家客户端`；日常客户端原目录未修改。
 - 档案：`pvp-fabric-1.20.1` / `1.0.0` / Minecraft `1.20.1` / Fabric `0.16.14` / Java `17`。
@@ -280,7 +283,7 @@ API `0.17.0` 起，签名清单不再通过 `publish-profile.sh` 直接覆盖活
 明确退出，避免绕过验签、通道修订和审计。完整后台流程见
 [`ADMIN_CATALOG_OPERATIONS.md`](ADMIN_CATALOG_OPERATIONS.md)。
 
-`2026-07-25` 发布 PVP 档案时，发布器对 `201` 个共享对象执行远端长度与 SHA-256 元数据校验并跳过，只上传 `3,547` 个缺失对象。发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；清单快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，归档 SHA-256 `CD99BB5059B58EA834B0BFF8D3A27D061C32439ED5E7D9E079ECA21DC4CBCF0F`。清单于 `2026-07-25T20:12:10.4811149+00:00` 原子激活。
+`2026-07-25` 发布恐怖整蛊档案时，发布器对 `201` 个共享对象执行远端长度与 SHA-256 元数据校验并跳过，只上传 `3,547` 个缺失对象。发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；清单快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，归档 SHA-256 `CD99BB5059B58EA834B0BFF8D3A27D061C32439ED5E7D9E079ECA21DC4CBCF0F`。清单于 `2026-07-25T20:12:10.4811149+00:00` 原子激活。
 
 ### 启动器安装包内部灰度
 

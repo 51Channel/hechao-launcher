@@ -1,0 +1,50 @@
+{
+  "capturedAt": "2026-07-28T13:24:29.1616966+08:00",
+  "hostAlias": "owl9",
+  "scope": "read-only dual-backend identity mapping",
+  "sharedNetwork": {
+    "localPort": 25565,
+    "publicEndpoint": "owl9.vipi9.top:19243",
+    "simultaneousStartAllowed": false
+  },
+  "horrorPrank": {
+    "displayName": "恐怖整蛊",
+    "serverRoot": "C:\\mc\\server",
+    "serverType": "Fabric",
+    "minecraftVersion": "1.20.1",
+    "startupTask": "HorrorPrank",
+    "javaRoot": "C:\\mc\\jre\\jdk-21.0.11+10-jre",
+    "minimumHeap": "2G",
+    "maximumHeap": "5G",
+    "onlineMode": true,
+    "running": true,
+    "processId": 7216,
+    "legacyCatalogServerId": "pvp",
+    "legacyVelocityTarget": "pvp",
+    "legacyClientProfileId": "pvp-fabric-1.20.1",
+    "heartbeatDataPath": "C:\\mc\\server"
+  },
+  "pvp": {
+    "displayName": "PVP",
+    "serverRoot": "E:\\MinecraftServer",
+    "serverType": "Purpur",
+    "serverVersion": "1.21.11-2568-f57bd86",
+    "startupScript": "E:\\MinecraftServer\\start.bat",
+    "dedicatedScheduledTaskFound": false,
+    "javaRoot": "E:\\MinecraftServer\\jdk",
+    "minimumHeap": "2G",
+    "maximumHeap": "4G",
+    "onlineMode": false,
+    "running": false,
+    "catalogServerId": null,
+    "velocityTarget": null,
+    "clientProfileId": null
+  },
+  "invariants": [
+    "The two backends are distinct and must never be operated as one server.",
+    "Only one backend may bind local port 25565 at a time.",
+    "The legacy identifier pvp in the launcher platform currently means HorrorPrank, not the Purpur PVP backend.",
+    "The Purpur PVP backend was not modified, started, stopped, or added to the launcher during this inventory."
+  ],
+  "secretsIncluded": false
+}

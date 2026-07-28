@@ -1,4 +1,4 @@
-# PVP 跨版本返回大厅设计
+# 恐怖整蛊跨版本返回大厅设计（历史 PVP 标识）
 
 > 状态：代码已实现、默认关闭；回环隔离代理的 1.13/1.20.1/1.21.11 status
 > 协议协商、受限凭据探针及 API `0.21.0` 生产数据库副本验收均已通过，真实登录、
@@ -6,10 +6,14 @@
 >
 > 生产 Velocity 的 ViaVersion/ViaBackwards 仍为 `.disabled`，大厅目录开关仍为关闭，
 > 本阶段没有重启生产代理或游戏服。
+>
+> 命名边界：本文文件名及历史内部标识 `PVP` / `pvp` 实际指 owl9 的恐怖整蛊
+> Fabric `1.20.1` 服务端 `C:\mc\server`，不指真正的 PVP Purpur 服务端
+> `E:\MinecraftServer`。本设计和当前验收均不得操作后者。
 
 ## 1. 问题
 
-PVP 使用 Minecraft `1.20.1` Fabric 客户端，大厅使用 Minecraft `1.21.11`
+恐怖整蛊使用 Minecraft `1.20.1` Fabric 客户端，大厅使用 Minecraft `1.21.11`
 Paper。现网 `HubCommand-1.0.0` 已由 Velocity 全局注册 `/hub`、`/lobby` 和 `/l`，
 命令本身没有缺失；它会直接请求连接 `lobby`。当前失败边界有两层：
 
@@ -32,8 +36,8 @@ Paper。现网 `HubCommand-1.0.0` 已由 Velocity 全局注册 `/hub`、`/lobby`
 - 目标为 Fabric、Forge 或 NeoForge 时，客户端档案匹配仍会继续检查；协议转换开关
   不能绕过模组档案保护。
 
-生产目标只计划对 `lobby` 开启。这样 PVP 可以返回大厅，但大厅不能用基础客户端
-跨版本进入 PVP，其他服务器也不会自动接受不同版本。
+生产目标只计划对 `lobby` 开启。这样恐怖整蛊可以返回大厅，但大厅不能用基础客户端
+跨版本进入恐怖整蛊，其他服务器也不会自动接受不同版本。
 
 ## 3. 现有制品核对
 
@@ -62,9 +66,9 @@ ViaVersion。实际类目录包含从 `1.20` 到 `1.21.11` 的完整逆向协议
 2. 临时代理加载 HubCommand、ViaVersion、ViaBackwards 与独立 Authorizer；只使用
    隔离 API 生成的短时凭据，不读取生产授权凭据。
 3. 通过 SSH 本地端口转发连接临时代理，不开放新的公网端口。
-4. 使用正确 PVP 1.20.1 档案进入 PVP，再执行 `/hub` 进入 1.21.11 大厅。
+4. 使用正确的恐怖整蛊 1.20.1 档案进入恐怖整蛊服，再执行 `/hub` 进入 1.21.11 大厅。
 5. 核对 UUID、皮肤、权限、物品栏、聊天、命令树、移动和正常退出。
-6. 重复进入 PVP、返回大厅和再次进入，至少保留两次成功样本。
+6. 重复进入恐怖整蛊、返回大厅和再次进入，至少保留两次成功样本。
 7. 停止临时代理并删除临时监听；确认生产 Velocity、游戏服进程和配置未变化。
 
 任何解码错误、物品错位、命令异常、身份变化或后端断线都算失败。
@@ -102,20 +106,20 @@ API 管理器把生产备份恢复到独立数据库，只监听 `127.0.0.1:1809
 2026-07-28 已在 `E:\Velocity-PvpReturn-Staging` 启动只监听
 `127.0.0.1:25579` 的隔离代理。ViaVersion/ViaBackwards `5.11.0` 与
 HubCommand、Authorizer `0.3.1` 候选均正常加载，错误日志为 `0`。`0.3.1` 会在
-每次实际放行后更新会话来源，避免 PVP -> Lobby 后仍以 PVP 作为下一次兼容判定来源；
+每次实际放行后更新会话来源，避免恐怖整蛊 -> Lobby 后仍以恐怖整蛊作为下一次兼容判定来源；
 生产 Authorizer 仍为 `0.3.0`。隔离 Authorizer
 保持 `monitor`，凭据认证探针返回预期的 `PlayerNotLinked`。通过 SSH 本地转发执行
 [`Test-MinecraftProtocolStatus.ps1`](../tools/acceptance/Test-MinecraftProtocolStatus.ps1)，
-协议 `393`、`763` 和 `774` 分别协商为相同协议号。它证明最低支持边界、PVP 版本和
+协议 `393`、`763` 和 `774` 分别协商为相同协议号。它证明最低支持边界、恐怖整蛊版本和
 大厅版本的 Via 状态链可用，不替代真实正版登录与后端转服。机器可读证据见
 [`PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json`](evidence/PVP_RETURN_PROTOCOL_STAGING_2026-07-28.json)。
 候选修复与隔离部署见
 [`VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md`](VELOCITY_AUTHORIZER_RELEASE_0.3.1_CANDIDATE.md)。
 
 API `0.21.0` 候选随后使用生产备份恢复独立临时 PostgreSQL 数据库，只监听
-`127.0.0.1:18093` 完成授权验收。迁移 018 将全部既有目标初始化为关闭；PVP 到大厅
+`127.0.0.1:18093` 完成授权验收。迁移 018 将全部既有目标初始化为关闭；恐怖整蛊到大厅
 在关闭时返回 `MinecraftVersionMismatch`，只为大厅开启后返回 `Allowed`，大厅到
-PVP 仍拒绝。即使临时为 Activity 开启协议转换，PVP 档案仍被
+恐怖整蛊仍拒绝。即使临时为 Activity 开启协议转换，恐怖整蛊档案仍被
 `ClientProfileMismatch` 拒绝。开关重置后再次恢复版本拒绝。生产 API、数据库、
 Via JAR 和目录均未变化。初次自动验收资源已经删除；为真实会话准备的同构隔离副本
 随后重新创建并保持回环监听，测试完成后必须执行 `stop` 和显式确认的 `remove`。
@@ -130,9 +134,9 @@ Via JAR 和目录均未变化。初次自动验收资源已经删除；为真实
 2. 在后台确认所有服务器的协议转换开关均为关闭。
 3. 备份 Velocity 插件目录、配置、计划任务状态和最新日志。
 4. 在维护窗口启用 ViaVersion/ViaBackwards 并重启 Velocity，先验证同版本
-   Lobby、Survival1、Survival2、Activity 和 PVP 首次路由均无回归。
+   Lobby、Survival1、Survival2、Activity 和恐怖整蛊首次路由均无回归。
 5. 只为 `lobby` 开启协议转换并确认审计记录。
-6. 使用 PVP 档案真实执行 `/hub`、再次进入 PVP、断线重连和正常退出。
+6. 使用恐怖整蛊档案真实执行 `/hub`、再次进入恐怖整蛊、断线重连和正常退出。
 7. 保持 Velocity 授权为 `monitor`，直到四级账号和全部转服路径通过。
 
 ## 6. 回滚
@@ -143,5 +147,5 @@ Via JAR 和目录均未变化。初次自动验收资源已经删除；为真实
 
 ## 7. 完成标准
 
-只有隔离代理、生产同版本回归、PVP `/hub`、成功重连、身份/皮肤/权限和日志脱敏
-全部通过后，才把“PVP 返回大厅”从待验收改为已完成。
+只有隔离代理、生产同版本回归、恐怖整蛊 `/hub`、成功重连、身份/皮肤/权限和日志脱敏
+全部通过后，才把“恐怖整蛊返回大厅”从待验收改为已完成。

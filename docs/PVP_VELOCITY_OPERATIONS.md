@@ -1,4 +1,9 @@
-# PVP Velocity modern 接入运维
+# 恐怖整蛊 Velocity modern 接入运维
+
+> 命名边界：本文历史文件名及内部目标 `pvp` 保持兼容，但本文操作对象始终是
+> `C:\mc\server` 的恐怖整蛊 Fabric 服，不是
+> `E:\MinecraftServer` 的真正 PVP Purpur 服。双服务端映射与共享端口约束见
+> [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md)。
 
 > 当前状态：FabricProxy-Lite `2.6.0` 与 CrossStitch `0.1.6` 已部署到
 > `owl9`，配置与 `owl5` Velocity 的 modern forwarding 密钥一致。正确 1.20.1
@@ -20,7 +25,7 @@
   -> C:\mc\server, Fabric 1.20.1, internal port 25565
 ```
 
-PVP 后端继续使用 `online-mode=true`。FabricProxy-Lite 的
+恐怖整蛊后端继续使用 `online-mode=true`。FabricProxy-Lite 的
 `hackOnlineMode=true` 让后端接受携带有效 modern forwarding 数据的 Velocity
 连接，同时拒绝没有有效转发数据的普通直连。不得把后端改成离线模式。
 
@@ -49,7 +54,7 @@ Fabric API 已包含它要求的 `fabric-networking-api-v1`。
 
 CrossStitch 使用官方 Modrinth `0.1.6`。Velocity 官方兼容说明建议内容型 Fabric
 服务端安装该兼容层，以处理代理无法原生理解的自定义 Brigadier 参数类型。第一次
-真实 PVP 路由在 Velocity 侧出现后端包解码失败，服务端玩家随即断开；安装后启动日志
+真实恐怖整蛊路由在 Velocity 侧出现后端包解码失败，服务端玩家随即断开；安装后启动日志
 同时列出 CrossStitch `0.1.6`、FabricProxy-Lite `2.6.0` 并在 `12.293` 秒完成。
 随后使用计划任务 `HorrorPrank` 持久启动，SSH 会话退出后任务、Java 进程与
 `25565` 监听均继续存在。正确赫朝客户端经统一入口被定向到 `pvp`，后端稳定连接
@@ -58,7 +63,7 @@ CrossStitch 使用官方 Modrinth `0.1.6`。Velocity 官方兼容说明建议内
 转发数据后得到 `This server requires you to connect with Velocity.`。客户端最终
 正常关闭，启动器记录退出码 `0`。
 
-第一次后续重连在统一入口读取阶段超时，未进入 Velocity 认证，也未到达 PVP 后端；
+第一次后续重连在统一入口读取阶段超时，未进入 Velocity 认证，也未到达恐怖整蛊后端；
 客户端仍停留在主菜单并由管理员正常关闭，退出码仍为 `0`。因此核心 modern
 forwarding 已通过，但“断线后再次成功进入”仍是单独的未完成门槛。
 
@@ -85,7 +90,7 @@ forwarding 已通过，但“断线后再次成功进入”仍是单独的未完
 deploy/windows/pvp-velocity/Install-PvpVelocityForwarding.ps1
 ```
 
-脚本执行前强制检查 PVP Java 进程和内部 `25565` 监听均为空；执行后也不会启动
+脚本执行前强制检查恐怖整蛊 Java 进程和内部 `25565` 监听均为空；执行后也不会启动
 服务器。它会核对官方 JAR 描述、服务端 `online-mode=true`、配置安全项、密钥摘要、
 启动脚本和计划任务定义，并在写入前创建受限备份。
 
@@ -96,30 +101,30 @@ deploy/windows/pvp-velocity/Install-PvpVelocityForwarding.ps1
 1. 使用原有 `HorrorPrank` 任务持久启动，没有使用随 SSH 会话结束的临时子进程。
 2. FabricProxy-Lite `2.6.0` 与 CrossStitch `0.1.6` 同时加载，后端完成启动。
 3. `owl9-pvp` 心跳与后端监听在线，采集器所有权保持在 `owl9-pvp`。
-4. 已绑定 Minecraft 的真实账号从统一 Velocity 入口稳定进入 PVP。
+4. 已绑定 Minecraft 的真实账号从统一 Velocity 入口稳定进入恐怖整蛊服。
 5. 启动 UUID 与后端语音、缓存和玩家数据身份一致；证据只保留布尔结果，不保存
    UUID 或指纹。名称、皮肤和有效游戏内权限仍需专用账号目视核对。
 6. 公网直连被 modern forwarding 明确拒绝。
-7. Velocity、PVP 与客户端同一时间窗口的日志已脱敏留证，正常退出码为 `0`。
+7. Velocity、恐怖整蛊与客户端同一时间窗口的日志已脱敏留证，正常退出码为 `0`。
 
 仍需完成：
 
 1. 再做一次成功断线重连，排除已记录的统一入口单次超时。
 2. 使用专门验收账号目视核对皮肤和有效游戏内权限。
 3. 验证 API 短暂失败以及与当前档案兼容的 NPC/命令转服路径。
-4. PVP 为 `1.20.1`，大厅为 `1.21.11`；当前 ViaVersion/ViaBackwards 禁用，
+4. 恐怖整蛊服为 `1.20.1`，大厅为 `1.21.11`；当前 ViaVersion/ViaBackwards 禁用，
    授权层也会硬拒绝版本不匹配。目标服级协议转换开关已在开发分支实现且默认关闭，
    回环隔离代理的三档协议状态握手、受限凭据探针及 API `0.21.0` 数据库副本门槛
    已通过；会话来源修复候选 `0.3.1` 的 `20/20` 测试和隔离加载也已通过，仍须按
    [`PVP_RETURN_ROUTE_DESIGN.md`](PVP_RETURN_ROUTE_DESIGN.md) 完成真实登录、
    `/hub` 和生产灰度，现有 `/hub` 仍不得记为通过。
 
-只有剩余步骤全部通过后，才可把 PVP 全路径记为“生产验收完成”。在此之前，
+只有剩余步骤全部通过后，才可把恐怖整蛊全路径记为“生产验收完成”。在此之前，
 Velocity 继续保持 `monitor`，不得因为静态文件已部署就切换 `enforce`。
 
 ## 5. 回滚
 
-回滚前必须由管理员优雅关闭 PVP，并再次确认没有 Java 进程和 `25565` 监听。
+回滚前必须由管理员优雅关闭恐怖整蛊服，并再次确认没有 Java 进程和 `25565` 监听。
 若只回滚本次兼容修复，移出 `crossstitch-0.1.6.jar` 并使用
 `C:\mc\manual-backups\pvp-crossstitch-20260728T003311Z` 复核。若回滚整个 modern
 forwarding，再移出 `FabricProxy-Lite-2.6.0.jar`；原配置在没有模组时不会生效，

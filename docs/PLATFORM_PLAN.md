@@ -3,6 +3,11 @@
 > 文档状态：启动器 `0.11.16` 私有 OSS 灰度候选、API `0.20.2` 生产、五服指标已加载、Velocity `0.3.0` monitor 且客户端不兼容硬拒绝
 > 更新日期：2026-07-28
 > 范围：玩家登录器、客户端分发、账号与权限、管理员后台、阿里云后端、Minecraft VPS 接入、HTTPS 与迁移
+>
+> owl9 命名边界：现有目录 ID、Velocity 目标和档案中的 `pvp` 实际代表
+> `C:\mc\server` 的恐怖整蛊 Fabric 服。真正 PVP 服是
+> `E:\MinecraftServer` 的 Purpur 服，当前未接入启动器且不在本轮验收范围。
+> 详见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md)。
 
 ## 1. 项目目标
 
@@ -42,13 +47,13 @@
 
 ## 3. 当前已完成内容
 
-当前 `hechao-launcher` 启动器 `0.11.16` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，API `0.21.0` 为未部署的隔离候选，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，生产 Velocity 授权插件为 `0.3.0`，会话来源修复 `0.3.1` 仅在隔离代理。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity/PVP 单账号首次路由；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。PVP CrossStitch 修复后的身份转发、直连拒绝、稳定连接和正常退出也已通过。默认关闭、目标服级的协议转换授权开关已通过 API 生产数据库副本验收，ViaVersion/ViaBackwards 回环代理也已完成 `393/763/774` status 协商，受限凭据 API 探针返回预期 `PlayerNotLinked`；Authorizer `0.3.1` 的 `20/20` 测试和隔离加载通过，仍待真实 `/hub`、成功重连和皮肤/权限目视核对。五个游戏目标均已加载指标代理，三份 Paper 世界正式归档、异机完整解压和隔离恢复通过。仍未完成的是四级真实账号、兼容 NPC 转服、PVP 专用回程/重连、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
+当前 `hechao-launcher` 启动器 `0.11.16` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，API `0.21.0` 为未部署的隔离候选，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，生产 Velocity 授权插件为 `0.3.0`，会话来源修复 `0.3.1` 仅在隔离代理。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity/恐怖整蛊单账号首次路由；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。恐怖整蛊 CrossStitch 修复后的身份转发、直连拒绝、稳定连接和正常退出也已通过。默认关闭、目标服级的协议转换授权开关已通过 API 生产数据库副本验收，ViaVersion/ViaBackwards 回环代理也已完成 `393/763/774` status 协商，受限凭据 API 探针返回预期 `PlayerNotLinked`；Authorizer `0.3.1` 的 `20/20` 测试和隔离加载通过，仍待真实 `/hub`、成功重连和皮肤/权限目视核对。五个游戏目标均已加载指标代理，三份 Paper 世界正式归档、异机完整解压和隔离恢复通过。仍未完成的是四级真实账号、兼容 NPC 转服、恐怖整蛊专用回程/重连、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
 
-owl9 的 PVP Fabric `1.20.1` 后端已经安装官方 FabricProxy-Lite `2.6.0`，
+owl9 的恐怖整蛊 Fabric `1.20.1` 后端已经安装官方 FabricProxy-Lite `2.6.0`，
 并与 owl5 Velocity 的 modern forwarding 密钥完成摘要核对和 ACL 加固。
-PVP 保持 `online-mode=true`，部署全程没有启动或重启游戏服；当前仍需服主下次
+恐怖整蛊保持 `online-mode=true`，部署全程没有启动或重启游戏服；当前仍需服主下次
 手动开服完成真实统一入口、身份转发和直连拒绝的说明已被后续持久任务验收取代。
-PVP `1.20.1` 与大厅 `1.21.11` 当前不能直接 `/hub`。专用回程已选定为
+恐怖整蛊 `1.20.1` 与大厅 `1.21.11` 当前不能直接 `/hub`。专用回程已选定为
 ViaVersion/ViaBackwards 加目标服级授权开关，代码默认关闭，必须先按
 [`PVP_RETURN_ROUTE_DESIGN.md`](PVP_RETURN_ROUTE_DESIGN.md) 完成隔离验证与重连复测。
 
@@ -82,7 +87,7 @@ ViaVersion/ViaBackwards 加目标服级授权开关，代码默认关闭，必�
 - [x] 受管 Java 21 运行时、Fabric `0.19.2` 进程构建和 Velocity 入口参数。
 - [x] 独立的 DPAPI 发布密钥、OSS 只读 API 身份，以及只在对象前缀内执行元数据校验与写入的发布工具。
 - [x] Velocity 3.4 / Java 21 异步授权插件、三种运行模式和无自动重启安装脚本。
-- [x] owl9 PVP Fabric 后端的 FabricProxy-Lite modern forwarding 静态部署、密钥摘要核对、受限 ACL 和无启动回滚备份。
+- [x] owl9 恐怖整蛊 Fabric 后端的 FabricProxy-Lite modern forwarding 静态部署、密钥摘要核对、受限 ACL 和无启动回滚备份。
 - [x] 启动器在进程启动前申请一次性授权，API 拒绝时不创建 Minecraft 进程。
 - [x] Minecraft 正常/异常退出记录、异常提示和玩家主动生成本地脱敏诊断包。
 - [x] 退出所有设备、撤销待使用后台/进服授权和密码确认解除 Minecraft 身份绑定。
@@ -95,7 +100,7 @@ ViaVersion/ViaBackwards 加目标服级授权开关，代码默认关闭，必�
 - [x] 管理后台账号停用/恢复、单设备与全部会话撤销、Minecraft UUID 封禁及事务审计。
 - [x] 管理后台客户端档案创建、签名清单导入、Test/Gray/Production、稳定分桶、暂停与自动回滚。
 
-更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、PVP Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.2` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前开发分支 `.NET 369/369`、Velocity `20/20`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。生产 Velocity `0.3.0` 以 `monitor` 加载，`0.3.1` 仅在隔离代理，生产客户端兼容矩阵 `8/8`；基础、Activity 与 PVP 专用档案的单账号真实首次路由已通过。真实普通、VIP、管理员、服主、兼容 NPC 转服、PVP 专用回程和成功重连仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
+更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、恐怖整蛊 Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.2` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前开发分支 `.NET 369/369`、Velocity `20/20`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。生产 Velocity `0.3.0` 以 `monitor` 加载，`0.3.1` 仅在隔离代理，生产客户端兼容矩阵 `8/8`；基础、Activity 与恐怖整蛊专用档案的单账号真实首次路由已通过。真实普通、VIP、管理员、服主、兼容 NPC 转服、恐怖整蛊专用回程和成功重连仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
 
 ## 4. 推荐总体架构
 
@@ -333,7 +338,7 @@ ViaVersion/ViaBackwards 加目标服级授权开关，代码默认关闭，必�
 - [x] 上传构建产物并导入由离线发布器签名的清单。
 - [x] 服务端重新计算并验证签名信封 SHA-256，不信任浏览器提交值。
 - [x] 发布到测试、灰度和正式通道。
-- [x] 查看下载量、失败率和客户端版本分布；启动器 `0.11.16` 为私有 OSS 灰度候选，API `0.20.2` 已通过生产回归；管理员 MFA 已登记，仍待 PVP 隔离回程复测和多人事件样本。
+- [x] 查看下载量、失败率和客户端版本分布；启动器 `0.11.16` 为私有 OSS 灰度候选，API `0.20.2` 已通过生产回归；管理员 MFA 已登记，仍待恐怖整蛊隔离回程复测和多人事件样本。
 - [x] 一键暂停问题版本并把通道回滚到上一份未暂停发布。
 
 ### 11.3 用户与权限
@@ -444,7 +449,7 @@ POST /v1/internal/luckperms/snapshot
 
 ### 阶段 0：资产盘点与保护现有业务
 
-- [x] 两台 Minecraft VPS 与阿里云实例均已完成无密码资产清单；`owl9` 已恢复公钥登录并记录 Windows、4 逻辑核、8 GiB、两卷磁盘和停服状态，独立只出站 PVP 采集器也已上线。
+- [x] 两台 Minecraft VPS 与阿里云实例均已完成无密码资产清单；`owl9` 已恢复公钥登录并记录 Windows、4 逻辑核、8 GiB、两卷磁盘和双服务端状态，代表恐怖整蛊历史目标 `pvp` 的独立只出站采集器也已上线。
 - [x] 记录现有端口、进程、域名、DNS、反向代理和证书。
 - [ ] 完成快照、配置备份、数据库备份和回滚演练。
 - [x] 确认 `hechao.world` 与 `api.hechao.world` 健康检查基线。
@@ -476,14 +481,14 @@ POST /v1/internal/luckperms/snapshot
 - [x] 建立私有 OSS 和 `download.hechao.world`，完成 CNAME 与 HTTPS。
 - [x] 完成清单生成、签名、上传、发布和回滚；独立发布身份与 `4,900` 个不可变对象已上线。
 - [x] 启动器完成断点续传、校验、修复和原子切换，生产公钥已内嵌。
-- [x] 建立基础、Vanilla、Forge、NeoForge 活动、PVP Fabric 与 DollNight 六份生产签名档案。
+- [x] 建立基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric 与 DollNight 六份生产签名档案。
 
 完成标准：干净电脑可以安装，断网后可续传，篡改文件会被修复，坏版本可以回滚。
 
 ### 阶段 4：真正启动和进服
 
 - [x] 完成 Microsoft OAuth 和 Minecraft 会话实现，Minecraft API 许可已经通过；仍需完成真实账号验收。
-- [x] 完成基础 Fabric、Vanilla、Forge、活动 NeoForge、PVP Fabric 和 DollNight 档案；按档案使用 Java 21 或 Java 17、独立目录和统一 Velocity 入口。
+- [x] 完成基础 Fabric、Vanilla、Forge、活动 NeoForge、恐怖整蛊 Fabric 和 DollNight 档案；按档案使用 Java 21 或 Java 17、独立目录和统一 Velocity 入口。
 - [x] 完成 Velocity 入口连接、短时启动授权、首次目标定向和客户端兼容保护；插件 `0.3.0` 已以 `monitor` 加载，不兼容目标硬拒绝。
 - [x] 全部目标映射已完成；继续做真实四级账号灰度后切换 Velocity `enforce`。
 - [x] 处理正常/异常退出和本地脱敏诊断。
@@ -505,17 +510,17 @@ POST /v1/internal/luckperms/snapshot
 
 按依赖关系，下一步只做以下事项：
 
-1. 完成两台服务器与阿里云的规格、端口、域名和服务盘点（已完成；`owl9` 的公钥管理基线、独立只出站状态采集与 PVP modern forwarding 静态兼容已上线，真实路由等待服主手动开服灰度）。
+1. 完成两台服务器与阿里云的规格、端口、域名和服务盘点（已完成；`owl9` 的公钥管理基线、双服务端边界、恐怖整蛊独立只出站状态采集与 modern forwarding 静态兼容已上线）。
 2. 确认现有 `hechao.world`、`api.hechao.world` 的监听方式和反向代理（已完成）。
 3. 确定新域名并部署不影响旧业务的 HTTPS 测试 API（已完成）。
 4. Minecraft Java API 访问许可已经通过；完成真实普通、VIP、管理员和服主账号验收。
 5. 定义数据库表和 API 契约，用真实目录 API 替换演示数据（已完成）。
-6. Velocity `0.3.0` 已加载为 `monitor`，所有目标、替换服目录和客户端兼容矩阵已核对；下一步安装正确 Activity/PVP 档案，再用真实四级账号、NPC、`/hub` 与断线重连灰度。
+6. Velocity `0.3.0` 已加载为 `monitor`，所有目标、替换服目录和客户端兼容矩阵已核对；下一步使用正确 Activity/恐怖整蛊档案，再用真实四级账号、NPC、`/hub` 与断线重连灰度。
 7. 创建独立发布 RAM 身份，将 AccessKey 保存为 DPAPI 密文；v3 仅允许 `hechaoworld/objects/*` 与 `hechaoworld/releases/launcher/*` 的 `GetObject/PutObject`（已完成）。
 8. 上传已校验的基础档案对象，部署 API `0.5.0`，再原子发布清单和目录记录（已完成）。
 9. 使用普通、VIP、管理员和服主正版账号完成下载、安装、Java 17/21、Fabric/NeoForge 启动和 Velocity 进服验收。
 10. 部署按 Velocity 目标的只读心跳、API `0.6.0` 和一分钟计划任务（已完成，不控制 Minecraft 进程）。
-11. API `0.20.2`、客户端兼容保护、五服指标、数据库/平台异地恢复和三服世界正式备份/隔离恢复均已验收；继续完成正确 Activity/PVP 客户端、真实四级账号和多人灰度。
+11. API `0.20.2`、客户端兼容保护、五服指标、数据库/平台异地恢复和三服世界正式备份/隔离恢复均已验收；继续完成正确 Activity/恐怖整蛊客户端、真实四级账号和多人灰度。
 
 ## 18. 待确认事项
 

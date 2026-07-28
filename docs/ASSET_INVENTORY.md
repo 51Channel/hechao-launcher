@@ -85,7 +85,7 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 - API `0.20.2` 切换前一致性备份目录为 `/var/backups/hechao-unified-account/20260727T230119Z`；数据库 dump SHA-256 为 `025061B836A02983FF0C376CD0D51A0760217B387F4E1ADB728864DDD2C6A6D8`，清单 SHA-256 为 `2C9FDD49DCF30A0AE4C30AC770E6A2DFB928E0B87D14964522C335A12DB1024D`，`pg_restore --list` 可读取 177 个目录项。
 - Nginx 日志脱敏切换前配置位于 `/var/backups/hechao-nginx-privacy/20260727T150915Z`；五个 server block 已使用不含查询字符串与 Referer 的 `hechao_privacy` 格式，配置检查和平滑 reload 通过。
 - 活动档案 `1.0.10` 发布前数据库备份 `/var/backups/hechao-launcher/database/hechao-launcher-20260724T120517Z.dump` 为 `64,196` 字节，SHA-256 为 `5CDF0991013A99A74622BFF23C37C9EC9C999418BB023306F18C33F9987F74A8`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-activity-neoforge-1.0.10-20260724T120517Z`，其中清单归档 SHA-256 为 `5C918781D08434FC581E0F69E91ABF08F5A2E3F2756F3FC985606D51F45F9ACE`。数据库校验和与 `pg_restore --list` 均通过。
-- PVP 档案 `1.0.0` 发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，清单归档 SHA-256 为 `cd99bb5059b58ea834b0bff8d3a27d061c32439ed5e7d9e079eca21dc4cbcf0f`。
+- 恐怖整蛊档案 `1.0.0`（历史 ID `pvp-fabric-1.20.1`）发布前数据库备份为 `/var/backups/hechao-launcher/database/hechao-launcher-20260725T202241Z.dump`；发布快照目录为 `/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`，清单归档 SHA-256 为 `cd99bb5059b58ea834b0bff8d3a27d061c32439ed5e7d9e079eca21dc4cbcf0f`。
 - Vanilla、Forge 与 DollNight 发布前统一备份目录为 `/var/backups/hechao-launcher/profile-publication/20260726T182024Z`；数据库备份 SHA-256 为 `183CA211FA431656FCD982305ACEA1C7859579D6D0BA9DB2511F947C37117334`，清单归档 SHA-256 为 `3A5380329322D61BAC16E8FBCB84C6036D90E44E5399A95DEA3B077AA613D884`。校验和与 `pg_restore --list` 均通过。
 - 启动器 `0.11.6` 小范围测试前数据库基线 `/var/backups/hechao-launcher/database/hechao-launcher-20260726T084308Z.dump` 为 `85,620` 字节，SHA-256 为 `199e8811da08e9f9c2f1db88866f9dd51574ab9b043b6ba147b3092ad0413c36`；备份服务结果、校验和与 `pg_restore --list` 均通过。
 - `hechao-launcher-db-backup.timer` 已启用，每日生成 PostgreSQL custom-format 备份并保留 14 天；首份备份校验通过，`pg_restore --list` 可读取 36 个对象。
@@ -144,7 +144,7 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 - API `0.20.2-20260727T225819Z` 基于提交 `c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57`。单文件为 `104,444,979` 字节，SHA-256 为 `327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6`；无 PDB 归档为 `45,574,298` 字节，SHA-256 为 `AE5561DFA85FB59476C22D66CB2AF0781112345B82BED8E9D7825DBC34559B32`。客户端会话来源、Minecraft 版本和模组档案兼容保护、`360/360` .NET、`13/13` Velocity 及生产矩阵 `8/8` 通过，当前在线。
 - 正式基础档案为 `base-1.21.11` / `1.0.5`，清单 SHA-256 为 `65667E6198C3ECF75DF79C686C87C244F3D5AC21B170364BD998A1DF5111640E`；包含 `4,902` 个文件、`4,900` 个去重对象和 `874,147,856` 字节。
 - NeoForge 活动正式档案为 `activity-neoforge-1.21.11` / `1.0.10`，清单 SHA-256 为 `0E059BBFE9FAB6770204DE547567CA64420A45E8364FA93206BB316E8AE2B69F`；包含 `4,754` 个文件与对象、`621,732,083` 字节。Meccha SHA-256 `C72511BEF3B0CC2C1A1C97E1C33709901714460191F9549FD461E71215534E9E` 与活动服一致；生产信任验签、发布物闭合验收、全量安装、逐文件复验、NeoForge `21.11.42` 进程构建、分级授权和真实 OSS 下载均通过。发布时目录保持 `Closed 0/30`；2026-07-28 已受控开服并取得指标，正确客户端真实进服仍待验收。
-- PVP 正式档案为 `pvp-fabric-1.20.1` / `1.0.0`，清单 SHA-256 为 `A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6`；包含 `3,749` 个逻辑文件、`3,748` 个去重对象和 `885,821,291` 字节。加载器为 Fabric `0.16.14`，运行时为 Java `17`；生产上传新增 `3,547` 个对象、校验跳过 `201` 个对象，当前目录显示名为“恐怖整蛊”。
+- 恐怖整蛊正式档案为 `pvp-fabric-1.20.1` / `1.0.0`，清单 SHA-256 为 `A5BCBBA71C69E85F0ACE4000C1983F8C9C1C1D7F546AFA36C53AE39C895706E6`；包含 `3,749` 个逻辑文件、`3,748` 个去重对象和 `885,821,291` 字节。加载器为 Fabric `0.16.14`，运行时为 Java `17`；生产上传新增 `3,547` 个对象、校验跳过 `201` 个对象，当前目录显示名为“恐怖整蛊”。
 - Vanilla 正式档案为 `vanilla-1.21.11` / `1.0.0`，清单 SHA-256 为 `C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865`；包含 `4,671` 个文件与对象、`549,101,696` 字节，运行时为 Java `21`，已绑定 Survival1。
 - Forge 正式档案为 `forge-1.20.1` / `1.0.0`，清单 SHA-256 为 `D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C`；包含 `3,667` 个文件与对象、`725,771,107` 字节，加载器为 Forge `47.4.0`，运行时为 Java `17`。当前未绑定服务器，因此不会出现在玩家目录。
 - DollNight 正式档案为 `dollnight-1.21.11` / `1.0.0`，清单 SHA-256 为 `6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575`；包含 `4,902` 个逻辑文件、`4,900` 个去重对象和 `874,147,856` 字节，加载器为 Fabric `0.19.2`，运行时为 Java `21`，已绑定 DollNight。三份新增档案的生产信任验签、闭合校验、全量安装、逐文件复验、进程构建、权限和对象下载回归均通过；当前解决方案测试为 `251/251`。
@@ -239,7 +239,7 @@ NeoForge 1.21.11 指标代理
 `D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6`，部署记录在
 `C:\manual-backups\mod-server-metrics-20260727T183834Z`。两个受限备份目录均已
 禁止继承，暂存目录已清理；部署时没有启动游戏服。2026-07-28 受控开服后，
-Activity 为 `20 TPS / 5.7745 MSPT`，PVP 为 `20 TPS / 12.7157 MSPT`。
+Activity 为 `20 TPS / 5.7745 MSPT`，恐怖整蛊为 `20 TPS / 12.7157 MSPT`。
 
 2026-07-26 曾因两个每日任务并发创建约 3.4 GB 的不完整 ZIP，导致 `E:` 空间耗尽。两个损坏归档和一个 0 字节大厅归档已验证后清理；一份 `7,963,944,183` 字节的历史备份在核对文件名与大小后迁移到 `C:\manual-backups\E-drive-overflow`。2026-07-27 部署的 VSS 世界备份引擎位于 `C:\ProgramData\Hechao\WorldBackup\Invoke-WorldBackup.ps1`，大小 `35,370` 字节，SHA-256 为 `2CC7511C222FEE2D984FD49D150F89355D7C9C48FD7A705FDB3DB047C34CD691`。它会在 Essentials 短暂冻结期间创建 VSS 一致快照，握手后后台压缩，按源文件最坏情况做磁盘预检，使用全局状态锁、`.partial`、ZIP 条目复核、SHA-256 旁车、原子完成、独立保留和精确卷影清理。
 
@@ -272,44 +272,59 @@ RDP 为 `19242`，主机名为 `WIN-802L81OVQVB`。系统是 Windows Server 2022
 Standard `10.0.20348`，1 颗 AMD EPYC 7R13、4 个逻辑处理器、8.00 GiB 内存。
 `C:` 为 39.13 GiB，盘点时剩余 8.88 GiB；`E:` 为 10.00 GiB，剩余 9.25 GiB。
 
-当前服务根目录是 `C:\mc\server`，实际版本为 Minecraft `1.20.1`、Fabric Loader
-`0.16.14`，不是历史记录中的 `1.21.11`。启动脚本使用随服 Java 21，参数为
-`-Xms2G -Xmx5G`；`server.properties` 为 `online-mode=true`、`max-players=20`、
-`view-distance=8`、`simulation-distance=6`、内部端口 `25565`。公网游戏入口为
-`owl9.vipi9.top:19243`，语音入口为 UDP `19267 -> 24454`。
+2026-07-28 13:24 复核确认 owl9 存在两个不同的服务端：
 
-服务在本次盘点时处于关闭状态：Java 进程 `0`，内部 `25565` 没有监听。手动计划任务
-`HorrorPrank` 存在且状态为 `Ready`，触发器未启用、无下次运行时间；本轮没有执行该
-任务，也没有修改文件、计划任务、防火墙或进程。
+| 服务端 | 根目录 | 核心 | 启动入口 | 当前状态 |
+| --- | --- | --- | --- | --- |
+| 恐怖整蛊 | `C:\mc\server` | Fabric `1.20.1` | 计划任务 `HorrorPrank` | 运行中 |
+| PVP | `E:\MinecraftServer` | Purpur `1.21.11-2568-f57bd86` | `start.bat` | 已停止 |
+
+两个服务端都配置内部端口 `25565`，因此不能同时启动，并复用公网游戏入口
+`owl9.vipi9.top:19243`。赫朝启动器当前显示的“恐怖整蛊”历史内部 ID、
+Velocity 目标和档案名分别是 `pvp`、`pvp` 与 `pvp-fabric-1.20.1`；这些标识
+不代表 `E:\MinecraftServer` 的真正 PVP 服。完整强制边界见
+[`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md)。
+
+恐怖整蛊启动脚本使用随服 Java 21，参数为 `-Xms2G -Xmx5G`；
+`server.properties` 为 `online-mode=true`、`max-players=20`、
+`view-distance=8`、`simulation-distance=6`。真正 PVP 服使用
+`E:\MinecraftServer\jdk`、`-Xms2G -Xmx4G` 和 Purpur 插件栈，当前没有赫朝
+启动器目录记录、客户端档案或独立 Velocity 目标。
+
+早期只读盘点时恐怖整蛊服处于关闭状态；后续受控验收已由 `HorrorPrank` 任务持久
+启动。13:24 复核时只有一个 Java 进程，PID `7216`，可执行文件位于
+`C:\mc\jre\jdk-21.0.11+10-jre` 并监听 `25565`，证明当前运行的是恐怖整蛊服；
+真正 PVP 服未运行。本轮双服务端识别没有修改、启动或停止任何游戏服。
 
 只出站状态采集器 `0.2.0` 已于 2026-07-28 部署到
 `C:\ProgramData\Hechao\StatusCollector`。目录 ACL 仅允许 `SYSTEM` 和本机管理员，
-一分钟计划任务以 `SYSTEM` 运行并连续返回 `0`。API 的 `pvp` 行现由
+一分钟计划任务以 `SYSTEM` 运行并连续返回 `0`。API 中代表恐怖整蛊的历史 `pvp` 行现由
 `collector_instance=owl9-pvp` 独占，停服状态准确报告
 `ProcessNotRunning`、`MetricsFileMissing` 和 C 盘容量；跨过两台采集器的完整周期后
 没有再被 `owl5` 覆盖。部署前后 Java 进程与 `25565` 监听均为空，没有启动、停止或
-重启游戏服。
+重启游戏服。该采集器的 `dataPath` 固定为 `C:\mc\server`，不代表真正 PVP 服；
+若改开 PVP，必须先切换或停用恐怖整蛊的目录与心跳逻辑，禁止只凭共享端口冒充。
 
-PVP 的静态 Velocity 兼容改造已完成。官方 FabricProxy-Lite `2.6.0` 已安装到
+恐怖整蛊服的静态 Velocity 兼容改造已完成。官方 FabricProxy-Lite `2.6.0` 已安装到
 `C:\mc\server\mods`，JAR SHA-256 为
 `D4719179353D790453061C14B4148994FF431AC57A126555B3009CE9A748D6C7`。
 原有配置在核对 `hackOnlineMode=true`、`hackEarlySend=true`、
 `hackMessageChain=true` 和转发密钥摘要后原样复用，配置内容与
-`server.properties`、启动脚本、计划任务定义均未改变。PVP 继续保持
+`server.properties`、启动脚本、计划任务定义均未改变。恐怖整蛊服继续保持
 `online-mode=true`，没有有效 modern forwarding 数据的直连会被模组拒绝。
 owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本机管理员，
 密钥内容未改变，Velocity 进程也未重启。
 
-第一次正确 PVP 客户端真实路由在 Velocity 与后端之间出现自定义包解码失败。已在
+第一次正确恐怖整蛊客户端真实路由在 Velocity 与后端之间出现自定义包解码失败。已在
 `save-all flush`、优雅停服和独立备份后安装官方 CrossStitch `0.1.6`；JAR 为
 `5,321` 字节，SHA-1 为 `aba735301c683ed43d5f3361f532bf38f28116f2`。修复后的
 `HorrorPrank` 持久任务同时列出 CrossStitch `0.1.6`、FabricProxy-Lite `2.6.0`
-并在 SSH 退出后继续监听。真实会话由统一入口定向到 PVP，稳定 `586` 秒且没有新的
+并在 SSH 退出后继续监听。真实会话由统一入口定向到历史目标 `pvp`（恐怖整蛊），稳定 `586` 秒且没有新的
 解码错误；启动 UUID 与后端语音、缓存和玩家数据的内存哈希一致，公网直连被
 `velocity:player_info` 明确拒绝，正常退出码为 `0`。一次随后重连在 Velocity
-认证前超时，仍需补做成功样本。PVP 先前空载基线为
+认证前超时，仍需补做成功样本。恐怖整蛊服先前空载基线为
 `20 TPS / 12.7157 MSPT`；皮肤和有效游戏内权限仍需专用账号目视核对。
-PVP 为 1.20.1，而大厅为 1.21.11，
+恐怖整蛊服为 1.20.1，而大厅为 1.21.11，
 不能把不兼容的 `/hub` 当作可用回程。按已选方案完成隔离验证与真实客户端灰度后，再决定
 是否收窄后端防火墙来源并推进 Velocity `enforce`。
 
@@ -317,7 +332,7 @@ PVP 为 1.20.1，而大厅为 1.21.11，
 [`evidence/OWL9_ASSET_BASELINE_2026-07-28.json`](evidence/OWL9_ASSET_BASELINE_2026-07-28.json)，
 状态采集部署证据见
 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)，
-PVP modern forwarding 部署证据见
+恐怖整蛊 modern forwarding 部署证据（历史文件名保留 `PVP`）见
 [`evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_PVP_VELOCITY_MODERN_DEPLOYMENT_2026-07-28.json)，
 首次真实路由与 CrossStitch 修复见
 [`evidence/CLIENT_ACTIVITY_PVP_ROUTE_AND_PVP_FIX_2026-07-28.json`](evidence/CLIENT_ACTIVITY_PVP_ROUTE_AND_PVP_FIX_2026-07-28.json)。
@@ -326,9 +341,9 @@ PVP modern forwarding 部署证据见
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 三份正式世界归档均为 `Completed`，远端 ZIP、SHA-256 旁车和条目数一致，异机完整解压与恢复检查已通过；当前 `E:` 仍保留约 12.74 GiB，后续继续按保留策略监控空间。
-3. `owl9` 的密钥认证、实时规格盘点、只出站状态采集和 PVP modern forwarding 均已完成；CrossStitch 修复后的真实进服、身份转发、直连拒绝、稳定连接和正常退出已通过。仍需成功重连、皮肤/权限目视核对与专用回程，再决定后端防火墙来源收窄。
+3. `owl9` 的密钥认证、双服务端实时盘点、恐怖整蛊只出站状态采集和 modern forwarding 均已完成；CrossStitch 修复后的真实进服、身份转发、直连拒绝、稳定连接和正常退出已通过。真正 PVP 服保持独立且未纳入本轮启动器验收。仍需恐怖整蛊成功重连、皮肤/权限目视核对与专用回程，再决定后端防火墙来源收窄。
 4. 启动器数据库、论坛与 Sub2API 的异地加密、真实 OSS 上传/下载、定时任务、告警恢复和异地主机隔离恢复均已验收；当前不再存在 RAM v5 或平台数据异地副本阻塞。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。Activity 与 PVP 单账号真实首次路由已通过；四级账号、兼容 NPC 转服、PVP 专用回程、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。Activity 与恐怖整蛊单账号真实首次路由已通过；四级账号、兼容 NPC 转服、恐怖整蛊专用回程、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态
@@ -347,7 +362,7 @@ PVP modern forwarding 部署证据见
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
-- 状态心跳：错误凭据返回 401；五个目标由 `owl5` 四目标与 `owl9-pvp` 单目标分布式写入，活动服与 PVP 离线被隔离，目录实时人数与维护状态覆盖通过
+- 状态心跳：错误凭据返回 401；五个目标由 `owl5` 四目标与代表恐怖整蛊的历史 `owl9-pvp` 单目标分布式写入，活动服与恐怖整蛊离线被隔离，目录实时人数与维护状态覆盖通过
 - 运行遥测：认证批次、幂等去重、30 天留存、三窗口聚合和后台页面已部署；生产已收到一条 `0.11.14` 的 `LauncherStarted/Success`，仍待三个窗口与更多事件类型验收
 - 诊断上传：编号 `1e707520` 已由真实 `0.11.14` 主动确认上传；上传端、生产端与管理员下载文件均为 `707` 字节且 SHA-256 为 `1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92`，上传授权、上传完成与管理员下载审计均存在
 - 数据库应用角色：非超级用户，无建库和建角色权限

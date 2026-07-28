@@ -5,6 +5,10 @@
 > 已加载：Paper/Purpur、NeoForge 与 Fabric 指标代理 `0.1.0`
 >
 > 安全边界：只读；不包含服务器启动、停止、重启、RCON 或控制台命令
+>
+> owl9 命名边界：指标目标 `pvp` 和采集器 `owl9-pvp` 只采集
+> `C:\mc\server` 的恐怖整蛊 Fabric 服，不代表
+> `E:\MinecraftServer` 的真正 PVP Purpur 服。
 
 ## 1. 数据链路
 
@@ -48,7 +52,7 @@ API 迁移 `16` 扩展当前心跳，并建立
 | `survival2` | Windows 采集器 | Paper/Purpur 代理 | 已加载并取得 TPS/MSPT/GC |
 | `survival1` | Windows 采集器 | Paper/Purpur 代理 | 已加载并取得 TPS/MSPT/GC |
 | `activity` | Windows 采集器 | NeoForge 1.21.11 代理 | 已加载并取得 TPS/MSPT/GC |
-| `pvp` | `owl9` Windows 采集器 | Fabric 1.20.1 代理 | 已加载并取得 TPS/MSPT/GC |
+| `pvp`（恐怖整蛊历史目标） | `owl9` Windows 采集器 | Fabric 1.20.1 代理 | 已加载并取得 TPS/MSPT/GC |
 
 没有指标代理不会影响在线状态或其他目标上报，只显示固定的“未配置/文件缺失”问题。
 
@@ -96,7 +100,7 @@ src\Hechao.ModServerMetricsAgent\neoforge\build\libs\HechaoServerMetrics-NeoForg
 5. 更新一分钟计划任务；不得启动任何 Minecraft 或 Velocity 进程。
 6. 使用 `deploy/windows/server-metrics/Install-ServerMetricsAgent.ps1` 备份并复制
    JAR 到三个 Paper/Purpur `plugins` 目录。
-7. 仅在活动服和 PVP 已关闭时，使用
+7. 仅在活动服和恐怖整蛊服已关闭时，使用
    `deploy/windows/mod-server-metrics/Install-ModServerMetricsAgent.ps1` 校验端口、
    Loader 元数据和 SHA-256，再把对应 JAR 原子部署到 `mods`。
 8. 保持游戏服原状态。服主以后自行启动对应服务端后，才验证代理加载和 JSON 新鲜度。
@@ -115,14 +119,14 @@ PID 均为同一组，计划任务手工与自动运行均返回成功。
 2026-07-28 又将 `pvp` 从 `owl5` 的远端状态探针拆到 `owl9` 本机只出站采集器。
 `owl5` 配置现保留四个本机目标，`owl9-pvp` 只查询
 `127.0.0.1:25565` 和 `C:\mc\server`。跨过两边完整计划周期后，API 中该行仍由
-`owl9-pvp` 写入，任务返回 `0`，磁盘容量入库；部署前后 PVP Java 进程与端口监听
+`owl9-pvp` 写入，任务返回 `0`，磁盘容量入库；部署前后恐怖整蛊 Java 进程与端口监听
 均为空。证据见
 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json)。
 
 2026-07-28 已在停服状态把 NeoForge 代理静态部署到
 `E:\ActivityNeoForge\mods`，把 Fabric 代理静态部署到 `C:\mc\server\mods`。
 安装器复核目标端口、Loader 元数据和制品 SHA-256；每服只保留一个启用 JAR，部署
-记录目录 ACL 已收紧，上传暂存已清理。活动服目标进程、PVP 全部 Java 进程和两个
+记录目录 ACL 已收紧，上传暂存已清理。活动服目标进程、恐怖整蛊全部 Java 进程和两个
 监听端口在部署后仍为空，没有启动或重启游戏服。证据见
 [`evidence/MOD_SERVER_METRICS_DEPLOYMENT_2026-07-28.json`](evidence/MOD_SERVER_METRICS_DEPLOYMENT_2026-07-28.json)。
 
@@ -150,7 +154,7 @@ Get-ScheduledTaskInfo -TaskName 'Hechao Launcher Server Heartbeats'
 Get-Content -Raw 'E:\LobbyServer\plugins\HechaoServerMetrics\metrics.json'
 ```
 
-第二条命令以及活动服/PVP 的同路径文件只在对应服务端已加载代理时存在；停服时文件
+第二条命令以及活动服/恐怖整蛊的同路径文件只在对应服务端已加载代理时存在；停服时文件
 可以保留，但采集器会结合进程状态和新鲜度判断，不把旧快照当作在线指标。
 
 2026-07-28 受控开服后的单用户空载基线：

@@ -1,4 +1,9 @@
-# PVP Fabric 档案 1.0.0 发布记录
+# 恐怖整蛊 Fabric 档案 1.0.0 发布记录
+
+> `pvp-fabric-1.20.1`、服务器 ID `pvp` 与 Velocity 目标 `pvp` 是历史内部标识。
+> 本档案绑定 `C:\mc\server` 的恐怖整蛊服，不绑定
+> `E:\MinecraftServer` 的真正 PVP 服。见
+> [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md)。
 
 > 档案 ID：`pvp-fabric-1.20.1`
 > 版本：`1.0.0`
@@ -50,4 +55,4 @@
 - 发布前清单快照：`/var/backups/hechao-launcher/profile-publications/pre-pvp-fabric-1.0.0-20260725T202252Z`
 - 清单快照归档 SHA-256：`CD99BB5059B58EA834B0BFF8D3A27D061C32439ED5E7D9E079ECA21DC4CBCF0F`
 
-回滚只恢复上一份目录记录和签名清单，不删除已上传的内容寻址对象。PVP 档案的 Java 17、Fabric 版本和独立 `.minecraft` 不能与 1.21.11 档案混用。
+回滚只恢复上一份目录记录和签名清单，不删除已上传的内容寻址对象。恐怖整蛊档案的 Java 17、Fabric 版本和独立 `.minecraft` 不能与 1.21.11 档案混用。
