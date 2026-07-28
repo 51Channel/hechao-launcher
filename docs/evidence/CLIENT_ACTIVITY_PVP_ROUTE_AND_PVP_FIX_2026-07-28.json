@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
-  "capturedAtUtc": "2026-07-28T00:59:55Z",
-  "purpose": "Record production Activity routing, the first PVP route failure, and the scoped CrossStitch compatibility deployment without claiming the pending PVP retest.",
+  "schemaVersion": 2,
+  "capturedAtUtc": "2026-07-28T01:48:24Z",
+  "purpose": "Record production Activity routing, the first PVP route failure, the scoped CrossStitch deployment, and the completed core PVP modern-forwarding retest without overstating the pending reconnect and return-path gates.",
   "activity": {
     "profileId": "activity-neoforge-1.21.11",
     "profileVersion": "1.0.10",
@@ -48,18 +48,70 @@
       "doneSeconds": 12.293
     },
     "currentAudit": {
-      "port25565Listening": false,
+      "persistentTask": "HorrorPrank",
+      "persistentTaskState": "Running",
+      "processIdAtCapture": 7216,
+      "processStartedAtUtc": "2026-07-28T01:19:07.8555344Z",
+      "port25565Listening": true,
       "gracefulStopMarkerAfterStartup": false,
-      "interpretation": "The deployment is present and loaded in the last startup, but sustained service and the repaired player route are not yet accepted."
+      "interpretation": "The administrator-controlled persistent task remained running after the SSH session ended and accepted the repaired real-player route."
     }
   },
+  "pvpCoreRetest": {
+    "profileId": "pvp-fabric-1.20.1",
+    "profileVersion": "1.0.0",
+    "launcherVersion": "0.11.15",
+    "javaMajorVersion": 17,
+    "velocityRouteObservedAtLocal": "2026-07-28T09:27:26+08:00",
+    "velocityInitialTarget": "lobby",
+    "velocityGrantedTarget": "pvp",
+    "backendJoinObserved": true,
+    "backendVoiceAuthenticationObserved": true,
+    "stableBackendSessionSeconds": 586,
+    "backendInvalidPacketOrDecoderErrorsAfterJoin": 0,
+    "identity": {
+      "launchArgumentMatchedBackendVoiceIdentity": true,
+      "backendUserCacheMatched": true,
+      "latestPlayerDataMatched": true,
+      "comparison": "SHA-256 over normalized UUID compared in memory; no UUID or fingerprint value retained"
+    },
+    "directBackendProbe": {
+      "endpoint": "owl9 public PVP backend",
+      "protocol": 763,
+      "loginPluginChannel": "velocity:player_info",
+      "rejected": true,
+      "reason": "This server requires you to connect with Velocity."
+    },
+    "normalExit": {
+      "gracefulWindowCloseAccepted": true,
+      "velocityDisconnectObservedAtLocal": "2026-07-28T09:37:12+08:00",
+      "backendLeaveObservedAtLocal": "2026-07-28T09:37:12+08:00",
+      "launcherRecordedExitCode": 0
+    },
+    "routeAcceptance": "passed-core-modern-forwarding"
+  },
+  "pvpReconnectAttempt": {
+    "clientProcessStartedAtLocal": "2026-07-28T09:37:47+08:00",
+    "connectionAttemptAtLocal": "2026-07-28T09:37:59+08:00",
+    "clientReadTimeoutAtLocal": "2026-07-28T09:38:30+08:00",
+    "velocityAuthenticationReached": false,
+    "backendJoinObserved": false,
+    "clientStayedOpenAtMainMenu": true,
+    "clientClosedGracefully": true,
+    "launcherRecordedExitCode": 0,
+    "acceptance": "pending-clean-retest",
+    "interpretation": "This attempt timed out before Velocity authentication and does not contradict the earlier successful modern-forwarding route, but reconnect must not be marked passed until a later clean attempt succeeds."
+  },
   "remainingAcceptance": [
-    "Start the PVP backend in the administrator-controlled persistent server window.",
-    "Repeat the real PVP client route and verify identity, permissions, stable join, return to hub, reconnect and normal exit.",
+    "Repeat a clean PVP reconnect after the single unified-entry timeout and retain matching Velocity and backend logs.",
+    "Verify skin and effective in-game permissions visually with a dedicated acceptance account.",
+    "Design a dedicated return path because PVP is Minecraft 1.20.1 while the lobby is 1.21.11; do not count the incompatible /hub path as passed.",
+    "Verify the API temporary-failure path and any compatible NPC or command transfer paths.",
     "Keep Velocity in monitor mode until four-tier accounts and all transfer paths pass."
   ],
   "privacy": {
     "minecraftUuidIncluded": false,
+    "minecraftUuidFingerprintIncluded": false,
     "accessTokenIncluded": false,
     "credentialIncluded": false,
     "signedUrlIncluded": false

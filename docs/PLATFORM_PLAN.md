@@ -42,12 +42,13 @@
 
 ## 3. 当前已完成内容
 
-当前 `hechao-launcher` 启动器 `0.11.15` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，Velocity 授权插件为 `0.3.0`。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity 单账号转服；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。PVP 已部署 CrossStitch 服务端兼容修复，仍待持久开服窗口下的真实复测。五个游戏目标均已加载指标代理，三份 Paper 世界正式归档、异机完整解压和隔离恢复通过。仍未完成的是 PVP 修复后真实进服、四级真实账号、NPC/`/hub`/重连、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
+当前 `hechao-launcher` 启动器 `0.11.15` 为私有 OSS 灰度候选；API 生产版本为 `0.20.2-20260727T225819Z`，平台监控器为 `0.1.2`，状态采集器为 `0.2.0`，Velocity 授权插件为 `0.3.0`。C 版五工作区、IconPark 图标、苹方字体、每档案独立 `.minecraft`、共享对象/Java、Windows 安装包、回滚、诊断、统一账号、论坛联动、三通道发布、只读运行状态和统一告警均已生产部署。正确赫朝客户端已完成真实管理员正版登录与 Lobby/Survival1/Survival2/Activity/PVP 单账号首次路由；API 与 Velocity 新增会话来源、Minecraft 版本和模组档案保护，生产矩阵 `8/8`，不兼容目标即使在 monitor 也会拒绝。PVP CrossStitch 修复后的身份转发、直连拒绝、稳定连接和正常退出也已通过，仍待成功重连、皮肤/权限目视核对和专用回程。五个游戏目标均已加载指标代理，三份 Paper 世界正式归档、异机完整解压和隔离恢复通过。仍未完成的是四级真实账号、兼容 NPC 转服、PVP 专用回程/重连、Velocity `enforce`、目录强制登录和 2/3/5/20 人灰度。功能与验收的权威状态见 [`COMPLETION_MATRIX.md`](COMPLETION_MATRIX.md)。
 
 owl9 的 PVP Fabric `1.20.1` 后端已经安装官方 FabricProxy-Lite `2.6.0`，
 并与 owl5 Velocity 的 modern forwarding 密钥完成摘要核对和 ACL 加固。
 PVP 保持 `online-mode=true`，部署全程没有启动或重启游戏服；当前仍需服主下次
-手动开服完成真实统一入口、身份转发、直连拒绝和 `/hub` 验收。
+手动开服完成真实统一入口、身份转发和直连拒绝的说明已被后续持久任务验收取代。
+PVP `1.20.1` 与大厅 `1.21.11` 当前不能直接 `/hub`，仍需专用回程设计与重连复测。
 
 2026-07-28 的生产剩余门槛审计确认：22 个社区账号中只有 1 个完成 Minecraft
 绑定，生产遥测也只有 1 条启动器启动成功；当前有效后台会话为 0。随后五个游戏目标
@@ -92,7 +93,7 @@ PVP 保持 `online-mode=true`，部署全程没有启动或重启游戏服；当
 - [x] 管理后台账号停用/恢复、单设备与全部会话撤销、Minecraft UUID 封禁及事务审计。
 - [x] 管理后台客户端档案创建、签名清单导入、Test/Gray/Production、稳定分桶、暂停与自动回滚。
 
-更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、PVP Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.2` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前解决方案 `.NET 360/360`、Velocity `13/13`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。Velocity `0.3.0` 以 `monitor` 加载，生产客户端兼容矩阵 `8/8`；正确基础档案真实转服通过，Activity/PVP 专用档案真实链路仍待验收。真实普通、VIP、管理员、服主与 NPC/`/hub` 链路仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
+更新、修复和“进入服务器”已经接入真实实现。基础 Fabric、Vanilla、Forge、NeoForge、PVP Fabric 与 DollNight 六份生产签名档案、私有 OSS、API `0.20.2` 与五目标实时心跳均已在线；Survival1 和 DollNight 已绑定各自档案，Forge 保持未绑定直到真实服务器建立。当前解决方案 `.NET 365/365`、Velocity `13/13`、等级代理 `4/4` 与指标代理 `2/2` 测试通过。Velocity `0.3.0` 以 `monitor` 加载，生产客户端兼容矩阵 `8/8`；基础、Activity 与 PVP 专用档案的单账号真实首次路由已通过。真实普通、VIP、管理员、服主、兼容 NPC 转服、PVP 专用回程和成功重连仍待灰度，因此 Velocity `enforce` 和目录强制开关尚未激活。
 
 ## 4. 推荐总体架构
 

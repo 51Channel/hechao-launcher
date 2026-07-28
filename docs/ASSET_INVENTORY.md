@@ -303,10 +303,13 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 第一次正确 PVP 客户端真实路由在 Velocity 与后端之间出现自定义包解码失败。已在
 `save-all flush`、优雅停服和独立备份后安装官方 CrossStitch `0.1.6`；JAR 为
 `5,321` 字节，SHA-1 为 `aba735301c683ed43d5f3361f532bf38f28116f2`。修复后的
-启动日志同时列出 CrossStitch `0.1.6`、FabricProxy-Lite `2.6.0` 并完成启动，但
-当前 `25565` 未监听，不能声称真实路由已修复。PVP 先前空载基线为
-`20 TPS / 12.7157 MSPT`；下一次必须在管理员控制的持久开服窗口复测统一入口、
-UUID/名称/皮肤/权限、直连拒绝和断线重连。PVP 为 1.20.1，而大厅为 1.21.11，
+`HorrorPrank` 持久任务同时列出 CrossStitch `0.1.6`、FabricProxy-Lite `2.6.0`
+并在 SSH 退出后继续监听。真实会话由统一入口定向到 PVP，稳定 `586` 秒且没有新的
+解码错误；启动 UUID 与后端语音、缓存和玩家数据的内存哈希一致，公网直连被
+`velocity:player_info` 明确拒绝，正常退出码为 `0`。一次随后重连在 Velocity
+认证前超时，仍需补做成功样本。PVP 先前空载基线为
+`20 TPS / 12.7157 MSPT`；皮肤和有效游戏内权限仍需专用账号目视核对。
+PVP 为 1.20.1，而大厅为 1.21.11，
 不能把不兼容的 `/hub` 当作可用回程。完成专用回程设计与真实客户端灰度后，再决定
 是否收窄后端防火墙来源并推进 Velocity `enforce`。
 
@@ -323,9 +326,9 @@ PVP modern forwarding 部署证据见
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 三份正式世界归档均为 `Completed`，远端 ZIP、SHA-256 旁车和条目数一致，异机完整解压与恢复检查已通过；当前 `E:` 仍保留约 12.74 GiB，后续继续按保留策略监控空间。
-3. `owl9` 的密钥认证、实时规格盘点、只出站状态采集和 PVP modern forwarding 静态改造均已完成；首次真实路由暴露的后端解码问题已部署 CrossStitch 修复，仍需持久开服窗口下的 1.20.1 客户端复测、直连拒绝与身份转发验收，之后再决定后端防火墙来源收窄。
+3. `owl9` 的密钥认证、实时规格盘点、只出站状态采集和 PVP modern forwarding 均已完成；CrossStitch 修复后的真实进服、身份转发、直连拒绝、稳定连接和正常退出已通过。仍需成功重连、皮肤/权限目视核对与专用回程，再决定后端防火墙来源收窄。
 4. 启动器数据库、论坛与 Sub2API 的异地加密、真实 OSS 上传/下载、定时任务、告警恢复和异地主机隔离恢复均已验收；当前不再存在 RAM v5 或平台数据异地副本阻塞。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。Activity 单账号真实路由已通过；PVP 修复后真实路由、四级账号、NPC 转服、`/hub`、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。Activity 与 PVP 单账号真实首次路由已通过；四级账号、兼容 NPC 转服、PVP 专用回程、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态
