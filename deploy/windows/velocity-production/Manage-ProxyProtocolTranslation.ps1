@@ -249,6 +249,31 @@ function Wait-ListenerState {
     throw "$Label listener on port $Port did not $expected within $TimeoutSeconds seconds."
 }
 
+function Wait-ProcessAndTaskStopped {
+    param(
+        [Parameter(Mandatory)][int]$ProcessId,
+        [Parameter(Mandatory)][string]$TaskName,
+        [Parameter(Mandatory)][int]$TimeoutSeconds,
+        [Parameter(Mandatory)][string]$Label
+    )
+
+    $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $processExists = $null -ne (
+            Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+        )
+        $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction Stop
+        $taskStopped = $task.State -ne 'Running'
+        if (-not $processExists -and $taskStopped) {
+            return
+        }
+
+        Start-Sleep -Milliseconds 500
+    } while ([DateTimeOffset]::UtcNow -lt $deadline)
+
+    throw "$Label process or scheduled task did not fully stop within $TimeoutSeconds seconds."
+}
+
 function Get-TaskAction {
     param([Parameter(Mandatory)][string]$TaskName)
 
@@ -945,11 +970,17 @@ function Stop-LobbyGracefully {
     Invoke-LobbyConsoleCommand `
         -ProcessId $listeners[0].OwningProcess `
         -Command 'stop'
+    $stoppingProcessId = [int]$listeners[0].OwningProcess
     Wait-ListenerState `
         -Port $LobbyPort `
         -Present $false `
         -TimeoutSeconds $ShutdownTimeoutSeconds `
         -Label 'Lobby' | Out-Null
+    Wait-ProcessAndTaskStopped `
+        -ProcessId $stoppingProcessId `
+        -TaskName $LobbyTaskName `
+        -TimeoutSeconds $ShutdownTimeoutSeconds `
+        -Label 'Lobby'
 }
 
 function Stop-VelocityTask {
@@ -961,12 +992,18 @@ function Stop-VelocityTask {
         throw "Expected one Velocity listener on port $VelocityPort."
     }
 
+    $stoppingProcessId = [int]$listeners[0].OwningProcess
     Stop-ScheduledTask -TaskName $VelocityTaskName
     Wait-ListenerState `
         -Port $VelocityPort `
         -Present $false `
         -TimeoutSeconds $ShutdownTimeoutSeconds `
         -Label 'Velocity' | Out-Null
+    Wait-ProcessAndTaskStopped `
+        -ProcessId $stoppingProcessId `
+        -TaskName $VelocityTaskName `
+        -TimeoutSeconds $ShutdownTimeoutSeconds `
+        -Label 'Velocity'
 }
 
 function Start-LobbyAndValidate {
@@ -983,6 +1020,12 @@ function Start-LobbyAndValidate {
         0
     }
 
+    $taskBeforeStart = Get-ScheduledTask `
+        -TaskName $LobbyTaskName `
+        -ErrorAction Stop
+    if ($taskBeforeStart.State -eq 'Running') {
+        throw 'Lobby scheduled task is still running before startup.'
+    }
     Start-ScheduledTask -TaskName $LobbyTaskName
     Wait-ListenerState `
         -Port $LobbyPort `
@@ -1004,15 +1047,27 @@ function Start-LobbyAndValidate {
     if (-not $ready) {
         throw 'Lobby did not reach the Done state.'
     }
-    if ($newLog -match '(?im)/ERROR\]|FATAL|Exception') {
-        throw 'Lobby emitted an error, fatal entry, or exception during startup.'
+    $fatalStartupPattern = (
+        '(?im)Failed to start the minecraft server|' +
+        'Encountered an unexpected exception|' +
+        'FatalStartupException|' +
+        'UnsupportedClassVersionError|' +
+        'Unable to access jarfile|' +
+        'Error loading plugin|' +
+        'Invalid plugin'
+    )
+    if ($newLog -match $fatalStartupPattern) {
+        throw 'Lobby emitted a fatal startup signature.'
     }
 
-    $viaLoaded = (
-        $newLog -match '(?i)ViaVersion' -or
-        $newLog -match '(?i)ViaBackwards'
+    $viaVersionLoaded = (
+        $newLog -match '(?i)\[ViaVersion\] Enabling ViaVersion'
     )
-    if ($viaLoaded -ne $ExpectVia) {
+    $viaBackwardsLoaded = (
+        $newLog -match '(?i)\[ViaBackwards\] Enabling ViaBackwards'
+    )
+    if ($viaVersionLoaded -ne $ExpectVia -or
+        $viaBackwardsLoaded -ne $ExpectVia) {
         throw 'Lobby Via plugin startup ownership did not match the requested state.'
     }
 }
@@ -1033,6 +1088,12 @@ function Start-VelocityAndValidate {
         0
     }
 
+    $taskBeforeStart = Get-ScheduledTask `
+        -TaskName $VelocityTaskName `
+        -ErrorAction Stop
+    if ($taskBeforeStart.State -eq 'Running') {
+        throw 'Velocity scheduled task is still running before startup.'
+    }
     Start-ScheduledTask -TaskName $VelocityTaskName
     Wait-ListenerState `
         -Port $VelocityPort `
