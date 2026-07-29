@@ -730,6 +730,13 @@
                         </select>
                     </label>
                     <label>
+                        服务器角色
+                        <select id="server-role" name="role" required>
+                            <option value="Player">玩家服务器</option>
+                            <option value="Infrastructure">内部基础设施</option>
+                        </select>
+                    </label>
+                    <label>
                         排序值
                         <input id="server-sort-order" name="sortOrder" type="number" min="-100000" max="100000" required>
                     </label>
@@ -748,6 +755,16 @@
                         <span>
                             <strong>允许跨版本协议转换</strong>
                             <small>仅在 Velocity 已部署并验收兼容转换插件时开启。</small>
+                        </span>
+                    </label>
+                    <label class="checkbox-field form-span">
+                        <input id="server-monitoring-enabled"
+                               name="monitoringEnabled"
+                               type="checkbox"
+                               checked>
+                        <span>
+                            <strong>纳入运行监控</strong>
+                            <small>即使不向玩家开放，也继续接收心跳、TPS、MSPT、GC 和告警。</small>
                         </span>
                     </label>
                     <label class="form-span">

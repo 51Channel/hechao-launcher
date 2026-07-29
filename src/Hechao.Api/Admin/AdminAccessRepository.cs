@@ -126,6 +126,7 @@ public sealed class AdminAccessRepository(
             LEFT JOIN launcher.server_access_overrides access_rule
                 ON access_rule.user_id = $1
                AND access_rule.server_id = server.id
+            WHERE server.server_role = 'Player'
             ORDER BY server.sort_order, server.id;
             """;
 
@@ -465,7 +466,11 @@ public sealed class AdminAccessRepository(
         CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT 1 FROM launcher.servers WHERE id = $1 FOR SHARE;
+            SELECT 1
+            FROM launcher.servers
+            WHERE id = $1
+              AND server_role = 'Player'
+            FOR SHARE;
             """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue(serverId);

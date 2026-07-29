@@ -138,7 +138,8 @@ public sealed class ServerHeartbeatRepository(NpgsqlDataSource dataSource)
         const string sql = """
             SELECT DISTINCT velocity_target
             FROM launcher.servers
-            WHERE velocity_target = ANY($1);
+            WHERE monitoring_enabled
+              AND velocity_target = ANY($1);
             """;
 
         var result = new HashSet<string>(StringComparer.Ordinal);

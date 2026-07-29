@@ -2080,6 +2080,11 @@ async Task<IResult> CreateAdminServerAsync(
             {
                 ["clientProfileId"] = ["客户端档案不存在或未启用。"]
             }),
+        AdminCatalogMutationStatus.InfrastructureServer => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["role"] = ["内部基础设施服务器不能转换为玩家服务器或恢复到玩家目录。"]
+            }),
         _ => Results.Problem(
             title: "服务器目录创建失败",
             statusCode: StatusCodes.Status500InternalServerError)
@@ -2603,6 +2608,11 @@ IResult MapAdminMutationResult(AdminCatalogMutationResult result)
             new Dictionary<string, string[]>
             {
                 ["clientProfileId"] = ["客户端档案不存在或未启用。"]
+            }),
+        AdminCatalogMutationStatus.InfrastructureServer => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["role"] = ["内部基础设施服务器不能转换为玩家服务器或恢复到玩家目录。"]
             }),
         _ => Results.Problem(
             title: "服务器目录更新失败",

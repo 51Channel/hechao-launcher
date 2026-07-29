@@ -30,6 +30,8 @@ public static class AdminServerRules
             request.MinimumTier,
             request.ClientProfileId,
             request.VelocityTarget,
+            request.AllowsProtocolTranslation,
+            request.Role,
             request.SortOrder,
             request.Announcement,
             request.OpensAt,
@@ -38,6 +40,11 @@ public static class AdminServerRules
         if (string.IsNullOrWhiteSpace(request.Id) || !IdPattern.IsMatch(request.Id))
         {
             errors["id"] = ["服务器 ID 必须为 2 到 64 位小写字母、数字、点、下划线或短横线。"];
+        }
+
+        if (request.Role == AdminServerRole.Infrastructure && request.IsVisible)
+        {
+            errors["isVisible"] = ["内部基础设施服务器不能出现在玩家目录中。"];
         }
 
         return errors;
@@ -56,6 +63,8 @@ public static class AdminServerRules
             request.MinimumTier,
             request.ClientProfileId,
             request.VelocityTarget,
+            request.AllowsProtocolTranslation,
+            request.Role,
             request.SortOrder,
             request.Announcement,
             request.OpensAt,
@@ -94,6 +103,8 @@ public static class AdminServerRules
         AccessTier minimumTier,
         string clientProfileId,
         string velocityTarget,
+        bool allowsProtocolTranslation,
+        AdminServerRole role,
         int sortOrder,
         string announcement,
         DateTimeOffset? opensAt,
@@ -141,6 +152,17 @@ public static class AdminServerRules
             !VelocityTargetPattern.IsMatch(velocityTarget))
         {
             errors["velocityTarget"] = ["Velocity 目标名称无效。"];
+        }
+
+        if (!Enum.IsDefined(role))
+        {
+            errors["role"] = ["服务器角色无效。"];
+        }
+        else if (role == AdminServerRole.Infrastructure &&
+                 allowsProtocolTranslation)
+        {
+            errors["allowsProtocolTranslation"] =
+                ["内部基础设施服务器不能接受玩家协议转换路由。"];
         }
 
         if (sortOrder is < -100000 or > 100000)

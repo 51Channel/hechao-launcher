@@ -78,6 +78,7 @@ public sealed class CatalogRepository(
                      AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
                   WHERE server.client_profile_id = profile.id
                     AND server.is_visible
+                    AND server.server_role = 'Player'
                     AND (
                         access_override.decision = 'Allow'
                         OR (
@@ -261,6 +262,7 @@ public sealed class CatalogRepository(
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
             WHERE server.is_visible
+              AND server.server_role = 'Player'
             ORDER BY server.sort_order, server.id;
             """;
 
@@ -279,6 +281,7 @@ public sealed class CatalogRepository(
                AND access_override.server_id = server.id
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             WHERE server.is_visible
+              AND server.server_role = 'Player'
               AND (
                   access_override.decision = 'Allow'
                   OR (

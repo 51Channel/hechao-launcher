@@ -20,4 +20,36 @@ public sealed class DatabaseMigrationTests
         Assert.Contains("DEFAULT false", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("UPDATE launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void InternalServerRoleMigration_IsolatesLobbyButKeepsMonitoring()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.019_internal_server_roles.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("server_role", sql, StringComparison.Ordinal);
+        Assert.Contains("monitoring_enabled", sql, StringComparison.Ordinal);
+        Assert.Contains("'Infrastructure'", sql, StringComparison.Ordinal);
+        Assert.Contains("lower(id) = 'lobby'", sql, StringComparison.Ordinal);
+        Assert.Contains("is_visible = false", sql, StringComparison.Ordinal);
+        Assert.Contains(
+            "allow_protocol_translation = false",
+            sql,
+            StringComparison.Ordinal);
+        Assert.Contains("monitoring_enabled = true", sql, StringComparison.Ordinal);
+        Assert.Contains(
+            "servers_infrastructure_isolation_check",
+            sql,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "servers_lobby_is_always_infrastructure_check",
+            sql,
+            StringComparison.Ordinal);
+    }
 }

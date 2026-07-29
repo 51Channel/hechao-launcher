@@ -81,6 +81,48 @@ public sealed class AdminServerRulesTests
     }
 
     [Fact]
+    public void ValidateCreate_RejectsVisibleInfrastructureServer()
+    {
+        var errors = AdminServerRules.Validate(
+            CreateValidRequest() with
+            {
+                Role = AdminServerRole.Infrastructure,
+                IsVisible = true
+            });
+
+        Assert.Contains("isVisible", errors);
+    }
+
+    [Fact]
+    public void ValidateCreate_RejectsProtocolTranslationForInfrastructure()
+    {
+        var errors = AdminServerRules.Validate(
+            CreateValidRequest() with
+            {
+                Role = AdminServerRole.Infrastructure,
+                IsVisible = false,
+                AllowsProtocolTranslation = true
+            });
+
+        Assert.Contains("allowsProtocolTranslation", errors);
+    }
+
+    [Fact]
+    public void ValidateCreate_AcceptsMonitoredHiddenInfrastructureServer()
+    {
+        var errors = AdminServerRules.Validate(
+            CreateValidRequest() with
+            {
+                Role = AdminServerRole.Infrastructure,
+                IsVisible = false,
+                AllowsProtocolTranslation = false,
+                MonitoringEnabled = true
+            });
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
     public void ValidateCreate_RejectsInvalidScheduleAndAnnouncement()
     {
         var opensAt = DateTimeOffset.Parse("2026-07-27T12:00:00Z");

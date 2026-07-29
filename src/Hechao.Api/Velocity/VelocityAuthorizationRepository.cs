@@ -338,6 +338,7 @@ public sealed class VelocityAuthorizationRepository(
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             WHERE {{predicate}}
               AND server.is_visible
+              AND server.server_role = 'Player'
             ORDER BY CASE
                          WHEN server.status = 'Online'
                               AND (server.opens_at IS NULL OR server.opens_at <= now())

@@ -2,6 +2,12 @@ using System.Text.Json;
 
 namespace Hechao.Contracts;
 
+public enum AdminServerRole
+{
+    Player,
+    Infrastructure
+}
+
 public sealed record AdminServerRecord(
     string Id,
     string DisplayName,
@@ -15,6 +21,8 @@ public sealed record AdminServerRecord(
     string ClientProfileId,
     string VelocityTarget,
     bool AllowsProtocolTranslation,
+    AdminServerRole Role,
+    bool MonitoringEnabled,
     int SortOrder,
     bool IsVisible,
     string Announcement,
@@ -42,7 +50,9 @@ public sealed record AdminServerCreateRequest(
     bool IsVisible,
     string Announcement,
     DateTimeOffset? OpensAt,
-    DateTimeOffset? ClosesAt);
+    DateTimeOffset? ClosesAt,
+    AdminServerRole Role = AdminServerRole.Player,
+    bool MonitoringEnabled = true);
 
 public sealed record AdminServerUpdateRequest(
     string DisplayName,
@@ -60,7 +70,9 @@ public sealed record AdminServerUpdateRequest(
     string Announcement,
     DateTimeOffset? OpensAt,
     DateTimeOffset? ClosesAt,
-    long ExpectedRevision);
+    long ExpectedRevision,
+    AdminServerRole Role = AdminServerRole.Player,
+    bool MonitoringEnabled = true);
 
 public sealed record AdminServerVisibilityRequest(
     bool IsVisible,

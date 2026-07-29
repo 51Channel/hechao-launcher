@@ -75,6 +75,7 @@ public sealed class ServerRuntimeStatusRepository(
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
               ON heartbeat.velocity_target = server.velocity_target
+            WHERE server.monitoring_enabled
             ORDER BY server.velocity_target, server.sort_order, server.id;
             """;
 

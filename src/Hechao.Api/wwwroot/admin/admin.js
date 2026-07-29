@@ -92,7 +92,8 @@ function cacheElements() {
         "server-id", "server-display-name", "server-short-name",
         "server-icon-glyph", "server-status", "server-max-players",
         "server-minecraft-version", "server-loader", "server-minimum-tier",
-        "server-sort-order", "server-client-profile", "server-velocity-target",
+        "server-role", "server-monitoring-enabled", "server-sort-order",
+        "server-client-profile", "server-velocity-target",
         "server-allows-protocol-translation",
         "server-is-visible", "server-visible-field", "server-revision-label",
         "server-announcement", "server-opens-at", "server-closes-at",
@@ -224,6 +225,7 @@ function bindEvents() {
     elements["close-drawer-button"].addEventListener("click", closeServerDrawer);
     elements["cancel-server-button"].addEventListener("click", closeServerDrawer);
     elements["server-form"].addEventListener("submit", saveServer);
+    elements["server-role"].addEventListener("change", syncServerRoleFields);
     elements["user-search-form"].addEventListener("submit", searchUsers);
     elements["close-access-preview-button"].addEventListener(
         "click",
@@ -1164,11 +1166,17 @@ function renderServers() {
     elements["server-total-count"].textContent = state.servers.length;
     elements["server-online-count"].textContent =
         state.servers.filter(
-            server => server.isVisible && server.effectiveStatus === "Online").length;
+            server => server.role === "Player" &&
+                server.isVisible &&
+                server.effectiveStatus === "Online").length;
     elements["server-maintenance-count"].textContent =
-        state.servers.filter(server => server.isVisible && server.status === "Maintenance").length;
+        state.servers.filter(server =>
+            server.role === "Player" &&
+            server.isVisible &&
+            server.status === "Maintenance").length;
     elements["server-archived-count"].textContent =
-        state.servers.filter(server => !server.isVisible).length;
+        state.servers.filter(server =>
+            server.role === "Player" && !server.isVisible).length;
     elements["server-table-body"].replaceChildren();
 
     servers.forEach(server => {
@@ -1209,9 +1217,11 @@ function statusCell(server) {
     const cell = document.createElement("td");
     const badge = document.createElement("span");
     badge.className = `status-badge ${statusClass(server)}`;
-    badge.textContent = server.isVisible
-        ? effectiveStatusText(server)
-        : "已归档";
+    badge.textContent = server.role === "Infrastructure"
+        ? "内部节点"
+        : server.isVisible
+            ? effectiveStatusText(server)
+            : "已归档";
     cell.append(badge);
     return cell;
 }
@@ -1224,7 +1234,8 @@ function runtimeCell(server) {
     loader.textContent = `${server.minecraftVersion} · ${server.loader}`;
     const target = document.createElement("span");
     target.textContent = `Velocity: ${server.velocityTarget}` +
-        (server.allowsProtocolTranslation ? " · 协议转换" : "");
+        (server.allowsProtocolTranslation ? " · 协议转换" : "") +
+        (server.monitoringEnabled ? " · 已监控" : " · 未监控");
     stack.append(loader, target);
     cell.append(stack);
     return cell;
@@ -1269,13 +1280,15 @@ function serverActionsCell(server) {
     const actions = document.createElement("div");
     actions.className = "row-actions";
     actions.append(
-        iconButton("pencil", "编辑服务器", () => openEditServer(server)),
-        iconButton(
+        iconButton("pencil", "编辑服务器", () => openEditServer(server))
+    );
+    if (server.role === "Player") {
+        actions.append(iconButton(
             server.isVisible ? "archive" : "rotate-ccw",
             server.isVisible ? "归档服务器" : "恢复服务器",
             () => confirmVisibilityChange(server)
-        )
-    );
+        ));
+    }
     cell.append(actions);
     return cell;
 }
@@ -1294,6 +1307,7 @@ function iconButton(icon, title, handler) {
 }
 
 function statusClass(server) {
+    if (server.role === "Infrastructure") return "status-archived";
     if (!server.isVisible) return "status-archived";
     if (server.effectiveStatus === "Online") return "status-online";
     if (server.effectiveStatus === "Maintenance") return "status-maintenance";
@@ -2806,6 +2820,9 @@ function openCreateServer() {
     elements["server-minecraft-version"].value = "1.21.11";
     elements["server-loader"].value = "Paper";
     elements["server-minimum-tier"].value = "Member";
+    elements["server-role"].value = "Player";
+    elements["server-role"].disabled = false;
+    elements["server-monitoring-enabled"].checked = true;
     elements["server-sort-order"].value = "100";
     elements["server-announcement"].value = "";
     elements["server-allows-protocol-translation"].checked = false;
@@ -2813,6 +2830,7 @@ function openCreateServer() {
     elements["server-closes-at"].value = "";
     elements["server-is-visible"].checked = true;
     elements["server-visible-field"].hidden = false;
+    syncServerRoleFields();
     elements["server-revision-label"].textContent = "新记录";
     setInlineError(elements["form-error"], "");
     elements["server-drawer"].showModal();
@@ -2833,6 +2851,10 @@ function openEditServer(server) {
     elements["server-minecraft-version"].value = server.minecraftVersion;
     elements["server-loader"].value = server.loader;
     elements["server-minimum-tier"].value = server.minimumTier;
+    elements["server-role"].value = server.role;
+    elements["server-role"].disabled =
+        server.role === "Infrastructure";
+    elements["server-monitoring-enabled"].checked = server.monitoringEnabled;
     elements["server-sort-order"].value = server.sortOrder;
     elements["server-client-profile"].value = server.clientProfileId;
     elements["server-velocity-target"].value = server.velocityTarget;
@@ -2842,6 +2864,7 @@ function openEditServer(server) {
     elements["server-opens-at"].value = formatInputDateTime(server.opensAt);
     elements["server-closes-at"].value = formatInputDateTime(server.closesAt);
     elements["server-visible-field"].hidden = true;
+    syncServerRoleFields();
     elements["server-revision-label"].textContent = `修订号 r${server.revision}`;
     setInlineError(elements["form-error"], "");
     elements["server-drawer"].showModal();
@@ -2868,6 +2891,8 @@ async function saveServer(event) {
         minecraftVersion: elements["server-minecraft-version"].value.trim(),
         loader: elements["server-loader"].value,
         minimumTier: elements["server-minimum-tier"].value,
+        role: elements["server-role"].value,
+        monitoringEnabled: elements["server-monitoring-enabled"].checked,
         clientProfileId: elements["server-client-profile"].value,
         velocityTarget: elements["server-velocity-target"].value.trim(),
         allowsProtocolTranslation:
@@ -2909,6 +2934,11 @@ async function saveServer(event) {
 }
 
 function confirmVisibilityChange(server) {
+    if (server.role === "Infrastructure") {
+        showToast("内部基础设施服务器不能恢复到玩家目录", true);
+        return;
+    }
+
     state.pendingVisibilityChange = server;
     state.pendingProfileChannelRollback = null;
     state.pendingProfileChannelAssignment = null;
@@ -2923,6 +2953,17 @@ function confirmVisibilityChange(server) {
     elements["accept-confirm-button"].className =
         `button ${restoring ? "button-primary" : "button-danger"}`;
     elements["confirm-dialog"].showModal();
+}
+
+function syncServerRoleFields() {
+    const infrastructure =
+        elements["server-role"].value === "Infrastructure";
+    elements["server-allows-protocol-translation"].disabled = infrastructure;
+    elements["server-is-visible"].disabled = infrastructure;
+    if (infrastructure) {
+        elements["server-allows-protocol-translation"].checked = false;
+        elements["server-is-visible"].checked = false;
+    }
 }
 
 function closeConfirmation() {

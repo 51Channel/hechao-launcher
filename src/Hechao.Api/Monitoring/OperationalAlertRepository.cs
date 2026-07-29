@@ -431,7 +431,7 @@ public sealed class OperationalAlertRepository(
                            AS display_names,
                        bool_or(loader = 'Paper') AS expects_tick_metrics
                 FROM launcher.servers
-                WHERE is_visible
+                WHERE monitoring_enabled
                   AND status = 'Online'
                   AND (opens_at IS NULL OR opens_at <= $1)
                   AND (closes_at IS NULL OR closes_at > $1)
