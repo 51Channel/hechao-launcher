@@ -1503,9 +1503,9 @@ function Invoke-Migration {
                 enabledViaJarCount = 0
                 listenerCount = @(Get-Listener -Port $LobbyPort).Count
             }
-            productionProtocolTranslationFlagChanged = false
-            gameWorldFilesChanged = false
-            rollbackRequired = false
+            productionProtocolTranslationFlagChanged = $false
+            gameWorldFilesChanged = $false
+            rollbackRequired = $false
         }
         [IO.File]::WriteAllText(
             (Join-Path $backup 'migration.json'),
