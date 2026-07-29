@@ -90,6 +90,7 @@ foreach ($root in @(
     "E:\Survival1",
     "E:\Survival2",
     "E:\DollNight",
+    "E:\ActivityNeoForge",
     "E:\ActivityLocal",
     "E:\ActivityServer",
     "E:\MonsterActivity"
@@ -97,6 +98,23 @@ foreach ($root in @(
     $scriptPath = Join-Path $root "plugins\Skript\scripts\hub.sk"
     if (Test-Path -LiteralPath $scriptPath -PathType Leaf) {
         $activeBackendHubScripts += $scriptPath
+    }
+}
+
+$activeLobbyPlayerScripts = @()
+foreach ($scriptName in @(
+    "admintool.sk",
+    "broadcast.sk",
+    "globalmute.sk",
+    "groupgui.sk",
+    "hub.sk",
+    "lobby_goto.sk",
+    "lobby_void.sk",
+    "report.sk"
+)) {
+    $scriptPath = Join-Path $lobbyRoot "plugins\Skript\scripts\$scriptName"
+    if (Test-Path -LiteralPath $scriptPath -PathType Leaf) {
+        $activeLobbyPlayerScripts += $scriptPath
     }
 }
 
@@ -138,6 +156,7 @@ $result = [ordered]@{
         -Path $lobbyProperties `
         -Name "enforce-whitelist"
     lobbyWhitelistEntries = $whitelistEntries
+    activeLobbyPlayerScripts = $activeLobbyPlayerScripts
     activeBackendHubScripts = $activeBackendHubScripts
     luckPermsTierAgentPresent = Test-Path -LiteralPath (
         Join-Path $lobbyRoot "plugins\HechaoLuckPermsTierAgent-0.1.0.jar"

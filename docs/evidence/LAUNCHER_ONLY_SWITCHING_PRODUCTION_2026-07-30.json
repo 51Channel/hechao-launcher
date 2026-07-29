@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-29T18:39:18.5319261Z",
+  "generatedAtUtc": "2026-07-29T19:37:01.9614664Z",
   "scope": "Launcher-only server switching production deployment",
   "buildSourceCommit": "51a82cf5e3b30e62db37db1bf6911e9a661eb818",
   "architecture": {
@@ -17,10 +17,13 @@
     "apiHealthCheckedAtUtc": "2026-07-29T16:59:39.9078996Z",
     "apiReadinessCheckedAtUtc": "2026-07-29T16:59:59.7885558Z",
     "publicCatalogCheckedAtUtc": "2026-07-29T17:01:01.2364251Z",
-    "owl5CheckedAtUtc": "2026-07-29T17:16:59.3957592Z",
+    "owl5CheckedAtUtc": "2026-07-29T19:36:04.5689799Z",
+    "owl9HorrorPrankCheckedAtUtc": "2026-07-29T19:37:01.9614664Z",
     "owl5PowerShellVersion": "7.6.4",
+    "owl9PowerShellVersion": "7.6.4",
     "velocityListener": "[::]:25577",
-    "lobbyListener": "127.0.0.1:25566"
+    "lobbyListener": "127.0.0.1:25566",
+    "publicLobbyPort25566Reachable": false
   },
   "components": [
     {
@@ -95,10 +98,35 @@
       "enforceWhitelist": true,
       "whitelistEntries": 0,
       "playerConnections": 0,
+      "playerScriptBackupDirectory": "E:\\manual-backups\\LobbyPlayerScripts-20260729T193402Z",
+      "activePlayerScripts": [],
+      "disabledPlayerScripts": [
+        "-admintool.sk",
+        "-broadcast.sk",
+        "-globalmute.sk",
+        "-groupgui.sk",
+        "-hub.sk",
+        "-lobby_goto.sk",
+        "-lobby_void.sk",
+        "-report.sk"
+      ],
+      "retainedOperationalScripts": [
+        "daily-backup.sk"
+      ],
       "activeBackendHubScripts": 0,
       "monitoringRetained": true
     }
   ],
+  "horrorPrankRoutingAudit": {
+    "host": "owl9",
+    "serverRoot": "C:\\mc\\server",
+    "truePvpRootAccessed": false,
+    "processId": 7216,
+    "listenerPort": 25565,
+    "legacyRoutingMods": [],
+    "hubOrLobbyNamedArtifacts": [],
+    "activeRoutingTextMatches": []
+  },
   "retiredPlayerRoutes": [
     "HubCommand",
     "ViaVersion lobby return",
@@ -113,15 +141,18 @@
     "velocity": "26/26",
     "lobbyGuard": "3/3",
     "publicCatalogLobbyMatches": 0,
+    "publicLobbyPort25566Reachable": false,
+    "activeLobbyPlayerScripts": 0,
+    "activeBackendHubScripts": 0,
+    "activeLegacyProxyPlugins": 0,
+    "horrorPrankRoutingArtifacts": 0,
     "apiPublicRegression": "passed",
     "privateLauncherDistribution": "passed"
   },
   "remainingExternalAcceptance": [
     "ordinary, Participant, Collaborator and Administrator real Minecraft accounts",
-    "same-profile and cross-profile switching three rounds each",
-    "launcher restart process takeover",
-    "disconnect and reconnect behavior",
-    "API transient failure and backend-down behavior",
+    "no-permission and offline-target real launcher rejection",
+    "API transient failure and backend-down real-session behavior",
     "2, 3, 5 and 20 simultaneous real-player gray rollout",
     "switch Velocity from monitor to enforce after the preceding checks",
     "enable mandatory catalog authentication after enforce is stable"

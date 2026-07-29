@@ -65,7 +65,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 纯 Vanilla 档案 | 已完成 | `vanilla-1.21.11` / `1.0.0` 已签名发布并绑定 Survival1；完整安装、逐文件校验、进程构建和生产下载回归通过 |
 | Forge 档案 | 已完成 | `forge-1.20.1` / `1.0.0` 已签名发布；完整安装、逐文件校验和 Forge `47.4.0` 进程构建通过，等待真实 Forge 服务器后再绑定 |
 | DollNight 正式档案 | 已完成 | `dollnight-1.21.11` / `1.0.0` 已签名发布并绑定 DollNight；完整安装、逐文件校验、进程构建和分级授权回归通过 |
-| 服务器在线、档案与进服授权检查 | 已完成 | UI 只允许在线目标启动；启动前重新申请一次性 Velocity 授权 |
+| 服务器在线、档案与进服授权检查 | 已完成 | UI 只允许在线目标启动；启动前重新申请一次性 Velocity 授权。真实 Activity 运行期间选择维护中的 DollNight 和已关闭的 Survival1，主操作均禁用、PID 与单进程状态不变 |
 | 启动器唯一切服与单 Minecraft 进程 | 已完成 | `0.12.1` 已用真实管理员正版会话完成同档案三轮 fresh grant 重进、NeoForge/Paper 跨档案三轮切换、`4,261` 个 200 ms 单进程采样、启动器重启接管、正常/异常退出状态与 fresh grant 恢复；没有出现 Lobby 回退，见 [`evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json`](evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json) |
 | 本地退出记录与脱敏诊断包 | 已完成 | 固定条目、大小限制、路径脱敏和保留上限有测试 |
 | 玩家确认后的诊断上传 | 已完成 | `0.11.14` 已由真实已登录客户端生成并确认上传编号 `1e707520`；上传端、生产端与管理员下载文件均为 `707` 字节且 SHA-256 一致，授权、完成和 `diagnostic.admin.downloaded` 审计及 14 天到期时间均已核对 |
@@ -95,8 +95,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | Velocity 异步授权、首次目标与客户端兼容 | 已部署待外部验收 | Authorizer `0.4.0` 已生产加载并将首次 API 故障、拒绝、空/非法响应、未知目标、插件未初始化和内部目标全部改为硬拒绝；仍保持 `monitor`，待四级账号、重新授权、重连和故障路径后切 `enforce` |
 | 恐怖整蛊 Fabric 后端 modern forwarding | 已完成 | owl9 的 `HorrorPrank` 持久任务加载 FabricProxy-Lite `2.6.0` 与官方 CrossStitch `0.1.6`；真实会话稳定 `586` 秒、启动/后端身份一致、解码错误为 `0`、公网直连被 `velocity:player_info` 明确拒绝、正常退出码为 `0` |
 | 恐怖整蛊跨版本返回大厅授权 | 已取消 | 2026-07-29 决定保留内部大厅但禁止玩家进入，并只允许启动器切服；隔离五轮证据保留为历史记录，API `0.21.0` 的目标级开关不得在生产为大厅开启 |
-| NPC、`/hub`、`/lobby` 和游戏内转服 | 已取消并移除 | HubCommand、ViaVersion/ViaBackwards 回程和后端 `/hub` 脚本均已备份后退出活动路径；玩家只能通过启动器切服，旧证据仅保留审计 |
-| 基础设施大厅玩家隔离 | 已部署待外部验收 | API `0.22.0`、Authorizer `0.4.0`、Lobby Guard `0.1.0` 已生产部署；`25566` 仅回环监听、强制空白名单，等级代理、指标、告警和备份保持在线，仍需四级真实账号旁路拒绝 |
+| NPC、`/hub`、`/lobby` 和游戏内转服 | 已取消并移除 | HubCommand、ViaVersion/ViaBackwards、owl5 后端脚本和 owl9 恐怖整蛊路由均为零；大厅八个玩家 Skript 已用在线 `disable` 退出并保留哈希备份，只留 `daily-backup.sk` |
+| 基础设施大厅玩家隔离 | 已部署待外部验收 | API `0.22.0`、Authorizer `0.4.0`、Lobby Guard `0.1.0` 已生产部署；`25566` 仅回环监听、公网连接失败、强制空白名单，等级代理、指标、告警和备份保持在线，仍需四级真实账号旁路拒绝 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
 | 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊持续上报；API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；真正 PVP 未接入该心跳 |
@@ -132,6 +132,6 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 5. [已完成] 两台游戏 VPS 的进程/磁盘/TPS/MSPT/GC 指标、世界正式备份和隔离恢复已验收；多人负载仍作为独立灰度门槛。
 6. 使用四级真实账号完成 `monitor` 灰度。
 7. [已完成] 部署启动器唯一切服与可回滚大厅隔离变更集，移除 HubCommand、Via 回程和后端游戏内转服；大厅任务、LuckPerms 等级代理、指标和备份保持在线。
-8. [单账号切服、重启接管和异常断线恢复已完成] 继续使用四级真实账号复测全部权限与旁路拒绝，并完成 API 故障路径，再切换 Velocity `enforce`。
+8. [单账号切服、重启接管、异常断线恢复、维护/关闭目标拦截及静态旁路移除已完成] 继续使用四级真实账号复测全部权限与大厅后端拒绝，并完成离线及 API 故障路径，再切换 Velocity `enforce`。
 9. 启用目录强制登录，完成 `2/3/5/20` 人灰度及真实回滚。
 10. 一个观察周期无阻断故障后，形成最终玩家验收记录。

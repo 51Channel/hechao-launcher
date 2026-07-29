@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-30T03:14:00+08:00",
+  "capturedAt": "2026-07-30T03:26:46+08:00",
   "scope": "installed launcher real-account switching, process takeover, exit, and recovery",
   "launcher": {
     "version": "0.12.1",
@@ -132,6 +132,42 @@
     "worldLoaded": true,
     "exitCode": 0
   },
+  "postReportActivityRepeatValidation": {
+    "checkedAt": "2026-07-30T03:23:06+08:00",
+    "processId": 36772,
+    "launcherInitiatedSwitch": true,
+    "previousGameExitedBeforeLaunch": true,
+    "safeManagedJavaPathUsed": true,
+    "safeNativeMappingUsed": true,
+    "commandLineContainedU200C": false,
+    "mecchaLoaded": true,
+    "lwjglLoaded": true,
+    "openAlInitialized": true,
+    "worldLoaded": true,
+    "fatalWindowPresent": false
+  },
+  "nonOnlineTargetRejection": {
+    "checkedAt": "2026-07-30T03:26:46+08:00",
+    "runningProfileId": "activity-neoforge-1.21.11",
+    "runningServerId": "activity",
+    "runningProcessId": 36772,
+    "maintenanceTarget": {
+      "serverId": "dollnight",
+      "status": "Maintenance",
+      "mainActionDisabled": true
+    },
+    "closedTarget": {
+      "serverId": "survival1",
+      "status": "Closed",
+      "mainActionDisabled": true
+    },
+    "minecraftJavaProcessCountAfterChecks": 1,
+    "runningProcessUnchanged": true,
+    "newLaunchCreated": false,
+    "lobbyFallbackTriggered": false,
+    "offlineTargetTested": false,
+    "noPermissionTargetTested": false
+  },
   "result": {
     "sameProfileRoundsPassed": 3,
     "crossProfileRoundsPassed": 3,
@@ -140,6 +176,8 @@
     "normalExitPassed": true,
     "abnormalExitStatePassed": true,
     "freshGrantRecoveryPassed": true,
+    "maintenanceTargetRejectionPassed": true,
+    "closedTargetRejectionPassed": true,
     "lobbyFallbackObserved": false
   }
 }

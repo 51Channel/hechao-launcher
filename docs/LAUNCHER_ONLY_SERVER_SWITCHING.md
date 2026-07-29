@@ -149,7 +149,7 @@ Velocity 继续作为唯一公网 Minecraft 入口，负责隐藏后端地址、
 | 启动器 | `0.12.1` | 私有 OSS 发布、全局单 Minecraft 进程、持久进程接管、安全退出后再授权、Lobby 目录过滤、Windows 升级/卸载、Activity 特殊路径兼容和匿名/签名下载验证 |
 | API | `0.22.0` | 迁移 `019`、`Player/Infrastructure` 角色、`monitoring_enabled`、Lobby 不可见/不可授权保护、隐藏后继续心跳与告警、管理后台内部节点视图 |
 | Velocity Authorizer | `0.4.0` | owl5 生产 `monitor` 加载、首次连接全部故障关闭、内部目标拒绝、未知授权目标拒绝、配置失效时不放行 |
-| Lobby Guard | `0.1.0` | owl5 生产加载、Paper 双重拒绝、`127.0.0.1:25566`、强制空白名单和安全下限回滚 |
+| Lobby Guard | `0.1.0` | owl5 生产加载、Paper 双重拒绝、`127.0.0.1:25566`、公网端口不可达、强制空白名单和安全下限回滚；八个大厅玩家 Skript 已在线禁用，只保留每日备份 |
 
 当前自动验证为 `.NET 384/384`、Velocity `26/26`、Lobby Guard `3/3`、
 LuckPerms 等级代理 `4/4`、Paper 指标代理 `2/2`。
@@ -175,18 +175,25 @@ pwsh -NoLogo -NoProfile -File .\tools\server\Get-HechaoLauncherOnlyProductionSta
 2. [已完成] 启动器正常退出后游戏保持运行；新启动器按持久状态接管原 PID 和目标。
    随后强制结束本地客户端，异常退出码、状态清理、主操作恢复和 fresh grant
    重新直达 `survival2` 均通过。
-3. 使用普通、Participant、Collaborator、Administrator 四级真实账号完成目录、进服、
+3. [已完成] Activity 运行期间选择维护中的 DollNight 和已关闭的 Survival1，主操作
+   均保持禁用；唯一 Minecraft PID、持久运行状态和目标均未改变。
+4. [已完成] 大厅公网端口、回环监听、Lobby Guard、空白名单、Velocity 旧插件、
+   owl5 后端脚本和 owl9 恐怖整蛊路由均已复核；大厅玩家命令、NPC 跳服、公告及其他
+   交互 Skript 已在线禁用，LuckPerms、指标和每日备份仍在。
+5. 使用普通、Participant、Collaborator、Administrator 四级真实账号完成目录、进服、
    重复授权、等级修改和大厅旁路拒绝。
-4. 在真实会话中验证断线重连、API 短暂失败、目标下线和异常退出均不会进入大厅或其他
+6. 在真实会话中验证断线重连、API 短暂失败、目标下线和异常退出均不会进入大厅或其他
    未授权后端。
-5. 上述路径稳定后切换 Velocity `enforce`、启用目录强制登录，再完成 `2/3/5/20` 人
+7. 上述路径稳定后切换 Velocity `enforce`、启用目录强制登录，再完成 `2/3/5/20` 人
    灰度与 TPS/MSPT/GC 容量验收。
 
-大厅玩家隔离已经上线；在第 1 至 5 项完成前，仍不能宣称真实玩家灰度和全量强制授权
+大厅玩家隔离已经上线；在第 1 至 7 项完成前，仍不能宣称真实玩家灰度和全量强制授权
 验收完成。
 
-第 1、2 项机器证据见
+第 1 至 3 项机器证据见
 [`evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json`](evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json)。
+第 4 项机器证据见
+[`evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json`](evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json)。
 
 ## 7. 被本决策取代的工作
 
