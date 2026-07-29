@@ -22,6 +22,7 @@ final class PluginConfigurationTest {
         assertEquals(AuthorizationMode.MONITOR, configuration.mode());
         assertEquals("https", configuration.apiUri().getScheme());
         assertFalse(configuration.hasCredential());
+        assertTrue(configuration.isInfrastructureTarget("lobby"));
         assertTrue(Files.exists(tempDirectory.resolve("config.properties")));
     }
 
@@ -35,6 +36,7 @@ final class PluginConfigurationTest {
                 token=abcdefghijklmnopqrstuvwxyz012345
                 proxy-instance=owl5-main
                 request-timeout-millis=1800
+                infrastructure-targets=lobby,permissions
                 """,
                 StandardCharsets.UTF_8);
 
@@ -43,6 +45,8 @@ final class PluginConfigurationTest {
         assertEquals(AuthorizationMode.ENFORCE, configuration.mode());
         assertTrue(configuration.hasCredential());
         assertEquals(1800, configuration.requestTimeout().toMillis());
+        assertTrue(configuration.isInfrastructureTarget("LOBBY"));
+        assertTrue(configuration.isInfrastructureTarget("permissions"));
     }
 
     @Test
@@ -55,6 +59,25 @@ final class PluginConfigurationTest {
                 token=abcdefghijklmnopqrstuvwxyz012345
                 proxy-instance=owl5-main
                 request-timeout-millis=1800
+                """,
+                StandardCharsets.UTF_8);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PluginConfiguration.load(tempDirectory));
+    }
+
+    @Test
+    void rejectsInvalidInfrastructureTarget() throws Exception {
+        Files.writeString(
+                tempDirectory.resolve("config.properties"),
+                """
+                mode=monitor
+                api-url=https://launcher-api.hechao.world/v1/internal/velocity/authorize
+                token=abcdefghijklmnopqrstuvwxyz012345
+                proxy-instance=owl5-main
+                request-timeout-millis=1800
+                infrastructure-targets=lobby,../pvp
                 """,
                 StandardCharsets.UTF_8);
 

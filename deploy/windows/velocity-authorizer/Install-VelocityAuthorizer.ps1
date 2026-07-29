@@ -13,6 +13,7 @@ param(
     [string]$BackupRoot = 'E:\manual-backups',
     [string]$ApiUrl = 'https://launcher-api.hechao.world/v1/internal/velocity/authorize',
     [string]$ProxyInstance = 'owl5-main',
+    [string[]]$InfrastructureTargets = @('lobby'),
 
     [ValidateRange(500, 10000)]
     [int]$RequestTimeoutMillis = 2500
@@ -77,6 +78,18 @@ if ($ApiUrl -notmatch '^https://') {
 if ($ProxyInstance -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$') {
     throw 'ProxyInstance is invalid.'
 }
+$normalizedInfrastructureTargets = @(
+    $InfrastructureTargets |
+        ForEach-Object { $_.Trim().ToLowerInvariant() } |
+        Select-Object -Unique
+)
+if ($normalizedInfrastructureTargets.Count -eq 0 -or
+    $normalizedInfrastructureTargets.Count -gt 32 -or
+    @($normalizedInfrastructureTargets | Where-Object {
+        $_ -notmatch '^[a-z0-9][a-z0-9._-]{0,63}$'
+    }).Count -ne 0) {
+    throw 'InfrastructureTargets contains an invalid Velocity target.'
+}
 
 $token = [System.IO.File]::ReadAllText($resolvedTokenPath).Trim()
 if ($token.Length -lt 24 -or $token.Length -gt 256 -or
@@ -120,6 +133,7 @@ $configuration = @(
     "token=$token"
     "proxy-instance=$ProxyInstance"
     "request-timeout-millis=$RequestTimeoutMillis"
+    "infrastructure-targets=$($normalizedInfrastructureTargets -join ',')"
 ) -join "`n"
 [System.IO.File]::WriteAllText(
     $configurationPath,

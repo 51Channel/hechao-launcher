@@ -8,7 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
+import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 record PluginConfiguration(
@@ -16,7 +19,8 @@ record PluginConfiguration(
         URI apiUri,
         String token,
         String proxyInstance,
-        Duration requestTimeout) {
+        Duration requestTimeout,
+        Set<String> infrastructureTargets) {
 
     private static final Pattern PROXY_INSTANCE_PATTERN =
             Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
@@ -27,6 +31,7 @@ record PluginConfiguration(
             token=
             proxy-instance=owl5-main
             request-timeout-millis=2500
+            infrastructure-targets=lobby
             """;
 
     static PluginConfiguration load(Path dataDirectory) throws IOException {
@@ -66,12 +71,16 @@ record PluginConfiguration(
                     "request-timeout-millis must be between 500 and 10000");
         }
 
+        Set<String> infrastructureTargets = parseInfrastructureTargets(
+                properties.getProperty("infrastructure-targets", "lobby"));
+
         return new PluginConfiguration(
                 mode,
                 apiUri,
                 token,
                 proxyInstance,
-                Duration.ofMillis(timeoutMillis));
+                Duration.ofMillis(timeoutMillis),
+                infrastructureTargets);
     }
 
     static AuthorizationMode readModeHint(Path dataDirectory) {
@@ -91,6 +100,29 @@ record PluginConfiguration(
 
     boolean hasCredential() {
         return token.length() >= 24 && token.length() <= 256;
+    }
+
+    boolean isInfrastructureTarget(String target) {
+        return target != null
+                && infrastructureTargets.contains(
+                        target.trim().toLowerCase(Locale.ROOT));
+    }
+
+    private static Set<String> parseInfrastructureTargets(String value) {
+        var targets = new LinkedHashSet<String>();
+        for (String candidate : value.split(",")) {
+            String target = candidate.trim().toLowerCase(Locale.ROOT);
+            if (target.isEmpty() || !PROXY_INSTANCE_PATTERN.matcher(target).matches()) {
+                throw new IllegalArgumentException(
+                        "infrastructure-targets contains an invalid target");
+            }
+            targets.add(target);
+        }
+        if (targets.isEmpty() || targets.size() > 32) {
+            throw new IllegalArgumentException(
+                    "infrastructure-targets must contain between 1 and 32 targets");
+        }
+        return Set.copyOf(targets);
     }
 
     private static String required(Properties properties, String key) {

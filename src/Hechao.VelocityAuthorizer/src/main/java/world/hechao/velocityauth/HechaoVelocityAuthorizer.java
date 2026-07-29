@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,12 +27,14 @@ import org.slf4j.Logger;
 @Plugin(
         id = "hechao-velocity-authorizer",
         name = "Hechao Velocity Authorizer",
-        version = "0.3.1",
+        version = "0.4.0",
         description = "Server-side Microsoft UUID and LuckPerms authorization for Hechao",
         authors = {"Hechao"})
 public final class HechaoVelocityAuthorizer {
     private static final String SERVICE_UNAVAILABLE_MESSAGE =
             "赫朝进服授权服务暂时不可用，请稍后重试。";
+    private static final String INTERNAL_TARGET_MESSAGE =
+            "该节点不接受玩家进入，请从赫朝启动器选择服务器。";
 
     private final Logger logger;
     private final Path dataDirectory;
@@ -78,7 +81,8 @@ public final class HechaoVelocityAuthorizer {
                             "https://launcher-api.hechao.world/v1/internal/velocity/authorize"),
                     "",
                     "invalid-configuration",
-                    java.time.Duration.ofMillis(2500));
+                    java.time.Duration.ofMillis(2500),
+                    Set.of("lobby"));
             logger.error("Unable to load Hechao authorization configuration.", exception);
             if (failureMode == AuthorizationMode.ENFORCE) {
                 logger.error("Enforce mode remains fail-closed until the configuration is fixed.");
@@ -89,16 +93,43 @@ public final class HechaoVelocityAuthorizer {
     @Subscribe(priority = 100)
     public EventTask onServerPreConnect(ServerPreConnectEvent event) {
         PluginConfiguration currentConfiguration = configuration;
-        if (currentConfiguration == null
-                || currentConfiguration.mode() == AuthorizationMode.DISABLED
-                || !event.getResult().isAllowed()) {
+        if (!event.getResult().isAllowed()) {
             return null;
         }
 
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
         boolean initialConnection = !authorizedSessions.containsKey(playerId);
-        String target = event.getOriginalServer().getServerInfo().getName().toLowerCase();
+        String target = event.getOriginalServer()
+                .getServerInfo()
+                .getName()
+                .toLowerCase(Locale.ROOT);
+        boolean infrastructureTarget =
+                isInfrastructureTarget(currentConfiguration, target);
+        if (currentConfiguration == null
+                || currentConfiguration.mode() == AuthorizationMode.DISABLED) {
+            deny(
+                    event,
+                    initialConnection,
+                    infrastructureTarget
+                            ? INTERNAL_TARGET_MESSAGE
+                            : SERVICE_UNAVAILABLE_MESSAGE);
+            logger.info(
+                    "Denied player {} -> {} because authorization is not initialized.",
+                    player.getUsername(),
+                    target);
+            return null;
+        }
+
+        if (infrastructureTarget && !initialConnection) {
+            deny(event, false, INTERNAL_TARGET_MESSAGE);
+            logger.info(
+                    "Denied player {} from internal target {}.",
+                    player.getUsername(),
+                    target);
+            return null;
+        }
+
         String remoteAddress = getRemoteAddress(player);
         String sessionServerId = authorizedSessions.get(playerId);
         AuthorizationApiClient client = apiClient;
@@ -144,51 +175,72 @@ public final class HechaoVelocityAuthorizer {
             AuthorizationDecision decision,
             Throwable failure) {
         Player player = event.getPlayer();
-        if (failure != null) {
-            if (mode == AuthorizationMode.ENFORCE) {
+        if (failure != null || decision == null) {
+            if (initialConnection || mode == AuthorizationMode.ENFORCE) {
                 deny(event, initialConnection, SERVICE_UNAVAILABLE_MESSAGE);
                 logger.warn(
                         "Denied {} -> {} because the authorization API was unavailable: {}",
                         player.getUsername(),
                         target,
-                        rootMessage(failure));
+                        failure == null ? "empty response" : rootMessage(failure));
             } else {
                 authorizedSessions.put(player.getUniqueId(), target);
                 logger.warn(
                         "[monitor] Authorization API unavailable for {} -> {}: {}",
                         player.getUsername(),
                         target,
-                        rootMessage(failure));
+                        failure == null ? "empty response" : rootMessage(failure));
             }
             return;
         }
 
         if (decision.allowed()) {
-            if (!decision.hasSessionServerId()) {
-                if (mode == AuthorizationMode.ENFORCE) {
+            if (!decision.hasSessionServerId() || !decision.hasVelocityTarget()) {
+                if (initialConnection || mode == AuthorizationMode.ENFORCE) {
                     deny(event, initialConnection, SERVICE_UNAVAILABLE_MESSAGE);
                     logger.error(
-                            "Denied {} -> {} because an allowed authorization omitted a server ID.",
+                            "Denied {} -> {} because an allowed authorization was incomplete.",
                             player.getUsername(),
                             target);
                 } else {
                     authorizedSessions.put(player.getUniqueId(), target);
                     logger.warn(
-                            "[monitor] Allowed authorization for {} -> {} omitted a server ID.",
+                            "[monitor] Allowed authorization for {} -> {} was incomplete.",
                             player.getUsername(),
                             target);
                 }
                 return;
             }
+            if (isInfrastructureTarget(configuration, decision.serverId())
+                    || isInfrastructureTarget(configuration, decision.velocityTarget())) {
+                deny(event, initialConnection, INTERNAL_TARGET_MESSAGE);
+                logger.error(
+                        "Denied {} because authorization returned internal target {} / {}.",
+                        player.getUsername(),
+                        decision.serverId(),
+                        decision.velocityTarget());
+                return;
+            }
             String authorizedServerId = decision.serverId().toLowerCase(Locale.ROOT);
             if (initialConnection) {
                 authorizedServerId =
-                        routeInitialConnection(event, mode, target, decision);
+                        routeInitialConnection(event, target, decision);
                 if (authorizedServerId == null) {
                     return;
                 }
             }
             authorizedSessions.put(player.getUniqueId(), authorizedServerId);
+            return;
+        }
+
+        if (initialConnection) {
+            deny(event, true, safeMessage(decision.message()));
+            logger.info(
+                    "Denied initial connection for {} -> {} with reason {} in {} mode.",
+                    player.getUsername(),
+                    target,
+                    decision.reason(),
+                    mode.name().toLowerCase(Locale.ROOT));
             return;
         }
 
@@ -226,10 +278,18 @@ public final class HechaoVelocityAuthorizer {
 
     String routeInitialConnection(
             ServerPreConnectEvent event,
-            AuthorizationMode mode,
             String originalTarget,
             AuthorizationDecision decision) {
         String grantedTarget = decision.velocityTarget().toLowerCase(Locale.ROOT);
+        if (isInfrastructureTarget(configuration, grantedTarget)
+                || isInfrastructureTarget(configuration, decision.serverId())) {
+            deny(event, true, INTERNAL_TARGET_MESSAGE);
+            logger.error(
+                    "Denied {} because an initial grant resolved to internal target {}.",
+                    event.getPlayer().getUsername(),
+                    grantedTarget);
+            return null;
+        }
         if (grantedTarget.equals(originalTarget)) {
             return decision.serverId().toLowerCase(Locale.ROOT);
         }
@@ -245,21 +305,12 @@ public final class HechaoVelocityAuthorizer {
             return decision.serverId().toLowerCase(Locale.ROOT);
         }
 
-        if (mode == AuthorizationMode.ENFORCE) {
-            deny(event, true, SERVICE_UNAVAILABLE_MESSAGE);
-            logger.error(
-                    "Denied {} because granted target {} is not registered on this proxy.",
-                    event.getPlayer().getUsername(),
-                    grantedTarget);
-            return null;
-        }
-
-        logger.warn(
-                "[monitor] Granted target {} for {} is not registered; keeping initial target {}.",
-                grantedTarget,
+        deny(event, true, SERVICE_UNAVAILABLE_MESSAGE);
+        logger.error(
+                "Denied {} because granted target {} is not registered on this proxy.",
                 event.getPlayer().getUsername(),
-                originalTarget);
-        return originalTarget;
+                grantedTarget);
+        return null;
     }
 
     private static void deny(
@@ -296,5 +347,14 @@ public final class HechaoVelocityAuthorizer {
         return message == null || message.isBlank()
                 ? current.getClass().getSimpleName()
                 : message;
+    }
+
+    private static boolean isInfrastructureTarget(
+            PluginConfiguration configuration,
+            String target) {
+        if (configuration != null) {
+            return configuration.isInfrastructureTarget(target);
+        }
+        return target != null && target.trim().equalsIgnoreCase("lobby");
     }
 }

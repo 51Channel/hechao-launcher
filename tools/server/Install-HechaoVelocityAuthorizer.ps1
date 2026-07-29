@@ -11,7 +11,8 @@ param(
     [string]$VelocityRoot = 'E:\Velocity',
     [string]$TaskName = 'Codex-Velocity-Live',
     [int]$Port = 25577,
-    [string]$BackupRoot = 'E:\manual-backups'
+    [string]$BackupRoot = 'E:\manual-backups',
+    [string[]]$InfrastructureTargets = @('lobby')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,6 +21,60 @@ $incomingPath = Join-Path $pluginsDirectory "HechaoVelocityAuthorizer-$Version.j
 $destinationPath = Join-Path $pluginsDirectory "HechaoVelocityAuthorizer-$Version.jar"
 $configurationPath = Join-Path $pluginsDirectory 'hechao-velocity-authorizer\config.properties'
 $velocityConfigurationPath = Join-Path $VelocityRoot 'velocity.toml'
+
+$normalizedInfrastructureTargets = @(
+    $InfrastructureTargets |
+        ForEach-Object { $_.Trim().ToLowerInvariant() } |
+        Select-Object -Unique
+)
+if ($normalizedInfrastructureTargets.Count -eq 0 -or
+    $normalizedInfrastructureTargets.Count -gt 32 -or
+    @($normalizedInfrastructureTargets | Where-Object {
+        $_ -notmatch '^[a-z0-9][a-z0-9._-]{0,63}$'
+    }).Count -ne 0) {
+    throw 'InfrastructureTargets contains an invalid Velocity target.'
+}
+
+function Set-ConfigurationProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $lines = @(Get-Content -LiteralPath $Path)
+    $replacement = "$Name=$Value"
+    $matched = $false
+    $updated = @(foreach ($line in $lines) {
+        if ($line -match "^$([regex]::Escape($Name))=") {
+            if (-not $matched) {
+                $replacement
+                $matched = $true
+            }
+        }
+        else {
+            $line
+        }
+    })
+    if (-not $matched) {
+        $updated += $replacement
+    }
+
+    $temporaryPath = "$Path.$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        [System.IO.File]::WriteAllLines(
+            $temporaryPath,
+            $updated,
+            (New-Object System.Text.UTF8Encoding($false)))
+        Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
+    }
+    finally {
+        Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+    }
+}
 
 function Wait-ForPortState {
     param(
@@ -107,9 +162,13 @@ try {
     Stop-ScheduledTask -TaskName $TaskName
     Wait-ForPortState -Listening $false
 
+    $replacementActivated = $true
     Remove-Item -LiteralPath $previousJar.FullName
     Move-Item -LiteralPath $incomingPath -Destination $destinationPath
-    $replacementActivated = $true
+    Set-ConfigurationProperty `
+        -Path $configurationPath `
+        -Name 'infrastructure-targets' `
+        -Value ($normalizedInfrastructureTargets -join ',')
 
     Start-Velocity
     $latestLogPath = Join-Path $VelocityRoot 'logs\latest.log'
@@ -139,6 +198,10 @@ catch {
         Copy-Item `
             -LiteralPath (Join-Path $backupDirectory $previousJar.Name) `
             -Destination $previousJar.FullName
+        Copy-Item `
+            -LiteralPath (Join-Path $backupDirectory 'config.properties') `
+            -Destination $configurationPath `
+            -Force
         Start-Velocity
     }
     throw
@@ -157,6 +220,7 @@ $mode = (
     Sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $destinationPath).Hash
     BackupDirectory = $backupDirectory
     Mode = $mode
+    InfrastructureTargets = $normalizedInfrastructureTargets
     Port = $Port
     ProcessId = $listener.OwningProcess
     EstablishedConnections = @(

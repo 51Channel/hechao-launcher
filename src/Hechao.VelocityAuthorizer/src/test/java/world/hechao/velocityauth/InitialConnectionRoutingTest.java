@@ -36,14 +36,13 @@ final class InitialConnectionRoutingTest {
 
         assertEquals("pvp", plugin.routeInitialConnection(
                 event,
-                AuthorizationMode.MONITOR,
                 "lobby",
                 decision));
         verify(event).setResult(any(ServerPreConnectEvent.ServerResult.class));
     }
 
     @Test
-    void leavesOriginalTargetWhenGrantAlreadyMatches() {
+    void leavesPlayerTargetWhenGrantAlreadyMatches() {
         ProxyServer proxy = mock(ProxyServer.class);
         ServerPreConnectEvent event = eventFor("Player");
         var plugin = plugin(proxy);
@@ -51,13 +50,12 @@ final class InitialConnectionRoutingTest {
                 true,
                 "Allowed",
                 "ok",
-                "lobby",
-                "lobby");
+                "pvp",
+                "pvp");
 
-        assertEquals("lobby", plugin.routeInitialConnection(
+        assertEquals("pvp", plugin.routeInitialConnection(
                 event,
-                AuthorizationMode.MONITOR,
-                "lobby",
+                "pvp",
                 decision));
         verify(proxy, never()).getServer(any());
         verify(event, never()).setResult(any());
@@ -79,7 +77,6 @@ final class InitialConnectionRoutingTest {
 
         assertNull(plugin.routeInitialConnection(
                 event,
-                AuthorizationMode.ENFORCE,
                 "lobby",
                 decision));
         verify(event).setResult(any(ServerPreConnectEvent.ServerResult.class));
@@ -87,7 +84,7 @@ final class InitialConnectionRoutingTest {
     }
 
     @Test
-    void monitorModeTracksOriginalTargetWhenGrantedTargetIsMissing() {
+    void monitorModeFailsClosedWhenGrantedTargetIsMissing() {
         ProxyServer proxy = mock(ProxyServer.class);
         when(proxy.getServer("missing")).thenReturn(Optional.empty());
 
@@ -100,12 +97,33 @@ final class InitialConnectionRoutingTest {
                 "missing",
                 "missing");
 
-        assertEquals("lobby", plugin.routeInitialConnection(
+        assertNull(plugin.routeInitialConnection(
                 event,
-                AuthorizationMode.MONITOR,
                 "lobby",
                 decision));
-        verify(event, never()).setResult(any());
+        verify(event).setResult(any(ServerPreConnectEvent.ServerResult.class));
+        verify(event.getPlayer()).disconnect(any(Component.class));
+    }
+
+    @Test
+    void rejectsInitialGrantToInternalLobby() {
+        ProxyServer proxy = mock(ProxyServer.class);
+        ServerPreConnectEvent event = eventFor("Player");
+        var plugin = plugin(proxy);
+        var decision = new AuthorizationDecision(
+                true,
+                "Allowed",
+                "ok",
+                "lobby",
+                "lobby");
+
+        assertNull(plugin.routeInitialConnection(
+                event,
+                "lobby",
+                decision));
+        verify(proxy, never()).getServer(any());
+        verify(event).setResult(any(ServerPreConnectEvent.ServerResult.class));
+        verify(event.getPlayer()).disconnect(any(Component.class));
     }
 
     private static HechaoVelocityAuthorizer plugin(ProxyServer proxy) {
