@@ -280,10 +280,13 @@ public sealed class MinecraftLaunchBuildSmokeTests
         Assert.DoesNotContain('\u200c', process.StartInfo.WorkingDirectory);
 
         var arguments = GetArguments(process.StartInfo);
+        var launchNativeDirectory = MinecraftGameLauncherService
+            .ValidateNativeLibraryDirectory(process.StartInfo);
         Assert.DoesNotContain('\u200c', arguments);
         Assert.DoesNotContain("runtime-links", process.StartInfo.WorkingDirectory);
         Assert.Contains("-Djava.library.path=", arguments);
-        Assert.Contains("runtime-links", arguments);
+        Assert.Contains("runtime-links", launchNativeDirectory);
+        Assert.True(Directory.Exists(launchNativeDirectory));
         Assert.Contains("net.neoforged.fml.startup.Client", arguments);
         Assert.Contains("--fml.neoForgeVersion", arguments);
         Assert.Contains("21.11.42", arguments);
@@ -390,6 +393,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
             var nativeProperties = new[]
             {
                 "java.library.path=",
+                "org.lwjgl.librarypath=",
                 "jna.tmpdir=",
                 "org.lwjgl.system.SharedLibraryExtractPath=",
                 "io.netty.native.workdir="
@@ -453,44 +457,91 @@ public sealed class MinecraftLaunchBuildSmokeTests
     }
 
     [Fact]
-    public void NormalizeNativeLibraryDirectory_RewritesOnlyNativeDirectoryProperties()
+    public void NormalizeNativeLibraryDirectory_CanonicalizesAllNativeDirectoryProperties()
     {
-        const string nativeDirectory =
-            "H:\\hechao \u200cLauncher\\instances\\activity\\.minecraft\\versions\\neoforge\\natives";
-        const string generatedNativeDirectory =
-            @"H:\HECHAO~2\INSTAN~1\ACTIVI~1\MINECR~1\versions\neoforge\natives";
         const string launchNativeDirectory =
             @"C:\Users\Player\AppData\Local\Hechao\Launcher\runtime-links\activity-natives";
         var startInfo = new ProcessStartInfo();
-        startInfo.ArgumentList.Add($"-Djava.library.path={generatedNativeDirectory}");
-        startInfo.ArgumentList.Add($"-Djna.tmpdir={nativeDirectory}");
+        startInfo.ArgumentList.Add("-Djava.library.path=relative-natives");
         startInfo.ArgumentList.Add(
-            $"-Dorg.lwjgl.system.SharedLibraryExtractPath={generatedNativeDirectory}");
+            "H:\\hechao \u200cLauncher\\instances\\activity\\.minecraft\\versions\\neoforge\\natives");
+        startInfo.ArgumentList.Add("-Djava.library.path=duplicate-natives");
         startInfo.ArgumentList.Add(
-            $"-Dio.netty.native.workdir={generatedNativeDirectory.Replace('\\', '/')}");
-        startInfo.ArgumentList.Add($"--gameDir={generatedNativeDirectory}");
+            "-Dorg.lwjgl.system.SharedLibraryExtractPath=generated-natives");
+        startInfo.ArgumentList.Add(
+            "-Dio.netty.native.workdir=generated/natives");
+        startInfo.ArgumentList.Add("--gameDir=generated-natives");
 
         MinecraftGameLauncherService.NormalizeNativeLibraryDirectory(
             startInfo,
-            nativeDirectory,
-            generatedNativeDirectory,
             launchNativeDirectory);
 
+        Assert.Equal(launchNativeDirectory, MinecraftGameLauncherService
+            .ValidateNativeLibraryDirectory(startInfo));
         Assert.Equal(
-            $"-Djava.library.path={launchNativeDirectory}",
-            startInfo.ArgumentList[0]);
-        Assert.Equal(
-            $"-Djna.tmpdir={launchNativeDirectory}",
-            startInfo.ArgumentList[1]);
-        Assert.Equal(
-            $"-Dorg.lwjgl.system.SharedLibraryExtractPath={launchNativeDirectory}",
-            startInfo.ArgumentList[2]);
-        Assert.Equal(
-            $"-Dio.netty.native.workdir={launchNativeDirectory.Replace('\\', '/')}",
-            startInfo.ArgumentList[3]);
-        Assert.Equal(
-            $"--gameDir={generatedNativeDirectory}",
-            startInfo.ArgumentList[4]);
+            [
+                $"-Djava.library.path={launchNativeDirectory}",
+                $"-Dorg.lwjgl.librarypath={launchNativeDirectory}",
+                $"-Djna.tmpdir={launchNativeDirectory}",
+                $"-Dorg.lwjgl.system.SharedLibraryExtractPath={launchNativeDirectory}",
+                $"-Dio.netty.native.workdir={launchNativeDirectory}"
+            ],
+            startInfo.ArgumentList.Take(5));
+        Assert.Single(
+            startInfo.ArgumentList,
+            argument => argument.StartsWith(
+                "-Djava.library.path=",
+                StringComparison.Ordinal));
+        Assert.Contains("--gameDir=generated-natives", startInfo.ArgumentList);
+    }
+
+    [Fact]
+    public void NormalizeNativeLibraryDirectory_CanonicalizesPackedArguments()
+    {
+        const string launchNativeDirectory =
+            @"C:\Users\Player Name\AppData\Local\Hechao\Launcher\runtime-links\activity-natives";
+        var startInfo = new ProcessStartInfo
+        {
+            Arguments =
+                "-Xmx4G " +
+                "-Djava.library.path=\"H:\\hechao \u200cLauncher\\natives\" " +
+                "\"-Djna.tmpdir=H:\\hechao \u200cLauncher\\natives\" " +
+                "-Djava.library.path=duplicate-natives " +
+                "net.neoforged.fml.startup.Client"
+        };
+
+        MinecraftGameLauncherService.NormalizeNativeLibraryDirectory(
+            startInfo,
+            launchNativeDirectory);
+
+        Assert.Equal(launchNativeDirectory, MinecraftGameLauncherService
+            .ValidateNativeLibraryDirectory(startInfo));
+        Assert.DoesNotContain('\u200c', startInfo.Arguments);
+        Assert.Contains(
+            $"-Dorg.lwjgl.librarypath=\"{launchNativeDirectory}\"",
+            startInfo.Arguments);
+        Assert.Contains("-Xmx4G", startInfo.Arguments);
+        Assert.EndsWith(
+            "net.neoforged.fml.startup.Client",
+            startInfo.Arguments,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidateNativeLibraryDirectory_RejectsDivergentNativePath()
+    {
+        var startInfo = new ProcessStartInfo();
+        startInfo.ArgumentList.Add("-Djava.library.path=C:\\safe-a");
+        startInfo.ArgumentList.Add("-Dorg.lwjgl.librarypath=C:\\safe-b");
+        startInfo.ArgumentList.Add("-Djna.tmpdir=C:\\safe-a");
+        startInfo.ArgumentList.Add(
+            "-Dorg.lwjgl.system.SharedLibraryExtractPath=C:\\safe-a");
+        startInfo.ArgumentList.Add("-Dio.netty.native.workdir=C:\\safe-a");
+
+        var exception = Assert.Throws<InvalidDataException>(() =>
+            MinecraftGameLauncherService.ValidateNativeLibraryDirectory(startInfo));
+
+        Assert.Contains("same safe path", exception.Message);
     }
 
     [Fact]

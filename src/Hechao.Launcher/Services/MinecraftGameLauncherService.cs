@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
 using CmlLib.Core.FileExtractors;
@@ -186,7 +187,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         return new MinecraftRunningGame(
             entry.Key,
             entry.Value.ServerId,
-            entry.Value.Process.Id,
+            entry.Value.ProcessId,
             entry.Value.StartedAt);
     }
 
@@ -293,6 +294,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             try
             {
                 progress?.Report(new MinecraftLaunchProgress(MinecraftLaunchPhase.Starting, 100));
+                ValidateNativeLibraryDirectory(process.StartInfo);
                 if (!process.Start())
                 {
                     throw new InvalidOperationException("The Minecraft process did not start.");
@@ -305,6 +307,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                     process.StartInfo.FileName);
                 var tracked = new TrackedMinecraftProcess(
                     process,
+                    processId,
                     request.ServerId,
                     executablePath,
                     startedAt);
@@ -499,12 +502,6 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 launchGameDirectory);
             NormalizeNativeLibraryDirectory(
                 process.StartInfo,
-                nativeDirectory,
-                Path.Combine(
-                    launchGameDirectory,
-                    "versions",
-                    metadata.VersionId,
-                    "natives"),
                 launchNativeDirectory);
 
             var javaPath = Path.GetFullPath(process.StartInfo.FileName);
@@ -557,62 +554,86 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
 
     internal static void NormalizeNativeLibraryDirectory(
         ProcessStartInfo startInfo,
-        string nativeDirectory,
-        string generatedNativeDirectory,
         string launchNativeDirectory)
     {
         ArgumentNullException.ThrowIfNull(startInfo);
 
-        var fullNativeDirectory = Path.GetFullPath(nativeDirectory);
+        var fullLaunchNativeDirectory = Path.GetFullPath(launchNativeDirectory);
         if (startInfo.ArgumentList.Count > 0)
         {
-            for (var index = 0; index < startInfo.ArgumentList.Count; index++)
+            for (var index = startInfo.ArgumentList.Count - 1; index >= 0; index--)
             {
-                var argument = startInfo.ArgumentList[index];
-                if (!IsNativeDirectoryArgument(argument))
+                if (GetNativeDirectoryArgumentPrefix(startInfo.ArgumentList[index]) is null)
                 {
                     continue;
                 }
 
-                startInfo.ArgumentList[index] = ReplaceNativeDirectory(
-                    argument,
-                    fullNativeDirectory,
-                    generatedNativeDirectory,
-                    launchNativeDirectory);
+                startInfo.ArgumentList.RemoveAt(index);
             }
 
-            return;
+            for (var index = NativeDirectoryArgumentPrefixes.Length - 1; index >= 0; index--)
+            {
+                startInfo.ArgumentList.Insert(
+                    0,
+                    NativeDirectoryArgumentPrefixes[index] + fullLaunchNativeDirectory);
+            }
+        }
+        else
+        {
+            var remainingArguments = startInfo.Arguments;
+            foreach (var prefix in NativeDirectoryArgumentPrefixes)
+            {
+                remainingArguments = NativeDirectoryArgumentRegex(prefix)
+                    .Replace(remainingArguments, string.Empty);
+            }
+
+            var nativeArguments = string.Join(
+                ' ',
+                NativeDirectoryArgumentPrefixes.Select(prefix =>
+                    FormatPackedNativeDirectoryArgument(
+                        prefix,
+                        fullLaunchNativeDirectory)));
+            startInfo.Arguments = string.IsNullOrWhiteSpace(remainingArguments)
+                ? nativeArguments
+                : $"{nativeArguments} {remainingArguments.Trim()}";
         }
 
-        if (NativeDirectoryArgumentPrefixes.Any(prefix =>
-                startInfo.Arguments.Contains(prefix, StringComparison.Ordinal)))
-        {
-            startInfo.Arguments = ReplaceNativeDirectory(
-                startInfo.Arguments,
-                fullNativeDirectory,
-                generatedNativeDirectory,
-                launchNativeDirectory);
-        }
+        ValidateNativeLibraryDirectory(startInfo);
     }
 
-    private static bool IsNativeDirectoryArgument(string value) =>
-        NativeDirectoryArgumentPrefixes.Any(prefix =>
-            value.StartsWith(prefix, StringComparison.Ordinal));
-
-    private static string ReplaceNativeDirectory(
-        string value,
-        string nativeDirectory,
-        string generatedNativeDirectory,
-        string launchNativeDirectory)
+    internal static string ValidateNativeLibraryDirectory(ProcessStartInfo startInfo)
     {
-        var rewritten = ReplaceLaunchPath(
-            value,
-            nativeDirectory,
-            launchNativeDirectory);
-        return ReplaceLaunchPath(
-            rewritten,
-            generatedNativeDirectory,
-            launchNativeDirectory);
+        ArgumentNullException.ThrowIfNull(startInfo);
+
+        string? expectedDirectory = null;
+        foreach (var prefix in NativeDirectoryArgumentPrefixes)
+        {
+            var values = GetNativeDirectoryArgumentValues(startInfo, prefix);
+            if (values.Count != 1)
+            {
+                throw new InvalidDataException(
+                    $"Minecraft must have exactly one {prefix} native directory argument.");
+            }
+
+            var directory = Path.GetFullPath(values[0]);
+            if (ProfileRuntimePathResolver.ContainsFormatCharacters(directory))
+            {
+                throw new InvalidDataException(
+                    "The Minecraft native directory contains unsupported Unicode format characters.");
+            }
+
+            expectedDirectory ??= directory;
+            if (!string.Equals(
+                    expectedDirectory,
+                    directory,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(
+                    "Minecraft native directory arguments do not resolve to the same safe path.");
+            }
+        }
+
+        return expectedDirectory!;
     }
 
     private static string ReplaceLaunchPath(
@@ -633,10 +654,56 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private static readonly string[] NativeDirectoryArgumentPrefixes =
     [
         "-Djava.library.path=",
+        "-Dorg.lwjgl.librarypath=",
         "-Djna.tmpdir=",
         "-Dorg.lwjgl.system.SharedLibraryExtractPath=",
         "-Dio.netty.native.workdir="
     ];
+
+    private static string? GetNativeDirectoryArgumentPrefix(string argument) =>
+        NativeDirectoryArgumentPrefixes.FirstOrDefault(prefix =>
+            argument.StartsWith(prefix, StringComparison.Ordinal));
+
+    private static IReadOnlyList<string> GetNativeDirectoryArgumentValues(
+        ProcessStartInfo startInfo,
+        string prefix)
+    {
+        if (startInfo.ArgumentList.Count > 0)
+        {
+            return startInfo.ArgumentList
+                .Where(argument => argument.StartsWith(prefix, StringComparison.Ordinal))
+                .Select(argument => argument[prefix.Length..])
+                .ToArray();
+        }
+
+        return NativeDirectoryArgumentRegex(prefix)
+            .Matches(startInfo.Arguments)
+            .Select(match =>
+            {
+                var groups = match.Groups;
+                if (groups["whole"].Success)
+                {
+                    return groups["whole"].Value;
+                }
+
+                return groups["quoted"].Success
+                    ? groups["quoted"].Value
+                    : groups["plain"].Value;
+            })
+            .ToArray();
+    }
+
+    private static Regex NativeDirectoryArgumentRegex(string prefix) =>
+        new(
+            $@"(?<!\S)(?:""{Regex.Escape(prefix)}(?<whole>[^""]*)""|{Regex.Escape(prefix)}(?:""(?<quoted>[^""]*)""|(?<plain>\S+)))",
+            RegexOptions.CultureInvariant);
+
+    private static string FormatPackedNativeDirectoryArgument(
+        string prefix,
+        string directory) =>
+        directory.Any(char.IsWhiteSpace)
+            ? $"{prefix}\"{directory}\""
+            : prefix + directory;
 
     internal static async Task EnsureLoggingConfigurationAsync(
         HttpClient httpClient,
@@ -1045,6 +1112,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
 
             var tracked = new TrackedMinecraftProcess(
                 process,
+                persisted.ProcessId,
                 persisted.ServerId,
                 executablePath,
                 startedAt);
@@ -1117,11 +1185,9 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             return;
         }
 
-        int? processId = null;
         int? exitCode = null;
         try
         {
-            processId = tracked.Process.Id;
             exitCode = tracked.Process.ExitCode;
         }
         catch (InvalidOperationException)
@@ -1131,23 +1197,20 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         {
         }
 
-        var exitKind = processId is > 0 &&
-                       _requestedStops.TryRemove(processId.Value, out var requestedKind)
+        var processId = tracked.ProcessId;
+        var exitKind = _requestedStops.TryRemove(processId, out var requestedKind)
             ? requestedKind
             : MinecraftProcessExitKind.Natural;
 
         RemoveAndDisposeProcess(profileId, tracked);
-        if (processId is > 0)
-        {
-            ClearPersistedProcess(processId.Value, tracked.StartedAt);
-            NotifyProcessExited(new MinecraftProcessExitedEventArgs(
-                profileId,
-                processId.Value,
-                exitCode,
-                tracked.StartedAt,
-                DateTimeOffset.UtcNow,
-                exitKind));
-        }
+        ClearPersistedProcess(processId, tracked.StartedAt);
+        NotifyProcessExited(new MinecraftProcessExitedEventArgs(
+            profileId,
+            processId,
+            exitCode,
+            tracked.StartedAt,
+            DateTimeOffset.UtcNow,
+            exitKind));
     }
 
     private static DateTimeOffset GetProcessStartedAt(Process process)
@@ -1195,13 +1258,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         TrackedMinecraftProcess tracked,
         MinecraftProcessExitKind exitKind)
     {
-        try
-        {
-            _requestedStops[tracked.Process.Id] = exitKind;
-        }
-        catch (InvalidOperationException)
-        {
-        }
+        _requestedStops[tracked.ProcessId] = exitKind;
     }
 
     private static void TryCloseMainWindow(Process process)
@@ -1317,6 +1374,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
 
     private sealed class TrackedMinecraftProcess(
         Process process,
+        int processId,
         string? serverId,
         string executablePath,
         DateTimeOffset startedAt)
@@ -1324,6 +1382,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         private int _exitHandled;
 
         public Process Process { get; } = process;
+
+        public int ProcessId { get; } = processId;
 
         public string? ServerId { get; } = serverId;
 
