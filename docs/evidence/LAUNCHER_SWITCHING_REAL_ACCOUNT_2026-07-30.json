@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-30T03:14:00+08:00",
+  "scope": "installed launcher real-account switching, process takeover, exit, and recovery",
+  "launcher": {
+    "version": "0.12.1",
+    "productVersion": "0.12.1+51a82cf5e3b30e62db37db1bf6911e9a661eb818",
+    "installedPath": "D:\\Hechao Launcher\\Hechao.Launcher.exe"
+  },
+  "account": {
+    "kind": "real Microsoft/Minecraft account",
+    "launcherTier": "Administrator",
+    "tokensRecorded": false
+  },
+  "catalog": {
+    "visibleServerCount": 5,
+    "lobbyVisible": false,
+    "sameProfileInterpretation": "No two distinct online catalog targets share one client profile. The same-profile gate therefore used three fresh-grant reentries of the installed Activity profile and verified full old-process exit before each new process."
+  },
+  "sameProfileRounds": [
+    {
+      "round": 1,
+      "profileId": "activity-neoforge-1.21.11",
+      "oldProcessId": 39136,
+      "oldExitCode": 0,
+      "oldExitedAt": "2026-07-30T02:57:11.0230505+08:00",
+      "newProcessId": 21112,
+      "newStartedAt": "2026-07-30T02:57:11.6246867+08:00"
+    },
+    {
+      "round": 2,
+      "profileId": "activity-neoforge-1.21.11",
+      "oldProcessId": 21112,
+      "oldExitCode": 0,
+      "oldExitedAt": "2026-07-30T02:59:29.2952325+08:00",
+      "newProcessId": 20776,
+      "newStartedAt": "2026-07-30T02:59:30.2192790+08:00"
+    },
+    {
+      "round": 3,
+      "profileId": "activity-neoforge-1.21.11",
+      "oldProcessId": 20776,
+      "oldExitCode": 0,
+      "oldExitedAt": "2026-07-30T03:00:26.6465973+08:00",
+      "newProcessId": 37212,
+      "newStartedAt": "2026-07-30T03:00:27.2332188+08:00"
+    }
+  ],
+  "crossProfileRounds": [
+    {
+      "round": 1,
+      "fromProfileId": "activity-neoforge-1.21.11",
+      "toProfileId": "base-1.21.11",
+      "oldProcessId": 37212,
+      "oldExitCode": 0,
+      "oldExitedAt": "2026-07-30T03:02:33.7598345+08:00",
+      "newProcessId": 37484,
+      "newStartedAt": "2026-07-30T03:02:37.6710657+08:00",
+      "target": "survival2",
+      "worldLoaded": true
+    },
+    {
+      "round": 2,
+      "fromProfileId": "base-1.21.11",
+      "toProfileId": "activity-neoforge-1.21.11",
+      "oldProcessId": 37484,
+      "oldExitCode": 0,
+      "oldExitedAt": "2026-07-30T03:03:42.4261122+08:00",
+      "newProcessId": 25236,
+      "newStartedAt": "2026-07-30T03:03:43.0142864+08:00",
+      "target": "activity",
+      "lwjglLoaded": true,
+      "mecchaLoaded": true,
+      "worldLoaded": true
+    },
+    {
+      "round": 3,
+      "fromProfileId": "activity-neoforge-1.21.11",
+      "toProfileId": "base-1.21.11",
+      "oldProcessId": 25236,
+      "oldExitCode": 0,
+      "oldExitedAt": "2026-07-30T03:08:22.1713305+08:00",
+      "newProcessId": 19648,
+      "newStartedAt": "2026-07-30T03:08:23.2602099+08:00",
+      "target": "survival2",
+      "worldLoaded": true
+    }
+  ],
+  "highFrequencyProcessMonitor": {
+    "source": "local Win32 process sampling",
+    "startedAtUtc": "2026-07-29T18:56:01.8307955Z",
+    "endedAtUtc": "2026-07-29T19:11:01.7701464Z",
+    "sampleIntervalMilliseconds": 200,
+    "sampleCount": 4261,
+    "maximumConcurrentMinecraftJavaProcesses": 1
+  },
+  "launcherRestartTakeover": {
+    "gameProcessId": 19648,
+    "oldLauncherProcessId": 32960,
+    "oldLauncherClosedNormally": true,
+    "gameSurvivedLauncherClose": true,
+    "newLauncherProcessId": 19704,
+    "newLauncherStartedAt": "2026-07-30T03:09:12.7447135+08:00",
+    "runningGameStateRecovered": true,
+    "recoveredProfileId": "base-1.21.11",
+    "recoveredServerId": "survival2",
+    "catalogObservedOnlinePlayers": 1
+  },
+  "abnormalExitAndRecovery": {
+    "forcedLocalClientProcessId": 19648,
+    "serverProcessesChanged": false,
+    "recordedExitCode": -1,
+    "recordedExitedAt": "2026-07-30T03:10:23.5196777+08:00",
+    "runningGameStateRemoved": true,
+    "launcherStatusAfterExit": "游戏异常退出",
+    "mainActionRecovered": true,
+    "recoveryProcessId": 11436,
+    "recoveryStartedAt": "2026-07-30T03:11:31.4974583+08:00",
+    "velocityFreshGrantRoutedAt": "2026-07-30T03:11:48+08:00",
+    "velocityTarget": "survival2",
+    "worldLoadedAt": "2026-07-30T03:11:50+08:00",
+    "lobbyFallbackObserved": false
+  },
+  "activityPathRegression": {
+    "staleFatalWindowObservedEarlier": true,
+    "fatalWindowPresentDuringFinalInspection": false,
+    "successfulActivityProcessId": 25236,
+    "safeJavaPathUsed": true,
+    "commandLineContainedU200C": false,
+    "lwjglLoaded": true,
+    "openGlInitialized": true,
+    "worldLoaded": true,
+    "exitCode": 0
+  },
+  "result": {
+    "sameProfileRoundsPassed": 3,
+    "crossProfileRoundsPassed": 3,
+    "singleProcessInvariantPassed": true,
+    "launcherRestartTakeoverPassed": true,
+    "normalExitPassed": true,
+    "abnormalExitStatePassed": true,
+    "freshGrantRecoveryPassed": true,
+    "lobbyFallbackObserved": false
+  }
+}

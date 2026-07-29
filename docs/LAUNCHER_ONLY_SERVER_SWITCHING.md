@@ -169,8 +169,12 @@ pwsh -NoLogo -NoProfile -File .\tools\server\Get-HechaoLauncherOnlyProductionSta
 
 ### 6.2 仍未完成
 
-1. 完成同档案与跨档案各三轮真实切换，并核对每轮只有一个 Minecraft 进程。
-2. 验证启动器退出后重新打开仍能接管现有游戏，再安全切换到另一档案。
+1. [已完成] 同档案三轮 fresh grant 重进与跨档案三轮真实切换均通过；当前没有两个
+   不同在线目标共用一个档案。15 分钟、`4,261` 个 200 ms 样本中的 Minecraft Java
+   进程峰值为 `1`。
+2. [已完成] 启动器正常退出后游戏保持运行；新启动器按持久状态接管原 PID 和目标。
+   随后强制结束本地客户端，异常退出码、状态清理、主操作恢复和 fresh grant
+   重新直达 `survival2` 均通过。
 3. 使用普通、Participant、Collaborator、Administrator 四级真实账号完成目录、进服、
    重复授权、等级修改和大厅旁路拒绝。
 4. 在真实会话中验证断线重连、API 短暂失败、目标下线和异常退出均不会进入大厅或其他
@@ -180,6 +184,9 @@ pwsh -NoLogo -NoProfile -File .\tools\server\Get-HechaoLauncherOnlyProductionSta
 
 大厅玩家隔离已经上线；在第 1 至 5 项完成前，仍不能宣称真实玩家灰度和全量强制授权
 验收完成。
+
+第 1、2 项机器证据见
+[`evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json`](evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json)。
 
 ## 7. 被本决策取代的工作
 
