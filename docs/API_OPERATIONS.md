@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.20.2-20260727T225819Z`
-> 本地 API 源码候选：`0.22.0`（迁移 018/019、基础设施角色和隐藏监控已通过测试）
-> 当前阶段：`0.21.0` 的跨版本回大厅方案已取消；`0.22.0` 等待数据库备份后原子部署
+> 当前线上版本：`0.22.0-20260729T144953Z`
+> 当前迁移：`019`
+> 当前阶段：跨版本回大厅方案已取消；基础设施大厅隔离已部署，待真实玩家灰度
 >
 > owl9 边界：API 中现有 server ID `pvp` 实际代表恐怖整蛊服
 > `C:\mc\server`，不代表 `E:\MinecraftServer` 的真正 PVP 服；后者尚未登记。
@@ -214,11 +214,10 @@ reload 和五个公网入口回归。详见
 `8/8` 生产兼容矩阵，详见
 [`API_RELEASE_0.20.2.md`](API_RELEASE_0.20.2.md)。
 
-`0.21.0` 候选增加目标服级协议转换开关和迁移 018。它已在生产数据库备份的独立
-临时副本上验证默认关闭、只开启大厅后的 PVP 回程授权、反向目标隔离以及 NeoForge
-档案防绕过；候选日志错误为 `0`，临时资源已删除，生产服务和数据库迁移仍保持
-`0.20.2` / `17`。2026-07-29 已取消游戏内跨版本回大厅方案，因此该候选不会单独
-进入生产；迁移 018 只作为 `0.22.0` 的前置迁移保留。详见
+`0.21.0` 增加目标服级协议转换开关和迁移 018。它先在生产数据库备份的独立临时副本
+上验证默认关闭、反向目标隔离以及 NeoForge 档案防绕过，随后短期进入生产，成为
+`0.22.0` 的实际直接前置版本。2026-07-29 已取消游戏内跨版本回大厅方案，因此生产
+从未为大厅开启该开关；迁移 018 只作为 `0.22.0` 的前置结构保留。详见
 [`API_RELEASE_0.21.0_CANDIDATE.md`](API_RELEASE_0.21.0_CANDIDATE.md)。
 
 历史隔离证据仍可用
@@ -242,9 +241,9 @@ reload 和五个公网入口回归。详见
 档案资格、启动授权、Velocity 授权与单服规则只接受 `Player` 角色；Lobby 会自动
 迁移为 `Infrastructure`，数据库约束禁止重新设为可见、可授权或玩家目标。心跳、
 运行指标、告警和管理员状态改为依赖 `monitoring_enabled`，因此 Lobby 对玩家隐藏后
-仍能承载 LuckPerms 等级代理、监控、告警和备份。候选通过 `.NET 379/379`，发布
-归档和回滚门槛见
-[`API_RELEASE_0.22.0_CANDIDATE.md`](API_RELEASE_0.22.0_CANDIDATE.md)。
+仍能承载 LuckPerms 等级代理、监控、告警和备份。生产发布通过 `.NET 379/379`、
+迁移 `019`、健康/就绪、公开目录零 Lobby、旧业务回归和 journal 零新增错误，见
+[`API_RELEASE_0.22.0.md`](API_RELEASE_0.22.0.md)。
 
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
@@ -360,7 +359,7 @@ systemctl reload nginx
 | `0.19.0-20260727T005013Z` | `29B351C33B6366BF2C3E9263275928D0F5C8329D05C14B1C7A138C0D81B279FA` | 进程、磁盘、TPS/MSPT/GC、30 天运行样本、服务状态后台、迁移 16、隔离生产副本验收和公网回归通过；`0.20.0` 的直接回滚目标 |
 | `0.20.0-20260727T011953Z` | `67C3E084D9E53509B283A4B39498219C33BF1676BB4F1805A916E83CFFABBDEB` | 请求指标、统一告警、后台告警页、迁移 17、平台监控器、隔离生产副本验收和公网回归通过；`0.20.1` 的直接回滚目标 |
 | `0.20.1-20260727T145451Z` | `94BC3831A4749A545968E90BD1ABD638BE26BD23B058091E2A91AF417D09AB54` | 私有签名 URL 不进入 journal，Nginx 查询参数/Referer 脱敏、`355/355` 测试、原子部署和平滑日志切换通过；`0.20.2` 的直接回滚目标 |
-| `0.20.2-20260727T225819Z` | `327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6` | 会话来源、Minecraft 版本和模组档案兼容保护，`360/360` .NET、`13/13` Velocity、生产矩阵 `8/8`；当前线上版本 |
-| `0.22.0-20260729T144953Z` | `CCD8EFAF4D1F3F89A1BF7C08F2F407283892F3CC69733155ACA6884D45073A13` | 迁移 018/019、玩家/基础设施角色、隐藏后监控、Lobby 永久不可授权，`.NET 379/379`；本地候选，待生产部署 |
+| `0.20.2-20260727T225819Z` | `327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6` | 会话来源、Minecraft 版本和模组档案兼容保护，`360/360` .NET、`13/13` Velocity、生产矩阵 `8/8`；历史版本 |
+| `0.22.0-20260729T144953Z` | `CCD8EFAF4D1F3F89A1BF7C08F2F407283892F3CC69733155ACA6884D45073A13` | 迁移 018/019、玩家/基础设施角色、隐藏后监控、Lobby 永久不可授权，`.NET 379/379`；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏和客户端兼容保护均已部署。API `0.20.2` 为当前线上版本；API `0.22.0`、启动器 `0.12.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 为同一批启动器唯一切服候选。真实管理员 MFA、基础客户端登录、诊断上传、管理员下载和对应审计均已完成。五服指标代理已经加载，Activity 单账号路由已通过，PVP 服务端兼容修复已部署但仍待真实复测；四级真实账号、单进程切服和多人灰度仍未完成生产验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏和客户端兼容保护均已部署。API `0.22.0`、启动器 `0.12.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 已组成当前启动器唯一切服生产基线。真实管理员 MFA、基础客户端登录、诊断上传、管理员下载和对应审计均已完成。五服指标代理已经加载，Activity 单账号路由已通过，恐怖整蛊服务端兼容修复已完成历史真实验收；四级真实账号、Activity 冷/热启动稳定性、单进程切服和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

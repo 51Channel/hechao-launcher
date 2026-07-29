@@ -3,15 +3,17 @@
 > 目标：验证“启动器唯一切服、大厅只作内部承载、全局单 Minecraft 进程”。
 > 本清单必须在 API `0.22.0`、Authorizer `0.4.0` 与 Lobby Guard `0.1.0`
 > 已部署并通过基础健康检查后执行。
+>
+> 当前状态：第 1 节生产门槛已于 2026-07-30 完成；第 2 至 4 节需要真实玩家执行。
 
 ## 1. 发布前门槛
 
-- [ ] API `/healthz`、`/readyz`、目录、登录、论坛和 Sub2API 回归正常。
-- [ ] 数据库迁移为 `19`；Lobby 为 `Infrastructure`、不可见、不可授权、继续监控。
-- [ ] Velocity 只保留统一公网入口；`lobby` 仅指向 `127.0.0.1:25566` 的内部占位。
-- [ ] HubCommand、ViaVersion、ViaBackwards、NPC 转服与默认 fallback 均不再提供玩家换服。
-- [ ] Lobby Guard 已加载；大厅仅回环监听、空白名单，当前玩家连接数为 `0`。
-- [ ] 启动器安装包 SHA-256 与候选发布记录一致。
+- [x] API `/healthz`、`/readyz`、目录、登录、论坛和 Sub2API 回归正常。
+- [x] 数据库迁移为 `19`；Lobby 为 `Infrastructure`、不可见、不可授权、继续监控。
+- [x] Velocity 只保留统一公网入口；`lobby` 仅指向 `127.0.0.1:25566` 的内部占位。
+- [x] HubCommand、ViaVersion、ViaBackwards、后端 `/hub` 与默认玩家回退均已退出活动路径；NPC 不再作为支持的切服入口。
+- [x] Lobby Guard 已加载；大厅仅回环监听、空白名单，当前玩家连接数为 `0`。
+- [x] 启动器安装包 SHA-256 与正式发布记录一致，私有 OSS 匿名 `403`、签名回读 `200`。
 
 ## 2. 单账号功能灰度
 
@@ -31,7 +33,7 @@
 
 ## 3. 权限与人数灰度
 
-- [ ] 普通、VIP、管理员、服主四级真实账号分别验证目录可见性和进服授权。
+- [ ] Member、Participant、Collaborator、Administrator 四级真实账号分别验证目录可见性和进服授权。
 - [ ] 单服 Allow、Deny、维护状态、过期授权、重复授权和未知目标均符合预期。
 - [ ] 依次完成 `2`、`3`、`5`、`20` 人灰度；观察 TPS、MSPT、GC、API 延迟和告警。
 - [ ] 灰度期间大厅在线玩家始终为 `0`，但 LuckPerms 等级代理、指标、告警和备份正常。

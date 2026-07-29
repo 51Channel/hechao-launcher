@@ -1,6 +1,6 @@
 # 赫朝启动器
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产仍为启动器 `0.11.16` 与 API `0.20.2`；启动器 `0.12.0`、API `0.22.0`、Velocity Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 已完成候选代码、制品和自动化测试，等待按可回滚顺序部署。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动和账号安全操作的管理员控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.12.0`、API `0.22.0`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；四个制品、可回滚部署和自动验收均已完成，剩余门槛只涉及真实四级账号与 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动和账号安全操作的管理员控制台。
 
 2026-07-29 已确认新架构：赫朝启动器成为唯一服务器选择和切换入口；大厅继续作为 LuckPerms 等前置能力的内部承载器，但不再向玩家展示、授权、路由或回退。Velocity 继续负责统一公网入口、forwarding 和服务端二次授权。完整约束、回滚和验收标准见 [`docs/LAUNCHER_ONLY_SERVER_SWITCHING.md`](docs/LAUNCHER_ONLY_SERVER_SWITCHING.md)。
 
@@ -41,13 +41,13 @@
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复、公告、开放排期、玩家搜索、访问预览和单服规则，所有变更使用修订号并在同一事务中写入审计日志。
 - 管理后台可排队四个固定 LuckPerms 全局组的等级变更；大厅代理通过 LuckPerms API 应用，不直接写 MariaDB，也不接受任意控制台命令。
 - 全部认证状态撤销和 UUID 封禁会通过可靠 outbox 联动论坛 `sessionVersion`，使已经签发的论坛 Cookie 失效。
-- 启动器 API 生产版本 `0.20.2` 已通过 `https://launcher-api.hechao.world` 上线；候选 `0.22.0` 增加玩家/基础设施角色与隐藏后监控。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
+- 启动器 API 生产版本 `0.22.0` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 私有对象重定向不会把短时 OSS 签名 URL 写入 journal；Nginx 访问日志只保留无查询参数的路径，不记录 Referer，避免密码重置和 OAuth 参数进入日志。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
-API `0.20.2-20260727T225819Z` 已完成一致性备份、哈希校验、原子切换、客户端会话来源与兼容保护、公网回归和生产矩阵 `8/8`；账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.0` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理已加载并读回真实 `owner` 映射。生产 Velocity Authorizer `0.3.1` 仍为 `monitor`；候选 `0.4.0` 已把所有首次连接故障改为硬拒绝，并永久拒绝基础设施目标。当前开发分支测试为 `.NET 379/379`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`。
+API `0.22.0-20260729T144953Z` 已完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.0` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。当前发布测试为 `.NET 379/379`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`。
 
-真实管理员已完成 MFA 登记，`0.11.14` 已产生首条真实启动遥测，诊断上传、管理员下载、审计和本地 SHA-256 复验均已完成。基础客户端的 Lobby、Survival1、Survival2、Activity 与恐怖整蛊历史单账号首次路由均已通过；恐怖整蛊的 CrossStitch 修复、身份转发、直连拒绝、稳定连接和正常退出也已验收。跨版本回大厅曾在 API `0.21.0` 候选和 Velocity 4 隔离环境完成五轮真实客户端验证，相关证据保留用于审计；2026-07-29 的新决策已经取消 `/hub`、NPC 和 Via 回大厅方案。生产代理已迁移至 Velocity 4、独立 Java 25 和 Authorizer `0.3.1` monitor。候选已完成全局单 Minecraft 进程、安全切服、Lobby 目录/授权隔离、首次连接故障关闭和大厅后端独立拒绝；下一步是部署后按 [`docs/PRELAUNCH_PILOT_0.12.0.md`](docs/PRELAUNCH_PILOT_0.12.0.md) 完成真实四级账号、`enforce`、目录强制登录和 `2/3/5/20` 人灰度。
+真实管理员已完成 MFA 登记，`0.11.14` 已产生首条真实启动遥测，诊断上传、管理员下载、审计和本地 SHA-256 复验均已完成。基础客户端的 Lobby、Survival1、Survival2、Activity 与恐怖整蛊历史单账号首次路由均已通过；恐怖整蛊的 CrossStitch 修复、身份转发、直连拒绝、稳定连接和正常退出也已验收。跨版本回大厅曾在 API `0.21.0` 和 Velocity 4 隔离环境完成五轮真实客户端验证，相关证据仅保留用于审计；2026-07-29 的新架构已经取消 `/hub`、NPC 和 Via 回大厅方案。生产代理已迁移至 Velocity 4、独立 Java 25 和 Authorizer `0.4.0` monitor；API `0.22.0`、Lobby Guard `0.1.0`、旧回程移除及后端 `/hub` 禁用均已落地。下一步只按 [`docs/PRELAUNCH_PILOT_0.12.0.md`](docs/PRELAUNCH_PILOT_0.12.0.md) 完成真实四级账号、同/跨档案切换、`enforce`、目录强制登录和 `2/3/5/20` 人灰度。
 
 三份 Paper 世界正式归档、远端 ZIP/旁车复核、异机完整解压、`level.dat` 校验和确定性区域抽样恢复已通过；owl9 恐怖整蛊另完成正式 VSS 归档、`2,493/2,493` 文件哈希比对和 `2,370/2,370` 区域全量恢复检查，真正 PVP 未触碰。RAM v5 已默认生效；启动器数据库、论坛与 Sub2API 的异地加密链均已完成真实 OSS 往返、定时任务、告警恢复与异地主机隔离恢复，平台监控器 `0.1.2` 已生产运行。客户端不会使用第三方启动器凭据，不采集 Microsoft 密码，也不保存赫朝账号密码。
 
@@ -61,7 +61,7 @@ API `0.20.2-20260727T225819Z` 已完成一致性备份、哈希校验、原子�
 - `src/Hechao.Api`：独立启动器 API、管理员 Web 控制台、MFA、目录 CRUD 与审计；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
 - `src/Hechao.StatusCollector`：游戏 VPS 上的只读 Minecraft 状态采集器，使用机器级 DPAPI 保护内部令牌。
 - `src/Hechao.ServerMetricsAgent`：Paper/Purpur 只读 TPS、MSPT 与 GC 本地指标代理。
-- `src/Hechao.VelocityAuthorizer`：Velocity 3.4 / Java 21 异步进服授权插件。
+- `src/Hechao.VelocityAuthorizer`：Velocity 4 / Java 25 生产运行、向下兼容测试环境的异步进服授权插件。
 - `src/Hechao.LuckPermsTierAgent`：大厅 Paper / Java 21 受控全局等级代理。
 - `src/Hechao.LobbyGuard`：大厅 Paper 后端玩家登录拒绝插件；不修改 LuckPerms、指标或备份。
 - `installer`：NSIS 3 简体中文/英文安装脚本。
@@ -95,11 +95,11 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 
 1. 已使用独立写入 RAM 身份发布 `base-1.21.11` / `1.0.5`、`activity-neoforge-1.21.11` / `1.0.10` 与 `pvp-fabric-1.20.1` / `1.0.0`，并原子激活签名清单、目录记录和实时心跳；活动服保持关闭。
 2. [审核已完成] 管理员于 2026-07-26 确认 Minecraft Java API 访问许可已经通过；仍需完成真实账号验收。
-3. [已完成] 生产 Authorizer `0.3.1` 已以 `monitor` 模式加载；全部代理目标已经登记，生产合成授权已验证一次性授权选择的后端目标能够改写初始占位路由。
+3. [已完成] 生产 Authorizer `0.4.0` 已以 `monitor` 模式加载；内部大厅目标、首次故障关闭和授权目标改写均已部署，Lobby Guard 提供后端独立拒绝。
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、每档案 Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
-6. [已完成] 部署 API `0.20.1`、私有下载与 Nginx 日志脱敏、统一运行告警及状态采集器 `0.2.0`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期、单服访问规则、论坛会话联动、受控全局等级、运行遥测和服务器进程/磁盘指标已上线。真实管理员 MFA 与诊断管理员下载审计已完成；大厅等级代理和三个指标代理仍需分别完成真实验收。
-7. 启动器 `0.12.0`、API `0.22.0`、Authorizer `0.4.0` 与 Lobby Guard `0.1.0` 候选已完成；按 [`docs/PRELAUNCH_PILOT_0.12.0.md`](docs/PRELAUNCH_PILOT_0.12.0.md) 完成可回滚部署、单进程切服、Lobby 永久拒绝和四级账号灰度。
+6. [已完成] 部署 API `0.22.0`、私有下载与 Nginx 日志脱敏、统一运行告警及状态采集器 `0.2.0`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期、单服访问规则、论坛会话联动、受控全局等级、运行遥测和服务器进程/磁盘指标均已上线。
+7. [已完成自动部署] 启动器 `0.12.0`、API `0.22.0`、Authorizer `0.4.0` 与 Lobby Guard `0.1.0` 已生产发布；继续按 [`docs/PRELAUNCH_PILOT_0.12.0.md`](docs/PRELAUNCH_PILOT_0.12.0.md) 完成真实四级账号、单进程切服、Lobby 旁路拒绝和多人灰度。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 

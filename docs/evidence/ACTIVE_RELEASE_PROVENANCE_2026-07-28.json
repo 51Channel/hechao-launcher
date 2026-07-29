@@ -1,112 +1,145 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-28T04:59:08Z",
+  "generatedAtUtc": "2026-07-29T17:17:00Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.11.16",
-      "releaseTag": "launcher-v0.11.16",
-      "releaseCommit": "ca71962dd17ac4ed79282fd33cc16500f45fbdd0",
-      "taggedAt": "2026-07-28T12:58:49+08:00",
+      "version": "0.12.0",
+      "releaseTag": "launcher-v0.12.0",
+      "releaseCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
+      "taggedAt": "2026-07-30T00:36:01+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "ca71962dd17ac4ed79282fd33cc16500f45fbdd0"
+        "value": "ba9576cd525de78fa639453e54466d967d5f1541"
       },
-      "deploymentState": "private-oss-gray",
+      "deploymentState": "private-oss-published-awaiting-real-player-gray",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 68763504,
-          "sha256": "E75DBF4EFC622AB3DA5E79AC6443443992EE294A0E38C614FBF5F204ADF9091E",
+          "size": 68781119,
+          "sha256": "56A2AAA6AB1CBF939DC11EA2430B47DDC96EF45AD5415D259878E6ED00855953",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.11.16-win-x64.exe",
-          "location": "releases/launcher/0.11.16/Hechao-Launcher-Setup-0.11.16-win-x64.exe",
-          "size": 61866222,
-          "sha256": "6D7C9E91EA621B384633F86D6498EBBD55BF73B65516D8F24F0838CD48EA4D8A",
+          "name": "Hechao-Launcher-Setup-0.12.0-win-x64.exe",
+          "location": "releases/launcher/0.12.0/Hechao-Launcher-Setup-0.12.0-win-x64.exe",
+          "size": 61874184,
+          "sha256": "9843E51B044611945BA8745D766678B4F43FB465E9039DD7EF3BDF9E55EAD4C2",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "release-tag",
-        "target": "launcher-v0.11.15"
+        "target": "launcher-v0.11.16"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.11.16.md",
-        "docs/PRELAUNCH_PILOT_0.11.16.md",
-        "docs/evidence/LAUNCHER_0.11.16_RELEASE_ACCEPTANCE_2026-07-28.json"
+        "docs/LAUNCHER_RELEASE_0.12.0.md",
+        "docs/PRELAUNCH_PILOT_0.12.0.md",
+        "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json"
       ]
     },
     {
       "component": "api",
-      "version": "0.20.2-20260727T225819Z",
-      "releaseTag": "api-v0.20.2",
-      "releaseCommit": "c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57",
-      "taggedAt": "2026-07-28T07:55:05+08:00",
+      "version": "0.22.0-20260729T144953Z",
+      "releaseTag": "api-v0.22.0",
+      "releaseCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
+      "taggedAt": "2026-07-30T00:36:09+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57"
+        "value": "ba9576cd525de78fa639453e54466d967d5f1541"
       },
       "deploymentState": "production",
       "artifacts": [
         {
-          "name": "hechao-api-0.20.2-20260727T225819Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.20.2-20260727T225819Z",
-          "size": 45574298,
-          "sha256": "AE5561DFA85FB59476C22D66CB2AF0781112345B82BED8E9D7825DBC34559B32",
+          "name": "hechao-api-0.22.0-20260729T144953Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z",
+          "size": 45576531,
+          "sha256": "2C70353CDB1C9458ADF1B14DB358CB13A31B91ECB22AC25267FF824AE4058B03",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.20.2-20260727T225819Z/Hechao.Api",
-          "size": 104444979,
-          "sha256": "327D17A6F24833CDAD9F912AC16D87EC2DEE463F7DBD427B6E672307DA24A6F6",
+          "location": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z/Hechao.Api",
+          "size": 104453683,
+          "sha256": "CCD8EFAF4D1F3F89A1BF7C08F2F407283892F3CC69733155ACA6884D45073A13",
           "primary": false
         }
       ],
       "rollback": {
-        "kind": "release-id",
-        "target": "0.20.1-20260727T145451Z"
+        "kind": "backup-directory",
+        "target": "/var/backups/hechao-launcher/api-pre-0.22.0-20260729T150635Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.20.2.md",
-        "docs/evidence/API_VELOCITY_CLIENT_COMPATIBILITY_2026-07-28.json"
+        "docs/API_RELEASE_0.22.0.md",
+        "docs/evidence/API_VELOCITY_CLIENT_COMPATIBILITY_2026-07-28.json",
+        "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json"
       ]
     },
     {
       "component": "velocity-authorizer",
-      "version": "0.3.0",
-      "releaseTag": "velocity-authorizer-v0.3.0",
-      "releaseCommit": "c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57",
-      "taggedAt": "2026-07-28T07:55:05+08:00",
+      "version": "0.4.0",
+      "releaseTag": "velocity-authorizer-v0.4.0",
+      "releaseCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
+      "taggedAt": "2026-07-30T00:36:19+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "c2b50e2ac75b8bc9a66cfcb9691c7ee566ebfd57"
+        "value": "ba9576cd525de78fa639453e54466d967d5f1541"
       },
       "deploymentState": "production-monitor-mode",
       "artifacts": [
         {
-          "name": "HechaoVelocityAuthorizer-0.3.0.jar",
-          "location": "E:\\Velocity\\plugins\\HechaoVelocityAuthorizer-0.3.0.jar",
-          "size": 21152,
-          "sha256": "289B13472AEAC4073895EF9BE7E630B4B5AACEC48A4D0FD849BBAFE0064E681D",
+          "name": "HechaoVelocityAuthorizer-0.4.0.jar",
+          "location": "E:\\Velocity\\plugins\\HechaoVelocityAuthorizer-0.4.0.jar",
+          "size": 22967,
+          "sha256": "D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "backup-directory",
-        "target": "E:\\manual-backups\\VelocityAuthorizer-0.3.0-20260727T231243Z"
+        "target": "E:\\manual-backups\\VelocityAuthorizer-0.4.0-20260729T150949Z"
       },
       "evidence": [
-        "docs/VELOCITY_AUTHORIZER_RELEASE_0.3.0.md",
+        "docs/VELOCITY_AUTHORIZER_RELEASE_0.4.0.md",
         "docs/VELOCITY_AUTHORIZATION_OPERATIONS.md",
-        "docs/evidence/API_VELOCITY_CLIENT_COMPATIBILITY_2026-07-28.json"
+        "docs/evidence/API_VELOCITY_CLIENT_COMPATIBILITY_2026-07-28.json",
+        "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json"
+      ]
+    },
+    {
+      "component": "lobby-guard",
+      "version": "0.1.0",
+      "releaseTag": "lobby-guard-v0.1.0",
+      "releaseCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
+      "taggedAt": "2026-07-30T00:36:28+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "ba9576cd525de78fa639453e54466d967d5f1541"
+      },
+      "deploymentState": "production-infrastructure-login-deny",
+      "artifacts": [
+        {
+          "name": "HechaoLobbyGuard-0.1.0.jar",
+          "location": "E:\\LobbyServer\\plugins\\HechaoLobbyGuard-0.1.0.jar",
+          "size": 3047,
+          "sha256": "B0B7AA651994797B16B1271D332EF03A218F8BB8FEC3226CF0F705D74311DE99",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "backup-directory",
+        "target": "E:\\manual-backups\\LobbyGuard-0.1.0-20260729T151317Z"
+      },
+      "evidence": [
+        "docs/LOBBY_GUARD_RELEASE_0.1.0.md",
+        "docs/LAUNCHER_ONLY_SERVER_SWITCHING.md",
+        "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json"
       ]
     },
     {

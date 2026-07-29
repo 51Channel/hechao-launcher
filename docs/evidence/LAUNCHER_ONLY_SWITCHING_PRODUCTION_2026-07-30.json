@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-29T17:17:00Z",
+  "scope": "Launcher-only server switching production deployment",
+  "buildSourceCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
+  "architecture": {
+    "playerSwitchingEntry": "Hechao Launcher only",
+    "publicProxy": "Velocity",
+    "lobbyRole": "Infrastructure",
+    "lobbyPlayerVisible": false,
+    "lobbyPlayerAuthorizable": false,
+    "lobbyPlayerReachable": false,
+    "lobbyMonitoringEnabled": true,
+    "inGameSwitching": false
+  },
+  "lastReadOnlyVerification": {
+    "apiHealthCheckedAtUtc": "2026-07-29T16:59:39.9078996Z",
+    "apiReadinessCheckedAtUtc": "2026-07-29T16:59:59.7885558Z",
+    "publicCatalogCheckedAtUtc": "2026-07-29T17:01:01.2364251Z",
+    "owl5CheckedAtUtc": "2026-07-29T17:16:59.3957592Z",
+    "owl5PowerShellVersion": "7.6.4",
+    "velocityListener": "[::]:25577",
+    "lobbyListener": "127.0.0.1:25566"
+  },
+  "components": [
+    {
+      "component": "launcher",
+      "version": "0.12.0",
+      "releaseTag": "launcher-v0.12.0",
+      "state": "private-oss-published-awaiting-real-player-gray",
+      "artifact": {
+        "name": "Hechao-Launcher-Setup-0.12.0-win-x64.exe",
+        "objectKey": "releases/launcher/0.12.0/Hechao-Launcher-Setup-0.12.0-win-x64.exe",
+        "size": 61874184,
+        "sha256": "9843E51B044611945BA8745D766678B4F43FB465E9039DD7EF3BDF9E55EAD4C2"
+      },
+      "acceptance": {
+        "anonymousStatus": 403,
+        "signedStatus": 200,
+        "signedContentMatched": true,
+        "firstReadSeconds": 1.34,
+        "verifyReadSeconds": 1.32,
+        "secondPublishSkippedAfterVerification": true,
+        "privateUrlDisclosed": false
+      }
+    },
+    {
+      "component": "api",
+      "version": "0.22.0-20260729T144953Z",
+      "releaseTag": "api-v0.22.0",
+      "state": "production",
+      "releaseDirectory": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z",
+      "backupDirectory": "/var/backups/hechao-launcher/api-pre-0.22.0-20260729T150635Z",
+      "databaseBackupSha256": "CDA327652BBA24F700659A0BA5C6AC2B8DC08D02A056FDFEA035020B35113D8B",
+      "migration": 19,
+      "health": "ok",
+      "readiness": "ready",
+      "publicLobbyMatches": 0,
+      "journalErrorsAfterDeploy": 0
+    },
+    {
+      "component": "velocity-authorizer",
+      "version": "0.4.0",
+      "releaseTag": "velocity-authorizer-v0.4.0",
+      "state": "production-monitor-mode",
+      "artifact": {
+        "location": "E:\\Velocity\\plugins\\HechaoVelocityAuthorizer-0.4.0.jar",
+        "size": 22967,
+        "sha256": "D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120"
+      },
+      "backupDirectory": "E:\\manual-backups\\VelocityAuthorizer-0.4.0-20260729T150949Z",
+      "legacyRoutingBackup": "E:\\manual-backups\\LegacyLobbyRouting-20260729T151223Z",
+      "infrastructureTargets": [
+        "lobby"
+      ],
+      "establishedPlayersBeforeDeploy": 0,
+      "activeLegacyProxyPlugins": 0
+    },
+    {
+      "component": "lobby-guard",
+      "version": "0.1.0",
+      "releaseTag": "lobby-guard-v0.1.0",
+      "state": "production",
+      "artifact": {
+        "location": "E:\\LobbyServer\\plugins\\HechaoLobbyGuard-0.1.0.jar",
+        "size": 3047,
+        "sha256": "B0B7AA651994797B16B1271D332EF03A218F8BB8FEC3226CF0F705D74311DE99"
+      },
+      "backupDirectory": "E:\\manual-backups\\LobbyGuard-0.1.0-20260729T151317Z",
+      "listener": "127.0.0.1:25566",
+      "whitelistEnabled": true,
+      "enforceWhitelist": true,
+      "whitelistEntries": 0,
+      "playerConnections": 0,
+      "activeBackendHubScripts": 0,
+      "monitoringRetained": true
+    }
+  ],
+  "retiredPlayerRoutes": [
+    "HubCommand",
+    "ViaVersion lobby return",
+    "ViaBackwards lobby return",
+    "backend /hub scripts",
+    "backend /lobby scripts",
+    "NPC lobby switching",
+    "proxy default player fallback"
+  ],
+  "automatedAcceptance": {
+    "dotnet": "379/379",
+    "velocity": "26/26",
+    "lobbyGuard": "3/3",
+    "publicCatalogLobbyMatches": 0,
+    "apiPublicRegression": "passed",
+    "privateLauncherDistribution": "passed"
+  },
+  "remainingExternalAcceptance": [
+    "ordinary, Participant, Collaborator and Administrator real Minecraft accounts",
+    "same-profile and cross-profile switching three rounds each",
+    "launcher restart process takeover",
+    "disconnect and reconnect behavior",
+    "API transient failure and backend-down behavior",
+    "2, 3, 5 and 20 simultaneous real-player gray rollout",
+    "switch Velocity from monitor to enforce after the preceding checks",
+    "enable mandatory catalog authentication after enforce is stable"
+  ],
+  "security": {
+    "containsPasswords": false,
+    "containsTokens": false,
+    "containsPrivateSignedUrls": false,
+    "realPlayerIdentitiesIncluded": false
+  }
+}

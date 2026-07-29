@@ -2,7 +2,7 @@
 
 > 决策日期：2026-07-29
 >
-> 状态：已确认，代码与候选制品完成，待生产部署和真实灰度
+> 状态：生产部署与自动验收完成，待真实四级账号和多人灰度
 >
 > 适用范围：赫朝启动器、启动器 API、Velocity、owl5 游戏服、owl9 恐怖整蛊服、
 > 状态采集、等级同步、备份与运维文档
@@ -142,42 +142,44 @@ Velocity 继续作为唯一公网 Minecraft 入口，负责隐藏后端地址、
 
 ## 6. 当前实现与剩余工作
 
-### 6.1 已完成的代码和候选制品
+### 6.1 已完成的生产部署
 
-| 组件 | 候选版本 | 已完成内容 |
+| 组件 | 生产版本 | 已完成内容 |
 | --- | --- | --- |
-| 启动器 | `0.12.0` | 全局单 Minecraft 进程、持久进程接管、安全退出后再授权、Lobby 目录过滤、Windows 安装包和隔离升级/卸载验证 |
-| API | `0.22.0` | `Player/Infrastructure` 角色、`monitoring_enabled`、Lobby 不可见/不可授权保护、隐藏后继续心跳与告警、管理后台内部节点视图 |
-| Velocity Authorizer | `0.4.0` | 首次连接全部故障关闭、内部目标拒绝、未知授权目标拒绝、配置失效时不放行 |
-| Lobby Guard | `0.1.0` | Paper 预登录与连接验证双重拒绝、本机监听、空白名单、优雅重启和安全下限回滚 |
+| 启动器 | `0.12.0` | 私有 OSS 发布、全局单 Minecraft 进程、持久进程接管、安全退出后再授权、Lobby 目录过滤、Windows 升级/卸载和匿名/签名下载验证 |
+| API | `0.22.0` | 迁移 `019`、`Player/Infrastructure` 角色、`monitoring_enabled`、Lobby 不可见/不可授权保护、隐藏后继续心跳与告警、管理后台内部节点视图 |
+| Velocity Authorizer | `0.4.0` | owl5 生产 `monitor` 加载、首次连接全部故障关闭、内部目标拒绝、未知授权目标拒绝、配置失效时不放行 |
+| Lobby Guard | `0.1.0` | owl5 生产加载、Paper 双重拒绝、`127.0.0.1:25566`、强制空白名单和安全下限回滚 |
 
 当前自动验证为 `.NET 379/379`、Velocity `26/26`、Lobby Guard `3/3`、
 LuckPerms 等级代理 `4/4`、Paper 指标代理 `2/2`。
 
+API、Authorizer、Lobby Guard、启动器私有 OSS、旧 Hub/Via 回程移除和各 Skript
+后端 `/hub` 停用均已完成。统一机器证据见
+[`evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json`](evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json)。
+owl5 当前状态可用只读脚本重复核对；它不会读取内部令牌或控制进程：
+
+```powershell
+pwsh -NoLogo -NoProfile -File .\tools\server\Get-HechaoLauncherOnlyProductionStatus.ps1 `
+  -HostName owl5.vipi9.top `
+  -Port 15152 `
+  -IdentityFile <运维 SSH 私钥路径> `
+  -AsJson
+```
+
 ### 6.2 仍未完成
 
-1. 将 API `0.22.0` 和迁移 `018/019` 部署生产，核对玩家目录无 Lobby、Lobby 授权拒绝、
-   管理后台仍有内部监控。
-2. 将 Authorizer `0.4.0` 部署到 owl5，并验证无授权、重复授权、API 超时、配置损坏和
-   目标下线均不能落入任意后端。
-3. 移除生产 Velocity 的 HubCommand、ViaVersion/ViaBackwards 回程层、异常回退和
-   `velocity.toml` 中除首次内部占位外的 Lobby 玩家路径。
-4. 部署 Lobby Guard `0.1.0`，把 `25566` 收紧为本机监听和空白名单；核对 LuckPerms、
-   指标、告警和备份不受影响。
-5. 检查并移除各玩家后端的 `/hub`、`/lobby`、`/l`、NPC 和其他游戏内转服入口。
-   Skript 后端使用
-   [`Disable-HechaoBackendLobbyCommands.ps1`](../tools/server/Disable-HechaoBackendLobbyCommands.ps1)
-   备份并停用 `hub.sk`，同时把旧广播改为提示使用赫朝启动器；运行中的服务端还需通过
-   受控控制台重载对应广播脚本。
-6. 发布启动器 `0.12.0` 私有候选，完成同档案/跨档案各三轮真实切换、启动器重启接管、
-   目标维护和异常退出回归。
-7. 使用普通、Participant、Collaborator、Administrator 四级真实账号完成目录、进服、
-   拒绝和等级修改回归。
-8. 上述路径稳定后切换 Velocity `enforce`、启用目录强制登录，再完成 2/3/5/20 人灰度
-   与 TPS/MSPT/GC 容量验收。
+1. 完成同档案与跨档案各三轮真实切换，并核对每轮只有一个 Minecraft 进程。
+2. 验证启动器退出后重新打开仍能接管现有游戏，再安全切换到另一档案。
+3. 使用普通、Participant、Collaborator、Administrator 四级真实账号完成目录、进服、
+   重复授权、等级修改和大厅旁路拒绝。
+4. 在真实会话中验证断线重连、API 短暂失败、目标下线和异常退出均不会进入大厅或其他
+   未授权后端。
+5. 上述路径稳定后切换 Velocity `enforce`、启用目录强制登录，再完成 `2/3/5/20` 人
+   灰度与 TPS/MSPT/GC 容量验收。
 
-在第 1 至 5 项完成前，不能称为“大厅玩家隔离已上线”；在第 6 至 8 项完成前，不能称为
-“赫朝启动器正式发布完成”。
+大厅玩家隔离已经上线；在第 1 至 5 项完成前，仍不能宣称真实玩家灰度和全量强制授权
+验收完成。
 
 ## 7. 被本决策取代的工作
 

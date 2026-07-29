@@ -1,6 +1,8 @@
 # Velocity Authorizer 0.4.0 候选发布记录
 
-> 状态：代码、测试、JAR 和回滚安装器完成；未部署生产
+> 状态：历史候选记录；已由
+> [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md)
+> 的正式生产记录取代
 >
 > 直接回滚版本：`0.3.1`
 

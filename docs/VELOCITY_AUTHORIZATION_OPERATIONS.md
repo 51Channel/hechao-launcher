@@ -1,8 +1,8 @@
 # Velocity 进服授权运维
 
-> 当前生产：API `0.20.2`、启动器 `0.11.16`、Velocity Authorizer `0.3.1`
-> 当前候选：API `0.22.0`、启动器 `0.12.0`、Velocity Authorizer `0.4.0`
-> 当前状态：候选代码、制品和自动化测试已完成，等待按本页顺序部署和真实账号灰度
+> 当前生产：API `0.22.0`、启动器 `0.12.0`、Velocity Authorizer `0.4.0`
+> （`monitor`）、Lobby Guard `0.1.0`
+> 当前状态：生产部署和自动验收完成，等待真实账号灰度后切换 `enforce`
 >
 > owl9 边界：Velocity 目标 `pvp` 当前只路由到恐怖整蛊服
 > `C:\mc\server`；真正 PVP 服 `E:\MinecraftServer` 尚无独立目标，不得通过该
@@ -97,12 +97,13 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 从 `0.4.0` 起，首次连接在插件未初始化、模式禁用、配置解析失败、API 超时或任何响应
 不完整时一律故障关闭。客户端不兼容、未知目标和基础设施目标也不受 monitor 放行影响。
 
-## 5. 当前生产与候选基线
+## 5. 当前生产基线
 
-- 当前生产插件：`0.3.1`，部署前必须由脚本重新采集文件名、大小和 SHA-256
-- 候选插件：`src/Hechao.VelocityAuthorizer/build/libs/HechaoVelocityAuthorizer-0.4.0.jar`
-- 候选 JAR 大小：`22,967` 字节
-- 候选 JAR SHA-256：`D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120`
+- 当前生产插件：`E:\Velocity\plugins\HechaoVelocityAuthorizer-0.4.0.jar`
+- JAR 大小：`22,967` 字节
+- JAR SHA-256：`D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120`
+- 部署备份：`E:\manual-backups\VelocityAuthorizer-0.4.0-20260729T150949Z`
+- 旧回程备份：`E:\manual-backups\LegacyLobbyRouting-20260729T151223Z`
 - API：`https://launcher-api.hechao.world/v1/internal/velocity/authorize`
 - 代理实例：`owl5-main`
 - 请求超时：`2500 ms`
@@ -115,14 +116,14 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 1.21.11/1.20.1 被 `MinecraftVersionMismatch` 拒绝，Activity/恐怖整蛊原档案自连允许。
 Authorizer `0.4.0` 的首次故障关闭、基础设施目标拒绝和普通后端会话兼容行为由
 `26/26` 个 Java 测试覆盖。自动验收不替代真实玩家直接路由、切服、断线重连和
-API 故障演练。候选记录见
-[`VELOCITY_AUTHORIZER_RELEASE_0.4.0_CANDIDATE.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0_CANDIDATE.md)。
+API 故障演练。正式记录见
+[`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md)。
 
 owl9 的恐怖整蛊 Fabric `1.20.1` 后端已安装 FabricProxy-Lite `2.6.0`，保持
-`online-mode=true` 并使用与代理一致的 modern forwarding 密钥。部署前后恐怖整蛊
-Java 进程与内部 `25565` 监听均为空，Velocity PID 和任务定义也未改变。该结果只证明
-静态兼容与密钥边界正确，仍需服主手动开服验证真实代理路由、身份数据和直连拒绝。
-详细步骤见 [`PVP_VELOCITY_OPERATIONS.md`](PVP_VELOCITY_OPERATIONS.md)。
+`online-mode=true` 并使用与代理一致的 modern forwarding 密钥。真实会话已完成
+统一入口、身份一致、后端直连拒绝、稳定连接和正常退出验收。真正 PVP
+`E:\MinecraftServer` 未被该历史目标操作。详细步骤见
+[`PVP_VELOCITY_OPERATIONS.md`](PVP_VELOCITY_OPERATIONS.md)。
 
 ## 6. 从 monitor 切换到 enforce
 
@@ -195,4 +196,4 @@ API `0.22.0` 已迁移，不应仅为插件回滚而降级数据库。不要通�
 或重启全部 Minecraft 服务来处理授权问题。
 
 详细发布证据见
-[`VELOCITY_AUTHORIZER_RELEASE_0.4.0_CANDIDATE.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0_CANDIDATE.md)。
+[`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md)。

@@ -1,6 +1,8 @@
 # Lobby Guard 0.1.0 候选发布记录
 
-> 状态：代码、测试、JAR 和生产安装器完成；未部署生产
+> 状态：历史候选记录；已由
+> [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md)
+> 的正式生产记录取代
 >
 > 适用服务端：`E:\LobbyServer`
 

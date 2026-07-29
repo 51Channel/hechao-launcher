@@ -1,8 +1,8 @@
 # 赫朝启动器管理员发布手册
 
-> 当前生产 API：`0.20.2-20260727T225819Z`
-> 当前启动器私有 OSS 灰度候选：`0.11.16`
-> 当前 Velocity 插件：`0.3.0`（`monitor`；客户端不兼容始终硬拒绝）
+> 当前生产 API：`0.22.0-20260729T144953Z`
+> 当前启动器私有 OSS 发布：`0.12.0`
+> 当前 Velocity 插件：`0.4.0`（`monitor`；首次故障和基础设施目标始终硬拒绝）
 > 适用范围：启动器、API、客户端档案、Velocity 插件、世界备份与分发记录
 > 明确边界：发布脚本不顺带启动、停止或重启 Minecraft 后端；确需维护时必须作为单独运维动作记录
 > owl9 边界：历史 `pvp` 档案和路由对应恐怖整蛊服 `C:\mc\server`；真正 PVP
@@ -17,7 +17,7 @@
 发布前后都必须运行：
 
 ```powershell
-.\tools\Test-ReleaseProvenanceLedger.ps1
+pwsh -NoLogo -NoProfile -File .\tools\Test-ReleaseProvenanceLedger.ps1
 ```
 
 校验必须确认标签为注释标签、标签落点存在、标签发布人与台账一致、构建来源可解析、
