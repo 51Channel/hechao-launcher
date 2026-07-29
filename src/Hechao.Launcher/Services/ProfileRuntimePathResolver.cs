@@ -10,7 +10,7 @@ namespace Hechao.Launcher.Services;
 
 internal static class ProfileRuntimePathResolver
 {
-    public static string GetLaunchRoot(string runtimeRoot, string aliasKey)
+    public static string GetRuntimeLaunchRoot(string runtimeRoot, string aliasKey)
     {
         var fullRuntimeRoot = Path.GetFullPath(runtimeRoot);
         Directory.CreateDirectory(fullRuntimeRoot);
@@ -47,9 +47,68 @@ internal static class ProfileRuntimePathResolver
         return WindowsJunction.Ensure(aliasRoot, fullRuntimeRoot);
     }
 
+    public static string GetGameLaunchRoot(string gameRoot)
+    {
+        var fullGameRoot = Path.GetFullPath(gameRoot);
+        Directory.CreateDirectory(fullGameRoot);
+        if (!ContainsFormatCharacters(fullGameRoot))
+        {
+            return fullGameRoot;
+        }
+
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException(
+                "A game path containing invisible format characters is not supported.");
+        }
+
+        return TryGetSafeShortPath(fullGameRoot) ??
+            throw new IOException(
+                "The game path requires an NTFS 8.3 short name because directory links " +
+                "are incompatible with Java CREATE_NEW file operations.");
+    }
+
+    internal static string? TryGetSafeShortPath(string path)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+
+        var fullPath = Path.GetFullPath(path);
+        var buffer = new StringBuilder(WindowsMaximumPath);
+        var length = GetShortPathName(
+            fullPath,
+            buffer,
+            checked((uint)buffer.Capacity));
+        if (length == 0 || length >= buffer.Capacity)
+        {
+            return null;
+        }
+
+        // Path.GetFullPath expands an 8.3 path back to its long form on .NET 10.
+        // Keep the fully qualified value returned by Windows so format characters stay absent.
+        var shortPath = buffer.ToString();
+        return Directory.Exists(shortPath) && !ContainsFormatCharacters(shortPath)
+            ? shortPath
+            : null;
+    }
+
     internal static bool ContainsFormatCharacters(string path) =>
         path.Any(character =>
             char.GetUnicodeCategory(character) == UnicodeCategory.Format);
+
+    private const int WindowsMaximumPath = 32_768;
+
+    [DllImport(
+        "kernel32.dll",
+        EntryPoint = "GetShortPathNameW",
+        CharSet = CharSet.Unicode,
+        SetLastError = true)]
+    private static extern uint GetShortPathName(
+        string longPath,
+        StringBuilder shortPath,
+        uint bufferLength);
 
     private static class WindowsJunction
     {
@@ -100,7 +159,7 @@ internal static class ProfileRuntimePathResolver
         {
             if ((alias.Attributes & FileAttributes.ReparsePoint) == 0)
             {
-                throw new IOException("The Java runtime compatibility path is not a directory link.");
+                throw new IOException("The launcher compatibility path is not a directory link.");
             }
 
             var resolved = alias.ResolveLinkTarget(returnFinalTarget: true);
@@ -110,7 +169,7 @@ internal static class ProfileRuntimePathResolver
                     Path.TrimEndingDirectorySeparator(Path.GetFullPath(targetPath)),
                     StringComparison.OrdinalIgnoreCase))
             {
-                throw new IOException("The Java runtime compatibility path points to another directory.");
+                throw new IOException("The launcher compatibility path points to another directory.");
             }
         }
 
@@ -158,7 +217,7 @@ internal static class ProfileRuntimePathResolver
             if (handle.IsInvalid)
             {
                 throw new IOException(
-                    "Unable to open the Java runtime compatibility path.",
+                    "Unable to open the launcher compatibility path.",
                     Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error()));
             }
 
@@ -173,7 +232,7 @@ internal static class ProfileRuntimePathResolver
                     IntPtr.Zero))
             {
                 throw new IOException(
-                    "Unable to create the Java runtime compatibility path.",
+                    "Unable to create the launcher compatibility path.",
                     Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error()));
             }
         }

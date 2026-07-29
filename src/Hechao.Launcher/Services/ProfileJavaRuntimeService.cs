@@ -106,7 +106,7 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
             metadata.JavaMajorVersion,
             cancellationToken);
 
-        var launchRuntimeRoot = ProfileRuntimePathResolver.GetLaunchRoot(
+        var launchRuntimeRoot = ProfileRuntimePathResolver.GetRuntimeLaunchRoot(
             runtimeRoot,
             profileId);
         var minecraftPath = new MinecraftPath(gameDirectory)
@@ -239,7 +239,7 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
                      .Distinct(StringComparer.OrdinalIgnoreCase))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var candidateLaunchRoot = ProfileRuntimePathResolver.GetLaunchRoot(
+            var candidateLaunchRoot = ProfileRuntimePathResolver.GetRuntimeLaunchRoot(
                 candidate,
                 $"seed-java-{javaMajorVersion}");
             var javaExecutables = Directory.EnumerateFiles(

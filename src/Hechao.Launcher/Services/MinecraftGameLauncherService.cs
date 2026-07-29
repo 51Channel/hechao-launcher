@@ -361,17 +361,17 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         string launchGameDirectory;
         string runtimeRoot;
         string launchRuntimeRoot;
+        string nativeDirectory;
+        string launchNativeDirectory;
         string? customJavaPath = null;
         MinecraftProfileMetadata metadata;
         try
         {
             var layout = new ClientStorageLayout(request.DataRoot);
             gameDirectory = ResolveProfileGameDirectory(layout, request.ProfileId);
-            launchGameDirectory = ProfileRuntimePathResolver.GetLaunchRoot(
-                gameDirectory,
-                $"{request.ProfileId}-game");
+            launchGameDirectory = ProfileRuntimePathResolver.GetGameLaunchRoot(gameDirectory);
             runtimeRoot = _runtimeRootOverride ?? layout.GetProfileRuntimeRoot(request.ProfileId);
-            launchRuntimeRoot = ProfileRuntimePathResolver.GetLaunchRoot(
+            launchRuntimeRoot = ProfileRuntimePathResolver.GetRuntimeLaunchRoot(
                 runtimeRoot,
                 request.ProfileId);
             metadata = await ReadAndValidateMetadataAsync(gameDirectory, cancellationToken);
@@ -450,6 +450,14 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 launchGameDirectory,
                 version.Logging,
                 cancellationToken);
+            nativeDirectory = Path.Combine(
+                gameDirectory,
+                "versions",
+                metadata.VersionId,
+                "natives");
+            launchNativeDirectory = ProfileRuntimePathResolver.GetRuntimeLaunchRoot(
+                nativeDirectory,
+                $"{request.ProfileId}-natives");
         }
         catch (OperationCanceledException)
         {
@@ -485,6 +493,19 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 GameLauncherVersion = LauncherProductInfo.Version
             });
             process.StartInfo.UseShellExecute = false;
+            NormalizeLaunchGameDirectory(
+                process.StartInfo,
+                gameDirectory,
+                launchGameDirectory);
+            NormalizeNativeLibraryDirectory(
+                process.StartInfo,
+                nativeDirectory,
+                Path.Combine(
+                    launchGameDirectory,
+                    "versions",
+                    metadata.VersionId,
+                    "natives"),
+                launchNativeDirectory);
 
             var javaPath = Path.GetFullPath(process.StartInfo.FileName);
             if (!File.Exists(javaPath) || !IsWithin(launchRuntimeRoot, javaPath))
@@ -505,6 +526,117 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 exception);
         }
     }
+
+    internal static void NormalizeLaunchGameDirectory(
+        ProcessStartInfo startInfo,
+        string gameDirectory,
+        string launchGameDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(startInfo);
+
+        var fullGameDirectory = Path.GetFullPath(gameDirectory);
+        startInfo.WorkingDirectory = launchGameDirectory;
+        if (startInfo.ArgumentList.Count > 0)
+        {
+            for (var index = 0; index < startInfo.ArgumentList.Count; index++)
+            {
+                startInfo.ArgumentList[index] = ReplaceLaunchPath(
+                    startInfo.ArgumentList[index],
+                    fullGameDirectory,
+                    launchGameDirectory);
+            }
+
+            return;
+        }
+
+        startInfo.Arguments = ReplaceLaunchPath(
+            startInfo.Arguments,
+            fullGameDirectory,
+            launchGameDirectory);
+    }
+
+    internal static void NormalizeNativeLibraryDirectory(
+        ProcessStartInfo startInfo,
+        string nativeDirectory,
+        string generatedNativeDirectory,
+        string launchNativeDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(startInfo);
+
+        var fullNativeDirectory = Path.GetFullPath(nativeDirectory);
+        if (startInfo.ArgumentList.Count > 0)
+        {
+            for (var index = 0; index < startInfo.ArgumentList.Count; index++)
+            {
+                var argument = startInfo.ArgumentList[index];
+                if (!IsNativeDirectoryArgument(argument))
+                {
+                    continue;
+                }
+
+                startInfo.ArgumentList[index] = ReplaceNativeDirectory(
+                    argument,
+                    fullNativeDirectory,
+                    generatedNativeDirectory,
+                    launchNativeDirectory);
+            }
+
+            return;
+        }
+
+        if (NativeDirectoryArgumentPrefixes.Any(prefix =>
+                startInfo.Arguments.Contains(prefix, StringComparison.Ordinal)))
+        {
+            startInfo.Arguments = ReplaceNativeDirectory(
+                startInfo.Arguments,
+                fullNativeDirectory,
+                generatedNativeDirectory,
+                launchNativeDirectory);
+        }
+    }
+
+    private static bool IsNativeDirectoryArgument(string value) =>
+        NativeDirectoryArgumentPrefixes.Any(prefix =>
+            value.StartsWith(prefix, StringComparison.Ordinal));
+
+    private static string ReplaceNativeDirectory(
+        string value,
+        string nativeDirectory,
+        string generatedNativeDirectory,
+        string launchNativeDirectory)
+    {
+        var rewritten = ReplaceLaunchPath(
+            value,
+            nativeDirectory,
+            launchNativeDirectory);
+        return ReplaceLaunchPath(
+            rewritten,
+            generatedNativeDirectory,
+            launchNativeDirectory);
+    }
+
+    private static string ReplaceLaunchPath(
+        string value,
+        string gameDirectory,
+        string launchGameDirectory)
+    {
+        var rewritten = value.Replace(
+            gameDirectory,
+            launchGameDirectory,
+            StringComparison.OrdinalIgnoreCase);
+        return rewritten.Replace(
+            gameDirectory.Replace('\\', '/'),
+            launchGameDirectory.Replace('\\', '/'),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static readonly string[] NativeDirectoryArgumentPrefixes =
+    [
+        "-Djava.library.path=",
+        "-Djna.tmpdir=",
+        "-Dorg.lwjgl.system.SharedLibraryExtractPath=",
+        "-Dio.netty.native.workdir="
+    ];
 
     internal static async Task EnsureLoggingConfigurationAsync(
         HttpClient httpClient,
