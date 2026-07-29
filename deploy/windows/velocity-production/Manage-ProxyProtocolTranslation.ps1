@@ -188,7 +188,8 @@ function Read-SharedText {
 function Get-NewLogText {
     param(
         [Parameter(Mandatory)][string]$Path,
-        [Parameter(Mandatory)][long]$PreviousLength
+        [AllowEmptyString()]
+        [Parameter(Mandatory)][string]$PreviousText
     )
 
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
@@ -196,8 +197,9 @@ function Get-NewLogText {
     }
 
     $text = Read-SharedText -Path $Path
-    if ($PreviousLength -gt 0 -and $text.Length -ge $PreviousLength) {
-        return $text.Substring([int]$PreviousLength)
+    if ($PreviousText.Length -gt 0 -and
+        $text.StartsWith($PreviousText, [StringComparison]::Ordinal)) {
+        return $text.Substring($PreviousText.Length)
     }
 
     return $text
@@ -946,11 +948,11 @@ function Stop-LobbyGracefully {
     }
 
     $latestLog = Join-Path $Roots.Lobby 'logs\latest.log'
-    $previousLength = if (Test-Path -LiteralPath $latestLog -PathType Leaf) {
-        (Read-SharedText -Path $latestLog).Length
+    $previousText = if (Test-Path -LiteralPath $latestLog -PathType Leaf) {
+        Read-SharedText -Path $latestLog
     }
     else {
-        0
+        ''
     }
 
     Invoke-LobbyConsoleCommand `
@@ -963,7 +965,7 @@ function Stop-LobbyGracefully {
         Start-Sleep -Milliseconds 500
         $newLog = Get-NewLogText `
             -Path $latestLog `
-            -PreviousLength $previousLength
+            -PreviousText $previousText
         $saved = $newLog -match '(?i)Saved the game|Saved all worlds'
     } while (-not $saved -and [DateTimeOffset]::UtcNow -lt $saveDeadline)
 
@@ -1017,11 +1019,11 @@ function Start-LobbyAndValidate {
     )
 
     $latestLog = Join-Path $Roots.Lobby 'logs\latest.log'
-    $previousLength = if (Test-Path -LiteralPath $latestLog -PathType Leaf) {
-        (Read-SharedText -Path $latestLog).Length
+    $previousText = if (Test-Path -LiteralPath $latestLog -PathType Leaf) {
+        Read-SharedText -Path $latestLog
     }
     else {
-        0
+        ''
     }
 
     $taskBeforeStart = Get-ScheduledTask `
@@ -1044,7 +1046,7 @@ function Start-LobbyAndValidate {
         Start-Sleep -Milliseconds 500
         $newLog = Get-NewLogText `
             -Path $latestLog `
-            -PreviousLength $previousLength
+            -PreviousText $previousText
         $ready = $newLog -match 'Done \('
     } while (-not $ready -and [DateTimeOffset]::UtcNow -lt $deadline)
 
@@ -1085,11 +1087,11 @@ function Start-VelocityAndValidate {
     )
 
     $latestLog = Join-Path $Roots.Velocity 'logs\latest.log'
-    $previousLength = if (Test-Path -LiteralPath $latestLog -PathType Leaf) {
-        (Read-SharedText -Path $latestLog).Length
+    $previousText = if (Test-Path -LiteralPath $latestLog -PathType Leaf) {
+        Read-SharedText -Path $latestLog
     }
     else {
-        0
+        ''
     }
 
     $taskBeforeStart = Get-ScheduledTask `
@@ -1112,7 +1114,7 @@ function Start-VelocityAndValidate {
         Start-Sleep -Milliseconds 500
         $newLog = Get-NewLogText `
             -Path $latestLog `
-            -PreviousLength $previousLength
+            -PreviousText $previousText
         $ready = (
             $newLog -match "Booting up Velocity $([regex]::Escape($ExpectedVersion))" -and
             $newLog -match (
