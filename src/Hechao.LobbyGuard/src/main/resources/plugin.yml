@@ -1,0 +1,8 @@
+name: HechaoLobbyGuard
+version: '0.1.0'
+main: world.hechao.lobbyguard.HechaoLobbyGuardPlugin
+api-version: '1.21'
+load: STARTUP
+description: Keeps the Hechao infrastructure Lobby unavailable to all players.
+authors:
+  - Hechao
