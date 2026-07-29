@@ -145,7 +145,8 @@ public sealed class CollectorConfiguration
             Port = server.Port,
             FallbackMaxPlayers = server.FallbackMaxPlayers,
             DataPath = dataPath,
-            MetricsPath = metricsPath
+            MetricsPath = metricsPath,
+            AllowStaleMetricsWhenEmpty = server.AllowStaleMetricsWhenEmpty
         };
     }
 
@@ -185,4 +186,6 @@ public sealed class ServerProbeConfiguration
     public string? DataPath { get; init; }
 
     public string? MetricsPath { get; init; }
+
+    public bool AllowStaleMetricsWhenEmpty { get; init; }
 }

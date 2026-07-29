@@ -183,9 +183,9 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 | --- | --- | --- | --- |
 | Velocity | `E:\Velocity` | `25577` | 运行中，`-Xmx1G` |
 | 大厅 | `E:\LobbyServer` | `25566` | 运行中，`-Xmx2G` |
-| Survival1 | `E:\Survival1` | `19228` | 运行中，`-Xmx2G` |
+| Survival1 | `E:\Survival1` | `19228` | 已停止；目录状态 `Closed` |
 | Survival2 | `E:\Survival2` | `25565` | 运行中，`-Xmx2G` |
-| Activity NeoForge | `E:\ActivityNeoForge` | `25568` | 未监听 |
+| Activity NeoForge | `E:\ActivityNeoForge` | `25568` | 运行中；零玩家时 Tick 指标暂停 |
 | DollNight | `E:\DollNight` | 与 Survival2 共用 `25565` | 替换服，不可与 Survival2 同时运行 |
 
 Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`、`pvp -> owl9.vipi9.top:19243`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
@@ -221,7 +221,7 @@ SHA-256 为 `35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B`�
 `E:\manual-backups\luckperms-tier-agent-20260726T223127Z`。安装时没有重启大厅；
 2026-07-28 的受控重启后启动日志已确认代理加载，真实 owner 快照可用。
 
-状态采集器 `0.2.0` 位于两台游戏 VPS 的 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 均为 `354186EF1D1B559D72107E80AD56467371CF7D59FCB31D5763E4C7B2B7F4A424`。两台计划任务 `Hechao Launcher Server Heartbeats` 都以 `SYSTEM` 身份每分钟运行：`owl5` 的 `mc-vps-primary` 查询 `lobby`、`survival2`、`survival1` 和 `activity`，`owl9` 的 `owl9-pvp` 只查询本机 `pvp`。令牌使用 `LocalMachine` DPAPI 加密。五个目标当前都能上报进程、磁盘和 TPS/MSPT/GC；采集器不包含 RCON 或进程启停能力。旧主采集器备份位于 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`，拆分前配置备份位于 `backups\server-heartbeats-before-owl9-split-20260727T165932Z.json`。
+状态采集器 `0.2.1` 位于两台游戏 VPS 的 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 均为 `7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED`。两台计划任务 `Hechao Launcher Server Heartbeats` 都以 `SYSTEM` 身份每分钟运行：`owl5` 的 `mc-vps-primary` 查询 `lobby`、`survival2`、`survival1` 和 `activity`，`owl9` 的 `owl9-pvp` 只查询本机恐怖整蛊历史目标 `pvp`。Activity 单独启用零玩家暂停识别；旧 Tick 数值不会发送，有玩家时仍严格报警。令牌使用 `LocalMachine` DPAPI 加密；采集器不包含 RCON 或进程启停能力。两机升级前后 Java PID 集合一致，回滚备份分别位于 `collector-0.2.1-20260729T211120Z` 和 `collector-0.2.1-20260729T211519Z`。
 
 状态链路为游戏 VPS 主动向 `launcher-api.hechao.world` 发起 HTTPS POST，API 使用
 独立心跳令牌认证；两台游戏 VPS 都不暴露 HTTP、指标或采集器监听端口。只读枚举
@@ -324,13 +324,13 @@ Velocity 目标和档案名分别是 `pvp`、`pvp` 与 `pvp-fabric-1.20.1`；这
 `C:\mc\jre\jdk-21.0.11+10-jre` 并监听 `25565`，证明当前运行的是恐怖整蛊服；
 真正 PVP 服未运行。本轮双服务端识别没有修改、启动或停止任何游戏服。
 
-只出站状态采集器 `0.2.0` 已于 2026-07-28 部署到
+只出站状态采集器已于 2026-07-30 同步升级到 `0.2.1`，
 `C:\ProgramData\Hechao\StatusCollector`。目录 ACL 仅允许 `SYSTEM` 和本机管理员，
 一分钟计划任务以 `SYSTEM` 运行并连续返回 `0`。API 中代表恐怖整蛊的历史 `pvp` 行现由
 `collector_instance=owl9-pvp` 独占，停服状态准确报告
 `ProcessNotRunning`、`MetricsFileMissing` 和 C 盘容量；跨过两台采集器的完整周期后
-没有再被 `owl5` 覆盖。部署前后 Java 进程与 `25565` 监听均为空，没有启动、停止或
-重启游戏服。该采集器的 `dataPath` 固定为 `C:\mc\server`，不代表真正 PVP 服；
+没有再被 `owl5` 覆盖。`0.2.1` 升级前后恐怖整蛊 Java PID 均为 `7216`，没有启动、
+停止或重启游戏服。该采集器的 `dataPath` 固定为 `C:\mc\server`，不代表真正 PVP 服；
 若改开 PVP，必须先切换或停用恐怖整蛊的目录与心跳逻辑，禁止只凭共享端口冒充。
 
 恐怖整蛊服的静态 Velocity 兼容改造已完成。官方 FabricProxy-Lite `2.6.0` 已安装到
@@ -369,29 +369,29 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 
 1. `download.hechao.world` 的 CNAME、HTTPS、私有 Bucket、读写分离 RAM 身份、真实客户端对象、签名清单和生产签名信任链已完成；生产签名加密恢复包已写入私有 OSS 并完成回读复验。
 2. `owl5` 三份正式世界归档均为 `Completed`，远端 ZIP、SHA-256 旁车和条目数一致，异机完整解压与恢复检查已通过；当前 `E:` 仍保留约 12.74 GiB，后续继续按保留策略监控空间。
-3. `owl9` 的密钥认证、双服务端实时盘点、恐怖整蛊只出站状态采集和 modern forwarding 均已完成；CrossStitch 修复后的真实进服、身份转发、直连拒绝、稳定连接和正常退出已通过。真正 PVP 服保持独立且未纳入本轮启动器验收。仍需恐怖整蛊成功重连、皮肤/权限目视核对与专用回程，再决定后端防火墙来源收窄。
+3. `owl9` 的密钥认证、双服务端实时盘点、恐怖整蛊只出站状态采集和 modern forwarding 均已完成；CrossStitch 修复后的真实进服、身份转发、直连拒绝、稳定连接和正常退出已通过。真正 PVP 服保持独立且未纳入本轮启动器验收。仍需恐怖整蛊多人断线重连及皮肤/权限目视核对；玩家回大厅和游戏内转服已经取消。
 4. 启动器数据库、论坛与 Sub2API 的异地加密、真实 OSS 上传/下载、定时任务、告警恢复和异地主机隔离恢复均已验收；当前不再存在 RAM v5 或平台数据异地副本阻塞。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity `0.3.0` 已加载为 `monitor`，客户端不兼容硬拒绝和生产矩阵 `8/8` 已通过。Activity 与恐怖整蛊单账号真实首次路由已通过；四级账号、兼容 NPC 转服、恐怖整蛊专用回程、断线重连和 API 故障路径仍待灰度，因此 `enforce` 与目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity Authorizer `0.4.0` 已加载为 `monitor`，首次授权故障关闭、内部大厅永久拒绝和生产兼容矩阵已通过。Activity 与恐怖整蛊单账号真实首次路由、启动器 API 故障关闭与恢复均已验收；四级账号、多人断线重连和逐级容量灰度仍待真实参与者，因此 `enforce` 与目录强制登录开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态
 
-- 发布 ID：`0.20.2-20260727T225819Z`
-- API `0.20.2`、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.11.16` 为私有 OSS 灰度版本。管理员 Web 已启用，真实 MFA 已登记。
-- Git 标签：`launcher-v0.11.16` 指向制品源码提交 `ca71962dd17ac4ed79282fd33cc16500f45fbdd0`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
+- 发布 ID：`0.22.0-20260729T144953Z`
+- API `0.22.0`、基础设施角色、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.12.2` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
+- Git 标签：`launcher-v0.12.2` 指向制品源码提交 `6405ac760fba9422d3f82fb6d3b9111e79ee700f`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
 - 公网 `8.148.207.171:8090`：连接超时，符合预期
 - 公网入口：`https://launcher-api.hechao.world`
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
-- `GET /v1/catalog`：过渡阶段匿名请求返回目录，无效 Bearer 返回 401；正式强制开关待认证许可完成后启用
-- 数据库迁移：启动时迁移 `1` 至 `17` 校验全部通过，包括目录、认证、Velocity、心跳、管理员 Web、赫朝账号、诊断上传、服务器排期、单服规则、账号安全、论坛撤销 outbox、LuckPerms 等级命令、客户端发布通道、运行遥测、服务器运行样本与统一告警
+- `GET /v1/catalog`：过渡阶段匿名请求返回玩家目录，无效 Bearer 返回 401；Lobby 为隐藏基础设施目标且公开命中为 `0`，正式强制开关待四级灰度和 Velocity `enforce` 稳定后启用
+- 数据库迁移：启动时迁移 `1` 至 `19` 校验全部通过，包括目录、认证、Velocity、心跳、管理员 Web、赫朝账号、诊断上传、服务器排期、单服规则、账号安全、论坛撤销 outbox、LuckPerms 等级命令、客户端发布通道、运行遥测、服务器运行样本、统一告警与基础设施角色
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
-- 状态心跳：错误凭据返回 401；五个目标由 `owl5` 四目标与代表恐怖整蛊的历史 `owl9-pvp` 单目标分布式写入，活动服与恐怖整蛊离线被隔离，目录实时人数与维护状态覆盖通过
-- 运行遥测：认证批次、幂等去重、30 天留存、三窗口聚合和后台页面已部署；生产已收到一条 `0.11.14` 的 `LauncherStarted/Success`，仍待三个窗口与更多事件类型验收
+- 状态心跳：错误凭据返回 401；五个目标由 `owl5` 四目标与代表恐怖整蛊的历史 `owl9-pvp` 单目标分布式写入。两机采集器均为 `0.2.1`；Survival1 已按真实停服状态记录为 `Closed`，Activity 零玩家暂停不会发送旧 Tick 数值
+- 运行遥测：认证批次、幂等去重、30 天留存、三窗口聚合和后台页面已部署；基础、Activity 与恐怖整蛊已有真实安装样本，仍待真实回滚、完整 Launch/GameExit 与多人样本
 - 诊断上传：编号 `1e707520` 已由真实 `0.11.14` 主动确认上传；上传端、生产端与管理员下载文件均为 `707` 字节且 SHA-256 为 `1C53C309DDA3D1D9A905836E79A041EDCD4DDD03C543E0424119C876AAA6BF92`，上传授权、上传完成与管理员下载审计均存在
 - 数据库应用角色：非超级用户，无建库和建角色权限
 - 公网 `8.148.207.171:5433`：连接超时，符合预期

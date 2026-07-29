@@ -185,6 +185,117 @@ public sealed class ServerHeartbeatCollectorTests
             server.Issues);
     }
 
+    [Fact]
+    public async Task CollectAsync_ReportsOptedInEmptyServerAsQuiescent()
+    {
+        var now = new DateTimeOffset(
+            2026,
+            7,
+            30,
+            8,
+            30,
+            0,
+            TimeSpan.Zero);
+        var staleMetrics = new ServerAgentMetrics(
+            now.AddHours(-2),
+            20,
+            20,
+            20,
+            0.5,
+            123);
+        var configuration = new CollectorConfiguration
+        {
+            CollectorInstance = "mc-vps-primary",
+            Servers =
+            [
+                new ServerProbeConfiguration
+                {
+                    VelocityTarget = "activity",
+                    Host = "empty",
+                    Port = 25568,
+                    FallbackMaxPlayers = 30,
+                    AllowStaleMetricsWhenEmpty = true
+                }
+            ]
+        };
+        var collector = new ServerHeartbeatCollector(
+            new FakeStatusClient(),
+            NullServerProcessMetricsProvider.Instance,
+            new FakeAgentMetricsReader(
+                new ServerAgentMetricsProbeResult(
+                    staleMetrics,
+                    ServerMetricIssueCode.MetricsFileStale)),
+            new FrozenTimeProvider(now));
+
+        var result = await collector.CollectAsync(
+            configuration,
+            CancellationToken.None);
+
+        var server = Assert.Single(result.Servers);
+        Assert.True(server.Online);
+        Assert.Equal(0, server.OnlinePlayers);
+        Assert.Null(server.Tps1m);
+        Assert.Null(server.MetricsCapturedAt);
+        Assert.DoesNotContain(
+            ServerMetricIssueCode.MetricsFileStale,
+            server.Issues!);
+    }
+
+    [Fact]
+    public async Task CollectAsync_RejectsStaleMetricsWhenPlayerIsOnline()
+    {
+        var now = new DateTimeOffset(
+            2026,
+            7,
+            30,
+            8,
+            30,
+            0,
+            TimeSpan.Zero);
+        var configuration = new CollectorConfiguration
+        {
+            CollectorInstance = "mc-vps-primary",
+            Servers =
+            [
+                new ServerProbeConfiguration
+                {
+                    VelocityTarget = "activity",
+                    Host = "online",
+                    Port = 25568,
+                    FallbackMaxPlayers = 30,
+                    AllowStaleMetricsWhenEmpty = true
+                }
+            ]
+        };
+        var collector = new ServerHeartbeatCollector(
+            new FakeStatusClient(),
+            NullServerProcessMetricsProvider.Instance,
+            new FakeAgentMetricsReader(
+                new ServerAgentMetricsProbeResult(
+                    new ServerAgentMetrics(
+                        now.AddHours(-2),
+                        20,
+                        20,
+                        20,
+                        0.5,
+                        123),
+                    ServerMetricIssueCode.MetricsFileStale)),
+            new FrozenTimeProvider(now));
+
+        var result = await collector.CollectAsync(
+            configuration,
+            CancellationToken.None);
+
+        var server = Assert.Single(result.Servers);
+        Assert.True(server.Online);
+        Assert.Equal(8, server.OnlinePlayers);
+        Assert.Null(server.Tps1m);
+        Assert.Null(server.MetricsCapturedAt);
+        Assert.Contains(
+            ServerMetricIssueCode.MetricsFileStale,
+            server.Issues!);
+    }
+
     private sealed class FakeStatusClient : IMinecraftStatusClient
     {
         public Task<MinecraftServerStatus> QueryAsync(
@@ -197,6 +308,12 @@ public sealed class ServerHeartbeatCollectorTests
             {
                 return Task.FromResult(
                     new MinecraftServerStatus(8, 300, "Paper 1.21.11", 774));
+            }
+
+            if (host == "empty")
+            {
+                return Task.FromResult(
+                    new MinecraftServerStatus(0, 30, "NeoForge 1.21.11", 774));
             }
 
             throw new SocketException((int)SocketError.ConnectionRefused);

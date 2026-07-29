@@ -151,7 +151,7 @@ Velocity 继续作为唯一公网 Minecraft 入口，负责隐藏后端地址、
 | Velocity Authorizer | `0.4.0` | owl5 生产 `monitor` 加载、首次连接全部故障关闭、内部目标拒绝、未知授权目标拒绝、配置失效时不放行 |
 | Lobby Guard | `0.1.0` | owl5 生产加载、Paper 双重拒绝、`127.0.0.1:25566`、公网端口不可达、强制空白名单和安全下限回滚；八个大厅玩家 Skript 已在线禁用，只保留每日备份 |
 
-当前自动验证为 `.NET 386/386`、Velocity `26/26`、Lobby Guard `3/3`、
+当前自动验证为 `.NET 388/388`、Velocity `26/26`、Lobby Guard `3/3`、
 LuckPerms 等级代理 `4/4`、Paper 指标代理 `2/2`。
 
 API、Authorizer、Lobby Guard、启动器私有 OSS、旧 Hub/Via 回程移除和各 Skript

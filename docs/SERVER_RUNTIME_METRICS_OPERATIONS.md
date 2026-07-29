@@ -1,6 +1,6 @@
 # 服务器运行指标运维
 
-> 当前生产：API `0.22.0-20260729T144953Z`、Windows 采集器 `0.2.0`
+> 当前生产：API `0.22.0-20260729T144953Z`、Windows 采集器 `0.2.1`
 >
 > 已加载：Paper/Purpur、NeoForge 与 Fabric 指标代理 `0.1.0`
 >
@@ -81,7 +81,7 @@ src\Hechao.ModServerMetricsAgent\neoforge\build\libs\HechaoServerMetrics-NeoForg
 
 | 制品 | SHA-256 |
 | --- | --- |
-| `hechao-status-collector-0.2.0-win-x64.zip` | `30D9BC599B80FEF48D5FE02B340FE494BE8DE7B5D590828BED34F155D81F8167` |
+| `Hechao.StatusCollector.exe` `0.2.1` | `7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED` |
 | `HechaoServerMetrics-0.1.0.jar` | `BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C` |
 | `HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar` | `D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6` |
 | `HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar` | `49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E` |
@@ -115,6 +115,13 @@ server_restart=not_performed
 `C:\ProgramData\Hechao\StatusCollector\backups\collector-0.2.0-20260727T004750Z`，
 指标代理备份位于 `E:\manual-backups\server-metrics-20260727T004852Z`。部署前后 Java
 PID 均为同一组，计划任务手工与自动运行均返回成功。
+
+2026-07-30 两台采集器升级到 `0.2.1`。Activity 明确启用
+`allowStaleMetricsWhenEmpty`：在线零玩家且最后快照结构有效时不再把 NeoForge
+休眠误报为故障，同时不发送旧 Tick 数值；有人在线后，过期快照仍立即报告
+`MetricsFileStale`。两机手工上报和计划任务均返回 `0`，部署前后 Java PID 集合
+完全一致。详见
+[`STATUS_COLLECTOR_RELEASE_0.2.1.md`](STATUS_COLLECTOR_RELEASE_0.2.1.md)。
 
 2026-07-28 又将 `pvp` 从 `owl5` 的远端状态探针拆到 `owl9` 本机只出站采集器。
 `owl5` 配置现保留四个本机目标，`owl9-pvp` 只查询

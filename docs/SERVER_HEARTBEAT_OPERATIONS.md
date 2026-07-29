@@ -72,6 +72,12 @@ $token | pwsh.exe -NoLogo -NoProfile -File .\Protect-HeartbeatToken.ps1 `
 6. Run the collector executable once and verify a successful API response.
 7. Confirm the task's last result is `0`.
 
+Production upgrades use `tools/server/Install-HechaoStatusCollector.ps1`. It verifies
+the uploaded SHA-256, disables only the heartbeat task, backs up the executable and
+configuration, performs a manual report and a scheduled report, and restores the old
+files and task state on failure. It records Java process IDs before and after and never
+controls a game server.
+
 The production target ownership is:
 
 | Collector instance | Velocity target | Local endpoint | Fallback maximum | Notes |
@@ -110,6 +116,11 @@ The first five-target manual production run observed:
 | `activity` | offline; connection failure isolated to this target |
 
 One offline target does not abort the remaining batch and is not a reason to start that server.
+
+Collector `0.2.1` supports an opt-in `allowStaleMetricsWhenEmpty` target setting for
+NeoForge's empty-server pause. It suppresses only a validated stale snapshot while the
+status endpoint is online with zero players. No stale tick values are sent to the API.
+Missing, invalid, unconfigured, offline, and player-present cases remain failures.
 
 ## Owl9 collector split
 

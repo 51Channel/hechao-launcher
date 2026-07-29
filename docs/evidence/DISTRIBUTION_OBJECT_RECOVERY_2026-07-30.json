@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-29T21:19:05.0336375+00:00",
+  "purpose": "Maintain a hash-complete recovery copy of every object referenced by the six active signed client profiles outside the private OSS object store.",
+  "source": {
+    "class": "administrator release workstation",
+    "profileCount": 6,
+    "referenceCount": 26645,
+    "uniqueObjectCount": 8944,
+    "uniqueObjectBytes": 1955105906,
+    "objectSetSha256": "e1154e71cae564940d852650ba4b5dee75b4389eafbed3398eb947dfae0325cd"
+  },
+  "destination": {
+    "class": "independent API host system disk",
+    "root": "/var/backups/hechao-launcher/distribution-objects",
+    "activeVersion": "20260729T203955Z",
+    "profileCount": 6,
+    "validatedFileCount": 8950,
+    "validatedBytes": 1966563951,
+    "inventorySha256": "48cfcb95ee840e010a3313005f1372467d8f4335eb21979e5374d14f2054461c",
+    "sha256SumsSha256": "f84e2a6b7fee19cea5bdc3442b2995e3f55986d894890d6213bc7de54b552eda",
+    "permissions": "0700 root:root"
+  },
+  "acceptance": {
+    "localFullHashValidationPassed": true,
+    "remoteFullHashValidationPassed": true,
+    "isolatedRestorePassed": true,
+    "contentDeduplicationPassed": true,
+    "corruptedMirrorRejected": true,
+    "corruptedSourceRejected": true,
+    "failedReplacementPreservedCurrentMirror": true,
+    "partialDirectoryCount": 0,
+    "restoreTemporaryDirectoryCount": 0
+  },
+  "toolingRegression": {
+    "validatedAtUtc": "2026-07-29T22:14:56.9326502+00:00",
+    "localMirrorRevalidatedAtUtc": "2026-07-29T22:17:38.3849525+00:00",
+    "remoteMirrorRevalidatedAtUtc": "2026-07-29T22:18:37.1908254+00:00",
+    "scenarioCount": 7,
+    "pathTraversalRejected": true,
+    "overlappingSourceAndDestinationRejected": true,
+    "failedReplacementPreservedCurrentMirror": true
+  },
+  "scope": {
+    "independentFromOssCredentials": true,
+    "independentStorageMedium": true,
+    "independentCloudProviderOrRegion": false,
+    "gameServerRestartPerformed": false,
+    "apiRestartPerformed": false
+  }
+}

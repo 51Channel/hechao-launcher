@@ -14,6 +14,11 @@
 > 2026-07-30 只读快照：Member `21` 个但 Minecraft 绑定为 `0`，Participant `0`，
 > Collaborator `0`，Administrator `1` 个且已绑定。生产当前具备外部灰度条件，但在
 > 三个缺失等级取得合法正版身份并完成逐级多人验收前，不得切换 `enforce`。
+>
+> 严格自动预检已运行 60 秒：API `22/22`、p95 `180.846 ms`，Activity 正确识别为
+> `paused-when-empty`，大厅为 `0` 人且最终活动 Critical 为 `0`。Survival1 已按
+> 实际停服状态改为 `Closed` 并完成数据库快照、事务审计和告警自动恢复；当前仅有
+> owl9 低磁盘 Warning，开始 20 人灰度前必须保留磁盘余量观察。
 
 ## 1. 发布前门槛
 
@@ -25,6 +30,8 @@
 - [x] 启动器 `0.12.2` 安装包 SHA-256 与正式发布记录一致，私有 OSS 匿名 `403`、两次签名回读 `200`。
 - [x] Activity 工作目录、受管 Java 和五个原生目录属性全部使用不含格式字符的安全路径。
 - [x] 安装版 `0.12.2` 完成正版会话、连接 Activity、进入世界、正常退出码 `0` 和零残留进程验收。
+- [x] 采集器 `0.2.1` 已部署两台 VPS；空服暂停、有人在线拒绝旧指标、部署失败回滚和 Java PID 不变均已验收。
+- [x] `Test-HechaoGrayPilotReadiness.ps1` 已完成 Readiness 基线并生成机器证据。
 
 ## 2. 单账号功能灰度
 
@@ -59,6 +66,8 @@ API 故障关闭和恢复证据见
 
 当前账号数量、API 健康、Authorizer/Lobby Guard 哈希与大厅隔离快照见
 [`evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json`](evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json)。
+连续采样、TPS/MSPT/GC、API 延迟、空服暂停和既存告警见
+[`evidence/GRAY_READINESS_PREFLIGHT_2026-07-30.json`](evidence/GRAY_READINESS_PREFLIGHT_2026-07-30.json)。
 
 ## 4. 通过与回滚
 

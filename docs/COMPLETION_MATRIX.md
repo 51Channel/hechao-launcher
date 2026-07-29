@@ -40,7 +40,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.12.0 -> 0.12.1` 的隔离干净安装与双轮卸载，以及 `0.12.1 -> 0.12.2` 覆盖安装、设置与 DPAPI 会话保留、ProductVersion 和运行中启动器保护均通过 |
 | 私有 OSS 发布 | 已完成 | `0.12.2` 不可变对象已发布；重复发布校验后跳过，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | 当前开发分支 .NET `386/386`，Velocity `26/26`，Lobby Guard `3/3`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2` |
+| 自动测试 | 已完成 | 当前开发分支 .NET `388/388`，Velocity `26/26`，Lobby Guard `3/3`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2` |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.12.2` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -100,8 +100,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 基础设施大厅玩家隔离 | 已部署待外部验收 | API `0.22.0`、Authorizer `0.4.0`、Lobby Guard `0.1.0` 已生产部署；`25566` 仅回环监听、公网连接失败、强制空白名单，等级代理、指标、告警和备份保持在线，仍需四级真实账号旁路拒绝 |
 | Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
 | 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
-| 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊持续上报；API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；真正 PVP 未接入该心跳 |
-| TPS、MSPT、进程内存和启动时间 | 已完成 | 五个运行目标的代理均已加载：Survival1 `19.996649 TPS / 1.1225 MSPT`、Survival2 `20.000241 / 1.0375`、基础设施 Lobby `20.003904 / 1.8530`、Activity `20 / 5.7745`；恐怖整蛊在正式备份后 15 秒复核为 `20 / 12.5916`、GC 增量 `0 ms`，PID 与监听未变化。20 至 30 人负载仍是独立外部门槛 |
+| 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊持续上报；两机只读采集器均为 `0.2.1` 且计划任务返回 `0`。API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；真正 PVP 未接入该心跳 |
+| TPS、MSPT、进程内存和启动时间 | 已完成 | 五个运行目标的代理均已加载；采集器 `0.2.1` 将 Activity 在线零玩家时的 NeoForge Tick 暂停表示为 `paused-when-empty`，不发送旧数值或伪造时间，有玩家时仍硬拒绝过期指标。严格 60 秒预检中 API `22/22`、p95 `180.846 ms`、大厅始终 `0` 人且最终活动 Critical 为 `0`；20 至 30 人负载仍是独立外部门槛 |
 | 管理后台状态与错误摘要 | 已实现待生产验收 | “服务状态”和“运行告警”页面、30 天样本、24 小时固定问题摘要与告警历史保留在 API `0.22.0`；真实管理员 MFA 已登记，仍待从正确启动器创建新票据并逐页复核当前五服数据 |
 | 远程启动、停止、重启 | 不在首版范围 | 若增加，必须使用最小权限代理、命令白名单、双确认和审计 |
 
@@ -114,12 +114,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 数据库每日备份 | 已完成 | 本机恢复演练已做 |
 | 数据库异地副本与异地主机恢复 | 已完成 | 当前 RAM v5 保留数据库和恢复前缀的最小权限；真实 OSS 上传、立即下载复验、定时任务、告警恢复、异地主机解密和隔离恢复均通过 |
 | 论坛与 Sub2API 每日及异地备份 | 已完成 | RAM v5 默认生效；在线一致性包、加密 OSS 上传与立即回读、owl5 解密、77 表隔离恢复、每日 timer，以及 `backup:platform-data-offsite` 的失败/恢复邮件均通过 |
+| 内容寻址对象独立恢复副本 | 已完成 | 六个活动签名档案共 `26,645` 个引用、`8,944` 个去重对象已保存到 OSS 外独立系统盘；本地/远端全量 SHA-256、损坏拒绝、失败替换保留和隔离恢复均通过。它不是跨云厂商或跨地域副本，见 [`DISTRIBUTION_OBJECT_RECOVERY.md`](DISTRIBUTION_OBJECT_RECOVERY.md) |
 | Minecraft 世界串行原子备份 | 已完成 | Lobby、Survival1、Survival2 正式 Essentials/VSS 归档均完成；owl9 恐怖整蛊也已通过 `save-all flush`/`save-off`/VSS/`save-on` 生成 `4,149,156,327` 字节正式归档，PID 未变化。真正 PVP 未触碰；恐怖整蛊远端 `E:` 只剩约 5.39 GiB，再次完整备份前需异机复核后扩容或计划回收当前归档 |
 | 世界恢复演练 | 已完成 | owl5 三份正式归档已转存管理机、重算 SHA、完整解压；7 个 `level.dat` 有效，确定性抽检 `454/9,049` 个区域文件、`152,365` 个区块无问题。恐怖整蛊另完成 `2,493/2,493` 文件长度与 SHA-256 比对及 `2,370/2,370` 区域全量扫描；源端既有的 22 个零字节 `entities`/`poi` 占位文件通过精确清单审计，地形空文件为 0。所有演练均未覆盖生产世界 |
 | API、登录、下载和证书告警 | 已完成 | API `0.22.0`、迁移 19、平台监控器 `0.1.2`、双备份检查、后台告警页和 transition-only 邮件已生产验收 |
 | 发布前故障自动演练 | 已完成 | 断网、损坏文件、维护、权限变化和版本回滚五类定向集合 `45/45` 通过；完整 `.NET 355/355` 与三组服务端代理 `17/17` 同轮复验，见 [`PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md`](PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md) |
 | 生产剩余门槛只读审计 | 已完成 | 账号、MFA、诊断、遥测、档案、心跳、告警、代理加载、世界归档与 RAM v5 当前状态已做匿名聚合核对；证据和执行顺序见 [`PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md`](PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md) |
-| TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 需要活动窗口和真实玩家 |
+| TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 自动预检与零玩家基线已通过；Survival1 已按实际停服状态改为 `Closed`，事务审计和严重告警自动恢复均已验证。仍需要活动窗口和真实玩家，并在扩大到 20 人前持续观察 owl9 低磁盘 Warning |
 | 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB 与双服务端边界已盘点：恐怖整蛊为 `C:\mc\server` Fabric，真正 PVP 为 `E:\MinecraftServer` Purpur，两者共享 `25565` 且禁止同时启动。恐怖整蛊只出站采集器、modern forwarding、运行基线和正式世界备份/异机恢复已验收；真正 PVP 未接入、未启动、未修改。见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md) 及其机器证据 |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |

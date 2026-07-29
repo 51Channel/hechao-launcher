@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "status": "waiting-for-external-participants",
+  "stage": "Readiness",
+  "target": null,
+  "startedAtUtc": "2026-07-30T06:10:26.2263793+08:00",
+  "completedAtUtc": "2026-07-30T06:11:26.683422+08:00",
+  "durationSeconds": 60.457,
+  "sampleIntervalSeconds": 5,
+  "sampleCount": 11,
+  "thresholds": {
+    "minimumTps": 18.5,
+    "maximumMspt": 50.0,
+    "maximumApiP95Milliseconds": 750.0,
+    "maximumGcMillisecondsPerMinute": 5000.0,
+    "maximumMetricAgeSeconds": 90,
+    "quiescentWhenEmptyTargets": [
+      "activity"
+    ]
+  },
+  "api": {
+    "probeCount": 22,
+    "failedProbeCount": 0,
+    "p50Milliseconds": 167.692,
+    "p95Milliseconds": 180.846,
+    "maximumMilliseconds": 1012.166
+  },
+  "accounts": [
+    {
+      "tier": "Administrator",
+      "linkedCount": 1,
+      "enabledCount": 1
+    },
+    {
+      "tier": "Member",
+      "linkedCount": 0,
+      "enabledCount": 21
+    }
+  ],
+  "targets": [
+    {
+      "target": "activity",
+      "role": "Player",
+      "catalogStatus": "Online",
+      "isOnline": true,
+      "metricAgeSeconds": 28.88,
+      "minimumTps1m": null,
+      "maximumMspt": null,
+      "maximumOnlinePlayers": 0,
+      "tickMetricsState": "paused-when-empty",
+      "gcMillisecondsPerMinute": 0.0,
+      "finalWorkingSetBytes": 19996672,
+      "finalProcessCpuPercent": 0,
+      "finalDiskFreeBytes": 12582596608,
+      "probeIssues": []
+    },
+    {
+      "target": "lobby",
+      "role": "Infrastructure",
+      "catalogStatus": "Online",
+      "isOnline": true,
+      "metricAgeSeconds": 28.88,
+      "minimumTps1m": 19.99674516344763,
+      "maximumMspt": 0.45549999999999996,
+      "maximumOnlinePlayers": 0,
+      "tickMetricsState": "live",
+      "gcMillisecondsPerMinute": 0.0,
+      "finalWorkingSetBytes": 180682752,
+      "finalProcessCpuPercent": 0,
+      "finalDiskFreeBytes": 12582596608,
+      "probeIssues": []
+    },
+    {
+      "target": "pvp",
+      "role": "Player",
+      "catalogStatus": "Online",
+      "isOnline": true,
+      "metricAgeSeconds": 43.879,
+      "minimumTps1m": 20.0,
+      "maximumMspt": 12.447097491666668,
+      "maximumOnlinePlayers": 0,
+      "tickMetricsState": "live",
+      "gcMillisecondsPerMinute": 0.0,
+      "finalWorkingSetBytes": 810614784,
+      "finalProcessCpuPercent": 6.180878005093439,
+      "finalDiskFreeBytes": 8817836032,
+      "probeIssues": []
+    },
+    {
+      "target": "survival1",
+      "role": "Player",
+      "catalogStatus": "Closed",
+      "isOnline": false,
+      "metricAgeSeconds": 28.88,
+      "minimumTps1m": null,
+      "maximumMspt": null,
+      "maximumOnlinePlayers": 0,
+      "tickMetricsState": "unavailable",
+      "gcMillisecondsPerMinute": 0.0,
+      "finalWorkingSetBytes": null,
+      "finalProcessCpuPercent": null,
+      "finalDiskFreeBytes": 12582596608,
+      "probeIssues": [
+        "StatusUnavailable",
+        "ProcessNotRunning",
+        "MetricsFileStale"
+      ]
+    },
+    {
+      "target": "survival2",
+      "role": "Player",
+      "catalogStatus": "Maintenance",
+      "isOnline": true,
+      "metricAgeSeconds": 28.88,
+      "minimumTps1m": 20.000884237111837,
+      "maximumMspt": 1.099839504950495,
+      "maximumOnlinePlayers": 0,
+      "tickMetricsState": "live",
+      "gcMillisecondsPerMinute": 0.0,
+      "finalWorkingSetBytes": 285872128,
+      "finalProcessCpuPercent": 0,
+      "finalDiskFreeBytes": 12582596608,
+      "probeIssues": []
+    }
+  ],
+  "authorizer": {
+    "mode": "monitor",
+    "infrastructureTargets": "lobby",
+    "lobbyServerIp": "127.0.0.1",
+    "lobbyWhitelistEnabled": "true",
+    "lobbyEnforceWhitelist": "true",
+    "lobbyWhitelistEntries": 0
+  },
+  "initialActiveAlertCount": 1,
+  "finalActiveAlertCount": 1,
+  "finalActiveAlerts": [
+    {
+      "fingerprint": "server:pvp:disk",
+      "severity": "Warning",
+      "code": "Server.DiskFree"
+    }
+  ],
+  "finalCriticalAlerts": [],
+  "newCriticalAlerts": [],
+  "blockingReasons": [
+    {
+      "kind": "External",
+      "code": "missing_linked_tier_member",
+      "message": "No enabled, Minecraft-linked Member account is available."
+    },
+    {
+      "kind": "External",
+      "code": "missing_linked_tier_participant",
+      "message": "No enabled, Minecraft-linked Participant account is available."
+    },
+    {
+      "kind": "External",
+      "code": "missing_linked_tier_collaborator",
+      "message": "No enabled, Minecraft-linked Collaborator account is available."
+    }
+  ],
+  "technicalBlockerCount": 0,
+  "externalBlockerCount": 3,
+  "safeProgression": false,
+  "automaticAction": "stop-expansion-and-keep-current-production-mode"
+}

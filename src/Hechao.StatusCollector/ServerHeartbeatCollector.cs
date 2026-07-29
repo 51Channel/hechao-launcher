@@ -110,13 +110,21 @@ public sealed class ServerHeartbeatCollector
         var processResult = await processTask;
         issues.AddRange(processResult.Issues);
         var agentResult = await agentTask;
-        if (agentResult.Issue is not null)
+        var acceptsPausedSnapshot =
+            online &&
+            onlinePlayers == 0 &&
+            server.AllowStaleMetricsWhenEmpty &&
+            agentResult.Metrics is not null &&
+            agentResult.Issue == ServerMetricIssueCode.MetricsFileStale;
+        if (agentResult.Issue is not null && !acceptsPausedSnapshot)
         {
             issues.Add(agentResult.Issue.Value);
         }
 
         var process = processResult.Process;
-        var metrics = agentResult.Metrics;
+        var metrics = agentResult.Issue == ServerMetricIssueCode.MetricsFileStale
+                ? null
+                : agentResult.Metrics;
         return new VelocityTargetHeartbeat(
             server.VelocityTarget,
             online,

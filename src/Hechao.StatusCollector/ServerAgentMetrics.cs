@@ -97,22 +97,18 @@ public sealed class JsonServerAgentMetricsReader : IServerAgentMetricsReader
                     ServerMetricIssueCode.MetricsFileInvalid);
             }
 
-            if (snapshot.CapturedAt < capturedAt - maximumAge)
-            {
-                return new ServerAgentMetricsProbeResult(
-                    null,
-                    ServerMetricIssueCode.MetricsFileStale);
-            }
-
+            var metrics = new ServerAgentMetrics(
+                snapshot.CapturedAt,
+                snapshot.Tps1m,
+                snapshot.Tps5m,
+                snapshot.Tps15m,
+                snapshot.MsptAverage,
+                snapshot.GcCollectionTimeMilliseconds);
             return new ServerAgentMetricsProbeResult(
-                new ServerAgentMetrics(
-                    snapshot.CapturedAt,
-                    snapshot.Tps1m,
-                    snapshot.Tps5m,
-                    snapshot.Tps15m,
-                    snapshot.MsptAverage,
-                    snapshot.GcCollectionTimeMilliseconds),
-                null);
+                metrics,
+                snapshot.CapturedAt < capturedAt - maximumAge
+                    ? ServerMetricIssueCode.MetricsFileStale
+                    : null);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or

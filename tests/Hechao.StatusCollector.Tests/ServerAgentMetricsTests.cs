@@ -50,7 +50,7 @@ public sealed class ServerAgentMetricsTests : IDisposable
     }
 
     [Fact]
-    public async Task ProbeAsync_RejectsStaleSnapshot()
+    public async Task ProbeAsync_ReturnsValidatedStaleSnapshotWithIssue()
     {
         var now = new DateTimeOffset(
             2026,
@@ -77,7 +77,9 @@ public sealed class ServerAgentMetricsTests : IDisposable
             TimeSpan.FromSeconds(30),
             CancellationToken.None);
 
-        Assert.Null(result.Metrics);
+        Assert.NotNull(result.Metrics);
+        Assert.Equal(20, result.Metrics.Tps1m);
+        Assert.Equal(now.AddMinutes(-2), result.Metrics.CapturedAt);
         Assert.Equal(ServerMetricIssueCode.MetricsFileStale, result.Issue);
     }
 

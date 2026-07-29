@@ -35,7 +35,7 @@ pwsh -NoLogo -NoProfile -File .\tools\Test-ReleaseProvenanceLedger.ps1
 | API | `api-v0.20.2` | 数据库与论坛一致性备份、独立端口端到端验收、原子部署、健康/就绪、认证、敏感 URL 日志、旧域名与公网端口 |
 | 客户端档案 | `profile-pvp-fabric-1.20.1-v1.0.0` | 清单签名、全对象哈希、干净安装、加载器与 Java、回滚 |
 | Velocity 插件 | `velocity-authorizer-v0.3.0` | Java 测试、配置模式、目标映射、会话来源及客户端兼容矩阵；部署和重启分开记录 |
-| 状态采集器 | `status-collector-v0.2.0` | 只读状态、进程与磁盘查询、任务结果、令牌 ACL、无进程控制能力 |
+| 状态采集器 | `status-collector-v0.2.1` | 只读状态、进程与磁盘查询、空服暂停、任务结果、令牌 ACL、无进程控制能力 |
 | 世界备份引擎 | 运维提交 | 串行锁、磁盘预检、ZIP 条目校验、SHA-256、原子完成、保留策略 |
 
 组件独立升版。只修改 API 时不要无意义地提高启动器版本；只更新活动档案时不要覆盖同版本对象或清单。
@@ -83,7 +83,10 @@ API 使用 `linux-x64` 自包含单文件发布。发布目录不得包含 PDB�
 5. 使用发布器 `0.7.0` 或更高版本上传。它必须先通过 `HeadObject` 校验当前对象的 `Content-Length` 与 `x-oss-meta-sha256`：匹配则跳过，不匹配则硬失败，仅缺失时上传并再次校验。OSS 在版本控制已开启或暂停时会忽略 `x-oss-forbid-overwrite`，不能只依赖该请求头。
 6. 先发布隐藏测试档案或内部测试服务器，完成全新安装和修复。
 7. 记录档案 ID、版本、Minecraft、加载器、Java、文件数、对象数、逻辑大小和清单 SHA-256。
-8. 验收后再原子更新生产清单与目录记录。
+8. 从全部活动签名清单重建内容寻址对象恢复集，完成本地全量哈希、独立主机安装、
+   远端全量哈希和隔离恢复，再原子更新 `current`。不得只追加本次新增对象；具体见
+   [`DISTRIBUTION_OBJECT_RECOVERY.md`](DISTRIBUTION_OBJECT_RECOVERY.md)。
+9. 验收后再原子更新生产清单与目录记录。
 
 活动档案必须使用独立 `profile-id`。Forge、Fabric、NeoForge 和原版档案不得共享可写 `.minecraft`。
 
@@ -154,6 +157,14 @@ admin.hechao.world                未启用时 404
 - 大厅、生存服、活动服目录与权限显示。
 - 服务器维护、关闭、权限变更和 API 暂时不可用。
 - 旧官网、中转 API、Velocity 与现有 Minecraft 服务没有受到影响。
+- 运行 `tools/acceptance/Test-HechaoGrayPilotReadiness.ps1`，保存每档机器证据；任何
+  活动 Critical、TPS/MSPT/GC 超阈值、API p95 超阈值或大厅出现玩家都立即停止扩大。
+
+`2026-07-30` 的严格 60 秒 Readiness 基线为 API `22/22` 成功、p95
+`180.846 ms`、Activity `paused-when-empty`、大厅 `0` 人且最终活动 Critical
+为 `0`。Survival1 已按真实停服状态改为 `Closed`，修订号从 `2` 增至 `3`，
+数据库快照、事务审计和告警自动恢复均已验证；当前仅保留
+`server:pvp:disk` Warning，不能把 Warning 当作多人容量已验收。
 
 真实四级账号、Velocity `monitor` 灰度和 `enforce` 验收未完成前，不向全部玩家开放强制登录版本。
 

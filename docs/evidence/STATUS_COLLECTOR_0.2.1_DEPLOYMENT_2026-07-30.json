@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-29T21:15:39+00:00",
+  "purpose": "Represent NeoForge empty-server tick suspension without reporting a false stale-metrics fault, while retaining strict stale rejection as soon as a player is online.",
+  "artifact": {
+    "version": "0.2.1",
+    "fileVersion": "0.2.1.0",
+    "sizeBytes": 73829052,
+    "sha256": "7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED"
+  },
+  "behavior": {
+    "optInProperty": "allowStaleMetricsWhenEmpty",
+    "optedInTargets": [
+      "activity"
+    ],
+    "staleTickValuesForwarded": false,
+    "staleIssueSuppressedOnlyWhenOnlineAndEmpty": true,
+    "staleIssueRetainedWhenPlayerOnline": true
+  },
+  "primaryGameVps": {
+    "collectorInstance": "mc-vps-primary",
+    "installedVersion": "0.2.1.0",
+    "installedSha256": "7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED",
+    "backupPath": "C:\\ProgramData\\Hechao\\StatusCollector\\backups\\collector-0.2.1-20260729T211120Z",
+    "manualExitCode": 0,
+    "scheduledTaskLastResult": 0,
+    "javaProcessIdsBefore": [
+      6008,
+      6112,
+      7748,
+      9428,
+      10412
+    ],
+    "javaProcessIdsAfter": [
+      6008,
+      6112,
+      7748,
+      9428,
+      10412
+    ]
+  },
+  "secondaryGameVps": {
+    "collectorInstance": "owl9-pvp",
+    "installedVersion": "0.2.1.0",
+    "installedSha256": "7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED",
+    "backupPath": "C:\\ProgramData\\Hechao\\StatusCollector\\backups\\collector-0.2.1-20260729T211519Z",
+    "manualExitCode": 0,
+    "scheduledTaskLastResult": 0,
+    "javaProcessIdsBefore": [
+      7216
+    ],
+    "javaProcessIdsAfter": [
+      7216
+    ],
+    "horrorPrankDirectoryChanged": false,
+    "truePvpDirectoryChanged": false
+  },
+  "rollbackRehearsal": {
+    "failedAttemptsRolledBack": 3,
+    "executableRestored": true,
+    "configurationRestored": true,
+    "scheduledTaskRestored": true,
+    "temporaryUploadsRemoved": true
+  },
+  "safety": {
+    "minecraftProcessStarted": false,
+    "minecraftProcessStopped": false,
+    "minecraftProcessRestarted": false,
+    "velocityRestarted": false,
+    "apiRestarted": false
+  }
+}
