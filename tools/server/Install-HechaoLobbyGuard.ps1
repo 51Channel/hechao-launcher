@@ -237,8 +237,7 @@ function Start-LobbyAndValidate {
     }
 
     $listener = @(Get-Listener)[0]
-    if ($RequireGuard -and
-        $listener.LocalAddress -notin @('127.0.0.1', '::1')) {
+    if ($listener.LocalAddress -notin @('127.0.0.1', '::1')) {
         throw "Lobby listener is not private: $($listener.LocalAddress)."
     }
     return $listener
@@ -382,8 +381,6 @@ $backupManifest = @(
     $backupManifest,
     [System.Text.Encoding]::ASCII)
 
-$originalWhitelistExisted =
-    Test-Path -LiteralPath $whitelistPath -PathType Leaf
 $mutationStarted = $false
 $rollbackSucceeded = $false
 try {
@@ -440,18 +437,11 @@ catch {
                 ) `
                 -Destination $serverPropertiesPath `
                 -Force
-            if ($originalWhitelistExisted) {
-                Copy-Item `
-                    -LiteralPath (Join-Path $backupDirectory 'whitelist.json') `
-                    -Destination $whitelistPath `
-                    -Force
-            }
-            else {
-                Remove-Item `
-                    -LiteralPath $whitelistPath `
-                    -Force `
-                    -ErrorAction SilentlyContinue
-            }
+            Set-ServerProperties
+            [System.IO.File]::WriteAllText(
+                $whitelistPath,
+                "[]`n",
+                (New-Object System.Text.UTF8Encoding($false)))
             foreach ($jar in $existingJars) {
                 Copy-Item `
                     -LiteralPath (Join-Path $backupDirectory $jar.Name) `
@@ -470,7 +460,10 @@ catch {
     }
     if ($rollbackSucceeded) {
         throw [System.InvalidOperationException]::new(
-            'Lobby Guard deployment failed; the previous Lobby state was restored.',
+            (
+                'Lobby Guard deployment failed; the prior runtime was restored ' +
+                'with private listening and player admission still closed.'
+            ),
             $deploymentError)
     }
     throw
