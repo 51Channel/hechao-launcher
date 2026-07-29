@@ -194,6 +194,83 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         Assert.Equal("进入服务器", viewModel.PrimaryActionText);
     }
 
+    [Fact]
+    public async Task SwitchingServer_StopsCurrentGameBeforeRequestingTargetGrant()
+    {
+        var operations = new List<string>();
+        var authentication = new StubAuthenticationService
+        {
+            OperationLog = operations
+        };
+        var gameLauncher = new StubGameLauncherService
+        {
+            ProfileRunning = true,
+            RunningServerId = "survival2",
+            OperationLog = operations
+        };
+        var viewModel = CreateViewModel(authentication, gameLauncher);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer?.Id == "survival2" &&
+            viewModel.ClientStatusText == "客户端已就绪");
+        viewModel.SelectServerCommand.Execute(
+            viewModel.Servers.Single(server => server.Id == "activity"));
+
+        Assert.Equal("切换服务器", viewModel.PrimaryActionText);
+        await viewModel.PrimaryActionCommand.ExecuteAsync();
+
+        Assert.Equal(1, gameLauncher.StopRequestCount);
+        Assert.Equal("activity", gameLauncher.LastLaunchRequest?.ServerId);
+        Assert.True(
+            operations.IndexOf("stop") < operations.IndexOf("grant:activity"));
+        Assert.True(
+            operations.IndexOf("grant:activity") < operations.IndexOf("start:activity"));
+        Assert.Equal("游戏已启动", viewModel.ClientStatusText);
+        Assert.Equal("重新连接", viewModel.PrimaryActionText);
+    }
+
+    [Fact]
+    public async Task SwitchingServer_WhenCurrentGameCannotStop_DoesNotGrantOrLaunch()
+    {
+        var authentication = new StubAuthenticationService();
+        var gameLauncher = new StubGameLauncherService
+        {
+            ProfileRunning = true,
+            RunningServerId = "survival2",
+            StopFailure = new MinecraftProcessStopException("test")
+        };
+        var viewModel = CreateViewModel(authentication, gameLauncher);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer?.Id == "survival2" &&
+            viewModel.ClientStatusText == "客户端已就绪");
+        viewModel.SelectServerCommand.Execute(
+            viewModel.Servers.Single(server => server.Id == "activity"));
+
+        await viewModel.PrimaryActionCommand.ExecuteAsync();
+
+        Assert.Equal(1, gameLauncher.StopRequestCount);
+        Assert.Equal(0, authentication.VelocityGrantRequestCount);
+        Assert.Equal(0, gameLauncher.LaunchRequestCount);
+        Assert.Equal("无法安全关闭当前游戏", viewModel.ClientStatusText);
+    }
+
+    [Fact]
+    public async Task Catalog_NeverDisplaysInfrastructureLobby()
+    {
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService());
+
+        await WaitUntilAsync(() => viewModel.SelectedServer is not null);
+
+        Assert.DoesNotContain(
+            viewModel.Servers,
+            server => string.Equals(
+                server.Id,
+                "lobby",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("survival2", viewModel.SelectedServer?.Id);
+    }
+
     private static MainWindowViewModel CreateViewModel(
         StubAuthenticationService authentication,
         StubGameLauncherService gameLauncher,
@@ -247,6 +324,30 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                     "1.21.11",
                     ModLoaderKind.Paper,
                     AccessTier.Member,
+                    "base-1.21.11"),
+                new(
+                    "survival2",
+                    "天域生存",
+                    "域",
+                    "域",
+                    ServerStatus.Online,
+                    0,
+                    100,
+                    "1.21.11",
+                    ModLoaderKind.Paper,
+                    AccessTier.Member,
+                    "base-1.21.11"),
+                new(
+                    "activity",
+                    "活动服",
+                    "活",
+                    "活",
+                    ServerStatus.Online,
+                    0,
+                    30,
+                    "1.21.11",
+                    ModLoaderKind.NeoForge,
+                    AccessTier.Participant,
                     "base-1.21.11")
             ];
             IReadOnlyList<ClientProfileSummary> profiles =
@@ -286,6 +387,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public int SilentSessionRequestCount { get; private set; }
         public int InteractiveSessionRequestCount { get; private set; }
         public int VelocityGrantRequestCount { get; private set; }
+        public List<string>? OperationLog { get; init; }
 
         public Task<HechaoAccount?> TryRestoreAsync(
             CancellationToken cancellationToken = default) =>
@@ -320,6 +422,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             CancellationToken cancellationToken = default)
         {
             VelocityGrantRequestCount++;
+            OperationLog?.Add($"grant:{serverId}");
             return Task.FromResult(new VelocityLaunchGrantResponse(
                 Guid.NewGuid(),
                 serverId,
@@ -445,9 +548,42 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
 
         public int LaunchRequestCount { get; private set; }
+        public int StopRequestCount { get; private set; }
         public bool ProfileRunning { get; set; }
+        public string? RunningServerId { get; set; }
+        public Exception? StopFailure { get; init; }
+        public List<string>? OperationLog { get; init; }
+        public MinecraftLaunchRequest? LastLaunchRequest { get; private set; }
 
         public bool IsProfileRunning(string profileId) => ProfileRunning;
+
+        public MinecraftRunningGame? GetRunningGame() =>
+            ProfileRunning
+                ? new MinecraftRunningGame(
+                    "base-1.21.11",
+                    RunningServerId,
+                    1234,
+                    DateTimeOffset.UtcNow.AddMinutes(-1))
+                : null;
+
+        public Task<MinecraftStopResult> StopRunningGameAsync(
+            TimeSpan gracefulTimeout,
+            IProgress<MinecraftStopProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            StopRequestCount++;
+            OperationLog?.Add("stop");
+            if (StopFailure is not null)
+            {
+                throw StopFailure;
+            }
+
+            progress?.Report(new MinecraftStopProgress(MinecraftStopPhase.Complete));
+            ProfileRunning = false;
+            RunningServerId = null;
+            return Task.FromResult(
+                new MinecraftStopResult(MinecraftStopOutcome.Graceful));
+        }
 
         public async Task<MinecraftLaunchResult> LaunchAsync(
             MinecraftLaunchRequest request,
@@ -456,18 +592,24 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             CancellationToken cancellationToken = default)
         {
             LaunchRequestCount++;
+            LastLaunchRequest = request;
             if (beforeStart is not null)
             {
                 await beforeStart(cancellationToken);
             }
 
             ProfileRunning = true;
+            RunningServerId = request.ServerId;
+            OperationLog?.Add($"start:{request.ServerId}");
             return new MinecraftLaunchResult(1234);
         }
 
-        public void RaiseProcessExited(int? exitCode)
+        public void RaiseProcessExited(
+            int? exitCode,
+            MinecraftProcessExitKind exitKind = MinecraftProcessExitKind.Natural)
         {
             ProfileRunning = false;
+            RunningServerId = null;
             var exitedAt = DateTimeOffset.UtcNow;
             ProcessExited?.Invoke(
                 this,
@@ -476,7 +618,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                     1234,
                     exitCode,
                     exitedAt.AddMinutes(-1),
-                    exitedAt));
+                    exitedAt,
+                    exitKind));
         }
     }
 

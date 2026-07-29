@@ -5,7 +5,7 @@ using Hechao.Distribution;
 namespace Hechao.Launcher.Services;
 
 public sealed record LauncherSettings(
-    string SelectedServerId = "lobby",
+    string SelectedServerId = "",
     string Memory = "6 GB",
     string ClientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory,
     bool CheckForUpdates = true,

@@ -66,6 +66,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isDiagnosticBusy;
     private GameDiagnosticBundleResult? _latestDiagnosticBundle;
     private string? _latestDiagnosticProfileId;
+    private string? _runningServerId;
     private string _diagnosticUploadStatus = "先在本机生成诊断包，再决定是否上传。";
 
     public MainWindowViewModel(
@@ -104,6 +105,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         _latestGameExit = gameDiagnosticsService.LoadLatestExit();
         _gameLauncherService.ProcessExited += GameLauncherService_OnProcessExited;
+        _runningServerId = _gameLauncherService.GetRunningGame()?.ServerId;
 
         MemoryOptions = ["2 GB", "4 GB", "6 GB", "8 GB", "12 GB", "16 GB"];
         _selectedMemory = MemoryOptions.Contains(_settings.Memory) ? _settings.Memory : "6 GB";
@@ -516,7 +518,6 @@ public sealed class MainWindowViewModel : ObservableObject
     public string SelectedServerPlayerText => SelectedServer is null ? string.Empty : $"{SelectedServer.OnlinePlayers}/{SelectedServer.MaxPlayers}";
     public string SelectedServerCategoryText => SelectedServer?.Id switch
     {
-        "lobby" => "赫朝主大厅",
         "survival2" => "长期生存世界",
         "activity" => "限时活动",
         "dollnight" => "特别企划",
@@ -527,7 +528,6 @@ public sealed class MainWindowViewModel : ObservableObject
             ? SelectedServer.Announcement
             : SelectedServer?.Id switch
             {
-                "lobby" => "从这里进入赫朝世界，并前往不同的服务器。",
                 "survival2" => "长期生存、建设与共同冒险的主世界。",
                 "activity" => "本期活动客户端会自动安装并匹配服务器版本。",
                 "dollnight" => "在夜幕与规则之间，完成这一场特别录制。",
@@ -816,10 +816,10 @@ public sealed class MainWindowViewModel : ObservableObject
 
             Servers.Clear();
             ActivityServers.Clear();
-            foreach (var server in snapshot.Servers)
+            foreach (var server in snapshot.Servers.Where(IsPlayerServer))
             {
                 Servers.Add(server);
-                if (server.Id is not ("lobby" or "survival2"))
+                if (server.Id != "survival2")
                 {
                     ActivityServers.Add(server);
                 }
@@ -1248,13 +1248,29 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             var launchSession = await GetMinecraftLaunchSessionWithRefreshAsync();
             SetCurrentAccount(_authenticationService.CurrentAccount);
+            var runningGame = _gameLauncherService.GetRunningGame();
+            if (runningGame is not null)
+            {
+                ClientStatusText = "正在安全关闭当前游戏";
+                PrimaryActionText = "正在切换";
+                var stopProgress = new Progress<MinecraftStopProgress>(
+                    ApplyStopProgress);
+                await _gameLauncherService.StopRunningGameAsync(
+                    TimeSpan.FromSeconds(15),
+                    stopProgress);
+                _runningServerId = null;
+                OnPropertyChanged(nameof(CanRollbackSelectedProfile));
+                OnPropertyChanged(nameof(RollbackProfileToolTip));
+            }
+
             await _gameLauncherService.LaunchAsync(
                 new MinecraftLaunchRequest(
                     ClientDirectory,
                     selectedServer.ClientProfileId,
                     ParseMemoryInMiB(SelectedMemory),
                     launchSession,
-                    GetSelectedProfileCustomJavaPath()),
+                    GetSelectedProfileCustomJavaPath(),
+                    selectedServer.Id),
                 progress,
                 async cancellationToken =>
                 {
@@ -1262,6 +1278,7 @@ public sealed class MainWindowViewModel : ObservableObject
                         selectedServer.Id,
                         cancellationToken);
                 });
+            _runningServerId = selectedServer.Id;
             OnPropertyChanged(nameof(CanRollbackSelectedProfile));
             OnPropertyChanged(nameof(RollbackProfileToolTip));
             UpdateProgress = 100;
@@ -1346,7 +1363,13 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             telemetryFailure = LauncherTelemetryFailureCode.GameAlreadyRunning;
             ClientStatusText = "游戏正在运行";
-            ShowToast("这个客户端已经在运行");
+            ShowToast("当前游戏仍在运行，未启动新的客户端");
+        }
+        catch (MinecraftProcessStopException)
+        {
+            telemetryFailure = LauncherTelemetryFailureCode.GameAlreadyRunning;
+            ClientStatusText = "无法安全关闭当前游戏";
+            ShowToast("当前游戏未能退出，已取消切换且没有申请新服授权");
         }
         catch (MinecraftLaunchException exception)
         {
@@ -1592,6 +1615,18 @@ public sealed class MainWindowViewModel : ObservableObject
         };
     }
 
+    private void ApplyStopProgress(MinecraftStopProgress progress)
+    {
+        ClientStatusText = progress.Phase switch
+        {
+            MinecraftStopPhase.RequestingExit => "正在请求当前游戏退出",
+            MinecraftStopPhase.WaitingForExit => "正在等待当前游戏保存并退出",
+            MinecraftStopPhase.ForcingExit => "当前游戏无响应，正在结束进程",
+            MinecraftStopPhase.Complete => "当前游戏已退出",
+            _ => ClientStatusText
+        };
+    }
+
     private void GameLauncherService_OnProcessExited(
         object? sender,
         MinecraftProcessExitedEventArgs eventArgs)
@@ -1603,10 +1638,12 @@ public sealed class MainWindowViewModel : ObservableObject
             eventArgs.ExitCode,
             eventArgs.StartedAt,
             eventArgs.ExitedAt);
-        _ = RecordGameExitAsync(record);
+        _ = RecordGameExitAsync(record, eventArgs.ExitKind);
     }
 
-    private async Task RecordGameExitAsync(GameExitRecord record)
+    private async Task RecordGameExitAsync(
+        GameExitRecord record,
+        MinecraftProcessExitKind exitKind)
     {
         try
         {
@@ -1624,10 +1661,10 @@ public sealed class MainWindowViewModel : ObservableObject
             : "unknown";
         await _telemetryService.RecordAsync(
             LauncherTelemetryEventType.GameExit,
-            record.ExitCode == 0
+            exitKind != MinecraftProcessExitKind.Natural || record.ExitCode == 0
                 ? LauncherTelemetryOutcome.Success
                 : LauncherTelemetryOutcome.Failure,
-            record.ExitCode == 0
+            exitKind != MinecraftProcessExitKind.Natural || record.ExitCode == 0
                 ? LauncherTelemetryFailureCode.None
                 : record.ExitCode is null
                     ? LauncherTelemetryFailureCode.Unexpected
@@ -1642,17 +1679,21 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(LatestGameExitText));
             OnPropertyChanged(nameof(CanRollbackSelectedProfile));
             OnPropertyChanged(nameof(RollbackProfileToolTip));
-            if (SelectedServer?.ClientProfileId == record.ProfileId &&
-                !IsProgressActive &&
-                !_gameLauncherService.IsProfileRunning(record.ProfileId))
+            var runningGame = _gameLauncherService.GetRunningGame();
+            _runningServerId = runningGame?.ServerId;
+            if (runningGame is null && !IsProgressActive)
             {
-                ClientStatusText = record.ExitCode == 0
+                ClientStatusText =
+                    exitKind != MinecraftProcessExitKind.Natural
+                        ? "游戏已退出"
+                        : record.ExitCode == 0
                     ? "游戏已退出"
                     : "游戏异常退出";
                 UpdatePrimaryActionForState();
             }
 
-            if (record.ExitCode != 0)
+            if (exitKind == MinecraftProcessExitKind.Natural &&
+                record.ExitCode != 0)
             {
                 ShowToast("Minecraft 异常退出，可在设置页生成脱敏诊断包");
             }
@@ -2496,9 +2537,34 @@ public sealed class MainWindowViewModel : ObservableObject
                         ? "安装客户端"
                         : !IsMinecraftLinked
                             ? "绑定正版身份"
-                            : "进入服务器";
+                            : GetLaunchActionText();
         OnPropertyChanged(nameof(PrimaryActionGlyph));
     }
+
+    private string GetLaunchActionText()
+    {
+        if (SelectedServer is null)
+        {
+            return "进入服务器";
+        }
+
+        if (_gameLauncherService.GetRunningGame() is not { } runningGame)
+        {
+            _runningServerId = null;
+            return "进入服务器";
+        }
+
+        _runningServerId = runningGame.ServerId;
+        return string.Equals(
+                _runningServerId,
+                SelectedServer.Id,
+                StringComparison.Ordinal)
+            ? "重新连接"
+            : "切换服务器";
+    }
+
+    private static bool IsPlayerServer(ServerSummary server) =>
+        !string.Equals(server.Id, "lobby", StringComparison.OrdinalIgnoreCase);
 
     private void SetAccountFormStatus(string message, bool isError)
     {

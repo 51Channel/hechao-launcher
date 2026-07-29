@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -35,22 +36,63 @@ public sealed record MinecraftLaunchRequest(
     string ProfileId,
     int MaximumRamMb,
     MinecraftLaunchSession Session,
-    string? JavaExecutablePath = null);
+    string? JavaExecutablePath = null,
+    string? ServerId = null);
 
 public sealed record MinecraftLaunchResult(int ProcessId);
+
+public enum MinecraftProcessExitKind
+{
+    Natural,
+    Requested,
+    Forced
+}
 
 public sealed record MinecraftProcessExitedEventArgs(
     string ProfileId,
     int ProcessId,
     int? ExitCode,
     DateTimeOffset StartedAt,
-    DateTimeOffset ExitedAt);
+    DateTimeOffset ExitedAt,
+    MinecraftProcessExitKind ExitKind = MinecraftProcessExitKind.Natural);
+
+public sealed record MinecraftRunningGame(
+    string ProfileId,
+    string? ServerId,
+    int ProcessId,
+    DateTimeOffset StartedAt);
+
+public enum MinecraftStopPhase
+{
+    RequestingExit,
+    WaitingForExit,
+    ForcingExit,
+    Complete
+}
+
+public sealed record MinecraftStopProgress(MinecraftStopPhase Phase);
+
+public enum MinecraftStopOutcome
+{
+    NotRunning,
+    Graceful,
+    Forced
+}
+
+public sealed record MinecraftStopResult(MinecraftStopOutcome Outcome);
 
 public interface IMinecraftGameLauncherService
 {
     event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
 
     bool IsProfileRunning(string profileId);
+
+    MinecraftRunningGame? GetRunningGame();
+
+    Task<MinecraftStopResult> StopRunningGameAsync(
+        TimeSpan gracefulTimeout,
+        IProgress<MinecraftStopProgress>? progress = null,
+        CancellationToken cancellationToken = default);
 
     Task<MinecraftLaunchResult> LaunchAsync(
         MinecraftLaunchRequest request,
@@ -72,9 +114,11 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private readonly MinecraftServerEndpoint _serverEndpoint;
     private readonly string? _microsoftClientId;
     private readonly string? _runtimeRootOverride;
+    private readonly IMinecraftRunningStateStore _runningStateStore;
     private readonly SemaphoreSlim _launchGate = new(1, 1);
-    private readonly ConcurrentDictionary<string, Process> _runningProcesses =
+    private readonly ConcurrentDictionary<string, TrackedMinecraftProcess> _runningProcesses =
         new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<int, MinecraftProcessExitKind> _requestedStops = new();
 
     public event EventHandler<MinecraftProcessExitedEventArgs>? ProcessExited;
 
@@ -82,7 +126,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         HttpClient httpClient,
         MinecraftServerEndpoint serverEndpoint,
         string? microsoftClientId,
-        string? runtimeRootOverride)
+        string? runtimeRootOverride,
+        IMinecraftRunningStateStore? runningStateStore = null)
     {
         _httpClient = httpClient;
         _serverEndpoint = serverEndpoint;
@@ -90,6 +135,9 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         _runtimeRootOverride = string.IsNullOrWhiteSpace(runtimeRootOverride)
             ? null
             : Path.GetFullPath(runtimeRootOverride);
+        _runningStateStore =
+            runningStateStore ?? NullMinecraftRunningStateStore.Instance;
+        TryAttachPersistedProcess();
     }
 
     public static MinecraftGameLauncherService CreateDefault(string? microsoftClientId)
@@ -113,7 +161,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             httpClient,
             serverEndpoint,
             microsoftClientId,
-            runtimeRootOverride: null);
+            runtimeRootOverride: null,
+            JsonMinecraftRunningStateStore.CreateDefault());
     }
 
     public bool IsProfileRunning(string profileId)
@@ -121,6 +170,88 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         ManifestValidator.ValidateProfileId(profileId);
         RemoveExitedProcess(profileId);
         return _runningProcesses.ContainsKey(profileId);
+    }
+
+    public MinecraftRunningGame? GetRunningGame()
+    {
+        RemoveExitedProcesses();
+        var entry = _runningProcesses
+            .OrderBy(pair => pair.Value.StartedAt)
+            .FirstOrDefault();
+        if (entry.Value is null)
+        {
+            return null;
+        }
+
+        return new MinecraftRunningGame(
+            entry.Key,
+            entry.Value.ServerId,
+            entry.Value.Process.Id,
+            entry.Value.StartedAt);
+    }
+
+    public async Task<MinecraftStopResult> StopRunningGameAsync(
+        TimeSpan gracefulTimeout,
+        IProgress<MinecraftStopProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (gracefulTimeout < TimeSpan.FromSeconds(1) ||
+            gracefulTimeout > TimeSpan.FromMinutes(2))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(gracefulTimeout),
+                gracefulTimeout,
+                "The graceful Minecraft exit timeout must be between 1 second and 2 minutes.");
+        }
+
+        await _launchGate.WaitAsync(cancellationToken);
+        try
+        {
+            RemoveExitedProcesses();
+            var running = _runningProcesses.Values.ToArray();
+            if (running.Length == 0)
+            {
+                return new MinecraftStopResult(MinecraftStopOutcome.NotRunning);
+            }
+
+            progress?.Report(new MinecraftStopProgress(MinecraftStopPhase.RequestingExit));
+            foreach (var tracked in running)
+            {
+                MarkStopRequested(tracked, MinecraftProcessExitKind.Requested);
+                TryCloseMainWindow(tracked.Process);
+            }
+
+            progress?.Report(new MinecraftStopProgress(MinecraftStopPhase.WaitingForExit));
+            if (await WaitForAllProcessesToExitAsync(
+                    gracefulTimeout,
+                    cancellationToken))
+            {
+                progress?.Report(new MinecraftStopProgress(MinecraftStopPhase.Complete));
+                return new MinecraftStopResult(MinecraftStopOutcome.Graceful);
+            }
+
+            progress?.Report(new MinecraftStopProgress(MinecraftStopPhase.ForcingExit));
+            foreach (var tracked in _runningProcesses.Values.ToArray())
+            {
+                MarkStopRequested(tracked, MinecraftProcessExitKind.Forced);
+                TryKillProcess(tracked.Process);
+            }
+
+            if (!await WaitForAllProcessesToExitAsync(
+                    TimeSpan.FromSeconds(10),
+                    cancellationToken))
+            {
+                throw new MinecraftProcessStopException(
+                    "Minecraft did not exit after the launcher ended its process.");
+            }
+
+            progress?.Report(new MinecraftStopProgress(MinecraftStopPhase.Complete));
+            return new MinecraftStopResult(MinecraftStopOutcome.Forced);
+        }
+        finally
+        {
+            _launchGate.Release();
+        }
     }
 
     public async Task<MinecraftLaunchResult> LaunchAsync(
@@ -135,10 +266,13 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         await _launchGate.WaitAsync(cancellationToken);
         try
         {
-            RemoveExitedProcess(request.ProfileId);
-            if (_runningProcesses.ContainsKey(request.ProfileId))
+            RemoveExitedProcesses();
+            var existing = _runningProcesses.Keys
+                .Order(StringComparer.Ordinal)
+                .FirstOrDefault();
+            if (existing is not null)
             {
-                throw new MinecraftAlreadyRunningException(request.ProfileId);
+                throw new MinecraftAlreadyRunningException(existing);
             }
 
             var process = await BuildProcessAsync(request, progress, cancellationToken);
@@ -156,12 +290,6 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 }
             }
 
-            if (!_runningProcesses.TryAdd(request.ProfileId, process))
-            {
-                process.Dispose();
-                throw new MinecraftAlreadyRunningException(request.ProfileId);
-            }
-
             try
             {
                 progress?.Report(new MinecraftLaunchProgress(MinecraftLaunchPhase.Starting, 100));
@@ -171,17 +299,43 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 }
 
                 var processId = process.Id;
-                var startedAt = DateTimeOffset.UtcNow;
+                var startedAt = GetProcessStartedAt(process);
+                var executablePath = GetProcessExecutablePath(
+                    process,
+                    process.StartInfo.FileName);
+                var tracked = new TrackedMinecraftProcess(
+                    process,
+                    request.ServerId,
+                    executablePath,
+                    startedAt);
+                if (!_runningProcesses.TryAdd(request.ProfileId, tracked))
+                {
+                    TryKillProcess(process);
+                    process.Dispose();
+                    throw new MinecraftAlreadyRunningException(request.ProfileId);
+                }
+
+                _runningStateStore.Save(new PersistedMinecraftProcess(
+                    request.ProfileId,
+                    request.ServerId,
+                    processId,
+                    executablePath,
+                    startedAt));
                 process.Exited += (_, _) => HandleProcessExited(
                     request.ProfileId,
-                    process,
-                    startedAt);
+                    tracked);
                 process.EnableRaisingEvents = true;
                 return new MinecraftLaunchResult(processId);
+            }
+            catch (MinecraftAlreadyRunningException)
+            {
+                throw;
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 _runningProcesses.TryRemove(request.ProfileId, out _);
+                TryKillProcess(process);
+                TryClearPersistedProcess(process);
                 process.Dispose();
                 throw new MinecraftLaunchException(
                     MinecraftLaunchFailure.ProcessStart,
@@ -551,6 +705,11 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
     private static void ValidateRequest(MinecraftLaunchRequest request)
     {
         ManifestValidator.ValidateProfileId(request.ProfileId);
+        if (!string.IsNullOrWhiteSpace(request.ServerId))
+        {
+            ManifestValidator.ValidateProfileId(request.ServerId);
+        }
+
         if (string.IsNullOrWhiteSpace(request.DataRoot))
         {
             throw new ArgumentException("The client data root is required.", nameof(request));
@@ -707,58 +866,285 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         return candidate.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void RemoveExitedProcess(string profileId)
+    private void TryAttachPersistedProcess()
     {
-        if (!_runningProcesses.TryGetValue(profileId, out var process))
+        PersistedMinecraftProcess? persisted;
+        try
+        {
+            persisted = _runningStateStore.Load();
+        }
+        catch
         {
             return;
         }
 
+        if (persisted is null)
+        {
+            return;
+        }
+
+        Process? process = null;
         try
         {
-            if (!process.HasExited)
+            process = Process.GetProcessById(persisted.ProcessId);
+            if (process.HasExited)
             {
+                ClearPersistedProcess(persisted.ProcessId, persisted.StartedAt);
+                process.Dispose();
                 return;
             }
+
+            var startedAt = GetProcessStartedAt(process);
+            var executablePath = GetProcessExecutablePath(process);
+            if (!JsonMinecraftRunningStateStore.StartedAtMatches(
+                    persisted.StartedAt,
+                    startedAt) ||
+                !string.Equals(
+                    Path.GetFullPath(persisted.ExecutablePath),
+                    executablePath,
+                    OperatingSystem.IsWindows()
+                        ? StringComparison.OrdinalIgnoreCase
+                        : StringComparison.Ordinal))
+            {
+                ClearPersistedProcess(persisted.ProcessId, persisted.StartedAt);
+                process.Dispose();
+                return;
+            }
+
+            var tracked = new TrackedMinecraftProcess(
+                process,
+                persisted.ServerId,
+                executablePath,
+                startedAt);
+            if (!_runningProcesses.TryAdd(persisted.ProfileId, tracked))
+            {
+                process.Dispose();
+                return;
+            }
+
+            process.Exited += (_, _) => HandleProcessExited(
+                persisted.ProfileId,
+                tracked);
+            process.EnableRaisingEvents = true;
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or InvalidOperationException or
+            NotSupportedException or Win32Exception)
+        {
+            ClearPersistedProcess(persisted.ProcessId, persisted.StartedAt);
+            process?.Dispose();
+        }
+    }
+
+    private void RemoveExitedProcess(string profileId)
+    {
+        if (!_runningProcesses.TryGetValue(profileId, out var tracked))
+        {
+            return;
+        }
+
+        if (HasExited(tracked.Process))
+        {
+            HandleProcessExited(profileId, tracked);
+        }
+    }
+
+    private void RemoveExitedProcesses()
+    {
+        foreach (var pair in _runningProcesses.ToArray())
+        {
+            if (HasExited(pair.Value.Process))
+            {
+                HandleProcessExited(pair.Key, pair.Value);
+            }
+        }
+    }
+
+    private static bool HasExited(Process process)
+    {
+        try
+        {
+            return process.HasExited;
         }
         catch (InvalidOperationException)
         {
+            return true;
         }
-
-        RemoveAndDisposeProcess(profileId, process);
+        catch (Win32Exception)
+        {
+            return true;
+        }
     }
 
     private void HandleProcessExited(
         string profileId,
-        Process process,
-        DateTimeOffset startedAt)
+        TrackedMinecraftProcess tracked)
     {
+        if (!tracked.TryBeginExitHandling())
+        {
+            return;
+        }
+
         int? processId = null;
         int? exitCode = null;
         try
         {
-            processId = process.Id;
-            exitCode = process.ExitCode;
+            processId = tracked.Process.Id;
+            exitCode = tracked.Process.ExitCode;
         }
         catch (InvalidOperationException)
         {
         }
+        catch (Win32Exception)
+        {
+        }
 
+        var exitKind = processId is > 0 &&
+                       _requestedStops.TryRemove(processId.Value, out var requestedKind)
+            ? requestedKind
+            : MinecraftProcessExitKind.Natural;
+
+        RemoveAndDisposeProcess(profileId, tracked);
+        if (processId is > 0)
+        {
+            ClearPersistedProcess(processId.Value, tracked.StartedAt);
+            NotifyProcessExited(new MinecraftProcessExitedEventArgs(
+                profileId,
+                processId.Value,
+                exitCode,
+                tracked.StartedAt,
+                DateTimeOffset.UtcNow,
+                exitKind));
+        }
+    }
+
+    private static DateTimeOffset GetProcessStartedAt(Process process)
+    {
         try
         {
-            if (processId is > 0)
+            return new DateTimeOffset(process.StartTime.ToUniversalTime());
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or NotSupportedException or
+            Win32Exception)
+        {
+            return DateTimeOffset.UtcNow;
+        }
+    }
+
+    private static string GetProcessExecutablePath(
+        Process process,
+        string? fallbackPath = null)
+    {
+        try
+        {
+            var path = process.MainModule?.FileName;
+            if (!string.IsNullOrWhiteSpace(path))
             {
-                NotifyProcessExited(new MinecraftProcessExitedEventArgs(
-                    profileId,
-                    processId.Value,
-                    exitCode,
-                    startedAt,
-                    DateTimeOffset.UtcNow));
+                return Path.GetFullPath(path);
             }
         }
-        finally
+        catch (Exception exception) when (
+            exception is InvalidOperationException or NotSupportedException or
+            Win32Exception)
         {
-            RemoveAndDisposeProcess(profileId, process);
+        }
+
+        if (!string.IsNullOrWhiteSpace(fallbackPath))
+        {
+            return Path.GetFullPath(fallbackPath);
+        }
+
+        throw new InvalidOperationException(
+            "The Minecraft process executable path could not be determined.");
+    }
+
+    private void MarkStopRequested(
+        TrackedMinecraftProcess tracked,
+        MinecraftProcessExitKind exitKind)
+    {
+        try
+        {
+            _requestedStops[tracked.Process.Id] = exitKind;
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private static void TryCloseMainWindow(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                _ = process.CloseMainWindow();
+            }
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or NotSupportedException or
+            Win32Exception)
+        {
+        }
+    }
+
+    private static void TryKillProcess(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or NotSupportedException or
+            Win32Exception)
+        {
+        }
+    }
+
+    private async Task<bool> WaitForAllProcessesToExitAsync(
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.Elapsed < timeout)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveExitedProcesses();
+            if (_runningProcesses.IsEmpty)
+            {
+                return true;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+        }
+
+        RemoveExitedProcesses();
+        return _runningProcesses.IsEmpty;
+    }
+
+    private void TryClearPersistedProcess(Process process)
+    {
+        try
+        {
+            ClearPersistedProcess(process.Id, GetProcessStartedAt(process));
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private void ClearPersistedProcess(int processId, DateTimeOffset startedAt)
+    {
+        try
+        {
+            _runningStateStore.ClearIfMatches(processId, startedAt);
+        }
+        catch
+        {
+            // Process cleanup must not fail because a state file is unavailable.
         }
     }
 
@@ -784,13 +1170,37 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         }
     }
 
-    private void RemoveAndDisposeProcess(string profileId, Process process)
+    private void RemoveAndDisposeProcess(
+        string profileId,
+        TrackedMinecraftProcess tracked)
     {
         if (_runningProcesses.TryRemove(
-                new KeyValuePair<string, Process>(profileId, process)))
+                new KeyValuePair<string, TrackedMinecraftProcess>(
+                    profileId,
+                    tracked)))
         {
-            process.Dispose();
+            tracked.Process.Dispose();
         }
+    }
+
+    private sealed class TrackedMinecraftProcess(
+        Process process,
+        string? serverId,
+        string executablePath,
+        DateTimeOffset startedAt)
+    {
+        private int _exitHandled;
+
+        public Process Process { get; } = process;
+
+        public string? ServerId { get; } = serverId;
+
+        public string ExecutablePath { get; } = executablePath;
+
+        public DateTimeOffset StartedAt { get; } = startedAt;
+
+        public bool TryBeginExitHandling() =>
+            Interlocked.Exchange(ref _exitHandled, 1) == 0;
     }
 }
 
@@ -883,6 +1293,9 @@ public sealed class MinecraftLaunchException(
 
 public sealed class MinecraftAlreadyRunningException(string profileId)
     : Exception($"Minecraft profile {profileId} is already running.");
+
+public sealed class MinecraftProcessStopException(string message)
+    : Exception(message);
 
 public sealed class MinecraftLaunchSessionExpiredException
     : Exception
