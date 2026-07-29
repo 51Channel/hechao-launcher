@@ -1,0 +1,931 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only production control-plane acceptance",
+  "startedAtUtc": "2026-07-30T06:41:30.496317+08:00",
+  "completedAtUtc": "2026-07-30T06:41:38.6011539+08:00",
+  "durationSeconds": 8.105,
+  "readiness": {
+    "technicalReady": true,
+    "externalReady": false,
+    "technicalFailureCount": 0,
+    "externalBlockerCount": 5,
+    "advisoryCount": 1
+  },
+  "service": {
+    "before": {
+      "current": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z",
+      "active": "active",
+      "mainPid": 2524978,
+      "started": "Wed 2026-07-29 23:07:36 CST",
+      "adminEnabled": "true",
+      "catalogAuthEnforced": "false",
+      "keyRing": {
+        "owner": "hechao-api:hechao-api",
+        "mode": "700",
+        "files": 1
+      },
+      "warningCount30m": 0
+    },
+    "after": {
+      "current": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z",
+      "active": "active",
+      "mainPid": 2524978,
+      "started": "Wed 2026-07-29 23:07:36 CST",
+      "adminEnabled": "true",
+      "catalogAuthEnforced": "false",
+      "keyRing": {
+        "owner": "hechao-api:hechao-api",
+        "mode": "700",
+        "files": 1
+      },
+      "warningCount30m": 0
+    }
+  },
+  "publicProbes": {
+    "health": {
+      "uri": "https://launcher-api.hechao.world/healthz",
+      "statusCode": 200,
+      "elapsedMilliseconds": 1820.546,
+      "contentLength": 114,
+      "contentSha256": "12c95e93804c0f78a6363813da8c4b8b17c3055d5775bb0fab4ff56991f1a635",
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": null,
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "readiness": {
+      "uri": "https://launcher-api.hechao.world/readyz",
+      "statusCode": 200,
+      "elapsedMilliseconds": 177.012,
+      "contentLength": 136,
+      "contentSha256": "4c63d4950c0900adbb4f24f83ba4623e15db2fa32bee2a3db3d254d55b81218c",
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": null,
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "adminIndex": {
+      "uri": "https://admin.hechao.world/admin/",
+      "statusCode": 200,
+      "elapsedMilliseconds": 728.86,
+      "contentLength": 63344,
+      "contentSha256": "80447bdb70113d66104904df99a105e6b4da2f04c1f4e6f38fe44b9bdffa043e",
+      "contentType": "text/html",
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {
+        "id=\"servers-section\"": true,
+        "id=\"users-section\"": true,
+        "id=\"profiles-section\"": true,
+        "id=\"telemetry-section\"": true,
+        "id=\"runtime-section\"": true,
+        "id=\"alerts-section\"": true,
+        "id=\"diagnostics-section\"": true,
+        "id=\"audit-section\"": true
+      }
+    },
+    "adminScript": {
+      "uri": "https://admin.hechao.world/admin/admin.js",
+      "statusCode": 200,
+      "elapsedMilliseconds": 275.375,
+      "contentLength": 126825,
+      "contentSha256": "63d43c4778ee8d7ee9bc0f2b542c4fbca3f44a444d453d5b154e137366e98616",
+      "contentType": "text/javascript",
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {
+        "renderTelemetry": true,
+        "renderRuntime": true,
+        "renderAlerts": true,
+        "/v1/admin/audit-logs": true,
+        "/v1/admin/diagnostics": true
+      }
+    },
+    "adminStyle": {
+      "uri": "https://admin.hechao.world/admin/admin.css",
+      "statusCode": 200,
+      "elapsedMilliseconds": 190.241,
+      "contentLength": 40572,
+      "contentSha256": "aaf8b4162c3045ed051474c28d147049a92668d1d76ee2c7c14dcda8323e8f87",
+      "contentType": "text/css",
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "anonymousAdmin": {
+      "uri": "https://admin.hechao.world/v1/admin/catalog/servers",
+      "statusCode": 401,
+      "elapsedMilliseconds": 168.832,
+      "contentLength": 0,
+      "contentSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentType": null,
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": null,
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "anonymousSession": {
+      "uri": "https://admin.hechao.world/v1/admin-auth/session",
+      "statusCode": 401,
+      "elapsedMilliseconds": 167.902,
+      "contentLength": 0,
+      "contentSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentType": null,
+      "cacheControl": "no-store",
+      "contentSecurityPolicy": null,
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "wrongHostAdmin": {
+      "uri": "https://launcher-api.hechao.world/admin/",
+      "statusCode": 404,
+      "elapsedMilliseconds": 175.613,
+      "contentLength": 0,
+      "contentSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentType": null,
+      "cacheControl": null,
+      "contentSecurityPolicy": null,
+      "xFrameOptions": null,
+      "referrerPolicy": "no-referrer",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "publicSite": {
+      "uri": "https://hechao.world/",
+      "statusCode": 200,
+      "elapsedMilliseconds": 725.82,
+      "contentLength": 67074,
+      "contentSha256": "c91938630f692210cba2c9c96b514e3eee821d48f5b9aed0ac7db1e111a07fd4",
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-store, must-revalidate, no-cache, max-age=0, private",
+      "contentSecurityPolicy": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src https://player.bilibili.com https://www.youtube-nocookie.com; form-action 'self'; img-src 'self' https: data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'",
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "strict-origin-when-cross-origin",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    },
+    "relay": {
+      "uri": "http://api.hechao.world/",
+      "statusCode": 200,
+      "elapsedMilliseconds": 489.753,
+      "contentLength": 2739,
+      "contentSha256": "85acce6e3f51bdd29f05210aa8884e3d6b8c27c9788d9d235860cf9ce8493480",
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-cache",
+      "contentSecurityPolicy": "default-src 'self'; script-src 'self' 'nonce-CW8phfR0aP0+BJOTJy/0nA==' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://*.stripe.com https://static.airwallex.com https://checkout.airwallex.com https://static-demo.airwallex.com https://checkout-demo.airwallex.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://static.airwallex.com https://checkout.airwallex.com https://static-demo.airwallex.com https://checkout-demo.airwallex.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; frame-src https://challenges.cloudflare.com https://*.stripe.com https://checkout.airwallex.com https://checkout-demo.airwallex.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+      "xFrameOptions": "DENY",
+      "referrerPolicy": "strict-origin-when-cross-origin",
+      "xContentTypeOptions": "nosniff",
+      "markers": {}
+    }
+  },
+  "database": {
+    "audit": {
+      "total": 2326,
+      "lastAt": "2026-07-30T06:38:08.35939+08:00",
+      "requiredActions": [
+        {
+          "count": 10,
+          "action": "admin.login_ticket.created",
+          "lastAt": "2026-07-30T06:31:01.157456+08:00"
+        },
+        {
+          "count": 1,
+          "action": "admin.mfa.enabled",
+          "lastAt": "2026-07-27T21:55:24.389361+08:00"
+        },
+        {
+          "count": 1,
+          "action": "admin.mfa.enrollment.started",
+          "lastAt": "2026-07-27T21:53:48.094947+08:00"
+        },
+        {
+          "count": 10,
+          "action": "admin.web_session.created",
+          "lastAt": "2026-07-30T06:31:04.265463+08:00"
+        },
+        {
+          "count": 1,
+          "action": "catalog.server.updated",
+          "lastAt": "2026-07-30T05:49:03.638732+08:00"
+        },
+        {
+          "count": 1,
+          "action": "diagnostic.admin.downloaded",
+          "lastAt": "2026-07-27T22:33:46.196241+08:00"
+        },
+        {
+          "count": 1,
+          "action": "diagnostic.upload.authorized",
+          "lastAt": "2026-07-27T22:08:32.032498+08:00"
+        },
+        {
+          "count": 1,
+          "action": "diagnostic.upload.completed",
+          "lastAt": "2026-07-27T22:08:32.9587+08:00"
+        },
+        {
+          "count": 25,
+          "action": "velocity.launch_grant.consumed",
+          "lastAt": "2026-07-30T05:33:37.341753+08:00"
+        },
+        {
+          "count": 38,
+          "action": "velocity.launch_grant.created",
+          "lastAt": "2026-07-30T05:33:15.725557+08:00"
+        }
+      ]
+    },
+    "alerts": {
+      "active": [
+        {
+          "code": "Server.DiskFree",
+          "source": "Server",
+          "openedAt": "2026-07-28T09:19:43.470574+08:00",
+          "severity": "Warning",
+          "lastSeenAt": "2026-07-30T06:40:38.685717+08:00",
+          "fingerprint": "server:pvp:disk",
+          "acknowledged": false
+        }
+      ]
+    },
+    "queues": {
+      "launchGrantsUnused": 0,
+      "tierCommandsPending": 0,
+      "forumRevocationsPending": 0
+    },
+    "catalog": {
+      "servers": [
+        {
+          "id": "lobby",
+          "role": "Infrastructure",
+          "status": "Online",
+          "target": "lobby",
+          "runtime": {
+            "mspt": 0.44608108910891087,
+            "tps1m": 20.002691649328774,
+            "online": true,
+            "players": 0,
+            "capturedAt": "2026-07-30T06:40:54.845502+08:00",
+            "maxPlayers": 200,
+            "receivedAt": "2026-07-30T06:40:57.842012+08:00",
+            "probeIssues": [],
+            "gcMilliseconds": 8827
+          },
+          "visible": false,
+          "revision": 2,
+          "profileId": "base-1.21.11",
+          "minimumTier": "Member",
+          "monitoringEnabled": true
+        },
+        {
+          "id": "survival2",
+          "role": "Player",
+          "status": "Online",
+          "target": "survival2",
+          "runtime": {
+            "mspt": 0.8131917,
+            "tps1m": 19.994605335512848,
+            "online": true,
+            "players": 0,
+            "capturedAt": "2026-07-30T06:40:54.845502+08:00",
+            "maxPlayers": 100,
+            "receivedAt": "2026-07-30T06:40:57.842012+08:00",
+            "probeIssues": [],
+            "gcMilliseconds": 43718
+          },
+          "visible": true,
+          "revision": 1,
+          "profileId": "base-1.21.11",
+          "minimumTier": "Member",
+          "monitoringEnabled": true
+        },
+        {
+          "id": "survival1",
+          "role": "Player",
+          "status": "Closed",
+          "target": "survival1",
+          "runtime": {
+            "mspt": null,
+            "tps1m": null,
+            "online": false,
+            "players": 0,
+            "capturedAt": "2026-07-30T06:40:54.845502+08:00",
+            "maxPlayers": 20,
+            "receivedAt": "2026-07-30T06:40:57.842012+08:00",
+            "probeIssues": [
+              "StatusUnavailable",
+              "ProcessNotRunning",
+              "MetricsFileStale"
+            ],
+            "gcMilliseconds": null
+          },
+          "visible": true,
+          "revision": 3,
+          "profileId": "vanilla-1.21.11",
+          "minimumTier": "Member",
+          "monitoringEnabled": true
+        },
+        {
+          "id": "activity",
+          "role": "Player",
+          "status": "Online",
+          "target": "activity",
+          "runtime": {
+            "mspt": null,
+            "tps1m": null,
+            "online": true,
+            "players": 0,
+            "capturedAt": "2026-07-30T06:40:54.845502+08:00",
+            "maxPlayers": 60,
+            "receivedAt": "2026-07-30T06:40:57.842012+08:00",
+            "probeIssues": [],
+            "gcMilliseconds": null
+          },
+          "visible": true,
+          "revision": 1,
+          "profileId": "activity-neoforge-1.21.11",
+          "minimumTier": "Participant",
+          "monitoringEnabled": true
+        },
+        {
+          "id": "pvp",
+          "role": "Player",
+          "status": "Online",
+          "target": "pvp",
+          "runtime": {
+            "mspt": 12.218213391666668,
+            "tps1m": 20,
+            "online": true,
+            "players": 0,
+            "capturedAt": "2026-07-30T06:40:41.933671+08:00",
+            "maxPlayers": 20,
+            "receivedAt": "2026-07-30T06:40:42.840921+08:00",
+            "probeIssues": [],
+            "gcMilliseconds": 77728
+          },
+          "visible": true,
+          "revision": 1,
+          "profileId": "pvp-fabric-1.20.1",
+          "minimumTier": "Participant",
+          "monitoringEnabled": true
+        },
+        {
+          "id": "dollnight",
+          "role": "Player",
+          "status": "Maintenance",
+          "target": "survival2",
+          "runtime": {
+            "mspt": 0.8131917,
+            "tps1m": 19.994605335512848,
+            "online": true,
+            "players": 0,
+            "capturedAt": "2026-07-30T06:40:54.845502+08:00",
+            "maxPlayers": 100,
+            "receivedAt": "2026-07-30T06:40:57.842012+08:00",
+            "probeIssues": [],
+            "gcMilliseconds": 43718
+          },
+          "visible": true,
+          "revision": 1,
+          "profileId": "dollnight-1.21.11",
+          "minimumTier": "Participant",
+          "monitoringEnabled": true
+        }
+      ],
+      "profiles": [
+        {
+          "id": "activity-neoforge-1.21.11",
+          "active": true,
+          "version": "1.0.10",
+          "channels": [
+            {
+              "channel": "gray",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            },
+            {
+              "channel": "production",
+              "revision": 1,
+              "releasePaused": false,
+              "releaseSha256": "0e059bbfe9fab6770204de547567ca64420a45e8364fa93206bb316e8ae2b69f",
+              "releaseVersion": "1.0.10",
+              "rolloutPercentage": 100
+            },
+            {
+              "channel": "test",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            }
+          ],
+          "revision": 1,
+          "releaseCount": 1
+        },
+        {
+          "id": "base-1.21.11",
+          "active": true,
+          "version": "1.0.5",
+          "channels": [
+            {
+              "channel": "gray",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            },
+            {
+              "channel": "production",
+              "revision": 1,
+              "releasePaused": false,
+              "releaseSha256": "65667e6198c3ecf75df79c686c87c244f3d5ac21b170364bd998a1df5111640e",
+              "releaseVersion": "1.0.5",
+              "rolloutPercentage": 100
+            },
+            {
+              "channel": "test",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            }
+          ],
+          "revision": 1,
+          "releaseCount": 1
+        },
+        {
+          "id": "dollnight-1.21.11",
+          "active": true,
+          "version": "1.0.0",
+          "channels": [
+            {
+              "channel": "gray",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            },
+            {
+              "channel": "production",
+              "revision": 1,
+              "releasePaused": false,
+              "releaseSha256": "6d0c73c2b8cd34621c5d44212047dc562ad05e8277b1f195bdac0fda5da16575",
+              "releaseVersion": "1.0.0",
+              "rolloutPercentage": 100
+            },
+            {
+              "channel": "test",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            }
+          ],
+          "revision": 1,
+          "releaseCount": 1
+        },
+        {
+          "id": "forge-1.20.1",
+          "active": true,
+          "version": "1.0.0",
+          "channels": [
+            {
+              "channel": "gray",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            },
+            {
+              "channel": "production",
+              "revision": 1,
+              "releasePaused": false,
+              "releaseSha256": "d33ff592b115667713bcc87477710aa7d8a86f77490c23b70b7dee620a56919c",
+              "releaseVersion": "1.0.0",
+              "rolloutPercentage": 100
+            },
+            {
+              "channel": "test",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            }
+          ],
+          "revision": 1,
+          "releaseCount": 1
+        },
+        {
+          "id": "pvp-fabric-1.20.1",
+          "active": true,
+          "version": "1.0.0",
+          "channels": [
+            {
+              "channel": "gray",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            },
+            {
+              "channel": "production",
+              "revision": 1,
+              "releasePaused": false,
+              "releaseSha256": "a5bcbba71c69e85f0ace4000c1983f8c9c1c1d7f546afa36c53ae39c895706e6",
+              "releaseVersion": "1.0.0",
+              "rolloutPercentage": 100
+            },
+            {
+              "channel": "test",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            }
+          ],
+          "revision": 1,
+          "releaseCount": 1
+        },
+        {
+          "id": "vanilla-1.21.11",
+          "active": true,
+          "version": "1.0.0",
+          "channels": [
+            {
+              "channel": "gray",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            },
+            {
+              "channel": "production",
+              "revision": 1,
+              "releasePaused": false,
+              "releaseSha256": "c22dedc09576273b6d4c52b07cf7975d09ba758533b7395974be34f73344c865",
+              "releaseVersion": "1.0.0",
+              "rolloutPercentage": 100
+            },
+            {
+              "channel": "test",
+              "revision": 1,
+              "releasePaused": null,
+              "releaseSha256": null,
+              "releaseVersion": null,
+              "rolloutPercentage": 0
+            }
+          ],
+          "revision": 1,
+          "releaseCount": 1
+        }
+      ]
+    },
+    "accounts": {
+      "tiers": [
+        {
+          "tier": "Administrator",
+          "linkedCount": 1,
+          "enabledCount": 1
+        },
+        {
+          "tier": "Member",
+          "linkedCount": 0,
+          "enabledCount": 21
+        }
+      ],
+      "total": 22,
+      "disabled": 0
+    },
+    "luckPerms": {
+      "groups": [
+        {
+          "tier": "Collaborator",
+          "freshCount": 1,
+          "playerCount": 1,
+          "primaryGroup": "admin"
+        },
+        {
+          "tier": "Member",
+          "freshCount": 102,
+          "playerCount": 102,
+          "primaryGroup": "default"
+        },
+        {
+          "tier": "Administrator",
+          "freshCount": 2,
+          "playerCount": 2,
+          "primaryGroup": "owner"
+        },
+        {
+          "tier": "Participant",
+          "freshCount": 12,
+          "playerCount": 12,
+          "primaryGroup": "vip"
+        }
+      ],
+      "snapshotTotal": 117,
+      "snapshotFreshTenMinutes": 117
+    },
+    "telemetry": {
+      "outcomes": [
+        {
+          "count": 4,
+          "outcome": "Failure",
+          "eventType": "GameExit"
+        },
+        {
+          "count": 18,
+          "outcome": "Success",
+          "eventType": "GameExit"
+        },
+        {
+          "count": 1,
+          "outcome": "Failure",
+          "eventType": "Launch"
+        },
+        {
+          "count": 23,
+          "outcome": "Success",
+          "eventType": "Launch"
+        },
+        {
+          "count": 11,
+          "outcome": "Success",
+          "eventType": "LauncherStarted"
+        }
+      ],
+      "users24Hours": 1,
+      "events24Hours": 57,
+      "failures24Hours": 5
+    },
+    "migrations": {
+      "count": 19,
+      "maximumVersion": 19
+    },
+    "diagnostics": {
+      "failed": 0,
+      "uploaded": 1
+    },
+    "capturedAtUtc": "2026-07-30T06:41:31.8804+08:00",
+    "administratorSecurity": {
+      "activeTickets": 0,
+      "mfaCredentials": 1,
+      "activeEnrollments": 0,
+      "activeMfaSessions": 0,
+      "recoveryCodeHashes": 8,
+      "activeUnverifiedSessions": 1
+    }
+  },
+  "checks": [
+    {
+      "kind": "Technical",
+      "code": "api_release",
+      "status": "Passed",
+      "message": "The production release must match 0.22.0-20260729T144953Z."
+    },
+    {
+      "kind": "Technical",
+      "code": "api_service_active",
+      "status": "Passed",
+      "message": "The production API service must be active with a valid PID."
+    },
+    {
+      "kind": "Technical",
+      "code": "api_process_unchanged",
+      "status": "Passed",
+      "message": "The read-only audit must not switch or restart the API."
+    },
+    {
+      "kind": "Technical",
+      "code": "admin_web_enabled",
+      "status": "Passed",
+      "message": "AdminWeb__Enabled must remain true."
+    },
+    {
+      "kind": "Technical",
+      "code": "data_protection_acl",
+      "status": "Passed",
+      "message": "The admin Data Protection key ring must be private and populated."
+    },
+    {
+      "kind": "Technical",
+      "code": "api_warning_log",
+      "status": "Passed",
+      "message": "The API should have no warning-or-higher journal lines in 30 minutes."
+    },
+    {
+      "kind": "Technical",
+      "code": "api_health",
+      "status": "Passed",
+      "message": "The public health endpoint must report the expected API version."
+    },
+    {
+      "kind": "Technical",
+      "code": "api_readiness",
+      "status": "Passed",
+      "message": "The public readiness endpoint and database must be ready."
+    },
+    {
+      "kind": "Technical",
+      "code": "admin_static_assets",
+      "status": "Passed",
+      "message": "All production admin sections and rendering code must be deployed."
+    },
+    {
+      "kind": "Technical",
+      "code": "admin_security_headers",
+      "status": "Passed",
+      "message": "The admin entry page must retain its browser security boundary."
+    },
+    {
+      "kind": "Technical",
+      "code": "admin_anonymous_rejected",
+      "status": "Passed",
+      "message": "Anonymous admin API and session requests must be rejected."
+    },
+    {
+      "kind": "Technical",
+      "code": "admin_wrong_host_rejected",
+      "status": "Passed",
+      "message": "The launcher API hostname must not expose the admin site."
+    },
+    {
+      "kind": "Technical",
+      "code": "legacy_public_entries",
+      "status": "Passed",
+      "message": "The public site and legacy relay entry must remain reachable."
+    },
+    {
+      "kind": "Technical",
+      "code": "database_migrations",
+      "status": "Passed",
+      "message": "The production database must contain migrations 1 through 19."
+    },
+    {
+      "kind": "Technical",
+      "code": "administrator_mfa",
+      "status": "Passed",
+      "message": "The real administrator MFA credential and recovery hashes must remain intact."
+    },
+    {
+      "kind": "External",
+      "code": "active_mfa_browser_session",
+      "status": "Blocked",
+      "message": "A fresh MFA-verified browser session is required for visual page acceptance."
+    },
+    {
+      "kind": "External",
+      "code": "linked_tier_member",
+      "status": "Blocked",
+      "message": "At least one legitimate Minecraft-linked Member account is required."
+    },
+    {
+      "kind": "External",
+      "code": "linked_tier_participant",
+      "status": "Blocked",
+      "message": "At least one legitimate Minecraft-linked Participant account is required."
+    },
+    {
+      "kind": "External",
+      "code": "linked_tier_collaborator",
+      "status": "Blocked",
+      "message": "At least one legitimate Minecraft-linked Collaborator account is required."
+    },
+    {
+      "kind": "External",
+      "code": "linked_tier_administrator",
+      "status": "Passed",
+      "message": "At least one legitimate Minecraft-linked Administrator account is required."
+    },
+    {
+      "kind": "Technical",
+      "code": "luckperms_snapshot",
+      "status": "Passed",
+      "message": "The LuckPerms snapshot must be fresh and contain all mapped groups."
+    },
+    {
+      "kind": "Technical",
+      "code": "lobby_isolation",
+      "status": "Passed",
+      "message": "Lobby must remain hidden, monitored, online, and empty."
+    },
+    {
+      "kind": "Technical",
+      "code": "runtime_freshness",
+      "status": "Passed",
+      "message": "Every monitored target must have a fresh runtime sample."
+    },
+    {
+      "kind": "Technical",
+      "code": "infrastructure_target_empty",
+      "status": "Passed",
+      "message": "Infrastructure targets must not contain players."
+    },
+    {
+      "kind": "Technical",
+      "code": "no_critical_alerts",
+      "status": "Passed",
+      "message": "No Critical operational alert may remain active."
+    },
+    {
+      "kind": "Advisory",
+      "code": "active_warning_alerts",
+      "status": "Warning",
+      "message": "Active Warning alerts require observation before larger player stages."
+    },
+    {
+      "kind": "Technical",
+      "code": "work_queues_empty",
+      "status": "Passed",
+      "message": "Security and authorization work queues must not contain abandoned work."
+    },
+    {
+      "kind": "Technical",
+      "code": "production_profile_channels",
+      "status": "Passed",
+      "message": "All six active profiles need an unpaused 100 percent production release."
+    },
+    {
+      "kind": "Technical",
+      "code": "telemetry_samples",
+      "status": "Passed",
+      "message": "Production launcher telemetry must contain recent real-client samples."
+    },
+    {
+      "kind": "Technical",
+      "code": "diagnostic_chain",
+      "status": "Passed",
+      "message": "At least one verified diagnostic upload and administrator download audit must exist."
+    },
+    {
+      "kind": "Technical",
+      "code": "required_audit_actions",
+      "status": "Passed",
+      "message": "Required MFA, catalog, diagnostic, and launch-grant audit actions must exist."
+    },
+    {
+      "kind": "External",
+      "code": "catalog_authentication_enforced",
+      "status": "Blocked",
+      "message": "Catalog authentication remains intentionally disabled until real-account and Velocity enforcement acceptance."
+    }
+  ],
+  "invariants": {
+    "databaseWritesPerformed": false,
+    "catalogStateChanged": false,
+    "apiRestarted": false,
+    "gameServerControlPerformed": false,
+    "credentialsOrTokensIncluded": false,
+    "personalAccountDetailsIncluded": false
+  },
+  "nginxHeaderDeduplication": {
+    "appliedAtUtc": "2026-07-29T22:41:07Z",
+    "backupDirectory": "/var/backups/hechao-nginx/20260729T224107Z-admin-header-dedup",
+    "configurationPath": "/etc/nginx/sites-available/hechao-launcher.conf",
+    "sha256Before": "9efedc3191923c3d69a8ef10a82addd0186f0952e7a4d118358df699b67fcff1",
+    "sha256After": "6c1059605d190585e0293e1ec3d47825c624b5de786544431d3b2a2e521fc9a7",
+    "repositoryTemplateSha256": "6c1059605d190585e0293e1ec3d47825c624b5de786544431d3b2a2e521fc9a7",
+    "repositoryTemplateMatchesProduction": true,
+    "nginxConfigurationValidatedBeforeReload": true,
+    "nginxConfigurationValidatedAfterReload": true,
+    "nginxActive": true,
+    "duplicateSecurityHeadersRemoved": true,
+    "apiPidBefore": 2524978,
+    "apiPidAfter": 2524978,
+    "apiPidUnchanged": true,
+    "gameServerControlPerformed": false
+  }
+}

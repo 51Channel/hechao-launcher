@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-29T20:23:55.9702744Z",
+  "generatedAtUtc": "2026-07-29T23:38:46.5830373Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.12.2",
-      "releaseTag": "launcher-v0.12.2",
-      "releaseCommit": "6405ac760fba9422d3f82fb6d3b9111e79ee700f",
-      "taggedAt": "2026-07-30T04:04:27+08:00",
+      "version": "0.12.3",
+      "releaseTag": "launcher-v0.12.3",
+      "releaseCommit": "e6a160c46b89e2d5e607363e662b327760930324",
+      "taggedAt": "2026-07-30T07:37:09+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "6405ac760fba9422d3f82fb6d3b9111e79ee700f"
+        "value": "e6a160c46b89e2d5e607363e662b327760930324"
       },
       "deploymentState": "private-oss-published-awaiting-real-player-gray",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 68785734,
-          "sha256": "EF8817CB19AC6A51C09CBEDD8685151044C7864B76F4C90293804E286923FEF3",
+          "size": 68793918,
+          "sha256": "18CF9772099EA1CA6FFEC7B8588CFFBFC3137FDACCD733291CC1242423518E07",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.12.2-win-x64.exe",
-          "location": "releases/launcher/0.12.2/Hechao-Launcher-Setup-0.12.2-win-x64.exe",
-          "size": 61876002,
-          "sha256": "FEE5A53FF9A6033E96E2150E8A31D474B559581BEED14B65F939743A83C4BDCB",
+          "name": "Hechao-Launcher-Setup-0.12.3-win-x64.exe",
+          "location": "releases/launcher/0.12.3/Hechao-Launcher-Setup-0.12.3-win-x64.exe",
+          "size": 61874260,
+          "sha256": "18E786560AF14C246EFF84638BABBE8E1CC02CBFB1E1065AD9501468C20603C6",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "release-tag",
-        "target": "launcher-v0.12.1"
+        "target": "launcher-v0.12.2"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.12.2.md",
-        "docs/PRELAUNCH_PILOT_0.12.2.md",
+        "docs/LAUNCHER_RELEASE_0.12.3.md",
+        "docs/PRELAUNCH_PILOT_0.12.3.md",
         "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json",
         "docs/evidence/ACTIVITY_NEOFORGE_PATH_COMPATIBILITY_2026-07-30.json",
-        "docs/evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json",
+        "docs/evidence/ACTIVITY_NEOFORGE_NATIVE_RUN_DIRECTORY_2026-07-30.json",
         "docs/evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json",
         "docs/evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json"
       ]

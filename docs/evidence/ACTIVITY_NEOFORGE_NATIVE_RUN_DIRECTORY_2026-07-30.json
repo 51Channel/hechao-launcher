@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-29T23:38:46.5830373Z",
+  "scope": "Launcher 0.12.3 Activity NeoForge physical native run directory",
+  "launcher": {
+    "version": "0.12.3",
+    "releaseTag": "launcher-v0.12.3",
+    "releaseCommit": "e6a160c46b89e2d5e607363e662b327760930324",
+    "installedProductVersion": "0.12.3+e6a160c46b89e2d5e607363e662b327760930324",
+    "installedFileVersion": "0.12.3.0",
+    "installedExecutable": {
+      "size": 68793918,
+      "sha256": "18CF9772099EA1CA6FFEC7B8588CFFBFC3137FDACCD733291CC1242423518E07",
+      "authenticode": "NotSigned"
+    },
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.12.3-win-x64.exe",
+      "objectKey": "releases/launcher/0.12.3/Hechao-Launcher-Setup-0.12.3-win-x64.exe",
+      "size": 61874260,
+      "sha256": "18E786560AF14C246EFF84638BABBE8E1CC02CBFB1E1065AD9501468C20603C6",
+      "authenticode": "NotSigned",
+      "anonymousStatus": 403,
+      "signedStatus": 200,
+      "firstReadSeconds": 1.22,
+      "verificationReadSeconds": 1.06,
+      "repeatPublish": "verified-and-skipped",
+      "privateUrlDisclosed": false
+    }
+  },
+  "failure": {
+    "exception": "java.lang.UnsatisfiedLinkError",
+    "messageClass": "lwjgl.dll cannot find dependent libraries",
+    "rootCause": "A directory junction with a format-safe alias could still be resolved by the Windows native loader to the physical target containing U+200C",
+    "affectedVersion": "0.12.2",
+    "dllCorruptionRejected": true,
+    "missingVisualCppRuntimeRejected": true,
+    "modConflictRejected": true
+  },
+  "fix": {
+    "nativeProperties": [
+      "java.library.path",
+      "org.lwjgl.librarypath",
+      "jna.tmpdir",
+      "org.lwjgl.system.SharedLibraryExtractPath",
+      "io.netty.native.workdir"
+    ],
+    "safeDirectory": "C:\\Users\\Administrator\\AppData\\Local\\Hechao\\Launcher\\native-runs\\activity-neoforge-12111-12111-NeoForge_211142",
+    "directoryKind": "physical",
+    "reparsePoint": false,
+    "containsUnicodeFormatCharacter": false,
+    "uniqueNativeDirectoryCount": 1,
+    "nativeFilesAfterLaunch": 8,
+    "copyVerification": "sha256",
+    "existingLwjglPreflight": "NativeLibrary.Load",
+    "modernLwjglRuntimeExtraction": true,
+    "failureCleanup": true
+  },
+  "automatedValidation": {
+    "dotnet": "392/392",
+    "launcherTests": "113/113",
+    "targetedNativeAndBuildTests": "18/18",
+    "realProfileBuildSmoke": "passed",
+    "sourceRuntimeSmoke": "passed",
+    "formatCheck": "passed",
+    "diffCheck": "passed",
+    "javaProcessesAfterSmoke": 0
+  },
+  "upgradeAcceptance": {
+    "fromVersion": "0.12.2",
+    "toVersion": "0.12.3",
+    "installerExitCode": 0,
+    "registeredVersion": "0.12.3",
+    "settingsPreserved": true,
+    "dpapiSessionPreserved": true
+  },
+  "installedLauncherAcceptance": {
+    "profileId": "activity-neoforge-1.21.11",
+    "processId": 3068,
+    "startedAt": "2026-07-30T07:30:29.394684+08:00",
+    "exitedAt": "2026-07-30T07:34:50.474935+08:00",
+    "exitCode": 0,
+    "connectedTarget": "mc.hehe11.fun:25565",
+    "enteredWorld": true,
+    "mecchaLoaded": true,
+    "lwjglLoaded": true,
+    "stoppingLogged": true,
+    "fatalPatternCounts": {
+      "UnsatisfiedLinkError": 0,
+      "CantFindDependentLibraries": 0,
+      "FatalStartupError": 0
+    },
+    "latestLog": {
+      "size": 17694,
+      "sha256": "B5C84C6306552DF7610D4C54220069B247A1FD5AF198BC1D7BF54CF67BAAC7F3"
+    },
+    "javaProcessesAfterExit": 0,
+    "runningGameStateExistsAfterExit": false,
+    "launcherRemainedResponsive": true
+  },
+  "rollback": {
+    "releaseTag": "launcher-v0.12.2",
+    "activityMustRemainClosedAfterRollback": true,
+    "serverComponentsUnaffected": true
+  }
+}

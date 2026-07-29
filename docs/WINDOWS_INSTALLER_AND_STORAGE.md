@@ -1,8 +1,8 @@
 # Windows 安装包与游戏数据目录
 
-> 启动器源码版本：`0.11.16`
+> 启动器源码版本：`0.12.3`
 > 存储结构版本：`2`
-> 更新日期：`2026-07-27`
+> 更新日期：`2026-07-30`
 
 ## 1. 已确定的产品形态
 
@@ -29,6 +29,8 @@
   settings.json
   game-exits.json
   diagnostics\
+  native-runs\
+    <safe-profile-version>\
 
 %LocalAppData%\Hechao\GameData\
   instances\
@@ -64,6 +66,7 @@
 | --- | --- | --- |
 | 程序目录 | 启动器 EXE、图标授权文件 | 可以 |
 | `Launcher` | 启动器设置、本机会话、退出记录和玩家生成的诊断包 | 默认保留 |
+| `Launcher/native-runs` | 每次游戏启动使用的物理原生 DLL 解压目录 | 可自动重建 |
 | `instances` | 每个档案独立的 `.minecraft`、受管 Java 和运行时状态 | 默认保留 |
 | `shared/objects` | SHA-256 内容寻址下载缓存 | 默认保留 |
 | `shared/runtime` | `0.11.7` 及更早版本的 Java 迁移来源 | 默认保留 |
@@ -114,6 +117,13 @@
 设置页更换游戏数据目录只切换后续使用的根目录，不会在界面线程里搬运数百 MB 或数 GB 的现有档案。旧目录保持不变；需要整体迁盘时先退出启动器，再按本手册备份并迁移，或重新选择原目录恢复。
 
 `0.11.9` 不再依赖可能被系统关闭的 8.3 短文件名。若玩家过去选择的数据根目录含有不可见 Unicode 格式字符，启动器会在 `%LocalAppData%\Hechao\Launcher\runtime-links` 分别创建指向该档案 `runtime` 和 `.minecraft` 的本地目录联接。Java 可执行文件、类路径、游戏目录和工作目录全部从安全别名生成，避免 JVM 能启动却无法读取 Fabric Loader。真实游戏数据、运行时、对象缓存和玩家设置不会迁移或改名；已有别名必须解析到预期目录，否则启动会停止。
+
+`0.12.3` 保留上述 Java 与游戏目录兼容映射，但不再把目录联接作为 LWJGL 原生 DLL
+的最终运行位置。启动器会在 `%LocalAppData%\Hechao\Launcher\native-runs` 为当前档案
+和 Minecraft 版本建立真实物理目录，验证其可写且不是重解析点，并将
+`java.library.path`、`org.lwjgl.librarypath`、JNA、LWJGL 解压和 Netty 五个属性
+统一指向该目录。旧格式已解压原生库会逐文件复制并复验 SHA-256；现代 LWJGL 在该
+目录内运行时解压。准备失败会在 Java 启动前终止并清理半成品，不触碰真实游戏数据。
 
 每个档案默认使用随客户端安装的受管 Java。玩家也可以在所选服务器的“运行配置”中为该客户端档案选择自己的 `java.exe` 或 `javaw.exe`。启动器会先执行 `java -version`，确认主版本与档案声明一致，再把路径按档案 ID 保存到 `settings.json`；切换回“自动”只删除该档案的覆盖设置，不删除玩家自己的 Java。
 
@@ -219,6 +229,13 @@ ProductVersion 为 `0.11.16+ca71962dd17ac4ed79282fd33cc16500f45fbdd0`。私有 O
 复验同时确认受保护结果 ACL、匿名 `403`、签名下载 `200`、精确长度与 SHA-256，
 且不输出短时链接。完整记录见
 [`LAUNCHER_RELEASE_0.11.16.md`](LAUNCHER_RELEASE_0.11.16.md)。
+
+`0.12.3` 已从 `0.12.2` 静默覆盖升级到原安装目录。安装前后 `settings.json` 与
+DPAPI `session.dat` SHA-256 保持一致，注册表版本为 `0.12.3`。安装版使用真实正版
+会话从启动器进入 Activity，物理 `native-runs` 目录完成 8 个原生文件运行时解压，
+NeoForge、LWJGL 与 Meccha 正常加载，连接目标世界后以退出码 `0` 结束；没有
+`UnsatisfiedLinkError`、`Can't find dependent libraries`、残留 Java 进程或过期
+运行状态。完整记录见 [`LAUNCHER_RELEASE_0.12.3.md`](LAUNCHER_RELEASE_0.12.3.md)。
 
 ## 7. 第三方构建资产
 

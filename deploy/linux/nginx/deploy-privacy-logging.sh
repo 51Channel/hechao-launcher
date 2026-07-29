@@ -72,6 +72,11 @@ if [[ $(grep -Fc "$include_line" "$stage_dir/hechao-launcher.conf") -ne 3 ]]; th
     exit 1
 fi
 
+if [[ $(grep -c '^[[:space:]]*proxy_hide_header ' "$stage_dir/hechao-launcher.conf") -ne 6 ]]; then
+    printf 'Expected six upstream security-header suppression rules.\n' >&2
+    exit 1
+fi
+
 rollback() {
     local target backup
     for target in "${targets[@]}"; do
