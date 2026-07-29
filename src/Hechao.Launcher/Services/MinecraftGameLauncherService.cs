@@ -364,8 +364,6 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         string launchGameDirectory;
         string runtimeRoot;
         string launchRuntimeRoot;
-        string nativeDirectory;
-        string launchNativeDirectory;
         string? customJavaPath = null;
         MinecraftProfileMetadata metadata;
         try
@@ -453,14 +451,6 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 launchGameDirectory,
                 version.Logging,
                 cancellationToken);
-            nativeDirectory = Path.Combine(
-                gameDirectory,
-                "versions",
-                metadata.VersionId,
-                "natives");
-            launchNativeDirectory = ProfileRuntimePathResolver.GetRuntimeLaunchRoot(
-                nativeDirectory,
-                $"{request.ProfileId}-natives");
         }
         catch (OperationCanceledException)
         {
@@ -477,6 +467,31 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         try
         {
             progress?.Report(new MinecraftLaunchProgress(MinecraftLaunchPhase.BuildingProcess, 92));
+            string launchNativeDirectory;
+            try
+            {
+                var extractedNativeDirectory = launcher.NativeLibraryExtractor.Extract(
+                    minecraftPath,
+                    version,
+                    launcher.RulesContext);
+                launchNativeDirectory = await NativeLibraryRunDirectory.PrepareAsync(
+                    extractedNativeDirectory,
+                    request.ProfileId,
+                    metadata.VersionId,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new MinecraftLaunchException(
+                    MinecraftLaunchFailure.NativeLibraryPreparation,
+                    "Unable to prepare the Minecraft native libraries.",
+                    exception);
+            }
+
             var process = launcher.BuildProcess(version, new MLaunchOption
             {
                 Session = new MSession(
@@ -492,9 +507,11 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 ServerIp = _serverEndpoint.Host,
                 ServerPort = _serverEndpoint.Port,
                 ClientId = _microsoftClientId,
+                NativesDirectory = launchNativeDirectory,
                 GameLauncherName = "Hechao Launcher",
                 GameLauncherVersion = LauncherProductInfo.Version
             });
+
             process.StartInfo.UseShellExecute = false;
             NormalizeLaunchGameDirectory(
                 process.StartInfo,
@@ -1471,6 +1488,7 @@ public enum MinecraftLaunchFailure
     InvalidProfile,
     InvalidJavaSelection,
     RuntimePreparation,
+    NativeLibraryPreparation,
     ProcessCreation,
     ProcessStart
 }

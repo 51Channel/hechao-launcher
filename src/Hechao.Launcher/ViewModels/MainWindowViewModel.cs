@@ -1381,6 +1381,8 @@ public sealed class MainWindowViewModel : ObservableObject
                     LauncherTelemetryFailureCode.InvalidJavaSelection,
                 MinecraftLaunchFailure.RuntimePreparation =>
                     LauncherTelemetryFailureCode.RuntimePreparationFailed,
+                MinecraftLaunchFailure.NativeLibraryPreparation =>
+                    LauncherTelemetryFailureCode.RuntimePreparationFailed,
                 _ => LauncherTelemetryFailureCode.ProcessCreationFailed
             };
             ClientStatusText = exception.Failure switch
@@ -1388,6 +1390,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 MinecraftLaunchFailure.InvalidProfile => "客户端启动信息无效",
                 MinecraftLaunchFailure.InvalidJavaSelection => "自定义 Java 不兼容",
                 MinecraftLaunchFailure.RuntimePreparation => "Java 准备失败",
+                MinecraftLaunchFailure.NativeLibraryPreparation => "游戏原生库准备失败",
                 MinecraftLaunchFailure.ProcessCreation => "无法生成游戏进程",
                 _ => "游戏启动失败"
             };
@@ -1397,6 +1400,8 @@ public sealed class MainWindowViewModel : ObservableObject
                     "客户端不完整，请先修复客户端",
                 MinecraftLaunchFailure.InvalidJavaSelection =>
                     $"当前客户端需要 Java {GetSelectedProfileJavaMajorVersion()}，请重新选择或恢复自动 Java",
+                MinecraftLaunchFailure.NativeLibraryPreparation =>
+                    "原生库未通过完整性或依赖检查，请使用“修复客户端”后重试",
                 _ => "游戏启动未完成，请检查网络或使用客户端修复"
             });
         }

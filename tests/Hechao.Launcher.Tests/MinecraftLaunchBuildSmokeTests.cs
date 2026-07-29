@@ -285,7 +285,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
         Assert.DoesNotContain('\u200c', arguments);
         Assert.DoesNotContain("runtime-links", process.StartInfo.WorkingDirectory);
         Assert.Contains("-Djava.library.path=", arguments);
-        Assert.Contains("runtime-links", launchNativeDirectory);
+        Assert.Contains("native-runs", launchNativeDirectory);
         Assert.True(Directory.Exists(launchNativeDirectory));
         Assert.Contains("net.neoforged.fml.startup.Client", arguments);
         Assert.Contains("--fml.neoForgeVersion", arguments);
@@ -406,7 +406,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
                         line.StartsWith(propertyName, StringComparison.Ordinal));
                 Assert.False(string.IsNullOrWhiteSpace(property));
                 Assert.DoesNotContain('\u200c', property);
-                Assert.Contains("runtime-links", property);
+                Assert.Contains("native-runs", property);
             }
         }
         finally
@@ -460,7 +460,7 @@ public sealed class MinecraftLaunchBuildSmokeTests
     public void NormalizeNativeLibraryDirectory_CanonicalizesAllNativeDirectoryProperties()
     {
         const string launchNativeDirectory =
-            @"C:\Users\Player\AppData\Local\Hechao\Launcher\runtime-links\activity-natives";
+            @"C:\Users\Player\AppData\Local\Hechao\Launcher\native-runs\activity-natives";
         var startInfo = new ProcessStartInfo();
         startInfo.ArgumentList.Add("-Djava.library.path=relative-natives");
         startInfo.ArgumentList.Add(
