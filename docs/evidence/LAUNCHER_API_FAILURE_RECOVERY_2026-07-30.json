@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-29T20:19:05.8952616Z",
+  "scope": "Launcher-only API failure-close and recovery acceptance",
+  "launcher": {
+    "version": "0.12.2",
+    "releaseTag": "launcher-v0.12.2",
+    "releaseCommit": "6405ac760fba9422d3f82fb6d3b9111e79ee700f"
+  },
+  "isolation": {
+    "method": "process-scoped HECHAO_LAUNCHER_API_BASE_URL override",
+    "endpointClass": "loopback connection refused",
+    "windowsFirewallChanged": false,
+    "serverConfigurationChanged": false,
+    "minecraftServerProcessChanged": false
+  },
+  "failureClose": {
+    "launcherProcessId": 31400,
+    "accountPresentation": "guest-not-signed-in",
+    "primaryAction": "login-account",
+    "enterServerActionAvailable": false,
+    "javaProcessCount": 0,
+    "runningGameStateExists": false,
+    "result": "passed"
+  },
+  "recovery": {
+    "launcherProcessId": 3576,
+    "accountPresentation": "51Channel-owner",
+    "sessionRecoveredWithoutCredentialEntry": true,
+    "enterServerActionAvailable": true,
+    "profileId": "activity-neoforge-1.21.11",
+    "serverId": "activity",
+    "gameProcessId": 39244,
+    "startedAt": "2026-07-30T04:14:58.5890724+08:00",
+    "exitedAt": "2026-07-30T04:18:31.0816943+08:00",
+    "exitCode": 0,
+    "connectedTarget": "mc.hehe11.fun:25565",
+    "enteredWorld": true,
+    "mecchaLoaded": true,
+    "lwjglLoaded": true,
+    "stoppingLogged": true,
+    "latestLog": {
+      "size": 17673,
+      "sha256": "10BFB30ECE24AA6D0BAEBB4FA93221ED9AFAD43081D9785CB1E6926A32E96628"
+    },
+    "fatalPatternCounts": {
+      "UnsatisfiedLinkError": 0,
+      "CantFindDependentLibraries": 0,
+      "FatalStartupError": 0,
+      "FileAlreadyExistsException": 0
+    },
+    "javaProcessesAfterExit": 0,
+    "runningGameStateExistsAfterExit": false,
+    "launcherRemainedResponsive": true,
+    "result": "passed"
+  },
+  "remainingExternalGates": [
+    "offline target and no-permission real account",
+    "four real account tiers",
+    "Allow Deny maintenance expired duplicate and unknown target matrix",
+    "2 3 5 and 20 real-player rollout",
+    "Authorizer enforce and catalog forced-login activation after gray acceptance"
+  ]
+}

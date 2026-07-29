@@ -66,6 +66,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | Forge 档案 | 已完成 | `forge-1.20.1` / `1.0.0` 已签名发布；完整安装、逐文件校验和 Forge `47.4.0` 进程构建通过，等待真实 Forge 服务器后再绑定 |
 | DollNight 正式档案 | 已完成 | `dollnight-1.21.11` / `1.0.0` 已签名发布并绑定 DollNight；完整安装、逐文件校验、进程构建和分级授权回归通过 |
 | 服务器在线、档案与进服授权检查 | 已完成 | UI 只允许在线目标启动；启动前重新申请一次性 Velocity 授权。真实 Activity 运行期间选择维护中的 DollNight 和已关闭的 Survival1，主操作均禁用、PID 与单进程状态不变 |
+| API 不可达故障关闭与恢复 | 已完成 | `0.12.2` 使用进程级不可达 API 地址时显示访客、无进服动作、无 Java 进程和运行状态；恢复正常 API 后原会话自动恢复并重新授权直达 Activity，退出码 `0`，见 [`evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json`](evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json) |
 | 启动器唯一切服与单 Minecraft 进程 | 已完成 | `0.12.1` 已用真实管理员正版会话完成同档案三轮 fresh grant 重进、NeoForge/Paper 跨档案三轮切换、`4,261` 个 200 ms 单进程采样、启动器重启接管、正常/异常退出状态与 fresh grant 恢复；没有出现 Lobby 回退，见 [`evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json`](evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json) |
 | 本地退出记录与脱敏诊断包 | 已完成 | 固定条目、大小限制、路径脱敏和保留上限有测试 |
 | 玩家确认后的诊断上传 | 已完成 | `0.11.14` 已由真实已登录客户端生成并确认上传编号 `1e707520`；上传端、生产端与管理员下载文件均为 `707` 字节且 SHA-256 一致，授权、完成和 `diagnostic.admin.downloaded` 审计及 14 天到期时间均已核对 |

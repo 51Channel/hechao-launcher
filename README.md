@@ -99,7 +99,7 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 4. 使用普通、VIP、管理员和服主正版账号完成下载、安装、每档案 Java 运行时准备及单服权限验收。
 5. 验收通过后把 Velocity 切到 `enforce`，再启用目录强制登录。
 6. [已完成] 部署 API `0.22.0`、私有下载与 Nginx 日志脱敏、统一运行告警及状态采集器 `0.2.0`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期、单服访问规则、论坛会话联动、受控全局等级、运行遥测和服务器进程/磁盘指标均已上线。
-7. [已完成自动部署] 启动器 `0.12.2`、API `0.22.0`、Authorizer `0.4.0` 与 Lobby Guard `0.1.0` 已生产发布；继续按 [`docs/PRELAUNCH_PILOT_0.12.2.md`](docs/PRELAUNCH_PILOT_0.12.2.md) 完成真实四级账号、故障关闭、Lobby 旁路拒绝和多人灰度。
+7. [已完成自动部署] 启动器 `0.12.2`、API `0.22.0`、Authorizer `0.4.0` 与 Lobby Guard `0.1.0` 已生产发布；API 不可达故障关闭与恢复已通过，继续按 [`docs/PRELAUNCH_PILOT_0.12.2.md`](docs/PRELAUNCH_PILOT_0.12.2.md) 完成真实四级账号、离线/无权限拒绝、Lobby 旁路拒绝和多人灰度。
 
 当前工程不包含 VPS 密钥、服务器管理权限或远程启停代码。
 

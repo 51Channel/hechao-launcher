@@ -62,14 +62,19 @@ URL 只保存在受 ACL 保护的本机结果文件中，不进入 Git、文档�
 - 私有 OSS 匿名访问两轮均为 `403`；签名回读两轮均为 `200`，耗时分别为 `1.35`
   秒和 `1.29` 秒，长度与 SHA-256 均一致。
 - 第二次发布识别到同键同内容并校验后跳过，没有覆盖不可变生产对象。
+- 使用进程级不可达 API 地址完成故障关闭演练：启动器显示访客、没有进服动作，不创建
+  Java 进程或运行状态；恢复正常 API 后原会话自动恢复，重新授权并再次直达 Activity
+  世界，退出码为 `0`。
 
 结构化证据见
-[`evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json`](evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json)。
+[`evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json`](evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json)
+和
+[`evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json`](evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json)。
 
 ## 4. 仍需真实玩家完成
 
 - Member、Participant、Collaborator、Administrator 四级正版账号授权。
-- 离线目标、无权限账号、API 暂时不可用与恢复后的失败关闭验收。
+- 离线目标和无权限真实账号的失败关闭验收。
 - 单服 Allow、Deny、维护、过期授权、重复授权和未知目标的完整行为矩阵。
 - `2/3/5/20` 人逐级灰度与 TPS、MSPT、GC、API 延迟和告警容量验收。
 - 灰度完成后再决定 Authorizer 从 `monitor` 切换到 `enforce`，随后启用目录强制登录。

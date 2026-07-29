@@ -7,8 +7,9 @@
 > 已部署并通过基础健康检查后执行。
 >
 > 当前状态：自动发布、原生目录修复、Activity 安装版真实进服、同/跨档案三轮
-> 切换、启动器重启接管以及正常/异常退出后的 fresh grant 恢复已完成；四级账号、
-> 离线/API 故障拒绝、`enforce` 和多人项目仍需要真实玩家执行。
+> 切换、启动器重启接管、正常/异常退出后的 fresh grant 恢复以及 API 不可达后的
+> 故障关闭/恢复已完成；四级账号、离线/无权限、`enforce` 和多人项目仍需要真实
+> 玩家执行。
 
 ## 1. 发布前门槛
 
@@ -34,7 +35,7 @@
 - [x] 启动器关闭再打开后能重新附着仍在运行的游戏，并正确恢复目标档案。
 - [x] 目标服维护或关闭时主操作禁用；已有 Activity 进程保持不变，不创建第二个游戏进程，也不回退到大厅。
 - [ ] 目标服离线或当前账号无权限时不启动游戏，也不回退到大厅。
-- [ ] API 暂时不可用时首次连接硬拒绝；恢复后重新申请授权可正常直达目标。
+- [x] API 暂时不可用时首次连接硬拒绝；恢复后重新申请授权可正常直达目标。隔离进程显示访客且没有进服动作、Java 进程或运行状态；恢复正常 API 后原会话自动恢复，Activity 再次进入世界并以退出码 `0` 结束。
 - [x] Lobby 只监听 `127.0.0.1:25566` 且公网端口不可达；Lobby Guard 与空白名单保持生效。
 - [x] 游戏正常退出与异常退出状态、诊断包和运行遥测均正确。
 
@@ -42,6 +43,8 @@
 [`evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json`](evidence/LAUNCHER_SWITCHING_REAL_ACCOUNT_2026-07-30.json)
 和
 [`evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json`](evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json)。
+API 故障关闭和恢复证据见
+[`evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json`](evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json)。
 
 ## 3. 权限与人数灰度
 
