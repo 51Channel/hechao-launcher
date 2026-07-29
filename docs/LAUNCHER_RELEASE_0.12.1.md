@@ -1,6 +1,6 @@
 # 启动器 0.12.1 正式发布记录
 
-> 状态：已发布到私有 OSS；自动发布验收与 Activity 冷/热启动验收通过
+> 状态：已发布到私有 OSS；自动发布、Activity 冷/热启动及安装版真实进服验收通过
 >
 > 正式标签：`launcher-v0.12.1`
 >
@@ -48,6 +48,10 @@ URL 只保存在受 ACL 保护的本机结果文件中，不进入 Git、文档�
 - `jcmd VM.system_properties` 确认 `user.dir` 为无 U+200C 的真实短路径，四个原生目录
   属性均为独立安全映射。
 - 两轮结束后均自动终止测试客户端，没有遗留 Activity Java 进程。
+- 已安装的 `0.12.1` 由真实“进入服务器”操作启动 Activity，完成 Microsoft/Minecraft
+  会话、NeoForge 与全部模组加载、连接 `mc.hehe11.fun` 并进入世界。
+- 该安装版会话随后正常退出，退出码为 `0`，日志出现 `Stopping!`，没有遗留 Java
+  进程；未出现 `UnsatisfiedLinkError`、`FileAlreadyExistsException` 或致命启动错误。
 - `0.12.0 -> 0.12.1` 覆盖升级、隔离干净安装、双轮卸载、设置和 DPAPI 会话保留
   均通过。
 - 私有 OSS 对象匿名访问返回 `403`；两次签名回读返回 `200`，耗时分别为 `1.28`
@@ -58,7 +62,7 @@ URL 只保存在受 ACL 保护的本机结果文件中，不进入 Git、文档�
 
 - 普通、Participant、Collaborator、Administrator 四级正版账号授权。
 - 同档案和跨档案各至少三轮切换，并核对每轮仅有一个 Minecraft 进程。
-- 使用真实 Activity 账号完成进入目标服、正常退出、断线重连和失败恢复。
+- 使用真实 Activity 账号完成断线重连和失败恢复。
 - 启动器关闭后重新打开，接管现有游戏并切换到另一档案。
 - `2/3/5/20` 人逐级灰度与 TPS、MSPT、GC 容量验收。
 

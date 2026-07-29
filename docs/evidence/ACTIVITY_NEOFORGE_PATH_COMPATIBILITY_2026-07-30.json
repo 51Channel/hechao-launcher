@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-29T18:39:18.5319261Z",
+  "generatedAtUtc": "2026-07-29T18:52:22.9521815Z",
   "scope": "Activity NeoForge Windows format-character path compatibility",
   "launcher": {
     "version": "0.12.1",
@@ -43,6 +43,17 @@
     "mecchaLoadingReachedBothRuns": true,
     "jcmdUserDirFormatFree": true,
     "jcmdNativePropertiesFormatFree": true,
+    "installedLauncherEndToEnd": {
+      "startedAt": "2026-07-30T02:49:58.6845895+08:00",
+      "exitedAt": "2026-07-30T02:51:30.0889729+08:00",
+      "microsoftMinecraftSessionUsed": true,
+      "neoforgeLoaded": true,
+      "mecchaLoaded": true,
+      "target": "mc.hehe11.fun:25565",
+      "targetWorldEntered": true,
+      "exitCode": 0,
+      "fatalPathErrors": 0
+    },
     "activityJavaProcessesRemaining": 0
   },
   "artifact": {
