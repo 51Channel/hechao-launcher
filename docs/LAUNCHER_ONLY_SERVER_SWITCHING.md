@@ -146,12 +146,12 @@ Velocity 继续作为唯一公网 Minecraft 入口，负责隐藏后端地址、
 
 | 组件 | 生产版本 | 已完成内容 |
 | --- | --- | --- |
-| 启动器 | `0.12.0` | 私有 OSS 发布、全局单 Minecraft 进程、持久进程接管、安全退出后再授权、Lobby 目录过滤、Windows 升级/卸载和匿名/签名下载验证 |
+| 启动器 | `0.12.1` | 私有 OSS 发布、全局单 Minecraft 进程、持久进程接管、安全退出后再授权、Lobby 目录过滤、Windows 升级/卸载、Activity 特殊路径兼容和匿名/签名下载验证 |
 | API | `0.22.0` | 迁移 `019`、`Player/Infrastructure` 角色、`monitoring_enabled`、Lobby 不可见/不可授权保护、隐藏后继续心跳与告警、管理后台内部节点视图 |
 | Velocity Authorizer | `0.4.0` | owl5 生产 `monitor` 加载、首次连接全部故障关闭、内部目标拒绝、未知授权目标拒绝、配置失效时不放行 |
 | Lobby Guard | `0.1.0` | owl5 生产加载、Paper 双重拒绝、`127.0.0.1:25566`、强制空白名单和安全下限回滚 |
 
-当前自动验证为 `.NET 379/379`、Velocity `26/26`、Lobby Guard `3/3`、
+当前自动验证为 `.NET 384/384`、Velocity `26/26`、Lobby Guard `3/3`、
 LuckPerms 等级代理 `4/4`、Paper 指标代理 `2/2`。
 
 API、Authorizer、Lobby Guard、启动器私有 OSS、旧 Hub/Via 回程移除和各 Skript

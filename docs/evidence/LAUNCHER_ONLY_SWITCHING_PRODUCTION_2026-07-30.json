@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-29T17:17:00Z",
+  "generatedAtUtc": "2026-07-29T18:39:18.5319261Z",
   "scope": "Launcher-only server switching production deployment",
-  "buildSourceCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
+  "buildSourceCommit": "51a82cf5e3b30e62db37db1bf6911e9a661eb818",
   "architecture": {
     "playerSwitchingEntry": "Hechao Launcher only",
     "publicProxy": "Velocity",
@@ -25,23 +25,26 @@
   "components": [
     {
       "component": "launcher",
-      "version": "0.12.0",
-      "releaseTag": "launcher-v0.12.0",
+      "version": "0.12.1",
+      "releaseTag": "launcher-v0.12.1",
       "state": "private-oss-published-awaiting-real-player-gray",
       "artifact": {
-        "name": "Hechao-Launcher-Setup-0.12.0-win-x64.exe",
-        "objectKey": "releases/launcher/0.12.0/Hechao-Launcher-Setup-0.12.0-win-x64.exe",
-        "size": 61874184,
-        "sha256": "9843E51B044611945BA8745D766678B4F43FB465E9039DD7EF3BDF9E55EAD4C2"
+        "name": "Hechao-Launcher-Setup-0.12.1-win-x64.exe",
+        "objectKey": "releases/launcher/0.12.1/Hechao-Launcher-Setup-0.12.1-win-x64.exe",
+        "size": 61874773,
+        "sha256": "6C5783AD9F0B21F0E7DB6BB4F9FC6E7A62BEFF3B550169F48D4F9CF8DBF1B907"
       },
       "acceptance": {
         "anonymousStatus": 403,
         "signedStatus": 200,
         "signedContentMatched": true,
-        "firstReadSeconds": 1.34,
-        "verifyReadSeconds": 1.32,
+        "firstReadSeconds": 1.28,
+        "verifyReadSeconds": 1.37,
         "secondPublishSkippedAfterVerification": true,
-        "privateUrlDisclosed": false
+        "privateUrlDisclosed": false,
+        "activityNeoForgeColdRuntimeSmoke": "passed",
+        "activityNeoForgeHotRuntimeSmoke": "passed",
+        "formatCharacterPathCompatibility": "passed"
       }
     },
     {
@@ -106,7 +109,7 @@
     "proxy default player fallback"
   ],
   "automatedAcceptance": {
-    "dotnet": "379/379",
+    "dotnet": "384/384",
     "velocity": "26/26",
     "lobbyGuard": "3/3",
     "publicCatalogLobbyMatches": 0,

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-29T18:39:18.5319261Z",
+  "scope": "Activity NeoForge Windows format-character path compatibility",
+  "launcher": {
+    "version": "0.12.1",
+    "releaseTag": "launcher-v0.12.1",
+    "sourceCommit": "51a82cf5e3b30e62db37db1bf6911e9a661eb818"
+  },
+  "profile": {
+    "id": "activity-neoforge-1.21.11",
+    "versionId": "1.21.11-NeoForge_21.11.42",
+    "javaMajorVersion": 21,
+    "dataRootContainsUnicodeFormatCharacter": true,
+    "unicodeFormatCharacter": "U+200C"
+  },
+  "rootCause": [
+    "NeoForge JarInJar temporary CREATE_NEW operations fail through a whole-game directory junction",
+    "Java runtime native dependencies fail when java.home resolves through the format-character path",
+    "LWJGL native dependencies fail when the native directory resolves back to the format-character path"
+  ],
+  "resolution": {
+    "gameWorkingDirectory": "existing NTFS 8.3 short path",
+    "managedJava": "dedicated safe junction",
+    "versionNatives": "dedicated safe junction",
+    "rewrittenNativeProperties": [
+      "java.library.path",
+      "jna.tmpdir",
+      "org.lwjgl.system.SharedLibraryExtractPath",
+      "io.netty.native.workdir"
+    ],
+    "wholeGameDirectoryJunctionUsed": false,
+    "profileFilesMovedOrCopied": false
+  },
+  "acceptance": {
+    "dotnet": "384/384",
+    "installerUpgradeFrom": "0.12.0",
+    "installerUpgradePassed": true,
+    "cleanInstallPassed": true,
+    "uninstallRounds": 2,
+    "coldRuntimeSmoke": "passed",
+    "hotRuntimeSmoke": "passed",
+    "mecchaLoadingReachedBothRuns": true,
+    "jcmdUserDirFormatFree": true,
+    "jcmdNativePropertiesFormatFree": true,
+    "activityJavaProcessesRemaining": 0
+  },
+  "artifact": {
+    "name": "Hechao-Launcher-Setup-0.12.1-win-x64.exe",
+    "objectKey": "releases/launcher/0.12.1/Hechao-Launcher-Setup-0.12.1-win-x64.exe",
+    "size": 61874773,
+    "sha256": "6C5783AD9F0B21F0E7DB6BB4F9FC6E7A62BEFF3B550169F48D4F9CF8DBF1B907",
+    "anonymousStatus": 403,
+    "signedStatuses": [
+      200,
+      200
+    ],
+    "signedReadSeconds": [
+      1.28,
+      1.37
+    ],
+    "secondPublishSkippedAfterVerification": true
+  },
+  "security": {
+    "containsPasswords": false,
+    "containsTokens": false,
+    "containsPrivateSignedUrls": false,
+    "realPlayerIdentitiesIncluded": false
+  }
+}
