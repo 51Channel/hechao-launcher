@@ -1,5 +1,11 @@
 # 代理单层协议转换生产运维
 
+> **历史流程，禁止执行新的生产迁移。** 2026-07-29 已确认大厅只保留为内部前置能力
+> 承载器，玩家只通过赫朝启动器切服。ViaVersion/ViaBackwards 大厅回程和 `lobby`
+> 玩家授权开关不再使用；现行隔离与回滚要求见
+> [`LAUNCHER_ONLY_SERVER_SWITCHING.md`](LAUNCHER_ONLY_SERVER_SWITCHING.md)。
+> 本文仅用于解释既有迁移与回滚证据。
+
 ## 1. 边界
 
 本流程只处理 owl5 的以下两个实例：
