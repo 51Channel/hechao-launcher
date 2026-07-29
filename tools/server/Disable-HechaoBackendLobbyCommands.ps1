@@ -17,6 +17,10 @@ $backupDirectory = Join-Path (
     [IO.Path]::GetFullPath($BackupRoot)
 ) "BackendLobbyCommands-$timestamp"
 $records = [Collections.Generic.List[object]]::new()
+$canonicalBroadcastEntry = [Text.Encoding]::UTF8.GetString(
+    [Convert]::FromBase64String(
+        'YWRkICImYeivt+WcqCAmZei1q+acneWQr+WKqOWZqCAmYeS4remAieaLqeW5tuWIh+aNouacjeWKoeWZqCIgdG8ge2Jyb2FkY2FzdC5tc2dzOjoqfQ=='
+    ))
 
 function Assert-ChildPath {
     param(
@@ -122,15 +126,20 @@ try {
                 $broadcast,
                 [Text.Encoding]::UTF8)
             $changed = $false
+            $replaceNextEntry = $false
             $updated = @(
                 foreach ($line in $lines) {
-                    if ($line -match '(?i)/hub\b' -and
-                        $line -match '\{broadcast\.msgs::\*\}') {
+                    if ($line -match '^\s*delete\s+\{broadcast\.msgs::\*\}') {
+                        $replaceNextEntry = $true
+                        $line
+                    }
+                    elseif ($replaceNextEntry -and
+                        $line -match '^\s*add\s+.*\{broadcast\.msgs::\*\}\s*$') {
                         $indent = [regex]::Match($line, '^\s*').Value
-                        $indent +
-                            'add "&a请在 &e赫朝启动器 &a中选择并切换服务器" ' +
-                            'to {broadcast.msgs::*}'
-                        $changed = $true
+                        $replacement = $indent + $canonicalBroadcastEntry
+                        $replacement
+                        $changed = $line -cne $replacement
+                        $replaceNextEntry = $false
                     }
                     else {
                         $line
