@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-07-29T16:25:41.9252529Z",
+  "runtime": {
+    "version": "7.6.4",
+    "installer": "PowerShell-7.6.4-win-x64.msi",
+    "installerBytes": 115515392,
+    "installerSha256": "D11942DF52FD12470169797ABFA4781D9480EFDC81000BA4FA55A5B921ED8DD0",
+    "signer": "Microsoft Corporation",
+    "officialRelease": "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.4"
+  },
+  "environments": [
+    {
+      "name": "development-workstation",
+      "installation": "current-user",
+      "path": "%LocalAppData%\\Programs\\PowerShell\\7\\PowerShell\\7\\pwsh.exe",
+      "verified": true
+    },
+    {
+      "name": "owl5",
+      "installation": "machine",
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "verified": true
+    },
+    {
+      "name": "owl9",
+      "installation": "machine",
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "verified": true
+    }
+  ],
+  "scheduledTaskMigrations": [
+    {
+      "name": "owl5",
+      "backupDirectory": "C:\\ProgramData\\Hechao\\Backups\\PowerShell7TaskMigration-20260729T161923Z",
+      "tasks": [
+        "Hechao Launcher LuckPerms Sync",
+        "Hechao-MinecraftConsoleBridge",
+        "Hechao-Server-ActivityNeoForge",
+        "Hechao-Server-Lobby",
+        "Hechao-Server-Survival1",
+        "Hechao-Server-Survival2"
+      ],
+      "verifiedExecutor": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "runningGameTasksRestarted": false
+    },
+    {
+      "name": "owl9",
+      "backupDirectory": "C:\\ProgramData\\Hechao\\Backups\\PowerShell7TaskMigration-20260729T161952Z",
+      "tasks": [
+        "Hechao-HorrorPrank-WorldBackup",
+        "Hechao-MinecraftConsoleBridge"
+      ],
+      "verifiedExecutor": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "realPvpTouched": false
+    }
+  ],
+  "verification": {
+    "repositoryPowerShellScriptsParsed": 27,
+    "rangeDownloaderSyntaxChecked": true,
+    "rangeDownloaderInstallerHashVerified": true,
+    "taskMigrationAutoRollbackEnabled": true,
+    "windowsPowerShell51AllowedOnlyForFirstBootstrap": true
+  }
+}

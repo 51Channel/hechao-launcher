@@ -64,7 +64,24 @@ Windows 启动器正式候选统一使用：
 
 首版已明确不购买 Authenticode 证书，当前安装包与 EXE 的预期状态为 `NotSigned`。这不是跳过完整性验证：正式公告必须只使用官方来源，并同时给出版本、大小和 SHA-256。以后增加代码签名时应作为独立启动器版本提交、测试、构建和发布，不得覆盖已有安装包。
 
-## 4. 提交前检查
+## 4. PowerShell 运行时
+
+本机发布、仓库脚本和 Windows VPS 运维统一使用 PowerShell 7 的 `pwsh`，
+禁止用 Windows PowerShell 5.1 的 `powershell.exe` 执行赫朝业务脚本。尚未安装
+PowerShell 7 的机器只允许使用 5.1 完成一次
+`Install-HechaoPowerShell7.ps1` 引导，之后立即切换到 `pwsh`。
+
+正式 Windows 计划任务使用
+`C:\Program Files\PowerShell\7\pwsh.exe`。提交或改版运维脚本前必须运行：
+
+```powershell
+pwsh -NoLogo -NoProfile -File .\tools\Test-HechaoPowerShell7Compliance.ps1
+```
+
+版本、安装校验、VPS 迁移和回滚见
+[`POWERSHELL_7_OPERATIONS.md`](POWERSHELL_7_OPERATIONS.md)。
+
+## 5. 提交前检查
 
 ```powershell
 git status --short
@@ -96,7 +113,7 @@ git config --get user.email
 历史未归档二进制逐字节一致。今后的正式版本必须在发布收口前更新台账并让校验脚本
 通过。
 
-## 5. 发布提交模板
+## 6. 发布提交模板
 
 ```text
 feat: add grant-directed Velocity routing
@@ -112,6 +129,6 @@ Production: API 0.14.1 healthy; plugin 0.2.0 loaded in monitor mode
 
 提交正文只记录非秘密事实。远端推送后再把提交 ID 和标签补入发布记录；若因此修改文档，应形成一个小型 `docs:` 或 `ops:` 提交。
 
-## 6. 当前初始提交
+## 7. 当前初始提交
 
 本目录在开始执行该规则时已经包含完整的平台源码，但 Git 尚无历史。第一次提交应作为“平台初始基线”，覆盖截至 API `0.5.0`、启动器 `0.6.0` 和 Velocity 插件 `0.1.0` 的现状。此后每项功能或改版必须独立提交并推送，不能继续累积为第二个巨型提交。

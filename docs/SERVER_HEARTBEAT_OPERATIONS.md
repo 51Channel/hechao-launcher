@@ -46,7 +46,7 @@ ServerHeartbeats__InternalTokenSha256=<64-character SHA-256 digest>
 ServerHeartbeats__FreshnessSeconds=180
 ```
 
-On the game VPS, use `Protect-HeartbeatToken.ps1` from an elevated Windows PowerShell
+On the game VPS, use `Protect-HeartbeatToken.ps1` from an elevated PowerShell 7
 session. It protects the token with machine-scope DPAPI and restricts the state directory
 to `SYSTEM` and local administrators.
 
@@ -58,7 +58,7 @@ For a non-interactive deployment, pass the token only through standard input and
 parameter:
 
 ```powershell
-$token | powershell.exe -NoProfile -File .\Protect-HeartbeatToken.ps1 `
+$token | pwsh.exe -NoLogo -NoProfile -File .\Protect-HeartbeatToken.ps1 `
     -ReadFromStandardInput
 ```
 

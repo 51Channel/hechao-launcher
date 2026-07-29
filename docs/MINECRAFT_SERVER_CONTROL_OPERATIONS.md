@@ -33,7 +33,7 @@ detaches, and records a success or failure JSON response.
 Example:
 
 ```powershell
-powershell.exe -NoProfile -File `
+pwsh.exe -NoLogo -NoProfile -File `
   C:\ProgramData\Hechao\ServerControl\Submit-MinecraftConsoleCommand.ps1 `
   -ProcessId 1234 `
   -Command list
