@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-29T20:19:05.8952616Z",
+  "generatedAtUtc": "2026-07-29T20:23:55.9702744Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -41,7 +41,8 @@
         "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json",
         "docs/evidence/ACTIVITY_NEOFORGE_PATH_COMPATIBILITY_2026-07-30.json",
         "docs/evidence/ACTIVITY_NEOFORGE_NATIVE_PATH_RECOVERY_2026-07-30.json",
-        "docs/evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json"
+        "docs/evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json",
+        "docs/evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json"
       ]
     },
     {

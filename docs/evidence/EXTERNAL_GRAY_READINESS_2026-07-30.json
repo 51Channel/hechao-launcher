@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-29T20:23:55.9702744Z",
+  "scope": "Read-only production readiness snapshot before real-account and multiplayer gray acceptance",
+  "api": {
+    "version": "0.22.0-20260729T144953Z",
+    "healthStatus": 200,
+    "readyStatus": 200
+  },
+  "owl5": {
+    "powershellVersion": "7.6.4",
+    "velocity": {
+      "port": 25577,
+      "listenerPresent": true,
+      "authorizerVersion": "0.4.0",
+      "authorizerSha256": "D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120",
+      "mode": "monitor",
+      "infrastructureTargets": [
+        "lobby"
+      ],
+      "legacyProxyPluginCount": 0
+    },
+    "lobby": {
+      "port": 25566,
+      "listenerAddress": "127.0.0.1",
+      "publicPortReachable": false,
+      "guardVersion": "0.1.0",
+      "guardSha256": "B0B7AA651994797B16B1271D332EF03A218F8BB8FEC3226CF0F705D74311DE99",
+      "whitelistEnabled": true,
+      "enforceWhitelist": true,
+      "whitelistEntries": 0,
+      "activePlayerScripts": 0,
+      "activeBackendHubScripts": 0,
+      "luckPermsTierAgentPresent": true,
+      "serverMetricsAgentPresent": true
+    }
+  },
+  "productionAccounts": [
+    {
+      "tier": "Member",
+      "accounts": 21,
+      "enabled": 21,
+      "minecraftBound": 0
+    },
+    {
+      "tier": "Participant",
+      "accounts": 0,
+      "enabled": 0,
+      "minecraftBound": 0
+    },
+    {
+      "tier": "Collaborator",
+      "accounts": 0,
+      "enabled": 0,
+      "minecraftBound": 0
+    },
+    {
+      "tier": "Administrator",
+      "accounts": 1,
+      "enabled": 1,
+      "minecraftBound": 1
+    }
+  ],
+  "automatableAcceptance": {
+    "launcherApiFailureCloseAndRecovery": "passed",
+    "activityNativePathRecovery": "passed",
+    "singleProcessSwitching": "passed",
+    "lobbyIsolation": "passed"
+  },
+  "externalAcceptanceRequired": [
+    "Bind legitimate Minecraft Java identities for Member Participant and Collaborator test accounts",
+    "Validate four real account tiers without sharing Microsoft credentials",
+    "Run 2 3 5 and 20 simultaneous real-player sessions",
+    "Observe TPS MSPT GC API latency and alerts during each rollout stage",
+    "Switch Authorizer to enforce only after account and player rollout acceptance",
+    "Enable catalog forced login only after enforce acceptance"
+  ],
+  "result": "production-ready-for-external-gray-not-yet-eligible-for-enforce"
+}

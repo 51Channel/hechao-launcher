@@ -10,6 +10,10 @@
 > 切换、启动器重启接管、正常/异常退出后的 fresh grant 恢复以及 API 不可达后的
 > 故障关闭/恢复已完成；四级账号、离线/无权限、`enforce` 和多人项目仍需要真实
 > 玩家执行。
+>
+> 2026-07-30 只读快照：Member `21` 个但 Minecraft 绑定为 `0`，Participant `0`，
+> Collaborator `0`，Administrator `1` 个且已绑定。生产当前具备外部灰度条件，但在
+> 三个缺失等级取得合法正版身份并完成逐级多人验收前，不得切换 `enforce`。
 
 ## 1. 发布前门槛
 
@@ -52,6 +56,9 @@ API 故障关闭和恢复证据见
 - [ ] 单服 Allow、Deny、维护状态、过期授权、重复授权和未知目标均符合预期。
 - [ ] 依次完成 `2`、`3`、`5`、`20` 人灰度；观察 TPS、MSPT、GC、API 延迟和告警。
 - [ ] 灰度期间大厅在线玩家始终为 `0`，但 LuckPerms 等级代理、指标、告警和备份正常。
+
+当前账号数量、API 健康、Authorizer/Lobby Guard 哈希与大厅隔离快照见
+[`evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json`](evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json)。
 
 ## 4. 通过与回滚
 

@@ -49,7 +49,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 能力 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 赫朝账号与论坛统一账号 | 已完成 | 注册、登录、资料和密码内部接口已部署 |
-| Microsoft/Minecraft 正版绑定 | 已实现待生产验收 | API 许可和 1 个真实管理员正版账号的正确赫朝客户端登录、基础档案进服已通过；仍只有 1 个 Minecraft 绑定，Participant 与 Collaborator 为 0，需四级真实账号验收 |
+| Microsoft/Minecraft 正版绑定 | 已实现待生产验收 | API 许可和 1 个真实管理员正版账号的正确赫朝客户端登录、基础档案进服已通过；生产有 Member `21` 个但绑定为 `0`，Participant 与 Collaborator 均为 `0`，Administrator `1` 个且已绑定，需三个缺失等级各准备合法正版身份后完成四级验收，见 [`evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json`](evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json) |
 | LuckPerms 等级同步、受控修改与目录过滤 | 已实现待生产验收 | 大厅等级代理已随受控重启加载，真实 owner 快照可用；强制目录开关未启用，仍需使用专门测试账号做四级改回和拒绝路径 |
 | 签名清单、断点续传、修复与原子切换 | 已完成 | 基础、Vanilla、Forge、NeoForge、恐怖整蛊、DollNight 档案与自动测试 |
 | 启动时客户端检查开关 | 已完成 | `0.11.14` 可跳过首次本地扫描，重新开启立即检查；第一次进服前仍强制检查，自动测试覆盖 |
