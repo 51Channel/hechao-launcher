@@ -48,6 +48,10 @@ param(
         'A300E7CBE190B42E434763CFCCAFB9D821F894B02E72A594ED72B340C3E22C70',
 
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
+    [string]$ExpectedVelocity4TomlSha256 =
+        '091094101E4DF2B05F814169FB9462FD8A6ED3C3858E62C92C4220BE4535F25A',
+
+    [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string]$ExpectedVelocityLegacySha256 =
         'CCC49F71751ECE26568D3476392D6130C8B43F2E5F3A88313325B9278A52BABD',
 
@@ -471,7 +475,7 @@ function Assert-ProxyBaseline {
 
     Assert-FileHash `
         -Path (Join-Path $Roots.Velocity 'velocity.toml') `
-        -ExpectedSha256 $ExpectedVelocityTomlSha256 `
+        -ExpectedSha256 $ExpectedVelocity4TomlSha256 `
         -Label 'Velocity configuration' | Out-Null
     Assert-FileHash `
         -Path (Join-Path $Roots.Velocity 'velocity.jar') `
