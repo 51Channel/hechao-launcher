@@ -165,6 +165,10 @@ LuckPerms 等级代理 `4/4`、Paper 指标代理 `2/2`。
 4. 部署 Lobby Guard `0.1.0`，把 `25566` 收紧为本机监听和空白名单；核对 LuckPerms、
    指标、告警和备份不受影响。
 5. 检查并移除各玩家后端的 `/hub`、`/lobby`、`/l`、NPC 和其他游戏内转服入口。
+   Skript 后端使用
+   [`Disable-HechaoBackendLobbyCommands.ps1`](../tools/server/Disable-HechaoBackendLobbyCommands.ps1)
+   备份并停用 `hub.sk`，同时把旧广播改为提示使用赫朝启动器；运行中的服务端还需通过
+   受控控制台重载对应广播脚本。
 6. 发布启动器 `0.12.0` 私有候选，完成同档案/跨档案各三轮真实切换、启动器重启接管、
    目标维护和异常退出回归。
 7. 使用普通、Participant、Collaborator、Administrator 四级真实账号完成目录、进服、
