@@ -19,6 +19,9 @@
   立即拒绝。
 - 生产安装器会备份 JAR、插件配置和 `velocity.toml`，写入内部目标，启动失败时恢复
   旧 JAR 与配置。
+- 旧 HubCommand、ViaVersion 和 ViaBackwards 由
+  [`Disable-HechaoLegacyLobbyRouting.ps1`](../tools/server/Disable-HechaoLegacyLobbyRouting.ps1)
+  备份后移出活动插件目录；Velocity 未恢复或 Authorizer 未加载时自动恢复旧 JAR。
 
 ## 2. 制品
 
@@ -31,7 +34,7 @@
 - Java 测试 `26/26` 通过。
 - 覆盖首次 API 故障、空响应、授权拒绝、未知目标、内部目标、插件未初始化、合法目标改写、
   非首次 monitor 兼容行为和配置输入校验。
-- 两份 Velocity 部署脚本通过 PowerShell 语法解析。
+- 三份 Velocity 部署脚本通过 PowerShell 语法解析。
 
 ## 4. 生产门槛
 
