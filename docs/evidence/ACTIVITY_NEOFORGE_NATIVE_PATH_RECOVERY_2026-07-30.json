@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-29T20:04:45.1028521Z",
+  "scope": "Launcher 0.12.2 Activity NeoForge native path recovery",
+  "launcher": {
+    "version": "0.12.2",
+    "releaseTag": "launcher-v0.12.2",
+    "releaseCommit": "6405ac760fba9422d3f82fb6d3b9111e79ee700f",
+    "installedProductVersion": "0.12.2+6405ac760fba9422d3f82fb6d3b9111e79ee700f",
+    "installedFileVersion": "0.12.2.0",
+    "installedExecutable": {
+      "size": 68785734,
+      "sha256": "EF8817CB19AC6A51C09CBEDD8685151044C7864B76F4C90293804E286923FEF3"
+    },
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.12.2-win-x64.exe",
+      "objectKey": "releases/launcher/0.12.2/Hechao-Launcher-Setup-0.12.2-win-x64.exe",
+      "size": 61876002,
+      "sha256": "FEE5A53FF9A6033E96E2150E8A31D474B559581BEED14B65F939743A83C4BDCB",
+      "anonymousStatus": 403,
+      "signedStatus": 200,
+      "firstReadSeconds": 1.35,
+      "verificationReadSeconds": 1.29,
+      "repeatPublish": "verified-and-skipped",
+      "privateUrlDisclosed": false
+    }
+  },
+  "failure": {
+    "exception": "java.lang.UnsatisfiedLinkError",
+    "messageClass": "lwjgl.dll cannot find dependent libraries",
+    "rootCause": "JVM canonicalization returned to a data path containing U+200C and a later org.lwjgl.librarypath argument could override the safe directory",
+    "dllCorruptionRejected": true,
+    "modConflictRejected": true
+  },
+  "fix": {
+    "nativeProperties": [
+      "java.library.path",
+      "org.lwjgl.librarypath",
+      "jna.tmpdir",
+      "org.lwjgl.system.SharedLibraryExtractPath",
+      "io.netty.native.workdir"
+    ],
+    "normalization": "remove all prior forms, insert one canonical value, validate before Process.Start",
+    "safeDirectory": "C:\\Users\\Administrator\\AppData\\Local\\Hechao\\Launcher\\runtime-links\\activity-neoforge-12111-natives-2CD75C95D800CB72",
+    "uniqueNativeDirectoryCount": 1,
+    "containsUnicodeFormatCharacter": false,
+    "staleProcessStateCleanupHardened": true
+  },
+  "automatedValidation": {
+    "dotnet": "386/386",
+    "targetedNativePathTests": "3/3",
+    "launcherTests": "109/109",
+    "formatCheck": "passed",
+    "diffCheck": "passed",
+    "sourceRuntimeSmoke": "passed",
+    "javaProcessesAfterSmoke": 0
+  },
+  "installedLauncherAcceptance": {
+    "profileId": "activity-neoforge-1.21.11",
+    "processId": 37868,
+    "startedAt": "2026-07-30T03:58:16.9763773+08:00",
+    "exitedAt": "2026-07-30T03:59:52.6864828+08:00",
+    "exitCode": 0,
+    "connectedTarget": "mc.hehe11.fun:25565",
+    "enteredWorld": true,
+    "mecchaLoaded": true,
+    "lwjglLoaded": true,
+    "stoppingLogged": true,
+    "fatalPatternCounts": {
+      "UnsatisfiedLinkError": 0,
+      "CantFindDependentLibraries": 0,
+      "FatalStartupError": 0,
+      "FileAlreadyExistsException": 0
+    },
+    "latestLog": {
+      "size": 17682,
+      "sha256": "12EB262346CDAE20BAF8220F807228622914609E5210C6B1C795A081843DC845"
+    },
+    "javaProcessesAfterExit": 0,
+    "runningGameStateExistsAfterExit": false,
+    "launcherRemainedResponsive": true
+  },
+  "rollback": {
+    "releaseTag": "launcher-v0.12.1",
+    "installerRetained": "artifacts/installer/Hechao-Launcher-Setup-0.12.1-win-x64.exe",
+    "serverComponentsUnaffected": true
+  }
+}
