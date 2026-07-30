@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-30T02:48:12Z",
+  "scope": "Read-only production admin web visual acceptance after fresh launcher ticket and MFA",
+  "release": {
+    "launcher": "0.12.3",
+    "api": "0.22.0"
+  },
+  "session": {
+    "freshLauncherTicketConfirmed": true,
+    "mfaCompleted": true,
+    "mfaCompletionVisibleInAudit": true,
+    "writeActionsPerformed": []
+  },
+  "modules": {
+    "serverCatalog": {
+      "status": "passed",
+      "configuredTargets": 6,
+      "currentPlayerVisibleTargets": 5,
+      "onlineOpenTargets": 3,
+      "maintenanceTargets": 1,
+      "archivedTargets": 0,
+      "infrastructureLobbyPlayerVisible": false
+    },
+    "playersAndPermissions": {
+      "status": "passed",
+      "accountRowsReported": 22,
+      "individualRecordsCaptured": false,
+      "writeActionsPerformed": []
+    },
+    "clientProfiles": {
+      "status": "passed",
+      "profileCount": 6,
+      "enabledProfileCount": 6,
+      "productionVersions": {
+        "forge-1.20.1": "1.0.0",
+        "vanilla-1.21.11": "1.0.0",
+        "base-1.21.11": "1.0.5",
+        "pvp-fabric-1.20.1": "1.0.0",
+        "activity-neoforge-1.21.11": "1.0.10",
+        "dollnight-1.21.11": "1.0.0"
+      }
+    },
+    "runtimeData": {
+      "status": "passed",
+      "windowsVerified": [
+        "24h",
+        "7d",
+        "30d"
+      ],
+      "last24Hours": {
+        "events": 61,
+        "uniquePlayers": 1,
+        "downloadAttempts": 0,
+        "downloadFailureRatePercent": 0.0,
+        "minecraftLaunchAttempts": 25,
+        "minecraftLaunchSuccesses": 24,
+        "minecraftLaunchFailures": 1
+      },
+      "last7Days": {
+        "events": 81,
+        "uniquePlayers": 1,
+        "downloadAttempts": 2,
+        "downloadFailureRatePercent": 0.0,
+        "installOrRepairSuccesses": 2,
+        "transferredGiB": 1.4,
+        "minecraftLaunchAttempts": 32,
+        "minecraftLaunchSuccesses": 31,
+        "minecraftLaunchFailures": 1
+      },
+      "last30DaysMatchedAvailable7DayHistory": true
+    },
+    "serviceStatus": {
+      "status": "passed",
+      "heartbeats": "5/5",
+      "onlineTargets": 4,
+      "currentPlayers": 0,
+      "abnormalTargets": 1,
+      "expectedOfflineTarget": "survival1",
+      "lobbyPlayers": 0,
+      "activityEmptyTickState": "paused-when-empty"
+    },
+    "alerts": {
+      "status": "passed-with-advisory",
+      "activeAlerts": 1,
+      "activeCriticalAlerts": 0,
+      "activeWarnings": 1,
+      "unacknowledgedAlerts": 1,
+      "advisory": {
+        "target": "pvp",
+        "meaning": "legacy horror-prank backend",
+        "code": "Server.DiskFree",
+        "freeGiBApproximately": 8.21
+      },
+      "acknowledgementPerformed": false
+    },
+    "diagnostics": {
+      "status": "passed",
+      "visiblePackages": 1,
+      "visiblePackageBytes": 707,
+      "automaticDeletionScheduled": true,
+      "downloadPerformed": false,
+      "identifiersCaptured": false
+    },
+    "audit": {
+      "status": "passed",
+      "freshAdminSessionCreatedVisible": true,
+      "freshTicketRedeemedVisible": true,
+      "freshMfaCompletionVisible": true,
+      "recurringLuckPermsSnapshotsVisible": true,
+      "identifiersCaptured": false
+    }
+  },
+  "result": "read-only-admin-visual-acceptance-passed",
+  "remainingExternalGates": [
+    "Prepare legitimate Minecraft Java identities for Member Participant and Collaborator test accounts",
+    "Complete four-tier real-account authorization and lobby-bypass rejection",
+    "Complete 2 3 5 and 20 simultaneous real-player rollout stages",
+    "Resolve or explicitly accept the horror-prank disk-free warning before the 20-player stage",
+    "Keep Velocity Authorizer in monitor until the real-account and five-player gates pass",
+    "Keep catalog forced login disabled until enforce acceptance passes",
+    "Use dedicated reversible test objects for remaining admin write-operation acceptance"
+  ]
+}
