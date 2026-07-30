@@ -36,6 +36,16 @@ LauncherUpdates__PublishedAt=<UTC ISO-8601>
 LauncherUpdates__ReleaseNotes=<single-line notes>
 ```
 
+## 首次启用边界
+
+`launcher-v0.13.0` 是第一份包含自更新模块的启动器。仍在运行
+`launcher-v0.12.3` 或更早版本的玩家必须手动覆盖安装一次 `0.13.0`；
+旧程序本身没有 `/v1/launcher/update` 客户端，无法自行完成这次跨越。
+
+从 `0.13.0` 开始，后续版本通过启动器内的更新提示下载、校验、静默覆盖并
+重新启动。发布首轮真实验收使用 `0.13.0 -> 0.13.1`，不得把
+`0.12.3 -> 0.13.0` 记作自更新验收。
+
 6. 重启 API，先用测试账号核对可选更新，再提高
    `MinimumSupportedVersion` 开启强制更新。
 
