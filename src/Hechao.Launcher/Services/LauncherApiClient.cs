@@ -254,6 +254,41 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         return await ReadRequiredAsync<LauncherCatalogSnapshot>(retryResponse, cancellationToken);
     }
 
+    public async Task<LauncherUpdateRelease?> GetLauncherUpdateAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var firstResponse = await SendLauncherUpdateRequestAsync(
+            accessToken,
+            cancellationToken);
+        if (firstResponse.StatusCode == HttpStatusCode.NoContent)
+        {
+            return null;
+        }
+
+        if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
+        {
+            return await ReadRequiredAsync<LauncherUpdateRelease>(
+                firstResponse,
+                cancellationToken);
+        }
+
+        if (!await RefreshCoreAsync(_session.RefreshToken, cancellationToken))
+        {
+            throw new LauncherAuthenticationRequiredException();
+        }
+
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendLauncherUpdateRequestAsync(
+            accessToken,
+            cancellationToken);
+        return retryResponse.StatusCode == HttpStatusCode.NoContent
+            ? null
+            : await ReadRequiredAsync<LauncherUpdateRelease>(
+                retryResponse,
+                cancellationToken);
+    }
+
     public async Task<byte[]> GetProfileManifestAsync(
         string profileId,
         CancellationToken cancellationToken = default)
@@ -572,6 +607,19 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         {
             request.Dispose();
         }
+    }
+
+    private Task<HttpResponseMessage> SendLauncherUpdateRequestAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            "v1/launcher/update");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            accessToken);
+        return SendAndDisposeRequestAsync(request, cancellationToken);
     }
 
     private async Task<HttpResponseMessage> SendVelocityLaunchGrantRequestAsync(

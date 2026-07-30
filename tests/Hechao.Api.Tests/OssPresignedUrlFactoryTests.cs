@@ -48,4 +48,44 @@ public sealed class OssPresignedUrlFactoryTests
             Environment.SetEnvironmentVariable("OSS_ACCESS_KEY_SECRET", previousAccessKeySecret);
         }
     }
+
+    [Fact]
+    public void TryCreateLauncherInstallerUrl_UsesExactPrivateReleasePath()
+    {
+        var previousAccessKeyId = Environment.GetEnvironmentVariable("OSS_ACCESS_KEY_ID");
+        var previousAccessKeySecret = Environment.GetEnvironmentVariable("OSS_ACCESS_KEY_SECRET");
+        try
+        {
+            Environment.SetEnvironmentVariable("OSS_ACCESS_KEY_ID", "test-access-key-id");
+            Environment.SetEnvironmentVariable("OSS_ACCESS_KEY_SECRET", "test-access-key-secret");
+            var options = Options.Create(new DistributionOptions
+            {
+                OssRegion = "cn-shanghai",
+                OssBucket = "hechaoworld",
+                OssEndpoint = "https://download.hechao.world",
+                OssObjectPrefix = "objects",
+                PresignedUrlSeconds = 300
+            });
+            using var factory = new OssPresignedUrlFactory(
+                options,
+                NullLogger<OssPresignedUrlFactory>.Instance);
+
+            var result = factory.TryCreateLauncherInstallerUrl("0.13.0");
+
+            Assert.NotNull(result);
+            var uri = new Uri(result);
+            Assert.Equal(
+                "/releases/launcher/0.13.0/Hechao-Launcher-Setup-0.13.0-win-x64.exe",
+                uri.AbsolutePath);
+            Assert.Contains(
+                "x-oss-signature-version=OSS4-HMAC-SHA256",
+                uri.Query,
+                StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OSS_ACCESS_KEY_ID", previousAccessKeyId);
+            Environment.SetEnvironmentVariable("OSS_ACCESS_KEY_SECRET", previousAccessKeySecret);
+        }
+    }
 }

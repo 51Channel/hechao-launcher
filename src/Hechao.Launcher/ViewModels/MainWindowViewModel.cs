@@ -22,6 +22,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IGameDiagnosticsService _gameDiagnosticsService;
     private readonly IGameDiagnosticUploadService _diagnosticUploadService;
     private readonly ILauncherTelemetryService _telemetryService;
+    private readonly ILauncherUpdateService _launcherUpdateService;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _profileJavaPaths =
@@ -68,6 +69,12 @@ public sealed class MainWindowViewModel : ObservableObject
     private string? _latestDiagnosticProfileId;
     private string? _runningServerId;
     private string _diagnosticUploadStatus = "先在本机生成诊断包，再决定是否上传。";
+    private LauncherUpdatePlan? _launcherUpdatePlan;
+    private bool _isLauncherUpdateVisible;
+    private bool _isLauncherUpdateBusy;
+    private double _launcherUpdateProgress;
+    private string _launcherUpdateStatus = string.Empty;
+    private bool _hasCheckedLauncherUpdate;
 
     public MainWindowViewModel(
         IServerCatalogClient catalogClient,
@@ -78,7 +85,8 @@ public sealed class MainWindowViewModel : ObservableObject
         IDownloadHistoryStore downloadHistoryStore,
         IGameDiagnosticsService gameDiagnosticsService,
         IGameDiagnosticUploadService diagnosticUploadService,
-        ILauncherTelemetryService? telemetryService = null)
+        ILauncherTelemetryService? telemetryService = null,
+        ILauncherUpdateService? launcherUpdateService = null)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -90,6 +98,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _diagnosticUploadService = diagnosticUploadService;
         _telemetryService =
             telemetryService ?? NullLauncherTelemetryService.Instance;
+        _launcherUpdateService =
+            launcherUpdateService ?? NullLauncherUpdateService.Instance;
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
@@ -179,6 +189,15 @@ public sealed class MainWindowViewModel : ObservableObject
             CanCreateDiagnosticBundle);
         OpenDiagnosticsDirectoryCommand = new RelayCommand(OpenDiagnosticsDirectory);
         UseManagedJavaCommand = new RelayCommand(UseManagedJava);
+        InstallLauncherUpdateCommand = new AsyncRelayCommand(
+            InstallLauncherUpdateAsync,
+            HandleUnexpectedLauncherUpdateError,
+            () => IsLauncherUpdateVisible && !IsLauncherUpdateBusy);
+        DismissLauncherUpdateCommand = new RelayCommand(
+            DismissLauncherUpdate,
+            () => IsLauncherUpdateVisible &&
+                  !IsLauncherUpdateBusy &&
+                  !IsLauncherUpdateRequired);
 
         LoadDownloadHistory();
 
@@ -222,6 +241,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand CreateDiagnosticBundleCommand { get; }
     public RelayCommand OpenDiagnosticsDirectoryCommand { get; }
     public RelayCommand UseManagedJavaCommand { get; }
+    public AsyncRelayCommand InstallLauncherUpdateCommand { get; }
+    public RelayCommand DismissLauncherUpdateCommand { get; }
     public event EventHandler? CloseRequested;
 
     public LauncherPage ActivePage
@@ -776,6 +797,67 @@ public sealed class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _toastMessage, value);
     }
 
+    public bool IsLauncherUpdateVisible
+    {
+        get => _isLauncherUpdateVisible;
+        private set
+        {
+            if (SetProperty(ref _isLauncherUpdateVisible, value))
+            {
+                InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
+                DismissLauncherUpdateCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsLauncherUpdateBusy
+    {
+        get => _isLauncherUpdateBusy;
+        private set
+        {
+            if (SetProperty(ref _isLauncherUpdateBusy, value))
+            {
+                InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
+                DismissLauncherUpdateCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsLauncherUpdateRequired =>
+        _launcherUpdatePlan?.IsRequired == true;
+
+    public string LauncherUpdateTitle =>
+        _launcherUpdatePlan is null
+            ? "启动器更新"
+            : $"赫朝启动器 {_launcherUpdatePlan.LatestVersion.ToString(3)}";
+
+    public string LauncherUpdateSummary =>
+        IsLauncherUpdateRequired
+            ? "当前版本已停止支持，需要更新后继续使用。"
+            : "新版本已经准备好，更新后会自动回到启动器。";
+
+    public string LauncherUpdateReleaseNotes =>
+        string.IsNullOrWhiteSpace(_launcherUpdatePlan?.ReleaseNotes)
+            ? "本次更新包含稳定性与功能改进。"
+            : _launcherUpdatePlan.ReleaseNotes;
+
+    public string LauncherUpdateSizeText =>
+        _launcherUpdatePlan is null
+            ? string.Empty
+            : FormatFileSize(_launcherUpdatePlan.InstallerBytes);
+
+    public double LauncherUpdateProgress
+    {
+        get => _launcherUpdateProgress;
+        private set => SetProperty(ref _launcherUpdateProgress, value);
+    }
+
+    public string LauncherUpdateStatus
+    {
+        get => _launcherUpdateStatus;
+        private set => SetProperty(ref _launcherUpdateStatus, value);
+    }
+
     private async Task InitializeAsync()
     {
         IsAccountBusy = true;
@@ -793,6 +875,92 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         await LoadCatalogAsync();
+        await TryCheckLauncherUpdateAsync();
+    }
+
+    private async Task TryCheckLauncherUpdateAsync()
+    {
+        if (_hasCheckedLauncherUpdate ||
+            !IsAuthenticated ||
+            IsLauncherUpdateVisible)
+        {
+            return;
+        }
+
+        _hasCheckedLauncherUpdate = true;
+        try
+        {
+            var plan = await _launcherUpdateService.CheckAsync();
+            if (plan is null)
+            {
+                return;
+            }
+
+            _launcherUpdatePlan = plan;
+            LauncherUpdateProgress = 0;
+            LauncherUpdateStatus = plan.IsRequired
+                ? "必须更新后才能继续使用当前服务。"
+                : "安装前会校验文件完整性。";
+            OnPropertyChanged(nameof(IsLauncherUpdateRequired));
+            OnPropertyChanged(nameof(LauncherUpdateTitle));
+            OnPropertyChanged(nameof(LauncherUpdateSummary));
+            OnPropertyChanged(nameof(LauncherUpdateReleaseNotes));
+            OnPropertyChanged(nameof(LauncherUpdateSizeText));
+            IsLauncherUpdateVisible = true;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or
+                LauncherApiException or InvalidDataException or
+                LauncherAuthenticationRequiredException)
+        {
+            Trace.TraceWarning(
+                "Launcher update check was skipped: {0}",
+                exception.Message);
+        }
+    }
+
+    private async Task InstallLauncherUpdateAsync()
+    {
+        if (_launcherUpdatePlan is not { } plan ||
+            IsLauncherUpdateBusy)
+        {
+            return;
+        }
+
+        IsLauncherUpdateBusy = true;
+        LauncherUpdateStatus = "正在下载启动器更新…";
+        var progress = new InlineProgress<LauncherUpdateDownloadProgress>(
+            value =>
+            {
+                LauncherUpdateProgress = value.Percent;
+                LauncherUpdateStatus =
+                    $"正在下载 {FormatFileSize(value.BytesDownloaded)} / " +
+                    $"{FormatFileSize(value.TotalBytes)}";
+            });
+        var updaterStarted =
+            await _launcherUpdateService.DownloadAndLaunchUpdaterAsync(
+                plan,
+                progress);
+        if (!updaterStarted)
+        {
+            throw new InvalidOperationException(
+                "The launcher updater could not be started.");
+        }
+
+        LauncherUpdateProgress = 100;
+        LauncherUpdateStatus = "更新已校验，正在重新启动…";
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void DismissLauncherUpdate()
+    {
+        if (IsLauncherUpdateBusy || IsLauncherUpdateRequired)
+        {
+            return;
+        }
+
+        IsLauncherUpdateVisible = false;
+        _launcherUpdatePlan = null;
     }
 
     private async Task LoadCatalogAsync(bool userInitiated = false)
@@ -2055,6 +2223,7 @@ public sealed class MainWindowViewModel : ObservableObject
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
+            await TryCheckLauncherUpdateAsync();
             ShowToast($"欢迎回来，{account.DisplayName}");
             return true;
         }
@@ -2122,6 +2291,7 @@ public sealed class MainWindowViewModel : ObservableObject
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
+            await TryCheckLauncherUpdateAsync();
             ShowToast($"赫朝账号 @{account.Username} 已创建，并已同步社区");
             return true;
         }
@@ -2297,6 +2467,17 @@ public sealed class MainWindowViewModel : ObservableObject
         SetAccountFormStatus(
             "Microsoft 登录未完成，请关闭浏览器页面后重试。",
             isError: true);
+    }
+
+    private void HandleUnexpectedLauncherUpdateError(Exception exception)
+    {
+        Trace.TraceError(
+            "Launcher self-update failed without replacing the current version: {0}",
+            exception);
+        IsLauncherUpdateBusy = false;
+        LauncherUpdateStatus =
+            "更新未完成，当前版本仍可继续使用。请稍后重试。";
+        ShowToast("启动器更新失败，当前版本未被替换");
     }
 
     private void BeginMinecraftUnlink()

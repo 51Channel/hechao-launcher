@@ -145,6 +145,12 @@ builder.Services.AddOptions<DistributionOptions>()
         "Distribution:PresignedUrlSeconds must be between 60 and 900.")
     .Validate(IsValidOssConfiguration, "Distribution OSS configuration is invalid.")
     .ValidateOnStart();
+builder.Services.AddOptions<LauncherUpdateOptions>()
+    .Bind(builder.Configuration.GetSection(LauncherUpdateOptions.SectionName))
+    .Validate(
+        options => options.IsValid(),
+        "LauncherUpdates configuration is invalid.")
+    .ValidateOnStart();
 builder.Services.AddOptions<DiagnosticUploadOptions>()
     .Bind(builder.Configuration.GetSection(DiagnosticUploadOptions.SectionName))
     .Validate(
@@ -622,6 +628,9 @@ app.MapPost("/v1/internal/forum/accounts/password/reset", ResetForumAccountPassw
 app.MapPost("/v1/internal/forum/accounts/profile", UpdateForumAccountProfileAsync)
     .RequireRateLimiting("internal-forum");
 app.MapGet("/v1/catalog", GetCatalogAsync)
+    .RequireRateLimiting("catalog");
+app.MapGet("/v1/launcher/update", GetLauncherUpdate)
+    .RequireAuthorization()
     .RequireRateLimiting("catalog");
 app.MapGet("/v1/profiles/{profileId}/manifest", GetProfileManifestAsync)
     .RequireAuthorization()
@@ -1596,6 +1605,36 @@ async Task<IResult> GetCatalogAsync(
         account?.AccessTier,
         cancellationToken);
     return Results.Ok(snapshot);
+}
+
+IResult GetLauncherUpdate(
+    IOptions<LauncherUpdateOptions> options,
+    OssPresignedUrlFactory urlFactory)
+{
+    var release = options.Value;
+    if (!release.Enabled)
+    {
+        return Results.NoContent();
+    }
+
+    var installerUrl = urlFactory.TryCreateLauncherInstallerUrl(
+        release.LatestVersion);
+    if (installerUrl is null)
+    {
+        return Results.Problem(
+            title: "启动器更新暂时不可用",
+            detail: "更新文件尚未准备完成，请稍后重试。",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    return Results.Ok(new LauncherUpdateRelease(
+        release.LatestVersion,
+        release.MinimumSupportedVersion,
+        release.InstallerBytes,
+        release.InstallerSha256.ToLowerInvariant(),
+        release.PublishedAt,
+        release.ReleaseNotes,
+        installerUrl));
 }
 
 async Task<IResult> GetProfileManifestAsync(

@@ -32,16 +32,31 @@ public sealed class OssPresignedUrlFactory : IDisposable
 
     public string? TryCreateGetUrl(string objectSha256)
     {
+        var objectKey = string.IsNullOrEmpty(_objectPrefix)
+            ? $"{objectSha256[..2]}/{objectSha256}"
+            : $"{_objectPrefix}/{objectSha256[..2]}/{objectSha256}";
+        return TryCreateGetUrlForKey(objectKey);
+    }
+
+    public string? TryCreateLauncherInstallerUrl(string version)
+    {
+        if (!LauncherUpdateOptions.TryParseVersion(version, out _))
+        {
+            return null;
+        }
+
+        var fileName = $"Hechao-Launcher-Setup-{version}-win-x64.exe";
+        return TryCreateGetUrlForKey($"releases/launcher/{version}/{fileName}");
+    }
+
+    private string? TryCreateGetUrlForKey(string objectKey)
+    {
         if (_client is null ||
             string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OSS_ACCESS_KEY_ID")) ||
             string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OSS_ACCESS_KEY_SECRET")))
         {
             return null;
         }
-
-        var objectKey = string.IsNullOrEmpty(_objectPrefix)
-            ? $"{objectSha256[..2]}/{objectSha256}"
-            : $"{_objectPrefix}/{objectSha256[..2]}/{objectSha256}";
 
         try
         {

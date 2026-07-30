@@ -1,0 +1,15 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "oss:GetObject"
+      ],
+      "Resource": [
+        "acs:oss:*:*:hechaoworld/objects/*",
+        "acs:oss:*:*:hechaoworld/releases/launcher/*"
+      ]
+    }
+  ]
+}
