@@ -47,6 +47,24 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void LauncherUpdateProgressBinding_IsExplicitlyOneWay()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var value = document
+            .Descendants(presentation + "ProgressBar")
+            .Select(element => element.Attribute("Value")?.Value)
+            .Single(binding =>
+                binding?.Contains(
+                    "LauncherUpdateProgress",
+                    StringComparison.Ordinal) == true);
+
+        Assert.Contains("Mode=OneWay", value);
+    }
+
+    [Fact]
     public void ServerClientDirectoryRow_AutoSizesWithoutClipping()
     {
         var document = LoadLauncherXaml();

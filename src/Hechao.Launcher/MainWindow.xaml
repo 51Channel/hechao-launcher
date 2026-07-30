@@ -3346,7 +3346,7 @@
                         <Grid Margin="0,20,0,0">
                             <ProgressBar Height="6"
                                          Maximum="100"
-                                         Value="{Binding LauncherUpdateProgress}" />
+                                         Value="{Binding LauncherUpdateProgress, Mode=OneWay}" />
                             <TextBlock Text="{Binding LauncherUpdateStatus}"
                                        FontSize="11"
                                        Foreground="{StaticResource InkMutedBrush}"
