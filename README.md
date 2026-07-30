@@ -12,6 +12,8 @@
 - 提供服务器、下载、活动、赫朝账户和设置五个真实工作区；短屏与高 DPI 下使用受约束布局和局部滚动，不裁切运行参数。
 - 使用 IconPark 官方轮廓图标统一功能按钮与状态图形；界面优先使用系统已安装的苹方字体，并在不可用时回退到微软雅黑。
 - 先注册或登录赫朝账号，再独立绑定 Microsoft/Minecraft Java 正版身份；旧版 Microsoft 临时账户可在验证同一正版身份后安全并入正式赫朝账号。
+- 已绑定 Minecraft 身份时在左下账号区域显示 Mojang 官方皮肤的头部与帽层；网络、
+  缓存或图片异常时回退本地默认头像。
 - 由启动器独占服务器切换，根据在线/维护状态控制主操作；已有游戏运行时先安全退出，再使用新授权启动目标档案。
 - 读取经 ECDSA P-256 签名的客户端清单；未知公钥、篡改负载、危险路径和远程明文 HTTP 会被拒绝。
 - 使用最多 16 路受控并行、HTTP Range 断点续传和 SHA-256 逐文件校验；重复摘要只下载一次，下载失败时保留 `.part` 供下次继续。
@@ -20,6 +22,9 @@
 - 使用安装式启动器和独立游戏数据根目录；每个客户端档案拥有自己的 `instances\<profile-id>\.minecraft` 与 `runtime`，下载对象跨档案共享，Java 默认随对应档案安装并允许单独改为玩家选择的兼容运行时。Windows 特殊字符路径会为游戏工作目录、Java 和原生库分别选择兼容路径，不移动或复制玩家档案。
 - 首次运行自动迁移旧 `%AppData%\Hechao\instances` 或自定义客户端根目录；迁移失败时保留原目录并停止启动，不静默切换到空数据。
 - Windows 安装包按当前用户安装到 `%LocalAppData%\Programs\Hechao Launcher`；升级和卸载均保留游戏数据。
+- 开发分支已实现启动器本体自更新：校验 API 发布元数据和私有 OSS 安装包后，由
+  临时更新器静默覆盖并重新拉起；失败保留原版本。首个正式自更新版本发布后，玩家
+  后续常规升级无需重复下载安装包。
 - 修复流程会重新检查本地文件；同档案的并发安装通过跨进程独占锁阻止。
 - 提供实时下载任务、持久化历史、取消任务、活动服目录、客户端修复入口和完整设置页。
 - “启动时检查客户端更新”可关闭首次本地扫描，但进入服务器前仍强制检查；重新开启时立即检查当前档案。
@@ -39,13 +44,16 @@
 - Windows 只读采集器每分钟查询各 Velocity 目标，并可按本机监听端口读取 Java 进程内存、CPU、启动时间和磁盘余量；Paper/Purpur 指标代理只把 TPS、MSPT 与累计 GC 时间原子写入本地 JSON。两者都不持有 RCON、控制台或服务器启停权限。
 - `Administrator` 可从启动器申请 90 秒一次性后台票据；票据只放 URL fragment，兑换后改用 `HttpOnly`、`Secure`、`SameSite=Strict` 的独立浏览器会话，不把启动器 Bearer 交给网页。
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复、公告、开放排期、玩家搜索、访问预览和单服规则，所有变更使用修订号并在同一事务中写入审计日志。
+- 开发分支新增服控面板和最小权限 Windows 代理：支持优雅启停、冲突服先停后启、
+  五项快捷设置与受限 Minecraft 控制台。生产开关默认关闭，真实任务和冲突组完成
+  专用目标验收后才启用。
 - 管理后台可排队四个固定 LuckPerms 全局组的等级变更；大厅代理通过 LuckPerms API 应用，不直接写 MariaDB，也不接受任意控制台命令。
 - 全部认证状态撤销和 UUID 封禁会通过可靠 outbox 联动论坛 `sessionVersion`，使已经签发的论坛 Cookie 失效。
 - 启动器 API 生产版本 `0.22.0` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 私有对象重定向不会把短时 OSS 签名 URL 写入 journal；Nginx 访问日志只保留无查询参数的路径，不记录 Referer，避免密码重置和 OAuth 参数进入日志。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
-API `0.22.0-20260729T144953Z` 已完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.1` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；Activity 零玩家时的 NeoForge 暂停会显式显示为空服暂停，不再误报指标过期。当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。当前发布测试为 `.NET 392/392`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`。
+API `0.22.0-20260729T144953Z` 已完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.1` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；Activity 零玩家时的 NeoForge 暂停会显式显示为空服暂停，不再误报指标过期。当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。当前开发分支测试为 `.NET 446/446`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`。
 
 真实管理员已完成 MFA 登记，`0.11.14` 已产生首条真实启动遥测，诊断上传、管理员下载、审计和本地 SHA-256 复验均已完成。基础客户端的 Lobby、Survival1、Survival2、Activity 与恐怖整蛊历史单账号首次路由均已通过；恐怖整蛊的 CrossStitch 修复、身份转发、直连拒绝、稳定连接和正常退出也已验收。Activity 在含 U+200C 的既有数据根目录下已由 `0.12.3` 改用 `%LocalAppData%\Hechao\Launcher\native-runs` 物理目录：`java.library.path`、`org.lwjgl.librarypath`、JNA、LWJGL 解压和 Netty 五个属性唯一指向该目录，不再依赖可能被 Windows 原生加载器解析回真实目标的目录联接。安装版启动器从“进入服务器”完成正版会话、连接 `mc.hehe11.fun`、进入 Activity 世界并以退出码 `0` 正常结束，全程未复现 `UnsatisfiedLinkError` 或 `Can't find dependent libraries`。同档案三轮 fresh grant 重进、NeoForge/Paper 跨档案三轮切换、15 分钟单进程采样、启动器重启接管、强制异常退出和新授权恢复也已用同一真实账号通过，全程未出现 Lobby 回退；Activity 运行时选择维护中的 DollNight 或已关闭的 Survival1，主操作均禁用且现有 PID 不变。跨版本回大厅曾在 API `0.21.0` 和 Velocity 4 隔离环境完成五轮真实客户端验证，相关证据仅保留用于审计；2026-07-29 的新架构已经取消 `/hub`、NPC 和 Via 回大厅方案。生产代理已迁移至 Velocity 4、独立 Java 25 和 Authorizer `0.4.0` monitor；API `0.22.0`、Lobby Guard `0.1.0`、旧回程移除及后端 `/hub` 禁用均已落地。大厅八个玩家交互 Skript 已在线禁用并保留哈希备份，只留每日备份；公网 `25566` 不可达，owl5 与 owl9 恐怖整蛊均无活动的旧转服路径。下一步只按 [`docs/PRELAUNCH_PILOT_0.12.3.md`](docs/PRELAUNCH_PILOT_0.12.3.md) 完成真实四级账号、离线/无权限拒绝、`enforce`、目录强制登录和 `2/3/5/20` 人灰度。
 
@@ -60,6 +68,8 @@ API `0.22.0-20260729T144953Z` 已完成一致性备份、哈希校验、迁移 `
 - `src/Hechao.Backup`：数据库与签名恢复材料的 RSA/AES-GCM 加密信封、私有 OSS 不可覆盖上传和下载复验工具。
 - `src/Hechao.Api`：独立启动器 API、管理员 Web 控制台、MFA、目录 CRUD 与审计；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
 - `src/Hechao.StatusCollector`：游戏 VPS 上的只读 Minecraft 状态采集器，使用机器级 DPAPI 保护内部令牌。
+- `src/Hechao.ServerControlAgent`：游戏 VPS 上的结构化最小权限服控代理；只使用固定
+  计划任务、Minecraft 控制台桥和白名单设置字段。
 - `src/Hechao.ServerMetricsAgent`：Paper/Purpur 只读 TPS、MSPT 与 GC 本地指标代理。
 - `src/Hechao.VelocityAuthorizer`：Velocity 4 / Java 25 生产运行、向下兼容测试环境的异步进服授权插件。
 - `src/Hechao.LuckPermsTierAgent`：大厅 Paper / Java 21 受控全局等级代理。
@@ -101,8 +111,8 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 6. [已完成] 部署 API `0.22.0`、私有下载与 Nginx 日志脱敏、统一运行告警及状态采集器 `0.2.1`；赫朝账号、对象分发、下载专用限流、授权定向路由、诊断上传、服务器排期、单服访问规则、论坛会话联动、受控全局等级、运行遥测和服务器进程/磁盘指标均已上线。
 7. [已完成自动部署] 启动器 `0.12.3`、API `0.22.0`、Authorizer `0.4.0` 与 Lobby Guard `0.1.0` 已生产发布；API 不可达故障关闭与恢复已通过，继续按 [`docs/PRELAUNCH_PILOT_0.12.3.md`](docs/PRELAUNCH_PILOT_0.12.3.md) 完成真实四级账号、离线/无权限拒绝、Lobby 旁路拒绝和多人灰度。
 
-当前工程不包含 VPS 密钥或服务器凭据。远程切换工具必须使用操作者本机密钥，默认只读，
-且不提供 Minecraft 游戏服启停能力。
+当前工程不包含 VPS 密钥或服务器凭据。服控代理令牌只以每台主机的 DPAPI
+`LocalMachine` 密文保存，API 只存 SHA-256；功能默认关闭，不能由玩家端调用。
 
 ## 实施文档
 
@@ -110,3 +120,8 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 [`docs/GRAY_PILOT_AUTHORIZATION_CUTOVER.md`](docs/GRAY_PILOT_AUTHORIZATION_CUTOVER.md)。
 
 功能、生产验收与外部依赖的权威状态见 [`docs/COMPLETION_MATRIX.md`](docs/COMPLETION_MATRIX.md)。owl9 的恐怖整蛊服与真正 PVP 服边界见 [`docs/OWL9_DUAL_BACKEND_OPERATIONS.md`](docs/OWL9_DUAL_BACKEND_OPERATIONS.md)。完整的平台架构、HTTPS 迁移、客户端下载、权限、管理后台和分阶段任务见 [`docs/PLATFORM_PLAN.md`](docs/PLATFORM_PLAN.md)。玩家安装、迁移、修复与隐私说明见 [`docs/PLAYER_INSTALLATION_GUIDE.md`](docs/PLAYER_INSTALLATION_GUIDE.md)，管理员构建、灰度、发布与回滚流程见 [`docs/ADMIN_RELEASE_RUNBOOK.md`](docs/ADMIN_RELEASE_RUNBOOK.md)。Windows 安装包、数据目录、旧版迁移与卸载边界见 [`docs/WINDOWS_INSTALLER_AND_STORAGE.md`](docs/WINDOWS_INSTALLER_AND_STORAGE.md)，PowerShell 7 运行时与计划任务迁移见 [`docs/POWERSHELL_7_OPERATIONS.md`](docs/POWERSHELL_7_OPERATIONS.md)，游戏退出与隐私诊断规则见 [`docs/GAME_DIAGNOSTICS.md`](docs/GAME_DIAGNOSTICS.md)。管理员浏览器登录与 MFA 见 [`docs/ADMIN_WEB_OPERATIONS.md`](docs/ADMIN_WEB_OPERATIONS.md)，账号停用、会话撤销和 UUID 封禁见 [`docs/ADMIN_ACCOUNT_SECURITY_OPERATIONS.md`](docs/ADMIN_ACCOUNT_SECURITY_OPERATIONS.md)，目录 API 边界见 [`docs/ADMIN_CATALOG_OPERATIONS.md`](docs/ADMIN_CATALOG_OPERATIONS.md)。客户端发布与密钥边界见 [`docs/DISTRIBUTION_OPERATIONS.md`](docs/DISTRIBUTION_OPERATIONS.md)。Microsoft/LuckPerms 激活与运维见 [`docs/AUTHENTICATION_OPERATIONS.md`](docs/AUTHENTICATION_OPERATIONS.md)。Velocity 最终授权见 [`docs/VELOCITY_AUTHORIZATION_OPERATIONS.md`](docs/VELOCITY_AUTHORIZATION_OPERATIONS.md)，代理单层协议转换生产切换见 [`docs/PROXY_PROTOCOL_TRANSLATION_PRODUCTION_OPERATIONS.md`](docs/PROXY_PROTOCOL_TRANSLATION_PRODUCTION_OPERATIONS.md)。只读状态采集见 [`docs/SERVER_HEARTBEAT_OPERATIONS.md`](docs/SERVER_HEARTBEAT_OPERATIONS.md)，深度运行指标见 [`docs/SERVER_RUNTIME_METRICS_OPERATIONS.md`](docs/SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`docs/OPERATIONAL_ALERTS.md`](docs/OPERATIONAL_ALERTS.md)，世界备份见 [`docs/WORLD_BACKUP_OPERATIONS.md`](docs/WORLD_BACKUP_OPERATIONS.md)。实时无密码资产基线见 [`docs/ASSET_INVENTORY.md`](docs/ASSET_INVENTORY.md)，API 发布与回滚见 [`docs/API_OPERATIONS.md`](docs/API_OPERATIONS.md)，数据库本机备份见 [`docs/DATABASE_OPERATIONS.md`](docs/DATABASE_OPERATIONS.md)，异地加密备份与恢复见 [`docs/OFFSITE_BACKUP_AND_RECOVERY.md`](docs/OFFSITE_BACKUP_AND_RECOVERY.md)，版本与 Git 规则见 [`docs/RELEASE_AND_GIT_WORKFLOW.md`](docs/RELEASE_AND_GIT_WORKFLOW.md)。
+
+服控部署、冲突编排和失败回滚见
+[`docs/SERVER_CONTROL_AGENT_OPERATIONS.md`](docs/SERVER_CONTROL_AGENT_OPERATIONS.md)，
+启动器本体更新见
+[`docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md`](docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md)。

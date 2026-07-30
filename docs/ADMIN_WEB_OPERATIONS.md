@@ -3,7 +3,7 @@
 > 源码版本：启动器 `0.12.3`、API `0.22.0`
 > 生产状态：API `0.22.0-20260729T144953Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
 > 管理入口：`https://admin.hechao.world/admin/`
-> 运行边界：只管理平台目录数据，不控制 Minecraft、Velocity 或 Java 进程
+> 运行边界：现有生产页面继续管理平台目录与只读运行数据；第九个“服控面板”已完成开发，但生产开关默认关闭，必须通过独立最小权限代理控制 Minecraft
 
 ## 1. 登录链路
 
@@ -99,7 +99,7 @@ location / {
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
-5. 部署 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、`healthz` 和 `readyz`。
+5. 部署当前生产 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、`healthz` 和 `readyz`；部署服控候选后还要确认迁移 20。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
 7. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存。
 8. 用普通成员确认票据端点返回 403。
@@ -162,7 +162,19 @@ API `0.20.0` 在“运行告警”页增加当前告警、级别、来源、首�
 TLS 证书和异地备份。平台监控器只在告警变化或恢复时发送邮件。详细边界见
 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)。
 
-## 7. 回滚
+## 7. 服控面板
+
+第九个“服控面板”支持结构化启动、停止和重启、冲突服先停后启、五项
+`server.properties` 快捷设置、受限 Minecraft 控制台和操作历史。它不提供
+PowerShell、CMD、SSH、任意文件浏览或任意进程终止能力。
+
+生产部署必须先保持 `ServerControl__Enabled=false`。两台游戏 VPS 的真实目录、
+端口、计划任务、冲突组和控制台桥完成只读盘点后，只能使用专门的无玩家测试目标
+完成首次启停验收。启动冲突组中的目标时，所有在线冲突服必须先成功停止；任一停止
+失败都会取消目标启动并写入审计。完整部署、双重校验和回滚步骤见
+[`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)。
+
+## 8. 回滚
 
 应用故障时可把 API `current` 链接切回直接回滚目标
 `0.19.0-20260727T005013Z`。迁移 5 至 17 均为加法或兼容变更，旧 API 不读取新增表与
