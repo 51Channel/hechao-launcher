@@ -201,6 +201,34 @@ public sealed class LauncherXamlContractTests
         Assert.Null(createButton.Attribute("Click"));
     }
 
+    [Fact]
+    public void SidebarAccountAvatar_UsesMinecraftSkinHeadAndHatLayers()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var brushes = document
+            .Descendants(presentation + "ImageBrush")
+            .Where(element =>
+                element.Attribute("ImageSource")?.Value ==
+                "{Binding AccountSkinSource}")
+            .ToArray();
+
+        Assert.Equal(2, brushes.Length);
+        Assert.All(
+            brushes,
+            brush => Assert.Equal(
+                "Absolute",
+                brush.Attribute("ViewboxUnits")?.Value));
+        Assert.Contains(
+            brushes,
+            brush => brush.Attribute("Viewbox")?.Value == "8,8,8,8");
+        Assert.Contains(
+            brushes,
+            brush => brush.Attribute("Viewbox")?.Value == "40,8,8,8");
+    }
+
     private static XDocument LoadLauncherXaml()
     {
         var repositoryRoot = FindRepositoryRoot();

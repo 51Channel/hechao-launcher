@@ -4,6 +4,8 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Hechao.Contracts;
 using Hechao.Distribution;
 using Hechao.Launcher.Infrastructure;
@@ -23,6 +25,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IGameDiagnosticUploadService _diagnosticUploadService;
     private readonly ILauncherTelemetryService _telemetryService;
     private readonly ILauncherUpdateService _launcherUpdateService;
+    private readonly IMinecraftSkinService _minecraftSkinService;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _profileJavaPaths =
@@ -75,6 +78,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private double _launcherUpdateProgress;
     private string _launcherUpdateStatus = string.Empty;
     private bool _hasCheckedLauncherUpdate;
+    private ImageSource? _accountSkinSource;
+    private long _accountSkinRevision;
 
     public MainWindowViewModel(
         IServerCatalogClient catalogClient,
@@ -86,7 +91,8 @@ public sealed class MainWindowViewModel : ObservableObject
         IGameDiagnosticsService gameDiagnosticsService,
         IGameDiagnosticUploadService diagnosticUploadService,
         ILauncherTelemetryService? telemetryService = null,
-        ILauncherUpdateService? launcherUpdateService = null)
+        ILauncherUpdateService? launcherUpdateService = null,
+        IMinecraftSkinService? minecraftSkinService = null)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -100,6 +106,8 @@ public sealed class MainWindowViewModel : ObservableObject
             telemetryService ?? NullLauncherTelemetryService.Instance;
         _launcherUpdateService =
             launcherUpdateService ?? NullLauncherUpdateService.Instance;
+        _minecraftSkinService =
+            minecraftSkinService ?? NullMinecraftSkinService.Instance;
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
@@ -368,6 +376,8 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public bool IsAuthenticated => _currentAccount is not null;
     public bool IsMinecraftLinked => _currentAccount?.IsMinecraftLinked == true;
+    public ImageSource? AccountSkinSource => _accountSkinSource;
+    public bool HasAccountSkin => _accountSkinSource is not null;
     public bool IsAdministrator =>
         _currentAccount?.AccessTier == AccessTier.Administrator;
     public string AccountDisplayName => _currentAccount?.DisplayName ?? "访客";
@@ -1410,7 +1420,8 @@ public sealed class MainWindowViewModel : ObservableObject
         UpdateProgress = 0;
         ClientStatusText = "正在准备正版游戏会话";
         PrimaryActionText = "正在启动";
-        var progress = new Progress<MinecraftLaunchProgress>(ApplyLaunchProgress);
+        var progress = new InlineProgress<MinecraftLaunchProgress>(
+            value => DispatchToUi(() => ApplyLaunchProgress(value)));
 
         try
         {
@@ -1421,8 +1432,8 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 ClientStatusText = "正在安全关闭当前游戏";
                 PrimaryActionText = "正在切换";
-                var stopProgress = new Progress<MinecraftStopProgress>(
-                    ApplyStopProgress);
+                var stopProgress = new InlineProgress<MinecraftStopProgress>(
+                    value => DispatchToUi(() => ApplyStopProgress(value)));
                 await _gameLauncherService.StopRunningGameAsync(
                     TimeSpan.FromSeconds(15),
                     stopProgress);
@@ -2660,6 +2671,11 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void SetCurrentAccount(HechaoAccount? account)
     {
+        var keepCurrentSkin =
+            _accountSkinSource is not null &&
+            _currentAccount?.MinecraftUuid is Guid currentMinecraftUuid &&
+            account?.MinecraftUuid == currentMinecraftUuid;
+        var skinRevision = Interlocked.Increment(ref _accountSkinRevision);
         _currentAccount = account;
         if (account is not null)
         {
@@ -2682,6 +2698,15 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(AccountActionGlyph));
         OnPropertyChanged(nameof(AccountActionTooltip));
         OnPropertyChanged(nameof(CanUploadDiagnosticBundle));
+        if (!keepCurrentSkin)
+        {
+            SetAccountSkinSource(null);
+        }
+        if (!keepCurrentSkin &&
+            account?.MinecraftUuid is Guid minecraftUuid)
+        {
+            _ = LoadAccountSkinAsync(minecraftUuid, skinRevision);
+        }
         PrimaryActionCommand.RaiseCanExecuteChanged();
         LogoutAccountCommand.RaiseCanExecuteChanged();
         LinkMinecraftCommand.RaiseCanExecuteChanged();
@@ -2689,6 +2714,78 @@ public sealed class MainWindowViewModel : ObservableObject
         LogoutAllDevicesCommand.RaiseCanExecuteChanged();
         OpenAdminConsoleCommand.RaiseCanExecuteChanged();
         UpdatePrimaryActionForState();
+    }
+
+    private async Task LoadAccountSkinAsync(
+        Guid minecraftUuid,
+        long revision)
+    {
+        try
+        {
+            var skin = await _minecraftSkinService.GetSkinAsync(minecraftUuid);
+            if (skin is null)
+            {
+                return;
+            }
+
+            var image = CreateFrozenSkinImage(skin.PngBytes);
+            void Apply()
+            {
+                if (revision == Interlocked.Read(ref _accountSkinRevision) &&
+                    _currentAccount?.MinecraftUuid == minecraftUuid)
+                {
+                    SetAccountSkinSource(image);
+                }
+            }
+
+            if (_uiContext is not null &&
+                SynchronizationContext.Current != _uiContext)
+            {
+                _uiContext.Post(_ => Apply(), null);
+            }
+            else
+            {
+                Apply();
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or NotSupportedException or
+                FileFormatException or ArgumentException)
+        {
+            // A bad cache entry falls back to the built-in local avatar.
+        }
+    }
+
+    private void SetAccountSkinSource(ImageSource? image)
+    {
+        if (ReferenceEquals(_accountSkinSource, image))
+        {
+            return;
+        }
+
+        _accountSkinSource = image;
+        OnPropertyChanged(nameof(AccountSkinSource));
+        OnPropertyChanged(nameof(HasAccountSkin));
+    }
+
+    private static ImageSource CreateFrozenSkinImage(byte[] pngBytes)
+    {
+        using var stream = new MemoryStream(pngBytes, writable: false);
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+        image.StreamSource = stream;
+        image.EndInit();
+        if (image.PixelWidth != 64 ||
+            image.PixelHeight is not (32 or 64))
+        {
+            throw new InvalidDataException(
+                "The Minecraft skin image has unsupported dimensions.");
+        }
+
+        image.Freeze();
+        return image;
     }
 
     private static string FormatFileSize(long bytes) =>

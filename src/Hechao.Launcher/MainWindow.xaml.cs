@@ -38,7 +38,8 @@ public partial class MainWindow : Window
                 new JsonGameDiagnosticsService(),
                 new GameDiagnosticUploadService(apiClient),
                 new JsonLauncherTelemetryService(apiClient),
-                LauncherUpdateService.CreateDefault(apiClient));
+                LauncherUpdateService.CreateDefault(apiClient),
+                MinecraftSkinService.CreateDefault());
         }
         catch (ClientStorageMigrationException exception)
         {
