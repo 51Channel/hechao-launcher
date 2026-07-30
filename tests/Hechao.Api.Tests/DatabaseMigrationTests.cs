@@ -5,6 +5,27 @@ namespace Hechao.Api.Tests;
 public sealed class DatabaseMigrationTests
 {
     [Fact]
+    public void RegisteredMigrations_CoverEveryEmbeddedSqlResourceInOrder()
+    {
+        var embeddedResources = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceNames()
+            .Where(name =>
+                name.StartsWith(
+                    "Hechao.Api.Database.Migrations.",
+                    StringComparison.Ordinal) &&
+                name.EndsWith(".sql", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            Enumerable.Range(1, embeddedResources.Length),
+            DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Equal(
+            embeddedResources,
+            DatabaseMigrator.RegisteredMigrationResources);
+    }
+
+    [Fact]
     public void ProtocolTranslationMigration_IsEmbeddedAndDefaultsClosed()
     {
         const string resourceName =
