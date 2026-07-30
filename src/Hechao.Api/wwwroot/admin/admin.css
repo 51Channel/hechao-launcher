@@ -1964,6 +1964,318 @@ dialog::backdrop {
     line-height: 1.45;
 }
 
+.control-layout {
+    min-height: 640px;
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.control-target-pane {
+    min-width: 0;
+    border-right: 1px solid var(--line);
+    background: #fafbfc;
+}
+
+.control-pane-heading,
+.control-detail-heading,
+.control-subheading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.control-pane-heading {
+    min-height: 58px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+}
+
+.control-pane-heading h3,
+.control-detail-heading h3,
+.control-subheading h3 {
+    margin: 0;
+}
+
+.control-pane-heading h3 {
+    font-size: 15px;
+}
+
+.control-pane-heading span,
+.control-server-id {
+    color: var(--ink-muted);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 9px;
+}
+
+.control-target-list {
+    padding: 7px 0;
+}
+
+.control-target-item {
+    position: relative;
+    width: 100%;
+    min-height: 70px;
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 10px;
+    padding: 12px 16px;
+    border-left: 3px solid transparent;
+    background: transparent;
+    text-align: left;
+}
+
+.control-target-item:hover {
+    background: var(--surface-pressed);
+}
+
+.control-target-item.active {
+    border-left-color: var(--brand);
+    background: var(--brand-soft);
+}
+
+.control-target-item strong {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.control-target-item span {
+    grid-column: 2;
+    margin-top: 4px;
+    overflow: hidden;
+    color: var(--ink-muted);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.control-target-marker {
+    width: 8px;
+    height: 8px;
+    align-self: center;
+    grid-row: 1 / span 2;
+    border: 2px solid var(--closed);
+    border-radius: 50%;
+    background: transparent;
+}
+
+.control-target-marker.online {
+    border-color: var(--success);
+    background: var(--success);
+}
+
+.control-target-marker.offline {
+    border-color: var(--danger);
+}
+
+.control-detail {
+    min-width: 0;
+}
+
+.control-detail-heading {
+    min-height: 92px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.control-detail-heading h3 {
+    margin-top: 4px;
+    font-size: 20px;
+}
+
+.control-detail-heading p,
+.control-subheading p {
+    margin: 5px 0 0;
+    color: var(--ink-muted);
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.control-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-actions .button {
+    min-width: 82px;
+}
+
+.control-conflict-notice,
+.control-dialog-warning {
+    border: 1px solid color-mix(in srgb, var(--warning) 44%, var(--line));
+    background: var(--warning-soft);
+    color: #684006;
+    line-height: 1.65;
+}
+
+.control-conflict-notice {
+    margin: 14px 20px 0;
+    padding: 11px 13px;
+    font-size: 10px;
+}
+
+.control-dialog-warning {
+    margin: 14px 0;
+    padding: 12px;
+    font-size: 11px;
+}
+
+.control-workspace-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.78fr) minmax(420px, 1.22fr);
+    border-bottom: 1px solid var(--line);
+}
+
+.control-settings,
+.control-terminal,
+.control-history {
+    min-width: 0;
+    padding: 20px;
+}
+
+.control-settings {
+    border-right: 1px solid var(--line);
+}
+
+.control-subheading {
+    align-items: flex-start;
+    min-height: 48px;
+    margin-bottom: 14px;
+}
+
+.control-subheading h3 {
+    font-size: 14px;
+}
+
+.control-settings-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px;
+}
+
+.control-settings-form > label:not(.checkbox-row) {
+    display: grid;
+    gap: 7px;
+    color: var(--ink-secondary);
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.control-settings-form input[type="number"],
+.control-settings-form select,
+.control-command-form input {
+    width: 100%;
+    min-height: 38px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.control-settings-form input[type="number"],
+.control-settings-form select {
+    padding: 0 10px;
+}
+
+.control-whitelist {
+    min-height: 38px;
+    align-self: end;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface-muted);
+}
+
+.control-settings-form .button {
+    align-self: end;
+}
+
+.control-console-output {
+    width: 100%;
+    height: 250px;
+    margin: 0;
+    overflow: auto;
+    padding: 14px;
+    border: 1px solid #2d2b29;
+    border-radius: 4px;
+    background: #1c1b1a;
+    color: #f0eee9;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 10px;
+    line-height: 1.62;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.control-quick-commands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.control-quick-commands button {
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface-muted);
+    color: var(--ink-secondary);
+    font-size: 10px;
+}
+
+.control-quick-commands button:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-pressed);
+}
+
+.control-command-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin-top: 9px;
+}
+
+.control-command-form input {
+    padding: 0 11px;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 10px;
+}
+
+.control-history {
+    padding-top: 18px;
+}
+
+.control-history-table {
+    min-width: 660px;
+}
+
+.control-history-table th:first-child,
+.control-history-table td:first-child {
+    width: 158px;
+}
+
+.control-history-table th:nth-child(2),
+.control-history-table td:nth-child(2),
+.control-history-table th:nth-child(3),
+.control-history-table td:nth-child(3) {
+    width: 100px;
+}
+
+.control-action-dialog {
+    width: min(520px, calc(100vw - 32px));
+}
+
 @media (max-width: 980px) {
     .console-shell {
         grid-template-columns: 78px minmax(0, 1fr);
@@ -2033,6 +2345,19 @@ dialog::backdrop {
 
     .profile-metadata-grid {
         grid-template-columns: 1fr;
+    }
+
+    .control-layout {
+        grid-template-columns: 205px minmax(0, 1fr);
+    }
+
+    .control-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .control-settings {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
     }
 }
 
@@ -2299,6 +2624,61 @@ dialog::backdrop {
     .diagnostic-table th,
     .diagnostic-table td {
         padding: 11px 10px;
+    }
+
+    .control-layout {
+        display: block;
+    }
+
+    .control-target-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .control-target-list {
+        display: flex;
+        overflow-x: auto;
+        padding: 8px;
+    }
+
+    .control-target-item {
+        min-width: 190px;
+        border-left: 0;
+        border-bottom: 3px solid transparent;
+    }
+
+    .control-target-item.active {
+        border-bottom-color: var(--brand);
+    }
+
+    .control-detail-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .control-actions {
+        width: 100%;
+    }
+
+    .control-actions .button {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .control-workspace-grid {
+        display: block;
+    }
+
+    .control-settings-form {
+        grid-template-columns: 1fr;
+    }
+
+    .control-command-form {
+        grid-template-columns: 1fr;
+    }
+
+    .control-console-output {
+        height: 210px;
     }
 }
 

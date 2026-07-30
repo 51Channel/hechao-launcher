@@ -52,4 +52,28 @@ public sealed class DatabaseMigrationTests
             sql,
             StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ServerControlMigration_UsesStructuredQueueAndNoShellPayload()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.020_server_control.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("server_control_targets", sql, StringComparison.Ordinal);
+        Assert.Contains("server_control_operations", sql, StringComparison.Ordinal);
+        Assert.Contains("server_control_commands", sql, StringComparison.Ordinal);
+        Assert.Contains(
+            "'Start', 'Stop', 'ConsoleCommand', 'ApplySettings'",
+            sql,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("shell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cmd.exe", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

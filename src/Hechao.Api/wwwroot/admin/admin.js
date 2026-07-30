@@ -10,6 +10,10 @@ const state = {
     telemetry: null,
     telemetryHours: 24,
     runtime: null,
+    control: null,
+    selectedControlServerId: null,
+    pendingControlAction: null,
+    controlPollTimer: null,
     alerts: null,
     diagnostics: [],
     auditEntries: [],
@@ -62,7 +66,7 @@ function cacheElements() {
         "account-avatar", "account-name", "account-group", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
         "servers-section", "users-section", "profiles-section",
-        "telemetry-section", "runtime-section", "alerts-section",
+        "telemetry-section", "runtime-section", "control-section", "alerts-section",
         "diagnostics-section", "audit-section",
         "server-total-count", "server-online-count", "server-maintenance-count",
         "server-archived-count", "server-search", "create-server-button",
@@ -81,6 +85,25 @@ function cacheElements() {
         "runtime-generated-at", "runtime-fresh-count", "runtime-online-count",
         "runtime-player-count", "runtime-issue-count", "runtime-table-body",
         "runtime-empty-state", "runtime-issue-body", "runtime-issue-empty",
+        "control-generated-at", "control-target-count", "control-agent-count",
+        "control-online-count", "control-operation-count",
+        "control-target-label", "control-target-list", "control-empty-state",
+        "control-detail", "control-selected-id", "control-selected-name",
+        "control-selected-meta", "control-start-button", "control-stop-button",
+        "control-restart-button", "control-conflict-notice",
+        "control-settings-form", "control-max-players",
+        "control-view-distance", "control-simulation-distance",
+        "control-difficulty", "control-whitelist",
+        "control-save-settings-button", "control-command-prefixes",
+        "control-console-time", "control-console-output",
+        "control-command-form", "control-command-input",
+        "control-send-command-button", "control-history-body",
+        "control-history-empty", "control-action-dialog",
+        "control-action-form", "control-action-title",
+        "control-action-message", "control-action-warning",
+        "control-action-error", "control-action-reason",
+        "control-action-confirmation", "control-action-confirmation-hint",
+        "cancel-control-action-button", "accept-control-action-button",
         "alert-generated-at", "alert-active-count", "alert-critical-count",
         "alert-warning-count", "alert-unacknowledged-count",
         "alert-table-body", "alert-empty-state",
@@ -173,6 +196,35 @@ function bindEvents() {
     document.querySelectorAll("[data-view]").forEach(button => {
         button.addEventListener("click", () => switchView(button.dataset.view));
     });
+    document.querySelectorAll("[data-control-action]").forEach(button => {
+        button.addEventListener("click", () =>
+            openControlAction(button.dataset.controlAction));
+    });
+    document.querySelectorAll("[data-control-command]").forEach(button => {
+        button.addEventListener("click", () => {
+            elements["control-command-input"].value =
+                button.dataset.controlCommand;
+            openControlAction("ConsoleCommand");
+        });
+    });
+    elements["control-settings-form"].addEventListener(
+        "submit",
+        event => {
+            event.preventDefault();
+            openControlAction("ApplySettings");
+        });
+    elements["control-command-form"].addEventListener(
+        "submit",
+        event => {
+            event.preventDefault();
+            openControlAction("ConsoleCommand");
+        });
+    elements["control-action-form"].addEventListener(
+        "submit",
+        submitControlAction);
+    elements["cancel-control-action-button"].addEventListener(
+        "click",
+        () => elements["control-action-dialog"].close());
     document.querySelectorAll("[data-telemetry-hours]").forEach(button => {
         button.addEventListener("click", async () => {
             const hours = Number(button.dataset.telemetryHours);
@@ -556,6 +608,7 @@ async function loadConsoleData() {
             users,
             telemetry,
             runtime,
+            control,
             alerts
         ] =
             await Promise.all([
@@ -565,6 +618,7 @@ async function loadConsoleData() {
             api(userSearchPath()),
             api(`/v1/admin/telemetry/summary?hours=${state.telemetryHours}`),
             api("/v1/admin/server-runtime/summary"),
+            api("/v1/admin/server-control/overview"),
             api("/v1/admin/operational-alerts")
             ]);
         state.servers = servers;
@@ -573,12 +627,14 @@ async function loadConsoleData() {
         state.users = users;
         state.telemetry = telemetry;
         state.runtime = runtime;
+        state.control = control;
         state.alerts = alerts;
         renderServers();
         renderUsers();
         renderProfiles();
         renderTelemetry();
         renderRuntime();
+        renderControl();
         renderAlerts();
         renderDiagnostics();
         populateProfileOptions();
@@ -613,6 +669,7 @@ function switchView(view) {
         "profiles",
         "telemetry",
         "runtime",
+        "control",
         "alerts",
         "diagnostics",
         "audit"
@@ -628,6 +685,7 @@ function switchView(view) {
         profiles: "客户端档案",
         telemetry: "运行数据",
         runtime: "服务状态",
+        control: "服控面板",
         alerts: "告警中心",
         diagnostics: "玩家诊断包",
         audit: "审计记录"
@@ -639,12 +697,14 @@ function switchView(view) {
     elements["profiles-section"].hidden = view !== "profiles";
     elements["telemetry-section"].hidden = view !== "telemetry";
     elements["runtime-section"].hidden = view !== "runtime";
+    elements["control-section"].hidden = view !== "control";
     elements["alerts-section"].hidden = view !== "alerts";
     elements["diagnostics-section"].hidden = view !== "diagnostics";
     elements["audit-section"].hidden = view !== "audit";
     if (view === "audit" && state.auditEntries.length === 0) {
         loadAudit(true);
     }
+    scheduleControlPolling(view === "control");
 }
 
 async function reloadTelemetry() {
@@ -1014,6 +1074,356 @@ function formatRuntimeUptime(startedAt) {
     if (days > 0) return `${days} 天 ${hours} 小时`;
     if (hours > 0) return `${hours} 小时 ${minutes} 分`;
     return `${minutes} 分钟`;
+}
+
+function renderControl() {
+    const overview = state.control;
+    if (!overview) return;
+
+    const targets = overview.targets || [];
+    const connectedTargets = targets.filter(target => target.agentConnected);
+    const activeOperations = targets.filter(target => target.activeOperation);
+    const connectedAgents = new Set(
+        connectedTargets.map(target => target.agentId));
+    elements["control-generated-at"].textContent =
+        `生成于 ${formatDateTime(overview.generatedAt)}`;
+    elements["control-target-count"].textContent =
+        targets.length.toLocaleString("zh-CN");
+    elements["control-agent-count"].textContent =
+        connectedAgents.size.toLocaleString("zh-CN");
+    elements["control-online-count"].textContent =
+        targets.filter(target => target.online).length.toLocaleString("zh-CN");
+    elements["control-operation-count"].textContent =
+        activeOperations.length.toLocaleString("zh-CN");
+    elements["control-target-label"].textContent = `${targets.length} 个目标`;
+    elements["control-empty-state"].hidden = targets.length !== 0;
+
+    if (!targets.some(target =>
+        target.serverId === state.selectedControlServerId)) {
+        state.selectedControlServerId = targets[0]?.serverId || null;
+    }
+
+    const list = elements["control-target-list"];
+    list.replaceChildren();
+    targets.forEach(target => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "control-target-item";
+        button.classList.toggle(
+            "active",
+            target.serverId === state.selectedControlServerId);
+        const title = document.createElement("strong");
+        title.textContent = target.displayName;
+        const meta = document.createElement("span");
+        meta.textContent = [
+            target.online ? "运行中" : "已停止",
+            target.agentConnected ? target.agentId : "代理离线"
+        ].join(" · ");
+        const marker = document.createElement("i");
+        marker.className = [
+            "control-target-marker",
+            !target.agentConnected
+                ? "offline"
+                : target.online
+                    ? "online"
+                    : "stopped"
+        ].join(" ");
+        button.append(marker, title, meta);
+        button.addEventListener("click", () => {
+            state.selectedControlServerId = target.serverId;
+            renderControl();
+        });
+        list.append(button);
+    });
+
+    const selected = getSelectedControlTarget();
+    elements["control-detail"].hidden = !selected;
+    if (!selected) {
+        return;
+    }
+
+    elements["control-selected-id"].textContent = selected.serverId;
+    elements["control-selected-name"].textContent = selected.displayName;
+    elements["control-selected-meta"].textContent = [
+        selected.online
+            ? `运行中 · PID ${selected.processId || "—"} · 端口 ${selected.port}`
+            : `已停止 · 端口 ${selected.port}`,
+        selected.agentConnected
+            ? `代理 ${selected.agentId} 在线`
+            : `代理 ${selected.agentId} 离线`,
+        `最后上报 ${formatRelativeTime(selected.lastSeenAt)}`
+    ].join("　");
+
+    const busy = Boolean(selected.activeOperation);
+    elements["control-start-button"].disabled =
+        !selected.agentConnected || busy ||
+        (selected.online && !hasOnlineControlConflict(selected));
+    elements["control-stop-button"].disabled =
+        !selected.agentConnected || busy || !selected.online;
+    elements["control-restart-button"].disabled =
+        !selected.agentConnected || busy;
+
+    const conflicts = getControlConflicts(selected);
+    const notice = elements["control-conflict-notice"];
+    notice.hidden = !selected.conflictGroup;
+    notice.textContent = selected.conflictGroup
+        ? `冲突组 ${selected.conflictGroup}：启动本服前会先正常关闭 ` +
+          (conflicts.length > 0
+              ? conflicts.map(target => target.displayName).join("、")
+              : "同组中正在运行的其他服务器") +
+          "，确认端口释放后才继续。"
+        : "";
+
+    const settings = selected.settings;
+    const settingsEditing =
+        elements["control-settings-form"].contains(document.activeElement);
+    if (!settingsEditing) {
+        elements["control-max-players"].value = settings?.maxPlayers ?? "";
+        elements["control-view-distance"].value =
+            settings?.viewDistance ?? "";
+        elements["control-simulation-distance"].value =
+            settings?.simulationDistance ?? "";
+        elements["control-difficulty"].value =
+            settings?.difficulty || "normal";
+        elements["control-whitelist"].checked =
+            Boolean(settings?.whiteList);
+    }
+    elements["control-settings-form"]
+        .querySelectorAll("input, select, button")
+        .forEach(control => {
+            control.disabled = !selected.agentConnected || busy || !settings;
+        });
+
+    const prefixes = selected.allowedCommandPrefixes || [];
+    elements["control-command-prefixes"].textContent =
+        prefixes.length > 0
+            ? `允许命令：${prefixes.join("、")}`
+            : "本机未开放控制台命令";
+    elements["control-console-time"].textContent =
+        selected.consoleCapturedAt
+            ? `日志 ${formatRelativeTime(selected.consoleCapturedAt)}`
+            : "暂无日志";
+    elements["control-console-output"].textContent =
+        selected.consoleTail || "服务器尚未产生可读取的控制台日志。";
+    elements["control-command-input"].disabled =
+        !selected.agentConnected || busy || !selected.online;
+    elements["control-send-command-button"].disabled =
+        !selected.agentConnected || busy || !selected.online;
+    document.querySelectorAll("[data-control-command]").forEach(button => {
+        const prefix = button.dataset.controlCommand.split(/\s+/, 1)[0];
+        button.disabled =
+            !selected.agentConnected ||
+            busy ||
+            !selected.online ||
+            !prefixes.includes(prefix);
+    });
+
+    renderControlHistory(selected.serverId);
+}
+
+function getSelectedControlTarget() {
+    return (state.control?.targets || []).find(target =>
+        target.serverId === state.selectedControlServerId) || null;
+}
+
+function getControlConflicts(target) {
+    if (!target.conflictGroup) return [];
+    return (state.control?.targets || []).filter(candidate =>
+        candidate.serverId !== target.serverId &&
+        candidate.conflictGroup === target.conflictGroup &&
+        candidate.online);
+}
+
+function hasOnlineControlConflict(target) {
+    return getControlConflicts(target).length > 0;
+}
+
+function renderControlHistory(serverId) {
+    const operations = (state.control?.recentOperations || [])
+        .filter(operation => operation.serverId === serverId)
+        .slice(0, 20);
+    const body = elements["control-history-body"];
+    body.replaceChildren();
+    operations.forEach(operation => {
+        const row = document.createElement("tr");
+        const automaticallyStopping =
+            operation.automaticallyStoppingServerIds || [];
+        const result = [
+            operation.resultMessage || "等待代理执行",
+            automaticallyStopping.length > 0
+                ? `自动关闭：${automaticallyStopping.join("、")}`
+                : ""
+        ].filter(Boolean).join("；");
+        row.append(
+            textCell(formatDateTime(operation.requestedAt)),
+            textCell(controlActionText(operation.action)),
+            textCell(controlStatusText(operation.status)),
+            textCell(result));
+        body.append(row);
+    });
+    elements["control-history-empty"].hidden = operations.length !== 0;
+    body.parentElement.hidden = false;
+}
+
+function controlActionText(action) {
+    return {
+        Start: "启动",
+        Stop: "停止",
+        Restart: "重启",
+        ConsoleCommand: "控制台命令",
+        ApplySettings: "快捷设置"
+    }[action] || action;
+}
+
+function controlStatusText(status) {
+    return {
+        Pending: "等待代理",
+        Running: "执行中",
+        Succeeded: "已完成",
+        Failed: "失败",
+        Cancelled: "已取消"
+    }[status] || status;
+}
+
+function openControlAction(action) {
+    const target = getSelectedControlTarget();
+    if (!target || !target.agentConnected || target.activeOperation) {
+        showToast("该服务器当前不能执行控制动作。", true);
+        return;
+    }
+
+    const pending = {
+        action,
+        serverId: target.serverId,
+        consoleCommand: null,
+        settings: null
+    };
+    if (action === "ConsoleCommand") {
+        const command = elements["control-command-input"].value.trim();
+        if (!command) {
+            showToast("请先输入 Minecraft 控制台命令。", true);
+            elements["control-command-input"].focus();
+            return;
+        }
+        pending.consoleCommand = command;
+    } else if (action === "ApplySettings") {
+        if (!elements["control-settings-form"].reportValidity()) {
+            return;
+        }
+        pending.settings = {
+            maxPlayers: Number(elements["control-max-players"].value),
+            viewDistance: Number(elements["control-view-distance"].value),
+            simulationDistance:
+                Number(elements["control-simulation-distance"].value),
+            difficulty: elements["control-difficulty"].value,
+            whiteList: elements["control-whitelist"].checked
+        };
+    }
+
+    state.pendingControlAction = pending;
+    const labels = {
+        Start: ["启动服务器", `启动 ${target.displayName}`],
+        Stop: ["停止服务器", `保存世界后正常停止 ${target.displayName}`],
+        Restart: ["重启服务器", `保存世界、停止并重新启动 ${target.displayName}`],
+        ConsoleCommand: [
+            "发送 Minecraft 命令",
+            `向 ${target.displayName} 发送：${pending.consoleCommand}`
+        ],
+        ApplySettings: [
+            "保存快捷设置",
+            `更新 ${target.displayName} 的受管 server.properties 字段`
+        ]
+    };
+    elements["control-action-title"].textContent = labels[action][0];
+    elements["control-action-message"].textContent = labels[action][1];
+    const conflicts =
+        action === "Start" || action === "Restart"
+            ? getControlConflicts(target)
+            : [];
+    elements["control-action-warning"].hidden = conflicts.length === 0;
+    elements["control-action-warning"].textContent = conflicts.length > 0
+        ? `将先自动保存并关闭：${conflicts.map(item => item.displayName).join("、")}。` +
+          "任何一个停止失败都会取消本次启动。"
+        : "";
+    elements["control-action-reason"].value = "";
+    elements["control-action-confirmation"].value = "";
+    elements["control-action-confirmation-hint"].textContent =
+        `请输入：${target.serverId}`;
+    setInlineError(elements["control-action-error"], "");
+    elements["control-action-dialog"].showModal();
+    elements["control-action-reason"].focus();
+}
+
+async function submitControlAction(event) {
+    event.preventDefault();
+    const pending = state.pendingControlAction;
+    if (!pending) {
+        elements["control-action-dialog"].close();
+        return;
+    }
+
+    const submit = elements["accept-control-action-button"];
+    setBusy(submit, true);
+    setInlineError(elements["control-action-error"], "");
+    try {
+        const result = await api(
+            `/v1/admin/server-control/targets/${encodeURIComponent(pending.serverId)}/operations`,
+            {
+                method: "POST",
+                body: {
+                    action: pending.action,
+                    confirmation:
+                        elements["control-action-confirmation"].value.trim(),
+                    reason: elements["control-action-reason"].value.trim(),
+                    consoleCommand: pending.consoleCommand,
+                    settings: pending.settings
+                }
+            });
+        elements["control-action-dialog"].close();
+        state.pendingControlAction = null;
+        const stopped = result.automaticallyStoppingServerIds || [];
+        showToast(
+            stopped.length > 0
+                ? `操作已排队，将先关闭 ${stopped.join("、")}`
+                : "服务器控制操作已安全排队");
+        await reloadControl();
+    } catch (error) {
+        setInlineError(elements["control-action-error"], error.message);
+    } finally {
+        setBusy(submit, false);
+    }
+}
+
+async function reloadControl() {
+    try {
+        state.control = await api("/v1/admin/server-control/overview");
+        renderControl();
+    } catch (error) {
+        if (error.status === 401 || error.status === 403) {
+            location.reload();
+            return;
+        }
+        showToast(error.message, true);
+    }
+}
+
+function scheduleControlPolling(enabled) {
+    if (state.controlPollTimer) {
+        window.clearInterval(state.controlPollTimer);
+        state.controlPollTimer = null;
+    }
+    if (enabled) {
+        state.controlPollTimer = window.setInterval(() => {
+            const editing =
+                elements["control-settings-form"].contains(
+                    document.activeElement) ||
+                elements["control-command-form"].contains(
+                    document.activeElement);
+            if (!elements["control-action-dialog"].open && !editing) {
+                reloadControl();
+            }
+        }, 3000);
+    }
 }
 
 function formatRelativeTime(value) {

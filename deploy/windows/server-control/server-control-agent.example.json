@@ -1,0 +1,41 @@
+{
+  "apiBaseUrl": "https://launcher-api.hechao.world",
+  "agentId": "owl-example",
+  "tokenPath": "C:\\ProgramData\\Hechao\\ServerControlAgent\\server-control-token.dat",
+  "stateDirectory": "C:\\ProgramData\\Hechao\\ServerControlAgent",
+  "consoleSubmitScript": "C:\\ProgramData\\Hechao\\ServerControl\\Submit-MinecraftConsoleCommand.ps1",
+  "pollSeconds": 2,
+  "heartbeatSeconds": 5,
+  "targets": [
+    {
+      "serverId": "fanstreet",
+      "serverDirectory": "C:\\Minecraft\\Fanstreet",
+      "startTaskName": "Hechao-Server-Fanstreet",
+      "port": 25565,
+      "conflictGroup": "owl-example-main-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": [
+        "list",
+        "save-all",
+        "say",
+        "whitelist"
+      ]
+    },
+    {
+      "serverId": "yugong",
+      "serverDirectory": "C:\\Minecraft\\Yugong",
+      "startTaskName": "Hechao-Server-Yugong",
+      "port": 25565,
+      "conflictGroup": "owl-example-main-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": [
+        "list",
+        "save-all",
+        "say",
+        "whitelist"
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ using Hechao.Api.Diagnostics;
 using Hechao.Api.Distribution;
 using Hechao.Api.LuckPerms;
 using Hechao.Api.Monitoring;
+using Hechao.Api.ServerControl;
 using Hechao.Api.Telemetry;
 using Hechao.Api.Velocity;
 using Hechao.Contracts;
@@ -131,6 +132,12 @@ builder.Services.AddOptions<ServerHeartbeatOptions>()
     .Validate(
         options => options.RuntimeHistoryCleanupHours is >= 1 and <= 24,
         "ServerHeartbeats:RuntimeHistoryCleanupHours must be between 1 and 24.")
+    .ValidateOnStart();
+builder.Services.AddOptions<ServerControlOptions>()
+    .Bind(builder.Configuration.GetSection(ServerControlOptions.SectionName))
+    .Validate(
+        options => options.IsValid(),
+        "ServerControl configuration is invalid.")
     .ValidateOnStart();
 builder.Services.AddOptions<DistributionOptions>()
     .Bind(builder.Configuration.GetSection(DistributionOptions.SectionName))
@@ -275,6 +282,16 @@ builder.Services.AddRateLimiter(options =>
             {
                 AutoReplenishment = true,
                 PermitLimit = 120,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    options.AddPolicy("internal-server-control", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 180,
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
@@ -456,6 +473,8 @@ builder.Services.AddSingleton<VelocityAuthorizationRepository>();
 builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
 builder.Services.AddSingleton<ServerHeartbeatRepository>();
 builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
+builder.Services.AddSingleton<ServerControlTokenValidator>();
+builder.Services.AddSingleton<ServerControlRepository>();
 builder.Services.AddHostedService<ServerRuntimeSampleCleanupService>();
 builder.Services.AddSingleton<ApiRequestMetricsCollector>();
 builder.Services.AddSingleton<OperationalAlertTokenValidator>();
@@ -608,6 +627,18 @@ app.MapPost(
 app.MapPost("/v1/internal/server-heartbeats", ImportServerHeartbeatsAsync)
     .RequireRateLimiting("internal-heartbeats");
 app.MapPost(
+        "/v1/internal/server-control/heartbeat",
+        ImportServerControlHeartbeatAsync)
+    .RequireRateLimiting("internal-server-control");
+app.MapPost(
+        "/v1/internal/server-control/commands/claim",
+        ClaimServerControlCommandsAsync)
+    .RequireRateLimiting("internal-server-control");
+app.MapPost(
+        "/v1/internal/server-control/commands/{commandId:guid}/complete",
+        CompleteServerControlCommandAsync)
+    .RequireRateLimiting("internal-server-control");
+app.MapPost(
         "/v1/internal/operational-alerts/events",
         ImportOperationalAlertEventAsync)
     .RequireRateLimiting("internal-alerts");
@@ -713,6 +744,14 @@ adminApi.MapDelete(
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 adminApi.MapGet("/telemetry/summary", GetAdminLauncherTelemetrySummaryAsync);
 adminApi.MapGet("/server-runtime/summary", GetAdminServerRuntimeSummaryAsync);
+adminApi.MapGet("/server-control/overview", GetAdminServerControlOverviewAsync);
+adminApi.MapGet(
+    "/server-control/operations/{operationId:guid}",
+    GetAdminServerControlOperationAsync);
+adminApi.MapPost(
+        "/server-control/targets/{serverId}/operations",
+        QueueAdminServerControlOperationAsync)
+    .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/operational-alerts", GetAdminOperationalAlertsAsync);
 adminApi.MapPost(
         "/operational-alerts/{fingerprint}/acknowledge",
@@ -1474,6 +1513,126 @@ IResult? ValidateInternalSyncToken(
         : AuthenticationProblem(
             StatusCodes.Status401Unauthorized,
             "内部同步凭据无效。");
+}
+
+async Task<IResult> ImportServerControlHeartbeatAsync(
+    ServerControlAgentHeartbeatRequest request,
+    ServerControlTokenValidator tokenValidator,
+    ServerControlRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure = ValidateServerControlToken(
+        request.AgentId,
+        tokenValidator,
+        context);
+    if (authenticationFailure is not null)
+    {
+        return authenticationFailure;
+    }
+
+    var errors = ServerControlRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    return Results.Ok(await repository.ImportHeartbeatAsync(
+        request,
+        DateTimeOffset.UtcNow,
+        cancellationToken));
+}
+
+async Task<IResult> ClaimServerControlCommandsAsync(
+    ServerControlCommandClaimRequest request,
+    ServerControlTokenValidator tokenValidator,
+    ServerControlRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure = ValidateServerControlToken(
+        request.AgentId,
+        tokenValidator,
+        context);
+    if (authenticationFailure is not null)
+    {
+        return authenticationFailure;
+    }
+
+    var errors = ServerControlRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    return Results.Ok(await repository.ClaimAsync(
+        request.AgentId,
+        request.Limit,
+        DateTimeOffset.UtcNow,
+        cancellationToken));
+}
+
+async Task<IResult> CompleteServerControlCommandAsync(
+    Guid commandId,
+    ServerControlCommandCompletionRequest request,
+    ServerControlTokenValidator tokenValidator,
+    ServerControlRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authenticationFailure = ValidateServerControlToken(
+        request.AgentId,
+        tokenValidator,
+        context);
+    if (authenticationFailure is not null)
+    {
+        return authenticationFailure;
+    }
+
+    var errors = ServerControlRules.Validate(request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var result = await repository.CompleteAsync(
+        commandId,
+        request,
+        DateTimeOffset.UtcNow,
+        cancellationToken);
+    return result.Status switch
+    {
+        ServerControlCompletionStatus.Success => Results.Ok(result.Operation),
+        ServerControlCompletionStatus.CommandNotFound => Results.NotFound(),
+        ServerControlCompletionStatus.ClaimConflict => Results.Conflict(new
+        {
+            message = "控制命令已由其他代理接管、租约已过期或已经完成。"
+        }),
+        _ => Results.Problem(
+            title: "服务器控制结果提交失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
+
+IResult? ValidateServerControlToken(
+    string agentId,
+    ServerControlTokenValidator tokenValidator,
+    HttpContext context)
+{
+    if (!tokenValidator.IsConfigured)
+    {
+        return Results.Problem(
+            title: "服务器控制代理尚未配置",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var suppliedToken =
+        context.Request.Headers["X-Hechao-Server-Control-Token"].ToString();
+    return tokenValidator.IsValid(agentId, suppliedToken)
+        ? null
+        : AuthenticationProblem(
+            StatusCodes.Status401Unauthorized,
+            "服务器控制代理凭据无效。");
 }
 
 async Task<IResult> ImportServerHeartbeatsAsync(
@@ -2246,6 +2405,102 @@ async Task<IResult> GetAdminServerRuntimeSummaryAsync(
     ServerRuntimeStatusRepository repository,
     CancellationToken cancellationToken) =>
     Results.Ok(await repository.GetSummaryAsync(cancellationToken));
+
+async Task<IResult> GetAdminServerControlOverviewAsync(
+    ServerControlRepository repository,
+    CancellationToken cancellationToken) =>
+    Results.Ok(await repository.GetOverviewAsync(
+        DateTimeOffset.UtcNow,
+        cancellationToken));
+
+async Task<IResult> GetAdminServerControlOperationAsync(
+    Guid operationId,
+    ServerControlRepository repository,
+    CancellationToken cancellationToken)
+{
+    var operation = await repository.GetOperationAsync(
+        operationId,
+        cancellationToken);
+    return operation is null ? Results.NotFound() : Results.Ok(operation);
+}
+
+async Task<IResult> QueueAdminServerControlOperationAsync(
+    string serverId,
+    AdminServerControlRequest request,
+    ServerControlRepository repository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var errors = ServerControlRules.Validate(serverId, request);
+    if (errors.Count > 0)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    var actor = context.User.GetPlayer();
+    if (actor?.AccessTier != AccessTier.Administrator)
+    {
+        return Results.Forbid();
+    }
+
+    ServerControlQueueMutationResult result;
+    try
+    {
+        result = await repository.QueueAsync(
+            serverId,
+            request,
+            actor.UserId,
+            context.Connection.RemoteIpAddress,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
+    }
+    catch (PostgresException exception) when (
+        exception.SqlState == PostgresErrorCodes.SerializationFailure)
+    {
+        return Results.Conflict(new
+        {
+            message = "服务器控制状态刚刚发生变化，请刷新后重试。"
+        });
+    }
+
+    return result.Status switch
+    {
+        ServerControlQueueStatus.Success => Results.Accepted(
+            $"/v1/admin/server-control/operations/" +
+            result.Result!.Operation.OperationId.ToString("D"),
+            result.Result),
+        ServerControlQueueStatus.FeatureDisabled => Results.Problem(
+            title: "服务器控制功能尚未启用",
+            statusCode: StatusCodes.Status503ServiceUnavailable),
+        ServerControlQueueStatus.TargetNotFound => Results.NotFound(),
+        ServerControlQueueStatus.AgentUnavailable => Results.Conflict(new
+        {
+            message = "该服务器的控制代理当前离线，未执行任何动作。"
+        }),
+        ServerControlQueueStatus.StateStale => Results.Conflict(new
+        {
+            message = "冲突组中存在状态过期的服务器，未执行启动。",
+            servers = result.BlockingServerIds
+        }),
+        ServerControlQueueStatus.OperationInProgress => Results.Conflict(new
+        {
+            message = "相关服务器已有控制动作进行中。",
+            servers = result.BlockingServerIds
+        }),
+        ServerControlQueueStatus.CommandNotAllowed => Results.ValidationProblem(
+            new Dictionary<string, string[]>
+            {
+                ["consoleCommand"] = ["该命令不在此服务器的本机允许列表中。"]
+            }),
+        ServerControlQueueStatus.TargetOffline => Results.Conflict(new
+        {
+            message = "服务器未运行，不能发送控制台命令。"
+        }),
+        _ => Results.Problem(
+            title: "服务器控制动作排队失败",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
+}
 
 async Task<IResult> GetAdminOperationalAlertsAsync(
     OperationalAlertRepository repository,

@@ -1,5 +1,9 @@
 # Minecraft server control operations
 
+All commands in this runbook use PowerShell 7 (`pwsh.exe`). The automated,
+allowlisted API and agent design is documented in
+[`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md).
+
 ## Purpose
 
 The Windows game hosts use visible Java console windows. The checked-in
@@ -68,6 +72,7 @@ logged in:
 ```powershell
 .\Install-MinecraftServerLaunchTask.ps1 `
   -ServerName Survival1 `
+  -ServerId survival1 `
   -ServerDirectory E:\Survival1
 ```
 
@@ -80,6 +85,11 @@ Start-ScheduledTask -TaskName Hechao-Server-Survival1
 
 An existing task with the same name is exported below
 `E:\manual-backups\server-control-<UTC timestamp>` before replacement.
+The managed runner also writes a per-run identity marker below
+`C:\ProgramData\Hechao\ServerControlAgent\runtime`. For targets sharing one
+port, the automated agent requires this marker and verifies that the listening
+Java process descends from the marked runner. An unknown port owner is never
+treated as either configured server.
 
 ## Safe restart sequence
 

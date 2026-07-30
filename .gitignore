@@ -2,6 +2,7 @@
 .idea/
 .dotnet/
 .dotnet-sdk-*/
+.packages/
 .iconpark-tool/
 artifacts/
 TestResults/

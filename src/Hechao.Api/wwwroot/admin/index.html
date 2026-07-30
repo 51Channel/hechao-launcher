@@ -140,6 +140,10 @@
                     <img src="/admin/assets/icons/monitor.svg" alt="">
                     <span>服务状态</span>
                 </button>
+                <button class="nav-item" type="button" data-view="control">
+                    <img src="/admin/assets/icons/server.svg" alt="">
+                    <span>服控面板</span>
+                </button>
                 <button class="nav-item" type="button" data-view="alerts">
                     <img src="/admin/assets/icons/circle-alert.svg" alt="">
                     <span>告警中心</span>
@@ -157,8 +161,8 @@
             <div class="sidebar-boundary">
                 <img src="/admin/assets/icons/shield-check.svg" alt="">
                 <div>
-                    <strong>运行控制已隔离</strong>
-                    <span>目录状态不会启停服务端</span>
+                    <strong>最小权限服控</strong>
+                    <span>仅允许受管服务器与 Minecraft 命令</span>
                 </div>
             </div>
 
@@ -555,6 +559,190 @@
                             </div>
                         </div>
                     </section>
+                </section>
+
+                <section id="control-section" class="view-section" hidden>
+                    <div class="section-heading control-heading">
+                        <div>
+                            <h2>服务器控制</h2>
+                            <p>通过本机白名单代理优雅启停服务端；共享端口或活动槽位会按冲突组串行切换。</p>
+                        </div>
+                        <span id="control-generated-at" class="count-label"></span>
+                    </div>
+
+                    <div class="summary-strip control-summary" aria-label="服务器控制摘要">
+                        <div>
+                            <span>受管服务器</span>
+                            <strong id="control-target-count">0</strong>
+                        </div>
+                        <div>
+                            <span>代理在线</span>
+                            <strong id="control-agent-count">0</strong>
+                        </div>
+                        <div>
+                            <span>运行中</span>
+                            <strong id="control-online-count">0</strong>
+                        </div>
+                        <div>
+                            <span>进行中动作</span>
+                            <strong id="control-operation-count">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="control-layout">
+                        <aside class="control-target-pane" aria-label="受管服务器">
+                            <div class="control-pane-heading">
+                                <h3>服务器</h3>
+                                <span id="control-target-label">0 个目标</span>
+                            </div>
+                            <div id="control-target-list" class="control-target-list"></div>
+                            <div id="control-empty-state" class="empty-state" hidden>
+                                <img src="/admin/assets/icons/server.svg" alt="">
+                                <strong>还没有受管服务器</strong>
+                                <span>部署最小权限代理后才会开放控制动作。</span>
+                            </div>
+                        </aside>
+
+                        <div id="control-detail" class="control-detail" hidden>
+                            <header class="control-detail-heading">
+                                <div>
+                                    <span id="control-selected-id" class="control-server-id"></span>
+                                    <h3 id="control-selected-name"></h3>
+                                    <p id="control-selected-meta"></p>
+                                </div>
+                                <div class="control-actions">
+                                    <button id="control-start-button"
+                                            class="button button-primary"
+                                            type="button" data-control-action="Start">
+                                        <img src="/admin/assets/icons/play.svg" alt="">
+                                        启动
+                                    </button>
+                                    <button id="control-stop-button"
+                                            class="button button-danger"
+                                            type="button" data-control-action="Stop">
+                                        <img src="/admin/assets/icons/square.svg" alt="">
+                                        停止
+                                    </button>
+                                    <button id="control-restart-button"
+                                            class="button button-secondary"
+                                            type="button" data-control-action="Restart">
+                                        <img src="/admin/assets/icons/refresh-cw.svg" alt="">
+                                        重启
+                                    </button>
+                                </div>
+                            </header>
+
+                            <div id="control-conflict-notice"
+                                 class="control-conflict-notice" hidden></div>
+
+                            <div class="control-workspace-grid">
+                                <section class="control-settings">
+                                    <div class="control-subheading">
+                                        <div>
+                                            <h3>快捷设置</h3>
+                                            <p>只修改受管 server.properties 白名单字段，并自动保留备份。</p>
+                                        </div>
+                                    </div>
+                                    <form id="control-settings-form" class="control-settings-form">
+                                        <label>
+                                            最大人数
+                                            <input id="control-max-players" type="number"
+                                                   min="1" max="1000" required>
+                                        </label>
+                                        <label>
+                                            视距
+                                            <input id="control-view-distance" type="number"
+                                                   min="2" max="32" required>
+                                        </label>
+                                        <label>
+                                            模拟距离
+                                            <input id="control-simulation-distance" type="number"
+                                                   min="2" max="32" required>
+                                        </label>
+                                        <label>
+                                            难度
+                                            <select id="control-difficulty" required>
+                                                <option value="peaceful">和平</option>
+                                                <option value="easy">简单</option>
+                                                <option value="normal">普通</option>
+                                                <option value="hard">困难</option>
+                                            </select>
+                                        </label>
+                                        <label class="checkbox-row control-whitelist">
+                                            <input id="control-whitelist" type="checkbox">
+                                            <span>启用原版白名单</span>
+                                        </label>
+                                        <button id="control-save-settings-button"
+                                                class="button button-secondary"
+                                                type="submit">
+                                            <img src="/admin/assets/icons/save.svg" alt="">
+                                            保存设置
+                                        </button>
+                                    </form>
+                                </section>
+
+                                <section class="control-terminal">
+                                    <div class="control-subheading">
+                                        <div>
+                                            <h3>Minecraft 控制台</h3>
+                                            <p id="control-command-prefixes"></p>
+                                        </div>
+                                        <span id="control-console-time"
+                                              class="count-label"></span>
+                                    </div>
+                                    <pre id="control-console-output"
+                                         class="control-console-output"
+                                         aria-live="polite"></pre>
+                                    <div class="control-quick-commands"
+                                         aria-label="快捷控制台命令">
+                                        <button type="button" data-control-command="list">在线玩家</button>
+                                        <button type="button" data-control-command="save-all flush">立即保存</button>
+                                        <button type="button" data-control-command="whitelist reload">重载白名单</button>
+                                    </div>
+                                    <form id="control-command-form"
+                                          class="control-command-form">
+                                        <input id="control-command-input" type="text"
+                                               maxlength="240"
+                                               autocomplete="off"
+                                               placeholder="输入允许的 Minecraft 控制台命令"
+                                               required>
+                                        <button id="control-send-command-button"
+                                                class="button button-primary"
+                                                type="submit">
+                                            <img src="/admin/assets/icons/send.svg" alt="">
+                                            发送
+                                        </button>
+                                    </form>
+                                </section>
+                            </div>
+
+                            <section class="control-history">
+                                <div class="control-subheading">
+                                    <div>
+                                        <h3>最近操作</h3>
+                                        <p>所有动作、结果与自动关闭的冲突服务器都会进入审计。</p>
+                                    </div>
+                                </div>
+                                <div class="table-frame">
+                                    <table class="control-history-table">
+                                        <thead>
+                                        <tr>
+                                            <th>时间</th>
+                                            <th>动作</th>
+                                            <th>状态</th>
+                                            <th>结果</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="control-history-body"></tbody>
+                                    </table>
+                                    <div id="control-history-empty"
+                                         class="empty-state" hidden>
+                                        <strong>还没有控制记录</strong>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="alerts-section" class="view-section" hidden>
@@ -1207,6 +1395,41 @@
                 <button id="cancel-security-action-button"
                         class="button button-secondary" type="button">取消</button>
                 <button id="accept-security-action-button"
+                        class="button button-danger" type="submit">确认执行</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="control-action-dialog"
+            class="confirm-dialog control-action-dialog">
+        <form id="control-action-form">
+            <div class="confirm-icon">
+                <img src="/admin/assets/icons/server.svg" alt="">
+            </div>
+            <h2 id="control-action-title">确认服务器操作</h2>
+            <p id="control-action-message"></p>
+            <div id="control-action-warning"
+                 class="control-dialog-warning" hidden></div>
+            <div id="control-action-error" class="inline-alert" hidden>
+                <img src="/admin/assets/icons/circle-alert.svg" alt="">
+                <span></span>
+            </div>
+            <label class="security-action-field">
+                操作原因
+                <textarea id="control-action-reason"
+                          minlength="4" maxlength="500" rows="3" required
+                          placeholder="至少 4 个字符，将写入审计日志"></textarea>
+            </label>
+            <label class="security-action-field">
+                输入服务器 ID 进行二次确认
+                <input id="control-action-confirmation"
+                       type="text" maxlength="64" autocomplete="off" required>
+                <span id="control-action-confirmation-hint"></span>
+            </label>
+            <div class="confirm-actions">
+                <button id="cancel-control-action-button"
+                        class="button button-secondary" type="button">取消</button>
+                <button id="accept-control-action-button"
                         class="button button-danger" type="submit">确认执行</button>
             </div>
         </form>

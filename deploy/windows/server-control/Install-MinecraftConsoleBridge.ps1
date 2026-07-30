@@ -10,6 +10,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
 
 $workerScript = Join-Path $InstallDirectory 'Invoke-MinecraftConsoleRequest.ps1'
 if (-not (Test-Path -LiteralPath $workerScript -PathType Leaf)) {
@@ -29,7 +30,7 @@ if ($null -ne $existingTask) {
 }
 
 $action = New-ScheduledTaskAction `
-    -Execute 'powershell.exe' `
+    -Execute $pwsh `
     -Argument (
         '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass ' +
         "-File `"$workerScript`""
