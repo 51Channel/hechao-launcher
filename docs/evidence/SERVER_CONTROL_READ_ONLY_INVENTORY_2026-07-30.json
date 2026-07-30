@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-07-30T11:52:06Z",
+  "scope": "Read-only server-control inventory before agent deployment",
+  "serverActions": [],
+  "powershell": {
+    "required": "7",
+    "owl5": "7.6.4",
+    "owl9": "7.6.4"
+  },
+  "owl5": {
+    "listeners": {
+      "25565": {
+        "serverId": "survival2",
+        "processId": 9428
+      },
+      "25566": {
+        "serverId": "lobby",
+        "processId": 6008
+      },
+      "25568": {
+        "serverId": "activity",
+        "processId": 6112
+      },
+      "25577": {
+        "role": "velocity",
+        "processId": 7748
+      }
+    },
+    "verifiedRuntimeAdoptionDryRun": [
+      {
+        "serverId": "survival2",
+        "runnerProcessId": 2212,
+        "result": "verified-only"
+      },
+      {
+        "serverId": "activity",
+        "runnerProcessId": 9288,
+        "result": "verified-only"
+      },
+      {
+        "serverId": "lobby",
+        "runnerProcessId": 8324,
+        "result": "verified-only"
+      }
+    ],
+    "conflictGroups": {
+      "owl5-survival-slot": [
+        "survival2",
+        "dollnight"
+      ],
+      "owl5-activity-slot": [
+        "activity",
+        "fanstreet",
+        "yugong"
+      ]
+    },
+    "conflictEvidence": {
+      "survival2": {
+        "root": "E:\\Survival2",
+        "port": 25565
+      },
+      "dollnight": {
+        "root": "E:\\DollNight",
+        "port": 25565
+      },
+      "activity": {
+        "root": "E:\\ActivityNeoForge",
+        "port": 25568
+      },
+      "fanstreet": {
+        "root": "E:\\FanStreet",
+        "port": 25568
+      },
+      "yugong": {
+        "root": "E:\\Yugong",
+        "port": 25568
+      }
+    },
+    "agentInstalled": false
+  },
+  "owl9": {
+    "listeners": {
+      "25565": {
+        "serverId": "pvp",
+        "processId": 7216
+      }
+    },
+    "verifiedRuntimeAdoptionDryRun": [
+      {
+        "serverId": "pvp",
+        "runnerProcessId": 5864,
+        "result": "verified-only"
+      }
+    ],
+    "conflictGroups": {
+      "owl9-25565-slot": [
+        "pvp",
+        "pvp-purpur"
+      ]
+    },
+    "conflictEvidence": {
+      "pvp": {
+        "description": "HorrorPrank Fabric backend; historical server ID",
+        "root": "C:\\mc\\server",
+        "port": 25565,
+        "running": true
+      },
+      "pvp-purpur": {
+        "description": "True PVP Purpur backend",
+        "root": "E:\\MinecraftServer",
+        "port": 25565,
+        "running": false
+      }
+    },
+    "agentInstalled": false
+  },
+  "notes": [
+    "FanStreet, Yugong, and ActivityNeoForge share owl5 port 25568.",
+    "The owl9 historical pvp target and the true PVP backend are distinct servers.",
+    "The adoption checks used -WhatIf and did not create runtime markers.",
+    "No Minecraft, Velocity, scheduled task, server property, or world state was changed."
+  ]
+}

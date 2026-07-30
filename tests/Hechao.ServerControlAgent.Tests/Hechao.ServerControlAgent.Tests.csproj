@@ -13,6 +13,15 @@
     <ProjectReference Include="..\..\src\Hechao.ServerControlAgent\Hechao.ServerControlAgent.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\deploy\windows\server-control\server-control-agent.owl5.production.json"
+          Link="server-control-agent.owl5.production.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\deploy\windows\server-control\server-control-agent.owl9.production.json"
+          Link="server-control-agent.owl9.production.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

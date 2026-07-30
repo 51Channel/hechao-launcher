@@ -1,0 +1,81 @@
+{
+  "apiBaseUrl": "https://launcher-api.hechao.world",
+  "agentId": "owl5",
+  "tokenPath": "C:\\ProgramData\\Hechao\\ServerControlAgent\\server-control-token.dat",
+  "stateDirectory": "C:\\ProgramData\\Hechao\\ServerControlAgent",
+  "consoleSubmitScript": "C:\\ProgramData\\Hechao\\ServerControl\\Submit-MinecraftConsoleCommand.ps1",
+  "pollSeconds": 2,
+  "heartbeatSeconds": 5,
+  "targets": [
+    {
+      "serverId": "lobby",
+      "serverDirectory": "E:\\LobbyServer",
+      "startTaskName": "Hechao-Server-Lobby",
+      "port": 25566,
+      "conflictGroup": null,
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "survival1",
+      "serverDirectory": "E:\\Survival1",
+      "startTaskName": "Hechao-Server-Survival1",
+      "port": 19228,
+      "conflictGroup": null,
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "survival2",
+      "serverDirectory": "E:\\Survival2",
+      "startTaskName": "Hechao-Server-Survival2",
+      "port": 25565,
+      "conflictGroup": "owl5-survival-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "dollnight",
+      "serverDirectory": "E:\\DollNight",
+      "startTaskName": "Hechao-Server-DollNight",
+      "port": 25565,
+      "conflictGroup": "owl5-survival-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "activity",
+      "serverDirectory": "E:\\ActivityNeoForge",
+      "startTaskName": "Hechao-Server-ActivityNeoForge",
+      "port": 25568,
+      "conflictGroup": "owl5-activity-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "fanstreet",
+      "serverDirectory": "E:\\FanStreet",
+      "startTaskName": "Hechao-Server-FanStreet",
+      "port": 25568,
+      "conflictGroup": "owl5-activity-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "yugong",
+      "serverDirectory": "E:\\Yugong",
+      "startTaskName": "Hechao-Server-Yugong",
+      "port": 25568,
+      "conflictGroup": "owl5-activity-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "apiBaseUrl": "https://launcher-api.hechao.world",
+  "agentId": "owl9",
+  "tokenPath": "C:\\ProgramData\\Hechao\\ServerControlAgent\\server-control-token.dat",
+  "stateDirectory": "C:\\ProgramData\\Hechao\\ServerControlAgent",
+  "consoleSubmitScript": "C:\\ProgramData\\Hechao\\ServerControl\\Submit-MinecraftConsoleCommand.ps1",
+  "pollSeconds": 2,
+  "heartbeatSeconds": 5,
+  "targets": [
+    {
+      "serverId": "pvp",
+      "serverDirectory": "C:\\mc\\server",
+      "startTaskName": "Hechao-Server-HorrorPrank",
+      "port": 25565,
+      "conflictGroup": "owl9-25565-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    },
+    {
+      "serverId": "pvp-purpur",
+      "serverDirectory": "E:\\MinecraftServer",
+      "startTaskName": "Hechao-Server-PvpPurpur",
+      "port": 25565,
+      "conflictGroup": "owl9-25565-slot",
+      "logRelativePath": "logs\\latest.log",
+      "propertiesRelativePath": "server.properties",
+      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+    }
+  ]
+}

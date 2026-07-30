@@ -87,6 +87,21 @@ owl9 的历史 Velocity 目标 `pvp` 实际是
 `E:\MinecraftServer`。两者共享 `25565`，必须作为两个独立目标放在同一冲突组，
 不能互换目录或启动任务。
 
+2026-07-30 的实时只读盘点还确认：
+
+- owl5 的 `ActivityNeoForge`、`FanStreet` 与 `Yugong` 都使用 `25568`，统一放入
+  `owl5-activity-slot`；
+- owl5 的 `Survival2` 与 `DollNight` 都使用 `25565`，统一放入
+  `owl5-survival-slot`；
+- owl9 的历史 `pvp` 与真正 PVP 统一放入 `owl9-25565-slot`。
+
+仓库中的
+[`server-control-agent.owl5.production.json`](../deploy/windows/server-control/server-control-agent.owl5.production.json)
+和
+[`server-control-agent.owl9.production.json`](../deploy/windows/server-control/server-control-agent.owl9.production.json)
+是本次实时盘点形成的无密钥白名单。旧迁移目录没有自动纳入控制目标；需要重新启用
+时必须先在后台建立清晰的服务端 ID，再复核端口和冲突组。
+
 ## 6. 安装顺序
 
 先发布 API，但保持 `ServerControl:Enabled=false`。数据库迁移可先执行，旧接口和
@@ -106,6 +121,11 @@ owl9 的历史 Velocity 目标 `pvp` 实际是
 8. 先启动代理但不执行游戏服动作，只核对心跳、目标、端口和日志；
 9. 所有目标只读状态正确后再启用 API 服控开关。
 
+API 主机统一通过
+[`configure-server-control.sh`](../deploy/linux/configure-server-control.sh)
+写入总开关、心跳时效、命令租约和各代理令牌摘要。脚本会先备份环境文件，且启用时
+至少要求一个合法摘要。摘要不是明文令牌，但仍不得写入 Git、聊天或发布记录。
+
 示例任务安装：
 
 ```powershell
@@ -115,6 +135,24 @@ pwsh.exe -NoLogo -NoProfile -File `
   -ServerId survival2 `
   -ServerDirectory E:\Survival2
 ```
+
+### 6.1 接管已经运行的旧任务
+
+部分服务端在服控代理上线前已经由旧版 `Run-MinecraftServer.ps1` 启动。为了避免仅
+因接入后台而重启在线服，先更新下一次启动使用的受管任务，再运行
+[`Adopt-MinecraftServerRuntime.ps1`](../deploy/windows/server-control/Adopt-MinecraftServerRuntime.ps1)。
+
+第一次必须带 `-WhatIf`。脚本只在以下条件全部成立时才允许写运行标记：
+
+1. 指定计划任务当前确实处于运行状态；
+2. 任务动作明确包含目标服务端根目录；
+3. 指定端口只有一个监听进程且进程是 Java；
+4. Java 的祖先进程链中存在包含同一根目录的 `pwsh`、PowerShell 或 `cmd` 运行器。
+
+正式执行只原子写入服务 ID、运行器 PID、启动时间和目录，不发送控制台命令，也不
+启动、停止或重启服务端。既有标记与当前运行实例不一致时默认硬拒绝；只有完成独立
+复核后才允许 `-Replace`。如果祖先链无法验证，就保持该目标不可控制，等下次计划
+维护时由新版受管任务正常启动。
 
 示例配置
 [`server-control-agent.example.json`](../deploy/windows/server-control/server-control-agent.example.json)

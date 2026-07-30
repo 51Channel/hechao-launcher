@@ -52,6 +52,21 @@ public sealed class AgentConfigurationTests
         Assert.Throws<InvalidDataException>(target.Validate);
     }
 
+    [Theory]
+    [InlineData("server-control-agent.owl5.production.json", "owl5", 7)]
+    [InlineData("server-control-agent.owl9.production.json", "owl9", 2)]
+    public void Load_AcceptsProductionInventory(
+        string fileName,
+        string expectedAgentId,
+        int expectedTargetCount)
+    {
+        var configuration = ServerControlAgentConfiguration.Load(
+            Path.Combine(AppContext.BaseDirectory, fileName));
+
+        Assert.Equal(expectedAgentId, configuration.AgentId);
+        Assert.Equal(expectedTargetCount, configuration.Targets.Count);
+    }
+
     private static ServerControlAgentConfiguration CreateConfiguration(
         params ServerControlTargetConfiguration[] targets) =>
         new()

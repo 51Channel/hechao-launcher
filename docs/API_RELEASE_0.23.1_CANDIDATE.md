@@ -43,7 +43,7 @@ Minecraft 控制台和默认关闭边界，并修复迁移 `020` 未加入
 
 复用 `0.23.0` 部署前已验证的数据库备份和 API/配置完整回滚包，但仍需重新核对
 哈希、当前生产版本和服控关闭状态。部署只允许重启 API；必须在切换后确认迁移
-`020`、四张服控表、`ServerControl__Enabled=false`、公网回归和新增日志错误为零。
+`020`、三张服控表、`ServerControl__Enabled=false`、公网回归和新增日志错误为零。
 
 任一检查失败，立即把 `current` 切回
 `/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z` 并重启 API。迁移
