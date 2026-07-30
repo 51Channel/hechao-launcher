@@ -159,6 +159,17 @@ admin.hechao.world                未启用时 404
 - 旧官网、中转 API、Velocity 与现有 Minecraft 服务没有受到影响。
 - 运行 `tools/acceptance/Test-HechaoGrayPilotReadiness.ps1`，保存每档机器证据；任何
   活动 Critical、TPS/MSPT/GC 超阈值、API p95 超阈值或大厅出现玩家都立即停止扩大。
+- 灰度工具必须在玩家进入前启动。schema `2` 证据会匿名统计本轮 fresh grant、
+  等级覆盖、拒绝原因和目标人数；五人 monitor 阶段必须覆盖四级账号及
+  `LaunchGrantRequired`、`InsufficientTier`、`AccessDenied`、
+  `ServerUnavailable`。版本和档案不兼容继续由生产兼容矩阵覆盖，不重新开放已取消的
+  游戏内转服路径。
+- monitor 证据必须先通过 `Test-HechaoAuthorizerEnforceGate.ps1`，再由
+  `Set-HechaoVelocityAuthorizerMode.ps1` 在零连接窗口切换。切换后重新生成
+  enforce 证据并通过同一闸门，最后才可运行
+  `Set-HechaoCatalogAuthentication.ps1`。两个切换工具默认只读，使用 `-Apply`
+  时会先备份且失败自动恢复。完整命令和回滚边界见
+  [`GRAY_PILOT_AUTHORIZATION_CUTOVER.md`](GRAY_PILOT_AUTHORIZATION_CUTOVER.md)。
 
 `2026-07-30` 的严格 60 秒 Readiness 基线为 API `22/22` 成功、p95
 `180.846 ms`、Activity `paused-when-empty`、大厅 `0` 人且最终活动 Critical

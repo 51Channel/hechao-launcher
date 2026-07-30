@@ -40,7 +40,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.12.0 -> 0.12.1` 的隔离干净安装与双轮卸载，以及 `0.12.1 -> 0.12.2 -> 0.12.3` 覆盖安装、设置与 DPAPI 会话保留、ProductVersion 和运行中启动器保护均通过 |
 | 私有 OSS 发布 | 已完成 | `0.12.3` 不可变对象已发布；重复发布校验后跳过，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | 当前开发分支 .NET `392/392`，Velocity `26/26`，Lobby Guard `3/3`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2` |
+| 自动测试 | 已完成 | 当前开发分支 .NET `392/392`，Velocity `26/26`，Lobby Guard `3/3`，LuckPerms 等级代理 `4/4`，Paper/Purpur 指标代理 `2/2`，授权切换闸门 `4/4` |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.12.3` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -98,8 +98,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 恐怖整蛊跨版本返回大厅授权 | 已取消 | 2026-07-29 决定保留内部大厅但禁止玩家进入，并只允许启动器切服；隔离五轮证据保留为历史记录，API `0.21.0` 的目标级开关不得在生产为大厅开启 |
 | NPC、`/hub`、`/lobby` 和游戏内转服 | 已取消并移除 | HubCommand、ViaVersion/ViaBackwards、owl5 后端脚本和 owl9 恐怖整蛊路由均为零；大厅八个玩家 Skript 已用在线 `disable` 退出并保留哈希备份，只留 `daily-backup.sk` |
 | 基础设施大厅玩家隔离 | 已部署待外部验收 | API `0.22.0`、Authorizer `0.4.0`、Lobby Guard `0.1.0` 已生产部署；`25566` 仅回环监听、公网连接失败、强制空白名单，等级代理、指标、告警和备份保持在线，仍需四级真实账号旁路拒绝 |
-| Velocity `enforce` | 外部验收 | 四级账号与全部转服路径通过后切换 |
-| 目录强制登录 | 外部验收 | `enforce` 稳定后启用 `Authentication__EnforceCatalogAuthentication=true` |
+| Velocity `enforce` | 外部验收 | schema `2` 已能匿名核对 fresh grant、等级、拒绝原因、人数、性能与 Lobby 零玩家；切换工具默认只读，并在零连接窗口备份、只重启 Velocity、失败恢复原模式。当前仍需四级真实账号和五人 monitor 证据 |
+| 目录强制登录 | 外部验收 | 独立工具只接受通过的 enforce 五人证据，备份环境文件、只重启 API，并在健康或匿名目录检查失败时自动恢复；当前不得启用 |
 | 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊持续上报；两机只读采集器均为 `0.2.1` 且计划任务返回 `0`。API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；真正 PVP 未接入该心跳 |
 | TPS、MSPT、进程内存和启动时间 | 已完成 | 五个运行目标的代理均已加载；采集器 `0.2.1` 将 Activity 在线零玩家时的 NeoForge Tick 暂停表示为 `paused-when-empty`，不发送旧数值或伪造时间，有玩家时仍硬拒绝过期指标。严格 60 秒预检中 API `22/22`、p95 `180.846 ms`、大厅始终 `0` 人且最终活动 Critical 为 `0`；20 至 30 人负载仍是独立外部门槛 |
 | 管理后台状态与错误摘要 | 已实现待生产验收 | “服务状态”和“运行告警”页面、30 天样本、24 小时固定问题摘要与告警历史保留在 API `0.22.0`；2026-07-30 服务器端只读验收覆盖八个页面模块、六个目录项、最新运行样本和实时告警，`32` 项技术检查全部通过，仍待从正确启动器创建新票据并完成 MFA 后逐页目视复核 |
@@ -121,7 +121,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 发布前故障自动演练 | 已完成 | 断网、损坏文件、维护、权限变化和版本回滚五类定向集合 `45/45` 通过；完整 `.NET 355/355` 与三组服务端代理 `17/17` 同轮复验，见 [`PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md`](PRELAUNCH_FAULT_REHEARSAL_2026-07-28.md) |
 | 生产剩余门槛只读审计 | 已完成 | 账号、MFA、诊断、遥测、档案、心跳、告警、代理加载、世界归档与 RAM v5 当前状态已做匿名聚合核对；证据和执行顺序见 [`PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md`](PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md) |
 | 生产控制面实时只读验收 | 已完成 | API `0.22.0`、迁移 `19/19`、管理站八个页面模块、匿名拒绝、Host 隔离、安全响应头、六个档案、实时指标、队列和审计共 `32` 项技术检查全部通过；Nginx 重复安全头已在可回滚 reload 中修复，API PID 未变化。见 [`evidence/PRODUCTION_CONTROL_PLANE_READINESS_2026-07-30.json`](evidence/PRODUCTION_CONTROL_PLANE_READINESS_2026-07-30.json) |
-| TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 自动预检与零玩家基线已通过；Survival1 已按实际停服状态改为 `Closed`，事务审计和严重告警自动恢复均已验证。仍需要活动窗口和真实玩家，并在扩大到 20 人前持续观察 owl9 低磁盘 Warning |
+| TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 自动预检与零玩家基线已通过；schema `2` 灰度工具会把 fresh grant、在线人数、TPS/MSPT/GC、API p95、告警与 Lobby 零玩家收在同一窗口。Survival1 已按真实停服状态改为 `Closed`；仍需要活动窗口和真实玩家，并在扩大到 20 人前持续观察 owl9 低磁盘 Warning |
 | 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB 与双服务端边界已盘点：恐怖整蛊为 `C:\mc\server` Fabric，真正 PVP 为 `E:\MinecraftServer` Purpur，两者共享 `25565` 且禁止同时启动。恐怖整蛊只出站采集器、modern forwarding、运行基线和正式世界备份/异机恢复已验收；真正 PVP 未接入、未启动、未修改。见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md) 及其机器证据 |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |
@@ -133,8 +133,12 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 3. [已完成] 发布 Vanilla、Forge 与 DollNight 正式签名档案。
 4. [已实现待生产验收] 目录高级规则、玩家搜索、访问预览、单服权限、平台账号/UUID 安全、论坛既有会话联动、受控全局等级及客户端三通道发布已生产部署；大厅代理已加载，仍待各管理页面和四级测试账号验收。
 5. [已完成] 两台游戏 VPS 的进程/磁盘/TPS/MSPT/GC 指标、世界正式备份和隔离恢复已验收；多人负载仍作为独立灰度门槛。
-6. 使用四级真实账号完成 `monitor` 灰度。
+6. [自动采证和失败关闭闸门已完成] 使用四级真实账号完成 `monitor` 灰度；当前缺
+   Member、Participant、Collaborator 的正版绑定。
 7. [已完成] 部署启动器唯一切服与可回滚大厅隔离变更集，移除 HubCommand、Via 回程和后端游戏内转服；大厅任务、LuckPerms 等级代理、指标和备份保持在线。
-8. [单账号切服、重启接管、异常断线恢复、维护/关闭目标拦截及静态旁路移除已完成] 继续使用四级真实账号复测全部权限与大厅后端拒绝，并完成离线及 API 故障路径，再切换 Velocity `enforce`。
-9. 启用目录强制登录，完成 `2/3/5/20` 人灰度及真实回滚。
+8. [单账号切服、重启接管、异常断线恢复、维护/关闭目标拦截、静态旁路移除及
+   可回滚切换工具已完成] 继续使用四级真实账号复测全部权限与大厅后端拒绝，并完成
+   离线及 API 故障路径，再由证据闸门切换 Velocity `enforce`。
+9. [目录切换与自动恢复工具已完成] 用 enforce 五人证据启用目录强制登录，继续完成
+   `2/3/5/20` 人灰度及真实回滚。
 10. 一个观察周期无阻断故障后，形成最终玩家验收记录。

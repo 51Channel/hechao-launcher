@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-07-30T00:42:28Z",
+  "scope": "Authorization gray evidence and fail-closed production cutover automation",
+  "productionReadOnlyState": {
+    "velocityAuthorizerMode": "monitor",
+    "velocityProcessIdAtCheck": 7748,
+    "catalogAuthenticationEnforced": false,
+    "apiHealthStatus": 200,
+    "apiReadyStatus": 200,
+    "anonymousCatalogStatus": 200
+  },
+  "grayEvidenceSchema": {
+    "version": 2,
+    "productionSmokeDurationSeconds": 15,
+    "productionSmokeStage": "5-negative-smoke",
+    "productionSmokeStatus": "waiting-for-external-participants",
+    "technicalBlockerCount": 0,
+    "apiP95Milliseconds": 667.248,
+    "missingLinkedTierPrerequisites": [
+      "missing_linked_tier_member",
+      "missing_linked_tier_participant",
+      "missing_linked_tier_collaborator"
+    ],
+    "expectedEmptyStageChecksFailedClosed": [
+      "player_stage_not_reached",
+      "fresh_authorization_stage_not_reached",
+      "missing_authorization_tier_member",
+      "missing_authorization_tier_participant",
+      "missing_authorization_tier_collaborator",
+      "missing_authorization_tier_administrator",
+      "missing_denied_reason_launchgrantrequired",
+      "missing_denied_reason_insufficienttier",
+      "missing_denied_reason_accessdenied",
+      "missing_denied_reason_serverunavailable"
+    ],
+    "containsPlayerIdentifiers": false,
+    "containsCredentialsOrTokens": false
+  },
+  "gates": {
+    "syntheticTests": "4/4 passed",
+    "currentNegativeEvidenceRejectedBeforeVelocityMutation": true,
+    "currentNegativeEvidenceRejectedBeforeApiMutation": true,
+    "velocityDryRun": "eligible-dry-run",
+    "catalogAuthenticationDryRun": "eligible-dry-run"
+  },
+  "transactions": {
+    "velocity": {
+      "defaultMode": "read-only",
+      "requiresPassingMonitorEvidenceForEnforce": true,
+      "requiresZeroEstablishedConnections": true,
+      "backsUpConfiguration": true,
+      "restartsOnlyVelocity": true,
+      "automaticRollbackOnFailure": true
+    },
+    "catalogAuthentication": {
+      "defaultMode": "read-only",
+      "requiresPassingEnforceEvidenceForEnable": true,
+      "backsUpProtectedEnvironment": true,
+      "restartsOnlyLauncherApi": true,
+      "verifiesPublicHealthReadyAndAnonymousCatalog": true,
+      "automaticRollbackOnFailure": true
+    }
+  },
+  "productionMutationPerformed": false,
+  "result": "automation-ready-external-identities-and-players-still-required"
+}

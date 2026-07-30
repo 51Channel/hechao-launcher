@@ -123,10 +123,20 @@ Authentication__EnforceCatalogAuthentication=false
 2. 用至少一个普通组、VIP、管理员和服主分别完成赫朝账号注册、登录、Microsoft 绑定和会话恢复测试。
 3. 验证新账号与旧 `legacy_*` 身份接管、Minecraft UUID、LuckPerms 快照和目录过滤结果正确。
 4. [已完成] 2026-07-26 单独重启 Velocity，并从启动日志确认最终授权插件以 `monitor` 模式加载。
-5. [部分完成] 所有 Velocity 目标与平台目录映射及首次合成授权定向已完成；继续验证真实首次连接、NPC 转服、`/hub`、断线重连和 API 故障。
-6. 在维护窗口把插件改为 `enforce` 并由管理员手动重启 Velocity。
-7. 将 `Authentication__EnforceCatalogAuthentication` 改为 `true`，只重启启动器 API。
-8. 验证匿名目录返回 401、有效账号只看到授权服务器、未使用启动器的连接被拒绝、旧网站与中转 API 保持正常。
+5. [部分完成] 所有 Velocity 目标与平台目录映射及首次合成授权定向已完成；继续验证
+   启动器唯一切服、断线重连、API 故障和 Lobby 永久拒绝。NPC、`/hub` 与游戏内
+   转服已取消，不再作为验收路径。
+6. 用 monitor 模式 schema `2` 五人证据通过
+   `Test-HechaoAuthorizerEnforceGate.ps1`，再由
+   `Set-HechaoVelocityAuthorizerMode.ps1 -Apply` 在零连接窗口切换并自动保护回滚。
+7. enforce 模式重新完成同一组五人和拒绝路径证据。
+8. 仅在 enforce 证据通过后，由
+   `Set-HechaoCatalogAuthentication.ps1 -Apply` 启用目录强制登录并只重启启动器
+   API。
+9. 验证匿名目录返回 401、有效账号只看到授权服务器、未使用启动器的连接被拒绝、旧网站与中转 API 保持正常。
+
+完整顺序见
+[`GRAY_PILOT_AUTHORIZATION_CUTOVER.md`](GRAY_PILOT_AUTHORIZATION_CUTOVER.md)。
 
 在第 6 步完成前，“启动器强制登录”不能等同于“服务器最终权限防线”。Velocity 的正版验证与每个目标服的等级授权是两层不同检查。详细模式、目标映射和回滚步骤见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)。
 

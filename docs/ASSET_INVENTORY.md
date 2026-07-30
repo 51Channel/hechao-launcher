@@ -372,7 +372,7 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 2. `owl5` 三份正式世界归档均为 `Completed`，远端 ZIP、SHA-256 旁车和条目数一致，异机完整解压与恢复检查已通过；当前 `E:` 仍保留约 12.74 GiB，后续继续按保留策略监控空间。
 3. `owl9` 的密钥认证、双服务端实时盘点、恐怖整蛊只出站状态采集和 modern forwarding 均已完成；CrossStitch 修复后的真实进服、身份转发、直连拒绝、稳定连接和正常退出已通过。真正 PVP 服保持独立且未纳入本轮启动器验收。仍需恐怖整蛊多人断线重连及皮肤/权限目视核对；玩家回大厅和游戏内转服已经取消。
 4. 启动器数据库、论坛与 Sub2API 的异地加密、真实 OSS 上传/下载、定时任务、告警恢复和异地主机隔离恢复均已验收；当前不再存在 RAM v5 或平台数据异地副本阻塞。
-5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity Authorizer `0.4.0` 已加载为 `monitor`，首次授权故障关闭、内部大厅永久拒绝和生产兼容矩阵已通过。Activity 与恐怖整蛊单账号真实首次路由、启动器 API 故障关闭与恢复均已验收；四级账号、多人断线重连和逐级容量灰度仍待真实参与者，因此 `enforce` 与目录强制登录开关尚未启用。
+5. Microsoft 公共客户端已注册，Minecraft Java API 许可已由管理员确认通过；Velocity Authorizer `0.4.0` 已加载为 `monitor`，首次授权故障关闭、内部大厅永久拒绝和生产兼容矩阵已通过。Activity 与恐怖整蛊单账号真实首次路由、启动器 API 故障关闭与恢复均已验收。schema `2` 匿名灰度证据、四级/fresh grant/拒绝路径闸门、Velocity 模式事务和目录强制登录事务已实现，失败会保持或恢复原模式；四级账号、多人断线重连和逐级容量灰度仍待真实参与者，因此生产开关尚未启用。
 6. 当前 `Hechao.Launcher.exe` 按已确认决策保持 `NotSigned`，Windows SmartScreen 首次运行提示属于已接受的首版发布风险；正式公告必须提供官方来源、大小和 SHA-256。客户端清单的 ECDSA 签名不能替代 EXE 代码签名，未来若增加 Authenticode 必须独立升版。
 
 ## 5. 当前 API 部署状态

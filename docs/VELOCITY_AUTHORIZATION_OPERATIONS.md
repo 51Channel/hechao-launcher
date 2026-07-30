@@ -142,11 +142,19 @@ owl9 的恐怖整蛊 Fabric `1.20.1` 后端已安装 FabricProxy-Lite `2.6.0`，
 
 随后由管理员安排一次 Velocity 手动重启窗口：
 
-1. 把 `config.properties` 的 `mode` 改为 `enforce`。
-2. 管理员手动重启 Velocity。
-3. 验证没有启动器授权时被拒绝，有授权时只进入授权目标服，任何情况下都不能进入大厅。
-4. 验证低等级、单服拒绝、维护服、未知目标和过期授权均被拒绝。
-5. 最后把 API 的 `Authentication__EnforceCatalogAuthentication` 改为 `true` 并仅重启 API。
+1. 用 schema `2` 灰度证据证明四级 fresh grant、五人阶段、要求的拒绝路径、性能和
+   Lobby 零玩家全部通过。
+2. 运行 `Test-HechaoAuthorizerEnforceGate.ps1`；不得手工跳过失败项。
+3. 在零连接维护窗口使用 `Set-HechaoVelocityAuthorizerMode.ps1 -Apply` 原子修改
+   `config.properties` 并只重启 Velocity。工具会在失败时恢复原模式。
+4. 验证没有启动器授权时被拒绝，有授权时只进入授权目标服，任何情况下都不能进入大厅。
+5. 验证低等级、单服拒绝、维护服、未知目标和过期授权均被拒绝。
+6. 重新跑 enforce 模式五人证据并通过同一闸门。
+7. 最后使用 `Set-HechaoCatalogAuthentication.ps1 -Apply` 启用目录强制登录；该工具
+   只重启 API，并在健康或匿名目录检查失败时恢复原环境文件。
+
+逐步命令见
+[`GRAY_PILOT_AUTHORIZATION_CUTOVER.md`](GRAY_PILOT_AUTHORIZATION_CUTOVER.md)。
 
 不得把“插件 JAR 已放入目录”误记为“强制授权已上线”。
 

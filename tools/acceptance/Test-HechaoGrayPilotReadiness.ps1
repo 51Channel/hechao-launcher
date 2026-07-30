@@ -23,6 +23,33 @@ param(
 
     [string]$Target,
 
+    [ValidateSet("monitor", "enforce")]
+    [string]$ExpectedAuthorizerMode = "monitor",
+
+    [ValidateSet(
+        "Member",
+        "Participant",
+        "Collaborator",
+        "Administrator"
+    )]
+    [string[]]$RequiredAuthorizationTiers = @(),
+
+    [ValidateSet(
+        "PlayerNotLinked",
+        "PlayerDisabled",
+        "MinecraftIdentityBanned",
+        "ServerUnknown",
+        "ServerUnavailable",
+        "AccessDenied",
+        "InsufficientTier",
+        "PermissionDataStale",
+        "LaunchGrantRequired",
+        "LaunchGrantIpMismatch",
+        "MinecraftVersionMismatch",
+        "ClientProfileMismatch"
+    )]
+    [string[]]$RequiredDeniedReasons = @(),
+
     [ValidateRange(15, 86400)]
     [int]$DurationSeconds = 60,
 
@@ -368,6 +395,131 @@ $script:ApiHttpClient.Dispose()
 $completedAt = [DateTimeOffset]::UtcNow
 $reasons = [Collections.Generic.List[object]]::new()
 
+$authorizationWindowStart = $startedAt.ToUniversalTime().ToString("O")
+$authorizationWindowEnd = $completedAt.ToUniversalTime().ToString("O")
+$authorizationSql = @"
+WITH authorization_events AS (
+    SELECT audit.action,
+           audit.target_id AS identity_key,
+           COALESCE(user_account.access_tier, 'Unknown') AS access_tier,
+           NULLIF(audit.after_data ->> 'ServerId', '') AS server_id,
+           NULLIF(audit.after_data ->> 'VelocityTarget', '') AS velocity_target,
+           COALESCE(audit.after_data ->> 'Reason', 'Unknown') AS reason,
+           lower(COALESCE(
+               audit.after_data ->> 'InitialConnection',
+               'false'
+           )) = 'true' AS initial_connection
+    FROM launcher.audit_logs audit
+    LEFT JOIN launcher.minecraft_identities identity_record
+      ON identity_record.minecraft_uuid::text = audit.target_id
+    LEFT JOIN launcher.users user_account
+      ON user_account.id = identity_record.user_id
+    WHERE audit.created_at >= '$authorizationWindowStart'::timestamptz
+      AND audit.created_at <= '$authorizationWindowEnd'::timestamptz
+      AND audit.action IN (
+          'velocity.launch_grant.created',
+          'velocity.launch_grant.consumed',
+          'velocity.authorization.denied'
+      )
+),
+by_tier AS (
+    SELECT access_tier,
+           count(*) FILTER (
+               WHERE action = 'velocity.launch_grant.consumed'
+                 AND reason = 'Allowed'
+           ) AS successful_consumption_count,
+           count(DISTINCT identity_key) FILTER (
+               WHERE action = 'velocity.launch_grant.consumed'
+                 AND reason = 'Allowed'
+           ) AS successful_identity_count,
+           count(*) FILTER (
+               WHERE action = 'velocity.authorization.denied'
+           ) AS denied_count
+    FROM authorization_events
+    GROUP BY access_tier
+),
+success_by_target AS (
+    SELECT velocity_target,
+           count(*) AS successful_consumption_count,
+           count(DISTINCT identity_key) AS successful_identity_count
+    FROM authorization_events
+    WHERE action = 'velocity.launch_grant.consumed'
+      AND reason = 'Allowed'
+      AND velocity_target IS NOT NULL
+    GROUP BY velocity_target
+),
+denied_by_reason AS (
+    SELECT reason,
+           count(*) AS denied_count,
+           count(DISTINCT identity_key) AS denied_identity_count
+    FROM authorization_events
+    WHERE action = 'velocity.authorization.denied'
+    GROUP BY reason
+)
+SELECT jsonb_build_object(
+    'windowStartedAtUtc', '$authorizationWindowStart',
+    'windowCompletedAtUtc', '$authorizationWindowEnd',
+    'eventCount', (
+        SELECT count(*) FROM authorization_events
+    ),
+    'distinctIdentityCount', (
+        SELECT count(DISTINCT identity_key) FROM authorization_events
+    ),
+    'successfulConsumptionCount', (
+        SELECT count(*)
+        FROM authorization_events
+        WHERE action = 'velocity.launch_grant.consumed'
+          AND reason = 'Allowed'
+    ),
+    'successfulIdentityCount', (
+        SELECT count(DISTINCT identity_key)
+        FROM authorization_events
+        WHERE action = 'velocity.launch_grant.consumed'
+          AND reason = 'Allowed'
+    ),
+    'byTier', COALESCE((
+        SELECT jsonb_agg(
+            jsonb_build_object(
+                'tier', by_tier.access_tier,
+                'successfulConsumptionCount',
+                    by_tier.successful_consumption_count,
+                'successfulIdentityCount',
+                    by_tier.successful_identity_count,
+                'deniedCount', by_tier.denied_count
+            )
+            ORDER BY by_tier.access_tier
+        )
+        FROM by_tier
+    ), '[]'::jsonb),
+    'successByTarget', COALESCE((
+        SELECT jsonb_agg(
+            jsonb_build_object(
+                'target', success_by_target.velocity_target,
+                'successfulConsumptionCount',
+                    success_by_target.successful_consumption_count,
+                'successfulIdentityCount',
+                    success_by_target.successful_identity_count
+            )
+            ORDER BY success_by_target.velocity_target
+        )
+        FROM success_by_target
+    ), '[]'::jsonb),
+    'deniedByReason', COALESCE((
+        SELECT jsonb_agg(
+            jsonb_build_object(
+                'reason', denied_by_reason.reason,
+                'deniedCount', denied_by_reason.denied_count,
+                'deniedIdentityCount',
+                    denied_by_reason.denied_identity_count
+            )
+            ORDER BY denied_by_reason.reason
+        )
+        FROM denied_by_reason
+    ), '[]'::jsonb)
+)::text;
+"@
+$authorizationEvidence = Invoke-PostgresJsonQuery -Sql $authorizationSql
+
 $failedApiProbes = @($apiProbes | Where-Object { -not $_.succeeded })
 if ($failedApiProbes.Count -gt 0) {
     Add-Reason `
@@ -640,18 +792,86 @@ if ($expectedPlayers -gt 0) {
             -Message (
                 "The selected target reached {0}/{1} players." -f
                     $selectedSummary.maximumOnlinePlayers,
+                $expectedPlayers
+            )
+    }
+
+    $selectedAuthorization = @(
+        $authorizationEvidence.successByTarget |
+            Where-Object target -EQ $Target
+    )
+    $authorizedIdentityCount = if ($selectedAuthorization.Count -eq 0) {
+        0
+    } else {
+        [int]$selectedAuthorization[0].successfulIdentityCount
+    }
+    if ($authorizedIdentityCount -lt $expectedPlayers) {
+        Add-Reason `
+            -Reasons $reasons `
+            -Kind External `
+            -Code "fresh_authorization_stage_not_reached" `
+            -Message (
+                "The selected target recorded fresh launch authorization for " +
+                "{0}/{1} distinct identities during this stage." -f
+                    $authorizedIdentityCount,
                     $expectedPlayers
             )
     }
 }
 
+foreach ($requiredTier in $RequiredAuthorizationTiers) {
+    $tierAuthorization = @(
+        $authorizationEvidence.byTier |
+            Where-Object tier -EQ $requiredTier
+    )
+    if ($tierAuthorization.Count -eq 0 -or
+        [int]$tierAuthorization[0].successfulIdentityCount -lt 1) {
+        Add-Reason `
+            -Reasons $reasons `
+            -Kind External `
+            -Code (
+                "missing_authorization_tier_{0}" -f
+                    $requiredTier.ToLowerInvariant()
+            ) `
+            -Message (
+                "No fresh successful launch authorization was recorded for " +
+                "the $requiredTier tier during this stage."
+            )
+    }
+}
+
+foreach ($requiredDeniedReason in $RequiredDeniedReasons) {
+    $deniedEvidence = @(
+        $authorizationEvidence.deniedByReason |
+            Where-Object reason -EQ $requiredDeniedReason
+    )
+    if ($deniedEvidence.Count -eq 0 -or
+        [int]$deniedEvidence[0].deniedCount -lt 1) {
+        Add-Reason `
+            -Reasons $reasons `
+            -Kind External `
+            -Code (
+                "missing_denied_reason_{0}" -f
+                    $requiredDeniedReason.ToLowerInvariant()
+            ) `
+            -Message (
+                "No $requiredDeniedReason authorization denial was recorded " +
+                "during this stage."
+            )
+    }
+}
+
 if ($null -ne $velocityStatus) {
-    if ($velocityStatus.authorizerMode -ne "monitor") {
+    if ($velocityStatus.authorizerMode -ne $ExpectedAuthorizerMode) {
         Add-Reason `
             -Reasons $reasons `
             -Kind Technical `
-            -Code "authorizer_not_monitor" `
-            -Message "Velocity Authorizer is not in monitor mode."
+            -Code "authorizer_mode_mismatch" `
+            -Message (
+                "Velocity Authorizer mode is {0}; expected {1}." -f
+                    $velocityStatus.authorizerMode,
+                    $ExpectedAuthorizerMode
+            )
     }
     if ($velocityStatus.lobbyWhitelistEntries -ne 0 -or
         $velocityStatus.lobbyServerIp -ne "127.0.0.1" -or
@@ -676,7 +896,7 @@ $status = if ($technicalReasons.Count -gt 0) {
 }
 
 $evidence = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     status = $status
     stage = $Stage
     target = if ([string]::IsNullOrWhiteSpace($Target)) { $null } else { $Target }
@@ -696,6 +916,8 @@ $evidence = [ordered]@{
         maximumMetricAgeSeconds = $MaximumMetricAgeSeconds
         quiescentWhenEmptyTargets = @($QuiescentWhenEmptyTargets)
     }
+    requiredAuthorizationTiers = @($RequiredAuthorizationTiers)
+    requiredDeniedReasons = @($RequiredDeniedReasons)
     api = [ordered]@{
         probeCount = $apiProbes.Count
         failedProbeCount = $failedApiProbes.Count
@@ -710,12 +932,14 @@ $evidence = [ordered]@{
         }
     }
     accounts = $finalAccounts
+    authorization = $authorizationEvidence
     targets = @($targetSummaries)
     authorizer = if ($null -eq $velocityStatus) {
         $null
     } else {
         [ordered]@{
             mode = [string]$velocityStatus.authorizerMode
+            expectedMode = $ExpectedAuthorizerMode
             infrastructureTargets = [string]$velocityStatus.infrastructureTargets
             lobbyServerIp = [string]$velocityStatus.lobbyServerIp
             lobbyWhitelistEnabled = [string]$velocityStatus.lobbyWhitelistEnabled

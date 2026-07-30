@@ -68,6 +68,9 @@ Velocity `4.0.0` build `6` 和独立 Temurin Java `25.0.4+7`，并曾完成五�
 Via 回程和后端 `/hub` 已备份后退出活动路径；API `0.22.0` 与 Lobby Guard 已部署。
 当前剩余工作是完成真实切服与四级账号、切换 `enforce` 和目录强制登录，再执行
 `2/3/5/20` 人灰度。大厅任务、等级代理、指标、告警和备份必须始终保留。
+schema `2` 灰度工具、匿名授权聚合、enforce 闸门和目录强制登录的备份/自动恢复
+工具已于 2026-07-30 完成；它们不会替代真实正版身份和多人负载。执行顺序见
+[`GRAY_PILOT_AUTHORIZATION_CUTOVER.md`](GRAY_PILOT_AUTHORIZATION_CUTOVER.md)。
 
 owl9 的恐怖整蛊 Fabric `1.20.1` 后端已经安装官方 FabricProxy-Lite `2.6.0`，
 并与 owl5 Velocity 的 modern forwarding 密钥完成摘要核对和 ACL 加固。
