@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T03:54:52Z",
+  "sourceCommit": "e9faeff301d7512a03eef4dcc40b3cfa46f43b02",
+  "api": {
+    "host": "8.148.207.171",
+    "service": "hechao-launcher-api.service",
+    "serviceStatus": "active",
+    "version": "0.23.1",
+    "serverControlEnabled": true,
+    "databaseStatus": "ready",
+    "configurationBackupCreated": true,
+    "secretOutput": false
+  },
+  "agentArtifact": {
+    "version": "0.1.0",
+    "productVersion": "0.1.0+e9faeff301d7512a03eef4dcc40b3cfa46f43b02",
+    "sizeBytes": 73884366,
+    "sha256": "FE09808A3C075AFAF9523691E26A07C71B8E1FAC62B9DAFD0C3968D7613DE70C"
+  },
+  "summary": {
+    "managedTargets": 9,
+    "freshAgents": 2,
+    "runningTargets": 4,
+    "operations": 0,
+    "commands": 0
+  },
+  "targets": [
+    { "serverId": "activity", "agentId": "owl5", "online": true, "processId": 6112 },
+    { "serverId": "dollnight", "agentId": "owl5", "online": false, "processId": null },
+    { "serverId": "fanstreet", "agentId": "owl5", "online": false, "processId": null },
+    { "serverId": "lobby", "agentId": "owl5", "online": true, "processId": 6008 },
+    { "serverId": "survival1", "agentId": "owl5", "online": false, "processId": null },
+    { "serverId": "survival2", "agentId": "owl5", "online": true, "processId": 9428 },
+    { "serverId": "yugong", "agentId": "owl5", "online": false, "processId": null },
+    { "serverId": "pvp", "agentId": "owl9", "online": true, "processId": 7216 },
+    { "serverId": "pvp-purpur", "agentId": "owl9", "online": false, "processId": null }
+  ],
+  "deployment": {
+    "agentTask": "Hechao Launcher Server Control Agent",
+    "owl5Backup": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T034958Z",
+    "owl9Backup": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T034958Z",
+    "serverAction": "none",
+    "minecraftProcessIdsChanged": false
+  },
+  "verification": {
+    "agentTests": { "passed": 14, "failed": 0, "skipped": 0 },
+    "powerShell7Compliance": "passed",
+    "offlinePortProbeRegression": "passed",
+    "postEnableAgentErrors": 0
+  },
+  "safety": {
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "credentialsRecorded": false
+  }
+}

@@ -1,6 +1,7 @@
 # 赫朝服务端控制代理运维手册
 
-> 状态：代码已实现并完成本地自动验证，生产功能默认关闭。
+> 状态：已于 2026-07-31 在 owl5、owl9 与生产 API 启用；9 个目标、2 个代理和
+> 4 个运行中实例的只读心跳已验收，尚未执行生产服启停命令。
 >
 > 适用范围：管理员 Web 后台、API 控制队列、Windows 游戏 VPS 本机代理。
 >
@@ -157,6 +158,23 @@ pwsh.exe -NoLogo -NoProfile -File `
 示例配置
 [`server-control-agent.example.json`](../deploy/windows/server-control/server-control-agent.example.json)
 仅展示字段和冲突组，不代表任何生产路径。
+
+### 6.2 生产状态（2026-07-31）
+
+生产 API `0.23.1` 已启用 `ServerControl`，owl5 和 owl9 的代理计划任务均为
+`Running`。数据库实时核对结果为：
+
+- 受管服务器 `9` 个；
+- 30 秒内在线代理 `2` 个；
+- 运行中目标 `4` 个；
+- 待处理或历史服控操作 `0` 个，代理命令 `0` 个。
+
+本次部署只重启 `Hechao Launcher Server Control Agent` 计划任务。安装器返回
+`server_action=none`，owl5 的 Lobby、Survival2、Activity 以及 owl9 的恐怖整蛊服
+在部署前后 PID 保持不变。代理制品 SHA-256 为
+`FE09808A3C075AFAF9523691E26A07C71B8E1FAC62B9DAFD0C3968D7613DE70C`，源码提交为
+`e9faeff301d7512a03eef4dcc40b3cfa46f43b02`。完整证据见
+[`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
 
 ## 7. 验收与回滚
 
