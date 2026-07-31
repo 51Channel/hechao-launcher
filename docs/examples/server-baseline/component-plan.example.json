@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "documentKind": "hechao-new-server-component-plan",
+  "exampleOnly": true,
+  "consumedByProduction": false,
+  "planStatus": "draft",
+  "activity": {
+    "activityId": "ready-check",
+    "serverId": "activity-ready-check",
+    "controlTargetId": "activity-ready-check",
+    "profileId": "activity-ready-check-neoforge-1.21.11",
+    "displayName": "集合签到"
+  },
+  "runtime": {
+    "minecraftVersion": "1.21.11",
+    "loader": "NeoForge",
+    "loaderVersion": "21.11.42",
+    "javaMajorVersion": 21,
+    "serverDirectory": "E:\\Activities\\ready-check",
+    "startTaskName": "Hechao-Server-Activity-ReadyCheck"
+  },
+  "network": {
+    "velocityTarget": "activity",
+    "backendHost": "127.0.0.1",
+    "backendPort": 25568,
+    "conflictGroup": "owl5-activity-slot",
+    "publicDirectAccessAllowed": false,
+    "forwarding": {
+      "required": true,
+      "mode": "modern",
+      "implementation": null,
+      "reviewState": "blocked",
+      "requiredAction": "实时盘点并批准 NeoForge 1.21.11 的实际 forwarding 实现",
+      "secretOwner": "platform-operator",
+      "secretIncluded": false
+    }
+  },
+  "sharedPlatformComponents": [
+    {
+      "component": "HechaoVelocityAuthorizer",
+      "versionSnapshot": "0.4.0",
+      "sha256Snapshot": "D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120",
+      "layer": "velocity-singleton",
+      "action": "verify-existing",
+      "copyIntoBackend": false
+    },
+    {
+      "component": "HechaoLobbyGuard",
+      "versionSnapshot": "0.1.0",
+      "sha256Snapshot": "B0B7AA651994797B16B1271D332EF03A218F8BB8FEC3226CF0F705D74311DE99",
+      "layer": "internal-lobby-only",
+      "action": "exclude",
+      "copyIntoBackend": false
+    },
+    {
+      "component": "HechaoLuckPermsTierAgent",
+      "versionSnapshot": "0.1.0",
+      "sha256Snapshot": "35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B",
+      "layer": "internal-lobby-only",
+      "action": "exclude",
+      "copyIntoBackend": false
+    }
+  ],
+  "hostServices": [
+    {
+      "component": "Hechao.ServerControlAgent",
+      "versionSnapshot": "0.2.0",
+      "sha256Snapshot": "11CC411AECC1DFDA276FC4CD23E7653A13C3323C3DF495B1C1AD0B81FFBCC3BD",
+      "layer": "vps-host-singleton",
+      "action": "register-control-target",
+      "installIntoBackend": false,
+      "requiredBeforeProduction": true
+    },
+    {
+      "component": "Hechao.StatusCollector",
+      "versionSnapshot": "0.2.1",
+      "sha256Snapshot": "7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED",
+      "layer": "vps-host-singleton",
+      "action": "register-status-and-metrics-target",
+      "installIntoBackend": false,
+      "requiredBeforeProduction": true
+    },
+    {
+      "component": "world-backup-and-alerting",
+      "versionSnapshot": "repository-revision",
+      "sha256Snapshot": null,
+      "layer": "vps-host-capability",
+      "action": "register-world-restore-and-alert-targets",
+      "installIntoBackend": false,
+      "requiredBeforeProduction": true
+    }
+  ],
+  "backendComponents": [
+    {
+      "component": "HechaoServerMetrics-NeoForge",
+      "version": "1.21.11-0.1.0",
+      "sha256": "49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E",
+      "compatibleMinecraft": "1.21.11",
+      "compatibleLoader": "NeoForge",
+      "destination": "mods/HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar",
+      "capabilityOwner": "hechao-platform",
+      "required": true,
+      "verification": "专用服务端启动后生成新鲜 metrics.json，StatusCollector 成功读取"
+    }
+  ],
+  "activityComponents": [
+    {
+      "component": "hechao-ready-check",
+      "version": "0.1.0",
+      "sha256": null,
+      "sourceCommit": null,
+      "destination": "mods/hechao-ready-check-0.1.0.jar",
+      "side": "client-and-server",
+      "capabilityOwner": "ready-check-activity",
+      "requiredBeforeDeployment": true
+    }
+  ],
+  "excludedComponents": [
+    {
+      "component": "backend-luckperms-copy",
+      "reason": "等级执行能力只属于内部大厅和平台"
+    },
+    {
+      "component": "hub-or-lobby-transfer",
+      "reason": "启动器是唯一换服入口"
+    },
+    {
+      "component": "announcement-grave-tab-nametag-scoreboard-bundle",
+      "reason": "不属于基础组件，活动需求未声明"
+    },
+    {
+      "component": "bukkit-plugins-on-neoforge",
+      "reason": "原生 NeoForge 不加载 Bukkit 插件"
+    }
+  ],
+  "capabilityOwnership": [
+    {
+      "capability": "nametag-tab-scoreboard",
+      "owner": "ready-check-activity",
+      "conflictingComponentsAllowed": false
+    },
+    {
+      "capability": "death-and-spectator-rules",
+      "owner": "ready-check-activity-server",
+      "conflictingComponentsAllowed": false
+    },
+    {
+      "capability": "server-start-stop",
+      "owner": "Hechao.ServerControlAgent",
+      "conflictingComponentsAllowed": false
+    },
+    {
+      "capability": "velocity-authorization",
+      "owner": "HechaoVelocityAuthorizer",
+      "conflictingComponentsAllowed": false
+    }
+  ],
+  "deployment": {
+    "fileMode": "replace-managed-directories",
+    "deployWhileStopped": true,
+    "startAuthorized": false,
+    "directoryOnlineAuthorized": false,
+    "secretsIncluded": false
+  },
+  "validation": {
+    "beforeDeployment": [
+      "实时核验路径、端口、PID、任务、目录状态和备份",
+      "补齐活动 JAR 的源码提交和 SHA-256",
+      "解决 forwarding reviewState=blocked",
+      "确认每种能力只有一个组件所有者"
+    ],
+    "afterAuthorizedStart": [
+      "冲突组无第二个运行后端",
+      "公网不能直连后端",
+      "正确 UUID 和一次性授权成功",
+      "错误档案和无权限账号失败关闭",
+      "TPS MSPT GC CPU 内存和磁盘指标新鲜"
+    ],
+    "productionGates": [
+      "forwarding 已批准",
+      "备份和恢复已验证",
+      "管理员 fresh grant 已通过",
+      "目录中只有当前活动可进入",
+      "2/3/5/20 人按阶段验收"
+    ]
+  },
+  "rollback": {
+    "clientProfileVersion": null,
+    "serverRelease": null,
+    "componentBackup": null,
+    "worldBackup": null,
+    "restoreVerified": false,
+    "restartAfterRollbackAuthorized": false
+  }
+}

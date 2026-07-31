@@ -178,10 +178,19 @@ if ($ClientHash -ne $ServerHash) { throw 'Client/server activity JAR mismatch.' 
 profile-activity-ready-check-neoforge-1.21.11-v1.0.0
 ```
 
-## 8. 服务端控制目标
+## 8. 基础组件计划与服务端控制目标
 
-在 owl5 的无秘密服控模板中增加独立目标，不能覆盖现有 `activity`、`fanstreet` 或
-`yugong`：
+在创建服务端目录前，先从
+[`component-plan.example.json`](server-baseline/component-plan.example.json) 建立本活动的
+组件计划。样例故意把 NeoForge `1.21.11` forwarding 标记为 `blocked`：接手者必须实时
+盘点并批准实际实现，不能因为指标模组已经存在就误认为身份转发也已经解决。
+
+本案例后端只应包含活动共同 JAR、NeoForge 对应指标模组和获批的 forwarding 实现。
+Velocity Authorizer 留在代理；Lobby Guard 和 LuckPerms Tier Agent 留在内部大厅；
+ServerControlAgent、StatusCollector、世界备份和告警通过主机目标注册，不复制到 `mods`。
+
+组件计划通过审查后，在 owl5 的无秘密服控模板中增加独立目标，不能覆盖现有
+`activity`、`fanstreet` 或 `yugong`：
 
 ```json
 {

@@ -17,6 +17,7 @@
 凡涉及 Minecraft 活动、活动客户端档案、活动服部署或活动切换，必须先读取：
 
 - `docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md`
+- `docs/HECHAO_NEW_SERVER_BASELINE.md`
 - `docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md`
 - `docs/DISTRIBUTION_OPERATIONS.md`
 - `docs/SERVER_CONTROL_AGENT_OPERATIONS.md`
@@ -30,6 +31,8 @@
 - 不得把新活动接到 `survival2`、`lobby`、`pvp` 或其他游戏服目标。
 - 不同 Minecraft 版本、加载器或独立模组集合使用不同客户端档案和可写 `.minecraft`；
   同一活动的兼容修复才在原档案上升版。
+- 新物理后端必须先填写组件计划，按代理单例、内部大厅、VPS 主机和后端加载器分层
+  接入；不得复制大厅、Survival 或旧活动服的完整 `plugins/mods/config` 目录。
 - 启动器是唯一换服入口。活动代码不得增加 `/hub`、大厅 NPC、自动回大厅或代理回退。
 - 服务端对玩法状态拥有最终权威；客户端数据必须验证、限流并在正确线程应用。
 - 部署默认以停服状态结束。没有当前任务中的明确授权，不启动、重启或切换生产后端。

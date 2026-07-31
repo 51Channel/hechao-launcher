@@ -18,9 +18,10 @@
 
 ```text
 这是赫朝 Minecraft 活动开发任务。先读取仓库根目录 AGENTS.md、
-docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md 和其中列出的权威文档。
+docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md、docs/HECHAO_NEW_SERVER_BASELINE.md
+和其中列出的权威文档。
 先盘点 Git、当前客户端档案、目录记录、活动槽后端、端口、进程、计划任务、
-冲突组、备份和回滚点，再提出本次最小变更范围。
+冲突组、基础组件计划、备份和回滚点，再提出本次最小变更范围。
 
 所有玩家活动统一使用 Velocity 目标 activity；不得改用 survival2、lobby 或 pvp。
 不同加载器/版本/独立模组集合必须隔离客户端档案。服务端权威校验客户端请求。
@@ -30,7 +31,8 @@ docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md 和其中列出的权威文档。
 
 Codex 读取顺序：
 
-1. 本文和[轻量案例](examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md)。
+1. 本文、[新服务端基础组件规范](HECHAO_NEW_SERVER_BASELINE.md)和
+   [轻量案例](examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md)。
 2. [`README.md`](../README.md) 与
    [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md)。
 3. [`DISTRIBUTION_OPERATIONS.md`](DISTRIBUTION_OPERATIONS.md) 与
@@ -102,6 +104,8 @@ flowchart LR
     正版 UUID、平台一次性授权和服务端权限。玩家名称只能展示，不能作为持久主键。
 12. **目录驱动**：正常新增活动不需要在启动器中写死新卡片。签名客户端档案与后台目录
     记录会驱动下载和展示；只有现有平台契约无法表达需求时才修改启动器/API。
+13. **组件分层**：新后端按 Velocity 单例、内部大厅、VPS 主机和后端加载器建立组件
+    计划；不得复制大厅、Survival 或旧活动服的整个 `plugins/mods/config` 目录。
 
 ## 4. 标识、目录与版本规范
 
@@ -144,6 +148,8 @@ flowchart LR
 
 开发前填写
 [`activity-spec.example.json`](examples/activity-channel/activity-spec.example.json) 的副本，
+并填写
+[`component-plan.example.json`](examples/server-baseline/component-plan.example.json) 的副本，
 至少确认：
 
 - 玩法目标、回合状态机、人数范围和预计时长；
@@ -152,9 +158,11 @@ flowchart LR
 - 四个稳定 ID、物理目录、计划任务、端口和冲突组；
 - 地图来源、世界是否保留、备份和恢复目标；
 - 最低 LuckPerms 等级、白名单、开放和关闭时间；
+- 平台单例、大厅专用、主机级和后端组件的接入或排除决定；
+- forwarding、深度指标实现、组件所有者、精确版本和 SHA-256；
 - 20 人性能预算、风险、回滚版本和负责人。
 
-样例 JSON 只用于交接和审查，生产程序不会读取它。不能把它误传为 API 配置。
+两份样例 JSON 只用于交接和审查，生产程序不会读取。不能把它们误传为 API 配置。
 
 ## 5. 玩法与协议开发规范
 
@@ -238,10 +246,12 @@ Minecraft 世界状态不是通用线程安全对象。“改成异步”只能�
 
 1. 在平台仓库和活动源码仓库分别运行 `git status --short --branch`。
 2. 确认 Minecraft、加载器、Java 和依赖版本，不凭文件名猜兼容性。
-3. 记录当前正式档案、服务端发布、世界备份和回滚目标。
-4. 建立范围明确的分支，例如 `feat/activity-ready-check` 或
+3. 按 [`HECHAO_NEW_SERVER_BASELINE.md`](HECHAO_NEW_SERVER_BASELINE.md) 完成组件计划；
+   未确认的 forwarding、指标或主机注册明确标为阻塞，不强装近似 JAR。
+4. 记录当前正式档案、服务端发布、世界备份和回滚目标。
+5. 建立范围明确的分支，例如 `feat/activity-ready-check` 或
    `fix/activity-spectator-rescue`。
-5. 将玩法规则先写成纯逻辑测试，再连接 Minecraft API。
+6. 将玩法规则先写成纯逻辑测试，再连接 Minecraft API。
 
 仓库不干净时只处理自己的文件；不能通过 `git reset --hard`、`git checkout --` 或
 删除目录清理他人工作。
@@ -385,6 +395,12 @@ SHA-256、活动共同 JAR SHA-256 和构建提交。输出目录已存在时先
 采集、深度指标、世界备份、告警和恢复清单。启动任务只对应一个目录和一个服务端，且
 必须使用 PowerShell 7 受管入口。
 
+创建目录或部署 JAR 前，必须先按
+[`HECHAO_NEW_SERVER_BASELINE.md`](HECHAO_NEW_SERVER_BASELINE.md) 审查组件计划。Velocity
+Authorizer 只属于代理，Lobby Guard、LuckPerms Tier Agent 只属于内部大厅，服控和状态
+采集器属于 VPS 主机；它们都不能被复制进活动后端。后端只安装与真实加载器精确兼容的
+一个 forwarding 实现、一个指标实现和需求单批准的活动组件。
+
 ### 8.2 部署前门槛
 
 1. 目录状态设为 `Maintenance` 或 `Closed`，停止签发新的可进入授权。
@@ -392,7 +408,9 @@ SHA-256、活动共同 JAR SHA-256 和构建提交。输出目录已存在时先
 3. 核对当前 `25568` 监听 PID、Java 命令行、工作目录、核心和冲突组。
 4. 对当前世界执行服务端保存、正式备份、SHA-256 和恢复可读性检查。
 5. 备份服务端 JAR、`mods`/`plugins`、配置、启动文件、任务定义和最近日志。
-6. 记录回滚目标和磁盘余量，确认没有遗留 `.partial` 或未完成部署。
+6. 对照组件计划确认所有 JAR 的来源、版本、SHA-256、唯一所有者和加载器兼容性；
+   任一 forwarding、指标、备份或身份项阻塞时停止部署。
+7. 记录回滚目标和磁盘余量，确认没有遗留 `.partial` 或未完成部署。
 
 若活动不保留旧地图，仍要先归档旧世界并验证备份，再按明确发布说明删除或替换；不能
 把“让世界自动生成”当作无备份删除理由。
@@ -402,6 +420,8 @@ SHA-256、活动共同 JAR SHA-256 和构建提交。输出目录已存在时先
 - 服务端必须先停止，再修改受管文件；禁止热替换正在加载的 JAR。
 - 发布说明明确选择 `replace` 或 `overlay`。默认对受管 `mods/plugins/config` 采用干净
   替换并保留声明的可变文件，不把历史插件和配置无差别融合进新活动。
+- 不复制大厅、Survival 或旧活动服的整个目录。平台单例、大厅专用和主机级组件按
+  组件计划核验或注册，不进入后端 `plugins/mods`。
 - 在隔离暂存目录解压，校验文件清单、大小、SHA-256、加载器、Java 和禁止文件，再切换
   到目标目录。任一步失败保留当前正式目录。
 - 客户端共同 JAR 与服务端 JAR 哈希一致；服务端专用和客户端专用依赖分别列明。
@@ -505,6 +525,7 @@ Codex 最终报告必须包含：
 源码提交与标签：
 客户端档案 ID/版本/清单 SHA-256：
 服务端目录/控制目标/核心/Java：
+组件计划：forwarding/指标/主机注册/明确排除项
 玩家入口：velocityTarget=activity
 测试：自动测试、专用服务端、真实人数矩阵
 生产动作：备份、部署、是否启动、目录状态
@@ -522,6 +543,8 @@ Codex 最终报告必须包含：
 - 活动档案签名、验签、全对象校验、干净安装、修复和回滚通过；
 - 目录记录绑定正确档案，`velocityTarget` 为 `activity`；
 - 物理后端属于 `owl5-activity-slot`，同槽无第二个运行实例；
+- 新服务端组件计划符合 `HECHAO_NEW_SERVER_BASELINE.md`，平台单例、大厅专用、主机级
+  和后端组件没有混装，forwarding 与指标均精确兼容；
 - 大厅、Survival2、PVP 和其他玩家服未被改成活动回退；
 - 世界和配置有可验证备份，回滚步骤经过演练；
 - 心跳、TPS/MSPT/GC、CPU、内存、磁盘和告警均可观察；

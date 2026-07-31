@@ -127,6 +127,8 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 
 活动客户端、服务端、活动槽、档案发布和回滚的统一开发规范见
 [`docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md`](docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md)，
+新物理后端的基础组件分层、加载器兼容、forwarding、指标和组件计划见
+[`docs/HECHAO_NEW_SERVER_BASELINE.md`](docs/HECHAO_NEW_SERVER_BASELINE.md)，
 接手 Codex 可从
 [`docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md`](docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md)
 的轻量案例开始。

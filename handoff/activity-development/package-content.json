@@ -69,6 +69,34 @@
       "destination": "deploy/windows/server-control"
     },
     {
+      "source": "deploy/windows/server-heartbeats",
+      "destination": "deploy/windows/server-heartbeats"
+    },
+    {
+      "source": "deploy/windows/server-metrics",
+      "destination": "deploy/windows/server-metrics"
+    },
+    {
+      "source": "deploy/windows/mod-server-metrics",
+      "destination": "deploy/windows/mod-server-metrics"
+    },
+    {
+      "source": "deploy/windows/world-backup",
+      "destination": "deploy/windows/world-backup"
+    },
+    {
+      "source": "deploy/windows/velocity-authorizer",
+      "destination": "deploy/windows/velocity-authorizer"
+    },
+    {
+      "source": "deploy/windows/luckperms-tier-agent",
+      "destination": "deploy/windows/luckperms-tier-agent"
+    },
+    {
+      "source": "deploy/windows/pvp-velocity",
+      "destination": "deploy/windows/pvp-velocity"
+    },
+    {
       "source": "src/Hechao.Contracts",
       "destination": "src/Hechao.Contracts"
     },
@@ -89,12 +117,40 @@
       "destination": "src/Hechao.ServerControlAgent"
     },
     {
+      "source": "src/Hechao.StatusCollector",
+      "destination": "src/Hechao.StatusCollector"
+    },
+    {
+      "source": "src/Hechao.VelocityAuthorizer",
+      "destination": "src/Hechao.VelocityAuthorizer"
+    },
+    {
+      "source": "src/Hechao.LobbyGuard",
+      "destination": "src/Hechao.LobbyGuard"
+    },
+    {
+      "source": "src/Hechao.LuckPermsTierAgent",
+      "destination": "src/Hechao.LuckPermsTierAgent"
+    },
+    {
+      "source": "src/Hechao.ServerMetricsAgent",
+      "destination": "src/Hechao.ServerMetricsAgent"
+    },
+    {
+      "source": "src/Hechao.ModServerMetricsAgent",
+      "destination": "src/Hechao.ModServerMetricsAgent"
+    },
+    {
       "source": "tests/Hechao.Distribution.Tests",
       "destination": "tests/Hechao.Distribution.Tests"
     },
     {
       "source": "tests/Hechao.ServerControlAgent.Tests",
       "destination": "tests/Hechao.ServerControlAgent.Tests"
+    },
+    {
+      "source": "tests/Hechao.StatusCollector.Tests",
+      "destination": "tests/Hechao.StatusCollector.Tests"
     }
   ],
   "fileMappings": [
@@ -129,6 +185,22 @@
     {
       "source": "tools/Test-ActivityDevelopmentHandoff.ps1",
       "destination": "tools/Test-ActivityDevelopmentHandoff.ps1"
+    },
+    {
+      "source": "tools/server/Install-HechaoStatusCollector.ps1",
+      "destination": "tools/server/Install-HechaoStatusCollector.ps1"
+    },
+    {
+      "source": "tools/server/Install-HechaoLobbyGuard.ps1",
+      "destination": "tools/server/Install-HechaoLobbyGuard.ps1"
+    },
+    {
+      "source": "tools/server/Install-HechaoVelocityAuthorizer.ps1",
+      "destination": "tools/server/Install-HechaoVelocityAuthorizer.ps1"
+    },
+    {
+      "source": "tools/server/Set-HechaoVelocityAuthorizerMode.ps1",
+      "destination": "tools/server/Set-HechaoVelocityAuthorizerMode.ps1"
     }
   ],
   "excludedPathSegments": [

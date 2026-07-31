@@ -9,16 +9,17 @@
 2. 让 Codex 从本目录启动，它会自动读取根目录 [`AGENTS.md`](AGENTS.md)。
 3. 把 [`01-给Codex的首条消息.md`](01-给Codex的首条消息.md) 填好后发给 Codex。
 4. 使用 [`02-新活动需求单模板.md`](02-新活动需求单模板.md) 固定玩法、版本和边界。
-5. 实施前完整阅读
-   [`docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md`](docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md)。
+5. 实施前完整阅读活动通道总规范和
+   [`docs/HECHAO_NEW_SERVER_BASELINE.md`](docs/HECHAO_NEW_SERVER_BASELINE.md)。
 6. 第一次接入先走
    [`docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md`](docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md)
    的轻量案例，不直接拿生产活动练手。
 
-## 当前最重要的五条规则
+## 当前最重要的六条规则
 
 - 所有玩家活动统一使用 Velocity 目标 `activity`。
 - owl5 `127.0.0.1:25568` 属于 `owl5-activity-slot`，同一时刻只运行一个活动后端。
+- 新服务端先建立组件计划；不得复制大厅、Survival 或旧活动服的完整插件/模组目录。
 - 不同 Minecraft 版本、加载器或独立模组集合使用独立客户端档案和可写 `.minecraft`。
 - 启动器是唯一换服入口，不添加 `/hub`、大厅 NPC、自动回大厅或代理失败回退。
 - 部署默认保持停服；没有当前任务的明确授权，不启动、重启或切换生产后端。
@@ -35,9 +36,9 @@
 06-常见错误与处理.md             既有故障和禁止做法
 AGENTS.md                        本包内 Codex 强制指令
 docs/                            当前仓库规范、案例、发布记录和历史证据快照
-src/                             与目录、档案、分发和服控有关的关键代码参考
+src/                             与目录、档案、分发、服控、授权和基础组件有关的代码参考
 tests/                           相关自动测试参考
-deploy/                          无秘密服控脚本与配置模板
+deploy/                          无秘密服控、指标、forwarding、备份和主机接入参考
 tools/                           客户端档案准备和规范校验工具
 PACKAGE-INFO.json                来源提交和生成信息
 MANIFEST.json                    每个交接文件的长度与 SHA-256
