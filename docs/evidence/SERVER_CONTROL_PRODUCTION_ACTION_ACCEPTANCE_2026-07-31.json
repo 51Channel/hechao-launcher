@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T04:46:45Z",
+  "source": "Production API database, authenticated admin page and direct VPS process readback",
+  "api": {
+    "version": "0.23.1",
+    "serviceStatus": "active",
+    "serviceRestarts": 0,
+    "publicHealthStatusCode": 200
+  },
+  "adminPage": {
+    "authenticated": true,
+    "managedTargets": 9,
+    "onlineAgents": 2,
+    "runningTargets": 5,
+    "activeOperations": 0,
+    "targetCardsRendered": true,
+    "emptyStateRendered": false
+  },
+  "operations": [
+    {
+      "serverId": "survival1",
+      "action": "Start",
+      "status": "Succeeded",
+      "attemptCount": 1,
+      "resultCode": "STARTED",
+      "processId": 2576
+    },
+    {
+      "serverId": "pvp",
+      "meaning": "HorrorPrank",
+      "action": "Stop",
+      "status": "Succeeded",
+      "attemptCount": 1,
+      "resultCode": "STOPPED",
+      "previousProcessId": 7216,
+      "previousProcessStillPresent": false
+    },
+    {
+      "serverId": "pvp-purpur",
+      "meaning": "PVP",
+      "action": "Start",
+      "status": "Succeeded",
+      "attemptCount": 1,
+      "resultCode": "STARTED",
+      "processId": 2912
+    }
+  ],
+  "currentProcesses": {
+    "owl5": [2576, 6008, 6112, 9428],
+    "owl9": [2912]
+  },
+  "remainingAcceptance": [
+    "Structured Restart action",
+    "Quick server.properties settings",
+    "Allowed and rejected terminal commands",
+    "Conflict-group automatic stop-before-start path"
+  ],
+  "safety": {
+    "operationsInitiatedByCodex": false,
+    "stateRevertedByCodex": false,
+    "credentialsRecorded": false,
+    "sourceIpRecorded": false,
+    "administratorIdentityRecorded": false
+  }
+}

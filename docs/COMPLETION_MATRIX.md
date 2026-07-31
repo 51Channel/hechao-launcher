@@ -2,7 +2,7 @@
 
 > 更新时间：`2026-07-31`
 >
-> 当前生产：启动器 `0.13.6`、API `0.22.0-20260729T144953Z`、
+> 当前生产：启动器 `0.13.7`、API `0.23.1`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -104,7 +104,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 玩家搜索、等级和单服授权管理 | 已实现待生产验收 | 玩家搜索、单服规则和受控四级全局等级入口均已上线；大厅代理已加载，仍需专门测试账号完成四级改回与拒绝路径 |
 | 账号、设备会话与 Minecraft UUID 封禁 | 已实现待生产验收 | 功能自 API `0.16.0` 上线并保留在当前 `0.22.0`；账号停用/恢复、单设备和全部会话撤销、UUID 定时封禁、论坛既有 Cookie 联动、并发保护、Velocity/目录拒绝及审计均通过隔离与生产链路验收。真实管理员 MFA 已登记，仍待在生产页面逐项操作验收 |
 | 审计日志查看 | 已完成 | 目录写入、登录与 MFA 事件可查询 |
-| 服控面板、冲突编排、快捷设置与终端 | 已上线待动作验收 | 结构化启动/停止/重启队列、冲突组先停后启、失败取消、双重校验、审计、五项 `server.properties` 快捷设置和命令前缀白名单已接入生产。两台代理持续上报 9 个目标，当前 2 个代理在线、4 个实例运行；部署未改变游戏 PID，首次真实启停仍限定为专用无玩家目标，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 和 [`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json) |
+| 服控面板、冲突编排、快捷设置与终端 | 已上线待完整动作验收 | 结构化队列、双重校验、审计、快捷设置和命令白名单已接入生产。后台已正常渲染 9 个目标、2 个在线代理和 5 个运行中实例；管理员发起的 Survival1 启动、恐怖整蛊停止和真正 PVP 启动均一次成功。结构化重启、快捷设置、终端允许/拒绝和冲突组自动切换仍待逐项验收，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 和 [`evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json) |
 
 ## 4. 服务端授权与状态
 
@@ -120,7 +120,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊持续上报；两机只读采集器均为 `0.2.1` 且计划任务返回 `0`。API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；真正 PVP 未接入该心跳 |
 | TPS、MSPT、进程内存和启动时间 | 已完成 | 五个运行目标的代理均已加载；采集器 `0.2.1` 将 Activity 在线零玩家时的 NeoForge Tick 暂停表示为 `paused-when-empty`，不发送旧数值或伪造时间，有玩家时仍硬拒绝过期指标。严格 60 秒预检中 API `22/22`、p95 `180.846 ms`、大厅始终 `0` 人且最终活动 Critical 为 `0`；20 至 30 人负载仍是独立外部门槛 |
 | 管理后台状态与错误摘要 | 已完成 | API `0.22.0` 的既有八个页面模块已完成服务器端 `32` 项技术检查，并于 2026-07-30 从正确启动器创建新票据、完成 MFA 后逐页目视复核；24 小时、7 天、30 天样本、五目标心跳、Lobby 零玩家、实时告警、诊断包与 MFA 审计均可见。当前仅有恐怖整蛊磁盘余量警告，未在只读验收中确认或修改，见 [`evidence/ADMIN_WEB_VISUAL_ACCEPTANCE_2026-07-30.json`](evidence/ADMIN_WEB_VISUAL_ACCEPTANCE_2026-07-30.json) |
-| 远程启动、停止、重启 | 已上线待动作验收 | 第九个“服控面板”已接入生产：9 个目标、2 个在线代理、4 个运行中实例已入库，代理安装未触碰游戏进程。管理员操作仍要求当前后台 MFA 会话、完整服务器 ID 二次确认和原因；首次真实启停继续限定为专用无玩家目标 |
+| 远程启动、停止、重启 | 已上线待重启验收 | 管理后台已显示 9 个目标、2 个在线代理和 5 个运行中实例；Survival1 启动、恐怖整蛊停止和真正 PVP 启动均成功，数据库结果与 VPS PID 一致。结构化 `Restart` 动作仍待单独验收 |
 
 ## 5. 运维与正式上线
 

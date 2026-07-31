@@ -1,7 +1,7 @@
 # 赫朝服务端控制代理运维手册
 
-> 状态：已于 2026-07-31 在 owl5、owl9 与生产 API 启用；9 个目标、2 个代理和
-> 4 个运行中实例的只读心跳已验收，尚未执行生产服启停命令。
+> 状态：已于 2026-07-31 在 owl5、owl9 与生产 API 启用；后台已显示 9 个目标、
+> 2 个代理和 5 个运行中实例，三项管理员启停操作均已成功。
 >
 > 适用范围：管理员 Web 后台、API 控制队列、Windows 游戏 VPS 本机代理。
 >
@@ -175,6 +175,21 @@ pwsh.exe -NoLogo -NoProfile -File `
 `FE09808A3C075AFAF9523691E26A07C71B8E1FAC62B9DAFD0C3968D7613DE70C`，源码提交为
 `e9faeff301d7512a03eef4dcc40b3cfa46f43b02`。完整证据见
 [`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
+
+### 6.3 管理员动作验收（2026-07-31）
+
+生产后台在完成 MFA 后已正常渲染 9 个服务器目标，不再显示空状态。管理员随后发起
+三项操作，API、代理与 VPS 进程读回结果一致：
+
+- `survival1` 启动成功，PID 为 `2576`；
+- `pvp`（恐怖整蛊）停止成功，原 PID `7216` 已不存在；
+- `pvp-purpur`（真正 PVP）启动成功，PID 为 `2912`。
+
+三条命令均为一次尝试成功，当前无进行中操作。当前生产为 9 个目标、2 个在线代理、
+5 个运行中实例、3 条已完成操作和 3 条已完成命令。本次 Codex 只做数据库、页面和
+进程读回，没有发起或撤销这些管理员操作。结构化重启、快捷设置、终端命令白名单
+与冲突组自动先停后启仍需分别验收。完整证据见
+[`evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json)。
 
 ## 7. 验收与回滚
 
