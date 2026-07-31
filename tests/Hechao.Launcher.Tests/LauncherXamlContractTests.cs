@@ -123,6 +123,23 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void ClientProfileActions_AreHostedInReadinessPanel()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var readinessPanel = document.Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value == "ClientReadinessPanel");
+        var actionsPanel = document.Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value == "ClientProfileActionsPanel");
+
+        Assert.Contains(readinessPanel, actionsPanel.Ancestors());
+        Assert.Equal("5", actionsPanel.Attribute("Grid.Row")?.Value);
+        Assert.Equal(4, actionsPanel.Elements(presentation + "Button").Count());
+    }
+
+    [Fact]
     public void ServerDetails_HidesTheRedundantScrollbar()
     {
         var document = LoadLauncherXaml();
