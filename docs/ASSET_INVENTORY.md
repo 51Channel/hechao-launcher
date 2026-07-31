@@ -166,6 +166,22 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   启动器 `0.10.0` 私有安装包为 `61,796,065` 字节。
 - Bucket 版本控制已开启，OSS 会忽略 `x-oss-forbid-overwrite`。活动首次上传因此为 `4,551` 个共享摘要创建同内容新版本，真正新增 `203` 个摘要、`152,843,997` 字节。发布器 `0.7.0` 已改为先校验当前对象长度与 SHA-256 元数据，匹配则跳过，不匹配则硬失败；生产全量复验结果为 `0` 个上传、`4,754` 个跳过、`0` 上传字节。完整记录见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
+- 启动器当前正式版本为 `0.13.6`，制品源码提交为
+  `667a15a9eb48cfb2264c3d2f085abc7cbbe1c070`，正式标签为
+  `launcher-v0.13.6`。单文件 EXE 为 `68,855,341` 字节，SHA-256 为
+  `2365C71C4F8348C9FD13ECABF7BCB2A9B4117D06D472A2C4093A88AA654DFAA2`；
+  NSIS 为 `61,904,234` 字节，SHA-256 为
+  `9A5F09BD5084C4C926598184A536825B4F59A0116571D255D4603F7CD54A4C03`。
+  两者均为 `NotSigned`。完整解决方案 `456/456`，启动器 `134/134`。
+- `0.13.6` 私有 OSS 对象匿名读取 `403`、两轮签名回读 `200`，长度与
+  SHA-256 一致；正式客户端 `0.13.5 -> 0.13.6` 自更新、状态保留和注册表
+  `DisplayVersion=0.13.6` 均已验收。`0.13.5` 仅为内部验收构建，不建标签、
+  不作为正式回滚目标，其既有不可变对象不得覆盖。
+- 生产更新通道当前为 `LatestVersion=0.13.6`、
+  `MinimumSupportedVersion=0.12.3`；API 服务为 `active`、`NRestarts=0`，
+  公网健康与就绪均为 `200`。详细记录见
+  [`LAUNCHER_RELEASE_0.13.6.md`](LAUNCHER_RELEASE_0.13.6.md)。
+
 ## 2. 主 Minecraft VPS：owl5
 
 | 项目 | 当前值 | 证据状态 |
@@ -377,9 +393,12 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 
 ## 5. 当前 API 部署状态
 
+> 启动器更新通道已在 `2026-07-31` 切换到 `launcher-v0.13.6`；下方 API
+> 发布 ID 与其他组件标签保持各自独立版本。
+
 - 发布 ID：`0.22.0-20260729T144953Z`
-- API `0.22.0`、基础设施角色、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.12.3` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
-- Git 标签：`launcher-v0.12.3` 指向制品源码提交 `e6a160c46b89e2d5e607363e662b327760930324`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理
+- API `0.22.0`、基础设施角色、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.13.6` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
+- 启动器正式标签为 `launcher-v0.13.6`，制品源码提交为 `667a15a9eb48cfb2264c3d2f085abc7cbbe1c070`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
