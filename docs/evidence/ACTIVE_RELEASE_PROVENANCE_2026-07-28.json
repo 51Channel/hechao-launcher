@@ -1,48 +1,45 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-29T23:38:46.5830373Z",
+  "generatedAtUtc": "2026-07-31T02:29:00Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.12.3",
-      "releaseTag": "launcher-v0.12.3",
-      "releaseCommit": "e6a160c46b89e2d5e607363e662b327760930324",
-      "taggedAt": "2026-07-30T07:37:09+08:00",
+      "version": "0.13.6",
+      "releaseTag": "launcher-v0.13.6",
+      "releaseCommit": "e6bdb3a3af58ffcfc8f6d7e3af8d654525626c95",
+      "taggedAt": "2026-07-31T10:24:57+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "e6a160c46b89e2d5e607363e662b327760930324"
+        "value": "667a15a9eb48cfb2264c3d2f085abc7cbbe1c070"
       },
-      "deploymentState": "private-oss-published-awaiting-real-player-gray",
+      "deploymentState": "production-private-oss-self-update-enabled",
+      "historicalNote": "0.13.5 was an internal acceptance build only. It has no release tag and is not a formal rollback target.",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 68793918,
-          "sha256": "18CF9772099EA1CA6FFEC7B8588CFFBFC3137FDACCD733291CC1242423518E07",
+          "size": 68855341,
+          "sha256": "2365C71C4F8348C9FD13ECABF7BCB2A9B4117D06D472A2C4093A88AA654DFAA2",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.12.3-win-x64.exe",
-          "location": "releases/launcher/0.12.3/Hechao-Launcher-Setup-0.12.3-win-x64.exe",
-          "size": 61874260,
-          "sha256": "18E786560AF14C246EFF84638BABBE8E1CC02CBFB1E1065AD9501468C20603C6",
+          "name": "Hechao-Launcher-Setup-0.13.6-win-x64.exe",
+          "location": "releases/launcher/0.13.6/Hechao-Launcher-Setup-0.13.6-win-x64.exe",
+          "size": 61904234,
+          "sha256": "9A5F09BD5084C4C926598184A536825B4F59A0116571D255D4603F7CD54A4C03",
           "primary": true
         }
       ],
       "rollback": {
-        "kind": "release-tag",
-        "target": "launcher-v0.12.2"
+        "kind": "update-channel-disable-and-forward-release",
+        "target": "disable LauncherUpdates; if code rollback is required, publish a higher version from source commit 029160bdc05d4c8e78ad4bae594efd09f7de7bef"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.12.3.md",
-        "docs/PRELAUNCH_PILOT_0.12.3.md",
-        "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json",
-        "docs/evidence/ACTIVITY_NEOFORGE_PATH_COMPATIBILITY_2026-07-30.json",
-        "docs/evidence/ACTIVITY_NEOFORGE_NATIVE_RUN_DIRECTORY_2026-07-30.json",
-        "docs/evidence/LAUNCHER_API_FAILURE_RECOVERY_2026-07-30.json",
-        "docs/evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json"
+        "docs/LAUNCHER_RELEASE_0.13.6.md",
+        "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
+        "docs/evidence/LAUNCHER_0.13.6_RELEASE_ACCEPTANCE_2026-07-31.json"
       ]
     },
     {
