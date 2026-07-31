@@ -73,7 +73,9 @@
     "finalDisplayVersion": "0.13.6",
     "settingsHashPreservedDuringRepair": true,
     "sessionHashPreservedDuringRepair": true,
-    "automaticRollbackPrepared": true
+    "registryAndStateRollbackPrepared": true,
+    "installDirectoryBackupVerified": false,
+    "repairSucceededWithoutRollback": true
   },
   "proxyMode": {
     "defaultUseSystemProxy": false,
