@@ -3326,50 +3326,69 @@
             </Border>
 
             <!-- Launcher self-update -->
-            <Grid Grid.ColumnSpan="3"
+            <Grid x:Name="LauncherUpdateOverlay"
+                  Grid.ColumnSpan="3"
                   Grid.RowSpan="2"
                   Panel.ZIndex="50"
-                  Background="#99000000"
+                  Background="#990F1110"
                   Visibility="{Binding IsLauncherUpdateVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <Border Width="520"
-                        Padding="28"
+                <Border x:Name="LauncherUpdateDialog"
+                        Width="560"
+                        MaxHeight="540"
+                        Margin="24"
+                        Padding="30"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="6">
-                    <StackPanel>
-                        <Grid>
+                        Style="{StaticResource SurfacePanelStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="46" />
+                                <ColumnDefinition Width="54" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="38"
-                                    Height="38"
+                            <Border Width="44"
+                                    Height="44"
                                     HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
                                     Background="{StaticResource HechaoRedSoftBrush}"
-                                    CornerRadius="4">
+                                    BorderBrush="#FFD8B2AD"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
                                 <controls:IconParkIcon Kind="Download"
-                                                       Width="18"
-                                                       Height="18"
+                                                       Width="20"
+                                                       Height="20"
                                                        Foreground="{StaticResource HechaoRedDarkBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center" />
                             </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1"
+                                        Margin="0,0,16,0"
+                                        VerticalAlignment="Center">
                                 <TextBlock Text="{Binding LauncherUpdateTitle}"
                                            FontSize="20"
                                            FontWeight="Black" />
                                 <TextBlock Text="{Binding LauncherUpdateSummary}"
-                                           FontSize="12"
+                                           Margin="0,5,0,0"
+                                           FontSize="13"
                                            Foreground="{StaticResource InkMutedBrush}"
-                                           Margin="0,4,0,0" />
+                                           TextWrapping="Wrap"
+                                           TextTrimming="None" />
                             </StackPanel>
                             <Border Grid.Column="2"
                                     Padding="9,5"
+                                    VerticalAlignment="Top"
                                     Background="{StaticResource HechaoRedSoftBrush}"
+                                    BorderBrush="#FFD8B2AD"
+                                    BorderThickness="1"
                                     CornerRadius="3"
                                     Visibility="{Binding IsLauncherUpdateRequired, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="必须更新"
@@ -3379,58 +3398,96 @@
                             </Border>
                         </Grid>
 
-                        <Border Height="1"
-                                Background="{StaticResource BorderBrush}"
-                                Margin="0,22,0,18" />
-                        <TextBlock Text="{Binding LauncherUpdateReleaseNotes}"
-                                   FontSize="13"
-                                   LineHeight="22"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding LauncherUpdateSizeText, StringFormat=安装包大小：{0}}"
-                                   FontFamily="Segoe UI"
-                                   FontSize="11"
-                                   Foreground="{StaticResource InkMutedBrush}"
-                                   Margin="0,12,0,0" />
+                        <Border Grid.Row="1"
+                                Height="1"
+                                Margin="0,22,0,18"
+                                Background="{StaticResource BorderBrush}" />
 
-                        <Grid Margin="0,20,0,0">
-                            <ProgressBar Height="6"
-                                         Maximum="100"
-                                         Value="{Binding LauncherUpdateProgress, Mode=OneWay}" />
-                            <TextBlock Text="{Binding LauncherUpdateStatus}"
-                                       FontSize="11"
+                        <Border Grid.Row="2"
+                                Padding="16,14"
+                                Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ScrollViewer MaxHeight="116"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <TextBlock Text="{Binding LauncherUpdateReleaseNotes}"
+                                               FontSize="13"
+                                               LineHeight="21"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None" />
+                                </ScrollViewer>
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding LauncherUpdateSizeText, StringFormat=安装包大小：{0}}"
+                                           Margin="0,11,0,0"
+                                           FontFamily="Segoe UI"
+                                           FontSize="11"
+                                           Foreground="{StaticResource InkMutedBrush}" />
+                            </Grid>
+                        </Border>
+
+                        <Grid x:Name="LauncherUpdateProgressRegion"
+                              Grid.Row="3"
+                              Margin="0,20,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <controls:AnimatedProgressBar Grid.Row="0"
+                                                          Style="{StaticResource HechaoProgressBarStyle}"
+                                                          Maximum="100"
+                                                          Value="{Binding LauncherUpdateProgress, Mode=OneWay}" />
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding LauncherUpdateStatus}"
+                                       Margin="0,9,0,0"
+                                       FontSize="12"
                                        Foreground="{StaticResource InkMutedBrush}"
-                                       Margin="0,13,0,0"
-                                       VerticalAlignment="Top" />
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
                         </Grid>
 
-                        <Grid Margin="0,28,0,0">
+                        <Grid Grid.Row="4"
+                              Margin="0,24,0,0"
+                              HorizontalAlignment="Right">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="136" />
                                 <ColumnDefinition Width="12" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="172" />
                             </Grid.ColumnDefinitions>
                             <Button Grid.Column="0"
                                     Height="44"
+                                    MinHeight="44"
                                     Style="{StaticResource BaseButtonStyle}"
                                     Content="稍后更新"
                                     Command="{Binding DismissLauncherUpdateCommand}" />
                             <Button Grid.Column="2"
                                     Height="44"
+                                    MinHeight="44"
+                                    Padding="18,10"
+                                    Foreground="White"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Command="{Binding InstallLauncherUpdateCommand}">
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Center">
                                     <controls:IconParkIcon Kind="Download"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Margin="0,0,8,0" />
+                                                           Width="15"
+                                                           Height="15"
+                                                           Margin="0,0,8,0"
+                                                           Foreground="White" />
                                     <TextBlock Text="下载并重启"
-                                               FontSize="13"
-                                               FontWeight="Bold" />
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               Foreground="White" />
                                 </StackPanel>
                             </Button>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
 

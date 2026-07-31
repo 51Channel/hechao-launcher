@@ -38,7 +38,7 @@ public sealed class LauncherXamlContractTests
             .Descendants(controls + "AnimatedProgressBar")
             .ToArray();
 
-        Assert.Equal(2, progressBars.Length);
+        Assert.Equal(3, progressBars.Length);
         Assert.All(
             progressBars,
             progressBar => Assert.Contains(
@@ -50,11 +50,10 @@ public sealed class LauncherXamlContractTests
     public void LauncherUpdateProgressBinding_IsExplicitlyOneWay()
     {
         var document = LoadLauncherXaml();
-        XNamespace presentation =
-            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace controls = "clr-namespace:Hechao.Launcher.Controls";
 
         var value = document
-            .Descendants(presentation + "ProgressBar")
+            .Descendants(controls + "AnimatedProgressBar")
             .Select(element => element.Attribute("Value")?.Value)
             .Single(binding =>
                 binding?.Contains(
@@ -62,6 +61,48 @@ public sealed class LauncherXamlContractTests
                     StringComparison.Ordinal) == true);
 
         Assert.Contains("Mode=OneWay", value);
+    }
+
+    [Fact]
+    public void LauncherUpdateDialog_UsesStableRowsAndExplicitPrimaryForeground()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var dialog = document
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "LauncherUpdateDialog");
+        var progressRegion = dialog
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "LauncherUpdateProgressRegion");
+        var progressBar = progressRegion
+            .Elements()
+            .Single(element => element.Name.LocalName == "AnimatedProgressBar");
+        var status = progressRegion
+            .Elements(presentation + "TextBlock")
+            .Single(element =>
+                (element.Attribute("Text")?.Value ?? string.Empty).Contains(
+                    "LauncherUpdateStatus",
+                    StringComparison.Ordinal));
+        var installButton = dialog
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                (element.Attribute("Command")?.Value ?? string.Empty).Contains(
+                    "InstallLauncherUpdateCommand",
+                    StringComparison.Ordinal));
+
+        Assert.Equal("560", dialog.Attribute("Width")?.Value);
+        Assert.Equal("0", progressBar.Attribute("Grid.Row")?.Value);
+        Assert.Equal("1", status.Attribute("Grid.Row")?.Value);
+        Assert.Equal("White", installButton.Attribute("Foreground")?.Value);
+        Assert.All(
+            installButton.Descendants().Where(
+                element => element.Name.LocalName is "IconParkIcon" or "TextBlock"),
+            element => Assert.Equal("White", element.Attribute("Foreground")?.Value));
     }
 
     [Fact]
