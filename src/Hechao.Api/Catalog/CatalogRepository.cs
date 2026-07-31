@@ -1,4 +1,5 @@
 using Hechao.Api.Monitoring;
+using Hechao.Api.ServerControl;
 using Hechao.Contracts;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -7,10 +8,13 @@ namespace Hechao.Api.Catalog;
 
 public sealed class CatalogRepository(
     NpgsqlDataSource dataSource,
-    IOptions<ServerHeartbeatOptions> heartbeatOptions)
+    IOptions<ServerHeartbeatOptions> heartbeatOptions,
+    IOptions<ServerControlOptions> controlOptions)
 {
     private readonly TimeSpan _heartbeatFreshness =
         TimeSpan.FromSeconds(heartbeatOptions.Value.FreshnessSeconds);
+    private readonly TimeSpan _controlFreshness =
+        TimeSpan.FromSeconds(controlOptions.Value.AgentFreshnessSeconds);
 
     public async Task<LauncherCatalogSnapshot> GetSnapshotAsync(
         Guid? userId,
@@ -244,7 +248,7 @@ public sealed class CatalogRepository(
             reader.GetBoolean(offset + 6));
     }
 
-    private static async Task<IReadOnlyList<ServerSummary>> ReadServersAsync(
+    private async Task<IReadOnlyList<ServerSummary>> ReadServersAsync(
         NpgsqlConnection connection,
         Guid? userId,
         AccessTier? accessTier,
@@ -257,10 +261,13 @@ public sealed class CatalogRepository(
                    server.minecraft_version, server.loader, server.minimum_tier,
                    server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
                    heartbeat.max_players, heartbeat.received_at, server.announcement,
-                   server.opens_at, server.closes_at
+                   server.opens_at, server.closes_at,
+                   control_target.reported_online, control_target.last_seen_at
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
+            LEFT JOIN launcher.server_control_targets control_target
+                ON control_target.server_id = server.id
             WHERE server.is_visible
               AND server.server_role = 'Player'
             ORDER BY server.sort_order, server.id;
@@ -272,10 +279,13 @@ public sealed class CatalogRepository(
                    server.minecraft_version, server.loader, server.minimum_tier,
                    server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
                    heartbeat.max_players, heartbeat.received_at, server.announcement,
-                   server.opens_at, server.closes_at
+                   server.opens_at, server.closes_at,
+                   control_target.reported_online, control_target.last_seen_at
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
+            LEFT JOIN launcher.server_control_targets control_target
+                ON control_target.server_id = server.id
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1
                AND access_override.server_id = server.id
@@ -325,11 +335,24 @@ public sealed class CatalogRepository(
             DateTimeOffset? closesAt = reader.IsDBNull(17)
                 ? null
                 : new DateTimeOffset(reader.GetDateTime(17));
-            var effectiveStatus = ServerAvailabilityRules.ResolveStatus(
+            var scheduledStatus = ServerAvailabilityRules.ResolveStatus(
                 configuredStatus,
                 opensAt,
                 closesAt,
                 now);
+            ServerControlObservation? controlObservation = null;
+            if (!reader.IsDBNull(18))
+            {
+                controlObservation = new ServerControlObservation(
+                    reader.GetBoolean(18),
+                    new DateTimeOffset(reader.GetDateTime(19)));
+            }
+
+            var controlledStatus = ServerControlAvailabilityRules.Resolve(
+                scheduledStatus,
+                controlObservation,
+                now,
+                _controlFreshness);
             ServerHeartbeatObservation? heartbeat = null;
             if (!reader.IsDBNull(11))
             {
@@ -341,7 +364,7 @@ public sealed class CatalogRepository(
             }
 
             var runtimeStatus = ServerRuntimeStatusResolver.Resolve(
-                effectiveStatus,
+                controlledStatus.Status,
                 reader.GetInt32(5),
                 reader.GetInt32(6),
                 heartbeat,

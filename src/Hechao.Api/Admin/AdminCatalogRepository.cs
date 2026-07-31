@@ -2,7 +2,9 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hechao.Api.Catalog;
+using Hechao.Api.ServerControl;
 using Hechao.Contracts;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -22,9 +24,13 @@ public sealed record AdminCatalogMutationResult(
     AdminCatalogMutationStatus Status,
     AdminServerRecord? Server = null);
 
-public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
+public sealed class AdminCatalogRepository(
+    NpgsqlDataSource dataSource,
+    IOptions<ServerControlOptions> controlOptions)
 {
     private static readonly JsonSerializerOptions AuditJsonOptions = CreateAuditJsonOptions();
+    private readonly TimeSpan _controlFreshness =
+        TimeSpan.FromSeconds(controlOptions.Value.AgentFreshnessSeconds);
 
     public async Task<IReadOnlyList<AdminServerRecord>> GetServersAsync(
         CancellationToken cancellationToken)
@@ -34,9 +40,12 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
                    minecraft_version, loader, minimum_tier, client_profile_id,
                    velocity_target, allow_protocol_translation, server_role,
                    monitoring_enabled, sort_order, is_visible,
-                   announcement, opens_at, closes_at, revision, created_at, updated_at
-            FROM launcher.servers
-            ORDER BY sort_order, id;
+                   announcement, opens_at, closes_at, revision, created_at, updated_at,
+                   control_target.reported_online, control_target.last_seen_at
+            FROM launcher.servers server
+            LEFT JOIN launcher.server_control_targets control_target
+                ON control_target.server_id = server.id
+            ORDER BY server.sort_order, server.id;
             """;
 
         var servers = new List<AdminServerRecord>();
@@ -60,9 +69,12 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
                    minecraft_version, loader, minimum_tier, client_profile_id,
                    velocity_target, allow_protocol_translation, server_role,
                    monitoring_enabled, sort_order, is_visible,
-                   announcement, opens_at, closes_at, revision, created_at, updated_at
-            FROM launcher.servers
-            WHERE id = $1;
+                   announcement, opens_at, closes_at, revision, created_at, updated_at,
+                   control_target.reported_online, control_target.last_seen_at
+            FROM launcher.servers server
+            LEFT JOIN launcher.server_control_targets control_target
+                ON control_target.server_id = server.id
+            WHERE server.id = $1;
             """;
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -418,7 +430,7 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         return entries;
     }
 
-    private static async Task<AdminServerRecord?> GetServerForUpdateAsync(
+    private async Task<AdminServerRecord?> GetServerForUpdateAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string serverId,
@@ -499,7 +511,7 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static AdminServerRecord ReadServer(NpgsqlDataReader reader)
+    private AdminServerRecord ReadServer(NpgsqlDataReader reader)
     {
         var configuredStatus =
             Enum.Parse<ServerStatus>(reader.GetString(4), ignoreCase: true);
@@ -509,6 +521,25 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
         DateTimeOffset? closesAt = reader.IsDBNull(18)
             ? null
             : new DateTimeOffset(reader.GetDateTime(18));
+        var now = DateTimeOffset.UtcNow;
+        var scheduledStatus = ServerAvailabilityRules.ResolveStatus(
+            configuredStatus,
+            opensAt,
+            closesAt,
+            now);
+        ServerControlObservation? controlObservation = null;
+        if (reader.FieldCount >= 24 && !reader.IsDBNull(22))
+        {
+            controlObservation = new ServerControlObservation(
+                reader.GetBoolean(22),
+                new DateTimeOffset(reader.GetDateTime(23)));
+        }
+
+        var controlAvailability = ServerControlAvailabilityRules.Resolve(
+            scheduledStatus,
+            controlObservation,
+            now,
+            _controlFreshness);
         return new AdminServerRecord(
             reader.GetString(0),
             reader.GetString(1),
@@ -531,14 +562,14 @@ public sealed class AdminCatalogRepository(NpgsqlDataSource dataSource)
             reader.GetString(16),
             opensAt,
             closesAt,
-            ServerAvailabilityRules.ResolveStatus(
-                configuredStatus,
-                opensAt,
-                closesAt,
-                DateTimeOffset.UtcNow),
+            controlAvailability.Status,
             reader.GetInt64(19),
             new DateTimeOffset(reader.GetDateTime(20)),
-            new DateTimeOffset(reader.GetDateTime(21)));
+            new DateTimeOffset(reader.GetDateTime(21)),
+            controlAvailability.HasTarget,
+            controlAvailability.IsFresh,
+            controlAvailability.ReportedOnline,
+            controlAvailability.LastSeenAt);
     }
 
     private static JsonElement ParseJson(string value)

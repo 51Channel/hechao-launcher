@@ -31,7 +31,11 @@ public sealed record AdminServerRecord(
     ServerStatus EffectiveStatus,
     long Revision,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    bool HasControlTarget = false,
+    bool ControlTargetFresh = false,
+    bool? ControlReportedOnline = null,
+    DateTimeOffset? ControlLastSeenAt = null);
 
 public sealed record AdminServerCreateRequest(
     string Id,

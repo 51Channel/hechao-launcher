@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hechao.Api.Catalog;
+using Hechao.Api.ServerControl;
 using Hechao.Api.Velocity;
 using Hechao.Contracts;
 using Microsoft.Extensions.Options;
@@ -25,11 +26,14 @@ public sealed record AdminAccessMutationResult(
 
 public sealed class AdminAccessRepository(
     NpgsqlDataSource dataSource,
-    IOptions<VelocityAuthorizationOptions> velocityOptions)
+    IOptions<VelocityAuthorizationOptions> velocityOptions,
+    IOptions<ServerControlOptions> controlOptions)
 {
     private static readonly JsonSerializerOptions AuditJsonOptions = CreateAuditJsonOptions();
     private readonly TimeSpan _maximumPermissionAge =
         TimeSpan.FromMinutes(velocityOptions.Value.MaximumLuckPermsAgeMinutes);
+    private readonly TimeSpan _controlFreshness =
+        TimeSpan.FromSeconds(controlOptions.Value.AgentFreshnessSeconds);
 
     public async Task<IReadOnlyList<AdminUserSummary>> SearchUsersAsync(
         string query,
@@ -121,11 +125,15 @@ public sealed class AdminAccessRepository(
                    access_rule.expires_at,
                    access_rule.revision,
                    access_rule.created_at,
-                   access_rule.updated_at
+                   access_rule.updated_at,
+                   control_target.reported_online,
+                   control_target.last_seen_at
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_rule
                 ON access_rule.user_id = $1
                AND access_rule.server_id = server.id
+            LEFT JOIN launcher.server_control_targets control_target
+                ON control_target.server_id = server.id
             WHERE server.server_role = 'Player'
             ORDER BY server.sort_order, server.id;
             """;
@@ -145,11 +153,24 @@ public sealed class AdminAccessRepository(
             DateTimeOffset? closesAt = reader.IsDBNull(6)
                 ? null
                 : new DateTimeOffset(reader.GetDateTime(6));
-            var effectiveStatus = ServerAvailabilityRules.ResolveStatus(
+            var scheduledStatus = ServerAvailabilityRules.ResolveStatus(
                 configuredStatus,
                 opensAt,
                 closesAt,
                 now);
+            ServerControlObservation? controlObservation = null;
+            if (!reader.IsDBNull(13))
+            {
+                controlObservation = new ServerControlObservation(
+                    reader.GetBoolean(13),
+                    new DateTimeOffset(reader.GetDateTime(14)));
+            }
+
+            var effectiveStatus = ServerControlAvailabilityRules.Resolve(
+                scheduledStatus,
+                controlObservation,
+                now,
+                _controlFreshness).Status;
             AdminServerAccessRuleRecord? rule = null;
             if (!reader.IsDBNull(7))
             {

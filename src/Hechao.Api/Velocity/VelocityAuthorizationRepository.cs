@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Hechao.Api.Catalog;
+using Hechao.Api.ServerControl;
 using Hechao.Contracts;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -10,9 +11,12 @@ namespace Hechao.Api.Velocity;
 
 public sealed class VelocityAuthorizationRepository(
     NpgsqlDataSource dataSource,
-    IOptions<VelocityAuthorizationOptions> options)
+    IOptions<VelocityAuthorizationOptions> options,
+    IOptions<ServerControlOptions> controlOptions)
 {
     private readonly VelocityAuthorizationOptions _options = options.Value;
+    private readonly TimeSpan _controlFreshness =
+        TimeSpan.FromSeconds(controlOptions.Value.AgentFreshnessSeconds);
 
     public async Task<VelocityLaunchGrantCreationResult> CreateLaunchGrantAsync(
         AuthenticatedPlayer authenticatedPlayer,
@@ -277,7 +281,7 @@ public sealed class VelocityAuthorizationRepository(
             reader.IsDBNull(6) ? null : ToDateTimeOffset(reader.GetDateTime(6)));
     }
 
-    private static Task<VelocityServerAccess?> ReadServerByIdAsync(
+    private Task<VelocityServerAccess?> ReadServerByIdAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid? userId,
@@ -294,7 +298,7 @@ public sealed class VelocityAuthorizationRepository(
             cancellationToken);
     }
 
-    private static Task<VelocityServerAccess?> ReadServerByTargetAsync(
+    private Task<VelocityServerAccess?> ReadServerByTargetAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid? userId,
@@ -311,7 +315,7 @@ public sealed class VelocityAuthorizationRepository(
             cancellationToken);
     }
 
-    private static async Task<VelocityServerAccess?> ReadServerAsync(
+    private async Task<VelocityServerAccess?> ReadServerAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid? userId,
@@ -319,6 +323,7 @@ public sealed class VelocityAuthorizationRepository(
         string predicate,
         CancellationToken cancellationToken)
     {
+        var now = DateTimeOffset.UtcNow;
         var sql = $$"""
             SELECT server.id,
                    server.velocity_target,
@@ -330,12 +335,16 @@ public sealed class VelocityAuthorizationRepository(
                    server.minecraft_version,
                    server.loader,
                    server.client_profile_id,
-                   server.allow_protocol_translation
+                   server.allow_protocol_translation,
+                   control_target.reported_online,
+                   control_target.last_seen_at
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1::uuid
                AND access_override.server_id = server.id
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
+            LEFT JOIN launcher.server_control_targets control_target
+                ON control_target.server_id = server.id
             WHERE {{predicate}}
               AND server.is_visible
               AND server.server_role = 'Player'
@@ -343,6 +352,9 @@ public sealed class VelocityAuthorizationRepository(
                          WHEN server.status = 'Online'
                               AND (server.opens_at IS NULL OR server.opens_at <= now())
                               AND (server.closes_at IS NULL OR server.closes_at > now())
+                              AND (control_target.server_id IS NULL
+                                   OR (control_target.reported_online
+                                       AND control_target.last_seen_at >= $3))
                              THEN 0
                          WHEN server.status = 'Maintenance' THEN 1
                          ELSE 2
@@ -359,6 +371,7 @@ public sealed class VelocityAuthorizationRepository(
             Value = userId ?? (object)DBNull.Value
         });
         command.Parameters.AddWithValue(lookupValue);
+        command.Parameters.AddWithValue(now - _controlFreshness);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
@@ -373,14 +386,28 @@ public sealed class VelocityAuthorizationRepository(
         DateTimeOffset? closesAt = reader.IsDBNull(6)
             ? null
             : new DateTimeOffset(reader.GetDateTime(6));
+        var scheduledStatus = ServerAvailabilityRules.ResolveStatus(
+            configuredStatus,
+            opensAt,
+            closesAt,
+            now);
+        ServerControlObservation? controlObservation = null;
+        if (!reader.IsDBNull(11))
+        {
+            controlObservation = new ServerControlObservation(
+                reader.GetBoolean(11),
+                new DateTimeOffset(reader.GetDateTime(12)));
+        }
+
+        var effectiveStatus = ServerControlAvailabilityRules.Resolve(
+            scheduledStatus,
+            controlObservation,
+            now,
+            _controlFreshness).Status;
         return new VelocityServerAccess(
             reader.GetString(0),
             reader.GetString(1),
-            ServerAvailabilityRules.ResolveStatus(
-                configuredStatus,
-                opensAt,
-                closesAt,
-                DateTimeOffset.UtcNow),
+            effectiveStatus,
             Enum.Parse<AccessTier>(reader.GetString(3), ignoreCase: true),
             reader.IsDBNull(4)
                 ? ServerAccessOverride.None

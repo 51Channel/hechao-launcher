@@ -55,6 +55,27 @@ public sealed class AdminWebStyleContractTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ServerDirectory_ExplainsControlDerivedAvailability()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var script = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "wwwroot",
+            "admin",
+            "admin.js"));
+
+        Assert.Contains("server.hasControlTarget", script, StringComparison.Ordinal);
+        Assert.Contains("server.controlTargetFresh", script, StringComparison.Ordinal);
+        Assert.Contains("server.controlReportedOnline === false", script, StringComparison.Ordinal);
+        Assert.Contains("服控失联", script, StringComparison.Ordinal);
+        Assert.Contains("服务已停止", script, StringComparison.Ordinal);
+        Assert.Contains("scheduleServerPolling(view === \"servers\")", script, StringComparison.Ordinal);
+        Assert.Contains("/v1/admin/catalog/servers", script, StringComparison.Ordinal);
+    }
+
     private static string ReadRule(string css, string selector)
     {
         var match = Regex.Match(

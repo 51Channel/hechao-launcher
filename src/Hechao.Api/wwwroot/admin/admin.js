@@ -14,6 +14,7 @@ const state = {
     selectedControlServerId: null,
     pendingControlAction: null,
     controlPollTimer: null,
+    serverPollTimer: null,
     alerts: null,
     diagnostics: [],
     auditEntries: [],
@@ -713,6 +714,7 @@ function switchView(view) {
     if (view === "audit" && state.auditEntries.length === 0) {
         loadAudit(true);
     }
+    scheduleServerPolling(view === "servers");
     scheduleControlPolling(view === "control");
 }
 
@@ -1472,6 +1474,34 @@ async function reloadControl() {
     }
 }
 
+async function reloadServers() {
+    try {
+        state.servers = await api("/v1/admin/catalog/servers");
+        renderServers();
+    } catch (error) {
+        if (error.status === 401 || error.status === 403) {
+            location.reload();
+            return;
+        }
+        console.warn("服务器目录自动刷新失败", error);
+    }
+}
+
+function scheduleServerPolling(enabled) {
+    if (state.serverPollTimer) {
+        window.clearInterval(state.serverPollTimer);
+        state.serverPollTimer = null;
+    }
+    if (enabled) {
+        reloadServers();
+        state.serverPollTimer = window.setInterval(() => {
+            if (!document.hidden && !elements["server-drawer"].open) {
+                reloadServers();
+            }
+        }, 5000);
+    }
+}
+
 function scheduleControlPolling(enabled) {
     if (state.controlPollTimer) {
         window.clearInterval(state.controlPollTimer);
@@ -1791,6 +1821,12 @@ function statusClass(server) {
 
 function effectiveStatusText(server) {
     if (server.status === "Online" && server.effectiveStatus === "Closed") {
+        if (server.hasControlTarget && !server.controlTargetFresh) {
+            return "服控失联";
+        }
+        if (server.hasControlTarget && server.controlReportedOnline === false) {
+            return "服务已停止";
+        }
         if (server.opensAt && new Date(server.opensAt) > new Date()) {
             return "等待开放";
         }
