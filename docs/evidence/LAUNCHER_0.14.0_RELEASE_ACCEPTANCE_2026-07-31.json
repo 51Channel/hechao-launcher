@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T14:38:35Z",
+  "component": "launcher",
+  "version": "0.14.0",
+  "buildSourceCommit": "bc04fea8d525663b3ae24f4a6dcfc6d1b219c986",
+  "releaseTag": "launcher-v0.14.0",
+  "tests": {
+    "solutionPassed": 492,
+    "solutionFailed": 0,
+    "distributionPassed": 45,
+    "apiPassed": 228,
+    "launcherPassed": 143,
+    "publisherPassed": 32,
+    "statusCollectorPassed": 12,
+    "backupPassed": 12,
+    "serverControlAgentPassed": 20,
+    "javascriptSyntaxPassed": true,
+    "formatVerificationPassed": true,
+    "powershell7CompliancePassed": true
+  },
+  "artifacts": {
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.14.0-win-x64.exe",
+      "sizeBytes": 61910638,
+      "sha256": "2F6ED3DBD94472DE99578DDCFA4CAFD504436575946722A6074A8F8C80AB0E8B",
+      "signatureStatus": "NotSigned"
+    },
+    "launcher": {
+      "name": "Hechao.Launcher.exe",
+      "sizeBytes": 68879271,
+      "sha256": "81AD01021A50B79C319CC670AA058E82480453E38BF416249037A6CD5155ACDB",
+      "productVersion": "0.14.0+bc04fea8d525663b3ae24f4a6dcfc6d1b219c986",
+      "signatureStatus": "NotSigned"
+    }
+  },
+  "installerValidation": {
+    "validatedAtUtc": "2026-07-31T14:15:29.2953642Z",
+    "upgradeFrom": "0.13.7",
+    "upgradeTo": "0.14.0",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "privateOss": {
+    "objectKey": "releases/launcher/0.14.0/Hechao-Launcher-Setup-0.14.0-win-x64.exe",
+    "firstPublishUploaded": true,
+    "secondPublishSkippedAfterVerification": true,
+    "anonymousStatusCodes": [403, 403],
+    "signedReadStatusCodes": [200, 200],
+    "lengthMatched": true,
+    "sha256Matched": true
+  },
+  "productionUpdateChannel": {
+    "enabled": true,
+    "latestVersion": "0.14.0",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61910638,
+    "installerSha256": "2F6ED3DBD94472DE99578DDCFA4CAFD504436575946722A6074A8F8C80AB0E8B",
+    "publishedAtUtc": "2026-07-31T14:26:00Z",
+    "apiVersion": "0.24.2",
+    "apiServiceStatus": "active",
+    "apiRestarts": 0,
+    "publicHealthStatusCode": 200
+  },
+  "managementMachineBootstrap": {
+    "fromVersion": "0.13.6",
+    "toVersion": "0.14.0",
+    "gracefulLauncherClose": true,
+    "verifiedLocalInstallerUsed": true,
+    "allStateFileHashesPreserved": true,
+    "accountSessionRestored": true,
+    "launcherOpenedSuccessfully": true
+  },
+  "automaticUpdateBehavior": {
+    "startupCheckPerProcess": true,
+    "automaticDownloadAndUpdaterLaunch": true,
+    "failurePreservesCurrentVersion": true,
+    "authenticatedPrivateDistributionRequired": true,
+    "firstAutomaticCapableVersion": "0.14.0"
+  },
+  "sharedPlayerSettingsAcceptance": {
+    "sharedOptionsCreated": true,
+    "keyCount": 277,
+    "keyBindingCount": 152,
+    "mouseSensitivityPresent": true,
+    "profileScopedExcludedKeysPresent": 0
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "minecraftAccessTokenIncluded": false,
+    "cookieIncluded": false
+  }
+}

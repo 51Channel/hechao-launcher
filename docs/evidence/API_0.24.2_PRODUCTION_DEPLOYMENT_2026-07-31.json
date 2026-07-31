@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T14:38:35Z",
+  "component": "api",
+  "version": "0.24.2",
+  "releaseId": "0.24.2-20260731T141731Z",
+  "buildSourceCommit": "bc04fea8d525663b3ae24f4a6dcfc6d1b219c986",
+  "releaseTag": "api-v0.24.2",
+  "artifacts": {
+    "archive": {
+      "name": "hechao-api-0.24.2-20260731T141731Z.tar.gz",
+      "sizeBytes": 45650671,
+      "sha256": "89BDAC08E0E129A6E0F2F820F3357EDDB7A777538146173C5065238936C88EAC",
+      "entries": 113,
+      "fileCount": 108,
+      "unsafePaths": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 104608311,
+      "sha256": "F7C1529969216D1287F40DE2000D2BAA3A08FD87B02E389C0292DF5B749A6D26",
+      "extractedHashMatched": true
+    }
+  },
+  "tests": {
+    "solutionPassed": 492,
+    "solutionFailed": 0,
+    "apiPassed": 228,
+    "javascriptSyntaxPassed": true
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.24.1-20260731T105946Z",
+    "serviceActive": true,
+    "mainPid": 8945,
+    "nRestarts": 0,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260731T142250Z.dump",
+      "sizeBytes": 1528097,
+      "sha256": "C427C8F606D754C2EE2AAEC27BFBBA4399930957E1B1B010DDD34740A54A74E2",
+      "pgRestoreListPassed": true
+    }
+  },
+  "deployment": {
+    "remoteArchiveHashMatched": true,
+    "remoteInstallScriptHashMatched": true,
+    "remoteServiceFileHashMatched": true,
+    "atomicInstallSucceeded": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.24.2-20260731T141731Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.24.1-20260731T105946Z",
+    "apiServiceRestartsByReleaseProcess": 2,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "mainPid": 142091,
+    "nRestarts": 0,
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "publicCatalogStatusCode": 200,
+    "databaseStatus": "ready",
+    "errorJournalEntries": 0,
+    "deployedAdminJsSha256": "52196887ADA9D7755345E37FCA048D7B853D65659934EE950A003495E82112B5",
+    "repositoryAdminJsSha256Matched": true
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false
+  }
+}
