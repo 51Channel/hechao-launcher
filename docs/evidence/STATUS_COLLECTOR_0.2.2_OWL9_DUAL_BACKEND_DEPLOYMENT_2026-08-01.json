@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T17:59:42.267824Z",
+  "release": {
+    "version": "0.2.2",
+    "sourceCommit": "bdeef56c2a8a234f0166e5d2a1b721a3c17c9e9b",
+    "deploymentScriptCommit": "68903eefbfe328bfe3a77631a2d2bbc3ba1605d9",
+    "tag": "status-collector-v0.2.2",
+    "artifact": {
+      "sizeBytes": 73866428,
+      "sha256": "400FA8AD19107D2ADB8B6D901C7D700CDAC0CA471054918FA3980D74B26B5F82",
+      "productVersion": "0.2.2+bdeef56c2a8a234f0166e5d2a1b721a3c17c9e9b"
+    }
+  },
+  "owl9": {
+    "host": "WIN-802L81OVQVB",
+    "collectorInstance": "owl9-pvp",
+    "configurationSha256": "527AB5E248C40AC0A60AA2AC3C778F1E713E05132D492B4F5C51CD48D9068A8F",
+    "targets": [
+      {
+        "velocityTarget": "pvp",
+        "serverDirectory": "C:\\mc\\server",
+        "expectedProcessExecutablePath": "C:\\mc\\jre\\jdk-21.0.11+10-jre\\bin\\java.exe",
+        "online": false,
+        "probeIssues": [
+          "ProcessNotRunning",
+          "MetricsFileStale"
+        ]
+      },
+      {
+        "velocityTarget": "pvp-purpur",
+        "serverDirectory": "E:\\MinecraftServer",
+        "expectedProcessExecutablePath": "E:\\MinecraftServer\\jdk\\bin\\java.exe",
+        "online": true,
+        "onlinePlayers": 0,
+        "maxPlayers": 20,
+        "processWorkingSetBytes": 685740032,
+        "processPrivateBytes": 2758713344,
+        "processCpuPercent": 1.55,
+        "diskFreeBytes": 5787799552,
+        "probeIssues": [
+          "MetricsFileMissing"
+        ]
+      }
+    ],
+    "minecraftProcess": {
+      "processIdBefore": 2912,
+      "processIdAfter": 2912,
+      "executablePath": "E:\\MinecraftServer\\jdk\\bin\\java.exe",
+      "createdAt": "2026-07-31T12:39:16.932876+08:00",
+      "restartPerformed": false
+    },
+    "heartbeatTask": {
+      "state": "Ready",
+      "lastTaskResult": 0,
+      "lastRun": "2026-08-01T01:58:58+08:00"
+    },
+    "backups": {
+      "collector": "C:\\ProgramData\\Hechao\\StatusCollector\\backups\\collector-0.2.2-20260731T175135Z",
+      "configuration": "C:\\ProgramData\\Hechao\\StatusCollector\\backups\\configuration-20260731T175506Z\\server-heartbeats.json"
+    },
+    "metricsPlugin": {
+      "path": "E:\\MinecraftServer\\plugins\\HechaoServerMetrics-0.1.0.jar",
+      "sha256": "BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C",
+      "backupDirectory": "E:\\manual-backups\\server-metrics-pvp-purpur-20260731T180340Z",
+      "serverRestarted": false,
+      "activatesOnNextNormalRestart": true
+    },
+    "failedAttemptSafety": {
+      "reason": "File.Replace required an explicit backup path on this host",
+      "configurationReplaced": false,
+      "configurationSha256AfterFailure": "C225848BA6F88542029FBA4F82FEB051F6CF25BD345A8CC74F229979FC3E75B7",
+      "minecraftProcessIdAfterFailure": 2912,
+      "stagingFilesRemaining": 0
+    }
+  },
+  "verification": {
+    "statusCollectorTests": "16/16",
+    "solutionTests": "501/501",
+    "apiHealthStatus": 200,
+    "apiReadinessStatus": 200,
+    "latestHeartbeatCapturedAtUtc": "2026-07-31T17:59:41.307109Z",
+    "latestHeartbeatReceivedAtUtc": "2026-07-31T17:59:42.267824Z"
+  }
+}

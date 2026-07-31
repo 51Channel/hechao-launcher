@@ -8,6 +8,11 @@
 > stdout 管道堵塞导致无法关服的问题；owl9 保持 `0.2.1`。发布证据见
 > [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
 
+> `2026-08-01` owl9 状态采集器升级到 `0.2.2`：共享 `25565` 的
+> `pvp`（恐怖整蛊）与 `pvp-purpur`（真正 PVP）改为按监听 PID 的 Java 路径
+> 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
+> [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
+
 赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.14.0`、API `0.24.2`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；四个制品、可回滚部署和自动验收均已完成，剩余门槛只涉及真实四级账号与 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作和最小权限服控的管理员控制台。
 
 2026-07-29 已确认新架构：赫朝启动器成为唯一服务器选择和切换入口；大厅继续作为 LuckPerms 等前置能力的内部承载器，但不再向玩家展示、授权、路由或回退。Velocity 继续负责统一公网入口、forwarding 和服务端二次授权。完整约束、回滚和验收标准见 [`docs/LAUNCHER_ONLY_SERVER_SWITCHING.md`](docs/LAUNCHER_ONLY_SERVER_SWITCHING.md)。

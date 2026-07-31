@@ -81,7 +81,7 @@ src\Hechao.ModServerMetricsAgent\neoforge\build\libs\HechaoServerMetrics-NeoForg
 
 | 制品 | SHA-256 |
 | --- | --- |
-| `Hechao.StatusCollector.exe` `0.2.1` | `7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED` |
+| `Hechao.StatusCollector.exe` `0.2.2` | `400FA8AD19107D2ADB8B6D901C7D700CDAC0CA471054918FA3980D74B26B5F82` |
 | `HechaoServerMetrics-0.1.0.jar` | `BD03312007E043223B37CF634872C3DAA4C0FB11B80B54ADC546507853528B2C` |
 | `HechaoServerMetrics-Fabric-1.20.1-0.1.0.jar` | `D38FB92413CC3B6B43CB87E396957697455A30799415611CB43C55D2C895B3F6` |
 | `HechaoServerMetrics-NeoForge-1.21.11-0.1.0.jar` | `49C258C3AFF655070F40B576AC4A026AE8B5D43030A635800A7038451766027E` |
@@ -122,6 +122,12 @@ PID 均为同一组，计划任务手工与自动运行均返回成功。
 `MetricsFileStale`。两机手工上报和计划任务均返回 `0`，部署前后 Java PID 集合
 完全一致。详见
 [`STATUS_COLLECTOR_RELEASE_0.2.1.md`](STATUS_COLLECTOR_RELEASE_0.2.1.md)。
+
+2026-08-01 owl9 升级到 `0.2.2`，按监听 PID 的 Java 可执行文件区分共享
+`25565` 的 `pvp` 与 `pvp-purpur`。真正 PVP 已恢复玩家、进程、CPU、内存和
+磁盘上报；Paper/Purpur 指标 JAR 已预置，待下一次正常手动重启后开始写入
+TPS/MSPT/GC。详见
+[`STATUS_COLLECTOR_RELEASE_0.2.2.md`](STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
 2026-07-28 又将 `pvp` 从 `owl5` 的远端状态探针拆到 `owl9` 本机只出站采集器。
 `owl5` 配置现保留四个本机目标，`owl9-pvp` 只查询
