@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Hechao.Distribution;
 
@@ -10,6 +12,7 @@ public sealed class ResumableFileDownloader
     private const int DefaultMaximumAttempts = 5;
     private const int MaximumRedirects = 5;
     private const int BufferSize = 128 * 1024;
+    private const int MaximumErrorBodyBytes = 16 * 1024;
     private const string RetryAfterDataKey = "Hechao.RetryAfter";
     private readonly HttpClient _httpClient;
     private readonly int _maximumAttempts;
@@ -127,8 +130,15 @@ public sealed class ResumableFileDownloader
 
         if (!response.IsSuccessStatusCode)
         {
+            var remoteErrorCode = await TryReadRemoteErrorCodeAsync(
+                response,
+                cancellationToken);
+            var errorCodeSuffix = remoteErrorCode is null
+                ? string.Empty
+                : $", code {remoteErrorCode}";
             var exception = new HttpRequestException(
-                $"The download server returned {(int)response.StatusCode} ({response.ReasonPhrase}).",
+                $"The download server returned {(int)response.StatusCode} " +
+                $"({response.ReasonPhrase}){errorCodeSuffix}.",
                 null,
                 response.StatusCode);
             if (GetRetryAfter(response.Headers.RetryAfter) is { } retryAfter)
@@ -190,6 +200,92 @@ public sealed class ResumableFileDownloader
                 $"The download ended early for {manifestFile.Path}: {downloadedBytes}/{manifestFile.Size} bytes.");
         }
     }
+
+    private static async Task<string?> TryReadRemoteErrorCodeAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        if (TryGetSafeHeaderValue(response, "x-oss-ec") is { } headerCode)
+        {
+            return headerCode;
+        }
+
+        if (response.Content.Headers.ContentLength is > MaximumErrorBodyBytes)
+        {
+            return null;
+        }
+
+        try
+        {
+            await using var source = await response.Content.ReadAsStreamAsync(
+                cancellationToken);
+            using var buffer = new MemoryStream();
+            var chunk = new byte[4096];
+            while (buffer.Length <= MaximumErrorBodyBytes)
+            {
+                var remaining = MaximumErrorBodyBytes + 1 - (int)buffer.Length;
+                var bytesRead = await source.ReadAsync(
+                    chunk.AsMemory(0, Math.Min(chunk.Length, remaining)),
+                    cancellationToken);
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                buffer.Write(chunk, 0, bytesRead);
+            }
+
+            if (buffer.Length == 0 || buffer.Length > MaximumErrorBodyBytes)
+            {
+                return null;
+            }
+
+            buffer.Position = 0;
+            using var reader = XmlReader.Create(
+                buffer,
+                new XmlReaderSettings
+                {
+                    DtdProcessing = DtdProcessing.Prohibit,
+                    IgnoreComments = true,
+                    IgnoreWhitespace = true,
+                    MaxCharactersInDocument = MaximumErrorBodyBytes
+                });
+            var document = XDocument.Load(reader, LoadOptions.None);
+            var bodyCode = document
+                .Descendants()
+                .FirstOrDefault(element =>
+                    string.Equals(
+                        element.Name.LocalName,
+                        "Code",
+                        StringComparison.Ordinal))
+                ?.Value;
+            return IsSafeErrorCode(bodyCode) ? bodyCode : null;
+        }
+        catch (Exception exception) when (
+            exception is IOException or XmlException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static string? TryGetSafeHeaderValue(
+        HttpResponseMessage response,
+        string name)
+    {
+        if (!response.Headers.TryGetValues(name, out var values))
+        {
+            return null;
+        }
+
+        var value = values.FirstOrDefault();
+        return IsSafeErrorCode(value) ? value : null;
+    }
+
+    private static bool IsSafeErrorCode(string? value) =>
+        value is { Length: > 0 and <= 64 } &&
+        value.All(character =>
+            char.IsAsciiLetterOrDigit(character) ||
+            character is '-' or '_' or '.');
 
     private async Task<HttpResponseMessage> SendFollowingRedirectsAsync(
         Uri initialUri,

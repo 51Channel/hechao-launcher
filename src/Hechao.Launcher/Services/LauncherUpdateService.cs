@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using Hechao.Contracts;
 using Hechao.Distribution;
 
@@ -65,19 +66,27 @@ public sealed class LauncherUpdateService
     private readonly string _updateRoot;
     private readonly Func<string?> _processPathProvider;
     private readonly Func<ProcessStartInfo, Process?> _processStarter;
+    private readonly Action<string, Exception> _failureReporter;
 
     internal LauncherUpdateService(
         LauncherApiClient apiClient,
         ResumableFileDownloader downloader,
         string updateRoot,
         Func<string?> processPathProvider,
-        Func<ProcessStartInfo, Process?> processStarter)
+        Func<ProcessStartInfo, Process?> processStarter,
+        Action<string, Exception>? failureReporter = null)
     {
         _apiClient = apiClient;
         _downloader = downloader;
         _updateRoot = Path.GetFullPath(updateRoot);
         _processPathProvider = processPathProvider;
         _processStarter = processStarter;
+        _failureReporter = failureReporter ??
+            ((stage, exception) =>
+                LauncherUpdateFailureLog.TryWrite(
+                    _updateRoot,
+                    stage,
+                    exception));
     }
 
     public static ILauncherUpdateService CreateDefault(LauncherApiClient apiClient)
@@ -172,50 +181,72 @@ public sealed class LauncherUpdateService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        var version = plan.LatestVersion.ToString(3);
-        var updateDirectory = Path.Combine(_updateRoot, version);
-        Directory.CreateDirectory(updateDirectory);
-        var installerPath = Path.Combine(
-            updateDirectory,
-            $"Hechao-Launcher-Setup-{version}-win-x64.exe");
-        var manifestFile = new ClientManifestFile(
-            Path.GetFileName(installerPath),
-            plan.InstallerBytes,
-            plan.InstallerSha256,
-            plan.InstallerUri.AbsoluteUri,
-            Required: true);
-        var downloadProgress = progress is null
-            ? null
-            : new InlineProgress<FileDownloadProgress>(value =>
-                progress.Report(new LauncherUpdateDownloadProgress(
-                    value.BytesDownloaded,
-                    value.TotalBytes)));
-        await _downloader.DownloadAsync(
-            manifestFile,
-            installerPath,
-            downloadProgress,
-            cancellationToken);
-
-        var processPath = _processPathProvider();
-        if (string.IsNullOrWhiteSpace(processPath) ||
-            !File.Exists(processPath))
+        LauncherUpdateFailureLog.TryDelete(_updateRoot);
+        var stage = "prepare-directory";
+        try
         {
-            throw new InvalidOperationException(
-                "The running launcher executable cannot be located.");
-        }
+            var version = plan.LatestVersion.ToString(3);
+            var updateDirectory = Path.Combine(_updateRoot, version);
+            Directory.CreateDirectory(updateDirectory);
+            var installerPath = Path.Combine(
+                updateDirectory,
+                $"Hechao-Launcher-Setup-{version}-win-x64.exe");
+            var manifestFile = new ClientManifestFile(
+                Path.GetFileName(installerPath),
+                plan.InstallerBytes,
+                plan.InstallerSha256,
+                plan.InstallerUri.AbsoluteUri,
+                Required: true);
+            var downloadProgress = progress is null
+                ? null
+                : new InlineProgress<FileDownloadProgress>(value =>
+                    progress.Report(new LauncherUpdateDownloadProgress(
+                        value.BytesDownloaded,
+                        value.TotalBytes)));
 
-        var updaterPath = Path.Combine(
-            updateDirectory,
-            "Hechao.Launcher.Updater.exe");
-        File.Copy(processPath, updaterPath, overwrite: true);
-        var startInfo = LauncherUpdateBootstrap.CreateStartInfo(
-            updaterPath,
-            Environment.ProcessId,
-            installerPath,
-            plan.InstallerBytes,
-            plan.InstallerSha256,
-            version);
-        return _processStarter(startInfo) is not null;
+            stage = "download";
+            await _downloader.DownloadAsync(
+                manifestFile,
+                installerPath,
+                downloadProgress,
+                cancellationToken);
+
+            stage = "locate-launcher";
+            var processPath = _processPathProvider();
+            if (string.IsNullOrWhiteSpace(processPath) ||
+                !File.Exists(processPath))
+            {
+                throw new InvalidOperationException(
+                    "The running launcher executable cannot be located.");
+            }
+
+            stage = "stage-updater";
+            var updaterPath = Path.Combine(
+                updateDirectory,
+                "Hechao.Launcher.Updater.exe");
+            File.Copy(processPath, updaterPath, overwrite: true);
+            var startInfo = LauncherUpdateBootstrap.CreateStartInfo(
+                updaterPath,
+                Environment.ProcessId,
+                installerPath,
+                plan.InstallerBytes,
+                plan.InstallerSha256,
+                version);
+
+            stage = "start-updater";
+            if (_processStarter(startInfo) is null)
+            {
+                throw new InvalidOperationException(
+                    "The launcher updater could not be started.");
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _failureReporter(stage, exception);
+            throw;
+        }
     }
 
     private static Version ParseVersion(string value, string error)
@@ -465,25 +496,10 @@ internal static class LauncherUpdateBootstrap
 
     private static void TryWriteFailure(string message)
     {
-        try
-        {
-            var localApplicationData = Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData);
-            var path = Path.Combine(
-                localApplicationData,
-                "Hechao",
-                "Launcher",
-                "updates",
-                "last-update-error.log");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(
-                path,
-                $"{DateTimeOffset.UtcNow:O} {message}{Environment.NewLine}");
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException)
-        {
-        }
+        LauncherUpdateFailureLog.TryWrite(
+            LauncherUpdateFailureLog.GetDefaultUpdateRoot(),
+            "install",
+            new InvalidOperationException(message));
     }
 
     private static void TryDelete(string path)
@@ -496,5 +512,112 @@ internal static class LauncherUpdateBootstrap
             exception is IOException or UnauthorizedAccessException)
         {
         }
+    }
+}
+
+internal static partial class LauncherUpdateFailureLog
+{
+    private const string FileName = "last-update-error.log";
+    private const int MaximumMessageLength = 1000;
+
+    [GeneratedRegex(@"https?://[^\s]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex UrlPattern();
+
+    [GeneratedRegex(@"\bBearer\s+[^\s]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex BearerPattern();
+
+    public static string GetDefaultUpdateRoot()
+    {
+        var localApplicationData = Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(
+            localApplicationData,
+            "Hechao",
+            "Launcher",
+            "updates");
+    }
+
+    public static void TryWrite(
+        string updateRoot,
+        string stage,
+        Exception exception)
+    {
+        try
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(updateRoot);
+            ArgumentException.ThrowIfNullOrWhiteSpace(stage);
+            ArgumentNullException.ThrowIfNull(exception);
+
+            var normalizedRoot = Path.GetFullPath(updateRoot);
+            Directory.CreateDirectory(normalizedRoot);
+            var statusCode = exception is HttpRequestException
+            {
+                StatusCode: { } status
+            }
+                ? ((int)status).ToString(CultureInfo.InvariantCulture)
+                : "none";
+            var lines = new[]
+            {
+                $"timestamp={DateTimeOffset.UtcNow:O}",
+                $"stage={SanitizeStage(stage)}",
+                $"exception={exception.GetType().FullName}",
+                $"http-status={statusCode}",
+                $"hresult=0x{exception.HResult:X8}",
+                $"message={SanitizeMessage(exception.Message)}"
+            };
+            File.WriteAllLines(
+                Path.Combine(normalizedRoot, FileName),
+                lines);
+        }
+        catch (Exception writeException) when (
+            writeException is IOException or UnauthorizedAccessException or
+                ArgumentException or NotSupportedException)
+        {
+        }
+    }
+
+    public static void TryDelete(string updateRoot)
+    {
+        try
+        {
+            File.Delete(Path.Combine(Path.GetFullPath(updateRoot), FileName));
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                ArgumentException or NotSupportedException)
+        {
+        }
+    }
+
+    private static string SanitizeStage(string stage)
+    {
+        var sanitized = new string(stage
+            .Where(value => char.IsAsciiLetterOrDigit(value) || value == '-')
+            .Take(64)
+            .ToArray());
+        return string.IsNullOrEmpty(sanitized) ? "unknown" : sanitized;
+    }
+
+    private static string SanitizeMessage(string message)
+    {
+        var singleLine = message
+            .Replace('\r', ' ')
+            .Replace('\n', ' ');
+        singleLine = BearerPattern().Replace(singleLine, "Bearer <redacted>");
+        singleLine = UrlPattern().Replace(
+            singleLine,
+            static match =>
+            {
+                if (!Uri.TryCreate(match.Value, UriKind.Absolute, out var uri))
+                {
+                    return "<redacted-url>";
+                }
+
+                return uri.GetLeftPart(UriPartial.Path) +
+                       (string.IsNullOrEmpty(uri.Query) ? string.Empty : "?<redacted>");
+            });
+        return singleLine.Length <= MaximumMessageLength
+            ? singleLine
+            : singleLine[..MaximumMessageLength];
     }
 }

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 
 namespace Hechao.Distribution.Tests;
@@ -186,5 +187,55 @@ public sealed class ResumableFileDownloaderTests
             retryAfter,
             retryAfter + TimeSpan.FromMilliseconds(150));
         Assert.Equal(content, await File.ReadAllBytesAsync(destination));
+    }
+
+    [Fact]
+    public async Task DownloadAsync_ReportsSafeRemoteErrorCodeWithoutResponseDetails()
+    {
+        const string responseBody = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Error>
+              <Code>AccessDenied</Code>
+              <Message>Do not expose this detail.</Message>
+              <RequestId>sensitive-request-id</RequestId>
+            </Error>
+            """;
+        using var httpClient = new HttpClient(
+            new StaticErrorResponseHandler(
+                HttpStatusCode.Forbidden,
+                responseBody));
+        var downloader = new ResumableFileDownloader(
+            httpClient,
+            maximumAttempts: 1);
+        using var temporary = new TemporaryDirectory();
+        var destination = Path.Combine(temporary.Path, "object");
+        var manifestFile = new ClientManifestFile(
+            "launcher.exe",
+            1024 * 1024,
+            new string('0', 64),
+            "https://download.hechao.world/launcher.exe?signature=secret");
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            downloader.DownloadAsync(manifestFile, destination));
+
+        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        Assert.Contains("code AccessDenied", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Do not expose", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("sensitive-request-id", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("signature=secret", exception.Message, StringComparison.Ordinal);
+    }
+
+    private sealed class StaticErrorResponseHandler(
+        HttpStatusCode statusCode,
+        string responseBody) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(statusCode)
+            {
+                RequestMessage = request,
+                Content = new StringContent(responseBody)
+            });
     }
 }

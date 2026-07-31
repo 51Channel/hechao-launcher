@@ -1,4 +1,7 @@
+using System.Net;
+using System.Security.Cryptography;
 using Hechao.Contracts;
+using Hechao.Distribution;
 using Hechao.Launcher.Services;
 
 namespace Hechao.Launcher.Tests;
@@ -114,6 +117,79 @@ public sealed class LauncherUpdateServiceTests
         Assert.Null(command);
     }
 
+    [Fact]
+    public async Task DownloadAndLaunchUpdaterAsync_ReportsDownloadStage()
+    {
+        using var httpClient = new HttpClient(
+            new StaticResponseHandler(HttpStatusCode.Forbidden));
+        var downloader = new ResumableFileDownloader(
+            httpClient,
+            maximumAttempts: 1);
+        using var temporary = new TemporaryDirectory();
+        string? reportedStage = null;
+        Exception? reportedException = null;
+        var service = new LauncherUpdateService(
+            null!,
+            downloader,
+            temporary.Path,
+            () => null,
+            _ => null,
+            (stage, exception) =>
+            {
+                reportedStage = stage;
+                reportedException = exception;
+            });
+        var plan = new LauncherUpdatePlan(
+            new Version(0, 13, 2),
+            new Version(0, 13, 3),
+            new Version(0, 12, 3),
+            1024 * 1024,
+            Convert.ToHexString(SHA256.HashData("installer"u8)).ToLowerInvariant(),
+            PublishedAt,
+            "诊断更新",
+            new Uri(
+                "https://download.hechao.world/releases/launcher/0.13.3/" +
+                "installer.exe?x-oss-signature=must-not-leak"));
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            service.DownloadAndLaunchUpdaterAsync(
+                plan,
+                progress: null,
+                CancellationToken.None));
+
+        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        Assert.Equal("download", reportedStage);
+        Assert.Same(exception, reportedException);
+    }
+
+    [Fact]
+    public void FailureLog_RedactsSignedUrlAndBearerToken()
+    {
+        using var temporary = new TemporaryDirectory();
+        var exception = new HttpRequestException(
+            "GET https://download.hechao.world/file.exe?x-oss-signature=secret " +
+            "failed with Bearer launcher-secret\r\nretry",
+            inner: null,
+            HttpStatusCode.Forbidden);
+
+        LauncherUpdateFailureLog.TryWrite(
+            temporary.Path,
+            "download",
+            exception);
+
+        var lines = File.ReadAllLines(Path.Combine(
+            temporary.Path,
+            "last-update-error.log"));
+        var log = string.Join('\n', lines);
+        Assert.Equal(6, lines.Length);
+        Assert.Contains("stage=download", log, StringComparison.Ordinal);
+        Assert.Contains("http-status=403", log, StringComparison.Ordinal);
+        Assert.Contains("?<redacted>", log, StringComparison.Ordinal);
+        Assert.Contains("Bearer <redacted>", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("x-oss-signature", log, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("launcher-secret", log, StringComparison.Ordinal);
+    }
+
     private static LauncherUpdateRelease CreateRelease(
         string version = "0.13.0",
         string minimumSupportedVersion = "0.11.0",
@@ -127,4 +203,34 @@ public sealed class LauncherUpdateServiceTests
             PublishedAt,
             "稳定性更新",
             installerUrl);
+
+    private sealed class StaticResponseHandler(HttpStatusCode statusCode)
+        : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(statusCode)
+            {
+                RequestMessage = request
+            });
+    }
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public TemporaryDirectory()
+        {
+            Path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                $"hechao-launcher-update-tests-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path);
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            Directory.Delete(Path, recursive: true);
+        }
+    }
 }
