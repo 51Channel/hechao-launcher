@@ -16,7 +16,7 @@ public sealed class ForumRegistrationClient
         _httpClient = httpClient;
     }
 
-    public static ForumRegistrationClient CreateDefault()
+    public static ForumRegistrationClient CreateDefault(bool useSystemProxy = false)
     {
         var configuredBaseUrl = Environment.GetEnvironmentVariable("HECHAO_FORUM_BASE_URL");
         var baseUri = new Uri(
@@ -37,7 +37,8 @@ public sealed class ForumRegistrationClient
                 DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(5),
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-            UseCookies = false
+            UseCookies = false,
+            UseProxy = useSystemProxy
         };
         var httpClient = new HttpClient(handler)
         {

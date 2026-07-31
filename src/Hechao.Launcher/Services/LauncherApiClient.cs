@@ -60,7 +60,9 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         };
     }
 
-    public static LauncherApiClient CreateDefault(ISecureSessionStore? sessionStore = null)
+    public static LauncherApiClient CreateDefault(
+        ISecureSessionStore? sessionStore = null,
+        bool useSystemProxy = false)
     {
         var configuredBaseUrl = Environment.GetEnvironmentVariable("HECHAO_LAUNCHER_API_BASE_URL");
         var baseUri = new Uri(string.IsNullOrWhiteSpace(configuredBaseUrl) ? DefaultApiBaseUrl : configuredBaseUrl);
@@ -69,8 +71,8 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             throw new InvalidOperationException("The launcher API must use HTTPS unless it is a loopback test endpoint.");
         }
 
-        var handler = CreateSocketsHttpHandler();
-        var uploadHandler = CreateSocketsHttpHandler();
+        var handler = CreateSocketsHttpHandler(useSystemProxy);
+        var uploadHandler = CreateSocketsHttpHandler(useSystemProxy);
         var httpClient = new HttpClient(handler)
         {
             BaseAddress = baseUri,
@@ -923,7 +925,7 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         return options;
     }
 
-    private static SocketsHttpHandler CreateSocketsHttpHandler() =>
+    internal static SocketsHttpHandler CreateSocketsHttpHandler(bool useSystemProxy) =>
         new()
         {
             AutomaticDecompression =
@@ -931,7 +933,8 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
                 DecompressionMethods.Deflate |
                 DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(5),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            UseProxy = useSystemProxy,
         };
 }
 

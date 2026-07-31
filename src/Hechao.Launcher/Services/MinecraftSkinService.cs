@@ -39,7 +39,7 @@ public sealed partial class MinecraftSkinService : IMinecraftSkinService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public static MinecraftSkinService CreateDefault()
+    public static MinecraftSkinService CreateDefault(bool useSystemProxy = false)
     {
         var handler = new SocketsHttpHandler
         {
@@ -49,7 +49,8 @@ public sealed partial class MinecraftSkinService : IMinecraftSkinService
                 DecompressionMethods.Deflate |
                 DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(5),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            UseProxy = useSystemProxy
         };
         var client = new HttpClient(handler)
         {

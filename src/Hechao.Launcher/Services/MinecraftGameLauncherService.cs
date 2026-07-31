@@ -141,7 +141,9 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         TryAttachPersistedProcess();
     }
 
-    public static MinecraftGameLauncherService CreateDefault(string? microsoftClientId)
+    public static MinecraftGameLauncherService CreateDefault(
+        string? microsoftClientId,
+        bool useSystemProxy = false)
     {
         var configuredEndpoint = Environment.GetEnvironmentVariable("HECHAO_MINECRAFT_SERVER_ENDPOINT");
         var serverEndpoint = MinecraftServerEndpoint.Parse(
@@ -151,7 +153,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             AutomaticDecompression =
                 DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(10),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            UseProxy = useSystemProxy
         };
         var httpClient = new HttpClient(handler)
         {

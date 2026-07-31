@@ -114,6 +114,26 @@ public sealed class LauncherSettingsStoreTests
     }
 
     [Fact]
+    public void Load_RoundTripsSystemProxySetting()
+    {
+        using var temporary = new TemporaryDirectory();
+        var settingsPath = Path.Combine(temporary.Path, "settings.json");
+        var dataRoot = Path.Combine(temporary.Path, "game-data");
+        var store = new JsonLauncherSettingsStore(
+            settingsPath,
+            new ClientStorageMigrator());
+
+        store.Save(new LauncherSettings(
+            ClientDirectory: dataRoot,
+            UseSystemProxy: true));
+
+        var actual = store.Load();
+
+        Assert.True(actual.UseSystemProxy);
+        Assert.False(new LauncherSettings().UseSystemProxy);
+    }
+
+    [Fact]
     public async Task Load_RejectsSettingsFromANewerStorageSchema()
     {
         using var temporary = new TemporaryDirectory();

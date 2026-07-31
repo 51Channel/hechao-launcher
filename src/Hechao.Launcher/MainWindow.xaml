@@ -2711,6 +2711,25 @@
                                                       IsChecked="{Binding OpenDownloadsWhenInstalling, Mode=TwoWay}"
                                                       VerticalAlignment="Center" />
                                     </Grid>
+                                    <Grid Margin="0,20,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="使用 Windows 系统代理"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="关闭时直连；切换后下次启动生效。"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource InkMutedBrush}"
+                                                       Margin="0,4,0,0" />
+                                        </StackPanel>
+                                        <ToggleButton Grid.Column="1"
+                                                      Style="{StaticResource SwitchToggleStyle}"
+                                                      IsChecked="{Binding UseSystemProxy, Mode=TwoWay}"
+                                                      VerticalAlignment="Center" />
+                                    </Grid>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -3177,6 +3196,36 @@
                                 <ToggleButton Grid.Column="2"
                                               Style="{StaticResource SwitchToggleStyle}"
                                               IsChecked="{Binding KeepDownloadsAfterClose, Mode=TwoWay}"
+                                              VerticalAlignment="Center" />
+                            </Grid>
+                            <Grid Height="50" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="42" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="34"
+                                        Height="34"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="{StaticResource SurfacePressedBrush}"
+                                        CornerRadius="4">
+                                    <controls:IconParkIcon Kind="ExternalTransmission"
+                                                           Width="14"
+                                                           Height="14"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="使用 Windows 系统代理" FontSize="14" FontWeight="SemiBold" />
+                                    <TextBlock Text="关闭时直连；下次启动生效"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkMutedBrush}"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                                <ToggleButton Grid.Column="2"
+                                              Style="{StaticResource SwitchToggleStyle}"
+                                              IsChecked="{Binding UseSystemProxy, Mode=TwoWay}"
                                               VerticalAlignment="Center" />
                             </Grid>
 

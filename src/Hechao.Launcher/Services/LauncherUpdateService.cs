@@ -89,7 +89,9 @@ public sealed class LauncherUpdateService
                     exception));
     }
 
-    public static ILauncherUpdateService CreateDefault(LauncherApiClient apiClient)
+    public static ILauncherUpdateService CreateDefault(
+        LauncherApiClient apiClient,
+        bool useSystemProxy = false)
     {
         var handler = new SocketsHttpHandler
         {
@@ -100,7 +102,7 @@ public sealed class LauncherUpdateService
                 System.Net.DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(10),
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-            UseProxy = false
+            UseProxy = useSystemProxy
         };
         var httpClient = new HttpClient(
             apiClient.CreateDownloadAuthorizationHandler(handler))

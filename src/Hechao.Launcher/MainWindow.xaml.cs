@@ -15,31 +15,37 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var apiClient = LauncherApiClient.CreateDefault();
+            var settingsStore = new JsonLauncherSettingsStore();
+            var useSystemProxy = settingsStore.Load().UseSystemProxy;
+            var apiClient = LauncherApiClient.CreateDefault(
+                useSystemProxy: useSystemProxy);
         var catalogClient = HttpServerCatalogClient.CreateDefault(new DemoServerCatalogClient(), apiClient);
         var authenticationService = new MicrosoftMinecraftAuthenticationService(
             apiClient,
-            ForumRegistrationClient.CreateDefault(),
-            XboxMinecraftAuthenticationClient.CreateDefault(),
+                ForumRegistrationClient.CreateDefault(useSystemProxy),
+                XboxMinecraftAuthenticationClient.CreateDefault(useSystemProxy),
             LauncherIdentityConfiguration.MicrosoftClientId);
-        var installationService = ClientInstallationService.CreateDefault(apiClient);
+            var installationService = ClientInstallationService.CreateDefault(
+                apiClient,
+                useSystemProxy);
         var gameLauncherService = MinecraftGameLauncherService.CreateDefault(
-            LauncherIdentityConfiguration.MicrosoftClientId);
+                LauncherIdentityConfiguration.MicrosoftClientId,
+                useSystemProxy);
         MainWindowViewModel viewModel;
         try
         {
             viewModel = new MainWindowViewModel(
                 catalogClient,
                 authenticationService,
-                new JsonLauncherSettingsStore(),
+                settingsStore,
                 installationService,
                 gameLauncherService,
                 new JsonDownloadHistoryStore(),
                 new JsonGameDiagnosticsService(),
                 new GameDiagnosticUploadService(apiClient),
                 new JsonLauncherTelemetryService(apiClient),
-                LauncherUpdateService.CreateDefault(apiClient),
-                MinecraftSkinService.CreateDefault());
+                LauncherUpdateService.CreateDefault(apiClient, useSystemProxy),
+                MinecraftSkinService.CreateDefault(useSystemProxy));
         }
         catch (ClientStorageMigrationException exception)
         {

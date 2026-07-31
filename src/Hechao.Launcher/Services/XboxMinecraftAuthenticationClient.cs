@@ -19,13 +19,14 @@ public sealed class XboxMinecraftAuthenticationClient
         _httpClient = httpClient;
     }
 
-    public static XboxMinecraftAuthenticationClient CreateDefault()
+    public static XboxMinecraftAuthenticationClient CreateDefault(bool useSystemProxy = false)
     {
         var handler = new SocketsHttpHandler
         {
             AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
             ConnectTimeout = TimeSpan.FromSeconds(5),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            UseProxy = useSystemProxy
         };
         var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
         client.DefaultRequestHeaders.UserAgent.Add(LauncherProductInfo.CreateUserAgent());

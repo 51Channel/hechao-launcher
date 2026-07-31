@@ -50,7 +50,9 @@ public sealed class ClientInstallationService : IClientInstallationService
         _javaRuntimeService = javaRuntimeService;
     }
 
-    public static ClientInstallationService CreateDefault(LauncherApiClient apiClient)
+    public static ClientInstallationService CreateDefault(
+        LauncherApiClient apiClient,
+        bool useSystemProxy = false)
     {
         var handler = new SocketsHttpHandler
         {
@@ -59,7 +61,7 @@ public sealed class ClientInstallationService : IClientInstallationService
             ConnectTimeout = TimeSpan.FromSeconds(10),
             MaxConnectionsPerServer = ClientProfileInstaller.DefaultMaxConcurrentDownloads,
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-            UseProxy = false
+            UseProxy = useSystemProxy
         };
         var httpClient = new HttpClient(apiClient.CreateDownloadAuthorizationHandler(handler))
         {

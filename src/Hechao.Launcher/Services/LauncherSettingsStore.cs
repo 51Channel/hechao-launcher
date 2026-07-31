@@ -14,7 +14,8 @@ public sealed record LauncherSettings(
     bool OpenDownloadsWhenInstalling = true,
     string StartupPage = "服务器",
     int StorageSchemaVersion = ClientStorageLayout.CurrentStorageSchemaVersion,
-    Dictionary<string, string>? ProfileJavaPaths = null);
+    Dictionary<string, string>? ProfileJavaPaths = null,
+    bool UseSystemProxy = false);
 
 public interface ILauncherSettingsStore
 {

@@ -52,6 +52,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _keepDownloadsAfterClose;
     private bool _closeLauncherAfterGameStart;
     private bool _openDownloadsWhenInstalling;
+    private bool _useSystemProxy;
     private string _selectedStartupPage;
     private bool _isCatalogLoading;
     private HechaoAccount? _currentAccount;
@@ -134,6 +135,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _keepDownloadsAfterClose = _settings.KeepDownloadsAfterClose;
         _closeLauncherAfterGameStart = _settings.CloseLauncherAfterGameStart;
         _openDownloadsWhenInstalling = _settings.OpenDownloadsWhenInstalling;
+        _useSystemProxy = _settings.UseSystemProxy;
         StartupPageOptions = ["服务器", "下载中心", "活动"];
         _selectedStartupPage = StartupPageOptions.Contains(_settings.StartupPage)
             ? _settings.StartupPage
@@ -733,6 +735,19 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _openDownloadsWhenInstalling, value))
             {
                 SaveSettings();
+            }
+        }
+    }
+
+    public bool UseSystemProxy
+    {
+        get => _useSystemProxy;
+        set
+        {
+            if (SetProperty(ref _useSystemProxy, value))
+            {
+                SaveSettings();
+                ShowToast("代理设置将在下次启动时生效");
             }
         }
     }
@@ -2199,6 +2214,8 @@ public sealed class MainWindowViewModel : ObservableObject
         KeepDownloadsAfterClose = true;
         CloseLauncherAfterGameStart = false;
         OpenDownloadsWhenInstalling = true;
+        _useSystemProxy = false;
+        OnPropertyChanged(nameof(UseSystemProxy));
         SelectedStartupPage = "服务器";
         SaveSettings();
         _ = RefreshClientStateAsync();
@@ -2959,7 +2976,8 @@ public sealed class MainWindowViewModel : ObservableObject
             ClientStorageLayout.CurrentStorageSchemaVersion,
             new Dictionary<string, string>(
                 _profileJavaPaths,
-                StringComparer.Ordinal));
+                StringComparer.Ordinal),
+            UseSystemProxy);
         _settingsStore.Save(_settings);
     }
 
