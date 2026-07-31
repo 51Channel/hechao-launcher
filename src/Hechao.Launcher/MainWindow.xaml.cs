@@ -15,19 +15,19 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-            var settingsStore = new JsonLauncherSettingsStore();
-            var useSystemProxy = settingsStore.Load().UseSystemProxy;
-            var apiClient = LauncherApiClient.CreateDefault(
-                useSystemProxy: useSystemProxy);
+        var settingsStore = new JsonLauncherSettingsStore();
+        var useSystemProxy = settingsStore.Load().UseSystemProxy;
+        var apiClient = LauncherApiClient.CreateDefault(
+            useSystemProxy: useSystemProxy);
         var catalogClient = HttpServerCatalogClient.CreateDefault(new DemoServerCatalogClient(), apiClient);
         var authenticationService = new MicrosoftMinecraftAuthenticationService(
             apiClient,
                 ForumRegistrationClient.CreateDefault(useSystemProxy),
                 XboxMinecraftAuthenticationClient.CreateDefault(useSystemProxy),
             LauncherIdentityConfiguration.MicrosoftClientId);
-            var installationService = ClientInstallationService.CreateDefault(
-                apiClient,
-                useSystemProxy);
+        var installationService = ClientInstallationService.CreateDefault(
+            apiClient,
+            useSystemProxy);
         var gameLauncherService = MinecraftGameLauncherService.CreateDefault(
                 LauncherIdentityConfiguration.MicrosoftClientId,
                 useSystemProxy);
@@ -45,7 +45,8 @@ public partial class MainWindow : Window
                 new GameDiagnosticUploadService(apiClient),
                 new JsonLauncherTelemetryService(apiClient),
                 LauncherUpdateService.CreateDefault(apiClient, useSystemProxy),
-                MinecraftSkinService.CreateDefault(useSystemProxy));
+                MinecraftSkinService.CreateDefault(useSystemProxy),
+                new PlayerGameSettingsService());
         }
         catch (ClientStorageMigrationException exception)
         {
@@ -274,6 +275,31 @@ public partial class MainWindow : Window
         if (result == MessageBoxResult.Yes)
         {
             await viewModel.RollbackSelectedProfileAsync();
+        }
+    }
+
+    private async void DeleteProfileButton_OnClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel ||
+            !viewModel.CanDeleteSelectedProfile)
+        {
+            return;
+        }
+
+        var profileName = viewModel.SelectedProfileDisplayName;
+        var result = MessageBox.Show(
+            $"将删除 {profileName} 的客户端文件、配套 Java 和回滚副本。\n\n" +
+            "灵敏度、按键绑定等个人游戏设置会保留；以后仍可重新安装。\n\n" +
+            "确认继续吗？",
+            "删除客户端",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (result == MessageBoxResult.Yes)
+        {
+            await viewModel.DeleteSelectedProfileAsync();
         }
     }
 

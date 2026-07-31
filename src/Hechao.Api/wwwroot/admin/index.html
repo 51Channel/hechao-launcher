@@ -903,6 +903,24 @@
                     <img src="/admin/assets/icons/circle-alert.svg" alt="">
                     <span></span>
                 </div>
+                <section id="server-discovery" class="server-discovery">
+                  <div class="server-discovery-heading">
+                    <div>
+                      <span>实时服控</span>
+                      <strong>检测到的运行中服务器</strong>
+                    </div>
+                    <span id="server-discovery-count" class="server-discovery-count">0 个可添加</span>
+                  </div>
+                  <label>
+                    <span>选择服务器</span>
+                    <select id="server-discovery-select">
+                      <option value="">正在读取运行状态…</option>
+                    </select>
+                  </label>
+                  <p id="server-discovery-hint">
+                    这里只列出心跳正常、当前在线且尚未加入服务器目录的服控目标。
+                  </p>
+                </section>
                 <div class="form-grid">
                     <label>
                         服务器 ID

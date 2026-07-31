@@ -18,6 +18,12 @@ public sealed class ClientStorageLayoutTests
             Path.Combine(temporary.Path, "shared", "runtime"),
             layout.RuntimeRoot);
         Assert.Equal(
+            Path.Combine(temporary.Path, "shared", "player-settings"),
+            layout.PlayerSettingsRoot);
+        Assert.Equal(
+            Path.Combine(temporary.Path, "shared", "player-settings", "options.txt"),
+            layout.PlayerOptionsPath);
+        Assert.Equal(
             Path.Combine(
                 temporary.Path,
                 "instances",

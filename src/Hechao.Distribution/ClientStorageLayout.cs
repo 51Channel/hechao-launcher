@@ -23,6 +23,10 @@ public sealed class ClientStorageLayout
     public string SharedRoot => Path.Combine(DataRoot, "shared");
     public string ObjectCacheRoot => Path.Combine(SharedRoot, "objects");
     public string RuntimeRoot => Path.Combine(SharedRoot, "runtime");
+
+    public string PlayerSettingsRoot => Path.Combine(SharedRoot, "player-settings");
+
+    public string PlayerOptionsPath => Path.Combine(PlayerSettingsRoot, "options.txt");
     public string InternalRoot => Path.Combine(DataRoot, ".hechao");
     public string LocksRoot => Path.Combine(InternalRoot, "locks");
     public string MigrationMarkerPath => Path.Combine(InternalRoot, "storage-layout.json");
@@ -56,6 +60,7 @@ public sealed class ClientStorageLayout
         Directory.CreateDirectory(InstancesRoot);
         Directory.CreateDirectory(ObjectCacheRoot);
         Directory.CreateDirectory(RuntimeRoot);
+        Directory.CreateDirectory(PlayerSettingsRoot);
         Directory.CreateDirectory(LocksRoot);
     }
 

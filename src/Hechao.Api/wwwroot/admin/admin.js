@@ -115,7 +115,9 @@ function cacheElements() {
         "diagnostic-empty-state", "audit-list", "audit-empty-state",
         "load-more-audit-button", "server-drawer", "server-form",
         "drawer-kicker", "drawer-title", "close-drawer-button",
-        "cancel-server-button", "save-server-button", "form-error",
+  "cancel-server-button", "save-server-button", "form-error",
+  "server-discovery", "server-discovery-count", "server-discovery-select",
+  "server-discovery-hint",
         "server-id", "server-display-name", "server-short-name",
         "server-icon-glyph", "server-status", "server-max-players",
         "server-minecraft-version", "server-loader", "server-minimum-tier",
@@ -248,7 +250,10 @@ function bindEvents() {
             await reloadTelemetry();
         });
     });
-    elements["create-server-button"].addEventListener("click", openCreateServer);
+  elements["create-server-button"].addEventListener("click", openCreateServer);
+  elements["server-discovery-select"].addEventListener("change", event => {
+    applyDiscoveredServerTarget(event.target.value);
+  });
     elements["create-profile-button"].addEventListener("click", openCreateProfile);
     elements["cancel-profile-create-button"].addEventListener(
         "click",
@@ -3307,8 +3312,8 @@ function downloadDiagnostic(upload) {
 }
 
 function populateProfileOptions() {
-    const selected = elements["server-client-profile"].value;
-    elements["server-client-profile"].replaceChildren();
+  const selected = elements["server-client-profile"].value;
+  elements["server-client-profile"].replaceChildren();
     state.profiles.filter(profile => profile.isActive).forEach(profile => {
         const option = document.createElement("option");
         option.value = profile.id;
@@ -3316,8 +3321,130 @@ function populateProfileOptions() {
         elements["server-client-profile"].append(option);
     });
     if (selected && state.profiles.some(profile => profile.id === selected && profile.isActive)) {
-        elements["server-client-profile"].value = selected;
-    }
+    elements["server-client-profile"].value = selected;
+  }
+}
+
+function discoveredServerTargets() {
+  const catalogIds = new Set(state.servers.map(server => server.id));
+  return (state.control?.targets ?? [])
+    .filter(target =>
+      target.agentConnected &&
+      target.online &&
+      !catalogIds.has(target.serverId))
+    .sort((left, right) =>
+      left.agentId.localeCompare(right.agentId, "zh-CN") ||
+      left.serverId.localeCompare(right.serverId, "zh-CN"));
+}
+
+function runtimeForControlTarget(serverId) {
+  return (state.runtime?.targets ?? []).find(target =>
+    target.velocityTarget === serverId) ?? null;
+}
+
+function inferServerSoftware(softwareVersion) {
+  const software = String(softwareVersion ?? "");
+  const version = software.match(/\b\d+\.\d+(?:\.\d+)?\b/)?.[0] ?? null;
+  let loader = null;
+  if (/neoforge/i.test(software)) {
+    loader = "NeoForge";
+  } else if (/fabric/i.test(software)) {
+    loader = "Fabric";
+  } else if (/forge/i.test(software)) {
+    loader = "Forge";
+  } else if (/paper|purpur|spigot|bukkit/i.test(software)) {
+    loader = "Paper";
+  } else if (/vanilla/i.test(software)) {
+    loader = "Vanilla";
+  }
+
+  return { version, loader };
+}
+
+function truncateCharacters(value, maximumLength) {
+  return Array.from(String(value ?? "")).slice(0, maximumLength).join("");
+}
+
+function populateDiscoveredServerOptions() {
+  const targets = discoveredServerTargets();
+  const select = elements["server-discovery-select"];
+  select.replaceChildren();
+  elements["server-discovery"].hidden = false;
+  elements["server-discovery-count"].textContent = `${targets.length} 个可添加`;
+
+  if (targets.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "未检测到可添加的运行中服务器";
+    select.append(option);
+    select.disabled = true;
+    elements["server-discovery-hint"].textContent =
+      "当前没有心跳正常、在线且尚未进入目录的服控目标，仍可在下方手动填写。";
+    return targets;
+  }
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "请选择运行中的服务器";
+  placeholder.selected = true;
+  select.append(placeholder);
+  targets.forEach(target => {
+    const option = document.createElement("option");
+    option.value = target.serverId;
+    option.textContent =
+      `${target.displayName} (${target.serverId}) · ${target.agentId} · ${target.port}`;
+    select.append(option);
+  });
+  select.disabled = false;
+  elements["server-discovery-hint"].textContent =
+    "选择后会自动填写可识别字段；显示名、加载器和客户端档案仍需在保存前核对。";
+  return targets;
+}
+
+function applyDiscoveredServerTarget(serverId) {
+  const target = discoveredServerTargets().find(item => item.serverId === serverId);
+  if (!target) {
+    elements["server-id"].readOnly = false;
+    elements["server-discovery-hint"].textContent =
+      "选择后会自动填写可识别字段；显示名、加载器和客户端档案仍需在保存前核对。";
+    return;
+  }
+
+  const runtime = runtimeForControlTarget(target.serverId);
+  const software = inferServerSoftware(runtime?.softwareVersion);
+  const displayName = target.displayName || target.serverId;
+  elements["server-id"].value = target.serverId;
+  elements["server-id"].readOnly = true;
+  elements["server-display-name"].value = displayName;
+  elements["server-short-name"].value = truncateCharacters(displayName, 12);
+  elements["server-icon-glyph"].value = truncateCharacters(displayName, 1) || "服";
+  elements["server-status"].value = "Online";
+  elements["server-max-players"].value = String(
+    target.settings?.maxPlayers ?? runtime?.maxPlayers ?? 30);
+  elements["server-velocity-target"].value = target.serverId;
+  elements["server-monitoring-enabled"].checked = true;
+
+  if (software.version) {
+    elements["server-minecraft-version"].value = software.version;
+  }
+  if (software.loader) {
+    elements["server-loader"].value = software.loader;
+  }
+
+  const matchingProfiles = state.profiles.filter(profile =>
+    profile.isActive &&
+    (!software.version || profile.minecraftVersion === software.version) &&
+    (!software.loader || profile.loader === software.loader));
+  if (matchingProfiles.length === 1) {
+    elements["server-client-profile"].value = matchingProfiles[0].id;
+  }
+
+  const softwareText = runtime?.softwareVersion
+    ? `，运行版本 ${runtime.softwareVersion}`
+    : "";
+  elements["server-discovery-hint"].textContent =
+    `已从 ${target.agentId}:${target.port} 填入 ${target.serverId}${softwareText}。` +
+    "请核对显示名、加载器、Velocity 目标和客户端档案。";
 }
 
 function openCreateServer() {
@@ -3326,6 +3453,7 @@ function openCreateServer() {
     elements["drawer-kicker"].textContent = "服务器目录";
     elements["drawer-title"].textContent = "新增服务器";
     elements["server-id"].disabled = false;
+    elements["server-id"].readOnly = false;
     elements["server-status"].value = "Online";
     elements["server-max-players"].value = "30";
     elements["server-minecraft-version"].value = "1.21.11";
@@ -3341,15 +3469,19 @@ function openCreateServer() {
     elements["server-closes-at"].value = "";
     elements["server-is-visible"].checked = true;
     elements["server-visible-field"].hidden = false;
+    const discoveredTargets = populateDiscoveredServerOptions();
     syncServerRoleFields();
     elements["server-revision-label"].textContent = "新记录";
     setInlineError(elements["form-error"], "");
     elements["server-drawer"].showModal();
-    elements["server-id"].focus();
+    (discoveredTargets.length > 0
+        ? elements["server-discovery-select"]
+        : elements["server-id"]).focus();
 }
 
 function openEditServer(server) {
     state.editingServer = server;
+    elements["server-discovery"].hidden = true;
     elements["drawer-kicker"].textContent = server.id;
     elements["drawer-title"].textContent = "编辑服务器";
     elements["server-id"].value = server.id;
@@ -3384,6 +3516,7 @@ function openEditServer(server) {
 
 function closeServerDrawer() {
     elements["server-drawer"].close();
+    elements["server-id"].readOnly = false;
     state.editingServer = null;
 }
 

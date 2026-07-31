@@ -76,6 +76,25 @@ public sealed class AdminWebStyleContractTests
         Assert.Contains("/v1/admin/catalog/servers", script, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ServerCreation_DiscoversFreshOnlineUncataloguedControlTargets()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var webRoot = Path.Combine(repositoryRoot, "src", "Hechao.Api", "wwwroot", "admin");
+        var html = File.ReadAllText(Path.Combine(webRoot, "index.html"));
+        var script = File.ReadAllText(Path.Combine(webRoot, "admin.js"));
+        var css = File.ReadAllText(Path.Combine(webRoot, "admin.css"));
+
+        Assert.Contains("id=\"server-discovery-select\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"server-discovery-hint\"", html, StringComparison.Ordinal);
+        Assert.Contains("target.agentConnected &&", script, StringComparison.Ordinal);
+        Assert.Contains("target.online &&", script, StringComparison.Ordinal);
+        Assert.Contains("!catalogIds.has(target.serverId)", script, StringComparison.Ordinal);
+        Assert.Contains("applyDiscoveredServerTarget", script, StringComparison.Ordinal);
+        Assert.Contains("runtime?.softwareVersion", script, StringComparison.Ordinal);
+        Assert.Contains(".server-discovery", css, StringComparison.Ordinal);
+    }
+
     private static string ReadRule(string css, string selector)
     {
         var match = Regex.Match(

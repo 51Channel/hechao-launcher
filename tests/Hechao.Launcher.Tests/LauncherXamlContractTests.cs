@@ -288,6 +288,27 @@ public sealed class LauncherXamlContractTests
             brush => brush.Attribute("Viewbox")?.Value == "40,8,8,8");
     }
 
+    [Fact]
+    public void ServerDetails_ProvidesConfirmedClientRemovalAction()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        var button = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Click")?.Value == "DeleteProfileButton_OnClick");
+
+        Assert.Equal(
+            "{Binding CanDeleteSelectedProfile}",
+            button.Attribute("IsEnabled")?.Value);
+        Assert.Equal(
+            "{Binding DeleteProfileToolTip}",
+            button.Attribute("ToolTip")?.Value);
+        Assert.Contains(
+            button.Descendants(),
+            element => element.Attribute("Kind")?.Value == "Delete");
+    }
+
     private static XDocument LoadLauncherXaml()
     {
         var repositoryRoot = FindRepositoryRoot();

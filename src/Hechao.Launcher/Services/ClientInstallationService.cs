@@ -24,6 +24,11 @@ public interface IClientInstallationService
         IProgress<ClientInstallProgress>? progress = null,
         CancellationToken cancellationToken = default);
 
+    Task<bool> DeleteAsync(
+        ClientProfileSummary profile,
+        string dataRoot,
+        CancellationToken cancellationToken = default);
+
     Task<InstalledProfileState> RollbackAsync(
         ClientProfileSummary profile,
         string dataRoot,
@@ -173,6 +178,15 @@ public sealed class ClientInstallationService : IClientInstallationService
             string.Empty,
             totalClientBytes,
             totalClientBytes));
+    }
+
+    public Task<bool> DeleteAsync(
+        ClientProfileSummary profile,
+        string dataRoot,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        return _installer.DeleteAsync(dataRoot, profile.Id, cancellationToken);
     }
 
     public async Task<InstalledProfileState> RollbackAsync(

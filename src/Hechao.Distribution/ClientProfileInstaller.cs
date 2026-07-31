@@ -140,6 +140,54 @@ public sealed class ClientProfileInstaller(
             cancellationToken);
     }
 
+    public Task<bool> DeleteAsync(
+        string dataRoot,
+        string profileId,
+        CancellationToken cancellationToken = default)
+    {
+        ManifestValidator.ValidateProfileId(profileId);
+        var layout = new ClientStorageLayout(dataRoot);
+        layout.EnsureBaseDirectories();
+
+        return Task.Run(
+            () =>
+            {
+                using var installationLock = AcquireInstallationLock(layout, profileId);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var stagingPrefix = $".{profileId}.staging-";
+                var paths = new List<string>
+                {
+                    layout.GetProfileRoot(profileId),
+                    layout.GetPreviousProfileRoot(profileId)
+                };
+                paths.AddRange(
+                    Directory.EnumerateDirectories(
+                            layout.InstancesRoot,
+                            "*",
+                            SearchOption.TopDirectoryOnly)
+                        .Where(path => Path.GetFileName(path).StartsWith(
+                            stagingPrefix,
+                            StringComparison.OrdinalIgnoreCase)));
+
+                var deleted = false;
+                foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!Directory.Exists(path))
+                    {
+                        continue;
+                    }
+
+                    DeleteDirectoryTree(path, cancellationToken);
+                    deleted = true;
+                }
+
+                return deleted;
+            },
+            cancellationToken);
+    }
+
     public async Task<InstalledProfileState> RollbackAsync(
         string dataRoot,
         string profileId,
@@ -803,6 +851,53 @@ public sealed class ClientProfileInstaller(
         catch (UnauthorizedAccessException)
         {
         }
+    }
+
+    private static void DeleteDirectoryTree(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+
+        var rootAttributes = File.GetAttributes(path);
+        if ((rootAttributes & FileAttributes.ReparsePoint) != 0)
+        {
+            Directory.Delete(path, recursive: false);
+            return;
+        }
+
+        foreach (var entry in Directory.EnumerateFileSystemEntries(path))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var attributes = File.GetAttributes(entry);
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    Directory.Delete(entry, recursive: false);
+                }
+                else
+                {
+                    DeleteDirectoryTree(entry, cancellationToken);
+                }
+
+                continue;
+            }
+
+            if ((attributes & FileAttributes.ReadOnly) != 0)
+            {
+                File.SetAttributes(entry, attributes & ~FileAttributes.ReadOnly);
+            }
+
+            File.Delete(entry);
+        }
+
+        File.SetAttributes(path, FileAttributes.Normal);
+        Directory.Delete(path, recursive: false);
     }
 
     private sealed record PendingInstallFile(

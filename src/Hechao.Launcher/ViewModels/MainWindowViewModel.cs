@@ -26,6 +26,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly ILauncherTelemetryService _telemetryService;
     private readonly ILauncherUpdateService _launcherUpdateService;
     private readonly IMinecraftSkinService _minecraftSkinService;
+    private readonly IPlayerGameSettingsService _playerGameSettingsService;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _profileJavaPaths =
@@ -93,7 +94,8 @@ public sealed class MainWindowViewModel : ObservableObject
         IGameDiagnosticUploadService diagnosticUploadService,
         ILauncherTelemetryService? telemetryService = null,
         ILauncherUpdateService? launcherUpdateService = null,
-        IMinecraftSkinService? minecraftSkinService = null)
+        IMinecraftSkinService? minecraftSkinService = null,
+        IPlayerGameSettingsService? playerGameSettingsService = null)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -109,6 +111,8 @@ public sealed class MainWindowViewModel : ObservableObject
             launcherUpdateService ?? NullLauncherUpdateService.Instance;
         _minecraftSkinService =
             minecraftSkinService ?? NullMinecraftSkinService.Instance;
+        _playerGameSettingsService =
+            playerGameSettingsService ?? NullPlayerGameSettingsService.Instance;
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
@@ -595,6 +599,19 @@ public sealed class MainWindowViewModel : ObservableObject
             ? "请先退出当前客户端"
             : $"回滚到 v{_rollbackCandidate.Version}";
 
+    public bool CanDeleteSelectedProfile =>
+        _selectedProfileState != LocalProfileState.Missing &&
+        !IsProgressActive &&
+        !IsSelectedProfileRunning();
+
+    public string DeleteProfileToolTip => _selectedProfileState == LocalProfileState.Missing
+        ? "当前客户端尚未安装"
+        : IsSelectedProfileRunning()
+            ? "请先退出当前客户端"
+            : IsProgressActive
+                ? "请等待当前任务完成"
+                : "删除客户端文件并保留玩家设置";
+
     public double UpdateProgress
     {
         get => _updateProgress;
@@ -631,6 +648,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 PrimaryActionCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(CanRollbackSelectedProfile));
                 OnPropertyChanged(nameof(RollbackProfileToolTip));
+                OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+                OnPropertyChanged(nameof(DeleteProfileToolTip));
             }
         }
     }
@@ -899,8 +918,23 @@ public sealed class MainWindowViewModel : ObservableObject
             IsAccountBusy = false;
         }
 
+        await TryImportPlayerGameSettingsAsync();
         await LoadCatalogAsync();
         await TryCheckLauncherUpdateAsync();
+    }
+
+    private async Task TryImportPlayerGameSettingsAsync()
+    {
+        try
+        {
+            await _playerGameSettingsService.ImportLatestAsync(ClientDirectory);
+        }
+        catch (PlayerGameSettingsException exception)
+        {
+            Trace.TraceWarning(
+                "Unable to import shared player settings: {0}",
+                exception.Message);
+        }
     }
 
     private async Task TryCheckLauncherUpdateAsync()
@@ -932,6 +966,15 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(LauncherUpdateReleaseNotes));
             OnPropertyChanged(nameof(LauncherUpdateSizeText));
             IsLauncherUpdateVisible = true;
+            LauncherUpdateStatus = "发现新版本，正在自动下载更新…";
+            try
+            {
+                await InstallLauncherUpdateAsync();
+            }
+            catch (Exception exception)
+            {
+                HandleUnexpectedLauncherUpdateError(exception);
+            }
         }
         catch (Exception exception) when (
             exception is HttpRequestException or TaskCanceledException or
@@ -1286,6 +1329,81 @@ public sealed class MainWindowViewModel : ObservableObject
         return succeeded;
     }
 
+    public async Task<bool> DeleteSelectedProfileAsync()
+    {
+        var selectedServer = SelectedServer;
+        if (selectedServer is null ||
+            !_clientProfiles.TryGetValue(selectedServer.ClientProfileId, out var profile))
+        {
+            ShowToast("当前服务器没有可删除的客户端档案");
+            return false;
+        }
+
+        if (_selectedProfileState == LocalProfileState.Missing)
+        {
+            ShowToast("当前客户端尚未安装");
+            return false;
+        }
+
+        if (IsProgressActive)
+        {
+            return false;
+        }
+
+        if (_gameLauncherService.IsProfileRunning(profile.Id))
+        {
+            ShowToast("请先退出当前客户端再删除");
+            return false;
+        }
+
+        var deleted = false;
+        IsProgressActive = true;
+        UpdateProgress = 10;
+        ClientStatusText = "正在保留个人游戏设置";
+        PrimaryActionText = "正在删除";
+        try
+        {
+            await _playerGameSettingsService.ImportLatestAsync(ClientDirectory);
+            UpdateProgress = 35;
+            ClientStatusText = "正在删除客户端文件";
+            await _installationService.DeleteAsync(profile, ClientDirectory);
+
+            _selectedProfileState = LocalProfileState.Missing;
+            _selectedProfileStateChecked = true;
+            SetRollbackCandidate(null);
+            NotifySelectedProfileJavaPropertiesChanged();
+            CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
+            UpdateProgress = 0;
+            ClientStatusText = "客户端已删除，个人设置已保留";
+            ShowToast($"已删除 {profile.DisplayName}，可随时重新安装");
+            deleted = true;
+        }
+        catch (ProfileInstallInProgressException)
+        {
+            ClientStatusText = "客户端正在被其他任务使用";
+            ShowToast("另一个启动器窗口正在安装、回滚或删除这个客户端");
+        }
+        catch (PlayerGameSettingsException)
+        {
+            ClientStatusText = "个人游戏设置尚未安全保存";
+            ShowToast("删除已取消，未能先保存灵敏度和按键设置");
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            ClientStatusText = "客户端删除失败";
+            ShowToast("部分文件仍被占用，客户端没有被标记为已删除");
+        }
+        finally
+        {
+            IsProgressActive = false;
+            OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+            OnPropertyChanged(nameof(DeleteProfileToolTip));
+            UpdatePrimaryActionForState();
+        }
+
+        return deleted;
+    }
+
     public async Task<bool> RollbackSelectedProfileAsync()
     {
         var selectedServer = SelectedServer;
@@ -1452,11 +1570,19 @@ public sealed class MainWindowViewModel : ObservableObject
                 await _gameLauncherService.StopRunningGameAsync(
                     TimeSpan.FromSeconds(15),
                     stopProgress);
+                await _playerGameSettingsService.CaptureProfileAsync(
+                    ClientDirectory,
+                    runningGame.ProfileId);
                 _runningServerId = null;
                 OnPropertyChanged(nameof(CanRollbackSelectedProfile));
                 OnPropertyChanged(nameof(RollbackProfileToolTip));
+                OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+                OnPropertyChanged(nameof(DeleteProfileToolTip));
             }
 
+            await _playerGameSettingsService.ApplyToProfileAsync(
+                ClientDirectory,
+                selectedServer.ClientProfileId);
             await _gameLauncherService.LaunchAsync(
                 new MinecraftLaunchRequest(
                     ClientDirectory,
@@ -1475,6 +1601,8 @@ public sealed class MainWindowViewModel : ObservableObject
             _runningServerId = selectedServer.Id;
             OnPropertyChanged(nameof(CanRollbackSelectedProfile));
             OnPropertyChanged(nameof(RollbackProfileToolTip));
+            OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+            OnPropertyChanged(nameof(DeleteProfileToolTip));
             UpdateProgress = 100;
             ClientStatusText = "游戏已启动";
             ShowToast($"正在进入 {selectedServer.Name}");
@@ -1564,6 +1692,12 @@ public sealed class MainWindowViewModel : ObservableObject
             telemetryFailure = LauncherTelemetryFailureCode.GameAlreadyRunning;
             ClientStatusText = "无法安全关闭当前游戏";
             ShowToast("当前游戏未能退出，已取消切换且没有申请新服授权");
+        }
+        catch (PlayerGameSettingsException)
+        {
+            telemetryFailure = LauncherTelemetryFailureCode.IoFailure;
+            ClientStatusText = "个人游戏设置同步失败";
+            ShowToast("无法安全同步灵敏度和按键设置，游戏没有启动");
         }
         catch (MinecraftLaunchException exception)
         {
@@ -1846,6 +1980,19 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         try
         {
+            await _playerGameSettingsService.CaptureProfileAsync(
+                ClientDirectory,
+                record.ProfileId);
+        }
+        catch (PlayerGameSettingsException exception)
+        {
+            Trace.TraceWarning(
+                "Unable to capture shared player settings after game exit: {0}",
+                exception.Message);
+        }
+
+        try
+        {
             await _gameDiagnosticsService.RecordExitAsync(record);
         }
         catch (Exception exception) when (
@@ -1878,6 +2025,8 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(LatestGameExitText));
             OnPropertyChanged(nameof(CanRollbackSelectedProfile));
             OnPropertyChanged(nameof(RollbackProfileToolTip));
+            OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+            OnPropertyChanged(nameof(DeleteProfileToolTip));
             var runningGame = _gameLauncherService.GetRunningGame();
             _runningServerId = runningGame?.ServerId;
             if (runningGame is null && !IsProgressActive)
@@ -2192,6 +2341,7 @@ public sealed class MainWindowViewModel : ObservableObject
         ClientStatusText = "正在检查客户端";
         UpdatePrimaryActionForState();
         SaveSettings();
+        _ = TryImportPlayerGameSettingsAsync();
         _ = RefreshClientStateAsync();
         ShowToast("游戏数据目录已更新");
     }
@@ -2218,6 +2368,7 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(UseSystemProxy));
         SelectedStartupPage = "服务器";
         SaveSettings();
+        _ = TryImportPlayerGameSettingsAsync();
         _ = RefreshClientStateAsync();
         ShowToast("启动器设置已恢复默认");
     }
@@ -3134,6 +3285,8 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(CanRollbackSelectedProfile));
         OnPropertyChanged(nameof(RollbackCandidateVersion));
         OnPropertyChanged(nameof(RollbackProfileToolTip));
+        OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+        OnPropertyChanged(nameof(DeleteProfileToolTip));
     }
 
     private static LauncherPage GetStartupPage(string startupPage)

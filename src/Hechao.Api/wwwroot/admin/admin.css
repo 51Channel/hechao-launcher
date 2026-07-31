@@ -1498,6 +1498,66 @@ dialog::backdrop {
     line-height: 1.55;
 }
 
+.server-discovery {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border: var(--line);
+    border-radius: 6px;
+    background: var(--surface-muted);
+}
+
+.server-discovery[hidden] {
+    display: none;
+}
+
+.server-discovery-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.server-discovery-heading > div {
+    display: grid;
+    gap: 3px;
+}
+
+.server-discovery-heading span,
+.server-discovery label > span {
+    color: var(--brand);
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.server-discovery-heading strong {
+    color: var(--ink);
+    font-size: 13px;
+}
+
+.server-discovery-count {
+    flex: 0 0 auto;
+    color: var(--ink-muted) !important;
+    font-weight: 600 !important;
+}
+
+.server-discovery label {
+    display: grid;
+    gap: 7px;
+}
+
+.server-discovery select {
+    width: 100%;
+}
+
+.server-discovery p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 10px;
+    line-height: 1.55;
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

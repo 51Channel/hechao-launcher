@@ -271,11 +271,104 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         Assert.Equal("survival2", viewModel.SelectedServer?.Id);
     }
 
+    [Fact]
+    public async Task Startup_WithAvailableLauncherUpdate_DownloadsAutomatically()
+    {
+        var updateService = new StubLauncherUpdateService
+        {
+            Plan = new LauncherUpdatePlan(
+                new Version(0, 13, 7),
+                new Version(0, 14, 0),
+                new Version(0, 12, 3),
+                64 * 1024 * 1024,
+                new string('a', 64),
+                DateTimeOffset.UtcNow,
+                "自动更新测试",
+                new Uri("https://download.hechao.world/launcher.exe"))
+        };
+
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            launcherUpdateService: updateService);
+
+        await WaitUntilAsync(() => updateService.DownloadRequestCount == 1);
+
+        Assert.True(viewModel.IsLauncherUpdateVisible);
+        Assert.Equal(100, viewModel.LauncherUpdateProgress);
+        Assert.Contains("重新启动", viewModel.LauncherUpdateStatus);
+    }
+
+    [Fact]
+    public async Task DeleteClient_PreservesSettingsBeforeRemovingProfile()
+    {
+        var operationLog = new List<string>();
+        var installation = new StubInstallationService
+        {
+            OperationLog = operationLog
+        };
+        var playerSettings = new StubPlayerGameSettingsService
+        {
+            OperationLog = operationLog
+        };
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            playerGameSettingsService: playerSettings);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "客户端已就绪");
+        operationLog.Clear();
+
+        var deleted = await viewModel.DeleteSelectedProfileAsync();
+
+        Assert.True(deleted);
+        Assert.Equal(["settings:import", "delete"], operationLog);
+        Assert.Equal(1, installation.DeleteRequestCount);
+        Assert.Equal("安装客户端", viewModel.PrimaryActionText);
+        Assert.False(viewModel.CanDeleteSelectedProfile);
+    }
+
+    [Fact]
+    public async Task EnterServer_AppliesSharedSettingsBeforeStartingGame()
+    {
+        var operationLog = new List<string>();
+        var authentication = new StubAuthenticationService
+        {
+            OperationLog = operationLog
+        };
+        var gameLauncher = new StubGameLauncherService
+        {
+            OperationLog = operationLog
+        };
+        var playerSettings = new StubPlayerGameSettingsService
+        {
+            OperationLog = operationLog
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            gameLauncher,
+            playerGameSettingsService: playerSettings);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "客户端已就绪");
+        operationLog.Clear();
+
+        await viewModel.PrimaryActionCommand.ExecuteAsync();
+
+        Assert.Equal(
+            ["settings:apply:base-1.21.11", "grant:survival2", "start:survival2"],
+            operationLog);
+    }
+
     private static MainWindowViewModel CreateViewModel(
         StubAuthenticationService authentication,
         StubGameLauncherService gameLauncher,
         StubInstallationService? installation = null,
-        LauncherSettings? settings = null)
+        LauncherSettings? settings = null,
+        ILauncherUpdateService? launcherUpdateService = null,
+        IPlayerGameSettingsService? playerGameSettingsService = null)
     {
         return new MainWindowViewModel(
             new StubCatalogClient(),
@@ -285,7 +378,9 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             gameLauncher,
             new StubDownloadHistoryStore(),
             new StubGameDiagnosticsService(),
-            new StubDiagnosticUploadService());
+            new StubDiagnosticUploadService(),
+            launcherUpdateService: launcherUpdateService,
+            playerGameSettingsService: playerGameSettingsService);
     }
 
     private static InstalledProfileState CreateInstalledState(string version) =>
@@ -495,11 +590,66 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             throw new NotSupportedException();
     }
 
+    private sealed class StubLauncherUpdateService : ILauncherUpdateService
+    {
+        public LauncherUpdatePlan? Plan { get; init; }
+        public int DownloadRequestCount { get; private set; }
+
+        public Task<LauncherUpdatePlan?> CheckAsync(
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(Plan);
+
+        public Task<bool> DownloadAndLaunchUpdaterAsync(
+            LauncherUpdatePlan plan,
+            IProgress<LauncherUpdateDownloadProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            DownloadRequestCount++;
+            progress?.Report(new LauncherUpdateDownloadProgress(
+                plan.InstallerBytes,
+                plan.InstallerBytes));
+            return Task.FromResult(true);
+        }
+    }
+
+    private sealed class StubPlayerGameSettingsService : IPlayerGameSettingsService
+    {
+        public List<string>? OperationLog { get; init; }
+
+        public Task ImportLatestAsync(
+            string dataRoot,
+            CancellationToken cancellationToken = default)
+        {
+            OperationLog?.Add("settings:import");
+            return Task.CompletedTask;
+        }
+
+        public Task CaptureProfileAsync(
+            string dataRoot,
+            string profileId,
+            CancellationToken cancellationToken = default)
+        {
+            OperationLog?.Add($"settings:capture:{profileId}");
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyToProfileAsync(
+            string dataRoot,
+            string profileId,
+            CancellationToken cancellationToken = default)
+        {
+            OperationLog?.Add($"settings:apply:{profileId}");
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class StubInstallationService : IClientInstallationService
     {
         public InstalledProfileState? RollbackCandidate { get; set; }
         public int LocalStateRequestCount { get; private set; }
         public int RollbackRequestCount { get; private set; }
+        public int DeleteRequestCount { get; private set; }
+        public List<string>? OperationLog { get; init; }
 
         public Task<LocalProfileState> GetLocalStateAsync(
             ClientProfileSummary profile,
@@ -522,6 +672,16 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             IProgress<ClientInstallProgress>? progress = null,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<bool> DeleteAsync(
+            ClientProfileSummary profile,
+            string dataRoot,
+            CancellationToken cancellationToken = default)
+        {
+            DeleteRequestCount++;
+            OperationLog?.Add("delete");
+            return Task.FromResult(true);
+        }
 
         public Task<InstalledProfileState> RollbackAsync(
             ClientProfileSummary profile,
