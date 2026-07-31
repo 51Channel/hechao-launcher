@@ -61,9 +61,10 @@ public static partial class ServerControlRules
 
         if (request.Action == ServerControlAction.ApplySettings)
         {
-            if (request.Settings is null || !IsValidSettings(request.Settings))
+            if (request.Settings is null ||
+                !IsValidSettings(request.Settings, requireMemory: true))
             {
-                errors["settings"] = ["服务器快捷设置无效。"];
+                errors["settings"] = ["服务器快捷设置或启动内存无效。"];
             }
         }
         else if (request.Settings is not null)
@@ -168,11 +169,33 @@ public static partial class ServerControlRules
         return errors;
     }
 
-    public static bool IsValidSettings(ServerQuickSettings settings) =>
-        settings.MaxPlayers is >= 1 and <= 1000 &&
-        settings.ViewDistance is >= 2 and <= 32 &&
-        settings.SimulationDistance is >= 2 and <= 32 &&
-        Difficulties.Contains(settings.Difficulty);
+    public static bool IsValidSettings(
+        ServerQuickSettings settings,
+        bool requireMemory = false)
+    {
+        var hasNoMemorySettings =
+            settings.InitialMemoryMiB is null &&
+            settings.MaximumMemoryMiB is null &&
+            settings.MaximumAllowedMemoryMiB is null;
+        var hasValidMemorySettings =
+            settings.InitialMemoryMiB is int initialMemoryMiB &&
+            settings.MaximumMemoryMiB is int maximumMemoryMiB &&
+            settings.MaximumAllowedMemoryMiB is int maximumAllowedMemoryMiB &&
+            initialMemoryMiB is >= 512 and <= 65536 &&
+            maximumMemoryMiB is >= 512 and <= 65536 &&
+            maximumAllowedMemoryMiB is >= 512 and <= 65536 &&
+            initialMemoryMiB % 256 == 0 &&
+            maximumMemoryMiB % 256 == 0 &&
+            maximumAllowedMemoryMiB % 256 == 0 &&
+            initialMemoryMiB <= maximumMemoryMiB &&
+            maximumMemoryMiB <= maximumAllowedMemoryMiB;
+
+        return settings.MaxPlayers is >= 1 and <= 1000 &&
+            settings.ViewDistance is >= 2 and <= 32 &&
+            settings.SimulationDistance is >= 2 and <= 32 &&
+            Difficulties.Contains(settings.Difficulty) &&
+            (hasValidMemorySettings || (!requireMemory && hasNoMemorySettings));
+    }
 
     public static bool IsValidConsoleCommand(string? value)
     {

@@ -110,6 +110,27 @@ foreach ($target in @($configurationObject.targets)) {
     )) {
         throw "server.properties is missing for target $($target.serverId)."
     }
+    $memorySettingsPath = Join-Path (
+        [System.IO.Path]::GetFullPath([string]$target.serverDirectory)
+    ) ([string]$target.memorySettingsRelativePath)
+    if (-not (Test-Path -LiteralPath $memorySettingsPath -PathType Leaf)) {
+        throw "JVM memory settings file is missing for target $($target.serverId)."
+    }
+    $memorySettingsText = [System.Text.Encoding]::Latin1.GetString(
+        [System.IO.File]::ReadAllBytes($memorySettingsPath))
+    $initialMemoryMatches = [regex]::Matches(
+        $memorySettingsText,
+        '(?i)(?<!\S)-Xms[1-9][0-9]*[KMG](?=\s|$)')
+    $maximumMemoryMatches = [regex]::Matches(
+        $memorySettingsText,
+        '(?i)(?<!\S)-Xmx[1-9][0-9]*[KMG](?=\s|$)')
+    if ($initialMemoryMatches.Count -ne 1 -or
+        $maximumMemoryMatches.Count -ne 1) {
+        throw (
+            "JVM memory settings file for target $($target.serverId) must " +
+            'contain exactly one -Xms and one -Xmx argument.'
+        )
+    }
     $task = Get-ScheduledTask `
         -TaskName $target.startTaskName `
         -ErrorAction SilentlyContinue

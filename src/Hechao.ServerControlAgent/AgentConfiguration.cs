@@ -41,9 +41,7 @@ public sealed record ServerControlAgentConfiguration
             StateDirectory = Path.GetFullPath(configuration.StateDirectory),
             ConsoleSubmitScript =
                 Path.GetFullPath(configuration.ConsoleSubmitScript),
-            Targets = configuration.Targets
-                .Select(target => target.Normalize())
-                .ToArray()
+            Targets = [.. configuration.Targets.Select(target => target.Normalize())]
         };
     }
 
@@ -110,6 +108,8 @@ public sealed record ServerControlTargetConfiguration
     public string? ConflictGroup { get; init; }
     public string LogRelativePath { get; init; } = @"logs\latest.log";
     public string PropertiesRelativePath { get; init; } = "server.properties";
+    public string MemorySettingsRelativePath { get; init; } = "start.bat";
+    public int MaximumAllowedMemoryMiB { get; init; } = 65536;
     public IReadOnlyList<string> AllowedCommandPrefixes { get; init; } =
         ["list", "say", "whitelist", "save-all"];
 
@@ -117,11 +117,10 @@ public sealed record ServerControlTargetConfiguration
         this with
         {
             ServerDirectory = Path.GetFullPath(ServerDirectory),
-            AllowedCommandPrefixes = AllowedCommandPrefixes
+            AllowedCommandPrefixes = [.. AllowedCommandPrefixes
                 .Select(prefix => prefix.ToLowerInvariant())
                 .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)
-                .ToArray()
+                .Order(StringComparer.Ordinal)]
         };
 
     internal void Validate()
@@ -134,6 +133,13 @@ public sealed record ServerControlTargetConfiguration
              !ConfigurationPatterns.ConflictGroup().IsMatch(ConflictGroup)) ||
             !IsSafeRelativePath(LogRelativePath) ||
             !IsSafeRelativePath(PropertiesRelativePath) ||
+            !IsSafeRelativePath(MemorySettingsRelativePath) ||
+            string.Equals(
+                PropertiesRelativePath,
+                MemorySettingsRelativePath,
+                StringComparison.OrdinalIgnoreCase) ||
+            MaximumAllowedMemoryMiB is < 512 or > 65536 ||
+            MaximumAllowedMemoryMiB % 256 != 0 ||
             AllowedCommandPrefixes.Count is < 1 or > 64 ||
             AllowedCommandPrefixes.Any(prefix =>
                 !ConfigurationPatterns.CommandPrefix().IsMatch(prefix)))
@@ -148,6 +154,9 @@ public sealed record ServerControlTargetConfiguration
 
     internal string GetPropertiesPath() =>
         GetContainedPath(PropertiesRelativePath);
+
+    internal string GetMemorySettingsPath() =>
+        GetContainedPath(MemorySettingsRelativePath);
 
     private string GetContainedPath(string relativePath)
     {

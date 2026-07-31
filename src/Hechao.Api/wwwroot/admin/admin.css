@@ -2129,6 +2129,35 @@ dialog::backdrop {
     font-size: 11px;
 }
 
+.control-detail-metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1px;
+    margin: 14px 20px 0;
+    border: 1px solid var(--line);
+    background: var(--line);
+}
+
+.control-detail-metrics > div {
+    min-width: 0;
+    padding: 11px 12px;
+    background: var(--surface-muted);
+}
+
+.control-detail-metrics dt {
+    color: var(--ink-muted);
+    font-size: 9px;
+}
+
+.control-detail-metrics dd {
+    margin: 5px 0 0;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
 .control-workspace-grid {
     display: grid;
     grid-template-columns: minmax(300px, 0.78fr) minmax(420px, 1.22fr);
@@ -2218,6 +2247,14 @@ dialog::backdrop {
 
 .control-settings-form .button {
     align-self: end;
+}
+
+.control-memory-limit-hint {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 9px;
+    line-height: 1.5;
 }
 
 .control-console-output {
@@ -2369,6 +2406,10 @@ dialog::backdrop {
 
     .control-layout {
         grid-template-columns: 205px minmax(0, 1fr);
+    }
+
+    .control-detail-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .control-workspace-grid {
@@ -2674,6 +2715,11 @@ dialog::backdrop {
     .control-detail-heading {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .control-detail-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-inline: 14px;
     }
 
     .control-actions {

@@ -30,6 +30,31 @@ public sealed class AdminWebStyleContractTests
         Assert.Contains("accent-color: var(--brand);", checkboxRule);
     }
 
+    [Fact]
+    public void ServerControlMemorySettings_HaveStableMarkupAndResponsiveLayout()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var webRoot = Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "wwwroot",
+            "admin");
+        var html = File.ReadAllText(Path.Combine(webRoot, "index.html"));
+        var script = File.ReadAllText(Path.Combine(webRoot, "admin.js"));
+        var css = File.ReadAllText(Path.Combine(webRoot, "admin.css"));
+
+        Assert.Contains("id=\"control-initial-memory\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"control-maximum-memory\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"control-info-memory\"", html, StringComparison.Ordinal);
+        Assert.Contains("initialMemoryMiB", script, StringComparison.Ordinal);
+        Assert.Contains("maximumAllowedMemoryMiB", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "grid-template-columns: repeat(6, minmax(0, 1fr));",
+            ReadRule(css, ".control-detail-metrics"),
+            StringComparison.Ordinal);
+    }
+
     private static string ReadRule(string css, string selector)
     {
         var match = Regex.Match(

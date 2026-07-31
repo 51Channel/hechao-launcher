@@ -52,6 +52,22 @@ public sealed class AgentConfigurationTests
         Assert.Throws<InvalidDataException>(target.Validate);
     }
 
+    [Fact]
+    public void Validate_RejectsUnsafeMemorySettingsConfiguration()
+    {
+        var target = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            null) with
+        {
+            MemorySettingsRelativePath = @"..\other\start.bat",
+            MaximumAllowedMemoryMiB = 256
+        };
+
+        Assert.Throws<InvalidDataException>(target.Validate);
+    }
+
     [Theory]
     [InlineData("server-control-agent.owl5.production.json", "owl5", 7)]
     [InlineData("server-control-agent.owl9.production.json", "owl9", 2)]
@@ -65,6 +81,11 @@ public sealed class AgentConfigurationTests
 
         Assert.Equal(expectedAgentId, configuration.AgentId);
         Assert.Equal(expectedTargetCount, configuration.Targets.Count);
+        Assert.All(configuration.Targets, target =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(target.MemorySettingsRelativePath));
+            Assert.InRange(target.MaximumAllowedMemoryMiB, 512, 65536);
+        });
     }
 
     private static ServerControlAgentConfiguration CreateConfiguration(

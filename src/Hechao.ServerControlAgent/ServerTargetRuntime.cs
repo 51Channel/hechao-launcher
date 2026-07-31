@@ -188,13 +188,27 @@ internal sealed class ServerTargetRuntime
         DateTimeOffset? capturedAt = File.Exists(logPath)
             ? File.GetLastWriteTimeUtc(logPath)
             : null;
+        var settings = ServerPropertiesEditor.Read(Configuration.GetPropertiesPath());
+        var memorySettings = JvmMemorySettingsEditor.Read(
+            Configuration.GetMemorySettingsPath(),
+            Configuration.MaximumAllowedMemoryMiB);
+        if (settings is not null && memorySettings is not null)
+        {
+            settings = settings with
+            {
+                InitialMemoryMiB = memorySettings.InitialMemoryMiB,
+                MaximumMemoryMiB = memorySettings.MaximumMemoryMiB,
+                MaximumAllowedMemoryMiB = Configuration.MaximumAllowedMemoryMiB
+            };
+        }
+
         return new ServerControlAgentTargetHeartbeat(
             Configuration.ServerId,
             Configuration.ConflictGroup,
             Configuration.Port,
             processId is not null,
             processId,
-            ServerPropertiesEditor.Read(Configuration.GetPropertiesPath()),
+            settings,
             Configuration.AllowedCommandPrefixes,
             ConsoleTailReader.Read(logPath),
             capturedAt);
@@ -304,13 +318,13 @@ internal sealed class ServerTargetRuntime
             return Succeeded("ALREADY_STOPPED", "服务器已经停止。");
         }
 
-        var save = await SubmitConsoleAsync(
+        var (Success, Message) = await SubmitConsoleAsync(
             processId.Value,
             "save-all flush",
             cancellationToken);
-        if (!save.Success)
+        if (!Success)
         {
-            return Failed("SAVE_FAILED", save.Message);
+            return Failed("SAVE_FAILED", Message);
         }
 
         await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
@@ -351,15 +365,15 @@ internal sealed class ServerTargetRuntime
             return Failed("SERVER_OFFLINE", "服务器未运行。");
         }
 
-        var result = await SubmitConsoleAsync(
+        var (Success, Message) = await SubmitConsoleAsync(
             processId.Value,
             normalized,
             cancellationToken);
-        return result.Success
+        return Success
             ? Succeeded(
                 "COMMAND_SENT",
                 "Minecraft 控制台已接收命令；请在日志快照中核对执行结果。")
-            : Failed("COMMAND_FAILED", result.Message);
+            : Failed("COMMAND_FAILED", Message);
     }
 
     private AgentCommandResult ApplySettings(ServerQuickSettings? settings)
@@ -368,29 +382,102 @@ internal sealed class ServerTargetRuntime
             settings.MaxPlayers is < 1 or > 1000 ||
             settings.ViewDistance is < 2 or > 32 ||
             settings.SimulationDistance is < 2 or > 32 ||
-            settings.Difficulty is not ("peaceful" or "easy" or "normal" or "hard"))
+            settings.Difficulty is not ("peaceful" or "easy" or "normal" or "hard") ||
+            settings.InitialMemoryMiB is not int initialMemoryMiB ||
+            settings.MaximumMemoryMiB is not int maximumMemoryMiB ||
+            initialMemoryMiB is < 512 or > 65536 ||
+            maximumMemoryMiB is < 512 or > 65536 ||
+            initialMemoryMiB % 256 != 0 ||
+            maximumMemoryMiB % 256 != 0 ||
+            initialMemoryMiB > maximumMemoryMiB ||
+            maximumMemoryMiB > Configuration.MaximumAllowedMemoryMiB)
         {
             return Failed("INVALID_SETTINGS", "服务器快捷设置无效。");
         }
 
+        var propertiesPath = Configuration.GetPropertiesPath();
+        var memorySettingsPath = Configuration.GetMemorySettingsPath();
+        byte[]? originalProperties = null;
+        byte[]? originalMemorySettings = null;
         try
         {
+            JvmMemorySettingsEditor.EnsureCanApply(
+                memorySettingsPath,
+                initialMemoryMiB,
+                maximumMemoryMiB,
+                Configuration.MaximumAllowedMemoryMiB);
+            originalProperties = File.ReadAllBytes(propertiesPath);
+            originalMemorySettings = File.ReadAllBytes(memorySettingsPath);
             ServerPropertiesEditor.Apply(
-                Configuration.GetPropertiesPath(),
+                propertiesPath,
                 _backupRoot,
                 Configuration.ServerId,
                 settings);
+            JvmMemorySettingsEditor.Apply(
+                memorySettingsPath,
+                _backupRoot,
+                Configuration.ServerId,
+                initialMemoryMiB,
+                maximumMemoryMiB,
+                Configuration.MaximumAllowedMemoryMiB);
             return Succeeded(
                 "SETTINGS_APPLIED",
-                "快捷设置已原子写入并备份；需要重启服务器的项目将在下次启动生效。");
+                "快捷设置和 JVM 启动内存已写入并备份；运行中的服务器不会自动重启，内存将在下次启动生效。");
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
-                InvalidDataException)
+                InvalidDataException or NotSupportedException)
         {
+            var rollbackErrors = new List<string>();
+            TryRestoreFile(propertiesPath, originalProperties, rollbackErrors);
+            TryRestoreFile(memorySettingsPath, originalMemorySettings, rollbackErrors);
+            var rollbackMessage = rollbackErrors.Count == 0
+                ? "修改已自动回滚。"
+                : $"自动回滚失败：{string.Join("；", rollbackErrors)}";
             return Failed(
-                "SETTINGS_WRITE_FAILED",
-                AgentLog.Sanitize(exception.Message, 1000));
+                rollbackErrors.Count == 0
+                    ? "SETTINGS_WRITE_FAILED"
+                    : "SETTINGS_ROLLBACK_FAILED",
+                AgentLog.Sanitize($"{exception.Message} {rollbackMessage}", 1000));
+        }
+    }
+
+    private static void TryRestoreFile(
+        string path,
+        byte[]? originalBytes,
+        ICollection<string> errors)
+    {
+        if (originalBytes is null)
+        {
+            return;
+        }
+
+        var temporary = path + $".rollback-{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllBytes(temporary, originalBytes);
+            File.Move(temporary, path, overwrite: true);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                NotSupportedException)
+        {
+            errors.Add($"{Path.GetFileName(path)}: {exception.Message}");
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(temporary))
+                {
+                    File.Delete(temporary);
+                }
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException)
+            {
+                errors.Add($"{Path.GetFileName(temporary)}: {exception.Message}");
+            }
         }
     }
 

@@ -15,6 +15,8 @@
       "conflictGroup": "owl-example-main-slot",
       "logRelativePath": "logs\\latest.log",
       "propertiesRelativePath": "server.properties",
+      "memorySettingsRelativePath": "start.bat",
+      "maximumAllowedMemoryMiB": 8192,
       "allowedCommandPrefixes": [
         "list",
         "save-all",
@@ -30,6 +32,8 @@
       "conflictGroup": "owl-example-main-slot",
       "logRelativePath": "logs\\latest.log",
       "propertiesRelativePath": "server.properties",
+      "memorySettingsRelativePath": "user_jvm_args.txt",
+      "maximumAllowedMemoryMiB": 8192,
       "allowedCommandPrefixes": [
         "list",
         "save-all",

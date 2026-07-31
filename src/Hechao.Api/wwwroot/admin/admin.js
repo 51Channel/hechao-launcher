@@ -91,9 +91,12 @@ function cacheElements() {
         "control-detail", "control-selected-id", "control-selected-name",
         "control-selected-meta", "control-start-button", "control-stop-button",
         "control-restart-button", "control-conflict-notice",
+        "control-info-status", "control-info-agent", "control-info-port",
+        "control-info-process", "control-info-memory", "control-info-memory-limit",
         "control-settings-form", "control-max-players",
         "control-view-distance", "control-simulation-distance",
-        "control-difficulty", "control-whitelist",
+        "control-difficulty", "control-initial-memory", "control-maximum-memory",
+        "control-memory-limit-hint", "control-whitelist",
         "control-save-settings-button", "control-command-prefixes",
         "control-console-time", "control-console-output",
         "control-command-form", "control-command-input",
@@ -213,6 +216,12 @@ function bindEvents() {
             event.preventDefault();
             openControlAction("ApplySettings");
         });
+    ["control-initial-memory", "control-maximum-memory"].forEach(id => {
+        elements[id].addEventListener("input", () => {
+            elements["control-initial-memory"].setCustomValidity("");
+            elements["control-maximum-memory"].setCustomValidity("");
+        });
+    });
     elements["control-command-form"].addEventListener(
         "submit",
         event => {
@@ -1117,7 +1126,10 @@ function renderControl() {
         const meta = document.createElement("span");
         meta.textContent = [
             target.online ? "运行中" : "已停止",
-            target.agentConnected ? target.agentId : "代理离线"
+            target.agentConnected ? target.agentId : "代理离线",
+            Number.isFinite(target.settings?.maximumMemoryMiB)
+                ? `Xmx ${formatMemoryMiB(target.settings.maximumMemoryMiB)}`
+                : "内存未上报"
         ].join(" · ");
         const marker = document.createElement("i");
         marker.className = [
@@ -1175,6 +1187,25 @@ function renderControl() {
         : "";
 
     const settings = selected.settings;
+    const hasMemorySettings =
+        Number.isFinite(settings?.initialMemoryMiB) &&
+        Number.isFinite(settings?.maximumMemoryMiB) &&
+        Number.isFinite(settings?.maximumAllowedMemoryMiB);
+    elements["control-info-status"].textContent =
+        selected.online ? "运行中" : "已停止";
+    elements["control-info-agent"].textContent = selected.agentConnected
+        ? `${selected.agentId} · 在线`
+        : `${selected.agentId} · 离线`;
+    elements["control-info-port"].textContent = String(selected.port);
+    elements["control-info-process"].textContent = selected.processId
+        ? String(selected.processId)
+        : "—";
+    elements["control-info-memory"].textContent = hasMemorySettings
+        ? `Xms ${formatMemoryMiB(settings.initialMemoryMiB)} · Xmx ${formatMemoryMiB(settings.maximumMemoryMiB)}`
+        : "未上报";
+    elements["control-info-memory-limit"].textContent = hasMemorySettings
+        ? formatMemoryMiB(settings.maximumAllowedMemoryMiB)
+        : "—";
     const settingsEditing =
         elements["control-settings-form"].contains(document.activeElement);
     if (!settingsEditing) {
@@ -1185,14 +1216,31 @@ function renderControl() {
             settings?.simulationDistance ?? "";
         elements["control-difficulty"].value =
             settings?.difficulty || "normal";
+        elements["control-initial-memory"].value = hasMemorySettings
+            ? formatMemoryGiBInput(settings.initialMemoryMiB)
+            : "";
+        elements["control-maximum-memory"].value = hasMemorySettings
+            ? formatMemoryGiBInput(settings.maximumMemoryMiB)
+            : "";
+        const maximumMemoryGiB = hasMemorySettings
+            ? formatMemoryGiBInput(settings.maximumAllowedMemoryMiB)
+            : "64";
+        elements["control-initial-memory"].max = maximumMemoryGiB;
+        elements["control-maximum-memory"].max = maximumMemoryGiB;
         elements["control-whitelist"].checked =
             Boolean(settings?.whiteList);
     }
+    elements["control-memory-limit-hint"].textContent = hasMemorySettings
+        ? `单服最大可设 ${formatMemoryMiB(settings.maximumAllowedMemoryMiB)}；运行中的服务不会自动重启。`
+        : "代理尚未上报可管理的 JVM 内存参数。";
     elements["control-settings-form"]
         .querySelectorAll("input, select, button")
         .forEach(control => {
-            control.disabled = !selected.agentConnected || busy || !settings;
+            control.disabled =
+                !selected.agentConnected || busy || !settings || !hasMemorySettings;
         });
+    elements["control-save-settings-button"].disabled =
+        !selected.agentConnected || busy || !settings || !hasMemorySettings;
 
     const prefixes = selected.allowedCommandPrefixes || [];
     elements["control-command-prefixes"].textContent =
@@ -1307,6 +1355,20 @@ function openControlAction(action) {
         }
         pending.consoleCommand = command;
     } else if (action === "ApplySettings") {
+        const initialMemoryInput = elements["control-initial-memory"];
+        const maximumMemoryInput = elements["control-maximum-memory"];
+        initialMemoryInput.setCustomValidity("");
+        maximumMemoryInput.setCustomValidity("");
+        const initialMemoryMiB = memoryGiBInputToMiB(initialMemoryInput.value);
+        const maximumMemoryMiB = memoryGiBInputToMiB(maximumMemoryInput.value);
+        const maximumAllowedMemoryMiB = target.settings?.maximumAllowedMemoryMiB;
+        if (initialMemoryMiB > maximumMemoryMiB) {
+            maximumMemoryInput.setCustomValidity("最大内存不能小于初始内存。");
+        } else if (Number.isFinite(maximumAllowedMemoryMiB) &&
+                   maximumMemoryMiB > maximumAllowedMemoryMiB) {
+            maximumMemoryInput.setCustomValidity(
+                `最大内存不能超过 ${formatMemoryMiB(maximumAllowedMemoryMiB)}。`);
+        }
         if (!elements["control-settings-form"].reportValidity()) {
             return;
         }
@@ -1316,7 +1378,10 @@ function openControlAction(action) {
             simulationDistance:
                 Number(elements["control-simulation-distance"].value),
             difficulty: elements["control-difficulty"].value,
-            whiteList: elements["control-whitelist"].checked
+            whiteList: elements["control-whitelist"].checked,
+            initialMemoryMiB,
+            maximumMemoryMiB,
+            maximumAllowedMemoryMiB
         };
     }
 
@@ -1331,7 +1396,7 @@ function openControlAction(action) {
         ],
         ApplySettings: [
             "保存快捷设置",
-            `更新 ${target.displayName} 的受管 server.properties 字段`
+            `更新 ${target.displayName} 的受管 server.properties 与 JVM 启动内存；运行中的服务不会自动重启`
         ]
     };
     elements["control-action-title"].textContent = labels[action][0];
@@ -3608,6 +3673,23 @@ function formatBytes(bytes) {
         index += 1;
     }
     return `${value >= 10 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
+}
+
+function formatMemoryGiBInput(memoryMiB) {
+    if (!Number.isFinite(memoryMiB) || memoryMiB <= 0) return "";
+    return Number((memoryMiB / 1024).toFixed(2)).toString();
+}
+
+function formatMemoryMiB(memoryMiB) {
+    const value = formatMemoryGiBInput(memoryMiB);
+    return value ? `${value} GiB` : "—";
+}
+
+function memoryGiBInputToMiB(value) {
+    const gibibytes = Number(value);
+    return Number.isFinite(gibibytes)
+        ? Math.round(gibibytes * 1024)
+        : Number.NaN;
 }
 
 function formatDateTime(value) {

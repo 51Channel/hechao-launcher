@@ -38,7 +38,10 @@ public sealed record ServerQuickSettings(
     int ViewDistance,
     int SimulationDistance,
     string Difficulty,
-    bool WhiteList);
+    bool WhiteList,
+    int? InitialMemoryMiB = null,
+    int? MaximumMemoryMiB = null,
+    int? MaximumAllowedMemoryMiB = null);
 
 public sealed record AdminServerControlRequest(
     ServerControlAction Action,

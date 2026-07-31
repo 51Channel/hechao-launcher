@@ -17,6 +17,7 @@
 - 启动一个配置中明确列出的计划任务；
 - 先执行 `save-all flush`，再通过 Minecraft 控制台执行 `stop`；
 - 修改 `server.properties` 中五个白名单字段并保留备份；
+- 读取并修改每服显式声明的 JVM `-Xms/-Xmx` 启动内存，按单服上限校验；
 - 发送配置中明确允许的单行 Minecraft 命令。
 
 代理不提供 PowerShell、CMD、SSH、任意文件浏览或任意进程终止接口。控制台输入
@@ -51,8 +52,16 @@
 - `difficulty`
 - `white-list`
 
+每个目标必须同时声明 `memorySettingsRelativePath` 和
+`maximumAllowedMemoryMiB`。内存文件可以是 `start.bat`、`start.ps1` 或
+NeoForge 的 `user_jvm_args.txt`，但必须恰好包含一个 `-Xms` 和一个 `-Xmx`；
+代理遇到缺失、重复、越界或无法解析时会失败关闭。后台以 GiB 展示和输入，协议使用
+MiB，最小值为 `512 MiB`、步长为 `256 MiB`，并由代理再次核对单服硬上限。
+
 代理以临时文件和同卷替换写入，并在
-`C:\ProgramData\Hechao\ServerControlAgent\backups` 保存原文件。设置不会触发
+`C:\ProgramData\Hechao\ServerControlAgent\backups` 保存 `server.properties`
+和内存参数文件的原件。两份文件作为同一次设置事务处理；任一写入失败时会自动恢复
+原始字节。设置不会触发
 自动重启；需要重启生效的项目由管理员另行执行受控重启。
 
 ## 4. Minecraft 控制台
@@ -76,7 +85,7 @@ SYSTEM 会话不能直接附加到可见 Java 控制台。桥接实现和人工�
 生产配置不得复制示例路径。每台 VPS 必须逐项确认：
 
 1. 服务器 ID 与后台目录 ID 完全一致；
-2. 服务端目录、`server.properties`、日志和启动批处理真实存在；
+2. 服务端目录、`server.properties`、日志、启动批处理和显式内存参数文件真实存在；
 3. 端口与当前监听一致；
 4. 共享端口和替换服的冲突组完整；
 5. 启动任务只对应一个服务端；
@@ -102,6 +111,21 @@ owl9 的历史 Velocity 目标 `pvp` 实际是
 [`server-control-agent.owl9.production.json`](../deploy/windows/server-control/server-control-agent.owl9.production.json)
 是本次实时盘点形成的无密钥白名单。旧迁移目录没有自动纳入控制目标；需要重新启用
 时必须先在后台建立清晰的服务端 ID，再复核端口和冲突组。
+
+2026-07-31 的只读内存基线如下。前两列来自真实启动文件，最后一列是后台允许设置的
+单服硬上限，不代表主机可以同时把所有服务端都开到上限：
+
+| 代理 | 服务端 | 当前 Xms | 当前 Xmx | 单服上限 |
+| --- | --- | ---: | ---: | ---: |
+| owl5 | `lobby` | 1 GiB | 2 GiB | 4 GiB |
+| owl5 | `survival1` | 0.5 GiB | 2 GiB | 6 GiB |
+| owl5 | `survival2` | 1 GiB | 2 GiB | 6 GiB |
+| owl5 | `dollnight` | 4 GiB | 11 GiB | 12 GiB |
+| owl5 | `activity` | 2 GiB | 6 GiB | 8 GiB |
+| owl5 | `fanstreet` | 2 GiB | 6 GiB | 8 GiB |
+| owl5 | `yugong` | 2 GiB | 6 GiB | 8 GiB |
+| owl9 | `pvp`（恐怖整蛊） | 2 GiB | 5 GiB | 6 GiB |
+| owl9 | `pvp-purpur`（真正 PVP） | 2 GiB | 4 GiB | 6 GiB |
 
 ## 6. 安装顺序
 

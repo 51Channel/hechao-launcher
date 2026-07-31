@@ -70,6 +70,42 @@ public sealed class ServerControlRulesTests
     }
 
     [Fact]
+    public void Validate_AcceptsSettingsWithManagedMemory()
+    {
+        var request = new AdminServerControlRequest(
+            ServerControlAction.ApplySettings,
+            "activity",
+            "调整活动服人数与启动内存",
+            Settings: new ServerQuickSettings(
+                60,
+                10,
+                8,
+                "normal",
+                false,
+                InitialMemoryMiB: 2048,
+                MaximumMemoryMiB: 6144,
+                MaximumAllowedMemoryMiB: 8192));
+
+        var errors = ServerControlRules.Validate("activity", request);
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Validate_RejectsApplySettingsWithoutManagedMemory()
+    {
+        var request = new AdminServerControlRequest(
+            ServerControlAction.ApplySettings,
+            "activity",
+            "只提交旧版快捷设置",
+            Settings: new ServerQuickSettings(60, 10, 8, "normal", false));
+
+        var errors = ServerControlRules.Validate("activity", request);
+
+        Assert.Contains("settings", errors);
+    }
+
+    [Fact]
     public void Validate_RejectsDuplicateHeartbeatTargets()
     {
         var target = new ServerControlAgentTargetHeartbeat(
