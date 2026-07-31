@@ -2187,6 +2187,10 @@ dialog::backdrop {
 }
 
 .control-whitelist {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
     min-height: 38px;
     align-self: end;
     margin: 0;
@@ -2194,6 +2198,22 @@ dialog::backdrop {
     border: 1px solid var(--line);
     border-radius: 4px;
     background: var(--surface-muted);
+}
+
+.control-whitelist input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    accent-color: var(--brand);
+    justify-self: start;
+}
+
+.control-whitelist span {
+    min-width: 0;
+    line-height: 1.35;
 }
 
 .control-settings-form .button {

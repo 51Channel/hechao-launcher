@@ -26,7 +26,7 @@
     <AssemblyName>Hechao.Api</AssemblyName>
     <RootNamespace>Hechao.Api</RootNamespace>
     <Product>赫朝启动器 API</Product>
-    <Version>0.23.1</Version>
+    <Version>0.23.2</Version>
   </PropertyGroup>
 
 </Project>
