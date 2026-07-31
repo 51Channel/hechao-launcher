@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "documentationOnly": true,
+  "activity": {
+    "activityId": "ready-check",
+    "displayName": "集合签到",
+    "sourceVersion": "0.1.0",
+    "minimumPlayers": 1,
+    "maximumPlayers": 20,
+    "minimumTier": "Participant"
+  },
+  "routing": {
+    "catalogServerId": "activity-ready-check",
+    "controlTargetId": "activity-ready-check",
+    "velocityTarget": "activity",
+    "agentId": "owl5",
+    "backendHost": "127.0.0.1",
+    "backendPort": 25568,
+    "conflictGroup": "owl5-activity-slot"
+  },
+  "clientProfile": {
+    "profileId": "activity-ready-check-neoforge-1.21.11",
+    "profileVersion": "1.0.0",
+    "minecraftVersion": "1.21.11",
+    "loader": "NeoForge",
+    "loaderVersion": "21.11.42",
+    "javaMajorVersion": 21,
+    "promotionOrder": [
+      "Test",
+      "Gray",
+      "Production"
+    ]
+  },
+  "serverRuntime": {
+    "serverDirectory": "E:\\Activities\\ready-check",
+    "startTaskName": "Hechao-Server-Activity-ReadyCheck",
+    "memorySettingsRelativePath": "user_jvm_args.txt",
+    "maximumAllowedMemoryMiB": 8192,
+    "deploymentEndsStopped": true
+  },
+  "sharedArtifact": {
+    "fileName": "hechao-ready-check-0.1.0.jar",
+    "clientAndServerSha256MustMatch": true,
+    "protocolVersion": 1
+  },
+  "acceptance": {
+    "playerStages": [
+      1,
+      2,
+      3,
+      5,
+      20
+    ],
+    "minimumSustainedTps": 19.5,
+    "maximumP95Mspt": 50,
+    "requiresWorldBackup": true,
+    "requiresRollbackDrill": true
+  }
+}
