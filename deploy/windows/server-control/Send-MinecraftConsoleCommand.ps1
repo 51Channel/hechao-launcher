@@ -52,6 +52,8 @@ namespace Hechao.ServerControl
         private const uint FileShareRead = 0x00000001;
         private const uint FileShareWrite = 0x00000002;
         private const uint OpenExisting = 3;
+        private const uint EnableQuickEditMode = 0x0040;
+        private const uint EnableExtendedFlags = 0x0080;
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct KeyEventRecord
@@ -115,6 +117,18 @@ namespace Hechao.ServerControl
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetConsoleMode(
+            IntPtr consoleHandle,
+            out uint mode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetConsoleMode(
+            IntPtr consoleHandle,
+            uint mode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool CloseHandle(IntPtr handle);
 
         public static int Send(uint processId, string command)
@@ -148,6 +162,8 @@ namespace Hechao.ServerControl
                         error,
                         "Unable to open the target console input buffer (Win32 " + error + ")");
                 }
+
+                DisableQuickEdit(input);
 
                 string line = command + "\r";
                 InputRecord[] records = new InputRecord[line.Length * 2];
@@ -210,6 +226,31 @@ namespace Hechao.ServerControl
 
                 try
                 {
+                    IntPtr input = CreateFileW(
+                        "CONIN$",
+                        GenericRead | GenericWrite,
+                        FileShareRead | FileShareWrite,
+                        IntPtr.Zero,
+                        OpenExisting,
+                        0,
+                        IntPtr.Zero);
+                    if (input == new IntPtr(-1))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        throw new Win32Exception(
+                            error,
+                            "Unable to open the target console input buffer (Win32 " + error + ")");
+                    }
+
+                    try
+                    {
+                        DisableQuickEdit(input);
+                    }
+                    finally
+                    {
+                        CloseHandle(input);
+                    }
+
                     if (!GenerateConsoleCtrlEvent(CtrlCEvent, 0))
                     {
                         int error = Marshal.GetLastWin32Error();
@@ -228,6 +269,27 @@ namespace Hechao.ServerControl
             finally
             {
                 SetConsoleCtrlHandler(IntPtr.Zero, false);
+            }
+        }
+
+        private static void DisableQuickEdit(IntPtr input)
+        {
+            if (!GetConsoleMode(input, out uint currentMode))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(
+                    error,
+                    "Unable to read the target console mode (Win32 " + error + ")");
+            }
+
+            uint updatedMode =
+                (currentMode | EnableExtendedFlags) & ~EnableQuickEditMode;
+            if (updatedMode != currentMode && !SetConsoleMode(input, updatedMode))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(
+                    error,
+                    "Unable to disable QuickEdit in the target console (Win32 " + error + ")");
             }
         }
 

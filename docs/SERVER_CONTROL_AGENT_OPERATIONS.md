@@ -15,9 +15,14 @@
 本机代理只支持以下结构化动作：
 
 - 启动一个配置中明确列出的计划任务；
+- 受管启动和控制台桥都会关闭 Windows QuickEdit，避免鼠标选择控制台文本时冻结
+  Java 输出；
+- 受管启动会把 stdout/stderr 直接追加到
+  `C:\ProgramData\Hechao\ServerControlAgent\logs\<serverId>-console.log`，达到
+  `64 MiB` 后保留一份 `previous` 日志，避免 Task Scheduler 的未消费输出管道填满；
 - 先执行 `save-all flush`，再通过 Minecraft 控制台执行 `stop`；若同一受管
-  Java PID 在 20 秒后仍监听目标端口，则向该控制台发送一次 `Ctrl+C`，触发 JVM
-  关机钩子并继续等待正常释放；
+  Java PID 在 20 秒后仍监听目标端口，则再次关闭该控制台的 QuickEdit，并发送一次
+  `Ctrl+C`，触发 JVM 关机钩子并继续等待正常释放；
 - 修改 `server.properties` 中五个白名单字段并保留备份；
 - 读取并修改每服显式声明的 JVM `-Xms/-Xmx` 启动内存，按单服上限校验；
 - 发送配置中明确允许的单行 Minecraft 命令。

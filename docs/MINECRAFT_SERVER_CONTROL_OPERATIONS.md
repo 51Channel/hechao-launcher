@@ -49,7 +49,11 @@ successful console write means Windows accepted the input events; the log is
 the authoritative proof that Minecraft processed the command.
 
 The submitter's `-Interrupt` parameter is reserved for the agent's structured stop path.
-It revalidates that the PID belongs to `java.exe` and triggers the JVM shutdown hook. It
+It revalidates that the PID belongs to `java.exe`, disables QuickEdit in that console, and
+triggers the JVM shutdown hook. Managed launches also disable QuickEdit before Java starts
+so selecting console text cannot freeze server output. Managed stdout and stderr are
+appended directly to `ServerControlAgent\logs\<serverId>-console.log`, with one 64 MiB
+previous log retained, so Task Scheduler cannot block Java on an undrained output pipe. The interrupt
 must not be exposed as a normal terminal command or replaced with forced process
 termination.
 

@@ -899,8 +899,9 @@ function Invoke-BackupCapture {
                 SourceBytes = $sourceBytes
             })
 
-        $powerShell = Join-Path $PSHOME 'powershell.exe'
+        $powerShell = (Get-Process -Id $PID).Path
         $argumentList = @(
+            '-NoLogo',
             '-NoProfile',
             '-NonInteractive',
             '-ExecutionPolicy',
