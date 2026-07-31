@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T18:31:39Z",
+  "component": "launcher",
+  "version": "0.14.1",
+  "buildSourceCommit": "0abb8e93873a371b6901496ee8b7484946321634",
+  "releaseTag": "launcher-v0.14.1",
+  "scope": {
+    "clientActionsMovedToReadinessPanel": true,
+    "xamlLayoutContractAdded": true,
+    "owl9BackendIdentityHandledByStatusCollectorRelease": "0.2.2"
+  },
+  "tests": {
+    "solutionPassed": 501,
+    "solutionFailed": 0,
+    "distributionPassed": 45,
+    "apiPassed": 228,
+    "launcherPassed": 144,
+    "launcherFailed": 0,
+    "publisherPassed": 32,
+    "statusCollectorPassed": 16,
+    "backupPassed": 12,
+    "serverControlAgentPassed": 24
+  },
+  "artifacts": {
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.14.1-win-x64.exe",
+      "sizeBytes": 61912187,
+      "sha256": "6B31535E3A5CF08FF6D5F3D2B9CAD1B69DD5B3E3242959132DFDAD240476413E",
+      "signatureStatus": "NotSigned"
+    },
+    "launcher": {
+      "name": "Hechao.Launcher.exe",
+      "sizeBytes": 68879293,
+      "sha256": "E47EC9EC634FB92307A4D1246B2A421EDDB659DCD5C78EE48E1028462C574449",
+      "productVersion": "0.14.1+0abb8e93873a371b6901496ee8b7484946321634",
+      "signatureStatus": "NotSigned"
+    }
+  },
+  "installerValidation": {
+    "validatedAtUtc": "2026-07-31T18:17:16.0595255Z",
+    "upgradeFrom": "0.14.0",
+    "upgradeTo": "0.14.1",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "privateOss": {
+    "objectKey": "releases/launcher/0.14.1/Hechao-Launcher-Setup-0.14.1-win-x64.exe",
+    "firstPublishUploaded": true,
+    "secondPublishSkippedAfterVerification": true,
+    "anonymousStatusCodes": [403, 403],
+    "signedReadStatusCodes": [200, 200],
+    "lengthMatched": true,
+    "sha256Matched": true
+  },
+  "productionUpdateChannel": {
+    "enabled": true,
+    "latestVersion": "0.14.1",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61912187,
+    "installerSha256": "6b31535e3a5cf08ff6d5f3d2b9cad1b69dd5b3e3242959132dfdad240476413e",
+    "publishedAtUtc": "2026-07-31T18:25:01Z",
+    "releaseNotes": "Move client maintenance actions into the left readiness panel.",
+    "apiVersion": "0.24.2",
+    "apiServiceStatus": "active",
+    "apiServiceSubStatus": "running",
+    "apiMainPid": 292148,
+    "apiRestarts": 0,
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "databaseStatus": "ready",
+    "errorLogsAfterSuccessfulCutover": 0
+  },
+  "deploymentRecovery": {
+    "firstAttemptSucceeded": false,
+    "firstAttemptFailure": "UTF-8 release notes were corrupted while passed through remote stdin, producing an invalid systemd environment file.",
+    "automaticRollbackCompleted": true,
+    "rollbackRestoredVersion": "0.14.0",
+    "rollbackHealthChecksPassed": true,
+    "secondAttemptUsedAsciiReleaseNotes": true,
+    "secondAttemptSucceeded": true
+  },
+  "runningLauncherPreservation": {
+    "pid": 14928,
+    "startTimeLocal": "2026-07-31T22:30:16.0758703+08:00",
+    "path": "D:\\Hechao Launcher\\Hechao.Launcher.exe",
+    "productVersion": "0.14.0+bc04fea8d525663b3ae24f4a6dcfc6d1b219c986",
+    "sha256": "81AD01021A50B79C319CC670AA058E82480453E38BF416249037A6CD5155ACDB",
+    "unchangedDuringRelease": true,
+    "closedOrRestartedByCodex": false
+  },
+  "automaticUpdateAcceptance": {
+    "productionChannelReady": true,
+    "userControlledLauncherRestartPending": true,
+    "expectedUpgradeFrom": "0.14.0",
+    "expectedUpgradeTo": "0.14.1"
+  },
+  "minecraftServers": {
+    "started": false,
+    "stopped": false,
+    "restarted": false
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "minecraftAccessTokenIncluded": false,
+    "cookieIncluded": false
+  }
+}
