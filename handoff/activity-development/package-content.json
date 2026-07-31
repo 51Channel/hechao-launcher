@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "packageKind": "hechao-activity-development-handoff",
+  "rootMappings": [
+    {
+      "source": "handoff/activity-development/README.md",
+      "destination": "README.md"
+    },
+    {
+      "source": "handoff/activity-development/AGENTS.md",
+      "destination": "AGENTS.md"
+    },
+    {
+      "source": "handoff/activity-development/00-从这里开始.md",
+      "destination": "00-从这里开始.md"
+    },
+    {
+      "source": "handoff/activity-development/01-给Codex的首条消息.md",
+      "destination": "01-给Codex的首条消息.md"
+    },
+    {
+      "source": "handoff/activity-development/02-新活动需求单模板.md",
+      "destination": "02-新活动需求单模板.md"
+    },
+    {
+      "source": "handoff/activity-development/03-如何基于现有框架开发.md",
+      "destination": "03-如何基于现有框架开发.md"
+    },
+    {
+      "source": "handoff/activity-development/04-开发与上线验收清单.md",
+      "destination": "04-开发与上线验收清单.md"
+    },
+    {
+      "source": "handoff/activity-development/05-最终交付报告模板.md",
+      "destination": "05-最终交付报告模板.md"
+    },
+    {
+      "source": "handoff/activity-development/06-常见错误与处理.md",
+      "destination": "06-常见错误与处理.md"
+    },
+    {
+      "source": "AGENTS.md",
+      "destination": "reference/current-repository/AGENTS.md"
+    },
+    {
+      "source": "README.md",
+      "destination": "reference/current-repository/README.md"
+    },
+    {
+      "source": "handoff/activity-development/package-content.json",
+      "destination": "reference/package-content.json"
+    },
+    {
+      "source": "global.json",
+      "destination": "global.json"
+    },
+    {
+      "source": "NuGet.config",
+      "destination": "NuGet.config"
+    }
+  ],
+  "directoryMappings": [
+    {
+      "source": "docs",
+      "destination": "docs"
+    },
+    {
+      "source": "deploy/windows/server-control",
+      "destination": "deploy/windows/server-control"
+    },
+    {
+      "source": "src/Hechao.Contracts",
+      "destination": "src/Hechao.Contracts"
+    },
+    {
+      "source": "src/Hechao.Distribution",
+      "destination": "src/Hechao.Distribution"
+    },
+    {
+      "source": "src/Hechao.Api/Catalog",
+      "destination": "src/Hechao.Api/Catalog"
+    },
+    {
+      "source": "src/Hechao.Api/ServerControl",
+      "destination": "src/Hechao.Api/ServerControl"
+    },
+    {
+      "source": "src/Hechao.ServerControlAgent",
+      "destination": "src/Hechao.ServerControlAgent"
+    },
+    {
+      "source": "tests/Hechao.Distribution.Tests",
+      "destination": "tests/Hechao.Distribution.Tests"
+    },
+    {
+      "source": "tests/Hechao.ServerControlAgent.Tests",
+      "destination": "tests/Hechao.ServerControlAgent.Tests"
+    }
+  ],
+  "fileMappings": [
+    {
+      "source": "tools/Prepare-DollNightProfile.ps1",
+      "destination": "tools/Prepare-DollNightProfile.ps1"
+    },
+    {
+      "source": "tools/Prepare-FabricPvpProfile.ps1",
+      "destination": "tools/Prepare-FabricPvpProfile.ps1"
+    },
+    {
+      "source": "tools/Prepare-ForgeProfile.ps1",
+      "destination": "tools/Prepare-ForgeProfile.ps1"
+    },
+    {
+      "source": "tools/Prepare-NeoForgeActivityProfile.ps1",
+      "destination": "tools/Prepare-NeoForgeActivityProfile.ps1"
+    },
+    {
+      "source": "tools/Prepare-VanillaProfile.ps1",
+      "destination": "tools/Prepare-VanillaProfile.ps1"
+    },
+    {
+      "source": "tools/Test-HechaoPowerShell7Compliance.ps1",
+      "destination": "tools/Test-HechaoPowerShell7Compliance.ps1"
+    },
+    {
+      "source": "tools/Test-ReleaseProvenanceLedger.ps1",
+      "destination": "tools/Test-ReleaseProvenanceLedger.ps1"
+    },
+    {
+      "source": "tools/Test-ActivityDevelopmentHandoff.ps1",
+      "destination": "tools/Test-ActivityDevelopmentHandoff.ps1"
+    }
+  ],
+  "excludedPathSegments": [
+    ".git",
+    ".gradle",
+    "artifacts",
+    "bin",
+    "build",
+    "node_modules",
+    "obj",
+    "secrets",
+    "TestResults"
+  ],
+  "forbiddenExtensions": [
+    ".db",
+    ".dmp",
+    ".dpapi",
+    ".dump",
+    ".jks",
+    ".key",
+    ".keystore",
+    ".log",
+    ".p12",
+    ".pem",
+    ".pfx",
+    ".sqlite",
+    ".sqlite3"
+  ]
+}

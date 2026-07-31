@@ -129,6 +129,16 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 [`docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md`](docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md)
 的轻量案例开始。
 
+需要把完整规范和关键代码参考交给新的开发者或 Codex 时，使用
+[`handoff/activity-development/README.md`](handoff/activity-development/README.md)
+中的独立交接包。正式交接包必须从干净 Git 提交生成，并立即通过独立验收器：
+
+```powershell
+pwsh -NoLogo -NoProfile -File .\tools\New-ActivityDevelopmentHandoff.ps1
+pwsh -NoLogo -NoProfile -File .\tools\Test-ActivityDevelopmentHandoff.ps1 `
+  -ArchivePath .\artifacts\handoff\<交接包>.zip
+```
+
 功能、生产验收与外部依赖的权威状态见 [`docs/COMPLETION_MATRIX.md`](docs/COMPLETION_MATRIX.md)。owl9 的恐怖整蛊服与真正 PVP 服边界见 [`docs/OWL9_DUAL_BACKEND_OPERATIONS.md`](docs/OWL9_DUAL_BACKEND_OPERATIONS.md)。完整的平台架构、HTTPS 迁移、客户端下载、权限、管理后台和分阶段任务见 [`docs/PLATFORM_PLAN.md`](docs/PLATFORM_PLAN.md)。玩家安装、迁移、修复与隐私说明见 [`docs/PLAYER_INSTALLATION_GUIDE.md`](docs/PLAYER_INSTALLATION_GUIDE.md)，管理员构建、灰度、发布与回滚流程见 [`docs/ADMIN_RELEASE_RUNBOOK.md`](docs/ADMIN_RELEASE_RUNBOOK.md)。Windows 安装包、数据目录、旧版迁移与卸载边界见 [`docs/WINDOWS_INSTALLER_AND_STORAGE.md`](docs/WINDOWS_INSTALLER_AND_STORAGE.md)，PowerShell 7 运行时与计划任务迁移见 [`docs/POWERSHELL_7_OPERATIONS.md`](docs/POWERSHELL_7_OPERATIONS.md)，游戏退出与隐私诊断规则见 [`docs/GAME_DIAGNOSTICS.md`](docs/GAME_DIAGNOSTICS.md)。管理员浏览器登录与 MFA 见 [`docs/ADMIN_WEB_OPERATIONS.md`](docs/ADMIN_WEB_OPERATIONS.md)，账号停用、会话撤销和 UUID 封禁见 [`docs/ADMIN_ACCOUNT_SECURITY_OPERATIONS.md`](docs/ADMIN_ACCOUNT_SECURITY_OPERATIONS.md)，目录 API 边界见 [`docs/ADMIN_CATALOG_OPERATIONS.md`](docs/ADMIN_CATALOG_OPERATIONS.md)。客户端发布与密钥边界见 [`docs/DISTRIBUTION_OPERATIONS.md`](docs/DISTRIBUTION_OPERATIONS.md)。Microsoft/LuckPerms 激活与运维见 [`docs/AUTHENTICATION_OPERATIONS.md`](docs/AUTHENTICATION_OPERATIONS.md)。Velocity 最终授权见 [`docs/VELOCITY_AUTHORIZATION_OPERATIONS.md`](docs/VELOCITY_AUTHORIZATION_OPERATIONS.md)，代理单层协议转换生产切换见 [`docs/PROXY_PROTOCOL_TRANSLATION_PRODUCTION_OPERATIONS.md`](docs/PROXY_PROTOCOL_TRANSLATION_PRODUCTION_OPERATIONS.md)。只读状态采集见 [`docs/SERVER_HEARTBEAT_OPERATIONS.md`](docs/SERVER_HEARTBEAT_OPERATIONS.md)，深度运行指标见 [`docs/SERVER_RUNTIME_METRICS_OPERATIONS.md`](docs/SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`docs/OPERATIONAL_ALERTS.md`](docs/OPERATIONAL_ALERTS.md)，世界备份见 [`docs/WORLD_BACKUP_OPERATIONS.md`](docs/WORLD_BACKUP_OPERATIONS.md)。实时无密码资产基线见 [`docs/ASSET_INVENTORY.md`](docs/ASSET_INVENTORY.md)，API 发布与回滚见 [`docs/API_OPERATIONS.md`](docs/API_OPERATIONS.md)，数据库本机备份见 [`docs/DATABASE_OPERATIONS.md`](docs/DATABASE_OPERATIONS.md)，异地加密备份与恢复见 [`docs/OFFSITE_BACKUP_AND_RECOVERY.md`](docs/OFFSITE_BACKUP_AND_RECOVERY.md)，版本与 Git 规则见 [`docs/RELEASE_AND_GIT_WORKFLOW.md`](docs/RELEASE_AND_GIT_WORKFLOW.md)。
 
 服控部署、冲突编排和失败回滚见
