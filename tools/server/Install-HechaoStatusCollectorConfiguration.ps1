@@ -77,6 +77,9 @@ Set-StrictMode -Version Latest
 `$timestamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
 `$backupDirectory = Join-Path (Join-Path `$installDirectory 'backups') "configuration-`$timestamp"
 `$backupPath = Join-Path `$backupDirectory 'server-heartbeats.json'
+`$atomicBackupPath = Join-Path `$installDirectory (
+    '.server-heartbeats-replace-' + [guid]::NewGuid().ToString('N') + '.json'
+)
 `$replaced = `$false
 
 function Get-JavaProcessIds {
@@ -127,7 +130,11 @@ try {
     New-Item -ItemType Directory -Path `$backupDirectory -Force | Out-Null
     Copy-Item -LiteralPath `$configurationPath -Destination `$backupPath
     Copy-Item -LiteralPath `$stagingPath -Destination `$replacementPath -Force
-    [System.IO.File]::Replace(`$replacementPath, `$configurationPath, `$null)
+    [System.IO.File]::Replace(
+        `$replacementPath,
+        `$configurationPath,
+        `$atomicBackupPath
+    )
     `$replaced = `$true
 
     Start-ScheduledTask -TaskName `$taskName
@@ -163,6 +170,7 @@ catch {
 finally {
     Remove-Item -LiteralPath `$stagingPath -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath `$replacementPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath `$atomicBackupPath -Force -ErrorAction SilentlyContinue
 }
 "@
 
