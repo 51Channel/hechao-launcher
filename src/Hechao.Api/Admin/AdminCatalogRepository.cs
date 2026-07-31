@@ -36,11 +36,13 @@ public sealed class AdminCatalogRepository(
         CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, display_name, short_name, icon_glyph, status, max_players,
-                   minecraft_version, loader, minimum_tier, client_profile_id,
-                   velocity_target, allow_protocol_translation, server_role,
-                   monitoring_enabled, sort_order, is_visible,
-                   announcement, opens_at, closes_at, revision, created_at, updated_at,
+            SELECT server.id, server.display_name, server.short_name, server.icon_glyph,
+                   server.status, server.max_players, server.minecraft_version, server.loader,
+                   server.minimum_tier, server.client_profile_id, server.velocity_target,
+                   server.allow_protocol_translation, server.server_role,
+                   server.monitoring_enabled, server.sort_order, server.is_visible,
+                   server.announcement, server.opens_at, server.closes_at, server.revision,
+                   server.created_at, server.updated_at,
                    control_target.reported_online, control_target.last_seen_at
             FROM launcher.servers server
             LEFT JOIN launcher.server_control_targets control_target
@@ -65,11 +67,13 @@ public sealed class AdminCatalogRepository(
         CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, display_name, short_name, icon_glyph, status, max_players,
-                   minecraft_version, loader, minimum_tier, client_profile_id,
-                   velocity_target, allow_protocol_translation, server_role,
-                   monitoring_enabled, sort_order, is_visible,
-                   announcement, opens_at, closes_at, revision, created_at, updated_at,
+            SELECT server.id, server.display_name, server.short_name, server.icon_glyph,
+                   server.status, server.max_players, server.minecraft_version, server.loader,
+                   server.minimum_tier, server.client_profile_id, server.velocity_target,
+                   server.allow_protocol_translation, server.server_role,
+                   server.monitoring_enabled, server.sort_order, server.is_visible,
+                   server.announcement, server.opens_at, server.closes_at, server.revision,
+                   server.created_at, server.updated_at,
                    control_target.reported_online, control_target.last_seen_at
             FROM launcher.servers server
             LEFT JOIN launcher.server_control_targets control_target
