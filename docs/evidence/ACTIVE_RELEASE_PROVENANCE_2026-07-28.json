@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-31T12:28:22.1406044Z",
+  "generatedAtUtc": "2026-07-31T16:30:14Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -84,42 +84,42 @@
     },
     {
       "component": "server-control-agent",
-      "version": "0.2.1",
-      "releaseTag": "server-control-agent-v0.2.1",
-      "releaseCommit": "73afd07363ba2f55e917e42a50444cdd5107917a",
-      "taggedAt": "2026-07-31T20:12:55+08:00",
+      "version": "0.2.3",
+      "releaseTag": "server-control-agent-v0.2.3",
+      "releaseCommit": "3916a86f408a15cefc89cbfce85e3fb2df992bd6",
+      "taggedAt": "2026-08-01T00:30:14+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "73afd07363ba2f55e917e42a50444cdd5107917a"
+        "value": "3916a86f408a15cefc89cbfce85e3fb2df992bd6"
       },
-      "deploymentState": "production-owl5-owl9-independent-heartbeat-loops",
-      "historicalNote": "0.2.0 remains the immediate per-host rollback release.",
+      "deploymentState": "production-owl5-console-deadlock-fix-owl9-remains-0.2.1",
+      "historicalNote": "0.2.2 was an untagged owl5 intermediate. Owl5 can roll back to its deployment backup; owl9 remains on the formal 0.2.1 release.",
       "artifacts": [
         {
-          "name": "hechao-server-control-agent-0.2.1-20260731T120244Z-win-x64.zip",
-          "location": "artifacts/releases/hechao-server-control-agent-0.2.1-20260731T120244Z-win-x64.zip",
-          "size": 33140634,
-          "sha256": "DBF3B48695C60139A5631A52491CA017A7B0382807D03E5DAFE838A7A7239DF0",
+          "name": "hechao-server-control-agent-0.2.3-20260731T162812Z-win-x64.zip",
+          "location": "artifacts/releases/hechao-server-control-agent-0.2.3-20260731T162812Z-win-x64.zip",
+          "size": 33142794,
+          "sha256": "DCFCB19AE8F3301111E9283FE7C2E24B8A1F6E6746FC944003BD44686E9D27E0",
           "primary": true
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
-          "location": "C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
+          "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
           "size": 73899214,
-          "sha256": "2D7D334C2205EB5F5D4032586B040F3624A85FA4B711630F151E5C8067D5C700",
+          "sha256": "633A9C7EB63D982E2E9A0AC450E54679E74DBE4BD21DD38EEAFF6A572F9647F1",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "per-host-backup-directory",
-        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T120614Z; owl9:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T120725Z"
+        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T162452Z"
       },
       "evidence": [
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.2.1.md",
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md",
         "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
         "docs/evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json",
-        "docs/evidence/SERVER_CONTROL_AGENT_0.2.1_PRODUCTION_DEPLOYMENT_2026-07-31.json"
+        "docs/evidence/SERVER_CONTROL_AGENT_0.2.3_PRODUCTION_DEPLOYMENT_2026-07-31.json"
       ]
     },
     {

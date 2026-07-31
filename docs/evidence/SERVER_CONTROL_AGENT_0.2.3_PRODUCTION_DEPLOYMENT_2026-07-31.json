@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T16:26:33.2682297Z",
+  "sourceCommit": "3916a86f408a15cefc89cbfce85e3fb2df992bd6",
+  "releaseTag": "server-control-agent-v0.2.3",
+  "artifact": {
+    "name": "hechao-server-control-agent-0.2.3-20260731T162812Z-win-x64.zip",
+    "sizeBytes": 33142794,
+    "sha256": "DCFCB19AE8F3301111E9283FE7C2E24B8A1F6E6746FC944003BD44686E9D27E0",
+    "entryCount": 1,
+    "entryName": "Hechao.ServerControlAgent.exe",
+    "executableSizeBytes": 73899214,
+    "executableSha256": "633A9C7EB63D982E2E9A0AC450E54679E74DBE4BD21DD38EEAFF6A572F9647F1",
+    "productVersion": "0.2.3+3916a86f408a15cefc89cbfce85e3fb2df992bd6",
+    "containsPdb": false,
+    "containsConfiguration": false,
+    "containsCredentials": false
+  },
+  "incident": {
+    "target": "activity",
+    "serverDirectory": "E:\\ActivityNeoForge",
+    "processId": 6112,
+    "port": 25568,
+    "pauseWhenEmptySeconds": 60,
+    "consoleCommandsProcessedAfterPause": false,
+    "shutdownHookEntered": true,
+    "blockedFrame": "TerminalConsoleAppender -> FileOutputStream.write",
+    "rootCause": "Task Scheduler stdout pipe was inherited but not continuously consumed and eventually filled",
+    "quickEditWasRootCause": false,
+    "forceTerminatedAfterVerifiedBackup": true,
+    "finalState": {
+      "processExists": false,
+      "listenerExists": false,
+      "taskState": "Ready",
+      "runtimeMarkerExists": false
+    },
+    "worldBackup": {
+      "path": "E:\\manual-backups\\activity-vss-forced-stop\\activity-force-backup-20260731-235327.zip",
+      "fileCount": 191,
+      "containsLevelDat": true,
+      "sha256": "5815F6FC230E4EA4274440D8AD2C0E69703100168F247796772856C33A2F6D0B",
+      "recordedHashMatchesRecalculation": true
+    }
+  },
+  "deployment": {
+    "host": "owl5",
+    "previousProductVersion": "0.2.2+39ccd355d09e8b5b8faa504555cd07da67d17789",
+    "previousAgentSha256": "8D15EB33FF2FE83F2CB33CFB8076E1B723A21F21E4424BCEE3589FE46C2BEA22",
+    "previousAgentProcessId": 9556,
+    "agentProcessId": 10108,
+    "agentTaskState": "Running",
+    "backupDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T162452Z",
+    "runScriptSha256": "498CF88BE7AE79714A5DBF7108E70BDA7C76366B6617CB9DD2E4F3ED5450C64A",
+    "consoleScriptSha256": "DDAAFA9672B9387B30DAF64D06690C2BCD4EA260C66241424DF983533FA197B5",
+    "worldBackupScriptSha256": "39489B3021A0E02969874AF9F3C167FD6B4F582D07F93E9E5967F6B2C3AABA0A",
+    "activityTaskState": "Ready",
+    "activityListenerCount": 0,
+    "activityMarkerExists": false,
+    "javaProcesses": [
+      {
+        "processId": 2576,
+        "creationDate": "2026-07-31T04:34:03.3514000Z",
+        "executablePath": "E:\\jdk\\bin\\java.exe"
+      },
+      {
+        "processId": 6008,
+        "creationDate": "2026-07-29T15:13:21.8787000Z",
+        "executablePath": "E:\\jdk\\bin\\java.exe"
+      },
+      {
+        "processId": 7748,
+        "creationDate": "2026-07-29T15:12:24.2041050Z",
+        "executablePath": "E:\\server-artifacts\\java\\temurin-jre-25.0.4+7\\bin\\java.exe"
+      },
+      {
+        "processId": 9428,
+        "creationDate": "2026-07-27T20:27:12.5183250Z",
+        "executablePath": "E:\\jdk\\bin\\java.exe"
+      },
+      {
+        "processId": 10412,
+        "creationDate": "2026-07-28T18:25:21.6526730Z",
+        "executablePath": "E:\\jdk\\bin\\java.exe"
+      }
+    ],
+    "javaProcessIdsOrStartTimesChanged": false,
+    "temporaryUploadCountAfterDeployment": 0
+  },
+  "verification": {
+    "managedStartProbePassed": 4,
+    "serverControlAgentTestsPassed": 24,
+    "backupTestsPassed": 12,
+    "solutionTestsPassed": 496,
+    "powerShellAstFilesPassed": 4,
+    "gitDiffCheckPassed": true,
+    "artifactEntryHashVerified": true,
+    "productionAgentVersionVerified": true,
+    "productionAgentHashVerified": true,
+    "productionManagedLaunchExecuted": false,
+    "productionManagedLaunchDeferredReason": "Minecraft servers are manually started and the activity server must remain stopped"
+  },
+  "safety": {
+    "minecraftServersStartedDuringAgentDeployment": 0,
+    "minecraftServersStoppedDuringAgentDeployment": 0,
+    "minecraftServersRestartedDuringAgentDeployment": 0,
+    "automaticRollbackAvailable": true,
+    "automaticRollbackPerformed": false,
+    "credentialsRecorded": false,
+    "administratorIdentityRecorded": false
+  }
+}

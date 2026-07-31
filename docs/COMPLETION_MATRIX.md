@@ -62,7 +62,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
-| API 与代理版本 | 已完成 | API `0.24.2`、owl5/owl9 代理 `0.2.1` 已部署；服务与任务均正常，见 [`API_RELEASE_0.24.2.md`](API_RELEASE_0.24.2.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.1.md) |
+| API 与代理版本 | 已完成 | API `0.24.2`、owl5 代理 `0.2.3`、owl9 代理 `0.2.1` 已部署；服务与任务均正常，见 [`API_RELEASE_0.24.2.md`](API_RELEASE_0.24.2.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) |
 | 目录与物理服状态同步 | 已完成 | `Online` 只作为管理员开放策略；同名服控目标在线时开放、停止时自动关闭、服控失联时故障关闭。`activity` 在线自动开放，停止的恐怖整蛊 `pvp` 自动关闭，`dollnight` 显式维护保持优先 |
 | 代理心跳与命令隔离 | 已完成 | 心跳和命令使用独立循环；两台生产代理升级后持续上报，最近错误为 `0`，全部 Java PID 和启动时间不变 |
 | 单服内存展示 | 已完成 | 9 个目标均上报 `Xms`、`Xmx`、单服硬上限、代理、端口与 PID |

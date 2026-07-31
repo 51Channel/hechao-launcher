@@ -194,22 +194,21 @@ pwsh.exe -NoLogo -NoProfile -File `
 
 ### 6.2 生产状态（2026-07-31）
 
-生产 API `0.24.1` 已启用 `ServerControl`，owl5 和 owl9 的代理 `0.2.1` 计划任务均为
-`Running`。数据库实时核对结果为：
+生产 API `0.24.2` 已启用 `ServerControl`。当前 owl5 代理为 `0.2.3`，owl9 代理为
+`0.2.1`，两台代理计划任务均为 `Running`。已接入 `9` 个受管目标，运行中目标数会随
+管理员手动启停动态变化，不应写成固定开放状态。
 
-- 受管服务器 `9` 个；
-- 30 秒内在线代理 `2` 个；
-- 运行中目标 `5` 个；
-- 待处理操作 `0` 个，待处理代理命令 `0` 个。
+`0.2.0` 新增 JVM 内存读写与单服硬上限；`0.2.1` 将心跳和命令拆为独立循环；
+`0.2.3` 在 owl5 修复受管 stdout 管道堵塞和空服无法关停。九个目标均上报 `Xms`、
+`Xmx` 和 `maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。
 
-`0.2.0` 新增 JVM 内存读写与单服硬上限；`0.2.1` 将心跳和命令拆为独立循环。九个目标
-均已上报 `Xms`、`Xmx` 和 `maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。
-两台代理升级只重启代理计划任务，API 发布只重启 API，五个运行目标 PID 在发布前后
-保持不变。当前代理制品 SHA-256 为
-`2D7D334C2205EB5F5D4032586B040F3624A85FA4B711630F151E5C8067D5C700`，源码提交为
-`73afd07363ba2f55e917e42a50444cdd5107917a`。内存基线见
-[`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)，
-当前代理发布见 [`SERVER_CONTROL_AGENT_RELEASE_0.2.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.1.md)。
+owl5 当前代理制品 SHA-256 为
+`633A9C7EB63D982E2E9A0AC450E54679E74DBE4BD21DD38EEAFF6A572F9647F1`，源码提交为
+`3916a86f408a15cefc89cbfce85e3fb2df992bd6`。内存基线见
+[`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)；
+当前 owl5 发布见 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)，
+owl9 仍以 [`SERVER_CONTROL_AGENT_RELEASE_0.2.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.1.md)
+为正式版本。
 
 ### 6.3 管理员动作验收（2026-07-31）
 
@@ -237,6 +236,23 @@ pwsh.exe -NoLogo -NoProfile -File `
 代理 `0.2.1` 为心跳和命令建立两个独立异步循环。停止脚本、启动脚本或其他长命令只占用命令循环，不再阻塞同一代理管理的其他目标心跳。生产升级后 20 秒窗口内两台代理均多次推进心跳，最大观测间隔为 owl5 `10.1` 秒、owl9 `7.2` 秒；这包含九个目标的串行状态采集时间，不应解释为固定 5 秒写库周期。
 
 本次未向生产游戏服下发长命令，只验证了独立调度测试、真实生产持续心跳和升级前后 Java PID/启动时间不变。若要执行破坏性停止链路验收，必须使用无玩家隔离目标。完整证据见 [`evidence/SERVER_CONTROL_AGENT_0.2.1_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_AGENT_0.2.1_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
+
+### 6.6 空服关停阻塞修复（owl5 代理 0.2.3）
+
+2026-07-31，Activity NeoForge 在 `pause-when-empty-seconds=60` 触发空服暂停后，
+`save-all flush` 和 `stop` 无法被主线程处理。线程栈确认主线程阻塞在
+`TerminalConsoleAppender -> FileOutputStream.write`；根因是计划任务继承的 stdout
+管道无人持续消费，写满后 Java 输出永久阻塞。QuickEdit 不是该次永久阻塞的最终原因。
+
+关服前已完成 VSS 世界备份并核对 `level.dat` 和 SHA-256；目标最终保持停止。owl5 随后
+升级到代理 `0.2.3`，受管 stdout/stderr 直接写入轮换日志，并保留 `save-all -> stop ->
+Ctrl+C` 的结构化停止链。owl9 继续运行 `0.2.1`。升级只重启服控代理，Activity 任务始终
+为 `Ready`，`25568` 无监听，其余 5 个 Java PID 和启动时间不变。
+
+本地受管启动探针验证退出码、stdout/stderr、`64 MiB` 轮换和运行标记清理共 `4/4`；
+按照手动开服边界，没有为生产验收重新启动 Activity。发布与证据见
+[`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) 和
+[`evidence/SERVER_CONTROL_AGENT_0.2.3_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_AGENT_0.2.3_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
 
 ## 7. 验收与回滚
 
