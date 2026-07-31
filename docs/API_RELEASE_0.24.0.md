@@ -59,9 +59,10 @@
 - JavaScript、JSON 和 PowerShell 语法检查通过。
 - 九个生产内存文件均完成只读唯一参数核验。
 - 生产静态资源、九个目标内存 JSON、输入边界和零错误日志均已复核。
-- 最终补拍时两个浏览器的后台会话均已过期，因此没有把登录页截图记为面板目视验收；不影响上述生产接口、代理、文件和进程证据。
+- 2026-07-31 已在完成 MFA 的生产后台补做最终目视验收：九个目标均显示状态、代理和 `Xmx`，详情页均显示 `Xms`、`Xmx` 与单服上限，两个内存输入框尺寸一致且可编辑，页面无横向溢出。验收过程未保存设置，也未启停或重启 Minecraft。
 
 详细证据见 [`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)。
+登录态目视补充证据见 [`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_VISUAL_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_VISUAL_ACCEPTANCE_2026-07-31.json)。
 
 ## 回滚
 

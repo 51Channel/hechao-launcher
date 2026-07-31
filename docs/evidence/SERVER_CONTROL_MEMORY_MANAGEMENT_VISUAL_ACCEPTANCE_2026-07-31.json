@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T09:41:54.6696280Z",
+  "sourceCommit": "088ca911abcceba741c45f3fef0296439a350d14",
+  "environment": {
+    "page": "production-admin-server-control",
+    "authenticatedAdminSession": true,
+    "mfaCompleted": true,
+    "browser": "Chrome",
+    "viewportCssPixels": "1862x843",
+    "devicePixelRatio": 1.375
+  },
+  "summary": {
+    "managedTargets": 9,
+    "onlineAgents": 2,
+    "runningTargets": 5,
+    "targetsVisuallyInspected": 9,
+    "memorySummariesPresent": 9,
+    "memoryInputsAligned": 9,
+    "memoryInputsEditable": 9,
+    "horizontalOverflow": false
+  },
+  "targets": [
+    { "serverId": "lobby", "initialMemoryMiB": 1024, "maximumMemoryMiB": 2048, "maximumAllowedMemoryMiB": 4096 },
+    { "serverId": "survival2", "initialMemoryMiB": 1024, "maximumMemoryMiB": 2048, "maximumAllowedMemoryMiB": 6144 },
+    { "serverId": "survival1", "initialMemoryMiB": 512, "maximumMemoryMiB": 2048, "maximumAllowedMemoryMiB": 6144 },
+    { "serverId": "activity", "initialMemoryMiB": 2048, "maximumMemoryMiB": 6144, "maximumAllowedMemoryMiB": 8192 },
+    { "serverId": "pvp", "meaning": "HorrorPrank", "initialMemoryMiB": 2048, "maximumMemoryMiB": 5120, "maximumAllowedMemoryMiB": 6144 },
+    { "serverId": "dollnight", "initialMemoryMiB": 4096, "maximumMemoryMiB": 11264, "maximumAllowedMemoryMiB": 12288 },
+    { "serverId": "fanstreet", "initialMemoryMiB": 2048, "maximumMemoryMiB": 6144, "maximumAllowedMemoryMiB": 8192 },
+    { "serverId": "pvp-purpur", "meaning": "PVP", "initialMemoryMiB": 2048, "maximumMemoryMiB": 4096, "maximumAllowedMemoryMiB": 6144 },
+    { "serverId": "yugong", "initialMemoryMiB": 2048, "maximumMemoryMiB": 6144, "maximumAllowedMemoryMiB": 8192 }
+  ],
+  "inputContract": {
+    "minimumGiB": 0.5,
+    "stepGiB": 0.25,
+    "maximumBoundMatchesPerServerLimit": true,
+    "runningServerWarningPresent": true
+  },
+  "safety": {
+    "settingsSaved": false,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "terminalCommandsSent": 0
+  }
+}

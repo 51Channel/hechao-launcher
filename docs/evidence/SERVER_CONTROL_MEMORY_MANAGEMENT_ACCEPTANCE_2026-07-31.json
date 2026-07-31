@@ -57,7 +57,8 @@
     "javascriptSyntaxPassed": true,
     "jsonSyntaxPassed": true,
     "powerShellSyntaxPassed": true,
-    "authenticatedVisualRetest": "deferred-session-expired"
+    "authenticatedVisualRetest": "passed-supplemental-evidence",
+    "authenticatedVisualEvidence": "SERVER_CONTROL_MEMORY_MANAGEMENT_VISUAL_ACCEPTANCE_2026-07-31.json"
   },
   "cleanup": {
     "apiStagingRemoved": true,
