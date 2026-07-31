@@ -1,0 +1,25 @@
+{
+  "apiEndpoint": "https://launcher-api.hechao.world/v1/internal/server-heartbeats",
+  "collectorInstance": "owl9-pvp",
+  "tokenPath": "heartbeat-token.dat",
+  "probeTimeoutSeconds": 3,
+  "metricsMaxAgeSeconds": 30,
+  "servers": [
+    {
+      "velocityTarget": "pvp",
+      "host": "127.0.0.1",
+      "port": 25565,
+      "fallbackMaxPlayers": 20,
+      "dataPath": "C:\\mc\\server",
+      "expectedProcessExecutablePath": "C:\\mc\\jre\\jdk-21.0.11+10-jre\\bin\\java.exe"
+    },
+    {
+      "velocityTarget": "pvp-purpur",
+      "host": "127.0.0.1",
+      "port": 25565,
+      "fallbackMaxPlayers": 20,
+      "dataPath": "E:\\MinecraftServer",
+      "expectedProcessExecutablePath": "E:\\MinecraftServer\\jdk\\bin\\java.exe"
+    }
+  ]
+}

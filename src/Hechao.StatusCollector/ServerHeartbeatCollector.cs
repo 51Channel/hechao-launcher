@@ -73,41 +73,52 @@ public sealed class ServerHeartbeatCollector
         var maxPlayers = server.FallbackMaxPlayers;
         string? softwareVersion = null;
         int? protocolVersion = null;
-
-        try
+        ServerProcessProbeResult? processResult = null;
+        var shouldProbeStatus = true;
+        if (server.ExpectedProcessExecutablePath is not null)
         {
-            var status = await _statusClient.QueryAsync(
-                server.Host,
-                server.Port,
-                timeout,
-                cancellationToken);
-            online = true;
-            onlinePlayers = status.OnlinePlayers;
-            maxPlayers = status.MaxPlayers;
-            softwareVersion = status.SoftwareVersion;
-            protocolVersion = status.ProtocolVersion;
-            Console.WriteLine(
-                $"target={server.VelocityTarget} status=online players={status.OnlinePlayers}/{status.MaxPlayers}");
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            issues.Add(ServerMetricIssueCode.StatusTimeout);
-            Console.WriteLine($"target={server.VelocityTarget} status=offline reason=timeout");
-        }
-        catch (Exception exception) when (
-            exception is IOException or
-                SocketException or
-                JsonException or
-                InvalidOperationException or
-                KeyNotFoundException or
-                FormatException)
-        {
-            issues.Add(ServerMetricIssueCode.StatusUnavailable);
-            Console.WriteLine(
-                $"target={server.VelocityTarget} status=offline reason={exception.GetType().Name}");
+            processResult = await processTask;
+            shouldProbeStatus =
+                processResult.EndpointOwnedByExpectedProcess is true;
         }
 
-        var processResult = await processTask;
+        if (shouldProbeStatus)
+        {
+            try
+            {
+                var status = await _statusClient.QueryAsync(
+                    server.Host,
+                    server.Port,
+                    timeout,
+                    cancellationToken);
+                online = true;
+                onlinePlayers = status.OnlinePlayers;
+                maxPlayers = status.MaxPlayers;
+                softwareVersion = status.SoftwareVersion;
+                protocolVersion = status.ProtocolVersion;
+                Console.WriteLine(
+                    $"target={server.VelocityTarget} status=online players={status.OnlinePlayers}/{status.MaxPlayers}");
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                issues.Add(ServerMetricIssueCode.StatusTimeout);
+                Console.WriteLine($"target={server.VelocityTarget} status=offline reason=timeout");
+            }
+            catch (Exception exception) when (
+                exception is IOException or
+                    SocketException or
+                    JsonException or
+                    InvalidOperationException or
+                    KeyNotFoundException or
+                    FormatException)
+            {
+                issues.Add(ServerMetricIssueCode.StatusUnavailable);
+                Console.WriteLine(
+                    $"target={server.VelocityTarget} status=offline reason={exception.GetType().Name}");
+            }
+        }
+
+        processResult ??= await processTask;
         issues.AddRange(processResult.Issues);
         var agentResult = await agentTask;
         var acceptsPausedSnapshot =
@@ -122,7 +133,8 @@ public sealed class ServerHeartbeatCollector
         }
 
         var process = processResult.Process;
-        var metrics = agentResult.Issue == ServerMetricIssueCode.MetricsFileStale
+        var metrics = !shouldProbeStatus ||
+            agentResult.Issue == ServerMetricIssueCode.MetricsFileStale
                 ? null
                 : agentResult.Metrics;
         return new VelocityTargetHeartbeat(

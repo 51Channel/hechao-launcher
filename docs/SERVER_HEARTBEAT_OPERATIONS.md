@@ -144,6 +144,32 @@ The `owl9` installation passed all of the following checks:
 Machine-readable evidence is in
 [`evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json`](evidence/OWL9_STATUS_COLLECTOR_DEPLOYMENT_2026-07-28.json).
 
+## Owl9 shared-port ownership
+
+Status Collector `0.2.2` registers both owl9 backends while preserving their
+distinct identities:
+
+| Target | Directory | Expected Java executable |
+| --- | --- | --- |
+| `pvp` | `C:\mc\server` | `C:\mc\jre\jdk-21.0.11+10-jre\bin\java.exe` |
+| `pvp-purpur` | `E:\MinecraftServer` | `E:\MinecraftServer\jdk\bin\java.exe` |
+
+Both targets probe `127.0.0.1:25565`, but a target may query and claim that
+endpoint only when the listening PID belongs to its configured Java
+executable. A mismatched target reports `ProcessNotRunning`; it does not reuse
+the other backend's player count, process metrics, or TPS snapshot. This keeps
+the historical `pvp-fabric-1.20.1` client archive mapped to HorrorPrank and
+allows the real PVP backend to report as `pvp-purpur`.
+
+The authoritative owl9 configuration is
+[`../deploy/windows/server-heartbeats/server-heartbeats.owl9.production.json`](../deploy/windows/server-heartbeats/server-heartbeats.owl9.production.json).
+Deploy it with
+[`../tools/server/Install-HechaoStatusCollectorConfiguration.ps1`](../tools/server/Install-HechaoStatusCollectorConfiguration.ps1).
+The deployment script hashes the staged JSON, creates a timestamped backup,
+atomically replaces the active configuration, runs only the heartbeat task,
+verifies unchanged Minecraft Java PIDs, and restores the previous
+configuration on failure.
+
 ## Verification
 
 API checks:

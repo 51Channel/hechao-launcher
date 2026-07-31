@@ -113,7 +113,8 @@ public sealed class CollectorConfiguration
                 server.Port is < 1 or > 65535 ||
                 server.FallbackMaxPlayers is < 0 or > 10000 ||
                 HasInvalidPath(server.DataPath) ||
-                HasInvalidPath(server.MetricsPath))
+                HasInvalidPath(server.MetricsPath) ||
+                HasInvalidPath(server.ExpectedProcessExecutablePath))
             {
                 throw new InvalidDataException(
                     $"Server probe configuration is invalid for '{server.VelocityTarget}'.");
@@ -128,6 +129,9 @@ public sealed class CollectorConfiguration
         var dataPath = NormalizeOptionalPath(server.DataPath, baseDirectory);
         var metricsPath = NormalizeOptionalPath(
             server.MetricsPath,
+            baseDirectory);
+        var expectedProcessExecutablePath = NormalizeOptionalPath(
+            server.ExpectedProcessExecutablePath,
             baseDirectory);
         if (metricsPath is null && dataPath is not null)
         {
@@ -146,6 +150,7 @@ public sealed class CollectorConfiguration
             FallbackMaxPlayers = server.FallbackMaxPlayers,
             DataPath = dataPath,
             MetricsPath = metricsPath,
+            ExpectedProcessExecutablePath = expectedProcessExecutablePath,
             AllowStaleMetricsWhenEmpty = server.AllowStaleMetricsWhenEmpty
         };
     }
@@ -186,6 +191,8 @@ public sealed class ServerProbeConfiguration
     public string? DataPath { get; init; }
 
     public string? MetricsPath { get; init; }
+
+    public string? ExpectedProcessExecutablePath { get; init; }
 
     public bool AllowStaleMetricsWhenEmpty { get; init; }
 }

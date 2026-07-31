@@ -16,7 +16,8 @@ public sealed record ServerProcessProbeResult(
     ServerProcessMetrics? Process,
     long? DiskFreeBytes,
     long? DiskTotalBytes,
-    IReadOnlyList<ServerMetricIssueCode> Issues);
+    IReadOnlyList<ServerMetricIssueCode> Issues,
+    bool? EndpointOwnedByExpectedProcess = null);
 
 public interface IServerProcessMetricsProvider
 {
@@ -96,11 +97,33 @@ public sealed class WindowsServerProcessMetricsProvider :
                     null,
                     diskFreeBytes,
                     diskTotalBytes,
-                    issues);
+                    issues,
+                    server.ExpectedProcessExecutablePath is null ? null : false);
             }
 
             using var process = Process.GetProcessById(processId.Value);
             process.Refresh();
+            bool? endpointOwnedByExpectedProcess = null;
+            if (server.ExpectedProcessExecutablePath is not null)
+            {
+                var executablePath = process.MainModule?.FileName;
+                endpointOwnedByExpectedProcess = executablePath is not null &&
+                    string.Equals(
+                        Path.GetFullPath(executablePath),
+                        server.ExpectedProcessExecutablePath,
+                        StringComparison.OrdinalIgnoreCase);
+                if (endpointOwnedByExpectedProcess is false)
+                {
+                    issues.Add(ServerMetricIssueCode.ProcessNotRunning);
+                    return new ServerProcessProbeResult(
+                        null,
+                        diskFreeBytes,
+                        diskTotalBytes,
+                        issues,
+                        false);
+                }
+            }
+
             var initialCpu = process.TotalProcessorTime;
             var stopwatch = Stopwatch.StartNew();
             await Task.Delay(CpuSampleDuration, cancellationToken);
@@ -127,7 +150,8 @@ public sealed class WindowsServerProcessMetricsProvider :
                 metrics,
                 diskFreeBytes,
                 diskTotalBytes,
-                issues);
+                issues,
+                endpointOwnedByExpectedProcess);
         }
         catch (Exception exception) when (
             exception is ArgumentException or InvalidOperationException)

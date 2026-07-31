@@ -1,5 +1,11 @@
 # owl9 双服务端边界
 
+> 2026-08-01 状态采集边界：`pvp` 仍只代表 `C:\mc\server` 的恐怖整蛊服，
+> `pvp-purpur` 只代表 `E:\MinecraftServer` 的真正 PVP。两者共享 `25565`，
+> 状态采集器必须同时核对监听 PID 的 `java.exe` 路径，禁止仅凭端口把运行状态
+> 归给 `pvp`。生产配置见
+> [`../deploy/windows/server-heartbeats/server-heartbeats.owl9.production.json`](../deploy/windows/server-heartbeats/server-heartbeats.owl9.production.json)。
+
 > 只读复核时间：2026-07-28 15:20（Asia/Shanghai）
 >
 > 这是一条强制运维边界。owl9 上的“恐怖整蛊服”和“PVP 服”是两个不同的

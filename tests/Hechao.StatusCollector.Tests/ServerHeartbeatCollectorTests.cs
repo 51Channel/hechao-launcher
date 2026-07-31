@@ -132,6 +132,87 @@ public sealed class ServerHeartbeatCollectorTests
     }
 
     [Fact]
+    public async Task CollectAsync_ProbesSharedEndpointOwnedByExpectedTarget()
+    {
+        var statusClient = new CountingStatusClient();
+        var configuration = new CollectorConfiguration
+        {
+            CollectorInstance = "owl9-pvp",
+            Servers =
+            [
+                new ServerProbeConfiguration
+                {
+                    VelocityTarget = "pvp-purpur",
+                    Host = "127.0.0.1",
+                    Port = 25565,
+                    FallbackMaxPlayers = 20,
+                    ExpectedProcessExecutablePath = @"E:\MinecraftServer\jdk\bin\java.exe"
+                }
+            ]
+        };
+        var collector = new ServerHeartbeatCollector(
+            statusClient,
+            new FakeProcessMetricsProvider(
+                new ServerProcessProbeResult(
+                    new ServerProcessMetrics(100, 120, 1.5, DateTimeOffset.UtcNow),
+                    200,
+                    300,
+                    [],
+                    true)),
+            NullServerAgentMetricsReader.Instance,
+            TimeProvider.System);
+
+        var result = await collector.CollectAsync(
+            configuration,
+            CancellationToken.None);
+
+        var server = Assert.Single(result.Servers);
+        Assert.True(server.Online);
+        Assert.Equal(1, statusClient.QueryCount);
+    }
+
+    [Fact]
+    public async Task CollectAsync_SkipsSharedEndpointOwnedByAnotherTarget()
+    {
+        var statusClient = new CountingStatusClient();
+        var configuration = new CollectorConfiguration
+        {
+            CollectorInstance = "owl9-pvp",
+            Servers =
+            [
+                new ServerProbeConfiguration
+                {
+                    VelocityTarget = "pvp",
+                    Host = "127.0.0.1",
+                    Port = 25565,
+                    FallbackMaxPlayers = 20,
+                    ExpectedProcessExecutablePath = @"C:\mc\jre\bin\java.exe"
+                }
+            ]
+        };
+        var collector = new ServerHeartbeatCollector(
+            statusClient,
+            new FakeProcessMetricsProvider(
+                new ServerProcessProbeResult(
+                    null,
+                    100,
+                    200,
+                    [ServerMetricIssueCode.ProcessNotRunning],
+                    false)),
+            NullServerAgentMetricsReader.Instance,
+            TimeProvider.System);
+
+        var result = await collector.CollectAsync(
+            configuration,
+            CancellationToken.None);
+
+        var server = Assert.Single(result.Servers);
+        Assert.False(server.Online);
+        Assert.Equal(0, statusClient.QueryCount);
+        Assert.Contains(ServerMetricIssueCode.ProcessNotRunning, server.Issues!);
+    }
+
+    [Fact]
     public async Task CollectAsync_ReportsProbeIssuesWithoutFailingBatch()
     {
         var now = new DateTimeOffset(
@@ -294,6 +375,25 @@ public sealed class ServerHeartbeatCollectorTests
         Assert.Contains(
             ServerMetricIssueCode.MetricsFileStale,
             server.Issues!);
+    }
+
+    private sealed class CountingStatusClient : IMinecraftStatusClient
+    {
+        public int QueryCount { get; private set; }
+
+        public Task<MinecraftServerStatus> QueryAsync(
+            string host,
+            int port,
+            TimeSpan timeout,
+            CancellationToken cancellationToken)
+        {
+            QueryCount++;
+            return Task.FromResult(new MinecraftServerStatus(
+                0,
+                20,
+                "Purpur",
+                774));
+        }
     }
 
     private sealed class FakeStatusClient : IMinecraftStatusClient

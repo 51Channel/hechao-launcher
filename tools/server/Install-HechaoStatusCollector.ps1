@@ -90,7 +90,7 @@ Set-StrictMode -Version Latest
 `$taskName = "Hechao Launcher Server Heartbeats"
 `$backupDirectory = Join-Path (
     Join-Path `$installDirectory "backups"
-) ("collector-0.2.1-" + (Get-Date).ToUniversalTime().ToString(
+) ("collector-0.2.2-" + (Get-Date).ToUniversalTime().ToString(
     "yyyyMMddTHHmmssZ"
 ))
 `$replacementPath = Join-Path `$installDirectory (
