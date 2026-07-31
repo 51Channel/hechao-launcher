@@ -17,37 +17,65 @@ internal sealed class ServerControlWorker(
     internal async Task RunAsync(CancellationToken cancellationToken)
     {
         receipts.Cleanup();
-        var nextHeartbeat = DateTimeOffset.MinValue;
+        await Task.WhenAll(
+            RunHeartbeatLoopAsync(cancellationToken),
+            RunCommandLoopAsync(cancellationToken));
+    }
+
+    private async Task RunHeartbeatLoopAsync(CancellationToken cancellationToken)
+    {
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                if (DateTimeOffset.UtcNow >= nextHeartbeat)
-                {
-                    await SendHeartbeatAsync(cancellationToken);
-                    nextHeartbeat = DateTimeOffset.UtcNow.AddSeconds(
-                        configuration.HeartbeatSeconds);
-                }
+                await SendHeartbeatAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception exception) when (
+                exception is HttpRequestException or
+                    IOException or
+                    InvalidDataException or
+                    InvalidOperationException or
+                    TimeoutException)
+            {
+                log.Write("ERROR", "heartbeat_failed", exception.Message);
+            }
 
+            await Task.Delay(
+                TimeSpan.FromSeconds(configuration.HeartbeatSeconds),
+                cancellationToken);
+        }
+    }
+
+    private async Task RunCommandLoopAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
                 var claim = await apiClient.ClaimAsync(
-                    limit: 1,
+                    1,
                     cancellationToken);
                 foreach (var command in claim.Commands)
                 {
                     await ProcessCommandAsync(command, cancellationToken);
                 }
             }
-            catch (OperationCanceledException) when (
-                cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
             catch (Exception exception) when (
-                exception is HttpRequestException or IOException or
-                    InvalidDataException or InvalidOperationException or
+                exception is HttpRequestException or
+                    IOException or
+                    InvalidDataException or
+                    InvalidOperationException or
                     TimeoutException)
             {
-                log.Write("ERROR", "worker_iteration_failed", exception.Message);
+                log.Write("ERROR", "command_poll_failed", exception.Message);
             }
 
             await Task.Delay(
