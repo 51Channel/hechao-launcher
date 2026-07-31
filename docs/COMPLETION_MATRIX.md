@@ -2,7 +2,7 @@
 
 > 更新时间：`2026-07-31`
 >
-> 当前生产：启动器 `0.13.7`、API `0.23.1`、
+> 当前生产：启动器 `0.13.7`、API `0.24.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -36,11 +36,11 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布待真实自更新验收 | `0.13.7` 已发布到私有 OSS；匿名读取 `403`、两轮签名回读 `200`、长度与 SHA-256 一致，覆盖安装和布局验收完成，真实点击自更新待不影响游戏时执行，见 [`LAUNCHER_RELEASE_0.13.7.md`](LAUNCHER_RELEASE_0.13.7.md) |
-| API `0.23.1` | 已完成 | 迁移 `020`、服控队列、代理协议、健康/就绪和旧业务回归通过；生产服控已启用，见 [`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json) |
+| API `0.24.0` | 已完成 | 迁移 `020`、服控队列、每服 JVM 内存、代理协议、健康/就绪和旧业务回归通过；生产证据见 [`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | 保留既有 `0.12.0 -> 0.13.6` 验收链；本次另完成 `0.13.6 -> 0.13.7` 覆盖升级、全新安装、双轮卸载、设置与会话保留、ProductVersion 和运行中启动器保护 |
 | 私有 OSS 发布 | 已完成 | `0.13.7` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | .NET `458/458`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
+| 自动测试 | 已完成 | .NET `467/467`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.13.7` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -57,6 +57,20 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 结构化验收见
 [`evidence/LAUNCHER_0.13.7_RELEASE_ACCEPTANCE_2026-07-31.json`](evidence/LAUNCHER_0.13.7_RELEASE_ACCEPTANCE_2026-07-31.json)。
+
+### 1.2 服控内存管理收口
+
+| 项目 | 状态 | 证据 |
+| --- | --- | --- |
+| API 与代理版本 | 已完成 | API `0.24.0`、owl5/owl9 代理 `0.2.0` 已部署；服务与任务均正常 |
+| 单服内存展示 | 已完成 | 9 个目标均上报 `Xms`、`Xmx`、单服硬上限、代理、端口与 PID |
+| 单服内存调整 | 已完成 | 支持 `512 MiB` 起、`256 MiB` 步长的 `Xms/Xmx`；API 与代理双重校验，设置不自动重启游戏服 |
+| 文件事务与回滚 | 已完成 | `server.properties` 与显式 JVM 参数文件先备份、同卷替换，任一失败恢复原始字节 |
+| 生产进程隔离 | 已完成 | API/代理升级前后五个运行目标 PID 不变，待处理操作和命令均为 `0` |
+| 最终后台目视补拍 | 待补拍 | 最终复核时后台会话已过期；生产接口、静态资源、代理、文件与进程证据均已完成 |
+
+结构化验收见
+[`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)。
 
 ## 2. 玩家端
 

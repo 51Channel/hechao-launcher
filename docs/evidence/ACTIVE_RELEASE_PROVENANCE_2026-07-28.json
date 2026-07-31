@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-31T04:38:54Z",
+  "generatedAtUtc": "2026-07-31T07:10:01.0713692+00:00",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,40 +45,79 @@
     },
     {
       "component": "api",
-      "version": "0.22.0-20260729T144953Z",
-      "releaseTag": "api-v0.22.0",
-      "releaseCommit": "ba9576cd525de78fa639453e54466d967d5f1541",
-      "taggedAt": "2026-07-30T00:36:09+08:00",
+      "version": "0.24.0-20260731T062107Z",
+      "releaseTag": "api-v0.24.0",
+      "releaseCommit": "088ca911abcceba741c45f3fef0296439a350d14",
+      "taggedAt": "2026-07-31T15:09:13+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "ba9576cd525de78fa639453e54466d967d5f1541"
+        "value": "088ca911abcceba741c45f3fef0296439a350d14"
       },
-      "deploymentState": "production",
+      "deploymentState": "production-server-control-memory-management",
+      "historicalNote": "0.23.2-20260731T050744Z remains the immediate rollback release.",
       "artifacts": [
         {
-          "name": "hechao-api-0.22.0-20260729T144953Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z",
-          "size": 45576531,
-          "sha256": "2C70353CDB1C9458ADF1B14DB358CB13A31B91ECB22AC25267FF824AE4058B03",
+          "name": "hechao-api-0.24.0-20260731T062107Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.24.0-20260731T062107Z",
+          "size": 45644864,
+          "sha256": "3C852B98AA7BC99DB3EF8CE9EB3BC500262A12CE29D55905D03D5CC16D1439B4",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.22.0-20260729T144953Z/Hechao.Api",
-          "size": 104453683,
-          "sha256": "CCD8EFAF4D1F3F89A1BF7C08F2F407283892F3CC69733155ACA6884D45073A13",
+          "location": "/opt/hechao-launcher-api/releases/0.24.0-20260731T062107Z/Hechao.Api",
+          "size": 104597043,
+          "sha256": "A90E7C61FECF811C183293403CD4B1816EFF6047DB5788A415BD6EFC1D34B66A",
           "primary": false
         }
       ],
       "rollback": {
-        "kind": "backup-directory",
-        "target": "/var/backups/hechao-launcher/api-pre-0.22.0-20260729T150635Z"
+        "kind": "release-symlink",
+        "target": "/opt/hechao-launcher-api/releases/0.23.2-20260731T050744Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.22.0.md",
-        "docs/evidence/API_VELOCITY_CLIENT_COMPATIBILITY_2026-07-28.json",
-        "docs/evidence/LAUNCHER_ONLY_SWITCHING_PRODUCTION_2026-07-30.json"
+        "docs/API_RELEASE_0.23.2.md",
+        "docs/API_RELEASE_0.24.0.md",
+        "docs/evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json"
+      ]
+    },
+    {
+      "component": "server-control-agent",
+      "version": "0.2.0",
+      "releaseTag": "server-control-agent-v0.2.0",
+      "releaseCommit": "088ca911abcceba741c45f3fef0296439a350d14",
+      "taggedAt": "2026-07-31T15:09:14+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "088ca911abcceba741c45f3fef0296439a350d14"
+      },
+      "deploymentState": "production-owl5-owl9-memory-management",
+      "artifacts": [
+        {
+          "name": "hechao-server-control-agent-0.2.0-20260731T061127Z-win-x64.zip",
+          "location": "artifacts/releases/hechao-server-control-agent-0.2.0-20260731T061127Z-win-x64.zip",
+          "size": 33137565,
+          "sha256": "3A6059E5A183187E85ECBA282472535D7253266ACF945ABA0821681777F9CF9F",
+          "primary": true
+        },
+        {
+          "name": "Hechao.ServerControlAgent.exe",
+          "location": "C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
+          "size": 73893582,
+          "sha256": "11CC411AECC1DFDA276FC4CD23E7653A13C3323C3DF495B1C1AD0B81FFBCC3BD",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "per-host-backup-directory",
+        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T061646Z; owl9:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T061915Z"
+      },
+      "evidence": [
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.2.0.md",
+        "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
+        "docs/evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json"
       ]
     },
     {

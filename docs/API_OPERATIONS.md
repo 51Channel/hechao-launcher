@@ -245,12 +245,13 @@ reload 和五个公网入口回归。详见
 迁移 `019`、健康/就绪、公开目录零 Lobby、旧业务回归和 journal 零新增错误，见
 [`API_RELEASE_0.22.0.md`](API_RELEASE_0.22.0.md)。
 
-下一版 API 候选在迁移 020 中增加结构化服控目标、操作、命令和代理心跳。管理端
-只能排队启动、停止、重启、白名单快捷设置和受限 Minecraft 命令；本机代理凭据按
-代理 ID 存储为 SHA-256，明文令牌只保留在对应 Windows VPS 的 DPAPI
-`LocalMachine` 密文中。功能默认关闭，发布数据库变更不会启动、停止或重启任何
-Minecraft、Velocity 或 Java 进程。完整边界见
-[`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)。
+API `0.23.x` 在迁移 020 中增加结构化服控目标、操作、命令和代理心跳；`0.24.0`
+继续加入每服 `Xms`、`Xmx` 与内存硬上限的展示和受控修改。管理端只能排队启动、
+停止、重启、结构化快捷设置和受限 Minecraft 命令；本机代理凭据按代理 ID 存储为
+SHA-256，明文令牌只保留在对应 Windows VPS 的 DPAPI `LocalMachine` 密文中。
+内存设置不会自动重启游戏服，API 和代理分别执行范围、步长与硬上限校验。完整边界见
+[`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，发布记录见
+[`API_RELEASE_0.24.0.md`](API_RELEASE_0.24.0.md)。
 
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 

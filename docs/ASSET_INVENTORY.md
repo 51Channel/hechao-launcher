@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.22.0`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级、六份生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标与统一告警 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.24.0`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级、六份生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警与服控内存管理 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -181,6 +181,24 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   `MinimumSupportedVersion=0.12.3`；API 服务为 `active`、`NRestarts=0`，
   公网健康端点为 `200`。详细记录见
   [`LAUNCHER_RELEASE_0.13.7.md`](LAUNCHER_RELEASE_0.13.7.md)。
+
+### 1.8 服控内存管理制品
+
+- API `0.23.2-20260731T050744Z` 归档为 `45,641,384` 字节，SHA-256
+  `D4E1AF0A8E02820C04D52F199581D45D5436887D0C4B9C5730736F5B6D0E2DD5`；
+  单文件为 `104,595,507` 字节，SHA-256
+  `6C3CB5B93086EB3CA96428AEDF409C74FAD96527E0547916FE07162AF57B0AE6`，现保留为回滚版本。
+- API `0.24.0-20260731T062107Z` 归档为 `45,644,864` 字节，SHA-256
+  `3C852B98AA7BC99DB3EF8CE9EB3BC500262A12CE29D55905D03D5CC16D1439B4`；
+  单文件为 `104,597,043` 字节，SHA-256
+  `A90E7C61FECF811C183293403CD4B1816EFF6047DB5788A415BD6EFC1D34B66A`，当前在线。
+- 服控代理 `0.2.0` ZIP 为 `33,137,565` 字节，SHA-256
+  `3A6059E5A183187E85ECBA282472535D7253266ACF945ABA0821681777F9CF9F`；
+  EXE 为 `73,893,582` 字节，SHA-256
+  `11CC411AECC1DFDA276FC4CD23E7653A13C3323C3DF495B1C1AD0B81FFBCC3BD`。
+- owl5 和 owl9 均运行代理 `0.2.0`；9 个目标已上报 JVM 内存，五个运行目标 PID
+  在部署前后不变。回滚备份与每服内存基线见
+  [`SERVER_CONTROL_AGENT_RELEASE_0.2.0.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.0.md)。
 
 ## 2. 主 Minecraft VPS：owl5
 

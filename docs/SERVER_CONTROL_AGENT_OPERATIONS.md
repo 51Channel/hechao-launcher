@@ -185,20 +185,20 @@ pwsh.exe -NoLogo -NoProfile -File `
 
 ### 6.2 生产状态（2026-07-31）
 
-生产 API `0.23.1` 已启用 `ServerControl`，owl5 和 owl9 的代理计划任务均为
+生产 API `0.24.0` 已启用 `ServerControl`，owl5 和 owl9 的代理 `0.2.0` 计划任务均为
 `Running`。数据库实时核对结果为：
 
 - 受管服务器 `9` 个；
 - 30 秒内在线代理 `2` 个；
-- 运行中目标 `4` 个；
-- 待处理或历史服控操作 `0` 个，代理命令 `0` 个。
+- 运行中目标 `5` 个；
+- 待处理操作 `0` 个，待处理代理命令 `0` 个。
 
-本次部署只重启 `Hechao Launcher Server Control Agent` 计划任务。安装器返回
-`server_action=none`，owl5 的 Lobby、Survival2、Activity 以及 owl9 的恐怖整蛊服
-在部署前后 PID 保持不变。代理制品 SHA-256 为
-`FE09808A3C075AFAF9523691E26A07C71B8E1FAC62B9DAFD0C3968D7613DE70C`，源码提交为
-`e9faeff301d7512a03eef4dcc40b3cfa46f43b02`。完整证据见
-[`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
+`0.2.0` 新增 JVM 内存读写与单服硬上限。九个目标均已上报 `Xms`、`Xmx` 和
+`maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。两台代理升级只重启代理
+计划任务，API 发布只重启 API，五个运行目标 PID 在发布前后保持不变。代理制品
+SHA-256 为 `11CC411AECC1DFDA276FC4CD23E7653A13C3323C3DF495B1C1AD0B81FFBCC3BD`，
+源码提交为 `088ca911abcceba741c45f3fef0296439a350d14`。完整证据见
+[`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)。
 
 ### 6.3 管理员动作验收（2026-07-31）
 
