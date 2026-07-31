@@ -35,28 +35,28 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
-| 启动器 | 已完成 | `0.13.6` 已发布到私有 OSS；匿名读取 `403`、两轮签名回读 `200`、长度与 SHA-256 一致，正式自更新和注册表版本均已验收，见 [`LAUNCHER_RELEASE_0.13.6.md`](LAUNCHER_RELEASE_0.13.6.md) |
-| API `0.22.0` | 已完成 | 发布 ID `0.22.0-20260729T144953Z`；迁移 `019`、基础设施角色、隐藏监控、健康/就绪、公开目录和旧业务回归通过，见 [`API_RELEASE_0.22.0.md`](API_RELEASE_0.22.0.md) |
+| 启动器 | 已发布待真实自更新验收 | `0.13.7` 已发布到私有 OSS；匿名读取 `403`、两轮签名回读 `200`、长度与 SHA-256 一致，覆盖安装和布局验收完成，真实点击自更新待不影响游戏时执行，见 [`LAUNCHER_RELEASE_0.13.7.md`](LAUNCHER_RELEASE_0.13.7.md) |
+| API `0.23.1` | 已完成 | 迁移 `020`、服控队列、代理协议、健康/就绪和旧业务回归通过；生产服控已启用，见 [`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
-| Windows 安装、覆盖升级与卸载 | 已完成 | 保留既有 `0.12.0 -> 0.12.3` 验收链；本次另完成 `0.13.5 -> 0.13.6` 覆盖升级、全新安装、双轮卸载、设置与会话保留、ProductVersion 和运行中启动器保护 |
-| 私有 OSS 发布 | 已完成 | `0.13.6` 不可变对象已发布；两轮重复发布均校验后跳过，匿名读取 `403`，签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | .NET `456/456`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
-| 2 至 3 人真实灰度 | 外部验收 | 待按 `0.13.6` 单进程切服与 Lobby 隔离清单执行 |
+| Windows 安装、覆盖升级与卸载 | 已完成 | 保留既有 `0.12.0 -> 0.13.6` 验收链；本次另完成 `0.13.6 -> 0.13.7` 覆盖升级、全新安装、双轮卸载、设置与会话保留、ProductVersion 和运行中启动器保护 |
+| 私有 OSS 发布 | 已完成 | `0.13.7` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，签名回读 `200`，私有签名 URL 未进入文档或日志 |
+| 自动测试 | 已完成 | .NET `458/458`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
+| 2 至 3 人真实灰度 | 外部验收 | 待按 `0.13.7` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
-### 1.1 启动器 0.13.6 收口
+### 1.1 启动器 0.13.7 收口
 
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
-| 正式版本与制品 | 已完成 | `0.13.6` 已发布私有 OSS；EXE 与安装包版本、大小、SHA-256、`NotSigned` 状态见 [`LAUNCHER_RELEASE_0.13.6.md`](LAUNCHER_RELEASE_0.13.6.md) |
-| 自动测试 | 已完成 | 完整解决方案 `456/456`，启动器 `134/134` |
-| 自更新 | 已完成 | 正式客户端 `0.13.5 -> 0.13.6` 下载、校验、静默覆盖和重启成功；设置、账号、皮肤、Java、目录与内存保留 |
+| 正式版本与制品 | 已完成 | `0.13.7` 已发布私有 OSS；EXE 与安装包版本、大小、SHA-256、`NotSigned` 状态见 [`LAUNCHER_RELEASE_0.13.7.md`](LAUNCHER_RELEASE_0.13.7.md) |
+| 自动测试 | 已完成 | 完整解决方案 `458/458`，启动器 `135/135` |
+| 自更新 | 已实现待生产验收 | 弹窗布局、长说明滚动、进度和按钮已通过 125% DPI 视觉验收；正式 `0.13.6 -> 0.13.7` 下载并重启待当前游戏会话结束后执行 |
 | 系统代理开关 | 已完成 | 默认直连，可选择继承 Windows 系统代理；设置持久化并在下次启动生效，覆盖所有启动器管理的 HTTP 客户端 |
-| 生产更新通道 | 已完成 | `LatestVersion=0.13.6`，公网健康与就绪均为 `200`，服务 `NRestarts=0` |
+| 生产更新通道 | 已完成 | `LatestVersion=0.13.7`，公网健康端点为 `200`，服务 `NRestarts=0` |
 | `0.13.5` 中间构建 | 已归档 | 仅内部验收，不创建标签、不作为回滚目标、不覆盖其不可变 OSS 对象 |
 
 结构化验收见
-[`evidence/LAUNCHER_0.13.6_RELEASE_ACCEPTANCE_2026-07-31.json`](evidence/LAUNCHER_0.13.6_RELEASE_ACCEPTANCE_2026-07-31.json)。
+[`evidence/LAUNCHER_0.13.7_RELEASE_ACCEPTANCE_2026-07-31.json`](evidence/LAUNCHER_0.13.7_RELEASE_ACCEPTANCE_2026-07-31.json)。
 
 ## 2. 玩家端
 
@@ -104,7 +104,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 玩家搜索、等级和单服授权管理 | 已实现待生产验收 | 玩家搜索、单服规则和受控四级全局等级入口均已上线；大厅代理已加载，仍需专门测试账号完成四级改回与拒绝路径 |
 | 账号、设备会话与 Minecraft UUID 封禁 | 已实现待生产验收 | 功能自 API `0.16.0` 上线并保留在当前 `0.22.0`；账号停用/恢复、单设备和全部会话撤销、UUID 定时封禁、论坛既有 Cookie 联动、并发保护、Velocity/目录拒绝及审计均通过隔离与生产链路验收。真实管理员 MFA 已登记，仍待在生产页面逐项操作验收 |
 | 审计日志查看 | 已完成 | 目录写入、登录与 MFA 事件可查询 |
-| 服控面板、冲突编排、快捷设置与终端 | 已实现待生产验收 | 已实现结构化启动/停止/重启队列、冲突组先停后启、失败取消、双重校验、审计、五项 `server.properties` 快捷设置和命令前缀白名单；Windows 代理只调用固定计划任务与 Minecraft 控制台桥，共享端口要求运行标记和进程祖先归属。API 默认关闭，待两台 VPS 真实路径/任务盘点及专用无玩家目标验收，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) |
+| 服控面板、冲突编排、快捷设置与终端 | 已上线待动作验收 | 结构化启动/停止/重启队列、冲突组先停后启、失败取消、双重校验、审计、五项 `server.properties` 快捷设置和命令前缀白名单已接入生产。两台代理持续上报 9 个目标，当前 2 个代理在线、4 个实例运行；部署未改变游戏 PID，首次真实启停仍限定为专用无玩家目标，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 和 [`evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json) |
 
 ## 4. 服务端授权与状态
 

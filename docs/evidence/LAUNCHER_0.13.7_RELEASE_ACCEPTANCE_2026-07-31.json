@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T04:27:43Z",
+  "component": "launcher",
+  "version": "0.13.7",
+  "buildSourceCommit": "b6fa703d03359519ae5d73336dc974409cf80937",
+  "releaseTag": "launcher-v0.13.7",
+  "tests": {
+    "solutionPassed": 458,
+    "solutionFailed": 0,
+    "launcherPassed": 135,
+    "distributionPassed": 42,
+    "apiPassed": 211,
+    "backupPassed": 12,
+    "publisherPassed": 32,
+    "statusCollectorPassed": 12,
+    "serverControlAgentPassed": 14
+  },
+  "artifacts": {
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.13.7-win-x64.exe",
+      "sizeBytes": 61910615,
+      "sha256": "5E7DD73BED96BE98EEB616CCF8155D268B92C8A0A25B54BB4D67F0712429B5CF",
+      "signatureStatus": "NotSigned"
+    },
+    "launcher": {
+      "name": "Hechao.Launcher.exe",
+      "sizeBytes": 68856376,
+      "sha256": "6C98FF66450E9FF8F91A00945BB7F7F8BF12200E071E82D34F978B751C21860A",
+      "productVersion": "0.13.7+b6fa703d03359519ae5d73336dc974409cf80937",
+      "signatureStatus": "NotSigned"
+    }
+  },
+  "installerValidation": {
+    "validatedAtUtc": "2026-07-31T04:07:53.1719276Z",
+    "upgradeFrom": "0.13.6",
+    "upgradeTo": "0.13.7",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "layoutAcceptance": {
+    "dpiScalePercent": 125,
+    "previewWidth": 1875,
+    "previewHeight": 1075,
+    "releaseNotesScrollable": true,
+    "progressAndStatusSeparated": true,
+    "buttonsAligned": true,
+    "overlapObserved": false,
+    "layoutContractTestAdded": true
+  },
+  "privateOss": {
+    "objectKey": "releases/launcher/0.13.7/Hechao-Launcher-Setup-0.13.7-win-x64.exe",
+    "firstPublishUploaded": true,
+    "secondPublishSkippedAfterVerification": true,
+    "anonymousStatusCodes": [403, 403],
+    "signedReadStatusCodes": [200, 200],
+    "lengthMatched": true,
+    "sha256Matched": true
+  },
+  "productionUpdateChannel": {
+    "enabled": true,
+    "latestVersion": "0.13.7",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61910615,
+    "installerSha256": "5E7DD73BED96BE98EEB616CCF8155D268B92C8A0A25B54BB4D67F0712429B5CF",
+    "publishedAtUtc": "2026-07-31T04:11:26Z",
+    "apiVersion": "0.23.1",
+    "apiServiceStatus": "active",
+    "apiRestarts": 0,
+    "publicHealthStatusCode": 200
+  },
+  "serverControlCompanionDeployment": {
+    "managedTargets": 9,
+    "freshAgents": 2,
+    "runningTargets": 4,
+    "operations": 0,
+    "commands": 0,
+    "minecraftProcessIdsChanged": false,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0
+  },
+  "realSelfUpdateAcceptance": {
+    "fromVersion": "0.13.6",
+    "toVersion": "0.13.7",
+    "status": "pending",
+    "reason": "Deferred to avoid interrupting an active game session",
+    "productionMachineCurrentVersion": "0.13.6"
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "minecraftAccessTokenIncluded": false,
+    "cookieIncluded": false
+  }
+}
