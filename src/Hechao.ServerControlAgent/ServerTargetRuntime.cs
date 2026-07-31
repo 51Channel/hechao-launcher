@@ -59,7 +59,8 @@ internal sealed class ServerTargetRuntime
             Configuration.Port.ToString(
                 System.Globalization.CultureInfo.InvariantCulture) +
             " -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess);" +
-            "if($p){[Console]::Out.Write($p)}";
+            "if($p){[Console]::Out.Write($p)};" +
+            "exit 0";
         var result = await _processRunner.RunAsync(
             "pwsh.exe",
             ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script],
@@ -68,7 +69,9 @@ internal sealed class ServerTargetRuntime
         if (result.ExitCode != 0)
         {
             throw new InvalidOperationException(
-                "Unable to inspect the configured listening port.");
+                FormatProbeFailure(
+                    "Unable to inspect the configured listening port",
+                    result));
         }
 
         return int.TryParse(
@@ -99,23 +102,24 @@ internal sealed class ServerTargetRuntime
         var script =
             "$root=Get-Process -Id " + runnerProcessId +
             " -ErrorAction SilentlyContinue;" +
-            "if($null -eq $root){exit};" +
+            "if($null -eq $root){exit 0};" +
             "$ticks=$root.StartTime.ToUniversalTime().Ticks;" +
             "if([Math]::Abs($ticks-" + runnerStartedAtUtcTicks +
-            ") -gt 50000000){exit};" +
+            ") -gt 50000000){exit 0};" +
             "$owner=(Get-NetTCPConnection -State Listen -LocalPort " + port +
             " -ErrorAction SilentlyContinue | Select-Object -First 1 " +
             "-ExpandProperty OwningProcess);" +
-            "if(-not $owner){exit};" +
+            "if(-not $owner){exit 0};" +
             "$current=[int]$owner;" +
             "for($i=0;$i -lt 16 -and $current -gt 0;$i++){" +
             "if($current -eq " + runnerProcessId +
-            "){[Console]::Out.Write($owner);exit};" +
+            "){[Console]::Out.Write($owner);exit 0};" +
             "$row=Get-CimInstance Win32_Process -Filter " +
             "\"ProcessId = $current\" -ErrorAction SilentlyContinue;" +
-            "if($null -eq $row){exit};" +
+            "if($null -eq $row){exit 0};" +
             "$current=[int]$row.ParentProcessId" +
-            "}";
+            "};" +
+            "exit 0";
         var result = await _processRunner.RunAsync(
             "pwsh.exe",
             ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script],
@@ -124,7 +128,9 @@ internal sealed class ServerTargetRuntime
         if (result.ExitCode != 0)
         {
             throw new InvalidOperationException(
-                "Unable to verify the managed server process.");
+                FormatProbeFailure(
+                    "Unable to verify the managed server process",
+                    result));
         }
 
         return int.TryParse(
@@ -464,6 +470,19 @@ internal sealed class ServerTargetRuntime
 
     private static AgentCommandResult Failed(string code, string message) =>
         new(ServerControlCommandOutcome.Failed, code, message);
+
+    private static string FormatProbeFailure(
+        string summary,
+        ProcessRunResult result)
+    {
+        var detail = string.IsNullOrWhiteSpace(result.StandardError)
+            ? result.StandardOutput
+            : result.StandardError;
+        var safeDetail = AgentLog.Sanitize(detail, 600);
+        return string.IsNullOrWhiteSpace(safeDetail)
+            ? $"{summary} (exit {result.ExitCode})."
+            : $"{summary} (exit {result.ExitCode}): {safeDetail}";
+    }
 
     private sealed record RuntimeMarker(
         string ServerId,

@@ -167,6 +167,28 @@ public sealed class ServerTargetRuntimeTests
     }
 
     [Fact]
+    public async Task OfflinePortProbe_ReturnsNoProcessWithoutFailingHeartbeat()
+    {
+        var runner = new RecordingProcessRunner((_, arguments) =>
+        {
+            var script = arguments.Last();
+            return script.EndsWith("exit 0", StringComparison.Ordinal)
+                ? new ProcessRunResult(0, string.Empty, string.Empty)
+                : new ProcessRunResult(1, string.Empty, string.Empty);
+        });
+        var runtime = CreateRuntime("survival1", 19228, null, runner);
+
+        var processId = await runtime.FindProcessIdAsync(
+            CancellationToken.None);
+
+        Assert.Null(processId);
+        Assert.Contains(
+            "exit 0",
+            Assert.Single(runner.Calls).Arguments.Last(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task SharedPortHeartbeat_RequiresMatchingManagedRunMarker()
     {
         var runtimeDirectory = Path.Combine(

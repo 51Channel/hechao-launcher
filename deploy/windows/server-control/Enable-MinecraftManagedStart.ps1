@@ -29,6 +29,7 @@ $results = foreach ($serverDirectory in $ServerDirectories) {
     }
 
     $standalonePausePattern = '(?im)^([ \t]*)pause([ \t]*)(\r?)$'
+    $managedMarkerPattern = '(?im)HECHAO_MANAGED_START'
     $pauseMatches = [regex]::Matches($text, $standalonePausePattern)
     $changed = $pauseMatches.Count -gt 0
 
@@ -40,14 +41,27 @@ $results = foreach ($serverDirectory in $ServerDirectories) {
             '$1if not defined HECHAO_MANAGED_START pause$2$3')
         [System.IO.File]::WriteAllText($scriptPath, $updated, $ascii)
     }
-    elseif ($text -notmatch '(?im)^[ \t]*if not defined HECHAO_MANAGED_START pause[ \t]*(?:\r)?$') {
-        throw "No standalone or managed pause statement was found: $scriptPath"
+    elseif ($text -notmatch $managedMarkerPattern) {
+        Copy-Item -LiteralPath $scriptPath -Destination $backupPath -Force
+        $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+        $separator = if ($text.Length -gt 0 -and -not $text.EndsWith("`n")) {
+            $newline
+        }
+        else {
+            ''
+        }
+        $updated = "${text}${separator}rem HECHAO_MANAGED_START: headless script has no pause${newline}"
+        [System.IO.File]::WriteAllText($scriptPath, $updated, $ascii)
+        $changed = $true
     }
 
     $afterHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $scriptPath).Hash
     $updatedText = [System.IO.File]::ReadAllText($scriptPath, $ascii)
     if ($updatedText -match '(?im)^[ \t]*pause[ \t]*(?:\r)?$') {
         throw "A standalone pause statement remains: $scriptPath"
+    }
+    if ($updatedText -notmatch $managedMarkerPattern) {
+        throw "Managed-start marker is missing after editing: $scriptPath"
     }
 
     [pscustomobject]@{
