@@ -1,45 +1,46 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-07-31T02:29:00Z",
+  "generatedAtUtc": "2026-07-31T04:38:54Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.13.6",
-      "releaseTag": "launcher-v0.13.6",
-      "releaseCommit": "e6bdb3a3af58ffcfc8f6d7e3af8d654525626c95",
-      "taggedAt": "2026-07-31T10:24:57+08:00",
+      "version": "0.13.7",
+      "releaseTag": "launcher-v0.13.7",
+      "releaseCommit": "74839695fd1ae8f7b3b470f4c4c708f0423756be",
+      "taggedAt": "2026-07-31T12:38:21+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "667a15a9eb48cfb2264c3d2f085abc7cbbe1c070"
+        "value": "b6fa703d03359519ae5d73336dc974409cf80937"
       },
-      "deploymentState": "production-private-oss-self-update-enabled",
-      "historicalNote": "0.13.5 was an internal acceptance build only. It has no release tag and is not a formal rollback target.",
+      "deploymentState": "production-private-oss-self-update-enabled-real-click-pending",
+      "historicalNote": "0.13.6 remains the previous formal release. 0.13.5 was an internal acceptance build only and is not a formal rollback target.",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 68855341,
-          "sha256": "2365C71C4F8348C9FD13ECABF7BCB2A9B4117D06D472A2C4093A88AA654DFAA2",
+          "size": 68856376,
+          "sha256": "6C98FF66450E9FF8F91A00945BB7F7F8BF12200E071E82D34F978B751C21860A",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.13.6-win-x64.exe",
-          "location": "releases/launcher/0.13.6/Hechao-Launcher-Setup-0.13.6-win-x64.exe",
-          "size": 61904234,
-          "sha256": "9A5F09BD5084C4C926598184A536825B4F59A0116571D255D4603F7CD54A4C03",
+          "name": "Hechao-Launcher-Setup-0.13.7-win-x64.exe",
+          "location": "releases/launcher/0.13.7/Hechao-Launcher-Setup-0.13.7-win-x64.exe",
+          "size": 61910615,
+          "sha256": "5E7DD73BED96BE98EEB616CCF8155D268B92C8A0A25B54BB4D67F0712429B5CF",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "update-channel-disable-and-forward-release",
-        "target": "disable LauncherUpdates; if code rollback is required, publish a higher version from source commit 029160bdc05d4c8e78ad4bae594efd09f7de7bef"
+        "target": "disable LauncherUpdates; if code rollback is required, publish a higher version from source commit 667a15a9eb48cfb2264c3d2f085abc7cbbe1c070"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.13.6.md",
+        "docs/LAUNCHER_RELEASE_0.13.7.md",
         "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
-        "docs/evidence/LAUNCHER_0.13.6_RELEASE_ACCEPTANCE_2026-07-31.json"
+        "docs/evidence/LAUNCHER_0.13.7_RELEASE_ACCEPTANCE_2026-07-31.json",
+        "docs/evidence/SERVER_CONTROL_PRODUCTION_DEPLOYMENT_2026-07-31.json"
       ]
     },
     {
