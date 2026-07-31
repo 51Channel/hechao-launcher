@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T12:14:48.043Z",
+  "verifiedAtUtc": "2026-07-31T12:28:22.1406044Z",
+  "sourceCommit": "73afd07363ba2f55e917e42a50444cdd5107917a",
+  "releaseTag": "server-control-agent-v0.2.1",
+  "artifact": {
+    "name": "hechao-server-control-agent-0.2.1-20260731T120244Z-win-x64.zip",
+    "sizeBytes": 33140634,
+    "sha256": "DBF3B48695C60139A5631A52491CA017A7B0382807D03E5DAFE838A7A7239DF0",
+    "entryCount": 1,
+    "entryName": "Hechao.ServerControlAgent.exe",
+    "executableSizeBytes": 73899214,
+    "executableSha256": "2D7D334C2205EB5F5D4032586B040F3624A85FA4B711630F151E5C8067D5C700",
+    "productVersion": "0.2.1+73afd07363ba2f55e917e42a50444cdd5107917a",
+    "containsPdb": false,
+    "containsConfiguration": false,
+    "containsCredentials": false
+  },
+  "deployments": {
+    "owl5": {
+      "agentId": "owl5",
+      "taskName": "Hechao Launcher Server Control Agent",
+      "taskState": "Running",
+      "previousProductVersion": "0.2.0+088ca911abcceba741c45f3fef0296439a350d14",
+      "previousAgentProcessId": 3496,
+      "agentProcessId": 4372,
+      "backupDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T120614Z",
+      "javaProcessIdsBefore": [2576, 6008, 6112, 7748, 9428, 10412],
+      "javaProcessIdsAfter": [2576, 6008, 6112, 7748, 9428, 10412],
+      "javaProcessStartTimesChanged": false,
+      "errorLogsSinceDeployment": 0
+    },
+    "owl9": {
+      "agentId": "owl9",
+      "taskName": "Hechao Launcher Server Control Agent",
+      "taskState": "Running",
+      "previousProductVersion": "0.2.0+088ca911abcceba741c45f3fef0296439a350d14",
+      "previousAgentProcessId": 5572,
+      "agentProcessId": 2392,
+      "backupDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T120725Z",
+      "javaProcessIdsBefore": [2912],
+      "javaProcessIdsAfter": [2912],
+      "javaProcessStartTimesChanged": false,
+      "errorLogsSinceDeployment": 0
+    }
+  },
+  "heartbeatAcceptance": {
+    "windowStartedAtUtc": "2026-07-31T12:14:27.413Z",
+    "windowEndedAtUtc": "2026-07-31T12:14:47.938Z",
+    "sampleCount": 6,
+    "databaseAgentVersion": "0.2.1",
+    "owl5DistinctHeartbeatCount": 3,
+    "owl9DistinctHeartbeatCount": 4,
+    "owl5MaximumObservedAdvanceSeconds": 10.12,
+    "owl9MaximumObservedAdvanceSeconds": 7.185,
+    "independentLoopRegressionTestPassed": true,
+    "destructiveLongCommandIssuedToProduction": false
+  },
+  "platform": {
+    "apiVersion": "0.24.1",
+    "publicHealthStatusCode": 200,
+    "publicReadinessStatusCode": 200,
+    "databaseStatus": "ready",
+    "managedTargets": 9,
+    "freshAgents": 2,
+    "runningTargets": 5,
+    "pendingOperations": 0,
+    "pendingCommands": 0,
+    "catalog": {
+      "activity": "Online",
+      "pvp": "Closed",
+      "pvpMeaning": "HorrorPrank",
+      "pvpPurpurMeaning": "PVP",
+      "dollnight": "Maintenance"
+    }
+  },
+  "verification": {
+    "agentTestsPassed": 20,
+    "solutionTestsPassed": 480,
+    "productVersionVerifiedOnBothHosts": true,
+    "artifactHashVerifiedOnBothHosts": true,
+    "taskRunningOnBothHosts": true,
+    "recentAgentErrors": 0,
+    "gitDiffCheckPassed": true,
+    "releaseProvenanceLedgerPassed": true
+  },
+  "safety": {
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftProcessIdsChanged": false,
+    "automaticRollbackAvailable": true,
+    "automaticRollbackPerformed": false,
+    "credentialsRecorded": false,
+    "administratorIdentityRecorded": false
+  }
+}

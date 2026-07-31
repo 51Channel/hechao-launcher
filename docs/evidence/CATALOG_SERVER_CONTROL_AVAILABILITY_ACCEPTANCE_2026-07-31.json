@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-07-31T11:33:54.9882248Z",
+  "supplementedAtUtc": "2026-07-31T12:28:22.1406044Z",
+  "sourceCommits": {
+    "feature": "91469c8953adc9a0ec384a21c9c16729ab096cae",
+    "fix": "4fdd58ce4fff0fe5f8432214cb77d9d546012586",
+    "agentHeartbeatFix": "73afd07363ba2f55e917e42a50444cdd5107917a"
+  },
+  "api": {
+    "version": "0.24.1",
+    "releaseId": "0.24.1-20260731T105946Z",
+    "releaseTag": "api-v0.24.1",
+    "serviceStatus": "active/running",
+    "serviceRestarts": 0,
+    "mainProcessId": 8945,
+    "publicHealthStatusCode": 200,
+    "publicReadinessStatusCode": 200,
+    "databaseStatus": "ready",
+    "archiveSizeBytes": 45644480,
+    "archiveSha256": "85E6BC7EE935678BB275A09611FDAF6DF39D38D24C104A7C24D2A10C0B93CAF7",
+    "executableSizeBytes": 104606771,
+    "executableSha256": "E5449CA15BE8B60154601EC54C2B0408A9E4D1C1DAB090A4835602CF31CE15DB",
+    "errorLogsSinceDeployment": 0
+  },
+  "failedCandidate": {
+    "releaseId": "0.24.1-20260731T103311Z",
+    "archiveSha256": "BF2BA9667A1F40A118CF3C2CF5F673392CFAEC03B27106737FBD80FBA7317E6B",
+    "failure": "PostgreSQL 42702 ambiguous column in AdminCatalogRepository",
+    "rolledBackTo": "0.24.0-20260731T062107Z",
+    "reusable": false,
+    "tagged": false
+  },
+  "catalog": {
+    "adminRecordCount": 6,
+    "publicRecordCount": 5,
+    "servers": [
+      {
+        "serverId": "survival1",
+        "configuredStatus": "Online",
+        "effectiveStatus": "Online",
+        "visible": true,
+        "clientProfileId": "base-1.21.11",
+        "clientProfileVersion": "1.0.5",
+        "controlAgentId": "owl5",
+        "reportedOnline": true,
+        "processId": 2576
+      },
+      {
+        "serverId": "activity",
+        "configuredStatus": "Online",
+        "effectiveStatus": "Online",
+        "visible": true,
+        "clientProfileId": "activity-neoforge-1.21.11",
+        "clientProfileVersion": "1.0.10",
+        "controlAgentId": "owl5",
+        "reportedOnline": true,
+        "processId": 6112
+      },
+      {
+        "serverId": "pvp",
+        "meaning": "HorrorPrank",
+        "configuredStatus": "Online",
+        "effectiveStatus": "Closed",
+        "visible": true,
+        "clientProfileId": "pvp-fabric-1.20.1",
+        "clientProfileVersion": "1.0.0",
+        "controlAgentId": "owl9",
+        "reportedOnline": false,
+        "processId": null
+      },
+      {
+        "serverId": "dollnight",
+        "configuredStatus": "Maintenance",
+        "effectiveStatus": "Maintenance",
+        "visible": true,
+        "clientProfileId": "dollnight-1.21.11",
+        "clientProfileVersion": "1.0.0",
+        "controlAgentId": "owl5",
+        "reportedOnline": false,
+        "processId": null
+      }
+    ]
+  },
+  "verification": {
+    "apiTestsPassed": 227,
+    "solutionTestsPassed": 480,
+    "javascriptSyntaxPassed": true,
+    "gitDiffCheckPassed": true,
+    "qualifiedJoinRegressionTestAdded": true,
+    "adminCatalogRequestStatusCode": 200,
+    "sharedActivityTargetUsesPhysicalServerControlState": true,
+    "stoppedBackendClosesWithoutManualCatalogEdit": true,
+    "runningBackendReopensAfterFreshHeartbeat": true
+  },
+  "agentFollowUp": {
+    "version": "0.2.1",
+    "releaseTag": "server-control-agent-v0.2.1",
+    "owl5TaskState": "Running",
+    "owl9TaskState": "Running",
+    "pendingOperations": 0,
+    "pendingCommands": 0,
+    "minecraftProcessIdsChanged": false,
+    "evidence": "SERVER_CONTROL_AGENT_0.2.1_PRODUCTION_DEPLOYMENT_2026-07-31.json"
+  },
+  "safety": {
+    "minecraftCommandsIssuedByDeployment": 0,
+    "minecraftServersStartedByDeployment": 0,
+    "minecraftServersStoppedByDeployment": 0,
+    "minecraftServersRestartedByDeployment": 0,
+    "credentialsRecorded": false,
+    "administratorIdentityRecorded": false
+  }
+}

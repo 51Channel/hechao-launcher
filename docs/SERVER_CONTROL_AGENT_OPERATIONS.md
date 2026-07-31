@@ -185,7 +185,7 @@ pwsh.exe -NoLogo -NoProfile -File `
 
 ### 6.2 生产状态（2026-07-31）
 
-生产 API `0.24.0` 已启用 `ServerControl`，owl5 和 owl9 的代理 `0.2.0` 计划任务均为
+生产 API `0.24.1` 已启用 `ServerControl`，owl5 和 owl9 的代理 `0.2.1` 计划任务均为
 `Running`。数据库实时核对结果为：
 
 - 受管服务器 `9` 个；
@@ -193,12 +193,14 @@ pwsh.exe -NoLogo -NoProfile -File `
 - 运行中目标 `5` 个；
 - 待处理操作 `0` 个，待处理代理命令 `0` 个。
 
-`0.2.0` 新增 JVM 内存读写与单服硬上限。九个目标均已上报 `Xms`、`Xmx` 和
-`maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。两台代理升级只重启代理
-计划任务，API 发布只重启 API，五个运行目标 PID 在发布前后保持不变。代理制品
-SHA-256 为 `11CC411AECC1DFDA276FC4CD23E7653A13C3323C3DF495B1C1AD0B81FFBCC3BD`，
-源码提交为 `088ca911abcceba741c45f3fef0296439a350d14`。完整证据见
-[`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)。
+`0.2.0` 新增 JVM 内存读写与单服硬上限；`0.2.1` 将心跳和命令拆为独立循环。九个目标
+均已上报 `Xms`、`Xmx` 和 `maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。
+两台代理升级只重启代理计划任务，API 发布只重启 API，五个运行目标 PID 在发布前后
+保持不变。当前代理制品 SHA-256 为
+`2D7D334C2205EB5F5D4032586B040F3624A85FA4B711630F151E5C8067D5C700`，源码提交为
+`73afd07363ba2f55e917e42a50444cdd5107917a`。内存基线见
+[`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)，
+当前代理发布见 [`SERVER_CONTROL_AGENT_RELEASE_0.2.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.1.md)。
 
 ### 6.3 管理员动作验收（2026-07-31）
 
@@ -214,6 +216,18 @@ SHA-256 为 `11CC411AECC1DFDA276FC4CD23E7653A13C3323C3DF495B1C1AD0B81FFBCC3BD`�
 进程读回，没有发起或撤销这些管理员操作。结构化重启、快捷设置、终端命令白名单
 与冲突组自动先停后启仍需分别验收。完整证据见
 [`evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json)。
+
+### 6.4 目录实际状态同步（API 0.24.1）
+
+目录记录保持管理员策略，服控代理负责提供具体物理服的实际运行状态。配置为 `Online` 的目标在代理新鲜上报在线时开放，上报停止时自动关闭，代理失联时故障关闭；重新运行并恢复心跳后自动开放。该机制不会自动启动或停止 Minecraft，也不会用共享 Velocity 入口代替具体物理服判断。
+
+当前 `activity`、`pvp` 等活动目录应保持 `Online` 策略，是否对玩家开放由同名服控目标决定。`pvp` 仍代表恐怖整蛊，真正 PVP 的服控目标是 `pvp-purpur`。生产证据见 [`API_RELEASE_0.24.1.md`](API_RELEASE_0.24.1.md) 和 [`evidence/CATALOG_SERVER_CONTROL_AVAILABILITY_ACCEPTANCE_2026-07-31.json`](evidence/CATALOG_SERVER_CONTROL_AVAILABILITY_ACCEPTANCE_2026-07-31.json)。
+
+### 6.5 心跳与长命令隔离（代理 0.2.1）
+
+代理 `0.2.1` 为心跳和命令建立两个独立异步循环。停止脚本、启动脚本或其他长命令只占用命令循环，不再阻塞同一代理管理的其他目标心跳。生产升级后 20 秒窗口内两台代理均多次推进心跳，最大观测间隔为 owl5 `10.1` 秒、owl9 `7.2` 秒；这包含九个目标的串行状态采集时间，不应解释为固定 5 秒写库周期。
+
+本次未向生产游戏服下发长命令，只验证了独立调度测试、真实生产持续心跳和升级前后 Java PID/启动时间不变。若要执行破坏性停止链路验收，必须使用无玩家隔离目标。完整证据见 [`evidence/SERVER_CONTROL_AGENT_0.2.1_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_AGENT_0.2.1_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
 
 ## 7. 验收与回滚
 
