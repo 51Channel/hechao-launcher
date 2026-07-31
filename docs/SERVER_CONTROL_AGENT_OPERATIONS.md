@@ -15,12 +15,16 @@
 本机代理只支持以下结构化动作：
 
 - 启动一个配置中明确列出的计划任务；
-- 先执行 `save-all flush`，再通过 Minecraft 控制台执行 `stop`；
+- 先执行 `save-all flush`，再通过 Minecraft 控制台执行 `stop`；若同一受管
+  Java PID 在 20 秒后仍监听目标端口，则向该控制台发送一次 `Ctrl+C`，触发 JVM
+  关机钩子并继续等待正常释放；
 - 修改 `server.properties` 中五个白名单字段并保留备份；
 - 读取并修改每服显式声明的 JVM `-Xms/-Xmx` 启动内存，按单服上限校验；
 - 发送配置中明确允许的单行 Minecraft 命令。
 
-代理不提供 PowerShell、CMD、SSH、任意文件浏览或任意进程终止接口。控制台输入
+代理不提供 PowerShell、CMD、SSH、任意文件浏览或任意进程终止接口。`Ctrl+C`
+兜底只存在于带二次确认和审计的结构化停止动作中；发送前必须重新确认监听进程仍是
+最初的受管 Java PID，PID 变化时硬拒绝，不会改为强杀。控制台输入
 会在 API 和本机代理两层检查；`stop`、`restart`、`shutdown`、`end` 永远不能作为
 普通终端命令发送，停服只能走带二次确认和审计的结构化动作。
 

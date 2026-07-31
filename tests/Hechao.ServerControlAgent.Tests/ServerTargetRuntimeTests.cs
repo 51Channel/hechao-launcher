@@ -72,6 +72,160 @@ public sealed class ServerTargetRuntimeTests
     }
 
     [Fact]
+    public async Task Stop_DoesNotInterruptWhenTextCommandStopsServer()
+    {
+        var stopped = false;
+        var runner = new RecordingProcessRunner((_, arguments) =>
+        {
+            if (arguments.Contains("-File"))
+            {
+                if (arguments.Contains("stop"))
+                {
+                    stopped = true;
+                }
+
+                return new ProcessRunResult(0, "ok", string.Empty);
+            }
+
+            return new ProcessRunResult(
+                0,
+                stopped ? string.Empty : "1234",
+                string.Empty);
+        });
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            saveFlushDelay: TimeSpan.Zero,
+            stopCommandGracePeriod: TimeSpan.Zero);
+
+        var result = await runtime.ExecuteAsync(
+            CreateStopCommand("activity"),
+            [runtime],
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Succeeded, result.Outcome);
+        Assert.Equal("STOPPED", result.ResultCode);
+        Assert.DoesNotContain(
+            runner.Calls,
+            call => call.Arguments.Contains("-Interrupt"));
+    }
+
+    [Fact]
+    public async Task Stop_InterruptsUnresponsiveManagedConsole()
+    {
+        var interrupted = false;
+        var runner = new RecordingProcessRunner((_, arguments) =>
+        {
+            if (arguments.Contains("-File"))
+            {
+                if (arguments.Contains("-Interrupt"))
+                {
+                    interrupted = true;
+                }
+
+                return new ProcessRunResult(0, "ok", string.Empty);
+            }
+
+            return new ProcessRunResult(
+                0,
+                interrupted ? string.Empty : "1234",
+                string.Empty);
+        });
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            saveFlushDelay: TimeSpan.Zero,
+            stopCommandGracePeriod: TimeSpan.Zero);
+
+        var result = await runtime.ExecuteAsync(
+            CreateStopCommand("activity"),
+            [runtime],
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Succeeded, result.Outcome);
+        Assert.Equal("STOPPED_WITH_INTERRUPT", result.ResultCode);
+        Assert.Contains(
+            runner.Calls,
+            call => call.Arguments.Contains("-Interrupt"));
+    }
+
+    [Fact]
+    public async Task Stop_RejectsInterruptWhenListeningProcessChanges()
+    {
+        var probeCount = 0;
+        var runner = new RecordingProcessRunner((_, arguments) =>
+        {
+            if (arguments.Contains("-File"))
+            {
+                return new ProcessRunResult(0, "ok", string.Empty);
+            }
+
+            probeCount++;
+            return new ProcessRunResult(
+                0,
+                probeCount == 1 ? "1234" : "5678",
+                string.Empty);
+        });
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            saveFlushDelay: TimeSpan.Zero,
+            stopCommandGracePeriod: TimeSpan.Zero);
+
+        var result = await runtime.ExecuteAsync(
+            CreateStopCommand("activity"),
+            [runtime],
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Failed, result.Outcome);
+        Assert.Equal("STOP_TARGET_CHANGED", result.ResultCode);
+        Assert.DoesNotContain(
+            runner.Calls,
+            call => call.Arguments.Contains("-Interrupt"));
+    }
+
+    [Fact]
+    public async Task Stop_ReportsInterruptBridgeFailure()
+    {
+        var runner = new RecordingProcessRunner((_, arguments) =>
+        {
+            if (arguments.Contains("-Interrupt"))
+            {
+                return new ProcessRunResult(1, string.Empty, "bridge failed");
+            }
+
+            if (arguments.Contains("-File"))
+            {
+                return new ProcessRunResult(0, "ok", string.Empty);
+            }
+
+            return new ProcessRunResult(0, "1234", string.Empty);
+        });
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            saveFlushDelay: TimeSpan.Zero,
+            stopCommandGracePeriod: TimeSpan.Zero);
+
+        var result = await runtime.ExecuteAsync(
+            CreateStopCommand("activity"),
+            [runtime],
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Failed, result.Outcome);
+        Assert.Equal("STOP_INTERRUPT_FAILED", result.ResultCode);
+        Assert.Contains("bridge failed", result.ResultMessage);
+    }
+
+    [Fact]
     public async Task Start_RejectsLocallyActiveConflictBeforeTaskExecution()
     {
         var runner = new RecordingProcessRunner((executable, arguments) =>
@@ -245,7 +399,9 @@ public sealed class ServerTargetRuntimeTests
         IProcessRunner runner,
         IReadOnlyList<string>? prefixes = null,
         bool requiresManagedMarker = false,
-        string? runtimeMarkerDirectory = null)
+        string? runtimeMarkerDirectory = null,
+        TimeSpan? saveFlushDelay = null,
+        TimeSpan? stopCommandGracePeriod = null)
     {
         var configuration = new ServerControlTargetConfiguration
         {
@@ -263,8 +419,21 @@ public sealed class ServerTargetRuntimeTests
             runtimeMarkerDirectory ??
                 @"C:\ProgramData\Hechao\ServerControlAgent\runtime",
             requiresManagedMarker,
-            runner);
+            runner,
+            saveFlushDelay,
+            stopCommandGracePeriod);
     }
+
+    private static ServerControlCommandDelivery CreateStopCommand(
+        string serverId) =>
+        new(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            serverId,
+            ServerControlCommandKind.Stop,
+            1,
+            null,
+            null);
 
     private sealed class RecordingProcessRunner(
         Func<string, IReadOnlyList<string>, ProcessRunResult> response)

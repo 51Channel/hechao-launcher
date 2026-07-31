@@ -5,6 +5,13 @@ namespace Hechao.ServerControlAgent;
 
 internal sealed class ServerTargetRuntime
 {
+    private static readonly TimeSpan DefaultSaveFlushDelay =
+        TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan DefaultStopCommandGracePeriod =
+        TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan StopCompletionTimeout =
+        TimeSpan.FromMinutes(3);
+
     private static readonly HashSet<string> ReservedTerminalCommands =
         new(StringComparer.Ordinal)
         {
@@ -19,6 +26,8 @@ internal sealed class ServerTargetRuntime
     private readonly string _runtimeMarkerPath;
     private readonly bool _requiresManagedMarker;
     private readonly IProcessRunner _processRunner;
+    private readonly TimeSpan _saveFlushDelay;
+    private readonly TimeSpan _stopCommandGracePeriod;
 
     internal ServerTargetRuntime(
         ServerControlTargetConfiguration configuration,
@@ -26,7 +35,9 @@ internal sealed class ServerTargetRuntime
         string backupRoot,
         string runtimeMarkerDirectory,
         bool requiresManagedMarker,
-        IProcessRunner processRunner)
+        IProcessRunner processRunner,
+        TimeSpan? saveFlushDelay = null,
+        TimeSpan? stopCommandGracePeriod = null)
     {
         Configuration = configuration;
         _consoleSubmitScript = consoleSubmitScript;
@@ -36,6 +47,21 @@ internal sealed class ServerTargetRuntime
             configuration.ServerId + ".json");
         _requiresManagedMarker = requiresManagedMarker;
         _processRunner = processRunner;
+        _saveFlushDelay = saveFlushDelay ?? DefaultSaveFlushDelay;
+        _stopCommandGracePeriod =
+            stopCommandGracePeriod ?? DefaultStopCommandGracePeriod;
+
+        if (_saveFlushDelay < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(saveFlushDelay));
+        }
+
+        if (_stopCommandGracePeriod < TimeSpan.Zero ||
+            _stopCommandGracePeriod >= StopCompletionTimeout)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(stopCommandGracePeriod));
+        }
     }
 
     internal ServerControlTargetConfiguration Configuration { get; }
@@ -327,7 +353,7 @@ internal sealed class ServerTargetRuntime
             return Failed("SAVE_FAILED", Message);
         }
 
-        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+        await Task.Delay(_saveFlushDelay, cancellationToken);
         var stop = await SubmitConsoleAsync(
             processId.Value,
             "stop",
@@ -339,13 +365,39 @@ internal sealed class ServerTargetRuntime
 
         var remaining = await WaitForStateAsync(
             shouldBeOnline: false,
-            TimeSpan.FromMinutes(3),
+            _stopCommandGracePeriod,
+            cancellationToken);
+        if (remaining is null)
+        {
+            return Succeeded("STOPPED", "服务器已保存并正常停止。");
+        }
+
+        if (remaining.Value != processId.Value)
+        {
+            return Failed(
+                "STOP_TARGET_CHANGED",
+                "停止期间监听进程发生变化，已拒绝向新进程发送中断。");
+        }
+
+        var interrupt = await SubmitConsoleInterruptAsync(
+            processId.Value,
+            cancellationToken);
+        if (!interrupt.Success)
+        {
+            return Failed("STOP_INTERRUPT_FAILED", interrupt.Message);
+        }
+
+        remaining = await WaitForStateAsync(
+            shouldBeOnline: false,
+            StopCompletionTimeout - _stopCommandGracePeriod,
             cancellationToken);
         return remaining is null
-            ? Succeeded("STOPPED", "服务器已保存并正常停止。")
+            ? Succeeded(
+                "STOPPED_WITH_INTERRUPT",
+                "服务器未响应文本停止命令，已通过 JVM 控制台中断保存并停止。")
             : Failed(
                 "STOP_TIMEOUT",
-                "服务器收到停止命令，但端口未在限定时间内释放。");
+                "服务器收到停止命令和控制台中断，但端口未在限定时间内释放。");
     }
 
     private async Task<AgentCommandResult> RunConsoleCommandAsync(
@@ -521,6 +573,33 @@ internal sealed class ServerTargetRuntime
                     System.Globalization.CultureInfo.InvariantCulture),
                 "-Command",
                 command
+            ],
+            TimeSpan.FromSeconds(30),
+            cancellationToken);
+        var message = string.IsNullOrWhiteSpace(result.StandardError)
+            ? result.StandardOutput
+            : result.StandardError;
+        return (
+            result.ExitCode == 0,
+            AgentLog.Sanitize(message, 1000));
+    }
+
+    private async Task<(bool Success, string Message)> SubmitConsoleInterruptAsync(
+        int processId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _processRunner.RunAsync(
+            "pwsh.exe",
+            [
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-File",
+                _consoleSubmitScript,
+                "-ProcessId",
+                processId.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                "-Interrupt"
             ],
             TimeSpan.FromSeconds(30),
             cancellationToken);

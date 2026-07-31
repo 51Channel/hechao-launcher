@@ -7,9 +7,10 @@ allowlisted API and agent design is documented in
 ## Purpose
 
 The Windows game hosts use visible Java console windows. The checked-in
-server-control tools provide two narrowly scoped operations:
+server-control tools provide three narrowly scoped operations:
 
 - send a Minecraft console command to a specific existing `java.exe` process;
+- send one `Ctrl+C` event to that process console only as the structured stop fallback;
 - register an on-demand Scheduled Task that starts one server in the logged-in
   Administrator desktop session.
 
@@ -46,6 +47,11 @@ pwsh.exe -NoLogo -NoProfile -File `
 Always verify the matching server's `logs/latest.log` after a command. A
 successful console write means Windows accepted the input events; the log is
 the authoritative proof that Minecraft processed the command.
+
+The submitter's `-Interrupt` parameter is reserved for the agent's structured stop path.
+It revalidates that the PID belongs to `java.exe` and triggers the JVM shutdown hook. It
+must not be exposed as a normal terminal command or replaced with forced process
+termination.
 
 ## Register an on-demand launcher
 
@@ -98,7 +104,9 @@ For one server at a time:
 1. Send `list` and record the player count.
 2. Notify connected players and wait for the agreed drain window.
 3. Send `save-all flush` and verify `Saved the game` in `latest.log`.
-4. Send `stop` and wait until both Java PID and listening port are gone.
+4. Send `stop` and wait until both Java PID and listening port are gone. If the same
+   managed Java PID still owns the port after 20 seconds, send the one-time console
+   interrupt fallback and verify the JVM shutdown log.
 5. Start only that server's on-demand task.
 6. Wait for `Done (...)! For help, type "help"` and its port listener.
 7. Verify required plugins or mods and the metrics output.

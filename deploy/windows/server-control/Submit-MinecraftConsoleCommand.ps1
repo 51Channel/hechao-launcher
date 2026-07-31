@@ -1,10 +1,10 @@
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName = 'Command')]
 param(
     [Parameter(Mandatory)]
     [ValidateRange(1, 2147483647)]
     [int]$ProcessId,
 
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ParameterSetName = 'Command')]
     [ValidateScript({
         if ([string]::IsNullOrWhiteSpace($_)) {
             throw 'Command cannot be empty.'
@@ -15,6 +15,9 @@ param(
         $true
     })]
     [string]$Command,
+
+    [Parameter(Mandatory, ParameterSetName = 'Interrupt')]
+    [switch]$Interrupt,
 
     [ValidateRange(5, 120)]
     [int]$TimeoutSeconds = 30,
@@ -41,8 +44,11 @@ $failedPath = Join-Path $failedDirectory "$requestId.json"
 $request = [ordered]@{
     request_id = $requestId
     process_id = $ProcessId
-    command = $Command
+    operation = if ($Interrupt) { 'interrupt' } else { 'command' }
     submitted_at_utc = (Get-Date).ToUniversalTime().ToString('o')
+}
+if (-not $Interrupt) {
+    $request.command = $Command
 }
 
 [System.IO.File]::WriteAllText(
@@ -74,4 +80,4 @@ while ((Get-Date) -lt $deadline) {
     Start-Sleep -Milliseconds 250
 }
 
-throw "Console command request $requestId timed out after $TimeoutSeconds seconds."
+throw "Console request $requestId timed out after $TimeoutSeconds seconds."

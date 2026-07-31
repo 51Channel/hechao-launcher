@@ -48,16 +48,36 @@ try {
             }
 
             $processId = [int]$request.process_id
-            $command = [string]$request.command
-            $bridgeResult = & $BridgeScript `
-                -ProcessId $processId `
-                -Command $command |
-                ConvertFrom-Json
+            $operation = [string]$request.operation
+            if ([string]::IsNullOrWhiteSpace($operation)) {
+                $operation = 'command'
+            }
+
+            switch ($operation) {
+                'command' {
+                    $command = [string]$request.command
+                    $bridgeResult = & $BridgeScript `
+                        -ProcessId $processId `
+                        -Command $command |
+                        ConvertFrom-Json
+                }
+                'interrupt' {
+                    $command = $null
+                    $bridgeResult = & $BridgeScript `
+                        -ProcessId $processId `
+                        -Interrupt |
+                        ConvertFrom-Json
+                }
+                default {
+                    throw "Unsupported console request operation: $operation"
+                }
+            }
 
             $response = [ordered]@{
                 request_id = $requestId
                 status = 'succeeded'
                 process_id = $processId
+                operation = $operation
                 command = $command
                 bridge = $bridgeResult
                 completed_at_utc = (

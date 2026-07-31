@@ -1,10 +1,10 @@
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName = 'Command')]
 param(
     [Parameter(Mandatory)]
     [ValidateRange(1, 2147483647)]
     [int]$ProcessId,
 
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ParameterSetName = 'Command')]
     [ValidateScript({
         if ([string]::IsNullOrWhiteSpace($_)) {
             throw 'Command cannot be empty.'
@@ -17,7 +17,10 @@ param(
         }
         $true
     })]
-    [string]$Command
+    [string]$Command,
+
+    [Parameter(Mandatory, ParameterSetName = 'Interrupt')]
+    [switch]$Interrupt
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,6 +46,7 @@ namespace Hechao.ServerControl
     {
         private const short KeyEvent = 0x0001;
         private const ushort VirtualKeyReturn = 0x0D;
+        private const uint CtrlCEvent = 0;
         private const uint GenericRead = 0x80000000;
         private const uint GenericWrite = 0x40000000;
         private const uint FileShareRead = 0x00000001;
@@ -78,6 +82,18 @@ namespace Hechao.ServerControl
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool AttachConsole(uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetConsoleCtrlHandler(
+            IntPtr handlerRoutine,
+            [MarshalAs(UnmanagedType.Bool)] bool add);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GenerateConsoleCtrlEvent(
+            uint ctrlEvent,
+            uint processGroupId);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern IntPtr CreateFileW(
@@ -171,6 +187,50 @@ namespace Hechao.ServerControl
             }
         }
 
+        public static void Interrupt(uint processId)
+        {
+            FreeConsole();
+            if (!SetConsoleCtrlHandler(IntPtr.Zero, true))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(
+                    error,
+                    "Unable to ignore control events in the bridge (Win32 " + error + ")");
+            }
+
+            try
+            {
+                if (!AttachConsole(processId))
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    throw new Win32Exception(
+                        error,
+                        "Unable to attach to the target console (Win32 " + error + ")");
+                }
+
+                try
+                {
+                    if (!GenerateConsoleCtrlEvent(CtrlCEvent, 0))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        throw new Win32Exception(
+                            error,
+                            "Unable to send Ctrl+C to the target console (Win32 " + error + ")");
+                    }
+
+                    System.Threading.Thread.Sleep(500);
+                }
+                finally
+                {
+                    FreeConsole();
+                }
+            }
+            finally
+            {
+                SetConsoleCtrlHandler(IntPtr.Zero, false);
+            }
+        }
+
         private static InputRecord CreateKeyRecord(
             bool keyDown,
             char value,
@@ -195,14 +255,22 @@ namespace Hechao.ServerControl
 '@
 }
 
-$eventsWritten = [Hechao.ServerControl.ConsoleBridge]::Send(
-    [uint32]$ProcessId,
-    $Command)
+$operation = if ($Interrupt) { 'interrupt' } else { 'command' }
+$eventsWritten = 0
+if ($Interrupt) {
+    [Hechao.ServerControl.ConsoleBridge]::Interrupt([uint32]$ProcessId)
+}
+else {
+    $eventsWritten = [Hechao.ServerControl.ConsoleBridge]::Send(
+        [uint32]$ProcessId,
+        $Command)
+}
 
 [pscustomobject]@{
     process_id = $ProcessId
     executable = $process.ExecutablePath
-    command = $Command
+    operation = $operation
+    command = if ($Interrupt) { $null } else { $Command }
     console_events_written = $eventsWritten
     sent_at_utc = (Get-Date).ToUniversalTime().ToString('o')
 } | ConvertTo-Json -Compress
