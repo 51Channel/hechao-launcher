@@ -2,7 +2,7 @@
 
 > 更新时间：`2026-08-01`
 >
-> 当前生产：启动器 `0.14.2`、API `0.24.2`、
+> 当前生产：启动器 `0.14.2`、API `0.25.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -36,7 +36,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.14.2` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.1` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
-| API `0.24.2` | 已完成 | 管理后台新增运行中服务器发现；完整回归、归档复验、数据库备份、原子部署、本机/公网健康与就绪均通过，生产证据见 [`API_RELEASE_0.24.2.md`](API_RELEASE_0.24.2.md) 与 [`evidence/API_0.24.2_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/API_0.24.2_PRODUCTION_DEPLOYMENT_2026-07-31.json) |
+| API `0.25.0` | 已完成 | 可信管理员设备已部署；迁移 21、数据库备份、原子切换、本机/公网健康、真实 MFA 创建及第二次启动器票据免 MFA 均通过，生产证据见 [`API_RELEASE_0.25.0.md`](API_RELEASE_0.25.0.md) 与 [`evidence/API_0.25.0_PRODUCTION_DEPLOYMENT_2026-08-01.json`](evidence/API_0.25.0_PRODUCTION_DEPLOYMENT_2026-08-01.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
 | 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
@@ -62,7 +62,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
-| API 与代理版本 | 已完成 | API `0.24.2`、owl5 代理 `0.2.3`、owl9 代理 `0.2.1` 已部署；服务与任务均正常，见 [`API_RELEASE_0.24.2.md`](API_RELEASE_0.24.2.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) |
+| API 与代理版本 | 已完成 | API `0.25.0`、owl5 代理 `0.2.3`、owl9 代理 `0.2.1` 已部署；服务与任务均正常，见 [`API_RELEASE_0.25.0.md`](API_RELEASE_0.25.0.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) |
 | 目录与物理服状态同步 | 已完成 | `Online` 只作为管理员开放策略；同名服控目标在线时开放、停止时自动关闭、服控失联时故障关闭。`activity` 在线自动开放，停止的恐怖整蛊 `pvp` 自动关闭，`dollnight` 显式维护保持优先 |
 | 代理心跳与命令隔离 | 已完成 | 心跳和命令使用独立循环；两台生产代理升级后持续上报，最近错误为 `0`，全部 Java PID 和启动时间不变 |
 | 单服内存展示 | 已完成 | 9 个目标均上报 `Xms`、`Xmx`、单服硬上限、代理、端口与 PID |

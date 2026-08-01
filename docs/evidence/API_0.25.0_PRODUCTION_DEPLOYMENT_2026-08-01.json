@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-01T11:15:27Z",
+  "component": "api",
+  "version": "0.25.0",
+  "releaseId": "0.25.0-20260801T105011Z",
+  "buildSourceCommit": "950bfeb3d4aabe2ee95225bbace53ec023fa4828",
+  "releaseTag": "api-v0.25.0",
+  "taggedAt": "2026-08-01T19:13:42+08:00",
+  "artifacts": {
+    "archive": {
+      "name": "hechao-api-0.25.0-20260801T105011Z.tar.gz",
+      "sizeBytes": 45661020,
+      "sha256": "C45DF2C7BF5C9D515864434E24B17FB64B8910F4F4BFF65A3B11F19A2EB422",
+      "entries": 113,
+      "fileCount": 108,
+      "unsafePaths": 0,
+      "links": 0,
+      "forbiddenFiles": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 104640051,
+      "sha256": "B69D32F1A374BE2BF96E875931861B7F09F786348B7C7AD7A1F26883559E2E9A",
+      "extractedHashMatched": true
+    }
+  },
+  "tests": {
+    "solutionPassed": 570,
+    "solutionFailed": 0,
+    "apiPassed": 239,
+    "javascriptSyntaxPassed": true,
+    "gitDiffCheckPassed": true
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.24.2-20260731T141731Z",
+    "serviceActive": true,
+    "mainPid": 853227,
+    "nRestarts": 0,
+    "databaseMigrationState": "20:20",
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260801T105549Z.dump",
+      "sizeBytes": 1830599,
+      "sha256": "E079173906E3846F0B3585CEF694EDBF428979BF90F620227FB6111D581AC15C",
+      "pgRestoreListPassed": true,
+      "pgRestoreEntries": 185
+    }
+  },
+  "deployment": {
+    "remoteArchiveHashMatched": true,
+    "remoteInstallScriptHashMatched": true,
+    "remoteServiceFileHashMatched": true,
+    "installScriptSha256": "54D4E224E2AC884D28C87943348E634BF939895BC37E6AC8F413EA15BA69E130",
+    "serviceFileSha256": "268DF991D2DD0FA2D06F83E8B0F72FA26813078EE1B0337E761D194AF7EFF59D",
+    "serviceFileUnchanged": true,
+    "atomicInstallSucceeded": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.25.0-20260801T105011Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.24.2-20260731T141731Z",
+    "preDeploymentBackup": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.25.0-20260801T105011Z",
+    "apiServiceRestartsByReleaseProcess": 1,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "mainPid": 917486,
+    "nRestarts": 0,
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "adminHostStatusCode": 200,
+    "wrongAdminHostStatusCode": 404,
+    "databaseStatus": "ready",
+    "databaseMigrationState": "21:21",
+    "trustedDeviceTablePresent": true,
+    "errorJournalEntries": 0,
+    "deployedBinarySha256Matched": true,
+    "deployedAdminJsSha256": "0FE53F618F38A53B3496035B24555C142810D63FEDECF26C5C5543B339367F7C",
+    "repositoryAdminJsSha256Matched": true
+  },
+  "trustedDeviceAcceptance": {
+    "activeDevices": 1,
+    "createdAtUtc": "2026-08-01T11:05:51.526599Z",
+    "expiresAtUtc": "2026-08-31T11:05:51.526599Z",
+    "lastUsedAtUtc": "2026-08-01T11:09:18.355264Z",
+    "createdAuditObserved": true,
+    "usedAuditObserved": true,
+    "secondLauncherTicketEnteredConsoleWithoutMfa": true,
+    "explicitLogoutAvoided": true
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "trustedTokenIncluded": false,
+    "cookieIncluded": false,
+    "mfaCodeIncluded": false,
+    "environmentContentsIncluded": false
+  }
+}

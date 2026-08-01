@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-01T09:30:36Z",
+  "generatedAtUtc": "2026-08-01T11:15:27Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,41 +45,40 @@
     },
     {
       "component": "api",
-      "version": "0.24.1-20260731T105946Z",
-      "releaseTag": "api-v0.24.1",
-      "releaseCommit": "4fdd58ce4fff0fe5f8432214cb77d9d546012586",
-      "taggedAt": "2026-07-31T19:33:24+08:00",
+      "version": "0.25.0-20260801T105011Z",
+      "releaseTag": "api-v0.25.0",
+      "releaseCommit": "950bfeb3d4aabe2ee95225bbace53ec023fa4828",
+      "taggedAt": "2026-08-01T19:13:42+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "4fdd58ce4fff0fe5f8432214cb77d9d546012586"
+        "value": "950bfeb3d4aabe2ee95225bbace53ec023fa4828"
       },
-      "deploymentState": "production-catalog-server-control-availability",
-      "historicalNote": "0.24.0-20260731T062107Z remains the immediate rollback release. 0.24.1-20260731T103311Z is a failed, untagged candidate and must not be reused.",
+      "deploymentState": "production-trusted-admin-devices",
+      "historicalNote": "0.24.2-20260731T141731Z remains the immediate rollback release. Trusted-device data introduced by migration 21 is retained during rollback.",
       "artifacts": [
         {
-          "name": "hechao-api-0.24.1-20260731T105946Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.24.1-20260731T105946Z",
-          "size": 45644480,
-          "sha256": "85E6BC7EE935678BB275A09611FDAF6DF39D38D24C104A7C24D2A10C0B93CAF7",
+          "name": "hechao-api-0.25.0-20260801T105011Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.25.0-20260801T105011Z",
+          "size": 45661020,
+          "sha256": "C45DF2C7BF5C9D515864434E24B17FB64B8910F4F4B4BFF65A3B11F19A2EB422",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.24.1-20260731T105946Z/Hechao.Api",
-          "size": 104606771,
-          "sha256": "E5449CA15BE8B60154601EC54C2B0408A9E4D1C1DAB090A4835602CF31CE15DB",
+          "location": "/opt/hechao-launcher-api/releases/0.25.0-20260801T105011Z/Hechao.Api",
+          "size": 104640051,
+          "sha256": "B69D32F1A374BE2BF96E875931861B7F09F786348B7C7AD7A1F26883559E2E9A",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-symlink",
-        "target": "/opt/hechao-launcher-api/releases/0.24.0-20260731T062107Z"
+        "target": "/opt/hechao-launcher-api/releases/0.24.2-20260731T141731Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.24.1.md",
-        "docs/evidence/CATALOG_SERVER_CONTROL_AVAILABILITY_ACCEPTANCE_2026-07-31.json",
-        "docs/evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json"
+        "docs/API_RELEASE_0.25.0.md",
+        "docs/evidence/API_0.25.0_PRODUCTION_DEPLOYMENT_2026-08-01.json"
       ]
     },
     {
