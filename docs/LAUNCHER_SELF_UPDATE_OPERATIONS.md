@@ -74,7 +74,25 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
 4. 下载失败、签名 URL 过期或 updater 启动失败时，当前 EXE 不被替换并可重试。
 5. 覆盖升级保留 `%LocalAppData%\Hechao\Launcher` 和游戏数据根目录。
 
-## 0.14.1 生产快照
+## 0.14.2 生产快照
+
+- `2026-08-01` 生产 `LatestVersion=0.14.2`，最低支持版本保持
+  `0.12.3`，因此没有扩大强制更新范围。
+- 安装包为 `61,929,723` 字节，SHA-256
+  `D71A6BAED73FE1A9F503DDC7282A73B8F2E4C51145B6A8562133058DF401D6D8`。
+- 私有对象为
+  `releases/launcher/0.14.2/Hechao-Launcher-Setup-0.14.2-win-x64.exe`；
+  两轮签名读取 `200`、两轮匿名读取 `403`，未记录签名 URL。
+- 正式 `LauncherApiClient` 使用现有 DPAPI 会话取得 `0.14.2` 元数据；
+  `0.14.1` 生成更新计划，`0.14.2` 不重复提示。API 签发地址完整下载的
+  长度和 SHA-256 与发布制品一致。
+- API 环境文件切换前备份为
+  `/etc/hechao-launcher-api/environment.launcher-updates.20260801T091627Z.bak`；
+  API `0.24.2` 保持原发布目录，只重启 API 服务，未操作游戏服务器。
+
+完整记录见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md)。
+
+## 0.14.1 历史快照
 
 - `2026-08-01` 已将生产通道切换为 `LatestVersion=0.14.1`，最低支持版本保持
   `0.12.3`。

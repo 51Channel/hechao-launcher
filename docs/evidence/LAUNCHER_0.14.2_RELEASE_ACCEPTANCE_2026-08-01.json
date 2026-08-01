@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-01T09:30:36Z",
+  "component": "launcher",
+  "version": "0.14.2",
+  "buildSourceCommit": "c66f4d357089a77f392a27a1a411f66e5e28f1e4",
+  "releaseTag": "launcher-v0.14.2",
+  "scope": {
+    "perRequestCatalogSourceAndFailClosedRefresh": true,
+    "mandatoryUpdateCommandAndMethodGate": true,
+    "registrationPartialSuccessRecovery": true,
+    "unexpectedAccountResponseBoundary": true,
+    "crossProcessRunningStateAndPlayerSettingsLocks": true,
+    "accountSkinAvatarConsistency": true
+  },
+  "tests": {
+    "releaseBuildWarnings": 0,
+    "releaseBuildErrors": 0,
+    "solutionPassed": 564,
+    "solutionFailed": 0,
+    "distributionPassed": 45,
+    "apiPassed": 233,
+    "launcherPassed": 202,
+    "launcherFailed": 0,
+    "publisherPassed": 32,
+    "statusCollectorPassed": 16,
+    "backupPassed": 12,
+    "serverControlAgentPassed": 24
+  },
+  "artifacts": {
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.14.2-win-x64.exe",
+      "sizeBytes": 61929723,
+      "sha256": "D71A6BAED73FE1A9F503DDC7282A73B8F2E4C51145B6A8562133058DF401D6D8",
+      "signatureStatus": "NotSigned"
+    },
+    "launcher": {
+      "name": "Hechao.Launcher.exe",
+      "sizeBytes": 68934230,
+      "sha256": "9A34721D8A5A703DE43746E6840FC225E0B2057F9F7A3235ED0514D85EAFCBB7",
+      "productVersion": "0.14.2+c66f4d357089a77f392a27a1a411f66e5e28f1e4",
+      "fileVersion": "0.14.2.0",
+      "signatureStatus": "NotSigned"
+    }
+  },
+  "installerValidation": {
+    "validatedAtUtc": "2026-08-01T09:08:16.0193191+00:00",
+    "upgradeFrom": "0.14.1",
+    "upgradeTo": "0.14.2",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "privateOss": {
+    "objectKey": "releases/launcher/0.14.2/Hechao-Launcher-Setup-0.14.2-win-x64.exe",
+    "firstPublishUploaded": true,
+    "secondPublishSkippedAfterVerification": true,
+    "anonymousStatusCodes": [
+      403,
+      403
+    ],
+    "signedReadStatusCodes": [
+      200,
+      200
+    ],
+    "signedReadBytes": [
+      61929723,
+      61929723
+    ],
+    "lengthMatched": true,
+    "sha256Matched": true
+  },
+  "productionUpdateChannel": {
+    "enabled": true,
+    "latestVersion": "0.14.2",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61929723,
+    "installerSha256": "d71a6baed73fe1a9f503ddc7282a73b8f2e4c51145b6a8562133058df401d6d8",
+    "publishedAtUtc": "2026-08-01T09:16:27Z",
+    "releaseNotes": "Harden catalog refresh, account recovery, shared settings locking, and account skin UI.",
+    "apiVersion": "0.24.2",
+    "apiReleaseDirectory": "/opt/hechao-launcher-api/releases/0.24.2-20260731T141731Z",
+    "apiServiceStatus": "active",
+    "apiServiceSubStatus": "running",
+    "apiMainPidBefore": 459678,
+    "apiMainPidAfter": 853227,
+    "apiRestarts": 0,
+    "environmentMode": "600",
+    "environmentOwner": "root:root",
+    "environmentBytes": 3384,
+    "environmentSha256": "97839ba4be753ceb310d868c1ceca99b0b04a99c15fb03c17b97f6a32964365d",
+    "backupPath": "/etc/hechao-launcher-api/environment.launcher-updates.20260801T091627Z.bak",
+    "backupMode": "600",
+    "backupOwner": "root:root",
+    "backupBytes": 3359,
+    "backupSha256": "6de55ffcf9f2c495827a83e5c414437390e1c33440671fe59f1d380181ad63ab",
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "publicCatalogStatusCode": 200,
+    "databaseStatus": "ready",
+    "errorLogsAfterCutover": 0
+  },
+  "authenticatedUpdateAcceptance": {
+    "sessionRestoreSucceeded": true,
+    "returnedLatestVersion": "0.14.2",
+    "returnedMinimumVersion": "0.12.3",
+    "installerScheme": "https",
+    "previousVersionPlanAvailable": true,
+    "currentVersionPlanAbsent": true,
+    "apiSignedDownloadStatusCode": 200,
+    "apiSignedDownloadBytes": 61929723,
+    "apiSignedDownloadSha256": "d71a6baed73fe1a9f503ddc7282a73b8f2e4c51145b6a8562133058df401d6d8",
+    "actualInstalledLauncherRestarted": false
+  },
+  "publicRegression": {
+    "launcherHealth": 200,
+    "launcherReady": 200,
+    "launcherCatalog": 200,
+    "launcherApiAdminBlocked": 404,
+    "adminSite": 200,
+    "website": 200,
+    "relayApi": 200
+  },
+  "rollback": {
+    "automaticRollbackWrapperUsed": true,
+    "automaticRollbackTriggered": false,
+    "previousLatestVersion": "0.14.1",
+    "previousInstallerBytes": 61912187,
+    "previousInstallerSha256": "6b31535e3a5cf08ff6d5f3d2b9cad1b69dd5b3e3242959132dfdad240476413e",
+    "environmentBackupVerified": true
+  },
+  "minecraftServers": {
+    "started": false,
+    "stopped": false,
+    "restarted": false
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "refreshTokenIncluded": false,
+    "sessionTokenIncluded": false,
+    "minecraftAccessTokenIncluded": false,
+    "cookieIncluded": false,
+    "accountIdentityIncluded": false
+  }
+}
