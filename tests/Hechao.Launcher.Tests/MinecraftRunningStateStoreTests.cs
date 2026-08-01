@@ -16,12 +16,13 @@ public sealed class MinecraftRunningStateStoreTests
         {
             var store = new JsonMinecraftRunningStateStore(statePath);
             var startedAt = DateTimeOffset.UtcNow;
-            var expected = new PersistedMinecraftProcess(
-                "base-1.21.11",
-                "survival2",
-                1234,
-                Path.Combine(root, "runtime", "bin", "javaw.exe"),
-                startedAt);
+        var expected = new PersistedMinecraftProcess(
+            "base-1.21.11",
+            "survival2",
+            1234,
+            Path.Combine(root, "runtime", "bin", "javaw.exe"),
+            startedAt,
+            Path.Combine(root, "game-data"));
 
             store.Save(expected);
 
@@ -40,6 +41,35 @@ public sealed class MinecraftRunningStateStoreTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public void Load_OldStateWithoutDataRoot_RemainsCompatible()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "hechao-running-state-tests",
+            Guid.NewGuid().ToString("N"));
+        var statePath = Path.Combine(root, "running-game.json");
+        Directory.CreateDirectory(root);
+        var startedAt = DateTimeOffset.UtcNow;
+        var executablePath = Path.Combine(root, "runtime", "bin", "javaw.exe");
+        File.WriteAllText(
+            statePath,
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                ProfileId = "base-1.21.11",
+                ServerId = "survival2",
+                ProcessId = 1234,
+                ExecutablePath = executablePath,
+                StartedAt = startedAt
+            }));
+
+        var loaded = new JsonMinecraftRunningStateStore(statePath).Load();
+
+        Assert.NotNull(loaded);
+        Assert.Equal(Path.GetFullPath(executablePath), loaded.ExecutablePath);
+        Assert.Null(loaded.DataRoot);
     }
 
     [Fact]

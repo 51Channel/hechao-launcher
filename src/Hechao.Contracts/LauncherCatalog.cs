@@ -24,6 +24,12 @@ public enum AccessTier
     Administrator
 }
 
+public enum ServerCatalogSection
+{
+    Permanent,
+    Activity
+}
+
 public sealed record ServerSummary(
     string Id,
     string Name,
@@ -38,7 +44,8 @@ public sealed record ServerSummary(
     string ClientProfileId,
     string Announcement = "",
     DateTimeOffset? OpensAt = null,
-    DateTimeOffset? ClosesAt = null);
+    DateTimeOffset? ClosesAt = null,
+    ServerCatalogSection? CatalogSection = null);
 
 public sealed record ClientProfileSummary(
     string Id,

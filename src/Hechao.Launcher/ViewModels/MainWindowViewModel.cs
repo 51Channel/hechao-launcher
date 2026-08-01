@@ -8,13 +8,18 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Hechao.Contracts;
 using Hechao.Distribution;
+using Hechao.Launcher.Controls;
 using Hechao.Launcher.Infrastructure;
 using Hechao.Launcher.Services;
+using ToastLevel = Hechao.Launcher.ViewModels.ToastSeverity;
 
 namespace Hechao.Launcher.ViewModels;
 
 public sealed class MainWindowViewModel : ObservableObject
 {
+    private static readonly TimeSpan MaxCatalogBoundaryDelay = TimeSpan.FromDays(30);
+    private static readonly TimeSpan CatalogBoundaryGracePeriod = TimeSpan.FromSeconds(1);
+
     private readonly IServerCatalogClient _catalogClient;
     private readonly ILauncherAuthenticationService _authenticationService;
     private readonly ILauncherSettingsStore _settingsStore;
@@ -47,6 +52,11 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isSettingsOpen;
     private bool _isToastVisible;
     private string _toastMessage = string.Empty;
+    private ToastSeverity _toastSeverity = ToastSeverity.Info;
+    private long _toastGeneration;
+    private long _toastAnnouncementRevision;
+    private ClientInstallPhase? _clientInstallPhase;
+    private bool _installStepFailed;
     private string _selectedMemory;
     private string _clientDirectory;
     private bool _checkForUpdates;
@@ -56,6 +66,11 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _useSystemProxy;
     private string _selectedStartupPage;
     private bool _isCatalogLoading;
+    private CancellationTokenSource? _catalogLoadCancellation;
+    private long _catalogLoadGeneration;
+    private long _catalogAppliedGeneration;
+    private long _clientStateRefreshGeneration;
+    private CancellationTokenSource? _catalogScheduleCancellation;
     private HechaoAccount? _currentAccount;
     private string? _accountStatusHint;
     private bool _isAccountBusy;
@@ -146,7 +161,9 @@ public sealed class MainWindowViewModel : ObservableObject
             : "服务器";
         _activePage = GetStartupPage(_selectedStartupPage);
 
-        SelectServerCommand = new RelayCommand<ServerSummary>(SelectServer);
+        SelectServerCommand = new RelayCommand<ServerSummary>(
+            SelectServer,
+            _ => CanSelectServer);
         PrimaryActionCommand = new AsyncRelayCommand(
             StartPrimaryActionAsync,
             HandleUnexpectedPrimaryActionError,
@@ -196,13 +213,21 @@ public sealed class MainWindowViewModel : ObservableObject
         ClearDownloadHistoryCommand = new RelayCommand(
             ClearDownloadHistory,
             () => DownloadHistory.Count > 0);
-        ViewActivityServerCommand = new RelayCommand<ServerSummary>(ViewActivityServer);
-        ResetLauncherSettingsCommand = new RelayCommand(ResetLauncherSettings);
+        ViewActivityServerCommand = new RelayCommand<ActivityServerItemViewModel>(
+            ViewActivityServer,
+            _ => CanSelectServer);
+        ResetLauncherSettingsCommand = new RelayCommand(
+            ResetLauncherSettings,
+            () => CanChangeClientDirectory);
         CreateDiagnosticBundleCommand = new RelayCommand(
             StartCreateDiagnosticBundle,
             CanCreateDiagnosticBundle);
         OpenDiagnosticsDirectoryCommand = new RelayCommand(OpenDiagnosticsDirectory);
         UseManagedJavaCommand = new RelayCommand(UseManagedJava);
+        CheckLauncherUpdateCommand = new AsyncRelayCommand(
+            () => TryCheckLauncherUpdateAsync(userInitiated: true),
+            HandleUnexpectedLauncherUpdateError,
+            () => IsAuthenticated && !IsLauncherUpdateBusy);
         InstallLauncherUpdateCommand = new AsyncRelayCommand(
             InstallLauncherUpdateAsync,
             HandleUnexpectedLauncherUpdateError,
@@ -222,7 +247,7 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     public ObservableCollection<ServerSummary> Servers { get; } = [];
-    public ObservableCollection<ServerSummary> ActivityServers { get; } = [];
+    public ObservableCollection<ActivityServerItemViewModel> ActivityServers { get; } = [];
     public ObservableCollection<DownloadJobViewModel> DownloadHistory { get; } = [];
     public IReadOnlyList<string> MemoryOptions { get; }
     public IReadOnlyList<string> StartupPageOptions { get; }
@@ -250,11 +275,12 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand ShowSettingsPageCommand { get; }
     public RelayCommand CancelDownloadCommand { get; }
     public RelayCommand ClearDownloadHistoryCommand { get; }
-    public RelayCommand<ServerSummary> ViewActivityServerCommand { get; }
+    public RelayCommand<ActivityServerItemViewModel> ViewActivityServerCommand { get; }
     public RelayCommand ResetLauncherSettingsCommand { get; }
     public RelayCommand CreateDiagnosticBundleCommand { get; }
     public RelayCommand OpenDiagnosticsDirectoryCommand { get; }
     public RelayCommand UseManagedJavaCommand { get; }
+    public AsyncRelayCommand CheckLauncherUpdateCommand { get; }
     public AsyncRelayCommand InstallLauncherUpdateCommand { get; }
     public RelayCommand DismissLauncherUpdateCommand { get; }
     public event EventHandler? CloseRequested;
@@ -508,6 +534,9 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             SetRollbackCandidate(null);
+            _clientInstallPhase = null;
+            _installStepFailed = false;
+            NotifyProgressStepStatesChanged();
             OnPropertyChanged(nameof(SelectedServerStatusText));
             OnPropertyChanged(nameof(SelectedServerLoaderText));
             OnPropertyChanged(nameof(SelectedServerPlayerText));
@@ -646,6 +675,11 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 RepairCommand.RaiseCanExecuteChanged();
                 PrimaryActionCommand.RaiseCanExecuteChanged();
+                SelectServerCommand.RaiseCanExecuteChanged();
+                ViewActivityServerCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(CanSelectServer));
+                OnPropertyChanged(nameof(CanChangeClientDirectory));
+                ResetLauncherSettingsCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(CanRollbackSelectedProfile));
                 OnPropertyChanged(nameof(RollbackProfileToolTip));
                 OnPropertyChanged(nameof(CanDeleteSelectedProfile));
@@ -665,11 +699,16 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             SaveSettings();
-            ShowToast($"已将游戏内存设为 {value}");
+                ShowToast($"已将游戏内存设为 {value}", ToastLevel.Success);
         }
     }
 
     public string ClientDirectory => _clientDirectory;
+
+    public bool CanSelectServer => !IsProgressActive;
+
+    public bool CanChangeClientDirectory =>
+        !IsProgressActive && _gameLauncherService.GetRunningGame() is null;
 
     public string SelectedProfileGameDirectory
     {
@@ -841,6 +880,52 @@ public sealed class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _toastMessage, value);
     }
 
+    public ToastSeverity ToastSeverity
+    {
+        get => _toastSeverity;
+        private set
+        {
+            if (SetProperty(ref _toastSeverity, value))
+            {
+                OnPropertyChanged(nameof(ToastIconKind));
+                OnPropertyChanged(nameof(ToastAutomationStatus));
+            }
+        }
+    }
+
+    public IconParkKind ToastIconKind => _toastSeverity switch
+    {
+        ToastLevel.Success => IconParkKind.CheckOne,
+        ToastLevel.Error => IconParkKind.Close,
+        _ => IconParkKind.VolumeNotice
+    };
+
+    public string ToastAutomationStatus => _toastSeverity switch
+    {
+        ToastLevel.Success => "成功",
+        ToastLevel.Error => "错误",
+        _ => "提示"
+    };
+
+    public long ToastAnnouncementRevision =>
+        Volatile.Read(ref _toastAnnouncementRevision);
+
+    public ProgressStepState ProgressStepOneState => GetProgressStepState(0);
+
+    public ProgressStepState ProgressStepTwoState => GetProgressStepState(1);
+
+    public ProgressStepState ProgressStepThreeState => GetProgressStepState(2);
+
+    public ProgressStepState ProgressStepFourState => GetProgressStepState(3);
+
+    public string ProgressStepOneStatusText => GetProgressStepStatusText(0);
+
+    public string ProgressStepTwoStatusText => GetProgressStepStatusText(1);
+
+    public string ProgressStepThreeStatusText => GetProgressStepStatusText(2);
+
+    public string ProgressStepFourStatusText => GetProgressStepStatusText(3);
+
     public bool IsLauncherUpdateVisible
     {
         get => _isLauncherUpdateVisible;
@@ -850,6 +935,7 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
                 DismissLauncherUpdateCommand.RaiseCanExecuteChanged();
+                CheckLauncherUpdateCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -863,6 +949,7 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
                 DismissLauncherUpdateCommand.RaiseCanExecuteChanged();
+                CheckLauncherUpdateCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -937,21 +1024,27 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    private async Task TryCheckLauncherUpdateAsync()
+    private async Task TryCheckLauncherUpdateAsync(bool userInitiated = false)
     {
-        if (_hasCheckedLauncherUpdate ||
+        if ((!userInitiated && _hasCheckedLauncherUpdate) ||
             !IsAuthenticated ||
-            IsLauncherUpdateVisible)
+            IsLauncherUpdateVisible ||
+            IsLauncherUpdateBusy)
         {
             return;
         }
 
-        _hasCheckedLauncherUpdate = true;
         try
         {
             var plan = await _launcherUpdateService.CheckAsync();
+            _hasCheckedLauncherUpdate = true;
             if (plan is null)
             {
+                if (userInitiated)
+                {
+                    ShowToast("当前已是最新版本", ToastLevel.Success);
+                }
+
                 return;
             }
 
@@ -966,6 +1059,20 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(LauncherUpdateReleaseNotes));
             OnPropertyChanged(nameof(LauncherUpdateSizeText));
             IsLauncherUpdateVisible = true;
+
+            if (_launcherUpdateService.HasPreviousInstallFailure(plan))
+            {
+                LauncherUpdateStatus =
+                    "这个版本上次安装失败。请检查提示后手动重试，启动器不会循环重启。";
+                return;
+            }
+
+            if (userInitiated)
+            {
+                LauncherUpdateStatus = "发现新版本，确认后即可下载并重启。";
+                return;
+            }
+
             LauncherUpdateStatus = "发现新版本，正在自动下载更新…";
             try
             {
@@ -981,6 +1088,11 @@ public sealed class MainWindowViewModel : ObservableObject
                 LauncherApiException or InvalidDataException or
                 LauncherAuthenticationRequiredException)
         {
+            if (userInitiated)
+            {
+                ShowToast("检查更新失败，请稍后重试", ToastLevel.Error);
+            }
+
             Trace.TraceWarning(
                 "Launcher update check was skipped: {0}",
                 exception.Message);
@@ -1033,16 +1145,24 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task LoadCatalogAsync(bool userInitiated = false)
     {
-        if (_isCatalogLoading)
-        {
-            return;
-        }
+        var generation = Interlocked.Increment(ref _catalogLoadGeneration);
+        var accountId = _currentAccount?.UserId;
+        using var cancellation = new CancellationTokenSource();
+        var previousCancellation = Interlocked.Exchange(
+            ref _catalogLoadCancellation,
+            cancellation);
+        previousCancellation?.Cancel();
 
         _isCatalogLoading = true;
         RefreshCommand.RaiseCanExecuteChanged();
         try
         {
-            var snapshot = await _catalogClient.GetCatalogAsync();
+            var snapshot = await _catalogClient.GetCatalogAsync(cancellation.Token);
+            if (!IsCatalogLoadCurrent(generation, cancellation, accountId))
+            {
+                return;
+            }
+
             _clientProfiles.Clear();
             foreach (var profile in snapshot.ClientProfiles)
             {
@@ -1055,9 +1175,9 @@ public sealed class MainWindowViewModel : ObservableObject
             foreach (var server in snapshot.Servers.Where(IsPlayerServer))
             {
                 Servers.Add(server);
-                if (server.Id != "survival2")
+                if (IsActivityServer(server))
                 {
-                    ActivityServers.Add(server);
+                    ActivityServers.Add(new ActivityServerItemViewModel(server));
                 }
             }
             OnPropertyChanged(nameof(ActivityServerCount));
@@ -1072,6 +1192,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 selectedServer is not null;
             SelectedServer = selectedServer;
             _hasLoadedCatalog = true;
+            Volatile.Write(ref _catalogAppliedGeneration, generation);
+            ScheduleCatalogBoundaryRefresh(snapshot.Servers);
 
             if (_catalogClient is ICatalogSourceState sourceState)
             {
@@ -1084,14 +1206,20 @@ public sealed class MainWindowViewModel : ObservableObject
                         ShowToast("目录服务暂时不可用，已显示内置应急目录");
                         break;
                     case CatalogSource.Live when userInitiated:
-                        ShowToast("服务器状态已刷新");
+                        ShowToast("服务器状态已刷新", ToastLevel.Success);
                         break;
                 }
             }
         }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception) when (!IsCatalogLoadCurrent(generation, cancellation, accountId))
+        {
+        }
         catch (Exception exception) when (exception is HttpRequestException or IOException or JsonException)
         {
-            ShowToast("暂时无法加载服务器目录");
+            ShowToast("暂时无法加载服务器目录", ToastLevel.Error);
         }
         catch (LauncherAuthenticationRequiredException)
         {
@@ -1104,18 +1232,122 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (LauncherApiException exception)
         {
-            ShowToast(exception.ApiDetail ?? "目录服务暂时不可用");
+            ShowToast(exception.ApiDetail ?? "目录服务暂时不可用", ToastLevel.Error);
         }
         finally
         {
-            _isCatalogLoading = false;
-            RefreshCommand.RaiseCanExecuteChanged();
+            if (ReferenceEquals(
+                    Interlocked.CompareExchange(
+                        ref _catalogLoadCancellation,
+                        null,
+                        cancellation),
+                    cancellation))
+                {
+                    _isCatalogLoading = false;
+                    RefreshCommand.RaiseCanExecuteChanged();
+                }
+
+                cancellation.Dispose();
+            }
+    }
+
+    private bool IsCatalogLoadCurrent(
+        long generation,
+        CancellationTokenSource cancellation,
+        Guid? accountId) =>
+        generation == Volatile.Read(ref _catalogLoadGeneration) &&
+        ReferenceEquals(_catalogLoadCancellation, cancellation) &&
+        _currentAccount?.UserId == accountId;
+
+    private void InvalidateCatalogLoad()
+    {
+        Interlocked.Increment(ref _catalogLoadGeneration);
+        Interlocked.Exchange(ref _catalogLoadCancellation, null)?.Cancel();
+        Interlocked.Exchange(ref _catalogScheduleCancellation, null)?.Cancel();
+        _isCatalogLoading = false;
+        RefreshCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ScheduleCatalogBoundaryRefresh(IEnumerable<ServerSummary> servers)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var nextBoundary = servers
+            .Where(IsActivityServer)
+            .SelectMany(server => new[] { server.OpensAt, server.ClosesAt })
+            .Where(boundary => boundary is not null && boundary > now)
+            .Select(boundary => boundary!.Value)
+            .DefaultIfEmpty()
+            .Min();
+        if (nextBoundary == default)
+        {
+            Interlocked.Exchange(ref _catalogScheduleCancellation, null)?.Cancel();
+            return;
         }
+
+        var cancellation = new CancellationTokenSource();
+        Interlocked.Exchange(ref _catalogScheduleCancellation, cancellation)?.Cancel();
+        _ = RefreshCatalogAtBoundaryAsync(nextBoundary, cancellation);
+    }
+
+    private async Task RefreshCatalogAtBoundaryAsync(
+        DateTimeOffset boundary,
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            while (true)
+            {
+                var delay = GetCatalogBoundaryDelaySlice(
+                    boundary,
+                    DateTimeOffset.UtcNow);
+                if (delay <= TimeSpan.Zero)
+                {
+                    break;
+                }
+
+                await Task.Delay(delay, cancellation.Token);
+            }
+
+            await LoadCatalogAsync();
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "活动目录边界刷新失败：{0}: {1}",
+                exception.GetType().Name,
+                exception.Message);
+        }
+        finally
+        {
+            Interlocked.CompareExchange(
+                ref _catalogScheduleCancellation,
+                null,
+                cancellation);
+            cancellation.Dispose();
+        }
+    }
+
+    internal static TimeSpan GetCatalogBoundaryDelaySlice(
+        DateTimeOffset boundary,
+        DateTimeOffset now)
+    {
+        var remaining = boundary - now + CatalogBoundaryGracePeriod;
+        if (remaining <= TimeSpan.Zero)
+        {
+            return TimeSpan.Zero;
+        }
+
+        return remaining > MaxCatalogBoundaryDelay
+            ? MaxCatalogBoundaryDelay
+            : remaining;
     }
 
     private void SelectServer(ServerSummary? server)
     {
-        if (server is null)
+        if (server is null || !CanSelectServer)
         {
             return;
         }
@@ -1126,20 +1358,22 @@ public sealed class MainWindowViewModel : ObservableObject
         SaveSettings();
     }
 
-    private void ViewActivityServer(ServerSummary? server)
+    private void ViewActivityServer(ActivityServerItemViewModel? item)
     {
-        if (server is null)
+        if (item is null || !CanSelectServer)
         {
             return;
         }
 
-        SelectedServer = server;
+        SelectedServer = item.Server;
         ActivePage = LauncherPage.Servers;
     }
 
     private async Task StartPrimaryActionAsync()
     {
-        if (IsProgressActive || SelectedServer is null)
+        var selectedServer = SelectedServer;
+        var dataRoot = ClientDirectory;
+        if (IsProgressActive || selectedServer is null)
         {
             return;
         }
@@ -1151,6 +1385,18 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
+        if (IsActivityServer(selectedServer))
+        {
+            if (!await RefreshActivityServerBeforeActionAsync(
+                    selectedServer.Id,
+                    dataRoot))
+            {
+                return;
+            }
+
+            selectedServer = SelectedServer!;
+        }
+
         if (!_selectedProfileStateChecked)
         {
             ClientStatusText = "正在检查客户端";
@@ -1158,6 +1404,11 @@ public sealed class MainWindowViewModel : ObservableObject
             if (!await RefreshClientStateAsync())
             {
                 ShowToast("客户端状态检查未完成，请重试");
+                return;
+            }
+
+            if (!IsClientContextCurrent(selectedServer.Id, dataRoot))
+            {
                 return;
             }
         }
@@ -1168,6 +1419,19 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 return;
             }
+
+            if (!IsClientContextCurrent(selectedServer.Id, dataRoot))
+            {
+                return;
+            }
+        }
+
+        if (selectedServer.Status != ServerStatus.Online)
+        {
+            ShowToast(selectedServer.Status == ServerStatus.Maintenance
+                ? "服务器正在维护，客户端已保留"
+                : "服务器暂未开放，客户端已保留");
+            return;
         }
 
         if (!IsMinecraftLinked)
@@ -1180,10 +1444,34 @@ public sealed class MainWindowViewModel : ObservableObject
         await LaunchSelectedServerAsync();
     }
 
+    private async Task<bool> RefreshActivityServerBeforeActionAsync(
+        string serverId,
+        string dataRoot)
+    {
+        var previousGeneration = Volatile.Read(ref _catalogAppliedGeneration);
+        await LoadCatalogAsync();
+        var refreshed = Volatile.Read(ref _catalogAppliedGeneration) > previousGeneration;
+        var hasAuthoritativeSource =
+            _catalogClient is not ICatalogSourceState sourceState ||
+            sourceState.LastSource == CatalogSource.Live;
+        if (refreshed &&
+            hasAuthoritativeSource &&
+            IsClientContextCurrent(serverId, dataRoot))
+        {
+            return true;
+        }
+
+        ShowToast("无法确认活动服当前状态，请刷新后重试", ToastLevel.Error);
+        return false;
+    }
+
     private async Task<bool> InstallSelectedProfileAsync(bool isRepair)
     {
-        if (IsProgressActive || SelectedServer is null ||
-            !_clientProfiles.TryGetValue(SelectedServer.ClientProfileId, out var profile))
+        var selectedServer = SelectedServer;
+        var dataRoot = ClientDirectory;
+        var keepObjectCache = KeepDownloadsAfterClose;
+        if (IsProgressActive || selectedServer is null ||
+            !_clientProfiles.TryGetValue(selectedServer.ClientProfileId, out var profile))
         {
             ShowToast("当前服务器没有可用的客户端档案");
             return false;
@@ -1207,21 +1495,36 @@ public sealed class MainWindowViewModel : ObservableObject
             BeginDownload(profile, isRepair);
             CancelDownloadCommand.RaiseCanExecuteChanged();
             var progress = new InlineProgress<ClientInstallProgress>(
-                value => DispatchToUi(() => ApplyInstallProgress(value)));
+                value => DispatchToUi(() =>
+                {
+                    if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                    {
+                        ApplyInstallProgress(value);
+                    }
+                }));
             await _installationService.InstallAsync(
                 profile,
-                new ClientInstallationOptions(ClientDirectory, KeepDownloadsAfterClose),
+                new ClientInstallationOptions(dataRoot, keepObjectCache),
                 progress,
                 _activeInstallCancellation.Token);
-            _selectedProfileState = LocalProfileState.Ready;
-            _selectedProfileStateChecked = true;
-            await RefreshRollbackCandidateAsync(profile, SelectedServer?.Id);
-            NotifySelectedProfileJavaPropertiesChanged();
-            CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
-            UpdateProgress = 100;
-            ClientStatusText = "客户端已就绪";
-            PrimaryActionText = "进入服务器";
-            ShowToast(isRepair ? "客户端修复完成" : "客户端安装完成");
+            if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+            {
+                _selectedProfileState = LocalProfileState.Ready;
+                _selectedProfileStateChecked = true;
+                await RefreshRollbackCandidateAsync(profile, selectedServer.Id, dataRoot);
+                if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                {
+                    NotifySelectedProfileJavaPropertiesChanged();
+                    CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
+                    UpdateProgress = 100;
+                    ClientStatusText = "客户端已就绪";
+                    UpdatePrimaryActionForState();
+                }
+            }
+
+            ShowToast(
+                isRepair ? "客户端修复完成" : "客户端安装完成",
+                ToastLevel.Success);
             succeeded = true;
             completionStatus = DownloadJobStatus.Completed;
             telemetryOutcome = LauncherTelemetryOutcome.Success;
@@ -1237,43 +1540,45 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             telemetryFailure = LauncherTelemetryFailureCode.ProfileUnavailable;
             ClientStatusText = "客户端尚未发布";
-            ShowToast("该客户端档案尚未发布下载清单");
+            ShowToast("该客户端档案尚未发布下载清单", ToastLevel.Error);
         }
         catch (LauncherApiException exception)
         {
             telemetryFailure = LauncherTelemetryFailureCode.ApiUnavailable;
             ClientStatusText = "下载服务不可用";
-            ShowToast(exception.ApiDetail ?? "客户端分发服务暂时不可用");
+            ShowToast(exception.ApiDetail ?? "客户端分发服务暂时不可用", ToastLevel.Error);
         }
         catch (ManifestSignatureException)
         {
             telemetryFailure = LauncherTelemetryFailureCode.SignatureInvalid;
             ClientStatusText = "清单签名无效";
-            ShowToast("客户端清单未通过签名验证，安装已停止");
+            ShowToast("客户端清单未通过签名验证，安装已停止", ToastLevel.Error);
         }
         catch (Exception exception) when (exception is ManifestIntegrityException or ClientManifestMismatchException)
         {
             telemetryFailure = LauncherTelemetryFailureCode.IntegrityFailed;
             ClientStatusText = "文件校验失败";
-            ShowToast("下载内容与发布清单不一致，安装已停止");
+            ShowToast("下载内容与发布清单不一致，安装已停止", ToastLevel.Error);
         }
         catch (InsufficientDiskSpaceException)
         {
             telemetryFailure = LauncherTelemetryFailureCode.InsufficientDiskSpace;
             ClientStatusText = "磁盘空间不足";
-            ShowToast("游戏数据目录所在磁盘空间不足");
+            ShowToast("游戏数据目录所在磁盘空间不足", ToastLevel.Error);
         }
         catch (ProfileInstallInProgressException)
         {
             telemetryFailure = LauncherTelemetryFailureCode.InstallBusy;
             ClientStatusText = "安装正在进行";
-            ShowToast("另一个启动器窗口正在安装这个客户端");
+            ShowToast("另一个启动器窗口正在安装这个客户端", ToastLevel.Error);
         }
         catch (ProfileJavaRuntimeException)
         {
             telemetryFailure = LauncherTelemetryFailureCode.RuntimePreparationFailed;
             ClientStatusText = "Java 安装未完成";
-            ShowToast("客户端文件已校验，但配套 Java 安装失败；重新修复会继续下载");
+            ShowToast(
+                "客户端文件已校验，但配套 Java 安装失败；重新修复会继续下载",
+                ToastLevel.Error);
         }
         catch (OperationCanceledException) when (
             _activeInstallCancellation?.IsCancellationRequested == true)
@@ -1292,7 +1597,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 ? LauncherTelemetryFailureCode.NetworkUnavailable
                 : LauncherTelemetryFailureCode.IoFailure;
             ClientStatusText = "安装未完成";
-            ShowToast("客户端安装中断，重新操作会从已下载位置继续");
+            ShowToast("客户端安装中断，重新操作会从已下载位置继续", ToastLevel.Error);
         }
         catch (Exception exception)
         {
@@ -1301,7 +1606,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 exception);
             ClientStatusText = "安装已安全停止";
             completionMessage = "启动器遇到未预期的安装错误";
-            ShowToast("安装已安全停止，客户端当前版本没有被替换");
+            ShowToast("安装已安全停止，客户端当前版本没有被替换", ToastLevel.Error);
         }
         finally
         {
@@ -1322,8 +1627,36 @@ public sealed class MainWindowViewModel : ObservableObject
             _activeInstallCancellation?.Dispose();
             _activeInstallCancellation = null;
             CancelDownloadCommand.RaiseCanExecuteChanged();
+            var targetStillSelected = IsClientContextCurrent(selectedServer.Id, dataRoot);
+            if (!targetStillSelected)
+            {
+                _clientInstallPhase = null;
+                _installStepFailed = false;
+            }
+            else if (succeeded)
+            {
+                _clientInstallPhase = ClientInstallPhase.Complete;
+                _installStepFailed = false;
+            }
+            else if (completionStatus == DownloadJobStatus.Failed)
+            {
+                _installStepFailed = true;
+            }
+            else
+            {
+                _clientInstallPhase = null;
+                _installStepFailed = false;
+            }
+            NotifyProgressStepStatesChanged();
             IsProgressActive = false;
-            UpdatePrimaryActionForState();
+            if (targetStillSelected)
+            {
+                UpdatePrimaryActionForState();
+            }
+            else
+            {
+                await RefreshClientStateAsync();
+            }
         }
 
         return succeeded;
@@ -1356,6 +1689,7 @@ public sealed class MainWindowViewModel : ObservableObject
             return false;
         }
 
+        var dataRoot = ClientDirectory;
         var deleted = false;
         IsProgressActive = true;
         UpdateProgress = 10;
@@ -1363,10 +1697,10 @@ public sealed class MainWindowViewModel : ObservableObject
         PrimaryActionText = "正在删除";
         try
         {
-            await _playerGameSettingsService.ImportLatestAsync(ClientDirectory);
+            await _playerGameSettingsService.ImportLatestAsync(dataRoot);
             UpdateProgress = 35;
             ClientStatusText = "正在删除客户端文件";
-            await _installationService.DeleteAsync(profile, ClientDirectory);
+            await _installationService.DeleteAsync(profile, dataRoot);
 
             _selectedProfileState = LocalProfileState.Missing;
             _selectedProfileStateChecked = true;
@@ -1375,7 +1709,9 @@ public sealed class MainWindowViewModel : ObservableObject
             CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
             UpdateProgress = 0;
             ClientStatusText = "客户端已删除，个人设置已保留";
-            ShowToast($"已删除 {profile.DisplayName}，可随时重新安装");
+            ShowToast(
+                $"已删除 {profile.DisplayName}，可随时重新安装",
+                ToastLevel.Success);
             deleted = true;
         }
         catch (ProfileInstallInProgressException)
@@ -1386,12 +1722,12 @@ public sealed class MainWindowViewModel : ObservableObject
         catch (PlayerGameSettingsException)
         {
             ClientStatusText = "个人游戏设置尚未安全保存";
-            ShowToast("删除已取消，未能先保存灵敏度和按键设置");
+            ShowToast("删除已取消，未能先保存灵敏度和按键设置", ToastLevel.Error);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             ClientStatusText = "客户端删除失败";
-            ShowToast("部分文件仍被占用，客户端没有被标记为已删除");
+            ShowToast("部分文件仍被占用，客户端没有被标记为已删除", ToastLevel.Error);
         }
         finally
         {
@@ -1460,7 +1796,9 @@ public sealed class MainWindowViewModel : ObservableObject
             UpdateProgress = 100;
             ClientStatusText = $"已回滚到 v{activatedState.Version}";
             NotifySelectedProfileJavaPropertiesChanged();
-            ShowToast($"客户端已回滚到 v{activatedState.Version}，存档与设置已保留");
+            ShowToast(
+                $"客户端已回滚到 v{activatedState.Version}，存档与设置已保留",
+                ToastLevel.Success);
             telemetryOutcome = LauncherTelemetryOutcome.Success;
             telemetryFailure = LauncherTelemetryFailureCode.None;
             return true;
@@ -1481,7 +1819,7 @@ public sealed class MainWindowViewModel : ObservableObject
             telemetryFailure = LauncherTelemetryFailureCode.RollbackUnavailable;
             SetRollbackCandidate(null);
             ClientStatusText = "没有可回滚版本";
-            ShowToast("上一版本不存在或未通过完整性检查");
+            ShowToast("上一版本不存在或未通过完整性检查", ToastLevel.Error);
         }
         catch (ProfileInstallInProgressException)
         {
@@ -1494,7 +1832,7 @@ public sealed class MainWindowViewModel : ObservableObject
             telemetryOutcome = LauncherTelemetryOutcome.Canceled;
             telemetryFailure = LauncherTelemetryFailureCode.UserCanceled;
             ClientStatusText = "回滚已取消";
-            ShowToast("客户端回滚已取消，当前版本保持不变");
+            ShowToast("客户端回滚已取消，当前版本保持不变", ToastLevel.Error);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
@@ -1509,7 +1847,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 "Unexpected client rollback failure: {0}",
                 exception);
             ClientStatusText = "回滚已安全停止";
-            ShowToast("回滚已安全停止，当前客户端版本没有被替换");
+            ShowToast("回滚已安全停止，当前客户端版本没有被替换", ToastLevel.Error);
         }
         finally
         {
@@ -1540,6 +1878,9 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         var selectedServer = SelectedServer;
+        var dataRoot = ClientDirectory;
+        var memoryMb = ParseMemoryInMiB(SelectedMemory);
+        var customJavaPath = GetSelectedProfileCustomJavaPath();
         var profileVersion = _clientProfiles.TryGetValue(
                 selectedServer.ClientProfileId,
                 out var selectedProfile)
@@ -1554,7 +1895,13 @@ public sealed class MainWindowViewModel : ObservableObject
         ClientStatusText = "正在准备正版游戏会话";
         PrimaryActionText = "正在启动";
         var progress = new InlineProgress<MinecraftLaunchProgress>(
-            value => DispatchToUi(() => ApplyLaunchProgress(value)));
+            value => DispatchToUi(() =>
+            {
+                if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                {
+                    ApplyLaunchProgress(value);
+                }
+            }));
 
         try
         {
@@ -1566,12 +1913,18 @@ public sealed class MainWindowViewModel : ObservableObject
                 ClientStatusText = "正在安全关闭当前游戏";
                 PrimaryActionText = "正在切换";
                 var stopProgress = new InlineProgress<MinecraftStopProgress>(
-                    value => DispatchToUi(() => ApplyStopProgress(value)));
+                    value => DispatchToUi(() =>
+                    {
+                        if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                        {
+                            ApplyStopProgress(value);
+                        }
+                    }));
                 await _gameLauncherService.StopRunningGameAsync(
                     TimeSpan.FromSeconds(15),
                     stopProgress);
                 await _playerGameSettingsService.CaptureProfileAsync(
-                    ClientDirectory,
+                    runningGame.DataRoot ?? dataRoot,
                     runningGame.ProfileId);
                 _runningServerId = null;
                 OnPropertyChanged(nameof(CanRollbackSelectedProfile));
@@ -1581,15 +1934,15 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             await _playerGameSettingsService.ApplyToProfileAsync(
-                ClientDirectory,
+                dataRoot,
                 selectedServer.ClientProfileId);
             await _gameLauncherService.LaunchAsync(
                 new MinecraftLaunchRequest(
-                    ClientDirectory,
+                    dataRoot,
                     selectedServer.ClientProfileId,
-                    ParseMemoryInMiB(SelectedMemory),
+                    memoryMb,
                     launchSession,
-                    GetSelectedProfileCustomJavaPath(),
+                    customJavaPath,
                     selectedServer.Id),
                 progress,
                 async cancellationToken =>
@@ -1599,6 +1952,8 @@ public sealed class MainWindowViewModel : ObservableObject
                         cancellationToken);
                 });
             _runningServerId = selectedServer.Id;
+            OnPropertyChanged(nameof(CanChangeClientDirectory));
+            ResetLauncherSettingsCommand.RaiseCanExecuteChanged();
             OnPropertyChanged(nameof(CanRollbackSelectedProfile));
             OnPropertyChanged(nameof(RollbackProfileToolTip));
             OnPropertyChanged(nameof(CanDeleteSelectedProfile));
@@ -1691,13 +2046,17 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             telemetryFailure = LauncherTelemetryFailureCode.GameAlreadyRunning;
             ClientStatusText = "无法安全关闭当前游戏";
-            ShowToast("当前游戏未能退出，已取消切换且没有申请新服授权");
+            ShowToast(
+                "当前游戏未能退出，已取消切换且没有申请新服授权",
+                ToastLevel.Error);
         }
         catch (PlayerGameSettingsException)
         {
             telemetryFailure = LauncherTelemetryFailureCode.IoFailure;
             ClientStatusText = "个人游戏设置同步失败";
-            ShowToast("无法安全同步灵敏度和按键设置，游戏没有启动");
+            ShowToast(
+                "无法安全同步灵敏度和按键设置，游戏没有启动",
+                ToastLevel.Error);
         }
         catch (MinecraftLaunchException exception)
         {
@@ -1737,7 +2096,7 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             telemetryFailure = LauncherTelemetryFailureCode.NetworkUnavailable;
             ClientStatusText = "进服授权服务不可用";
-            ShowToast("无法连接赫朝授权服务，请稍后再试");
+            ShowToast("无法连接赫朝授权服务，请稍后再试", ToastLevel.Error);
         }
         finally
         {
@@ -1792,6 +2151,9 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void ApplyInstallProgress(ClientInstallProgress progress)
     {
+        _clientInstallPhase = progress.Phase;
+        _installStepFailed = false;
+        NotifyProgressStepStatesChanged();
         UpdateProgress = progress.Percent;
         ActiveDownload?.Update(
             progress.Percent,
@@ -1818,6 +2180,9 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void BeginDownload(ClientProfileSummary profile, bool isRepair)
     {
+        _clientInstallPhase = ClientInstallPhase.Checking;
+        _installStepFailed = false;
+        NotifyProgressStepStatesChanged();
         ActiveDownload = new DownloadJobViewModel(
             Guid.NewGuid(),
             profile.Id,
@@ -1859,10 +2224,22 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void ClearDownloadHistory()
     {
+        var previousHistory = DownloadHistory.ToArray();
         DownloadHistory.Clear();
-        _downloadHistoryStore.Save([]);
+        if (!PersistDownloadHistory())
+        {
+            foreach (var download in previousHistory)
+            {
+                DownloadHistory.Add(download);
+            }
+
+            NotifyDownloadHistoryChanged();
+            ShowToast("无法写入下载历史，记录未清空", ToastLevel.Error);
+            return;
+        }
+
         NotifyDownloadHistoryChanged();
-        ShowToast("下载历史已清空");
+        ShowToast("下载历史已清空", ToastLevel.Success);
     }
 
     private void LoadDownloadHistory()
@@ -1905,24 +2282,37 @@ public sealed class MainWindowViewModel : ObservableObject
         NotifyDownloadHistoryChanged();
     }
 
-    private void PersistDownloadHistory()
+    private bool PersistDownloadHistory()
     {
-        var downloads = ActiveDownload is null
-            ? DownloadHistory.AsEnumerable()
-            : DownloadHistory.Prepend(ActiveDownload);
-        _downloadHistoryStore.Save(downloads.Select(download =>
-            new DownloadHistoryRecord(
-                download.Id,
-                download.ProfileId,
-                download.DisplayName,
-                download.Version,
-                download.StartedAt,
-                download.CompletedAt,
-                download.Status,
-                download.CompletedBytes,
-                download.TotalBytes,
-                download.CurrentFile,
-                download.FailureMessage)));
+        try
+        {
+            var downloads = ActiveDownload is null
+                ? DownloadHistory.AsEnumerable()
+                : DownloadHistory.Prepend(ActiveDownload);
+            _downloadHistoryStore.Save(downloads.Select(download =>
+                new DownloadHistoryRecord(
+                    download.Id,
+                    download.ProfileId,
+                    download.DisplayName,
+                    download.Version,
+                    download.StartedAt,
+                    download.CompletedAt,
+                    download.Status,
+                    download.CompletedBytes,
+                    download.TotalBytes,
+                    download.CurrentFile,
+                    download.FailureMessage)));
+            return true;
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                ArgumentException or NotSupportedException)
+        {
+            Trace.TraceWarning(
+                "Unable to persist download history: {0}",
+                exception.Message);
+            return false;
+        }
     }
 
     private void NotifyDownloadHistoryChanged()
@@ -1971,17 +2361,18 @@ public sealed class MainWindowViewModel : ObservableObject
             eventArgs.ExitCode,
             eventArgs.StartedAt,
             eventArgs.ExitedAt);
-        _ = RecordGameExitAsync(record, eventArgs.ExitKind);
+        _ = RecordGameExitAsync(record, eventArgs.ExitKind, eventArgs.DataRoot);
     }
 
     private async Task RecordGameExitAsync(
         GameExitRecord record,
-        MinecraftProcessExitKind exitKind)
+        MinecraftProcessExitKind exitKind,
+        string? dataRoot)
     {
         try
         {
             await _playerGameSettingsService.CaptureProfileAsync(
-                ClientDirectory,
+                dataRoot ?? ClientDirectory,
                 record.ProfileId);
         }
         catch (PlayerGameSettingsException exception)
@@ -2027,8 +2418,10 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(RollbackProfileToolTip));
             OnPropertyChanged(nameof(CanDeleteSelectedProfile));
             OnPropertyChanged(nameof(DeleteProfileToolTip));
+            OnPropertyChanged(nameof(CanChangeClientDirectory));
             var runningGame = _gameLauncherService.GetRunningGame();
             _runningServerId = runningGame?.ServerId;
+            ResetLauncherSettingsCommand.RaiseCanExecuteChanged();
             if (runningGame is null && !IsProgressActive)
             {
                 ClientStatusText =
@@ -2111,7 +2504,9 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is IOException or UnauthorizedAccessException or
             ArgumentException or InvalidDataException or ManifestFormatException)
         {
-            ShowToast("无法生成诊断包，请先确认客户端已安装且日志可读取");
+            ShowToast(
+                "无法生成诊断包，请先确认客户端已安装且日志可读取",
+                ToastLevel.Error);
         }
         finally
         {
@@ -2145,7 +2540,9 @@ public sealed class MainWindowViewModel : ObservableObject
                 $"已上传 · 编号 {shortId} · " +
                 $"{receipt.ExpiresAt.ToLocalTime():yyyy-MM-dd} 自动删除";
             OnPropertyChanged(nameof(DiagnosticUploadStatus));
-            ShowToast("诊断包已安全上传，管理员下载会写入审计记录");
+            ShowToast(
+                "诊断包已安全上传，管理员下载会写入审计记录",
+                ToastLevel.Success);
             return true;
         }
         catch (LauncherAuthenticationRequiredException)
@@ -2169,7 +2566,7 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             _diagnosticUploadStatus = "上传未完成，诊断包仍保留在本机。";
             OnPropertyChanged(nameof(DiagnosticUploadStatus));
-            ShowToast("诊断上传失败，请检查网络后重试");
+            ShowToast("诊断上传失败，请检查网络后重试", ToastLevel.Error);
             return false;
         }
         finally
@@ -2190,7 +2587,7 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is IOException or UnauthorizedAccessException or
             System.ComponentModel.Win32Exception)
         {
-            ShowToast("暂时无法打开诊断目录");
+            ShowToast("暂时无法打开诊断目录", ToastLevel.Error);
         }
     }
 
@@ -2219,18 +2616,23 @@ public sealed class MainWindowViewModel : ObservableObject
             return false;
         }
 
+        var dataRoot = ClientDirectory;
+        var generation = Interlocked.Increment(ref _clientStateRefreshGeneration);
         try
         {
             var stateTask = _installationService.GetLocalStateAsync(
                 profile,
-                ClientDirectory);
+                dataRoot);
             var rollbackTask = _installationService.GetRollbackCandidateAsync(
                 profile,
-                ClientDirectory);
+                dataRoot);
             await Task.WhenAll(stateTask, rollbackTask);
             var state = await stateTask;
             var rollbackCandidate = await rollbackTask;
-            if (SelectedServer?.Id != selectedServer.Id || IsProgressActive)
+            if (!IsClientStateRefreshCurrent(
+                    generation,
+                    selectedServer.Id,
+                    dataRoot))
             {
                 return false;
             }
@@ -2263,7 +2665,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 "Client state check failed for profile {0}: {1}",
                 profile.Id,
                 exception);
-            if (SelectedServer?.Id == selectedServer.Id && !IsProgressActive)
+            if (IsClientStateRefreshCurrent(
+                    generation,
+                    selectedServer.Id,
+                    dataRoot))
             {
                 _selectedProfileStateChecked = false;
                 UpdateProgress = 0;
@@ -2274,16 +2679,26 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    private bool IsClientStateRefreshCurrent(
+        long generation,
+        string serverId,
+        string dataRoot) =>
+        generation == Volatile.Read(ref _clientStateRefreshGeneration) &&
+        !IsProgressActive &&
+        IsClientContextCurrent(serverId, dataRoot);
+
     private async Task RefreshRollbackCandidateAsync(
         ClientProfileSummary profile,
-        string? selectedServerId)
+        string? selectedServerId,
+        string? dataRoot = null)
     {
+        var targetDataRoot = dataRoot ?? ClientDirectory;
         try
         {
             var candidate = await _installationService.GetRollbackCandidateAsync(
                 profile,
-                ClientDirectory);
-            if (SelectedServer?.Id == selectedServerId)
+                targetDataRoot);
+            if (IsClientContextCurrent(selectedServerId, targetDataRoot))
             {
                 SetRollbackCandidate(candidate);
             }
@@ -2291,10 +2706,30 @@ public sealed class MainWindowViewModel : ObservableObject
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            if (SelectedServer?.Id == selectedServerId)
+            if (IsClientContextCurrent(selectedServerId, targetDataRoot))
             {
                 SetRollbackCandidate(null);
             }
+        }
+    }
+
+    private bool IsClientContextCurrent(string? serverId, string dataRoot) =>
+        string.Equals(SelectedServer?.Id, serverId, StringComparison.Ordinal) &&
+        AreDirectoriesSame(ClientDirectory, dataRoot);
+
+    private static bool AreDirectoriesSame(string left, string right)
+    {
+        try
+        {
+            return string.Equals(
+                Path.GetFullPath(Environment.ExpandEnvironmentVariables(left)),
+                Path.GetFullPath(Environment.ExpandEnvironmentVariables(right)),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -2308,12 +2743,20 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            ShowToast("暂时无法打开游戏数据目录");
+            ShowToast("暂时无法打开游戏数据目录", ToastLevel.Error);
         }
     }
 
     public void UpdateClientDirectory(string path)
     {
+        if (!CanChangeClientDirectory)
+        {
+            ShowToast(_gameLauncherService.GetRunningGame() is not null
+                ? "请先退出正在运行的游戏再更改目录"
+                : "当前任务完成后才能更改目录");
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(path))
         {
             return;
@@ -2343,7 +2786,7 @@ public sealed class MainWindowViewModel : ObservableObject
         SaveSettings();
         _ = TryImportPlayerGameSettingsAsync();
         _ = RefreshClientStateAsync();
-        ShowToast("游戏数据目录已更新");
+        ShowToast("游戏数据目录已更新", ToastLevel.Success);
     }
 
     private void ResetLauncherSettings()
@@ -2370,11 +2813,21 @@ public sealed class MainWindowViewModel : ObservableObject
         SaveSettings();
         _ = TryImportPlayerGameSettingsAsync();
         _ = RefreshClientStateAsync();
-        ShowToast("启动器设置已恢复默认");
+        ShowToast("启动器设置已恢复默认", ToastLevel.Success);
     }
 
-    private bool CanUseSelectedServer() =>
-        !IsProgressActive && SelectedServer?.Status == ServerStatus.Online;
+    private bool CanUseSelectedServer()
+    {
+        if (IsProgressActive || SelectedServer is null)
+        {
+            return false;
+        }
+
+        return !IsAuthenticated ||
+               !_selectedProfileStateChecked ||
+               _selectedProfileState != LocalProfileState.Ready ||
+               SelectedServer.Status == ServerStatus.Online;
+    }
 
     public async Task<bool> LoginAccountAsync(
         string usernameOrEmail,
@@ -2403,7 +2856,7 @@ public sealed class MainWindowViewModel : ObservableObject
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
             await TryCheckLauncherUpdateAsync();
-            ShowToast($"欢迎回来，{account.DisplayName}");
+            ShowToast($"欢迎回来，{account.DisplayName}", ToastLevel.Success);
             return true;
         }
         catch (LauncherApiException exception)
@@ -2561,7 +3014,9 @@ public sealed class MainWindowViewModel : ObservableObject
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
-            ShowToast($"已绑定 Minecraft 玩家 {account.MinecraftName}");
+            ShowToast(
+                $"已绑定 Minecraft 玩家 {account.MinecraftName}",
+                ToastLevel.Success);
         }
         catch (MicrosoftAuthenticationNotConfiguredException)
         {
@@ -2631,7 +3086,9 @@ public sealed class MainWindowViewModel : ObservableObject
         IsProgressActive = false;
         ClientStatusText = "操作已安全停止";
         UpdatePrimaryActionForState();
-        ShowToast("操作已安全停止，请重试；现有客户端文件未被替换");
+        ShowToast(
+            "操作已安全停止，请重试；现有客户端文件未被替换",
+            ToastLevel.Error);
     }
 
     private void HandleUnexpectedMicrosoftSignInError(Exception exception)
@@ -2656,7 +3113,7 @@ public sealed class MainWindowViewModel : ObservableObject
         IsLauncherUpdateBusy = false;
         LauncherUpdateStatus =
             "更新未完成，当前版本仍可继续使用。请稍后重试。";
-        ShowToast("启动器更新失败，当前版本未被替换");
+        ShowToast("启动器更新失败，当前版本未被替换", ToastLevel.Error);
     }
 
     private void BeginMinecraftUnlink()
@@ -2744,7 +3201,7 @@ public sealed class MainWindowViewModel : ObservableObject
             await _authenticationService.LogoutAsync();
             ClearAuthenticatedState();
             SetAccountFormStatus(string.Empty, isError: false);
-            ShowToast("已退出赫朝账号");
+        ShowToast("已退出赫朝账号", ToastLevel.Success);
         }
         finally
         {
@@ -2767,7 +3224,9 @@ public sealed class MainWindowViewModel : ObservableObject
             ClearAuthenticatedState();
             SetAccountFormStatus(string.Empty, isError: false);
             var deviceCount = Math.Max(1, response.RevokedLauncherSessions);
-            ShowToast($"已退出所有设备，共撤销 {deviceCount} 个启动器会话");
+            ShowToast(
+                $"已退出所有设备，共撤销 {deviceCount} 个启动器会话",
+                ToastLevel.Success);
         }
         catch (LauncherAuthenticationRequiredException)
         {
@@ -2814,7 +3273,7 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 UseShellExecute = true
             });
-            ShowToast("管理后台已在浏览器中打开");
+            ShowToast("管理后台已在浏览器中打开", ToastLevel.Success);
         }
         catch (LauncherAuthenticationRequiredException)
         {
@@ -2829,7 +3288,7 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is HttpRequestException or TaskCanceledException or
             IOException or System.ComponentModel.Win32Exception)
         {
-            ShowToast("暂时无法打开管理后台");
+            ShowToast("暂时无法打开管理后台", ToastLevel.Error);
         }
         finally
         {
@@ -2839,12 +3298,18 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void SetCurrentAccount(HechaoAccount? account)
     {
+        var accountChanged = _currentAccount?.UserId != account?.UserId;
         var keepCurrentSkin =
             _accountSkinSource is not null &&
             _currentAccount?.MinecraftUuid is Guid currentMinecraftUuid &&
             account?.MinecraftUuid == currentMinecraftUuid;
         var skinRevision = Interlocked.Increment(ref _accountSkinRevision);
         _currentAccount = account;
+        if (accountChanged)
+        {
+            InvalidateCatalogLoad();
+        }
+
         if (account is not null)
         {
             _telemetryService.TryFlush();
@@ -2881,6 +3346,7 @@ public sealed class MainWindowViewModel : ObservableObject
         UnlinkMinecraftCommand.RaiseCanExecuteChanged();
         LogoutAllDevicesCommand.RaiseCanExecuteChanged();
         OpenAdminConsoleCommand.RaiseCanExecuteChanged();
+        CheckLauncherUpdateCommand.RaiseCanExecuteChanged();
         UpdatePrimaryActionForState();
     }
 
@@ -2986,11 +3452,19 @@ public sealed class MainWindowViewModel : ObservableObject
                     ? "更新客户端"
                     : _selectedProfileState != LocalProfileState.Ready
                         ? "安装客户端"
-                        : !IsMinecraftLinked
-                            ? "绑定正版身份"
-                            : GetLaunchActionText();
+                        : SelectedServer?.Status != ServerStatus.Online
+                            ? GetUnavailableServerActionText()
+                            : !IsMinecraftLinked
+                                ? "绑定正版身份"
+                                : GetLaunchActionText();
         OnPropertyChanged(nameof(PrimaryActionGlyph));
+        PrimaryActionCommand.RaiseCanExecuteChanged();
     }
+
+    private string GetUnavailableServerActionText() =>
+        SelectedServer?.Status == ServerStatus.Maintenance
+            ? "维护中"
+            : "暂未开放";
 
     private string GetLaunchActionText()
     {
@@ -3016,6 +3490,18 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private static bool IsPlayerServer(ServerSummary server) =>
         !string.Equals(server.Id, "lobby", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsActivityServer(ServerSummary server) =>
+        // Cached catalogs from before CatalogSection used survival2 as the sole permanent server.
+        server.CatalogSection switch
+        {
+            ServerCatalogSection.Activity => true,
+            ServerCatalogSection.Permanent => false,
+            _ => !string.Equals(
+                server.Id,
+                "survival2",
+                StringComparison.OrdinalIgnoreCase),
+        };
 
     private void SetAccountFormStatus(string message, bool isError)
     {
@@ -3102,12 +3588,70 @@ public sealed class MainWindowViewModel : ObservableObject
         IsSettingsOpen = false;
     }
 
-    private async void ShowToast(string message)
+    private ProgressStepState GetProgressStepState(int stepIndex)
     {
+        if (_clientInstallPhase is null)
+        {
+            return ProgressStepState.Pending;
+        }
+
+        var currentStep = _clientInstallPhase switch
+        {
+            ClientInstallPhase.Checking => 0,
+            ClientInstallPhase.Downloading => 1,
+            ClientInstallPhase.Staging or ClientInstallPhase.Switching => 2,
+            ClientInstallPhase.PreparingRuntime => 3,
+            ClientInstallPhase.Complete => 4,
+            _ => 0
+        };
+        if (currentStep == 4 || stepIndex < currentStep)
+        {
+            return ProgressStepState.Complete;
+        }
+
+        if (stepIndex > currentStep)
+        {
+            return ProgressStepState.Pending;
+        }
+
+        return _installStepFailed
+            ? ProgressStepState.Failed
+            : ProgressStepState.Current;
+    }
+
+    private void NotifyProgressStepStatesChanged()
+    {
+        OnPropertyChanged(nameof(ProgressStepOneState));
+        OnPropertyChanged(nameof(ProgressStepTwoState));
+        OnPropertyChanged(nameof(ProgressStepThreeState));
+        OnPropertyChanged(nameof(ProgressStepFourState));
+        OnPropertyChanged(nameof(ProgressStepOneStatusText));
+        OnPropertyChanged(nameof(ProgressStepTwoStatusText));
+        OnPropertyChanged(nameof(ProgressStepThreeStatusText));
+        OnPropertyChanged(nameof(ProgressStepFourStatusText));
+    }
+
+    private string GetProgressStepStatusText(int stepIndex) =>
+        GetProgressStepState(stepIndex) switch
+        {
+            ProgressStepState.Current => "进行中",
+            ProgressStepState.Complete => "已完成",
+            ProgressStepState.Failed => "失败",
+            _ => "等待"
+        };
+
+    private async void ShowToast(
+        string message,
+        ToastSeverity severity = ToastLevel.Info)
+    {
+        var generation = Interlocked.Increment(ref _toastGeneration);
         ToastMessage = message;
+        ToastSeverity = severity;
         IsToastVisible = true;
+        Interlocked.Increment(ref _toastAnnouncementRevision);
+        OnPropertyChanged(nameof(ToastAnnouncementRevision));
         await Task.Delay(4000);
-        if (ToastMessage == message)
+        if (generation == Volatile.Read(ref _toastGeneration))
         {
             IsToastVisible = false;
         }
@@ -3179,7 +3723,9 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         NotifySelectedProfileJavaPropertiesChanged();
-        ShowToast($"当前客户端已恢复自动 Java {GetSelectedProfileJavaMajorVersion()}");
+        ShowToast(
+            $"当前客户端已恢复自动 Java {GetSelectedProfileJavaMajorVersion()}",
+            ToastLevel.Success);
     }
 
     private string? GetSelectedProfileCustomJavaPath()

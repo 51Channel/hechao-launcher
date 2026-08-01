@@ -262,7 +262,8 @@ public sealed class CatalogRepository(
                    server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
                    heartbeat.max_players, heartbeat.received_at, server.announcement,
                    server.opens_at, server.closes_at,
-                   control_target.reported_online, control_target.last_seen_at
+                   control_target.reported_online, control_target.last_seen_at,
+                   server.velocity_target
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
@@ -280,7 +281,8 @@ public sealed class CatalogRepository(
                    server.client_profile_id, heartbeat.is_online, heartbeat.online_players,
                    heartbeat.max_players, heartbeat.received_at, server.announcement,
                    server.opens_at, server.closes_at,
-                   control_target.reported_online, control_target.last_seen_at
+                   control_target.reported_online, control_target.last_seen_at,
+                   server.velocity_target
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
@@ -384,11 +386,17 @@ public sealed class CatalogRepository(
                 reader.GetString(10),
                 reader.GetString(15),
                 opensAt,
-                closesAt));
+                closesAt,
+                ResolveCatalogSection(reader.GetString(20))));
         }
 
         return servers;
     }
+
+    internal static ServerCatalogSection ResolveCatalogSection(string velocityTarget) =>
+        velocityTarget == "activity"
+            ? ServerCatalogSection.Activity
+            : ServerCatalogSection.Permanent;
 
     private sealed class ProfileCandidateBuilder(
         string profileId,

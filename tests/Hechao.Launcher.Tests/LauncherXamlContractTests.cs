@@ -136,11 +136,22 @@ public sealed class LauncherXamlContractTests
 
         Assert.Contains(readinessPanel, actionsPanel.Ancestors());
         Assert.Equal("5", actionsPanel.Attribute("Grid.Row")?.Value);
-        Assert.Equal(4, actionsPanel.Elements(presentation + "Button").Count());
+        var buttons = actionsPanel.Elements(presentation + "Button").ToArray();
+        Assert.Equal(4, buttons.Length);
+        Assert.Equal(
+            ["回滚", "修复", "删除", "设置"],
+            buttons.Select(button =>
+                button.Descendants(presentation + "TextBlock")
+                    .Single()
+                    .Attribute("Text")?.Value));
+        Assert.All(
+            buttons,
+            button => Assert.False(string.IsNullOrWhiteSpace(
+                button.Attribute("ToolTip")?.Value)));
     }
 
     [Fact]
-    public void ServerDetails_HidesTheRedundantScrollbar()
+    public void ServerDetails_UsesAutomaticVerticalScrollbar()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation =
@@ -155,31 +166,40 @@ public sealed class LauncherXamlContractTests
                 "ServerDetailsScrollViewer");
 
         Assert.Equal(
-            "Hidden",
+            "Auto",
             scrollViewer.Attribute("VerticalScrollBarVisibility")?.Value);
     }
 
     [Fact]
-    public void Theme_RemovesPageFocusOutlineAndUsesSlimScrollbar()
+    public void Theme_UsesVisibleFocusVisualAndSlimScrollbar()
     {
         var document = LoadThemeXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var scrollViewerStyle = document
+        var focusVisualStyle = document
             .Descendants(presentation + "Style")
             .Single(element =>
-                element.Attribute("TargetType")?.Value.Contains(
-                    "ScrollViewer",
-                    StringComparison.Ordinal) == true &&
-                element.Attribute(XName.Get(
-                    "Key",
-                    "http://schemas.microsoft.com/winfx/2006/xaml")) is null);
+                element.Attribute(x + "Key")?.Value ==
+                "HechaoFocusVisualStyle");
         Assert.Contains(
-            scrollViewerStyle.Descendants(presentation + "Setter"),
+            focusVisualStyle.Descendants(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "Control.Template");
+        Assert.DoesNotContain(
+            document.Descendants(presentation + "Setter"),
             setter =>
                 setter.Attribute("Property")?.Value == "FocusVisualStyle" &&
                 setter.Attribute("Value")?.Value == "{x:Null}");
+        Assert.All(
+            document.Descendants(presentation + "Setter")
+                .Where(setter =>
+                    setter.Attribute("Property")?.Value == "FocusVisualStyle"),
+            setter => Assert.Equal(
+                "{StaticResource HechaoFocusVisualStyle}",
+                setter.Attribute("Value")?.Value));
 
         var scrollBarStyle = document
             .Descendants(presentation + "Style")
@@ -326,6 +346,365 @@ public sealed class LauncherXamlContractTests
             element => element.Attribute("Kind")?.Value == "Delete");
     }
 
+    [Fact]
+    public void ServerDetails_LongPathValuesUseEllipsisAndTooltip()
+    {
+        var launcher = LoadLauncherXaml();
+        var theme = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var valueStyle = theme
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value == "DetailRowValueStyle");
+        var setters = valueStyle
+            .Elements(presentation + "Setter")
+            .ToDictionary(
+                element => element.Attribute("Property")!.Value,
+                element => element.Attribute("Value")?.Value);
+        var gameDirectory = launcher
+            .Descendants(presentation + "TextBlock")
+            .Single(element =>
+                element.Attribute("Text")?.Value ==
+                "{Binding SelectedProfileGameDirectory}");
+
+        Assert.Equal("Stretch", setters["HorizontalAlignment"]);
+        Assert.Equal("Right", setters["TextAlignment"]);
+        Assert.Equal("CharacterEllipsis", setters["TextTrimming"]);
+        Assert.Equal(
+            "{Binding SelectedProfileGameDirectory}",
+            gameDirectory.Attribute("ToolTip")?.Value);
+    }
+
+    [Fact]
+    public void Settings_DeclaresDiagnosticsRowAndGuardsDirectoryChanges()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var diagnosticsHeading = document
+            .Descendants(presentation + "TextBlock")
+            .Single(element => element.Attribute("Text")?.Value == "故障诊断");
+        var diagnosticsPanel = diagnosticsHeading
+            .Ancestors(presentation + "Border")
+            .First();
+        var settingsGrid = Assert.IsType<XElement>(diagnosticsPanel.Parent);
+        var rowDefinitions = settingsGrid
+            .Element(presentation + "Grid.RowDefinitions")!
+            .Elements(presentation + "RowDefinition")
+            .ToArray();
+        var changeDirectoryButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Content")?.Value == "更改目录");
+
+        Assert.Equal("4", diagnosticsPanel.Attribute("Grid.Row")?.Value);
+        Assert.Equal(5, rowDefinitions.Length);
+        Assert.Equal(
+            "{Binding CanChangeClientDirectory}",
+            changeDirectoryButton.Attribute("IsEnabled")?.Value);
+    }
+
+    [Fact]
+    public void SettingsSwitches_HaveAccessibleNamesAndAccurateCacheCopy()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var switches = document
+            .Descendants(presentation + "ToggleButton")
+            .Where(element =>
+                element.Attribute("Style")?.Value ==
+                "{StaticResource SwitchToggleStyle}")
+            .ToArray();
+        var cacheLabels = document
+            .Descendants(presentation + "TextBlock")
+            .Where(element =>
+                element.Attribute("Text")?.Value ==
+                "保留已下载文件缓存")
+            .ToArray();
+
+        Assert.Equal(8, switches.Length);
+        Assert.All(
+            switches,
+            element => Assert.False(string.IsNullOrWhiteSpace(
+                element.Attribute("AutomationProperties.Name")?.Value)));
+        Assert.Equal(2, cacheLabels.Length);
+        Assert.Contains(
+            document.Descendants(presentation + "TextBlock"),
+            element =>
+                element.Attribute("Text")?.Value ==
+                "保留校验通过的下载文件，供后续安装、更新或修复复用。");
+    }
+
+    [Fact]
+    public void GlobalOverlays_TrapTabFocusAtTheRoot()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+        var rootGrid = document.Root!
+            .Element(presentation + "Border")!
+            .Element(presentation + "Grid")!;
+
+        foreach (var name in new[]
+                 {
+                     "MicrosoftSignInOverlay",
+                     "LauncherUpdateOverlay",
+                 })
+        {
+            var overlay = document
+                .Descendants()
+                .Single(element => element.Attribute(x + "Name")?.Value == name);
+            Assert.Same(rootGrid, overlay.Parent);
+            Assert.Equal(
+                "True",
+                overlay.Attribute("FocusManager.IsFocusScope")?.Value);
+            Assert.Contains(
+                "ElementName=",
+                overlay.Attribute("FocusManager.FocusedElement")?.Value);
+            Assert.Equal(
+                "Cycle",
+                overlay.Attribute("KeyboardNavigation.TabNavigation")?.Value);
+        }
+    }
+
+    [Fact]
+    public void StatusToastAndProgressIndicators_UseDynamicBindings()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var playerText = document
+            .Descendants(presentation + "TextBlock")
+            .Single(element =>
+                element.Attribute("Text")?.Value ==
+                "{Binding SelectedServerPlayerText}");
+        var statusDot = playerText
+            .Parent!
+            .Elements(presentation + "Ellipse")
+            .Single();
+        var statusValues = statusDot
+            .Descendants(presentation + "DataTrigger")
+            .Select(element => element.Attribute("Value")?.Value)
+            .ToArray();
+        Assert.Contains(
+            "{x:Static contracts:ServerStatus.Online}",
+            statusValues);
+        Assert.Contains(
+            "{x:Static contracts:ServerStatus.Maintenance}",
+            statusValues);
+        Assert.Contains(
+            "{x:Static contracts:ServerStatus.Closed}",
+            statusValues);
+        Assert.Contains(
+            statusDot.Descendants(presentation + "Setter"),
+            element =>
+                element.Attribute("Property")?.Value == "Fill" &&
+                element.Attribute("Value")?.Value ==
+                "{StaticResource ClosedBrush}");
+
+        var toast = document
+            .Descendants()
+            .Single(element => element.Name.LocalName == "LiveRegionBorder");
+        var toastIcon = toast
+            .Descendants()
+            .Single(element => element.Name.LocalName == "IconParkIcon");
+        Assert.Equal(
+            "{Binding ToastSeverity}",
+            toast.Attribute("Tag")?.Value);
+        Assert.Equal(
+            "{Binding ToastMessage}",
+            toast.Attribute("AutomationProperties.Name")?.Value);
+        Assert.Equal(
+            "{Binding ToastAutomationStatus}",
+            toast.Attribute("AutomationProperties.ItemStatus")?.Value);
+        Assert.Equal(
+            "Polite",
+            toast.Attribute("AutomationProperties.LiveSetting")?.Value);
+        Assert.Equal(
+            "{Binding ToastIconKind}",
+            toastIcon.Attribute("Kind")?.Value);
+
+        var progressSteps = document
+            .Descendants(presentation + "Ellipse")
+            .Where(element =>
+                element.Attribute("Style")?.Value ==
+                "{StaticResource ProgressStepIndicatorStyle}")
+            .ToArray();
+        Assert.Equal(4, progressSteps.Length);
+        Assert.Equal(
+            [
+                "{Binding ProgressStepOneState}",
+                "{Binding ProgressStepTwoState}",
+                "{Binding ProgressStepThreeState}",
+                "{Binding ProgressStepFourState}",
+            ],
+            progressSteps.Select(element => element.Attribute("Tag")?.Value));
+
+        var progressGlyphs = document
+            .Descendants(presentation + "TextBlock")
+            .Where(element =>
+                element.Attribute("Style")?.Value ==
+                "{StaticResource ProgressStepGlyphStyle}")
+            .ToArray();
+        Assert.Equal(4, progressGlyphs.Length);
+        Assert.Equal(
+            ["检查文件", "下载资源", "应用更新", "准备运行"],
+            progressGlyphs.Select(element =>
+                element.Attribute("AutomationProperties.Name")?.Value));
+        Assert.Equal(
+            [
+                "{Binding ProgressStepOneStatusText}",
+                "{Binding ProgressStepTwoStatusText}",
+                "{Binding ProgressStepThreeStatusText}",
+                "{Binding ProgressStepFourStatusText}",
+            ],
+            progressGlyphs.Select(element =>
+                element.Attribute("AutomationProperties.ItemStatus")?.Value));
+
+        var theme = LoadThemeXaml();
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+        var glyphStyle = theme
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ProgressStepGlyphStyle");
+        var glyphTriggerValues = glyphStyle
+            .Descendants(presentation + "Trigger")
+            .Select(element => element.Attribute("Value")?.Value)
+            .ToArray();
+        Assert.Contains(
+            "{x:Static viewModels:ProgressStepState.Current}",
+            glyphTriggerValues);
+        Assert.Contains(
+            "{x:Static viewModels:ProgressStepState.Complete}",
+            glyphTriggerValues);
+        Assert.Contains(
+            "{x:Static viewModels:ProgressStepState.Failed}",
+            glyphTriggerValues);
+        var glyphValues = glyphStyle
+            .Descendants(presentation + "Setter")
+            .Where(element => element.Attribute("Property")?.Value == "Text")
+            .Select(element => element.Attribute("Value")?.Value)
+            .ToArray();
+        Assert.Contains("•", glyphValues);
+        Assert.Contains("✓", glyphValues);
+        Assert.Contains("×", glyphValues);
+    }
+
+    [Fact]
+    public void ServerAndActivitySelection_RespectLongRunningTasks()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var serverList = document
+            .Descendants(presentation + "ListBox")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding Servers}");
+        var activityList = document
+            .Descendants(presentation + "ListBox")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding ActivityServers}");
+        Assert.Equal(
+            "{Binding CanSelectServer}",
+            serverList.Attribute("IsEnabled")?.Value);
+        Assert.Equal(
+            "{Binding CanSelectServer}",
+            activityList.Attribute("IsEnabled")?.Value);
+
+        var viewButton = activityList
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Command")?.Value.Contains(
+                    "ViewActivityServerCommand",
+                    StringComparison.Ordinal) == true);
+        Assert.Equal(
+            "{Binding DataContext.CanSelectServer, RelativeSource={RelativeSource AncestorType=ListBox}}",
+            viewButton.Attribute("IsEnabled")?.Value);
+        Assert.Equal(
+            "{Binding}",
+            viewButton.Attribute("CommandParameter")?.Value);
+    }
+
+    [Fact]
+    public void ActivityCards_UseWrapperServerAndShowScheduleDetails()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var activityList = document
+            .Descendants(presentation + "ListBox")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding ActivityServers}");
+        var template = activityList
+            .Descendants(presentation + "DataTemplate")
+            .Single();
+        var attributeValues = template
+            .DescendantsAndSelf()
+            .Attributes()
+            .Select(attribute => attribute.Value)
+            .ToArray();
+
+        Assert.Null(template.Attribute("DataType"));
+        Assert.Contains("{Binding ScheduleText}", attributeValues);
+        Assert.Contains("{Binding AnnouncementText}", attributeValues);
+        Assert.Contains("{Binding Server.IconGlyph}", attributeValues);
+        Assert.Contains("{Binding Server.Name}", attributeValues);
+        Assert.Contains("{Binding Server.ShortName}", attributeValues);
+        Assert.Contains("{Binding Server.Status}", attributeValues);
+        Assert.Contains("{Binding Server.MinecraftVersion}", attributeValues);
+        Assert.Contains("{Binding Server.Loader}", attributeValues);
+        Assert.Contains("{Binding Server.OnlinePlayers}", attributeValues);
+        Assert.Contains("{Binding Server.MaxPlayers}", attributeValues);
+    }
+
+    [Fact]
+    public void InkFaintColor_MeetsNormalTextContrastOnThemeSurfaces()
+    {
+        var document = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+        var colors = document
+            .Descendants(presentation + "Color")
+            .ToDictionary(
+                element => element.Attribute(x + "Key")!.Value,
+                element => element.Value);
+        var backgroundKeys = new[]
+        {
+            "CanvasColor",
+            "SurfaceColor",
+            "SurfaceMutedColor",
+            "SurfacePressedColor",
+            "RailColor",
+            "DirectoryColor",
+            "StripColor",
+        };
+
+        Assert.All(
+            backgroundKeys,
+            key => Assert.True(
+                ContrastRatio(colors["InkFaintColor"], colors[key]) >= 4.5,
+                $"InkFaintColor contrast against {key} must be at least 4.5:1."));
+    }
+
     private static XDocument LoadLauncherXaml()
     {
         var repositoryRoot = FindRepositoryRoot();
@@ -345,6 +724,37 @@ public sealed class LauncherXamlContractTests
             "Hechao.Launcher",
             "Themes",
             "HechaoTheme.xaml"));
+    }
+
+    private static double ContrastRatio(string first, string second)
+    {
+        var firstLuminance = RelativeLuminance(first);
+        var secondLuminance = RelativeLuminance(second);
+        var lighter = Math.Max(firstLuminance, secondLuminance);
+        var darker = Math.Min(firstLuminance, secondLuminance);
+        return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    private static double RelativeLuminance(string color)
+    {
+        var hex = color.Trim().TrimStart('#');
+        if (hex.Length == 8)
+        {
+            hex = hex[2..];
+        }
+
+        var channels = Enumerable.Range(0, 3)
+            .Select(index =>
+                Convert.ToInt32(hex.Substring(index * 2, 2), 16) / 255d)
+            .Select(channel =>
+                channel <= 0.04045
+                    ? channel / 12.92
+                    : Math.Pow((channel + 0.055) / 1.055, 2.4))
+            .ToArray();
+        return
+            (0.2126 * channels[0]) +
+            (0.7152 * channels[1]) +
+            (0.0722 * channels[2]);
     }
 
     private static string FindRepositoryRoot()

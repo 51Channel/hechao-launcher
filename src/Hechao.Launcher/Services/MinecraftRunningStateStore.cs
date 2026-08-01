@@ -9,7 +9,8 @@ internal sealed record PersistedMinecraftProcess(
     string? ServerId,
     int ProcessId,
     string ExecutablePath,
-    DateTimeOffset StartedAt);
+    DateTimeOffset StartedAt,
+    string? DataRoot = null);
 
 internal interface IMinecraftRunningStateStore
 {
@@ -158,7 +159,10 @@ internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateSto
             Validate(process);
             return process with
             {
-                ExecutablePath = Path.GetFullPath(process.ExecutablePath)
+                ExecutablePath = Path.GetFullPath(process.ExecutablePath),
+                DataRoot = string.IsNullOrWhiteSpace(process.DataRoot)
+                    ? null
+                    : Path.GetFullPath(process.DataRoot)
             };
         }
         catch (Exception exception) when (
@@ -187,6 +191,11 @@ internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateSto
 
         ArgumentException.ThrowIfNullOrWhiteSpace(process.ExecutablePath);
         _ = Path.GetFullPath(process.ExecutablePath);
+        if (!string.IsNullOrWhiteSpace(process.DataRoot))
+        {
+            _ = Path.GetFullPath(process.DataRoot);
+        }
+
         if (process.StartedAt == default)
         {
             throw new ArgumentException(

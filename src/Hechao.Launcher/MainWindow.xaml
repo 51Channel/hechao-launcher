@@ -217,6 +217,7 @@
                              Background="Transparent"
                              ItemsSource="{Binding Servers}"
                              SelectedItem="{Binding SelectedServer, Mode=TwoWay}"
+                             IsEnabled="{Binding CanSelectServer}"
                              ItemContainerStyle="{StaticResource ServerListItemStyle}"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -574,6 +575,10 @@
                                                              Value="{x:Static contracts:ServerStatus.Maintenance}">
                                                     <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedServer.Status}"
+                                                             Value="{x:Static contracts:ServerStatus.Closed}">
+                                                    <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Ellipse.Style>
@@ -642,9 +647,28 @@
                                 <Border Width="1" Height="12" Background="{StaticResource BorderBrush}" Margin="13,0" />
                                 <Ellipse Width="7"
                                          Height="7"
-                                         Fill="{StaticResource OnlineBrush}"
                                          Margin="0,0,6,0"
-                                         VerticalAlignment="Center" />
+                                         VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedServer.Status}"
+                                                             Value="{x:Static contracts:ServerStatus.Online}">
+                                                    <Setter Property="Fill" Value="{StaticResource OnlineBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedServer.Status}"
+                                                             Value="{x:Static contracts:ServerStatus.Maintenance}">
+                                                    <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedServer.Status}"
+                                                             Value="{x:Static contracts:ServerStatus.Closed}">
+                                                    <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
                                 <TextBlock Text="{Binding SelectedServerPlayerText}"
                                            FontFamily="Segoe UI"
                                            FontSize="12"
@@ -723,7 +747,7 @@
 
                 <ScrollViewer x:Name="ServerDetailsScrollViewer"
                               Grid.Row="3"
-                              VerticalScrollBarVisibility="Hidden"
+                              VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                 <Grid MinHeight="332">
                     <Grid.ColumnDefinitions>
@@ -801,53 +825,49 @@
                                     Background="{StaticResource BorderBrush}"
                                     VerticalAlignment="Center" />
                             <TextBlock Grid.Column="0"
-                                       Text="检查环境"
+                                       Text="检查文件"
                                        Style="{StaticResource ProcessLabelStyle}" />
                             <TextBlock Grid.Column="1"
-                                       Text="获取清单"
-                                       Style="{StaticResource ProcessLabelStyle}" />
-                            <TextBlock Grid.Column="2"
                                        Text="下载资源"
                                        Style="{StaticResource ProcessLabelStyle}" />
-                            <TextBlock Grid.Column="3"
-                                       Text="校验文件"
+                            <TextBlock Grid.Column="2"
+                                       Text="应用更新"
                                        Style="{StaticResource ProcessLabelStyle}" />
-                            <Ellipse Grid.Row="1"
-                                     Grid.Column="0"
-                                     Width="17"
-                                     Height="17"
-                                     Fill="{StaticResource SurfaceBrush}"
-                                     Stroke="{StaticResource SteelBrush}"
-                                     StrokeThickness="2"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center" />
-                            <Ellipse Grid.Row="1"
-                                     Grid.Column="1"
-                                     Width="17"
-                                     Height="17"
-                                     Fill="{StaticResource SurfaceBrush}"
-                                     Stroke="{StaticResource BorderStrongBrush}"
-                                     StrokeThickness="2"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center" />
-                            <Ellipse Grid.Row="1"
-                                     Grid.Column="2"
-                                     Width="17"
-                                     Height="17"
-                                     Fill="{StaticResource SurfaceBrush}"
-                                     Stroke="{StaticResource BorderStrongBrush}"
-                                     StrokeThickness="2"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center" />
-                            <Ellipse Grid.Row="1"
-                                     Grid.Column="3"
-                                     Width="17"
-                                     Height="17"
-                                     Fill="{StaticResource SurfaceBrush}"
-                                     Stroke="{StaticResource BorderStrongBrush}"
-                                     StrokeThickness="2"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3"
+                                       Text="准备运行"
+                                       Style="{StaticResource ProcessLabelStyle}" />
+                            <Grid Grid.Row="1" Grid.Column="0">
+                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
+                                         Tag="{Binding ProgressStepOneState}" />
+                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
+                                           Tag="{Binding ProgressStepOneState}"
+                                           AutomationProperties.Name="检查文件"
+                                           AutomationProperties.ItemStatus="{Binding ProgressStepOneStatusText}" />
+                            </Grid>
+                            <Grid Grid.Row="1" Grid.Column="1">
+                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
+                                         Tag="{Binding ProgressStepTwoState}" />
+                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
+                                           Tag="{Binding ProgressStepTwoState}"
+                                           AutomationProperties.Name="下载资源"
+                                           AutomationProperties.ItemStatus="{Binding ProgressStepTwoStatusText}" />
+                            </Grid>
+                            <Grid Grid.Row="1" Grid.Column="2">
+                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
+                                         Tag="{Binding ProgressStepThreeState}" />
+                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
+                                           Tag="{Binding ProgressStepThreeState}"
+                                           AutomationProperties.Name="应用更新"
+                                           AutomationProperties.ItemStatus="{Binding ProgressStepThreeStatusText}" />
+                            </Grid>
+                            <Grid Grid.Row="1" Grid.Column="3">
+                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
+                                         Tag="{Binding ProgressStepFourState}" />
+                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
+                                           Tag="{Binding ProgressStepFourState}"
+                                           AutomationProperties.Name="准备运行"
+                                           AutomationProperties.ItemStatus="{Binding ProgressStepFourStatusText}" />
+                            </Grid>
                         </Grid>
 
                         <Grid Grid.Row="2" Margin="0,8,0,0">
@@ -951,7 +971,7 @@
                                                            Width="14"
                                                            Height="14"
                                                            Margin="0,0,6,0" />
-                                    <TextBlock Text="回滚版本"
+                                    <TextBlock Text="回滚"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
@@ -967,7 +987,7 @@
                                                            Width="14"
                                                            Height="14"
                                                            Margin="0,0,6,0" />
-                                    <TextBlock Text="修复客户端"
+                                    <TextBlock Text="修复"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
@@ -984,22 +1004,23 @@
                                                            Width="14"
                                                            Height="14"
                                                            Margin="0,0,6,0" />
-                                    <TextBlock Text="删除客户端"
+                                    <TextBlock Text="删除"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
                             </Button>
-                            <Button Grid.Column="3"
-                                    Style="{StaticResource BaseButtonStyle}"
-                                    Height="42"
-                                    Margin="4,0,0,0"
-                                    Command="{Binding ShowSettingsPageCommand}">
+                             <Button Grid.Column="3"
+                                     Style="{StaticResource BaseButtonStyle}"
+                                     Height="42"
+                                     Margin="4,0,0,0"
+                                     Command="{Binding ShowSettingsPageCommand}"
+                                     ToolTip="打开客户端设置">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="SettingTwo"
                                                            Width="14"
                                                            Height="14"
                                                            Margin="0,0,6,0" />
-                                    <TextBlock Text="更多设置"
+                                    <TextBlock Text="设置"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
@@ -1078,6 +1099,7 @@
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding SelectedProfileGameDirectory}"
                                            FontFamily="Consolas"
+                                           ToolTip="{Binding SelectedProfileGameDirectory}"
                                            Style="{StaticResource DetailRowValueStyle}" />
                             </Grid>
 
@@ -1684,6 +1706,7 @@
                             <ListBox ItemsSource="{Binding ActivityServers}"
                                      BorderThickness="0"
                                      Background="Transparent"
+                                     IsEnabled="{Binding CanSelectServer}"
                                      ItemContainerStyle="{StaticResource PageListItemStyle}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <ListBox.ItemsPanel>
@@ -1692,14 +1715,15 @@
                                     </ItemsPanelTemplate>
                                 </ListBox.ItemsPanel>
                                 <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type contracts:ServerSummary}">
+                                    <DataTemplate>
                                         <Border Width="370"
-                                                MinHeight="218"
+                                                MinHeight="286"
                                                 Margin="0,0,10,2"
                                                 Padding="20"
                                                 Style="{StaticResource SurfacePanelStyle}">
                                             <Grid>
                                                 <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="*" />
                                                     <RowDefinition Height="Auto" />
@@ -1710,11 +1734,11 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <Border Width="42"
-                                                            Height="42"
-                                                            Background="{StaticResource HechaoRedSoftBrush}"
-                                                            CornerRadius="4">
-                                                        <TextBlock Text="{Binding IconGlyph}"
+                                                     <Border Width="42"
+                                                             Height="42"
+                                                             Background="{StaticResource HechaoRedSoftBrush}"
+                                                             CornerRadius="4">
+                                                        <TextBlock Text="{Binding Server.IconGlyph}"
                                                                    FontSize="18"
                                                                    FontWeight="Black"
                                                                    Foreground="{StaticResource HechaoRedDarkBrush}"
@@ -1722,10 +1746,10 @@
                                                                    VerticalAlignment="Center" />
                                                     </Border>
                                                     <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="{Binding Name}"
+                                                        <TextBlock Text="{Binding Server.Name}"
                                                                    FontSize="16"
                                                                    FontWeight="Black" />
-                                                        <TextBlock Text="{Binding ShortName}"
+                                                        <TextBlock Text="{Binding Server.ShortName}"
                                                                    FontFamily="Segoe UI"
                                                                    FontSize="11"
                                                                    Foreground="{StaticResource InkMutedBrush}"
@@ -1747,11 +1771,11 @@
                                                                     <Style TargetType="Ellipse">
                                                                         <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
                                                                         <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding Status}"
+                                                                            <DataTrigger Binding="{Binding Server.Status}"
                                                                                          Value="{x:Static contracts:ServerStatus.Online}">
                                                                                 <Setter Property="Fill" Value="{StaticResource OnlineBrush}" />
                                                                             </DataTrigger>
-                                                                            <DataTrigger Binding="{Binding Status}"
+                                                                            <DataTrigger Binding="{Binding Server.Status}"
                                                                                          Value="{x:Static contracts:ServerStatus.Maintenance}">
                                                                                 <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
                                                                             </DataTrigger>
@@ -1764,11 +1788,11 @@
                                                                     <Style TargetType="TextBlock">
                                                                         <Setter Property="Text" Value="未开放" />
                                                                         <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding Status}"
+                                                                            <DataTrigger Binding="{Binding Server.Status}"
                                                                                          Value="{x:Static contracts:ServerStatus.Online}">
                                                                                 <Setter Property="Text" Value="在线" />
                                                                             </DataTrigger>
-                                                                            <DataTrigger Binding="{Binding Status}"
+                                                                            <DataTrigger Binding="{Binding Server.Status}"
                                                                                          Value="{x:Static contracts:ServerStatus.Maintenance}">
                                                                                 <Setter Property="Text" Value="维护中" />
                                                                             </DataTrigger>
@@ -1780,7 +1804,24 @@
                                                     </Border>
                                                 </Grid>
 
-                                                <Grid Grid.Row="1" Margin="0,22,0,16">
+                                                <StackPanel Grid.Row="1"
+                                                            Margin="0,16,0,0">
+                                                    <TextBlock Text="{Binding ScheduleText}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                               TextWrapping="Wrap"
+                                                               TextTrimming="None" />
+                                                    <TextBlock Text="{Binding AnnouncementText}"
+                                                               Margin="0,5,0,0"
+                                                               FontSize="11"
+                                                               LineHeight="17"
+                                                               Foreground="{StaticResource InkMutedBrush}"
+                                                               TextWrapping="Wrap"
+                                                               TextTrimming="None" />
+                                                </StackPanel>
+
+                                                <Grid Grid.Row="2" Margin="0,18,0,16">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="*" />
@@ -1788,7 +1829,7 @@
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel>
                                                         <TextBlock Text="版本" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
-                                                        <TextBlock Text="{Binding MinecraftVersion}"
+                                                        <TextBlock Text="{Binding Server.MinecraftVersion}"
                                                                    FontFamily="Segoe UI"
                                                                    FontSize="13"
                                                                    FontWeight="Bold"
@@ -1796,7 +1837,7 @@
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="1">
                                                         <TextBlock Text="加载器" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
-                                                        <TextBlock Text="{Binding Loader}"
+                                                        <TextBlock Text="{Binding Server.Loader}"
                                                                    FontFamily="Segoe UI"
                                                                    FontSize="13"
                                                                    FontWeight="Bold"
@@ -1808,17 +1849,18 @@
                                                                    FontSize="13"
                                                                    FontWeight="Bold"
                                                                    Margin="0,5,0,0">
-                                                            <Run Text="{Binding OnlinePlayers}" />
+                                                            <Run Text="{Binding Server.OnlinePlayers}" />
                                                             <Run Text="/" />
-                                                            <Run Text="{Binding MaxPlayers}" />
+                                                            <Run Text="{Binding Server.MaxPlayers}" />
                                                         </TextBlock>
                                                     </StackPanel>
                                                 </Grid>
 
-                                                <Button Grid.Row="2"
+                                                <Button Grid.Row="3"
                                                         Height="42"
                                                         Style="{StaticResource BaseButtonStyle}"
                                                         Command="{Binding DataContext.ViewActivityServerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                        IsEnabled="{Binding DataContext.CanSelectServer, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                         CommandParameter="{Binding}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <controls:IconParkIcon Kind="Right"
@@ -2435,123 +2477,6 @@
                     </Grid>
                 </ScrollViewer>
 
-                <Border Panel.ZIndex="40"
-                        Background="#990F1110"
-                        Visibility="{Binding IsMicrosoftSignInVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <Border Width="520"
-                            Padding="30"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource SurfacePanelStyle}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="54" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="44"
-                                        Height="44"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Background="{StaticResource HechaoRedSoftBrush}"
-                                        BorderBrush="#FFD8B2AD"
-                                        BorderThickness="1"
-                                        CornerRadius="5">
-                                    <controls:IconParkIcon Kind="ExternalTransmission"
-                                                           Width="20"
-                                                           Height="20"
-                                                           Foreground="{StaticResource HechaoRedDarkBrush}"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
-                                </Border>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{Binding MicrosoftSignInTitle}"
-                                               FontSize="20"
-                                               FontWeight="Black" />
-                                    <TextBlock Text="MICROSOFT / MINECRAFT"
-                                               FontFamily="Segoe UI"
-                                               FontSize="10"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource HechaoRedDarkBrush}"
-                                               Margin="0,5,0,0" />
-                                </StackPanel>
-                            </Grid>
-
-                            <TextBlock Grid.Row="1"
-                                       Text="{Binding MicrosoftSignInDescription}"
-                                       FontSize="13"
-                                       LineHeight="22"
-                                       Foreground="{StaticResource InkMutedBrush}"
-                                       TextWrapping="Wrap"
-                                       TextTrimming="None"
-                                       Margin="0,24,0,0" />
-
-                            <Border Grid.Row="2"
-                                    Margin="0,22,0,0"
-                                    Padding="14"
-                                    Background="{StaticResource SurfaceMutedBrush}"
-                                    BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Width="9"
-                                            Height="9"
-                                            Margin="1,2,12,0"
-                                            VerticalAlignment="Top"
-                                            Background="#FF23845B"
-                                            CornerRadius="5" />
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="浏览器窗口已打开"
-                                                   FontSize="13"
-                                                   FontWeight="Bold" />
-                                        <TextBlock Text="如果没有看到浏览器，取消本次登录后重新点击绑定按钮。"
-                                                   FontSize="11"
-                                                   Foreground="{StaticResource InkFaintBrush}"
-                                                   TextWrapping="Wrap"
-                                                   TextTrimming="None"
-                                                   Margin="0,5,0,0" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <Grid Grid.Row="3" Margin="0,24,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="启动器不会读取或保存你的 Microsoft 密码。"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkFaintBrush}"
-                                           VerticalAlignment="Center" />
-                                <Button Grid.Column="1"
-                                        MinWidth="126"
-                                        Height="40"
-                                        Style="{StaticResource BaseButtonStyle}"
-                                        Command="{Binding CancelMicrosoftSignInCommand}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <controls:IconParkIcon Kind="Close"
-                                                               Width="14"
-                                                               Height="14"
-                                                               Margin="0,0,7,0" />
-                                        <TextBlock Text="取消本次登录"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Border>
-                </Border>
             </Grid>
 
             <!-- Settings page -->
@@ -2564,6 +2489,7 @@
                               HorizontalScrollBarVisibility="Disabled">
                     <Grid Margin="34,28,34,34" MaxWidth="1180">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -2624,6 +2550,7 @@
                                         <ToggleButton Grid.Column="1"
                                                       Style="{StaticResource SwitchToggleStyle}"
                                                       IsChecked="{Binding CloseLauncherAfterGameStart, Mode=TwoWay}"
+                                                      AutomationProperties.Name="游戏启动后关闭启动器"
                                                       VerticalAlignment="Center" />
                                     </Grid>
                                 </StackPanel>
@@ -2673,6 +2600,7 @@
                                                 Style="{StaticResource BaseButtonStyle}"
                                                 Margin="10,0,0,0"
                                                 Click="ChooseClientDirectoryButton_OnClick"
+                                                IsEnabled="{Binding CanChangeClientDirectory}"
                                                 Content="更改目录" />
                                     </Grid>
 
@@ -2693,18 +2621,32 @@
                                         <ToggleButton Grid.Column="1"
                                                       Style="{StaticResource SwitchToggleStyle}"
                                                       IsChecked="{Binding CheckForUpdates, Mode=TwoWay}"
+                                                      AutomationProperties.Name="启动时检查客户端更新"
                                                       VerticalAlignment="Center" />
                                     </Grid>
+                                    <Button Margin="0,12,0,0"
+                                            Padding="13,8"
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource BaseButtonStyle}"
+                                            Command="{Binding CheckLauncherUpdateCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <controls:IconParkIcon Kind="CheckOne"
+                                                                   Width="13"
+                                                                   Height="13"
+                                                                   Margin="0,0,7,0" />
+                                            <TextBlock Text="立即检查启动器更新" />
+                                        </StackPanel>
+                                    </Button>
                                     <Grid Margin="0,20,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="保留下载缓存"
+                                            <TextBlock Text="保留已下载文件缓存"
                                                        FontSize="14"
                                                        FontWeight="SemiBold" />
-                                            <TextBlock Text="修复或断点续传时复用已经校验通过的对象。"
+                                            <TextBlock Text="保留校验通过的下载文件，供后续安装、更新或修复复用。"
                                                        FontSize="11"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        Margin="0,4,0,0" />
@@ -2712,6 +2654,7 @@
                                         <ToggleButton Grid.Column="1"
                                                       Style="{StaticResource SwitchToggleStyle}"
                                                       IsChecked="{Binding KeepDownloadsAfterClose, Mode=TwoWay}"
+                                                      AutomationProperties.Name="保留已下载文件缓存"
                                                       VerticalAlignment="Center" />
                                     </Grid>
                                     <Grid Margin="0,20,0,0">
@@ -2731,6 +2674,7 @@
                                         <ToggleButton Grid.Column="1"
                                                       Style="{StaticResource SwitchToggleStyle}"
                                                       IsChecked="{Binding OpenDownloadsWhenInstalling, Mode=TwoWay}"
+                                                      AutomationProperties.Name="安装时打开下载中心"
                                                       VerticalAlignment="Center" />
                                     </Grid>
                                     <Grid Margin="0,20,0,0">
@@ -2750,6 +2694,7 @@
                                         <ToggleButton Grid.Column="1"
                                                       Style="{StaticResource SwitchToggleStyle}"
                                                       IsChecked="{Binding UseSystemProxy, Mode=TwoWay}"
+                                                      AutomationProperties.Name="使用 Windows 系统代理"
                                                       VerticalAlignment="Center" />
                                     </Grid>
                                 </StackPanel>
@@ -3188,6 +3133,7 @@
                                 <ToggleButton Grid.Column="2"
                                               Style="{StaticResource SwitchToggleStyle}"
                                               IsChecked="{Binding CheckForUpdates, Mode=TwoWay}"
+                                              AutomationProperties.Name="启动时检查客户端更新"
                                               VerticalAlignment="Center" />
                             </Grid>
                             <Grid Height="50" Margin="0,4,0,0">
@@ -3209,8 +3155,8 @@
                                                            VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="关闭后保留下载任务" FontSize="14" FontWeight="SemiBold" />
-                                    <TextBlock Text="下次打开后可以继续下载"
+                                    <TextBlock Text="保留已下载文件缓存" FontSize="14" FontWeight="SemiBold" />
+                                    <TextBlock Text="供后续安装、更新或修复复用"
                                                FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,3,0,0" />
@@ -3218,6 +3164,7 @@
                                 <ToggleButton Grid.Column="2"
                                               Style="{StaticResource SwitchToggleStyle}"
                                               IsChecked="{Binding KeepDownloadsAfterClose, Mode=TwoWay}"
+                                              AutomationProperties.Name="保留已下载文件缓存"
                                               VerticalAlignment="Center" />
                             </Grid>
                             <Grid Height="50" Margin="0,4,0,0">
@@ -3248,6 +3195,7 @@
                                 <ToggleButton Grid.Column="2"
                                               Style="{StaticResource SwitchToggleStyle}"
                                               IsChecked="{Binding UseSystemProxy, Mode=TwoWay}"
+                                              AutomationProperties.Name="使用 Windows 系统代理"
                                               VerticalAlignment="Center" />
                             </Grid>
 
@@ -3347,12 +3295,141 @@
                 </Grid>
             </Border>
 
+            <!-- Global Microsoft authentication -->
+            <Border x:Name="MicrosoftSignInOverlay"
+                    Grid.ColumnSpan="3"
+                    Grid.RowSpan="2"
+                    Panel.ZIndex="40"
+                    Background="#990F1110"
+                    FocusManager.IsFocusScope="True"
+                    FocusManager.FocusedElement="{Binding ElementName=CancelMicrosoftSignInButton}"
+                    KeyboardNavigation.TabNavigation="Cycle"
+                    Visibility="{Binding IsMicrosoftSignInVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border Width="520"
+                        Padding="30"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SurfacePanelStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="54" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="44"
+                                    Height="44"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="{StaticResource HechaoRedSoftBrush}"
+                                    BorderBrush="#FFD8B2AD"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
+                                <controls:IconParkIcon Kind="ExternalTransmission"
+                                                       Width="20"
+                                                       Height="20"
+                                                       Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding MicrosoftSignInTitle}"
+                                           FontSize="20"
+                                           FontWeight="Black" />
+                                <TextBlock Text="MICROSOFT / MINECRAFT"
+                                           FontFamily="Segoe UI"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource HechaoRedDarkBrush}"
+                                           Margin="0,5,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1"
+                                   Text="{Binding MicrosoftSignInDescription}"
+                                   FontSize="13"
+                                   LineHeight="22"
+                                   Foreground="{StaticResource InkMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="None"
+                                   Margin="0,24,0,0" />
+
+                        <Border Grid.Row="2"
+                                Margin="0,22,0,0"
+                                Padding="14"
+                                Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="9"
+                                        Height="9"
+                                        Margin="1,2,12,0"
+                                        VerticalAlignment="Top"
+                                        Background="#FF23845B"
+                                        CornerRadius="5" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="浏览器窗口已打开"
+                                               FontSize="13"
+                                               FontWeight="Bold" />
+                                    <TextBlock Text="如果没有看到浏览器，取消本次登录后重新点击绑定按钮。"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkFaintBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,5,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="3" Margin="0,24,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="启动器不会读取或保存你的 Microsoft 密码。"
+                                       FontSize="11"
+                                       Foreground="{StaticResource InkFaintBrush}"
+                                       VerticalAlignment="Center" />
+                            <Button x:Name="CancelMicrosoftSignInButton"
+                                    Grid.Column="1"
+                                    MinWidth="126"
+                                    Height="40"
+                                    Style="{StaticResource BaseButtonStyle}"
+                                    Command="{Binding CancelMicrosoftSignInCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <controls:IconParkIcon Kind="Close"
+                                                           Width="14"
+                                                           Height="14"
+                                                           Margin="0,0,7,0" />
+                                    <TextBlock Text="取消本次登录"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Border>
+
             <!-- Launcher self-update -->
             <Grid x:Name="LauncherUpdateOverlay"
                   Grid.ColumnSpan="3"
                   Grid.RowSpan="2"
                   Panel.ZIndex="50"
                   Background="#990F1110"
+                  FocusManager.IsFocusScope="True"
+                  FocusManager.FocusedElement="{Binding ElementName=InstallLauncherUpdateButton}"
+                  KeyboardNavigation.TabNavigation="Cycle"
                   Visibility="{Binding IsLauncherUpdateVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border x:Name="LauncherUpdateDialog"
                         Width="560"
@@ -3456,7 +3533,9 @@
 
                         <Grid x:Name="LauncherUpdateProgressRegion"
                               Grid.Row="3"
-                              Margin="0,20,0,0">
+                              Margin="0,20,0,0"
+                              Focusable="True"
+                              AutomationProperties.Name="启动器更新状态">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="8" />
                                 <RowDefinition Height="Auto" />
@@ -3488,7 +3567,8 @@
                                     Style="{StaticResource BaseButtonStyle}"
                                     Content="稍后更新"
                                     Command="{Binding DismissLauncherUpdateCommand}" />
-                            <Button Grid.Column="2"
+                            <Button x:Name="InstallLauncherUpdateButton"
+                                    Grid.Column="2"
                                     Height="44"
                                     MinHeight="44"
                                     Padding="18,10"
@@ -3514,7 +3594,8 @@
             </Grid>
 
             <!-- Toast -->
-            <Border Grid.Column="2"
+            <controls:LiveRegionBorder x:Name="ToastLiveRegion"
+                    Grid.Column="2"
                     Grid.Row="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
@@ -3523,9 +3604,13 @@
                     Panel.ZIndex="30"
                     Background="#F01B1A18"
                     CornerRadius="5"
+                    Tag="{Binding ToastSeverity}"
+                    AutomationProperties.Name="{Binding ToastMessage}"
+                    AutomationProperties.ItemStatus="{Binding ToastAutomationStatus}"
+                    AutomationProperties.LiveSetting="Polite"
                     Visibility="{Binding IsToastVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal">
-                    <controls:IconParkIcon Kind="CheckOne"
+                    <controls:IconParkIcon Kind="{Binding ToastIconKind}"
                                            Width="12"
                                            Height="12"
                                            Foreground="#FFFF5A51"
@@ -3536,7 +3621,7 @@
                                FontSize="13"
                                VerticalAlignment="Center" />
                 </StackPanel>
-            </Border>
+            </controls:LiveRegionBorder>
         </Grid>
     </Border>
 </Window>

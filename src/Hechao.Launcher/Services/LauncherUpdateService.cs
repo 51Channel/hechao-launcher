@@ -37,6 +37,8 @@ public interface ILauncherUpdateService
     Task<LauncherUpdatePlan?> CheckAsync(
         CancellationToken cancellationToken = default);
 
+    bool HasPreviousInstallFailure(LauncherUpdatePlan plan) => false;
+
     Task<bool> DownloadAndLaunchUpdaterAsync(
         LauncherUpdatePlan plan,
         IProgress<LauncherUpdateDownloadProgress>? progress = null,
@@ -247,8 +249,21 @@ public sealed class LauncherUpdateService
         catch (Exception exception)
         {
             _failureReporter(stage, exception);
+            LauncherUpdateFailureLog.TryWrite(
+                _updateRoot,
+                stage,
+                exception,
+                plan.LatestVersion.ToString(3));
             throw;
         }
+    }
+
+    internal bool HasPreviousInstallFailure(LauncherUpdatePlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        return LauncherUpdateFailureLog.HasFailedVersion(
+            _updateRoot,
+            plan.LatestVersion.ToString(3));
     }
 
     private static Version ParseVersion(string value, string error)
@@ -289,6 +304,9 @@ public sealed class LauncherUpdateService
         public Task<LauncherUpdatePlan?> CheckAsync(
             CancellationToken cancellationToken = default) =>
             service.CheckAsync(cancellationToken);
+
+        public bool HasPreviousInstallFailure(LauncherUpdatePlan plan) =>
+            service.HasPreviousInstallFailure(plan);
 
         public Task<bool> DownloadAndLaunchUpdaterAsync(
             LauncherUpdatePlan plan,
@@ -442,7 +460,7 @@ internal static class LauncherUpdateBootstrap
                 InvalidDataException or InvalidOperationException or
                 System.ComponentModel.Win32Exception or OperationCanceledException)
         {
-            TryWriteFailure(exception.Message);
+            TryWriteFailure(command.Version, exception.Message);
             var installedPath = ReadInstalledLauncherPath();
             if (installedPath is not null)
             {
@@ -496,12 +514,13 @@ internal static class LauncherUpdateBootstrap
         return File.Exists(path) ? path : null;
     }
 
-    private static void TryWriteFailure(string message)
+    private static void TryWriteFailure(string version, string message)
     {
         LauncherUpdateFailureLog.TryWrite(
             LauncherUpdateFailureLog.GetDefaultUpdateRoot(),
             "install",
-            new InvalidOperationException(message));
+            new InvalidOperationException(message),
+            version);
     }
 
     private static void TryDelete(string path)
@@ -542,7 +561,8 @@ internal static partial class LauncherUpdateFailureLog
     public static void TryWrite(
         string updateRoot,
         string stage,
-        Exception exception)
+        Exception exception,
+        string? targetVersion = null)
     {
         try
         {
@@ -562,6 +582,7 @@ internal static partial class LauncherUpdateFailureLog
             {
                 $"timestamp={DateTimeOffset.UtcNow:O}",
                 $"stage={SanitizeStage(stage)}",
+                $"target-version={SanitizeVersion(targetVersion)}",
                 $"exception={exception.GetType().FullName}",
                 $"http-status={statusCode}",
                 $"hresult=0x{exception.HResult:X8}",
@@ -575,6 +596,38 @@ internal static partial class LauncherUpdateFailureLog
             writeException is IOException or UnauthorizedAccessException or
                 ArgumentException or NotSupportedException)
         {
+        }
+    }
+
+    public static bool HasFailedVersion(string updateRoot, string targetVersion)
+    {
+        try
+        {
+            var normalizedVersion = SanitizeVersion(targetVersion);
+            if (normalizedVersion == "none")
+            {
+                return false;
+            }
+
+            var path = Path.Combine(Path.GetFullPath(updateRoot), FileName);
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            const string prefix = "target-version=";
+            var recordedVersion = File.ReadLines(path)
+                .FirstOrDefault(line => line.StartsWith(prefix, StringComparison.Ordinal));
+            return string.Equals(
+                recordedVersion?[prefix.Length..],
+                normalizedVersion,
+                StringComparison.Ordinal);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                ArgumentException or NotSupportedException)
+        {
+            return false;
         }
     }
 
@@ -599,6 +652,13 @@ internal static partial class LauncherUpdateFailureLog
             .ToArray());
         return string.IsNullOrEmpty(sanitized) ? "unknown" : sanitized;
     }
+
+    private static string SanitizeVersion(string? value) =>
+        Version.TryParse(value, out var version) &&
+        version.Major >= 0 &&
+        string.Equals(version.ToString(3), value, StringComparison.Ordinal)
+            ? version.ToString(3)
+            : "none";
 
     private static string SanitizeMessage(string message)
     {

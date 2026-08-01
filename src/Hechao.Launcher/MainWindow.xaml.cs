@@ -1,8 +1,10 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Hechao.Distribution;
 using Hechao.Launcher.Services;
 using Hechao.Launcher.ViewModels;
@@ -12,6 +14,9 @@ namespace Hechao.Launcher;
 
 public partial class MainWindow : Window
 {
+    private IInputElement? _focusBeforeModal;
+    private bool _modalFocusCaptured;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -61,6 +66,77 @@ public partial class MainWindow : Window
 
         viewModel.CloseRequested += (_, _) => Close();
         DataContext = viewModel;
+        viewModel.PropertyChanged += ViewModel_OnPropertyChanged;
+        Closed += (_, _) => viewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
+    }
+
+    private void ViewModel_OnPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName is
+            nameof(MainWindowViewModel.IsMicrosoftSignInVisible) or
+            nameof(MainWindowViewModel.IsLauncherUpdateVisible) or
+            nameof(MainWindowViewModel.IsLauncherUpdateBusy))
+        {
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.Input,
+                UpdateModalKeyboardFocus);
+        }
+
+        if (eventArgs.PropertyName ==
+            nameof(MainWindowViewModel.ToastAnnouncementRevision))
+        {
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.ContextIdle,
+                ToastLiveRegion.RaiseLiveRegionChanged);
+        }
+    }
+
+    private void UpdateModalKeyboardFocus()
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.IsLauncherUpdateVisible || viewModel.IsMicrosoftSignInVisible)
+        {
+            if (!_modalFocusCaptured)
+            {
+                _focusBeforeModal = Keyboard.FocusedElement;
+                _modalFocusCaptured = true;
+            }
+
+            UIElement target = viewModel.IsLauncherUpdateVisible
+                ? InstallLauncherUpdateButton.IsEnabled
+                    ? InstallLauncherUpdateButton
+                    : LauncherUpdateProgressRegion
+                : CancelMicrosoftSignInButton;
+            target.Focus();
+            Keyboard.Focus(target);
+            return;
+        }
+
+        if (!_modalFocusCaptured)
+        {
+            return;
+        }
+
+        _modalFocusCaptured = false;
+        if (_focusBeforeModal is UIElement previousFocus &&
+            previousFocus.IsVisible &&
+            previousFocus.IsEnabled)
+        {
+            previousFocus.Focus();
+            Keyboard.Focus(previousFocus);
+        }
+        else
+        {
+            Keyboard.ClearFocus();
+        }
+
+        _focusBeforeModal = null;
     }
 
     private void TitleBar_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

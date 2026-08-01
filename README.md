@@ -5,6 +5,10 @@
 > [`docs/LAUNCHER_RELEASE_0.14.1.md`](docs/LAUNCHER_RELEASE_0.14.1.md)。
 > 生产通道已经就绪；本机 `0.14.0 -> 0.14.1` 真实自动升级等待用户亲自重开验收。
 
+> `2026-08-01` 前端布局、无障碍与客户端业务逻辑审查候选已完成，完整解决方案
+> `532/532` 通过；本轮尚未发版或部署。审查记录见
+> [`docs/LAUNCHER_FRONTEND_AUDIT_2026-08-01.md`](docs/LAUNCHER_FRONTEND_AUDIT_2026-08-01.md)。
+
 > `2026-07-31` 服控更新：owl5 已部署 ServerControlAgent `0.2.3`，修复空服暂停后
 > stdout 管道堵塞导致无法关服的问题；owl9 保持 `0.2.1`。发布证据见
 > [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
@@ -63,11 +67,11 @@
   9 个目标、2 个在线代理和 5 个运行中实例；内存设置下次启动生效，不会自动重启服务端。
 - 管理后台可排队四个固定 LuckPerms 全局组的等级变更；大厅代理通过 LuckPerms API 应用，不直接写 MariaDB，也不接受任意控制台命令。
 - 全部认证状态撤销和 UUID 封禁会通过可靠 outbox 联动论坛 `sessionVersion`，使已经签发的论坛 Cookie 失效。
-- 启动器 API 生产版本 `0.24.1` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
+- 启动器 API 生产版本 `0.24.2` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控，管理后台支持从真实运行状态发现服务器。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 私有对象重定向不会把短时 OSS 签名 URL 写入 journal；Nginx 访问日志只保留无查询参数的路径，不记录 Referer，避免密码重置和 OAuth 参数进入日志。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
-API `0.22.0-20260729T144953Z` 已完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.1` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；Activity 零玩家时的 NeoForge 暂停会显式显示为空服暂停，不再误报指标过期。当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。当前开发分支测试为 `.NET 480/480`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`。
+API `0.22.0-20260729T144953Z` 已完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.1` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；Activity 零玩家时的 NeoForge 暂停会显式显示为空服暂停，不再误报指标过期。当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。生产发布基线测试为 `.NET 501/501`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`；本次前端审查候选为 `.NET 532/532`。
 
 API `0.24.2` 与 owl5 服控代理 `0.2.3`、owl9 `0.2.1` 已在生产启用每服 JVM 内存展示、受控修改、目录实际状态同步和运行中服务器发现。九个目标均上报 `Xms`、`Xmx` 与硬上限；服控心跳与命令执行已拆为独立循环，长停止命令不再阻塞整台 VPS 的状态更新。API/代理升级前后五个运行目标 PID 不变，待处理服控操作和命令均为 `0`。发布与内存基线见 [`docs/API_RELEASE_0.24.0.md`](docs/API_RELEASE_0.24.0.md)，目录同步见 [`docs/API_RELEASE_0.24.1.md`](docs/API_RELEASE_0.24.1.md)，服务器发现见 [`docs/API_RELEASE_0.24.2.md`](docs/API_RELEASE_0.24.2.md)，代理修复见 [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
 

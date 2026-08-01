@@ -55,13 +55,15 @@ public sealed record MinecraftProcessExitedEventArgs(
     int? ExitCode,
     DateTimeOffset StartedAt,
     DateTimeOffset ExitedAt,
-    MinecraftProcessExitKind ExitKind = MinecraftProcessExitKind.Natural);
+    MinecraftProcessExitKind ExitKind = MinecraftProcessExitKind.Natural,
+    string? DataRoot = null);
 
 public sealed record MinecraftRunningGame(
     string ProfileId,
     string? ServerId,
     int ProcessId,
-    DateTimeOffset StartedAt);
+    DateTimeOffset StartedAt,
+    string? DataRoot = null);
 
 public enum MinecraftStopPhase
 {
@@ -191,7 +193,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             entry.Key,
             entry.Value.ServerId,
             entry.Value.ProcessId,
-            entry.Value.StartedAt);
+            entry.Value.StartedAt,
+            entry.Value.DataRoot);
     }
 
     public async Task<MinecraftStopResult> StopRunningGameAsync(
@@ -313,7 +316,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                     processId,
                     request.ServerId,
                     executablePath,
-                    startedAt);
+                    startedAt,
+                    Path.GetFullPath(request.DataRoot));
                 if (!_runningProcesses.TryAdd(request.ProfileId, tracked))
                 {
                     TryKillProcess(process);
@@ -326,7 +330,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                     request.ServerId,
                     processId,
                     executablePath,
-                    startedAt));
+                    startedAt,
+                    Path.GetFullPath(request.DataRoot)));
                 process.Exited += (_, _) => HandleProcessExited(
                     request.ProfileId,
                     tracked);
@@ -1135,7 +1140,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
                 persisted.ProcessId,
                 persisted.ServerId,
                 executablePath,
-                startedAt);
+                startedAt,
+                persisted.DataRoot);
             if (!_runningProcesses.TryAdd(persisted.ProfileId, tracked))
             {
                 process.Dispose();
@@ -1230,7 +1236,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             exitCode,
             tracked.StartedAt,
             DateTimeOffset.UtcNow,
-            exitKind));
+            exitKind,
+            tracked.DataRoot));
     }
 
     private static DateTimeOffset GetProcessStartedAt(Process process)
@@ -1397,7 +1404,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         int processId,
         string? serverId,
         string executablePath,
-        DateTimeOffset startedAt)
+        DateTimeOffset startedAt,
+        string? dataRoot)
     {
         private int _exitHandled;
 
@@ -1410,6 +1418,8 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         public string ExecutablePath { get; } = executablePath;
 
         public DateTimeOffset StartedAt { get; } = startedAt;
+
+        public string? DataRoot { get; } = dataRoot;
 
         public bool TryBeginExitHandling() =>
             Interlocked.Exchange(ref _exitHandled, 1) == 0;

@@ -181,13 +181,31 @@ public sealed class LauncherUpdateServiceTests
             temporary.Path,
             "last-update-error.log"));
         var log = string.Join('\n', lines);
-        Assert.Equal(6, lines.Length);
+        Assert.Equal(7, lines.Length);
+        Assert.Contains(lines, line => line == "target-version=none");
         Assert.Contains("stage=download", log, StringComparison.Ordinal);
         Assert.Contains("http-status=403", log, StringComparison.Ordinal);
         Assert.Contains("?<redacted>", log, StringComparison.Ordinal);
         Assert.Contains("Bearer <redacted>", log, StringComparison.Ordinal);
         Assert.DoesNotContain("x-oss-signature", log, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("launcher-secret", log, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FailureLog_IdentifiesOnlyTheFailedTargetVersion()
+    {
+        using var temporary = new TemporaryDirectory();
+        LauncherUpdateFailureLog.TryWrite(
+            temporary.Path,
+            "install",
+            new InvalidOperationException("installer failed"),
+            "0.14.2");
+
+        Assert.True(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.2"));
+        Assert.False(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.3"));
+
+        LauncherUpdateFailureLog.TryDelete(temporary.Path);
+        Assert.False(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.2"));
     }
 
     private static LauncherUpdateRelease CreateRelease(
