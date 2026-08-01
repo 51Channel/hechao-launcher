@@ -26,4 +26,6 @@ public sealed record AdminMfaVerificationResponse(
     IReadOnlyList<string>? RecoveryCodes = null,
     bool RecoveryCodeUsed = false);
 
+public sealed record AdminTrustedDeviceResponse(DateTimeOffset ExpiresAt);
+
 public sealed record AdminCsrfTokenResponse(string RequestToken);

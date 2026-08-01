@@ -63,8 +63,8 @@ function cacheElements() {
         "mfa-verify-form", "mfa-enroll-form", "mfa-code", "mfa-enroll-code",
         "mfa-error", "mfa-logout-button", "begin-enrollment-button",
         "enrollment-content", "mfa-qr-code", "mfa-secret-key",
-        "copy-secret-button", "enrollment-expiry", "console-view",
-        "account-avatar", "account-name", "account-group", "logout-button",
+        "copy-secret-button", "enrollment-expiry", "trust-this-device", "console-view",
+        "account-avatar", "account-name", "account-group", "trust-device-button", "logout-button",
         "breadcrumb-current", "view-title", "last-refreshed", "refresh-button",
         "servers-section", "users-section", "profiles-section",
         "telemetry-section", "runtime-section", "control-section", "alerts-section",
@@ -180,6 +180,7 @@ function cacheElements() {
 function bindEvents() {
     elements["close-tab-button"].addEventListener("click", () => window.close());
     elements["mfa-logout-button"].addEventListener("click", logout);
+    elements["trust-device-button"].addEventListener("click", trustCurrentDeviceFromConsole);
     elements["logout-button"].addEventListener("click", logout);
     elements["mfa-verify-form"].addEventListener("submit", verifyMfa);
     elements["mfa-enroll-form"].addEventListener("submit", completeEnrollment);
@@ -554,9 +555,13 @@ async function verifyMfa(event) {
         if (result.recoveryCodeUsed) {
             showToast("恢复码已使用，请及时补充新的恢复方案");
         }
+        const trustWarning = await tryTrustSelectedDevice();
         elements["mfa-code"].value = "";
         state.session = await api("/v1/admin-auth/session", { csrf: false });
         await enterConsole();
+        if (trustWarning) {
+            showToast(`已完成验证，但本机信任设置失败：${trustWarning}`, true);
+        }
     } catch (error) {
         setInlineError(elements["mfa-error"], error.message);
         elements["mfa-code"].select();
@@ -581,8 +586,48 @@ async function finishRecoverySetup() {
     elements["mfa-secret-key"].value = "";
     elements["mfa-qr-code"].removeAttribute("src");
     elements["mfa-enroll-code"].value = "";
+    const trustWarning = await tryTrustSelectedDevice();
     state.session = await api("/v1/admin-auth/session", { csrf: false });
     await enterConsole();
+    if (trustWarning) {
+        showToast(`已完成验证，但本机信任设置失败：${trustWarning}`, true);
+    }
+}
+
+async function tryTrustSelectedDevice() {
+    if (!elements["trust-this-device"].checked) {
+        return "";
+    }
+
+    try {
+        await trustCurrentDevice(false);
+        return "";
+    } catch (error) {
+        return error.message;
+    }
+}
+
+async function trustCurrentDevice(showConfirmation) {
+    const result = await api("/v1/admin-auth/trusted-device", {
+        method: "POST"
+    });
+    if (showConfirmation) {
+        showToast(`此电脑已受信任至 ${formatDateTime(result.expiresAt)}`);
+    }
+
+    return result;
+}
+
+async function trustCurrentDeviceFromConsole() {
+    const button = elements["trust-device-button"];
+    setBusy(button, true);
+    try {
+        await trustCurrentDevice(true);
+    } catch (error) {
+        showToast(error.message, true);
+    } finally {
+        setBusy(button, false);
+    }
 }
 
 function downloadRecoveryCodes() {
@@ -3782,6 +3827,9 @@ function auditActionText(action) {
         "admin.mfa.enabled": "启用双重验证",
         "admin.mfa.verified": "完成双重验证",
         "admin.mfa.recovery_code_used": "使用恢复码",
+        "admin.trusted_device.created": "信任管理设备",
+        "admin.trusted_device.used": "受信任设备免动态码",
+        "admin.trusted_device.revoked": "取消受信任设备",
         "diagnostic.upload.authorized": "授权诊断上传",
         "diagnostic.upload.completed": "诊断包上传完成",
         "diagnostic.upload.failed": "诊断包上传失败",

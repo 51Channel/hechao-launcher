@@ -360,6 +360,21 @@ form {
     font-weight: 700;
 }
 
+.trusted-device-option {
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    margin-top: 16px;
+    cursor: pointer;
+}
+
+.trusted-device-option input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--brand);
+}
+
 .enrollment-layout {
     display: grid;
     grid-template-columns: 174px minmax(0, 1fr);
@@ -518,7 +533,7 @@ form {
 .sidebar-account {
     min-width: 0;
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 36px;
+    grid-template-columns: 34px minmax(0, 1fr) 36px 36px;
     align-items: center;
     gap: 9px;
     padding: 15px 14px;

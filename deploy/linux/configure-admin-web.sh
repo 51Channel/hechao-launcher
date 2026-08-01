@@ -39,6 +39,7 @@ AdminWeb__DataProtectionKeyPath=$key_path
 AdminWeb__TicketSeconds=90
 AdminWeb__SessionMinutes=30
 AdminWeb__EnrollmentMinutes=10
+AdminWeb__TrustedDeviceDays=30
 AdminWeb__TotpIssuer=Hechao
 EOF
 

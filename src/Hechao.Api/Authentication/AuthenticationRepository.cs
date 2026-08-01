@@ -1577,6 +1577,20 @@ public sealed class AuthenticationRepository(
             adminSessions = await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
+        await using (var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.admin_trusted_devices
+            SET revoked_at = $2
+            WHERE user_id = $1 AND revoked_at IS NULL;
+            """,
+            connection,
+            transaction))
+        {
+            command.Parameters.AddWithValue(userId);
+            command.Parameters.AddWithValue(revokedAt);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
         int adminTickets;
         await using (var command = new NpgsqlCommand(
             """

@@ -7,6 +7,8 @@ namespace Hechao.Api.Admin;
 
 public static class AdminWebEndpoints
 {
+    public const string TrustedDeviceCookieName = "__Host-HechaoAdminTrusted";
+
     public static void MapAdminWebEndpoints(this WebApplication app)
     {
         var auth = app.MapGroup("/v1/admin-auth");
@@ -31,6 +33,10 @@ public static class AdminWebEndpoints
             .AddEndpointFilter<AdminAntiforgeryFilter>()
             .RequireRateLimiting("admin-mfa");
         session.MapPost("/mfa/verify", VerifyMfaAsync)
+            .AddEndpointFilter<AdminAntiforgeryFilter>()
+            .RequireRateLimiting("admin-mfa");
+        session.MapPost("/trusted-device", TrustCurrentDeviceAsync)
+            .RequireAuthorization(AdminAuthorization.PolicyName)
             .AddEndpointFilter<AdminAntiforgeryFilter>()
             .RequireRateLimiting("admin-mfa");
         session.MapPost("/logout", LogoutAsync)
@@ -79,6 +85,7 @@ public static class AdminWebEndpoints
     private static async Task<IResult> RedeemTicketAsync(
         AdminBrowserRedeemRequest request,
         AdminWebSessionRepository repository,
+        AdminTrustedDeviceRepository trustedDevices,
         IOptions<AdminWebOptions> options,
         HttpContext context,
         CancellationToken cancellationToken)
@@ -107,8 +114,27 @@ public static class AdminWebEndpoints
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 
-        SetSessionCookie(context, result.SessionToken, result.State.ExpiresAt);
-        return Results.Ok(ToStatus(result.State));
+        var state = result.State;
+        if (context.Request.Cookies.TryGetValue(TrustedDeviceCookieName, out var trustedToken))
+        {
+            var trustedResult = await trustedDevices.VerifySessionAsync(
+                state,
+                trustedToken,
+                context.Connection.RemoteIpAddress,
+                cancellationToken);
+            if (trustedResult.Status == AdminTrustedDeviceVerificationStatus.Success &&
+                trustedResult.State is not null)
+            {
+                state = trustedResult.State;
+            }
+            else
+            {
+                DeleteTrustedDeviceCookie(context);
+            }
+        }
+
+        SetSessionCookie(context, result.SessionToken, state.ExpiresAt);
+        return Results.Ok(ToStatus(state));
     }
 
     private static IResult GetSession(HttpContext context)
@@ -206,12 +232,24 @@ public static class AdminWebEndpoints
 
     private static async Task<IResult> LogoutAsync(
         AdminWebSessionRepository repository,
+        AdminTrustedDeviceRepository trustedDevices,
         HttpContext context,
         CancellationToken cancellationToken)
     {
         var state = AdminWebSessionAuthenticationHandler.GetState(context);
         if (state is not null)
         {
+            if (context.Request.Cookies.TryGetValue(
+                    TrustedDeviceCookieName,
+                    out var trustedToken))
+            {
+                await trustedDevices.RevokeAsync(
+                    state.Player.UserId,
+                    trustedToken,
+                    context.Connection.RemoteIpAddress,
+                    cancellationToken);
+            }
+
             await repository.RevokeSessionAsync(
                 state,
                 context.Connection.RemoteIpAddress,
@@ -221,7 +259,38 @@ public static class AdminWebEndpoints
         context.Response.Cookies.Delete(
             AdminWebSessionAuthenticationHandler.CookieName,
             CreateCookieOptions(expiresAt: null));
+        DeleteTrustedDeviceCookie(context);
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> TrustCurrentDeviceAsync(
+        AdminTrustedDeviceRepository trustedDevices,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        var state = AdminWebSessionAuthenticationHandler.GetState(context);
+        if (state is null || !state.MfaVerified)
+        {
+            return Results.Forbid();
+        }
+
+        var result = await trustedDevices.CreateAsync(
+            state,
+            context.Connection.RemoteIpAddress,
+            context.Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        if (result is null)
+        {
+            return Results.Problem(
+                title: "无法信任这台电脑",
+                statusCode: StatusCodes.Status409Conflict);
+        }
+
+        context.Response.Cookies.Append(
+            TrustedDeviceCookieName,
+            result.Token,
+            CreateCookieOptions(result.ExpiresAt));
+        return Results.Ok(new AdminTrustedDeviceResponse(result.ExpiresAt));
     }
 
     private static IResult MapMfaVerificationResult(
@@ -290,5 +359,12 @@ public static class AdminWebEndpoints
             IsEssential = true,
             Expires = expiresAt
         };
+    }
+
+    private static void DeleteTrustedDeviceCookie(HttpContext context)
+    {
+        context.Response.Cookies.Delete(
+            TrustedDeviceCookieName,
+            CreateCookieOptions(expiresAt: null));
     }
 }

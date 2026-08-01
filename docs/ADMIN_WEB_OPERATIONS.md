@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.12.3`、API `0.22.0`
+> 源码版本：启动器 `0.14.2`、API `0.25.0`
 > 生产状态：API `0.22.0-20260729T144953Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
 > 管理入口：`https://admin.hechao.world/admin/`
 > 运行边界：现有生产页面继续管理平台目录与只读运行数据；第九个“服控面板”已完成开发，但生产开关默认关闭，必须通过独立最小权限代理控制 Minecraft
@@ -13,7 +13,7 @@
 4. 启动器用系统浏览器打开 `/admin/#ticket=<token>`。fragment 不会随 HTTP 请求、访问日志或 `Referer` 发送。
 5. 页面从地址栏移除 fragment，再以 JSON 将票据提交到 `POST /v1/admin-auth/redeem`。
 6. API 校验票据哈希、过期时间、一次性状态、管理员状态和来源 IP，随后创建独立浏览器会话。
-7. 浏览器只保存 `__Host-HechaoAdmin` Cookie；启动器 Bearer 不进入网页、localStorage、sessionStorage 或 URL 查询参数。
+7. 浏览器保存短期 `__Host-HechaoAdmin` Cookie；管理员显式启用本机信任后，另保存 `__Host-HechaoAdminTrusted`。启动器 Bearer 不进入网页、localStorage、sessionStorage 或 URL 查询参数。
 
 同一管理员最多保留 5 个未撤销会话。默认会话时长 30 分钟。账号被禁用或不再是 `Administrator` 后，下一次请求立即失效。
 
@@ -24,9 +24,17 @@
 - 同一个 TOTP 时间窗口只能成功一次，重复提交会被拒绝。
 - 启用时生成 8 个高熵恢复码，仅在该次响应中显示；数据库只保存 SHA-256。
 - 恢复码使用后立即从数据库事务中删除，不能重复使用。
-- 每个新浏览器会话都必须重新完成 TOTP 或恢复码验证。
+- 未启用本机信任的每个新浏览器会话都必须重新完成 TOTP 或恢复码验证。
 
-恢复码必须离线保存。当前版本没有远程关闭 MFA 或绕过 MFA 的接口；若验证器和全部恢复码同时丢失，应暂停部署并设计带双人复核和审计的恢复流程，不要直接删除生产凭据记录。
+恢复码必须离线保存。本机信任不能关闭或重置 MFA，也不能替代启动器管理员身份；若验证器和全部恢复码同时丢失，应暂停部署并设计带双人复核和审计的恢复流程，不要直接删除生产凭据记录。
+
+### 2.1 受信任的本机
+
+- 只有已经通过 MFA 的管理员浏览器会话，才能通过复选框或侧栏盾牌按钮信任当前浏览器配置文件；默认有效期为 30 天，服务端配置上限为 90 天。
+- 可信令牌是 256 位随机值，只进入 `HttpOnly`、`Secure`、`SameSite=Strict`、Host-only Cookie；PostgreSQL 只保存 SHA-256，不保存明文。
+- 受信任设备仍必须由已登录启动器创建 90 秒一次性管理员票据。可信 Cookie 只能把同一管理员的新后台会话标记为已完成 MFA，不能单独创建管理员身份或通过直接 URL 登录。
+- 每个管理员最多保留 3 个有效可信设备。账号停用、密码修改、撤销全部会话或显式退出后台都会撤销相应可信设备；无痕窗口、其他浏览器配置文件和其他电脑仍要求 MFA。
+- 创建、使用和撤销分别写入 `admin.trusted_device.created`、`admin.trusted_device.used` 和 `admin.trusted_device.revoked` 审计事件，审计数据不包含令牌。
 
 ## 3. 浏览器安全边界
 
@@ -61,6 +69,7 @@ AdminWeb__DataProtectionKeyPath=/var/lib/hechao-launcher-api/data-protection
 AdminWeb__TicketSeconds=90
 AdminWeb__SessionMinutes=30
 AdminWeb__EnrollmentMinutes=10
+AdminWeb__TrustedDeviceDays=30
 AdminWeb__TotpIssuer=Hechao
 ```
 
@@ -99,9 +108,9 @@ location / {
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
-5. 部署当前生产 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、`healthz` 和 `readyz`；部署服控候选后还要确认迁移 20。
+5. 部署当前生产 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、迁移 20、迁移 21、`healthz` 和 `readyz`。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
-7. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存。
+7. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存；显式信任当前电脑后再次从启动器打开后台，确认不再要求动态码。
 8. 用普通成员确认票据端点返回 403。
 9. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。
 10. 验证玩家账号停用/恢复、设备会话撤销、UUID 封禁/解除、最后管理员保护和审计。
@@ -177,7 +186,7 @@ PowerShell、CMD、SSH、任意文件浏览或任意进程终止能力。
 ## 8. 回滚
 
 应用故障时可把 API `current` 链接切回直接回滚目标
-`0.19.0-20260727T005013Z`。迁移 5 至 17 均为加法或兼容变更，旧 API 不读取新增表与
+`0.19.0-20260727T005013Z`。迁移 5 至 21 均为加法或兼容变更，旧 API 不读取新增表与
 字段，回滚时不要删除 MFA、会话、访问规则、UUID 封禁、请求指标、告警或审计记录。
 
-若只需关闭管理后台，先将 `AdminWeb__Enabled=false`，再按 API 标准发布流程重启 `hechao-launcher-api.service`。这只影响后台，不要求也不允许重启大厅、生存服、活动服、Velocity 或其他 Minecraft 服务。
+若只需关闭可信设备功能，先把现有 `launcher.admin_trusted_devices` 行标记为撤销并回滚上一 API；不要删除 MFA 凭据。若需关闭整个管理后台，先将 `AdminWeb__Enabled=false`，再按 API 标准发布流程重启 `hechao-launcher-api.service`。这些操作不要求也不允许重启大厅、生存服、活动服、Velocity 或其他 Minecraft 服务。

@@ -10,6 +10,7 @@ public sealed class AdminWebOptions
     public int TicketSeconds { get; init; } = 90;
     public int SessionMinutes { get; init; } = 30;
     public int EnrollmentMinutes { get; init; } = 10;
+    public int TrustedDeviceDays { get; init; } = 30;
     public string TotpIssuer { get; init; } = "赫朝服务器";
 
     public bool TryGetPublicBaseUri(out Uri baseUri)

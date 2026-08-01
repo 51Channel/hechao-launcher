@@ -55,6 +55,9 @@ builder.Services.AddOptions<AdminWebOptions>()
         options => options.EnrollmentMinutes is >= 5 and <= 30,
         "AdminWeb:EnrollmentMinutes must be between 5 and 30.")
     .Validate(
+        options => options.TrustedDeviceDays is >= 1 and <= 90,
+        "AdminWeb:TrustedDeviceDays must be between 1 and 90.")
+    .Validate(
         options => options.TryGetPublicBaseUri(out _),
         "AdminWeb:PublicBaseUrl must be an HTTPS origin or loopback origin.")
     .Validate(
@@ -456,6 +459,7 @@ builder.Services.AddSingleton<AdminAccountSecurityRepository>();
 builder.Services.AddSingleton<AdminWebTokenGenerator>();
 builder.Services.AddSingleton<AdminTotpService>();
 builder.Services.AddSingleton<AdminWebSessionRepository>();
+builder.Services.AddSingleton<AdminTrustedDeviceRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ProfileManifestStore>();

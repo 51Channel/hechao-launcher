@@ -101,6 +101,11 @@
                 </div>
             </div>
 
+            <label class="trusted-device-option" for="trust-this-device">
+                <input id="trust-this-device" type="checkbox">
+                <span>信任这台电脑</span>
+            </label>
+
             <div id="mfa-error" class="inline-alert" hidden>
                 <img src="/admin/assets/icons/circle-alert.svg" alt="">
                 <span></span>
@@ -172,6 +177,9 @@
                     <strong id="account-name">管理员</strong>
                     <span id="account-group">Administrator</span>
                 </div>
+                <button id="trust-device-button" class="icon-button" type="button" title="信任这台电脑">
+                    <img src="/admin/assets/icons/shield-check.svg" alt="">
+                </button>
                 <button id="logout-button" class="icon-button" type="button" title="退出管理后台">
                     <img src="/admin/assets/icons/log-out.svg" alt="">
                 </button>

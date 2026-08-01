@@ -38,7 +38,8 @@ public sealed class DatabaseMigrator(NpgsqlDataSource dataSource, ILogger<Databa
         new(17, "operational_alerts", "Hechao.Api.Database.Migrations.017_operational_alerts.sql"),
         new(18, "protocol_translation_routes", "Hechao.Api.Database.Migrations.018_protocol_translation_routes.sql"),
         new(19, "internal_server_roles", "Hechao.Api.Database.Migrations.019_internal_server_roles.sql"),
-        new(20, "server_control", "Hechao.Api.Database.Migrations.020_server_control.sql")
+        new(20, "server_control", "Hechao.Api.Database.Migrations.020_server_control.sql"),
+        new(21, "admin_trusted_devices", "Hechao.Api.Database.Migrations.021_admin_trusted_devices.sql")
     ];
 
     internal static IReadOnlyList<int> RegisteredMigrationVersions { get; } =

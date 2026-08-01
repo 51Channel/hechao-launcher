@@ -958,6 +958,17 @@ public sealed class AdminAccountSecurityRepository(
             userId,
             revokedAt,
             cancellationToken);
+        _ = await ExecuteRevocationAsync(
+            connection,
+            transaction,
+            """
+            UPDATE launcher.admin_trusted_devices
+            SET revoked_at = $2
+            WHERE user_id = $1 AND revoked_at IS NULL;
+            """,
+            userId,
+            revokedAt,
+            cancellationToken);
         var adminTickets = await ExecuteRevocationAsync(
             connection,
             transaction,
