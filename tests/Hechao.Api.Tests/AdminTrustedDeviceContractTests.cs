@@ -80,29 +80,34 @@ public sealed class AdminTrustedDeviceContractTests
     [Fact]
     public void Frontend_RequiresExplicitTrustAndProvidesAuthenticatedConsoleAction()
     {
-        var html = ReadRepositoryFile(
+        var mfaView = ReadRepositoryFile(
             "src",
             "Hechao.Api",
-            "wwwroot",
-            "admin",
-            "index.html");
-        var script = ReadRepositoryFile(
+            "AdminWeb",
+            "src",
+            "components",
+            "MfaView.vue");
+        var appShell = ReadRepositoryFile(
             "src",
             "Hechao.Api",
-            "wwwroot",
-            "admin",
-            "admin.js");
+            "AdminWeb",
+            "src",
+            "components",
+            "AppShell.vue");
         var css = ReadRepositoryFile(
             "src",
             "Hechao.Api",
-            "wwwroot",
-            "admin",
+            "AdminWeb",
+            "src",
+            "styles",
             "admin.css");
 
-        Assert.Contains("id=\"trust-this-device\" type=\"checkbox\"", html, StringComparison.Ordinal);
-        Assert.Contains("id=\"trust-device-button\"", html, StringComparison.Ordinal);
-        Assert.Contains("if (!elements[\"trust-this-device\"].checked)", script, StringComparison.Ordinal);
-        Assert.Contains("/v1/admin-auth/trusted-device", script, StringComparison.Ordinal);
+        Assert.Contains("v-model=\"trustDevice\" type=\"checkbox\"", mfaView, StringComparison.Ordinal);
+        Assert.Contains("tryTrustSelectedDevice", mfaView, StringComparison.Ordinal);
+        Assert.Contains("if (!trustDevice.value) return", mfaView, StringComparison.Ordinal);
+        Assert.Contains("/v1/admin-auth/trusted-device", mfaView, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"信任这台电脑\"", appShell, StringComparison.Ordinal);
+        Assert.Contains("/v1/admin-auth/trusted-device", appShell, StringComparison.Ordinal);
         Assert.Contains(".trusted-device-option input", css, StringComparison.Ordinal);
     }
 

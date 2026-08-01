@@ -750,6 +750,9 @@ adminApi.MapGet("/telemetry/summary", GetAdminLauncherTelemetrySummaryAsync);
 adminApi.MapGet("/server-runtime/summary", GetAdminServerRuntimeSummaryAsync);
 adminApi.MapGet("/server-control/overview", GetAdminServerControlOverviewAsync);
 adminApi.MapGet(
+    "/server-control/targets/{serverId}",
+    GetAdminServerControlTargetAsync);
+adminApi.MapGet(
     "/server-control/operations/{operationId:guid}",
     GetAdminServerControlOperationAsync);
 adminApi.MapPost(
@@ -2416,6 +2419,18 @@ async Task<IResult> GetAdminServerControlOverviewAsync(
     Results.Ok(await repository.GetOverviewAsync(
         DateTimeOffset.UtcNow,
         cancellationToken));
+
+async Task<IResult> GetAdminServerControlTargetAsync(
+    string serverId,
+    ServerControlRepository repository,
+    CancellationToken cancellationToken)
+{
+    var detail = await repository.GetTargetDetailAsync(
+        serverId,
+        DateTimeOffset.UtcNow,
+        cancellationToken);
+    return detail is null ? Results.NotFound() : Results.Ok(detail);
+}
 
 async Task<IResult> GetAdminServerControlOperationAsync(
     Guid operationId,

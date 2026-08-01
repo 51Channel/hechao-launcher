@@ -27,6 +27,49 @@
     <RootNamespace>Hechao.Api</RootNamespace>
     <Product>赫朝启动器 API</Product>
     <Version>0.25.0</Version>
+    <AdminWebRoot>$(MSBuildProjectDirectory)/AdminWeb</AdminWebRoot>
+    <AdminWebOutput>$(MSBuildProjectDirectory)/wwwroot/admin</AdminWebOutput>
+    <AdminWebBuildStamp>$(AdminWebRoot)/node_modules/.cache/admin-web-build.stamp</AdminWebBuildStamp>
+    <DefaultItemExcludes>$(DefaultItemExcludes);AdminWeb/node_modules/**;AdminWeb/test-results/**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="AdminWeb/**/*" />
+    <None Remove="AdminWeb/**/*" />
+    <AdminWebSource Include="$(AdminWebRoot)/index.html;
+                             $(AdminWebRoot)/package.json;
+                             $(AdminWebRoot)/package-lock.json;
+                             $(AdminWebRoot)/vite.config.ts;
+                             $(AdminWebRoot)/tsconfig*.json;
+                             $(AdminWebRoot)/scripts/**/*;
+                             $(AdminWebRoot)/src/**/*;
+                             $(AdminWebRoot)/tests/**/*.test.ts;
+                             $(AdminWebRoot)/tests/setup.ts" />
+  </ItemGroup>
+
+  <Target Name="InstallAdminWebDependencies"
+          Condition="'$(SkipAdminWebBuild)' != 'true'"
+          Inputs="$(AdminWebRoot)/package.json;$(AdminWebRoot)/package-lock.json"
+          Outputs="$(AdminWebRoot)/node_modules/.package-lock.json">
+    <Exec WorkingDirectory="$(AdminWebRoot)" Command="npm ci --no-audit --no-fund" />
+  </Target>
+
+  <Target Name="BuildAdminWeb"
+          BeforeTargets="PrepareForBuild;ComputeFilesToPublish"
+          DependsOnTargets="InstallAdminWebDependencies"
+          Condition="'$(SkipAdminWebBuild)' != 'true'"
+          Inputs="@(AdminWebSource)"
+          Outputs="$(AdminWebBuildStamp);$(AdminWebOutput)/index.html">
+    <Exec WorkingDirectory="$(AdminWebRoot)" Command="npm run build" />
+    <MakeDir Directories="$(AdminWebRoot)/node_modules/.cache" />
+    <Touch Files="$(AdminWebBuildStamp)" AlwaysCreate="true" />
+    <ItemGroup>
+      <Content Remove="wwwroot/admin/**/*;$(AdminWebOutput)/**/*" />
+      <Content Include="wwwroot/admin/**/*">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
 
 </Project>

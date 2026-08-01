@@ -254,9 +254,18 @@ SHA-256，明文令牌只保留在对应 Windows VPS 的 DPAPI `LocalMachine` �
 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，发布记录见
 [`API_RELEASE_0.24.0.md`](API_RELEASE_0.24.0.md)。
 
+管理后台的服控读取已拆为两个合同：`GET /v1/admin/server-control/overview` 只返回
+全部目标摘要和活动操作，`GET /v1/admin/server-control/targets/{serverId}` 只返回
+当前目标的命令白名单、控制台尾部和最近 20 条操作。前端不得重新把所有目标日志塞回
+3 秒概览轮询。
+
 管理后台环境配置使用 [`configure-admin-web.sh`](../deploy/linux/configure-admin-web.sh)。脚本会备份旧环境文件、创建只允许 `hechao-api` 访问的 Data Protection 目录，并显式写入启用状态，但不会重启 API。
 
 ## 2. 本地构建
+
+API 项目会自动构建 `src/Hechao.Api/AdminWeb`，因此构建机还必须具备该工程
+`package.json` 约束的 Node.js 与 npm。首次构建或锁文件变化时执行 `npm ci`，
+随后执行 TypeScript 检查与 Vite 生产构建；不要使用旧的手工 `admin.js`。
 
 ```powershell
 dotnet restore src\Hechao.Api\Hechao.Api.csproj -r linux-x64 --source https://api.nuget.org/v3/index.json

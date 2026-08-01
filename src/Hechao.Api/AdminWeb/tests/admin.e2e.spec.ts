@@ -1,0 +1,605 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page, type Request, type Route } from "@playwright/test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const assetRoot = fileURLToPath(new URL("../../wwwroot/admin/assets", import.meta.url));
+const hashOne = "1".repeat(64);
+const hashTwo = "2".repeat(64);
+const migratedRoutes = [
+  ["servers", "服务器目录"],
+  ["users", "玩家与权限"],
+  ["profiles", "客户端档案"],
+  ["telemetry", "运行数据"],
+  ["runtime", "服务状态"],
+  ["control", "服控面板"],
+  ["alerts", "统一告警中心"],
+  ["diagnostics", "玩家诊断包"],
+  ["audit", "审计记录"]
+] as const;
+
+const session = {
+  player: {
+    userId: "11111111-1111-1111-1111-111111111111",
+    minecraftUuid: "22222222-2222-2222-2222-222222222222",
+    minecraftName: "HechaoAdmin",
+    luckPermsPrimaryGroup: "administrator",
+    accessTier: "Administrator",
+    luckPermsSyncedAt: "2026-08-02T03:00:00Z"
+  },
+  mfaConfigured: true,
+  mfaVerified: true,
+  expiresAt: "2026-08-02T08:00:00Z"
+};
+
+function quickSettings(maxPlayers: number) {
+  return {
+    maxPlayers,
+    viewDistance: 10,
+    simulationDistance: 8,
+    difficulty: "normal",
+    whiteList: false,
+    initialMemoryMiB: 2048,
+    maximumMemoryMiB: 4096,
+    maximumAllowedMemoryMiB: 8192
+  };
+}
+
+function controlOverview(requestNumber: number) {
+  return {
+    generatedAt: "2026-08-02T04:00:00Z",
+    agentFreshnessSeconds: 45,
+    targets: [{
+      serverId: "activity",
+      displayName: "活动服",
+      agentId: "owl5",
+      conflictGroup: "owl5-activity-slot",
+      port: 25568,
+      agentConnected: true,
+      lastSeenAt: "2026-08-02T04:00:00Z",
+      online: true,
+      processId: 18888,
+      settings: quickSettings(requestNumber > 1 ? 99 : 30),
+      activeOperation: null
+    }, {
+      serverId: "fanstreet",
+      displayName: "范街活动服",
+      agentId: "owl5",
+      conflictGroup: "owl5-activity-slot",
+      port: 25568,
+      agentConnected: true,
+      lastSeenAt: "2026-08-02T04:00:00Z",
+      online: false,
+      processId: null,
+      settings: quickSettings(40),
+      activeOperation: null
+    }]
+  };
+}
+
+function controlDetail(requestNumber: number) {
+  const lines = Array.from({ length: 80 }, (_, index) =>
+    `[04:${String(index).padStart(2, "0")}:00 INFO] ${requestNumber > 1 ? "refreshed" : "initial"} log line ${index}`
+  );
+  return {
+    generatedAt: "2026-08-02T04:00:00Z",
+    agentFreshnessSeconds: 45,
+    target: {
+      ...controlOverview(requestNumber).targets[0],
+      allowedCommandPrefixes: ["list", "save-all", "whitelist"],
+      consoleTail: lines.join("\n"),
+      consoleCapturedAt: "2026-08-02T04:00:00Z"
+    },
+    recentOperations: []
+  };
+}
+
+const profileSummary = {
+  id: "activity-neoforge-1.21.11",
+  displayName: "活动服 NeoForge",
+  version: "1.0.0",
+  downloadBytes: 524288000,
+  sha256: hashOne,
+  publishedAt: "2026-08-01T08:00:00Z",
+  isActive: true,
+  updatedAt: "2026-08-01T08:00:00Z",
+  revision: 4,
+  releaseCount: 2,
+  channels: [
+    { channel: "Test", manifestSha256: hashTwo, version: "1.1.0", rolloutPercentage: 100, revision: 2, updatedAt: "2026-08-01T08:00:00Z" },
+    { channel: "Gray", manifestSha256: null, version: null, rolloutPercentage: 10, revision: 1, updatedAt: "2026-08-01T08:00:00Z" },
+    { channel: "Production", manifestSha256: hashOne, version: "1.0.0", rolloutPercentage: 100, revision: 3, updatedAt: "2026-08-01T08:00:00Z" }
+  ]
+};
+
+const releases = [
+  { profileId: profileSummary.id, manifestSha256: hashTwo, version: "1.1.0", downloadBytes: 530000000, fileCount: 9200, minecraftVersion: "1.21.11", javaVersion: "25", loader: "NeoForge", loaderVersion: "21.11.42", publishedAt: "2026-08-02T01:00:00Z", isPaused: false, pauseReason: "", revision: 1, createdAt: "2026-08-02T01:00:00Z", createdByDisplayName: "HechaoAdmin" },
+  { profileId: profileSummary.id, manifestSha256: hashOne, version: "1.0.0", downloadBytes: 524288000, fileCount: 9100, minecraftVersion: "1.21.11", javaVersion: "25", loader: "NeoForge", loaderVersion: "21.11.42", publishedAt: "2026-08-01T08:00:00Z", isPaused: false, pauseReason: "", revision: 1, createdAt: "2026-08-01T08:00:00Z", createdByDisplayName: "HechaoAdmin" }
+];
+
+const now = "2026-08-02T04:00:00Z";
+const serverRecords = [{
+  id: "activity",
+  displayName: "活动服",
+  shortName: "活动",
+  iconGlyph: "活",
+  status: "Online",
+  maxPlayers: 30,
+  minecraftVersion: "1.21.11",
+  loader: "NeoForge",
+  minimumTier: "Member",
+  clientProfileId: profileSummary.id,
+  velocityTarget: "activity",
+  allowsProtocolTranslation: false,
+  role: "Player",
+  monitoringEnabled: true,
+  sortOrder: 10,
+  isVisible: true,
+  announcement: "今晚进行活动测试",
+  opensAt: null,
+  closesAt: null,
+  effectiveStatus: "Online",
+  revision: 1,
+  createdAt: now,
+  updatedAt: now,
+  hasControlTarget: true,
+  controlTargetFresh: true,
+  controlReportedOnline: true,
+  controlLastSeenAt: now
+}, {
+  id: "lobby",
+  displayName: "基础设施大厅",
+  shortName: "大厅",
+  iconGlyph: "厅",
+  status: "Closed",
+  maxPlayers: 30,
+  minecraftVersion: "1.21.11",
+  loader: "Paper",
+  minimumTier: "Administrator",
+  clientProfileId: profileSummary.id,
+  velocityTarget: "lobby",
+  allowsProtocolTranslation: false,
+  role: "Infrastructure",
+  monitoringEnabled: true,
+  sortOrder: -100,
+  isVisible: false,
+  announcement: "",
+  opensAt: null,
+  closesAt: null,
+  effectiveStatus: "Closed",
+  revision: 5,
+  createdAt: now,
+  updatedAt: now,
+  hasControlTarget: false,
+  controlTargetFresh: false,
+  controlReportedOnline: null,
+  controlLastSeenAt: null
+}];
+
+const userSummary = {
+  userId: "33333333-3333-3333-3333-333333333333",
+  username: "player-one",
+  displayName: "测试玩家",
+  email: "player@example.test",
+  minecraftUuid: "44444444-4444-4444-4444-444444444444",
+  minecraftName: "TestPlayer",
+  luckPermsPrimaryGroup: "member",
+  accessTier: "Member",
+  luckPermsSyncedAt: now,
+  isDisabled: false,
+  isMinecraftIdentityBanned: false,
+  activeRuleCount: 1,
+  createdAt: now
+};
+
+const accessRule = {
+  userId: userSummary.userId,
+  serverId: "activity",
+  decision: "Allow",
+  reason: "活动测试",
+  expiresAt: null,
+  revision: 2,
+  createdAt: now,
+  updatedAt: now
+};
+
+const accessPreview = {
+  user: userSummary,
+  servers: [{
+    serverId: "activity",
+    serverDisplayName: "活动服",
+    configuredStatus: "Online",
+    effectiveStatus: "Online",
+    isVisible: true,
+    minimumTier: "Member",
+    allowed: true,
+    reason: "AllowedByRule",
+    rule: accessRule
+  }]
+};
+
+const userSecurity = {
+  user: userSummary,
+  launcherSessions: [{
+    sessionId: "55555555-5555-5555-5555-555555555555",
+    createdAt: now,
+    lastSeenAt: now,
+    refreshExpiresAt: "2026-09-02T04:00:00Z",
+    sourceIp: "127.0.0.1"
+  }],
+  activeAdminSessions: 0,
+  pendingAdminTickets: 0,
+  pendingVelocityLaunchGrants: 0,
+  pendingForumSessionRevocations: 0,
+  pendingLuckPermsTierChange: null,
+  minecraftIdentityBan: null
+};
+
+interface MockOptions {
+  onProductionUpdate?: (body: Record<string, unknown>) => void;
+  intercept?: (route: Route, request: Request, path: string) => Promise<boolean>;
+}
+
+async function mockAdminApi(
+  page: Page,
+  options: MockOptions = {}
+): Promise<void> {
+  let controlRequests = 0;
+  let controlDetailRequests = 0;
+  await page.route("**/admin/assets/**", async route => {
+    const relative = decodeURIComponent(new URL(route.request().url()).pathname.split("/admin/assets/")[1] ?? "");
+    const path = join(assetRoot, relative);
+    if (!relative.includes("..") && existsSync(path)) await route.fulfill({ path });
+    else await route.fulfill({ status: 404, body: "not found" });
+  });
+  await page.route("**/v1/**", async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+    if (options.intercept && await options.intercept(route, request, path)) return;
+    if (path === "/v1/admin-auth/session") {
+      await route.fulfill({ json: session });
+    } else if (path === "/v1/admin-auth/csrf") {
+      await route.fulfill({ json: { requestToken: "e2e-csrf" } });
+    } else if (path === "/v1/admin/server-control/overview") {
+      controlRequests += 1;
+      await route.fulfill({ json: controlOverview(controlRequests) });
+    } else if (path === "/v1/admin/server-control/targets/activity") {
+      controlDetailRequests += 1;
+      await route.fulfill({ json: controlDetail(controlDetailRequests) });
+    } else if (path === "/v1/admin/catalog/client-profiles" && request.method() === "GET") {
+      await route.fulfill({ json: [profileSummary] });
+    } else if (path === `/v1/admin/catalog/client-profiles/${profileSummary.id}` && request.method() === "GET") {
+      await route.fulfill({ json: { profile: profileSummary, releases } });
+    } else if (path.endsWith("/channels/Production") && request.method() === "PUT") {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      options.onProductionUpdate?.(body);
+      const updated = {
+        ...profileSummary,
+        version: "1.1.0",
+        sha256: hashTwo,
+        channels: profileSummary.channels.map(channel => channel.channel === "Production"
+          ? { ...channel, manifestSha256: hashTwo, version: "1.1.0", revision: 4 }
+          : channel)
+      };
+      await route.fulfill({ json: { profile: updated, releases } });
+    } else if (path === "/v1/admin/catalog/servers") {
+      await route.fulfill({ json: serverRecords });
+    } else if (path === "/v1/admin/users") {
+      await route.fulfill({ json: [userSummary] });
+    } else if (path === `/v1/admin/users/${userSummary.userId}/access-preview`) {
+      await route.fulfill({ json: accessPreview });
+    } else if (path === `/v1/admin/users/${userSummary.userId}/security`) {
+      await route.fulfill({ json: userSecurity });
+    } else if (path === "/v1/admin/telemetry/summary") {
+      await route.fulfill({ json: {
+        from: "2026-08-01T04:00:00Z",
+        to: "2026-08-02T04:00:00Z",
+        windowHours: Number(url.searchParams.get("hours") ?? 24),
+        eventCount: 128,
+        uniqueUsers: 12,
+        downloads: { attempts: 40, succeeded: 37, failed: 2, canceled: 1, bytes: 1073741824, failureRate: 0.05 },
+        launches: { attempts: 72, succeeded: 68, failed: 3, canceled: 1, bytes: 0, failureRate: 3 / 72 },
+        launcherVersions: [{ launcherVersion: "0.14.2", users: 12 }],
+        profileVersions: [{ profileId: profileSummary.id, profileVersion: "1.0.0", users: 9, events: 44 }],
+        failures: [{ type: "Install", failureCode: "NetworkUnavailable", count: 2 }]
+      } });
+    } else if (path === "/v1/admin/server-runtime/summary") {
+      await route.fulfill({ json: {
+        generatedAt: "2026-08-02T04:00:00Z",
+        freshnessSeconds: 120,
+        targets: [{
+          velocityTarget: "activity",
+          servers: [{ serverId: "activity", displayName: "活动服", isVisible: true }],
+          hasHeartbeat: true,
+          isFresh: true,
+          online: true,
+          onlinePlayers: 8,
+          maxPlayers: 30,
+          softwareVersion: "NeoForge 21.11.42 / Minecraft 1.21.11",
+          protocolVersion: 774,
+          processWorkingSetBytes: 4294967296,
+          processPrivateBytes: 5368709120,
+          processCpuPercent: 31.5,
+          processStartedAt: "2026-08-02T02:00:00Z",
+          diskFreeBytes: 107374182400,
+          diskTotalBytes: 214748364800,
+          tps1m: 20,
+          tps5m: 19.9,
+          tps15m: 19.8,
+          msptAverage: 18.4,
+          gcCollectionTimeMilliseconds: 92,
+          metricsCapturedAt: now,
+          issues: [],
+          collectorInstance: "owl5",
+          capturedAt: now,
+          receivedAt: now
+        }],
+        issues: []
+      } });
+    } else if (path === "/v1/admin/operational-alerts") {
+      await route.fulfill({ json: {
+        generatedAt: "2026-08-02T04:00:00Z",
+        activeCount: 1,
+        criticalCount: 0,
+        warningCount: 1,
+        unacknowledgedCount: 1,
+        alerts: [{
+          fingerprint: "server:activity:disk",
+          code: "ServerDiskLow",
+          source: "Server",
+          severity: "Warning",
+          status: "Active",
+          title: "活动服磁盘余量偏低",
+          summary: "可用空间低于预警线。",
+          openedAt: "2026-08-02T03:00:00Z",
+          lastSeenAt: now,
+          lastTransitionAt: "2026-08-02T03:00:00Z",
+          resolvedAt: null,
+          observationCount: 4,
+          acknowledgedAt: null,
+          acknowledgedBy: null,
+          revision: 1
+        }]
+      } });
+    } else if (path === "/v1/admin/diagnostics") {
+      await route.fulfill({ json: [{
+        uploadId: "abcd1234",
+        userId: userSummary.userId,
+        accountDisplayName: userSummary.displayName,
+        profileId: profileSummary.id,
+        launcherVersion: "0.14.2",
+        size: 2048,
+        sha256: hashOne,
+        uploadedAt: now,
+        expiresAt: "2026-08-16T04:00:00Z"
+      }] });
+    } else if (path === "/v1/admin/audit-logs") {
+      await route.fulfill({ json: [{
+        id: 128,
+        actorUserId: session.player.userId,
+        actorDisplayName: session.player.minecraftName,
+        action: "catalog.server.updated",
+        targetType: "server",
+        targetId: "activity",
+        sourceIp: "127.0.0.1",
+        beforeData: { maxPlayers: 20 },
+        afterData: { maxPlayers: 30 },
+        createdAt: now
+      }] });
+    } else {
+      await route.fulfill({ status: 404, json: { detail: `Unhandled test endpoint: ${request.method()} ${path}` } });
+    }
+  });
+}
+
+test("control polling preserves dirty settings and console reading position", async ({ page }) => {
+  await mockAdminApi(page);
+  await page.goto("/admin/control");
+  await expect(page.locator(".page-heading h1")).toHaveText("服控面板");
+  await expect(page.getByLabel("最大玩家数")).toHaveValue("30");
+
+  await page.getByLabel("最大玩家数").fill("42");
+  await expect(page.getByText("有未保存更改")).toBeVisible();
+
+  const output = page.locator(".control-console-output");
+  await page.getByLabel("跟随末尾").uncheck();
+  await output.evaluate(element => { element.scrollTop = 60; });
+  const before = await output.evaluate(element => element.scrollTop);
+  await page.waitForTimeout(3_300);
+
+  await expect(page.getByLabel("最大玩家数")).toHaveValue("42");
+  const after = await output.evaluate(element => element.scrollTop);
+  expect(Math.abs(after - before)).toBeLessThanOrEqual(2);
+  await page.screenshot({ path: "../../../artifacts/admin-web-control-desktop.png", fullPage: true });
+});
+
+test("every production channel change requires confirmation", async ({ page }) => {
+  let productionBody: Record<string, unknown> | null = null;
+  await mockAdminApi(page, { onProductionUpdate: body => { productionBody = body; } });
+  await page.goto("/admin/profiles");
+  await expect(page.locator(".page-heading h1")).toHaveText("客户端档案");
+  await page.getByRole("button", { name: "管理客户端档案" }).click();
+  await expect(page.locator(".profile-drawer")).toBeVisible();
+
+  const productionCard = page.locator(".profile-channel-card").filter({ hasText: "正式通道" });
+  await productionCard.getByLabel("发布版本").selectOption(hashTwo);
+  await productionCard.getByRole("button", { name: "保存通道" }).click();
+  await expect(page.getByRole("heading", { name: "切换正式版本" })).toBeVisible();
+  await page.getByRole("button", { name: "确认设为正式" }).click();
+
+  await expect.poll(() => productionBody).not.toBeNull();
+  expect(productionBody).toMatchObject({
+    manifestSha256: hashTwo,
+    rolloutPercentage: 100,
+    expectedRevision: 3
+  });
+  await page.screenshot({ path: "../../../artifacts/admin-web-profiles-desktop.png", fullPage: true });
+});
+
+test("server editor recovers from a revision conflict without losing the draft", async ({ page }) => {
+  const updates: Record<string, unknown>[] = [];
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path !== "/v1/admin/catalog/servers/activity" || request.method() !== "PUT") return false;
+      const body = request.postDataJSON() as Record<string, unknown>;
+      updates.push(body);
+      if (updates.length === 1) {
+        await route.fulfill({
+          status: 409,
+          json: {
+            message: "服务器目录已被其他管理员修改，请刷新后重试。",
+            current: { ...serverRecords[0], displayName: "活动服（他人修订）", revision: 2 }
+          }
+        });
+      } else {
+        await route.fulfill({
+          json: { ...serverRecords[0], ...body, revision: 3 }
+        });
+      }
+      return true;
+    }
+  });
+  await page.goto("/admin/servers");
+  await page.getByRole("button", { name: "编辑服务器" }).click();
+  await page.getByLabel("显示名称").fill("活动服（我的草稿）");
+
+  await page.getByRole("button", { name: "保存服务器" }).click();
+  await expect(page.getByText(/服务器已有新修订 r2/)).toBeVisible();
+  await expect(page.getByLabel("显示名称")).toHaveValue("活动服（我的草稿）");
+
+  await page.getByRole("button", { name: "保存服务器" }).click();
+  await expect(page.locator(".server-table")).toBeVisible();
+  expect(updates).toHaveLength(2);
+  expect(updates[0].expectedRevision).toBe(1);
+  expect(updates[1].expectedRevision).toBe(2);
+});
+
+test("profile conflict does not claim stale data is the latest revision", async ({ page }) => {
+  let detailRequests = 0;
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === `/v1/admin/catalog/client-profiles/${profileSummary.id}` && request.method() === "GET") {
+        detailRequests += 1;
+        if (detailRequests > 1) {
+          await route.fulfill({ status: 503, json: { detail: "最新档案暂时不可用。" } });
+          return true;
+        }
+      }
+      if (path === `/v1/admin/catalog/client-profiles/${profileSummary.id}` && request.method() === "PUT") {
+        await route.fulfill({ status: 409, json: { message: "档案已被其他管理员修改。" } });
+        return true;
+      }
+      return false;
+    }
+  });
+  await page.goto("/admin/profiles");
+  await page.getByRole("button", { name: "管理客户端档案" }).click();
+  const profileDrawer = page.locator(".profile-drawer");
+  await profileDrawer.getByLabel("显示名称").fill("活动服 NeoForge 新名称");
+  await profileDrawer.getByRole("button", { name: "保存档案信息" }).click();
+
+  await expect(page.getByText(/最新修订读取失败/)).toBeVisible();
+  await expect(page.getByText(/已载入最新修订/)).toHaveCount(0);
+});
+
+test("access-rule conflict reports when the latest preview cannot be loaded", async ({ page }) => {
+  let previewRequests = 0;
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === `/v1/admin/users/${userSummary.userId}/access-preview` && request.method() === "GET") {
+        previewRequests += 1;
+        if (previewRequests > 1) {
+          await route.fulfill({ status: 503, json: { detail: "最新权限预览暂时不可用。" } });
+          return true;
+        }
+      }
+      if (path === `/v1/admin/users/${userSummary.userId}/access-rules/activity` && request.method() === "PUT") {
+        await route.fulfill({ status: 409, json: { message: "权限规则已被其他管理员修改。" } });
+        return true;
+      }
+      return false;
+    }
+  });
+  await page.goto("/admin/users");
+  await page.getByRole("button", { name: "预览最终权限" }).click();
+  await page.getByRole("button", { name: "编辑单服规则" }).click();
+  await page.getByLabel("原因").fill("保留我的规则草稿");
+  await page.getByRole("button", { name: "保存规则" }).click();
+
+  await expect(page.getByText(/最新修订读取失败/)).toBeVisible();
+  await expect(page.getByLabel("原因")).toHaveValue("保留我的规则草稿");
+});
+
+test("infrastructure servers cannot be restored or converted back to player servers", async ({ page }) => {
+  await mockAdminApi(page);
+  await page.goto("/admin/servers");
+  await page.getByRole("button", { name: "已归档" }).click();
+
+  await expect(page.getByRole("button", { name: "基础设施节点不能恢复" })).toBeDisabled();
+  await page.getByRole("button", { name: "编辑服务器" }).click();
+  await expect(page.getByLabel("服务器角色")).toBeDisabled();
+  await expect(page.getByLabel("允许协议转换")).toBeDisabled();
+});
+
+test("mobile navigation remains scrollable without covering page content", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockAdminApi(page);
+  await page.goto("/admin/servers");
+  await expect(page.locator(".page-heading h1")).toHaveText("服务器目录");
+  const nav = page.locator(".primary-nav");
+  await expect(nav).toBeVisible();
+  expect(await nav.evaluate(element => element.scrollWidth > element.clientWidth)).toBe(true);
+  const headingBox = await page.locator(".page-heading").boundingBox();
+  const topbarBox = await page.locator(".topbar").boundingBox();
+  expect(headingBox && topbarBox && headingBox.y >= topbarBox.y + topbarBox.height).toBe(true);
+  await page.screenshot({ path: "../../../artifacts/admin-web-mobile.png", fullPage: true });
+});
+
+test("all migrated routes remain contained on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockAdminApi(page);
+  for (const [route, heading] of migratedRoutes) {
+    await page.goto(`/admin/${route}`);
+    await expect(page.locator(".page-heading h1")).toHaveText(heading);
+    expect(await page.evaluate(() =>
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )).toBe(true);
+  }
+});
+
+test("all migrated routes render independently without browser errors", async ({ page }) => {
+  const browserErrors: string[] = [];
+  page.on("pageerror", error => browserErrors.push(error.message));
+  page.on("console", message => {
+    if (message.type() === "error") browserErrors.push(message.text());
+  });
+  await mockAdminApi(page);
+  for (const [route, heading] of migratedRoutes) {
+    await page.goto(`/admin/${route}`);
+    await expect(page.locator(".page-heading h1")).toHaveText(heading);
+    expect(await page.evaluate(() =>
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )).toBe(true);
+  }
+  expect(browserErrors).toEqual([]);
+});
+
+test("all migrated routes have no automated WCAG A or AA violations", async ({ page }) => {
+  await mockAdminApi(page);
+  for (const [route, heading] of migratedRoutes) {
+    await page.goto(`/admin/${route}`);
+    await expect(page.locator(".page-heading h1")).toHaveText(heading);
+    const report = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    const blocking = report.violations.map(item => ({
+        route,
+        id: item.id,
+        impact: item.impact,
+        targets: item.nodes.map(node => node.target.join(" "))
+      }));
+    expect(blocking).toEqual([]);
+  }
+});

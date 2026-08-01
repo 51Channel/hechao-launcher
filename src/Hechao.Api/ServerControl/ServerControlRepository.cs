@@ -125,20 +125,16 @@ public sealed class ServerControlRepository(
     {
         await using var connection =
             await dataSource.OpenConnectionAsync(cancellationToken);
-        var operations = await ReadRecentOperationsAsync(
+        var operations = await ReadActiveOperationsAsync(
             connection,
-            limit: 80,
             cancellationToken);
         var activeByTarget = operations
-            .Where(operation =>
-                operation.Status is ServerControlOperationStatus.Pending or
-                    ServerControlOperationStatus.Running)
             .GroupBy(operation => operation.ServerId, StringComparer.Ordinal)
             .ToDictionary(
                 group => group.Key,
                 group => group.OrderByDescending(item => item.RequestedAt).First(),
                 StringComparer.Ordinal);
-        var targets = new List<AdminServerControlTargetRecord>();
+        var targets = new List<AdminServerControlTargetSummaryRecord>();
         const string sql = """
             SELECT target.server_id,
                    COALESCE(server.display_name, target.server_id),
@@ -148,10 +144,7 @@ public sealed class ServerControlRepository(
                    target.last_seen_at,
                    target.reported_online,
                    target.process_id,
-                   target.settings::text,
-                   target.allowed_command_prefixes,
-                   target.console_tail,
-                   target.console_captured_at
+                   target.settings::text
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             ORDER BY COALESCE(server.sort_order, 2147483647),
@@ -164,7 +157,7 @@ public sealed class ServerControlRepository(
         {
             var serverId = reader.GetString(0);
             var lastSeenAt = new DateTimeOffset(reader.GetDateTime(5));
-            targets.Add(new AdminServerControlTargetRecord(
+            targets.Add(new AdminServerControlTargetSummaryRecord(
                 serverId,
                 reader.GetString(1),
                 reader.GetString(2),
@@ -180,18 +173,82 @@ public sealed class ServerControlRepository(
                     : JsonSerializer.Deserialize<ServerQuickSettings>(
                         reader.GetString(8),
                         JsonOptions),
-                reader.GetFieldValue<string[]>(9),
-                reader.GetString(10),
-                reader.IsDBNull(11)
-                    ? null
-                    : new DateTimeOffset(reader.GetDateTime(11)),
                 activeByTarget.GetValueOrDefault(serverId)));
         }
 
         return new AdminServerControlOverview(
             now,
             _options.AgentFreshnessSeconds,
-            targets,
+            targets);
+    }
+
+    public async Task<AdminServerControlTargetDetail?> GetTargetDetailAsync(
+        string serverId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var connection =
+            await dataSource.OpenConnectionAsync(cancellationToken);
+        var operations = await ReadRecentOperationsAsync(
+            connection,
+            serverId,
+            limit: 20,
+            cancellationToken);
+        var activeOperation = operations.FirstOrDefault(operation =>
+            operation.Status is ServerControlOperationStatus.Pending or
+                ServerControlOperationStatus.Running);
+        const string sql = """
+            SELECT target.server_id,
+                   COALESCE(server.display_name, target.server_id),
+                   target.agent_id,
+                   target.conflict_group,
+                   target.port,
+                   target.last_seen_at,
+                   target.reported_online,
+                   target.process_id,
+                   target.settings::text,
+                   target.allowed_command_prefixes,
+                   target.console_tail,
+                   target.console_captured_at
+            FROM launcher.server_control_targets AS target
+            LEFT JOIN launcher.servers AS server ON server.id = target.server_id
+            WHERE target.server_id = $1;
+            """;
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue(serverId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var lastSeenAt = new DateTimeOffset(reader.GetDateTime(5));
+        var target = new AdminServerControlTargetRecord(
+            reader.GetString(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            reader.IsDBNull(3) ? null : reader.GetString(3),
+            reader.GetInt32(4),
+            now - lastSeenAt <=
+                TimeSpan.FromSeconds(_options.AgentFreshnessSeconds),
+            lastSeenAt,
+            reader.GetBoolean(6),
+            reader.IsDBNull(7) ? null : reader.GetInt32(7),
+            reader.IsDBNull(8)
+                ? null
+                : JsonSerializer.Deserialize<ServerQuickSettings>(
+                    reader.GetString(8),
+                    JsonOptions),
+            reader.GetFieldValue<string[]>(9),
+            reader.GetString(10),
+            reader.IsDBNull(11)
+                ? null
+                : new DateTimeOffset(reader.GetDateTime(11)),
+            activeOperation);
+        return new AdminServerControlTargetDetail(
+            now,
+            _options.AgentFreshnessSeconds,
+            target,
             operations);
     }
 
@@ -911,8 +968,45 @@ public sealed class ServerControlRepository(
     }
 
     private static async Task<IReadOnlyList<AdminServerControlOperationRecord>>
+        ReadActiveOperationsAsync(
+            NpgsqlConnection connection,
+            CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT operation.id,
+                   operation.target_server_id,
+                   COALESCE(server.display_name, operation.target_server_id),
+                   operation.action,
+                   operation.status,
+                   operation.reason,
+                   operation.requested_by,
+                   operation.requested_at,
+                   operation.started_at,
+                   operation.completed_at,
+                   operation.result_code,
+                   operation.result_message,
+                   operation.automatically_stopping_server_ids
+            FROM launcher.server_control_operations AS operation
+            LEFT JOIN launcher.servers AS server
+              ON server.id = operation.target_server_id
+            WHERE operation.status IN ('Pending', 'Running')
+            ORDER BY operation.requested_at DESC;
+            """;
+        var result = new List<AdminServerControlOperationRecord>();
+        await using var command = new NpgsqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(ReadOperation(reader));
+        }
+
+        return result;
+    }
+
+    private static async Task<IReadOnlyList<AdminServerControlOperationRecord>>
         ReadRecentOperationsAsync(
             NpgsqlConnection connection,
+            string serverId,
             int limit,
             CancellationToken cancellationToken)
     {
@@ -933,11 +1027,13 @@ public sealed class ServerControlRepository(
             FROM launcher.server_control_operations AS operation
             LEFT JOIN launcher.servers AS server
               ON server.id = operation.target_server_id
+            WHERE operation.target_server_id = $1
             ORDER BY operation.requested_at DESC
-            LIMIT $1;
+            LIMIT $2;
             """;
         var result = new List<AdminServerControlOperationRecord>();
         await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue(serverId);
         command.Parameters.AddWithValue(limit);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))

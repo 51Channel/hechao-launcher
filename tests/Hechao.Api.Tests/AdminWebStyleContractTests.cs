@@ -7,14 +7,7 @@ public sealed class AdminWebStyleContractTests
     [Fact]
     public void ServerControlWhitelist_OverridesGlobalInputDimensions()
     {
-        var repositoryRoot = FindRepositoryRoot();
-        var css = File.ReadAllText(Path.Combine(
-            repositoryRoot,
-            "src",
-            "Hechao.Api",
-            "wwwroot",
-            "admin",
-            "admin.css"));
+        var css = ReadAdminWebSource("src", "styles", "admin.css");
 
         var rowRule = ReadRule(css, ".control-whitelist");
         var checkboxRule = ReadRule(
@@ -33,66 +26,78 @@ public sealed class AdminWebStyleContractTests
     [Fact]
     public void ServerControlMemorySettings_HaveStableMarkupAndResponsiveLayout()
     {
-        var repositoryRoot = FindRepositoryRoot();
-        var webRoot = Path.Combine(
-            repositoryRoot,
-            "src",
-            "Hechao.Api",
-            "wwwroot",
-            "admin");
-        var html = File.ReadAllText(Path.Combine(webRoot, "index.html"));
-        var script = File.ReadAllText(Path.Combine(webRoot, "admin.js"));
-        var css = File.ReadAllText(Path.Combine(webRoot, "admin.css"));
+        var view = ReadAdminWebSource("src", "views", "ControlView.vue");
+        var css = ReadAdminWebSource("src", "styles", "admin.css");
 
-        Assert.Contains("id=\"control-initial-memory\"", html, StringComparison.Ordinal);
-        Assert.Contains("id=\"control-maximum-memory\"", html, StringComparison.Ordinal);
-        Assert.Contains("id=\"control-info-memory\"", html, StringComparison.Ordinal);
-        Assert.Contains("initialMemoryMiB", script, StringComparison.Ordinal);
-        Assert.Contains("maximumAllowedMemoryMiB", script, StringComparison.Ordinal);
+        Assert.Contains("settingsDraft.initialMemoryGiB", view, StringComparison.Ordinal);
+        Assert.Contains("settingsDraft.maximumMemoryGiB", view, StringComparison.Ordinal);
+        Assert.Contains("selectedTarget.settings?.maximumAllowedMemoryMiB", view, StringComparison.Ordinal);
+        Assert.Contains("初始内存（GiB）", view, StringComparison.Ordinal);
+        Assert.Contains("最大内存（GiB）", view, StringComparison.Ordinal);
         Assert.Contains(
-            "grid-template-columns: repeat(6, minmax(0, 1fr));",
-            ReadRule(css, ".control-detail-metrics"),
+            "grid-template-columns: repeat(5, minmax(0, 1fr));",
+            css,
             StringComparison.Ordinal);
     }
 
     [Fact]
     public void ServerDirectory_ExplainsControlDerivedAvailability()
     {
-        var repositoryRoot = FindRepositoryRoot();
-        var script = File.ReadAllText(Path.Combine(
-            repositoryRoot,
-            "src",
-            "Hechao.Api",
-            "wwwroot",
-            "admin",
-            "admin.js"));
+        var view = ReadAdminWebSource("src", "views", "ServersView.vue");
 
-        Assert.Contains("server.hasControlTarget", script, StringComparison.Ordinal);
-        Assert.Contains("server.controlTargetFresh", script, StringComparison.Ordinal);
-        Assert.Contains("server.controlReportedOnline === false", script, StringComparison.Ordinal);
-        Assert.Contains("服控失联", script, StringComparison.Ordinal);
-        Assert.Contains("服务已停止", script, StringComparison.Ordinal);
-        Assert.Contains("scheduleServerPolling(view === \"servers\")", script, StringComparison.Ordinal);
-        Assert.Contains("/v1/admin/catalog/servers", script, StringComparison.Ordinal);
+        Assert.Contains("item.hasControlTarget", view, StringComparison.Ordinal);
+        Assert.Contains("item.controlTargetFresh", view, StringComparison.Ordinal);
+        Assert.Contains("item.controlReportedOnline === false", view, StringComparison.Ordinal);
+        Assert.Contains("服控失联", view, StringComparison.Ordinal);
+        Assert.Contains("服务已停止", view, StringComparison.Ordinal);
+        Assert.Contains("usePolling(servers.refresh, 5_000)", view, StringComparison.Ordinal);
+        Assert.Contains("/v1/admin/catalog/servers", view, StringComparison.Ordinal);
     }
 
     [Fact]
     public void ServerCreation_DiscoversFreshOnlineUncataloguedControlTargets()
     {
-        var repositoryRoot = FindRepositoryRoot();
-        var webRoot = Path.Combine(repositoryRoot, "src", "Hechao.Api", "wwwroot", "admin");
-        var html = File.ReadAllText(Path.Combine(webRoot, "index.html"));
-        var script = File.ReadAllText(Path.Combine(webRoot, "admin.js"));
-        var css = File.ReadAllText(Path.Combine(webRoot, "admin.css"));
+        var view = ReadAdminWebSource("src", "views", "ServersView.vue");
+        var css = ReadAdminWebSource("src", "styles", "admin.css");
 
-        Assert.Contains("id=\"server-discovery-select\"", html, StringComparison.Ordinal);
-        Assert.Contains("id=\"server-discovery-hint\"", html, StringComparison.Ordinal);
-        Assert.Contains("target.agentConnected &&", script, StringComparison.Ordinal);
-        Assert.Contains("target.online &&", script, StringComparison.Ordinal);
-        Assert.Contains("!catalogIds.has(target.serverId)", script, StringComparison.Ordinal);
-        Assert.Contains("applyDiscoveredServerTarget", script, StringComparison.Ordinal);
-        Assert.Contains("runtime?.softwareVersion", script, StringComparison.Ordinal);
+        Assert.Contains("item.agentConnected && item.online", view, StringComparison.Ordinal);
+        Assert.Contains("!ids.has(item.serverId)", view, StringComparison.Ordinal);
+        Assert.Contains("@change=\"applyDiscovery\"", view, StringComparison.Ordinal);
+        Assert.Contains("runtime.value?.targets", view, StringComparison.Ordinal);
+        Assert.Contains("softwareVersion", view, StringComparison.Ordinal);
         Assert.Contains(".server-discovery", css, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuiltAdminEntry_UsesVueModuleBundlesWithoutLegacyScripts()
+    {
+        var webRoot = Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "Hechao.Api",
+            "wwwroot",
+            "admin");
+        var html = File.ReadAllText(Path.Combine(webRoot, "index.html"));
+
+        Assert.Contains("<div id=\"app\"></div>", html, StringComparison.Ordinal);
+        Assert.Contains("src=\"/admin/assets/admin.js\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"/admin/assets/admin.css\"", html, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(webRoot, "admin.js")));
+        Assert.False(File.Exists(Path.Combine(webRoot, "admin.css")));
+        Assert.Empty(Directory.GetFiles(
+            webRoot,
+            "*.map",
+            SearchOption.AllDirectories));
+    }
+
+    private static string ReadAdminWebSource(params string[] segments)
+    {
+        return File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "Hechao.Api",
+            "AdminWeb",
+            Path.Combine(segments)));
     }
 
     private static string ReadRule(string css, string selector)

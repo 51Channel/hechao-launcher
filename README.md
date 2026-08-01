@@ -65,12 +65,13 @@
 - Windows 只读采集器每分钟查询各 Velocity 目标，并可按本机监听端口读取 Java 进程内存、CPU、启动时间和磁盘余量；Paper/Purpur 指标代理只把 TPS、MSPT 与累计 GC 时间原子写入本地 JSON。两者都不持有 RCON、控制台或服务器启停权限。
 - `Administrator` 可从启动器申请 90 秒一次性后台票据；票据只放 URL fragment，兑换后改用 `HttpOnly`、`Secure`、`SameSite=Strict` 的独立浏览器会话，不把启动器 Bearer 交给网页。
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复、公告、开放排期、玩家搜索、访问预览和单服规则，所有变更使用修订号并在同一事务中写入审计日志。
+- 当前仓库中的管理后台已迁移到 Vue 3、TypeScript、Vite 和 Vue Router；九个管理模块按路由拆分并按需加载，ASP.NET Core 构建和发布会自动生成 `wwwroot/admin` 静态产物。本轮候选尚未部署到生产。
 - 服控面板和最小权限 Windows 代理已接入生产：支持优雅启停、冲突服先停后启、
   `server.properties` 与 JVM 内存快捷设置，以及受限 Minecraft 控制台。当前可见
   9 个目标、2 个在线代理和 5 个运行中实例；内存设置下次启动生效，不会自动重启服务端。
 - 管理后台可排队四个固定 LuckPerms 全局组的等级变更；大厅代理通过 LuckPerms API 应用，不直接写 MariaDB，也不接受任意控制台命令。
 - 全部认证状态撤销和 UUID 封禁会通过可靠 outbox 联动论坛 `sessionVersion`，使已经签发的论坛 Cookie 失效。
-- 启动器 API 生产版本 `0.24.2` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控，管理后台支持从真实运行状态发现服务器。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
+- 启动器 API 生产版本 `0.25.0` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控，管理后台支持从真实运行状态发现服务器。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 私有对象重定向不会把短时 OSS 签名 URL 写入 journal；Nginx 访问日志只保留无查询参数的路径，不记录 Referer，避免密码重置和 OAuth 参数进入日志。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
@@ -90,6 +91,7 @@ API `0.24.2` 与 owl5 服控代理 `0.2.3`、owl9 `0.2.1` 已在生产启用每�
 - `src/Hechao.Publisher`：管理员离线生成密钥、内容寻址对象和签名清单，并使用 DPAPI 凭据上传 OSS 对象的命令行工具。
 - `src/Hechao.Backup`：数据库与签名恢复材料的 RSA/AES-GCM 加密信封、私有 OSS 不可覆盖上传和下载复验工具。
 - `src/Hechao.Api`：独立启动器 API、管理员 Web 控制台、MFA、目录 CRUD 与审计；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
+- `src/Hechao.Api/AdminWeb`：Vue 3 + TypeScript + Vite 管理后台源码、Vitest 单元测试和 Playwright 浏览器测试；`wwwroot/admin` 只是构建产物。
 - `src/Hechao.StatusCollector`：游戏 VPS 上的只读 Minecraft 状态采集器，使用机器级 DPAPI 保护内部令牌。
 - `src/Hechao.ServerControlAgent`：游戏 VPS 上的结构化最小权限服控代理；只使用固定
   计划任务、Minecraft 控制台桥和白名单设置字段。
@@ -123,6 +125,20 @@ dotnet publish src\Hechao.StatusCollector\Hechao.StatusCollector.csproj -c Relea
 .\src\Hechao.VelocityAuthorizer\gradlew.bat -p src\Hechao.ServerMetricsAgent clean test jar --no-daemon
 .\src\Hechao.VelocityAuthorizer\gradlew.bat -p src\Hechao.LobbyGuard clean test jar --no-daemon
 ```
+
+单独开发或验证管理后台：
+
+```powershell
+Set-Location src\Hechao.Api\AdminWeb
+npm ci
+npm run typecheck
+npm test
+npm run test:e2e
+npm run build
+```
+
+`dotnet build` 和 `dotnet publish` 会自动执行管理后台依赖恢复与生产构建。不要直接修改
+`src\Hechao.Api\wwwroot\admin\assets\admin.js`、分块脚本或 `admin.css`。
 
 ## 接入顺序
 

@@ -1,9 +1,10 @@
 # 管理员 Web 控制台与 MFA
 
 > 源码版本：启动器 `0.14.2`、API `0.25.0`
-> 生产状态：API `0.22.0-20260729T144953Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
+> 生产状态：API `0.25.0` 已部署且 `AdminWeb__Enabled=true`；真实管理员已于 2026-07-27 完成首次 MFA 登记
 > 管理入口：`https://admin.hechao.world/admin/`
-> 运行边界：现有生产页面继续管理平台目录与只读运行数据；第九个“服控面板”已完成开发，但生产开关默认关闭，必须通过独立最小权限代理控制 Minecraft
+> 前端状态：生产仍使用既有原生页面；仓库中的 Vue 3 候选已完成迁移和本地验证，本轮尚未部署生产
+> 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
 
@@ -45,6 +46,34 @@
 - 响应统一使用 `Cache-Control: no-store`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer` 和 `X-Content-Type-Options: nosniff`。
 - MFA 尝试按来源 IP 限制为 5 分钟 10 次，票据创建和兑换按来源 IP 限制为每分钟 10 次。
 - TOTP 密钥使用 ASP.NET Core Data Protection 加密后写入 PostgreSQL；Data Protection key ring 不得放进 Git 或发布目录。
+
+### 3.1 Vue 前端工程
+
+管理后台源码位于 `src/Hechao.Api/AdminWeb`，使用 Vue 3、TypeScript、Vite 和
+Vue Router。九个页面分别对应 `/admin/servers`、`users`、`profiles`、
+`telemetry`、`runtime`、`control`、`alerts`、`diagnostics` 和 `audit`。
+ASP.NET Core 使用 `/admin/{*path:nonfile}` 回退到 Vue 入口，因此刷新深层路由仍由
+同一应用接管。
+
+生产构建输出到 `src/Hechao.Api/wwwroot/admin`。源码映射已关闭，生成的 JavaScript、
+分块脚本和 CSS 不得手工修改；应修改 `AdminWeb/src` 后重新构建。`.csproj` 会在
+`dotnet build` 和 `dotnet publish` 前执行 `npm ci` 与 `npm run build`，发布目录仍只
+包含构建后的静态资源，不包含 `node_modules`、测试结果或前端源码。
+
+独立验证命令必须在 PowerShell 7 中执行：
+
+```powershell
+Set-Location src\Hechao.Api\AdminWeb
+npm ci
+npm run typecheck
+npm test
+npm run test:e2e
+npm run build
+```
+
+Playwright 覆盖九个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
+服控轮询期间的脏表单和控制台阅读位置、正式通道确认，以及修订冲突恢复。API 测试
+另验证静态资源 MIME、`/admin/control` 深层路由、Host 锁定和安全响应头。
 
 ## 4. 配置
 
@@ -110,11 +139,12 @@ location / {
 4. 创建并备份 Data Protection key ring。
 5. 部署当前生产 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、迁移 20、迁移 21、`healthz` 和 `readyz`。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
-7. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存；显式信任当前电脑后再次从启动器打开后台，确认不再要求动态码。
-8. 用普通成员确认票据端点返回 403。
-9. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。
-10. 验证玩家账号停用/恢复、设备会话撤销、UUID 封禁/解除、最后管理员保护和审计。
-11. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
+7. 验证 `/admin/servers`、`/admin/control` 和 `/admin/audit` 直接刷新均返回 Vue 入口，浏览器控制台没有资源 404。
+8. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存；显式信任当前电脑后再次从启动器打开后台，确认不再要求动态码。
+9. 用普通成员确认票据端点返回 403。
+10. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。
+11. 验证玩家账号停用/恢复、设备会话撤销、UUID 封禁/解除、最后管理员保护和审计。
+12. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
 
 API `0.20.0` 已生产部署，管理后台开关已启用。2026-07-27 的真实登记由管理员
 在启动器生成的一次性浏览器会话中完成；生产数据库核对结果为 MFA 凭据 `1`、
@@ -176,6 +206,12 @@ TLS 证书和异地备份。平台监控器只在告警变化或恢复时发送�
 第九个“服控面板”支持结构化启动、停止和重启、冲突服先停后启、五项
 `server.properties` 快捷设置、受限 Minecraft 控制台和操作历史。它不提供
 PowerShell、CMD、SSH、任意文件浏览或任意进程终止能力。
+
+Vue 页面每 3 秒读取轻量的 `GET /v1/admin/server-control/overview`，该接口只返回
+目标摘要和进行中的操作。当前选中服务器的控制台尾部、命令白名单和最近 20 条操作
+由 `GET /v1/admin/server-control/targets/{serverId}` 单独读取，避免每次轮询携带所有
+服务器日志和全局历史。部署 API 与静态页面之间存在短暂版本交错时，已打开的原生旧
+页面会把缺失字段按空值处理并暂时隐藏历史；刷新页面后即进入 Vue 版本。
 
 生产部署必须先保持 `ServerControl__Enabled=false`。两台游戏 VPS 的真实目录、
 端口、计划任务、冲突组和控制台桥完成只读盘点后，只能使用专门的无玩家测试目标

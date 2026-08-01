@@ -65,6 +65,19 @@ public sealed record AdminServerControlOperationRecord(
     string? ResultMessage,
     IReadOnlyList<string> AutomaticallyStoppingServerIds);
 
+public sealed record AdminServerControlTargetSummaryRecord(
+    string ServerId,
+    string DisplayName,
+    string AgentId,
+    string? ConflictGroup,
+    int Port,
+    bool AgentConnected,
+    DateTimeOffset LastSeenAt,
+    bool Online,
+    int? ProcessId,
+    ServerQuickSettings? Settings,
+    AdminServerControlOperationRecord? ActiveOperation);
+
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
     string DisplayName,
@@ -84,7 +97,12 @@ public sealed record AdminServerControlTargetRecord(
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
     int AgentFreshnessSeconds,
-    IReadOnlyList<AdminServerControlTargetRecord> Targets,
+    IReadOnlyList<AdminServerControlTargetSummaryRecord> Targets);
+
+public sealed record AdminServerControlTargetDetail(
+    DateTimeOffset GeneratedAt,
+    int AgentFreshnessSeconds,
+    AdminServerControlTargetRecord Target,
     IReadOnlyList<AdminServerControlOperationRecord> RecentOperations);
 
 public sealed record AdminServerControlQueueResult(
