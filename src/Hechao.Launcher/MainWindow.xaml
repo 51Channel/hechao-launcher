@@ -22,7 +22,8 @@
         TextOptions.TextRenderingMode="ClearType"
         TextOptions.TextHintingMode="Fixed"
         UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        SnapsToDevicePixels="True"
+        PreviewKeyDown="MainWindow_OnPreviewKeyDown">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
                             ResizeBorderThickness="6"
@@ -79,10 +80,11 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Margin="8,16,8,0">
-                        <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
-                                IsChecked="{Binding IsServersPage, Mode=OneWay}"
-                                Command="{Binding ShowServersCommand}"
-                                ToolTip="服务器大厅">
+                    <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
+                                  IsChecked="{Binding IsServersPage, Mode=TwoWay}"
+                                  Command="{Binding ShowServersCommand}"
+                                  ToolTip="服务器大厅"
+                                  AutomationProperties.Name="服务器大厅">
                             <StackPanel>
                                 <controls:IconParkIcon Kind="Server"
                                                        Width="20"
@@ -95,10 +97,11 @@
                                            HorizontalAlignment="Center" />
                             </StackPanel>
                         </ToggleButton>
-                        <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
-                                IsChecked="{Binding IsDownloadsPage, Mode=OneWay}"
-                                Command="{Binding ShowDownloadsCommand}"
-                                ToolTip="下载中心">
+                    <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
+                                  IsChecked="{Binding IsDownloadsPage, Mode=TwoWay}"
+                                  Command="{Binding ShowDownloadsCommand}"
+                                  ToolTip="下载中心"
+                                  AutomationProperties.Name="下载中心">
                             <StackPanel>
                                 <controls:IconParkIcon Kind="Download"
                                                        Width="20"
@@ -110,10 +113,11 @@
                                            HorizontalAlignment="Center" />
                             </StackPanel>
                         </ToggleButton>
-                        <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
-                                IsChecked="{Binding IsActivitiesPage, Mode=OneWay}"
-                                Command="{Binding ShowActivitiesCommand}"
-                                ToolTip="活动服目录">
+                    <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
+                                  IsChecked="{Binding IsActivitiesPage, Mode=TwoWay}"
+                                  Command="{Binding ShowActivitiesCommand}"
+                                  ToolTip="活动服目录"
+                                  AutomationProperties.Name="活动服目录">
                             <StackPanel>
                                 <controls:IconParkIcon Kind="Calendar"
                                                        Width="20"
@@ -125,10 +129,11 @@
                                            HorizontalAlignment="Center" />
                             </StackPanel>
                         </ToggleButton>
-                        <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
-                                IsChecked="{Binding IsAccountPage, Mode=OneWay}"
-                                Command="{Binding ShowAccountCommand}"
-                                ToolTip="{Binding AccountActionTooltip}">
+                    <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
+                                  IsChecked="{Binding IsAccountPage, Mode=TwoWay}"
+                                  Command="{Binding ShowAccountCommand}"
+                                  ToolTip="{Binding AccountActionTooltip}"
+                                  AutomationProperties.Name="赫朝账户">
                             <StackPanel>
                                 <controls:IconParkIcon Kind="User"
                                                        Width="20"
@@ -140,10 +145,11 @@
                                            HorizontalAlignment="Center" />
                             </StackPanel>
                         </ToggleButton>
-                        <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
-                                IsChecked="{Binding IsSettingsPage, Mode=OneWay}"
-                                Command="{Binding ShowSettingsPageCommand}"
-                                ToolTip="启动器设置">
+                    <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
+                                  IsChecked="{Binding IsSettingsPage, Mode=TwoWay}"
+                                  Command="{Binding ShowSettingsPageCommand}"
+                                  ToolTip="启动器设置"
+                                  AutomationProperties.Name="启动器设置">
                             <StackPanel>
                                 <controls:IconParkIcon Kind="SettingTwo"
                                                        Width="20"
@@ -181,6 +187,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="106" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="142" />
                     </Grid.RowDefinitions>
@@ -211,17 +218,59 @@
                                 VerticalAlignment="Bottom" />
                     </Grid>
 
-                    <ListBox Grid.Row="1"
+                    <controls:LiveRegionBorder x:Name="ServerCatalogStatusLiveRegion"
+                                               Grid.Row="1"
+                                               Margin="16,0,16,2"
+                                               Padding="12,10"
+                                               Background="{StaticResource StripBrush}"
+                                               BorderBrush="{StaticResource BorderBrush}"
+                                               BorderThickness="1"
+                                               CornerRadius="4"
+                                               AutomationProperties.Name="服务器目录状态"
+                                               AutomationProperties.ItemStatus="{Binding CatalogStatusMessage}"
+                                               AutomationProperties.LiveSetting="Polite"
+                                               Visibility="{Binding IsCatalogStatusVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding CatalogStatusMessage}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource InkMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    MinWidth="62"
+                                    Height="30"
+                                    Margin="10,0,0,0"
+                                    Padding="10,4"
+                                    Style="{StaticResource BaseButtonStyle}"
+                                    Content="重试"
+                                    Command="{Binding RefreshCommand}"
+                                    AutomationProperties.Name="重新加载服务器目录" />
+                        </Grid>
+                    </controls:LiveRegionBorder>
+
+                    <ListBox Grid.Row="2"
                              Margin="10,10,10,12"
                              BorderThickness="0"
                              Background="Transparent"
                              ItemsSource="{Binding Servers}"
                              SelectedItem="{Binding SelectedServer, Mode=TwoWay}"
                              IsEnabled="{Binding CanSelectServer}"
-                             ItemContainerStyle="{StaticResource ServerListItemStyle}"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto">
-                        <ListBox.ItemTemplate>
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 AutomationProperties.Name="服务器目录">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem"
+                                       BasedOn="{StaticResource ServerListItemStyle}">
+                                    <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+                                    <Setter Property="AutomationProperties.ItemStatus" Value="{Binding Status}" />
+                                    <Setter Property="AutomationProperties.HelpText" Value="{Binding MinecraftVersion}" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type contracts:ServerSummary}">
                                 <Grid Height="84">
                                     <Grid.ColumnDefinitions>
@@ -338,7 +387,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <Border Grid.Row="2"
+                    <Border Grid.Row="3"
                             Margin="16,0"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="0,1,0,0">
@@ -485,14 +534,14 @@
                             Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Grid Width="46" Height="64">
-                        <Button Style="{StaticResource QuietIconButtonStyle}"
-                                Width="38"
-                                Height="38"
-                                Content="&#xE7F4;"
-                                Command="{Binding ToggleNotificationsCommand}"
-                                ToolTip="通知"
-                                AutomationProperties.Name="通知"
-                                VerticalAlignment="Center" />
+                        <ToggleButton Style="{StaticResource QuietIconToggleButtonStyle}"
+                                      Width="38"
+                                      Height="38"
+                                      Content="&#xE7F4;"
+                                      IsChecked="{Binding IsNotificationsOpen, Mode=TwoWay}"
+                                      ToolTip="通知中心"
+                                      AutomationProperties.Name="通知中心"
+                                      VerticalAlignment="Center" />
                         <Ellipse Width="6"
                                  Height="6"
                                  Fill="{StaticResource HechaoRedBrush}"
@@ -513,21 +562,24 @@
                             Background="{StaticResource BorderBrush}"
                             Margin="4,0,6,0"
                             VerticalAlignment="Center" />
-                    <Button Style="{StaticResource TitleBarButtonStyle}"
-                            Height="64"
-                            Content="&#xE921;"
-                            Click="MinimizeButton_OnClick"
-                            ToolTip="最小化" />
-                    <Button Style="{StaticResource TitleBarButtonStyle}"
-                            Height="64"
-                            Content="&#xE922;"
-                            Click="MaximizeButton_OnClick"
-                            ToolTip="最大化或还原" />
-                    <Button Style="{StaticResource CloseButtonStyle}"
-                            Height="64"
-                            Content="&#xE8BB;"
-                            Click="CloseButton_OnClick"
-                            ToolTip="关闭" />
+                        <Button Style="{StaticResource TitleBarButtonStyle}"
+                                Height="64"
+                                Content="&#xE921;"
+                                Click="MinimizeButton_OnClick"
+                                ToolTip="最小化"
+                                AutomationProperties.Name="最小化窗口" />
+                        <Button Style="{StaticResource TitleBarButtonStyle}"
+                                Height="64"
+                                Content="&#xE922;"
+                                Click="MaximizeButton_OnClick"
+                                ToolTip="最大化或还原"
+                                AutomationProperties.Name="最大化或还原窗口" />
+                        <Button Style="{StaticResource CloseButtonStyle}"
+                                Height="64"
+                                Content="&#xE8BB;"
+                                Click="CloseButton_OnClick"
+                                ToolTip="关闭"
+                                AutomationProperties.Name="关闭启动器" />
                 </StackPanel>
 
                 <Border Grid.ColumnSpan="2"
@@ -735,13 +787,14 @@
                                    Foreground="{StaticResource InkMutedBrush}"
                                    VerticalAlignment="Center"
                                    Margin="14,0" />
-                        <Button Grid.Column="4"
-                                Style="{StaticResource QuietIconButtonStyle}"
-                                Width="36"
-                                Height="36"
-                                Content="&#xE8A7;"
-                                Command="{Binding ToggleNotificationsCommand}"
-                                ToolTip="查看全部通知" />
+                        <ToggleButton Grid.Column="4"
+                                      Style="{StaticResource QuietIconToggleButtonStyle}"
+                                      Width="36"
+                                      Height="36"
+                                      Content="&#xE8A7;"
+                                      IsChecked="{Binding IsNotificationsOpen, Mode=TwoWay}"
+                                      ToolTip="查看全部通知"
+                                      AutomationProperties.Name="通知中心" />
                     </Grid>
                 </Border>
 
@@ -905,12 +958,13 @@
                                                FontWeight="Bold"
                                                HorizontalAlignment="Right" />
                                 </Grid>
-                                <controls:AnimatedProgressBar Grid.Row="1"
-                                                              Style="{StaticResource HechaoProgressBarStyle}"
-                                                              Minimum="0"
-                                                              Maximum="100"
-                                                              Value="{Binding UpdateProgress, Mode=OneWay}"
-                                                              Margin="0,9,0,0" />
+                            <controls:AnimatedProgressBar Grid.Row="1"
+                                                          Style="{StaticResource HechaoProgressBarStyle}"
+                                                          Minimum="0"
+                                                          Maximum="100"
+                                                          Value="{Binding UpdateProgress, Mode=OneWay}"
+                                                          Margin="0,9,0,0"
+                                                          AutomationProperties.Name="客户端准备进度" />
                                 <TextBlock Grid.Row="2"
                                            Text="{Binding ClientStatusText}"
                                            FontSize="11"
@@ -933,18 +987,27 @@
                                     BorderThickness="1"
                                     CornerRadius="4">
                                 <Grid Margin="12,0,4,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="34" />
+                                    </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding ClientDirectory}"
                                                FontFamily="Consolas"
                                                FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding ClientDirectory}"
+                                               AutomationProperties.HelpText="{Binding ClientDirectory}"
                                                VerticalAlignment="Center" />
-                                    <Button HorizontalAlignment="Right"
+                                    <Button Grid.Column="1"
+                                            HorizontalAlignment="Right"
                                             Style="{StaticResource QuietIconButtonStyle}"
                                             Width="34"
                                             Height="34"
                                             Content="&#xE838;"
                                             Command="{Binding OpenClientDirectoryCommand}"
-                                            ToolTip="打开游戏数据目录" />
+                                            ToolTip="打开游戏数据目录"
+                                            AutomationProperties.Name="打开游戏数据目录" />
                                 </Grid>
                             </Border>
                         </Grid>
@@ -965,6 +1028,7 @@
                                     Margin="0,0,4,0"
                                     IsEnabled="{Binding CanRollbackSelectedProfile}"
                                     ToolTip="{Binding RollbackProfileToolTip}"
+                                    AutomationProperties.Name="回滚客户端"
                                     Click="RollbackProfileButton_OnClick">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="History"
@@ -981,7 +1045,8 @@
                                     Height="42"
                                     Margin="4,0"
                                     Command="{Binding RepairCommand}"
-                                    ToolTip="校验并修复当前客户端">
+                                    ToolTip="校验并修复当前客户端"
+                                    AutomationProperties.Name="校验并修复客户端">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="Repair"
                                                            Width="14"
@@ -998,6 +1063,7 @@
                                     Margin="4,0"
                                     IsEnabled="{Binding CanDeleteSelectedProfile}"
                                     ToolTip="{Binding DeleteProfileToolTip}"
+                                    AutomationProperties.Name="删除客户端"
                                     Click="DeleteProfileButton_OnClick">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="Delete"
@@ -1012,9 +1078,10 @@
                              <Button Grid.Column="3"
                                      Style="{StaticResource BaseButtonStyle}"
                                      Height="42"
-                                     Margin="4,0,0,0"
-                                     Command="{Binding ShowSettingsPageCommand}"
-                                     ToolTip="打开客户端设置">
+                                    Margin="4,0,0,0"
+                                    Command="{Binding ShowSettingsPageCommand}"
+                                    ToolTip="打开客户端设置"
+                                    AutomationProperties.Name="打开客户端设置">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="SettingTwo"
                                                            Width="14"
@@ -1128,10 +1195,11 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <Button Grid.Column="0"
-                                            Height="38"
-                                            MinHeight="0"
-                                            Margin="0,0,4,0"
-                                            Command="{Binding UseManagedJavaCommand}">
+                                        Height="38"
+                                        MinHeight="0"
+                                        Margin="0,0,4,0"
+                                        Command="{Binding UseManagedJavaCommand}"
+                                        AutomationProperties.Name="使用客户端自带 Java">
                                         <Button.Style>
                                             <Style TargetType="Button"
                                                    BasedOn="{StaticResource BaseButtonStyle}">
@@ -1153,10 +1221,11 @@
                                                    FontWeight="SemiBold" />
                                     </Button>
                                     <Button Grid.Column="1"
-                                            Height="38"
-                                            MinHeight="0"
-                                            Margin="4,0,0,0"
-                                            Click="ChooseProfileJavaButton_OnClick">
+                                        Height="38"
+                                        MinHeight="0"
+                                        Margin="4,0,0,0"
+                                        Click="ChooseProfileJavaButton_OnClick"
+                                        AutomationProperties.Name="使用自定义 Java">
                                         <Button.Style>
                                             <Style TargetType="Button"
                                                    BasedOn="{StaticResource BaseButtonStyle}">
@@ -1196,13 +1265,16 @@
                                                    FontSize="10"
                                                    Foreground="{StaticResource InkMutedBrush}"
                                                    TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding SelectedProfileJavaPathText}"
+                                                   AutomationProperties.HelpText="{Binding SelectedProfileJavaPathText}"
                                                    VerticalAlignment="Center" />
                                         <Button Grid.Column="1"
                                                 Width="26"
                                                 Height="26"
                                                 Style="{StaticResource QuietIconButtonStyle}"
                                                 Click="ChooseProfileJavaButton_OnClick"
-                                                ToolTip="选择自定义 Java">
+                                                ToolTip="选择自定义 Java"
+                                                AutomationProperties.Name="选择自定义 Java">
                                             <controls:IconParkIcon Kind="FolderOpen"
                                                                    Width="12"
                                                                    Height="12" />
@@ -1224,7 +1296,8 @@
                                          Style="{StaticResource MemorySegmentListStyle}"
                                          ItemContainerStyle="{StaticResource MemorySegmentItemStyle}"
                                          ItemsSource="{Binding MemoryOptions}"
-                                         SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                         SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="当前客户端游戏内存" />
                             </Grid>
 
                         </Grid>
@@ -1320,12 +1393,13 @@
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Button Style="{StaticResource QuietIconButtonStyle}"
-                            Width="46"
-                            Height="64"
-                            Content="&#xE7F4;"
-                            Command="{Binding ToggleNotificationsCommand}"
-                            ToolTip="通知" />
+                    <ToggleButton Style="{StaticResource QuietIconToggleButtonStyle}"
+                                  Width="46"
+                                  Height="64"
+                                  Content="&#xE7F4;"
+                                  IsChecked="{Binding IsNotificationsOpen, Mode=TwoWay}"
+                                  ToolTip="通知中心"
+                                  AutomationProperties.Name="通知中心" />
                     <Border Width="1"
                             Height="24"
                             Background="{StaticResource BorderBrush}"
@@ -1335,17 +1409,20 @@
                             Height="64"
                             Content="&#xE921;"
                             Click="MinimizeButton_OnClick"
-                            ToolTip="最小化" />
+                            ToolTip="最小化"
+                            AutomationProperties.Name="最小化窗口" />
                     <Button Style="{StaticResource TitleBarButtonStyle}"
                             Height="64"
                             Content="&#xE922;"
                             Click="MaximizeButton_OnClick"
-                            ToolTip="最大化或还原" />
+                            ToolTip="最大化或还原"
+                            AutomationProperties.Name="最大化或还原窗口" />
                     <Button Style="{StaticResource CloseButtonStyle}"
                             Height="64"
                             Content="&#xE8BB;"
                             Click="CloseButton_OnClick"
-                            ToolTip="关闭" />
+                            ToolTip="关闭"
+                            AutomationProperties.Name="关闭启动器" />
                 </StackPanel>
                 <Border Grid.ColumnSpan="2"
                         Height="1"
@@ -1391,7 +1468,8 @@
                                         VerticalAlignment="Bottom">
                                 <Button Style="{StaticResource BaseButtonStyle}"
                                         Command="{Binding OpenClientDirectoryCommand}"
-                                        Margin="0,0,8,0">
+                                        Margin="0,0,8,0"
+                                        AutomationProperties.Name="打开游戏数据目录">
                                     <StackPanel Orientation="Horizontal">
                                         <controls:IconParkIcon Kind="FolderOpen"
                                                                Width="14"
@@ -1401,7 +1479,8 @@
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource BaseButtonStyle}"
-                                        Command="{Binding ClearDownloadHistoryCommand}">
+                                        Command="{Binding ClearDownloadHistoryCommand}"
+                                        AutomationProperties.Name="清空下载历史">
                                     <StackPanel Orientation="Horizontal">
                                         <controls:IconParkIcon Kind="Delete"
                                                                Width="14"
@@ -1468,11 +1547,12 @@
                                                FontSize="11"
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,7,0,0" />
-                                    <controls:AnimatedProgressBar Grid.Row="2"
-                                                                  Style="{StaticResource HechaoProgressBarStyle}"
-                                                                  Value="{Binding ActiveDownload.Percent, Mode=OneWay}"
-                                                                  Maximum="100"
-                                                                  Margin="0,12,0,0" />
+                                <controls:AnimatedProgressBar Grid.Row="2"
+                                                              Style="{StaticResource HechaoProgressBarStyle}"
+                                                              Value="{Binding ActiveDownload.Percent, Mode=OneWay}"
+                                                              Maximum="100"
+                                                              Margin="0,12,0,0"
+                                                              AutomationProperties.Name="当前下载进度" />
                                     <TextBlock Grid.Row="3"
                                                Text="{Binding ActiveDownload.Version, StringFormat=客户端版本 {0}}"
                                                FontFamily="Segoe UI"
@@ -1484,7 +1564,8 @@
                                         Style="{StaticResource BaseButtonStyle}"
                                         Command="{Binding CancelDownloadCommand}"
                                         VerticalAlignment="Center"
-                                        Content="取消任务" />
+                                        Content="取消任务"
+                                        AutomationProperties.Name="取消当前下载" />
                             </Grid>
                         </Border>
 
@@ -1541,10 +1622,18 @@
                         </Grid>
 
                         <Grid Grid.Row="3">
-                            <ListBox ItemsSource="{Binding DownloadHistory}"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     ItemContainerStyle="{StaticResource PageListItemStyle}">
+                        <ListBox ItemsSource="{Binding DownloadHistory}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 AutomationProperties.Name="下载历史">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem"
+                                           BasedOn="{StaticResource PageListItemStyle}">
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
+                                        <Setter Property="AutomationProperties.ItemStatus" Value="{Binding StatusText}" />
+                                        <Setter Property="AutomationProperties.HelpText" Value="{Binding ProgressText}" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Style="{StaticResource SurfacePanelStyle}"
@@ -1666,7 +1755,8 @@
                             <Button Grid.Column="1"
                                     Style="{StaticResource BaseButtonStyle}"
                                     Command="{Binding RefreshCommand}"
-                                    VerticalAlignment="Bottom">
+                                    VerticalAlignment="Bottom"
+                                    AutomationProperties.Name="刷新活动状态">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="Refresh"
                                                            Width="14"
@@ -1702,13 +1792,39 @@
                             </Grid>
                         </Border>
 
-                        <Grid Grid.Row="2">
+                        <controls:LiveRegionBorder x:Name="ActivityCatalogStaleLiveRegion"
+                                                   Grid.Row="2"
+                                                   Margin="0,0,0,12"
+                                                   Padding="14,10"
+                                                   Background="{StaticResource StripBrush}"
+                                                   BorderBrush="{StaticResource BorderBrush}"
+                                                   BorderThickness="1"
+                                                   CornerRadius="4"
+                                                   AutomationProperties.Name="活动目录数据状态"
+                                                   AutomationProperties.ItemStatus="{Binding CatalogStatusMessage}"
+                                                   AutomationProperties.LiveSetting="Polite"
+                                                   Visibility="{Binding IsCatalogStale, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="{Binding CatalogStatusMessage}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource InkMutedBrush}"
+                                       TextWrapping="Wrap" />
+                        </controls:LiveRegionBorder>
+
+                        <Grid Grid.Row="3">
                             <ListBox ItemsSource="{Binding ActivityServers}"
                                      BorderThickness="0"
                                      Background="Transparent"
                                      IsEnabled="{Binding CanSelectServer}"
-                                     ItemContainerStyle="{StaticResource PageListItemStyle}"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     AutomationProperties.Name="活动服务器目录">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem"
+                                           BasedOn="{StaticResource PageListItemStyle}">
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding Server.Name}" />
+                                        <Setter Property="AutomationProperties.ItemStatus" Value="{Binding ScheduleText}" />
+                                        <Setter Property="AutomationProperties.HelpText" Value="{Binding AnnouncementText}" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <WrapPanel />
@@ -1859,9 +1975,10 @@
                                                 <Button Grid.Row="3"
                                                         Height="42"
                                                         Style="{StaticResource BaseButtonStyle}"
-                                                        Command="{Binding DataContext.ViewActivityServerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                        IsEnabled="{Binding DataContext.CanSelectServer, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                        CommandParameter="{Binding}">
+                                                Command="{Binding DataContext.ViewActivityServerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                IsEnabled="{Binding DataContext.CanSelectServer, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                AutomationProperties.Name="查看活动客户端与进入条件">
                                                     <StackPanel Orientation="Horizontal">
                                                         <controls:IconParkIcon Kind="Right"
                                                                                Width="14"
@@ -1875,21 +1992,45 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                            <Border Padding="28">
-                                <Border.Style>
-                                    <Style TargetType="Border" BasedOn="{StaticResource SurfacePanelStyle}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasActivityServers}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <TextBlock Text="当前目录中还没有活动服务器。"
-                                           FontSize="14"
-                                           Foreground="{StaticResource InkMutedBrush}" />
-                            </Border>
+                            <controls:LiveRegionBorder x:Name="ActivityCatalogStatusLiveRegion"
+                                                       Padding="28"
+                                                       AutomationProperties.Name="活动目录状态"
+                                                       AutomationProperties.ItemStatus="{Binding ActivityCatalogStateMessage}"
+                                                       AutomationProperties.LiveSetting="Polite"
+                                                       Visibility="{Binding IsActivityCatalogStateVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Border Style="{StaticResource SurfacePanelStyle}"
+                                        Padding="28">
+                                    <StackPanel HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                MaxWidth="420">
+                                        <controls:IconParkIcon Kind="Refresh"
+                                                               Width="24"
+                                                               Height="24"
+                                                               Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                               HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding ActivityCatalogStateTitle}"
+                                                   Margin="0,14,0,0"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   TextAlignment="Center" />
+                                        <TextBlock Text="{Binding ActivityCatalogStateMessage}"
+                                                   Margin="0,7,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource InkMutedBrush}"
+                                                   TextWrapping="Wrap"
+                                                   TextAlignment="Center" />
+                                        <Button MinWidth="108"
+                                                Height="38"
+                                                Margin="0,18,0,0"
+                                                Padding="14,7"
+                                                HorizontalAlignment="Center"
+                                                Style="{StaticResource BaseButtonStyle}"
+                                                Content="重新加载"
+                                                Command="{Binding RefreshCommand}"
+                                                AutomationProperties.Name="重新加载活动目录" />
+                                    </StackPanel>
+                                </Border>
+                            </controls:LiveRegionBorder>
                         </Grid>
                     </Grid>
                 </ScrollViewer>
@@ -2078,6 +2219,8 @@
                                                     Height="46"
                                                     Margin="0,22,0,0"
                                                     Style="{StaticResource PrimaryButtonStyle}"
+                                                    IsEnabled="{Binding CanSubmitAccountForms}"
+                                                    AutomationProperties.Name="登录赫朝账号"
                                                     Click="LoginAccountButton_OnClick">
                                                 <TextBlock Text="登录赫朝账号"
                                                            Foreground="White"
@@ -2134,12 +2277,13 @@
                                                          Margin="0,0,10,0"
                                                          Style="{StaticResource TextFieldStyle}"
                                                          AutomationProperties.Name="邮箱" />
-                                                <Button x:Name="SendRegistrationCodeButton"
-                                                        Grid.Column="1"
-                                                        Style="{StaticResource BaseButtonStyle}"
-                                                        Click="SendRegistrationCodeButton_OnClick"
-                                                        AutomationProperties.Name="发送注册验证码">
-                                                    <TextBlock Text="发送验证码"
+                                            <Button x:Name="SendRegistrationCodeButton"
+                                                    Grid.Column="1"
+                                                    Style="{StaticResource BaseButtonStyle}"
+                                                    IsEnabled="{Binding CanSendRegistrationCode}"
+                                                    Click="SendRegistrationCodeButton_OnClick"
+                                                    AutomationProperties.Name="{Binding RegistrationCodeActionText}">
+                                                <TextBlock Text="{Binding RegistrationCodeActionText}"
                                                                FontSize="13"
                                                                FontWeight="SemiBold" />
                                                 </Button>
@@ -2176,6 +2320,8 @@
                                                     Height="46"
                                                     Margin="0,18,0,0"
                                                     Style="{StaticResource PrimaryButtonStyle}"
+                                                    IsEnabled="{Binding CanSubmitAccountForms}"
+                                                    AutomationProperties.Name="创建赫朝账号"
                                                     Click="RegisterAccountButton_OnClick">
                                                 <TextBlock Text="创建赫朝账号"
                                                            Foreground="White"
@@ -2185,22 +2331,27 @@
                                         </Grid>
                                     </TabItem>
                                 </TabControl>
-                                <TextBlock Text="{Binding AccountFormMessage}"
-                                           FontSize="12"
-                                           TextWrapping="Wrap"
-                                           TextTrimming="None"
-                                           Margin="0,14,0,0">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{StaticResource SteelBrush}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsAccountFormError}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource HechaoRedDarkBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                <controls:LiveRegionBorder x:Name="AccountFormLiveRegion"
+                                                           Margin="0,14,0,0"
+                                                           AutomationProperties.Name="赫朝账号表单状态"
+                                                           AutomationProperties.ItemStatus="{Binding AccountFormMessage}"
+                                                           AutomationProperties.LiveSetting="Polite">
+                                    <TextBlock Text="{Binding AccountFormMessage}"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource SteelBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsAccountFormError}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource HechaoRedDarkBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </controls:LiveRegionBorder>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -2316,7 +2467,8 @@
                                               MinWidth="176"
                                               VerticalAlignment="Center">
                                             <Button Height="46"
-                                                    Command="{Binding LinkMinecraftCommand}">
+                                                    Command="{Binding LinkMinecraftCommand}"
+                                                    AutomationProperties.Name="绑定 Microsoft 正版身份">
                                                 <Button.Style>
                                                     <Style TargetType="Button"
                                                            BasedOn="{StaticResource PrimaryButtonStyle}">
@@ -2387,12 +2539,14 @@
                                                          Height="42"
                                                          MaxLength="128"
                                                          VerticalContentAlignment="Center"
-                                                         ToolTip="当前赫朝账号密码" />
+                                                         ToolTip="当前赫朝账号密码"
+                                                         AutomationProperties.Name="当前赫朝账号密码" />
                                             <Button Grid.Column="1"
                                                     MinWidth="84"
                                                     Height="42"
                                                     Margin="10,0,0,0"
                                                     Style="{StaticResource BaseButtonStyle}"
+                                                    AutomationProperties.Name="取消解除 Minecraft 绑定"
                                                     Click="CancelMinecraftUnlinkButton_OnClick"
                                                     Content="取消" />
                                             <Button Grid.Column="2"
@@ -2400,6 +2554,7 @@
                                                     Height="42"
                                                     Margin="10,0,0,0"
                                                     Style="{StaticResource PrimaryButtonStyle}"
+                                                    AutomationProperties.Name="确认解除 Minecraft 绑定"
                                                     Click="ConfirmMinecraftUnlinkButton_OnClick">
                                                 <TextBlock Text="确认解除"
                                                            Foreground="White"
@@ -2459,19 +2614,23 @@
                                     </Grid>
                                 </Border>
 
-                                <Border Margin="0,16,0,0"
-                                        Padding="18"
-                                        Background="{StaticResource StripBrush}"
-                                        BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="5"
-                                        Visibility="{Binding HasAccountFormMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <controls:LiveRegionBorder x:Name="AuthenticatedAccountFormLiveRegion"
+                                                           Margin="0,16,0,0"
+                                                           Padding="18"
+                                                           Background="{StaticResource StripBrush}"
+                                                           BorderBrush="{StaticResource BorderBrush}"
+                                                           BorderThickness="1"
+                                                           CornerRadius="5"
+                                                           AutomationProperties.Name="赫朝账户状态"
+                                                           AutomationProperties.ItemStatus="{Binding AccountFormMessage}"
+                                                           AutomationProperties.LiveSetting="Polite"
+                                                           Visibility="{Binding HasAccountFormMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <TextBlock Text="{Binding AccountFormMessage}"
                                                FontSize="12"
                                                Foreground="{StaticResource HechaoRedDarkBrush}"
                                                TextWrapping="Wrap"
                                                TextTrimming="None" />
-                                </Border>
+                                </controls:LiveRegionBorder>
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -2529,10 +2688,11 @@
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="游戏内存"
                                                Style="{StaticResource FormLabelStyle}" />
-                                    <ListBox Style="{StaticResource MemorySegmentListStyle}"
-                                             ItemContainerStyle="{StaticResource MemorySegmentItemStyle}"
-                                             ItemsSource="{Binding MemoryOptions}"
-                                             SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ListBox Style="{StaticResource MemorySegmentListStyle}"
+                                                 ItemContainerStyle="{StaticResource MemorySegmentItemStyle}"
+                                                 ItemsSource="{Binding MemoryOptions}"
+                                                 SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.Name="默认游戏内存" />
                                     <Grid Margin="0,22,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -2594,7 +2754,10 @@
                                                        FontSize="12"
                                                        Foreground="{StaticResource InkMutedBrush}"
                                                        VerticalAlignment="Center"
-                                                       Margin="12,0" />
+                                                       Margin="12,0"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding ClientDirectory}"
+                                                       AutomationProperties.HelpText="{Binding ClientDirectory}" />
                                         </Border>
                                         <Button Grid.Column="1"
                                                 Style="{StaticResource BaseButtonStyle}"
@@ -2624,11 +2787,12 @@
                                                       AutomationProperties.Name="启动时检查客户端更新"
                                                       VerticalAlignment="Center" />
                                     </Grid>
-                                    <Button Margin="0,12,0,0"
-                                            Padding="13,8"
-                                            HorizontalAlignment="Left"
-                                            Style="{StaticResource BaseButtonStyle}"
-                                            Command="{Binding CheckLauncherUpdateCommand}">
+                                        <Button Margin="0,12,0,0"
+                                                Padding="13,8"
+                                                HorizontalAlignment="Left"
+                                                Style="{StaticResource BaseButtonStyle}"
+                                                Command="{Binding CheckLauncherUpdateCommand}"
+                                                AutomationProperties.Name="检查启动器更新">
                                         <StackPanel Orientation="Horizontal">
                                             <controls:IconParkIcon Kind="CheckOne"
                                                                    Width="13"
@@ -2738,7 +2902,8 @@
                                         <ComboBox Grid.Column="1"
                                                   Style="{StaticResource MemoryComboBoxStyle}"
                                                   ItemsSource="{Binding StartupPageOptions}"
-                                                  SelectedItem="{Binding SelectedStartupPage, Mode=TwoWay}" />
+                                                  SelectedItem="{Binding SelectedStartupPage, Mode=TwoWay}"
+                                                  AutomationProperties.Name="默认打开页面" />
                                     </Grid>
                                     <Border Height="1"
                                             Background="{StaticResource BorderBrush}"
@@ -2817,7 +2982,8 @@
                                     <WrapPanel Margin="30,18,0,0">
                                         <Button Style="{StaticResource BaseButtonStyle}"
                                                 Command="{Binding CreateDiagnosticBundleCommand}"
-                                                Margin="0,0,8,8">
+                                                Margin="0,0,8,8"
+                                                AutomationProperties.Name="生成脱敏诊断包">
                                             <StackPanel Orientation="Horizontal">
                                                 <controls:IconParkIcon Kind="Tool"
                                                                        Width="14"
@@ -2832,7 +2998,8 @@
                                                 IsEnabled="{Binding CanUploadDiagnosticBundle}"
                                                 Click="UploadDiagnosticButton_OnClick"
                                                 ToolTip="只上传刚刚由启动器生成的脱敏诊断包"
-                                                Margin="0,0,8,8">
+                                                Margin="0,0,8,8"
+                                                AutomationProperties.Name="上传脱敏诊断包">
                                             <StackPanel Orientation="Horizontal">
                                                 <controls:IconParkIcon Kind="ExternalTransmission"
                                                                        Width="14"
@@ -2845,7 +3012,8 @@
                                         </Button>
                                         <Button Style="{StaticResource BaseButtonStyle}"
                                                 Command="{Binding OpenDiagnosticsDirectoryCommand}"
-                                                Margin="0,0,8,8">
+                                                Margin="0,0,8,8"
+                                                AutomationProperties.Name="打开诊断目录">
                                             <StackPanel Orientation="Horizontal">
                                                 <controls:IconParkIcon Kind="FolderOpen"
                                                                        Width="14"
@@ -2865,7 +3033,8 @@
             </Grid>
 
             <!-- Notification center -->
-            <Border Grid.Column="2"
+            <Border x:Name="NotificationsPanel"
+                    Grid.Column="2"
                     Grid.RowSpan="2"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
@@ -2877,6 +3046,9 @@
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"
                     CornerRadius="6"
+                    FocusManager.IsFocusScope="True"
+                    KeyboardNavigation.TabNavigation="Cycle"
+                    AutomationProperties.Name="通知中心"
                     Visibility="{Binding IsNotificationsOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border.Effect>
                     <DropShadowEffect Color="#36000000"
@@ -2893,13 +3065,15 @@
                                        Foreground="{StaticResource InkMutedBrush}"
                                        Margin="0,4,0,0" />
                         </StackPanel>
-                        <Button HorizontalAlignment="Right"
+                        <Button x:Name="CloseNotificationsButton"
+                                HorizontalAlignment="Right"
                                 Style="{StaticResource QuietIconButtonStyle}"
                                 Width="34"
                                 Height="34"
                                 Content="&#xE711;"
                                 Command="{Binding CloseOverlaysCommand}"
-                                ToolTip="关闭" />
+                                ToolTip="关闭"
+                                AutomationProperties.Name="关闭通知中心" />
                     </Grid>
 
                     <Border BorderBrush="{StaticResource BorderBrush}"
@@ -3013,7 +3187,8 @@
                                 Height="36"
                                 Content="&#xE711;"
                                 Command="{Binding CloseOverlaysCommand}"
-                                ToolTip="关闭" />
+                                ToolTip="关闭"
+                                AutomationProperties.Name="关闭设置面板" />
                         <Border Height="1"
                                 Background="{StaticResource BorderBrush}"
                                 VerticalAlignment="Bottom" />
@@ -3055,7 +3230,8 @@
                                 <ComboBox Grid.Column="2"
                                           Style="{StaticResource MemoryComboBoxStyle}"
                                           ItemsSource="{Binding MemoryOptions}"
-                                          SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                          SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          AutomationProperties.Name="游戏内存" />
                             </Grid>
 
                             <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,16" />
@@ -3089,7 +3265,9 @@
                                                Foreground="{StaticResource InkMutedBrush}"
                                                Margin="0,5,0,0"
                                                TextWrapping="Wrap"
-                                               TextTrimming="None" />
+                                               TextTrimming="None"
+                                               ToolTip="{Binding ClientDirectory}"
+                                               AutomationProperties.HelpText="{Binding ClientDirectory}" />
                                 </StackPanel>
                                 <Button Grid.Column="2"
                                         Style="{StaticResource QuietIconButtonStyle}"
@@ -3098,6 +3276,7 @@
                                         Content="&#xE838;"
                                         Command="{Binding OpenClientDirectoryCommand}"
                                         ToolTip="打开游戏数据目录"
+                                        AutomationProperties.Name="打开游戏数据目录"
                                         VerticalAlignment="Top" />
                             </Grid>
 
@@ -3235,7 +3414,8 @@
                                         Style="{StaticResource BaseButtonStyle}"
                                         Height="36"
                                         Command="{Binding AccountActionCommand}"
-                                        ToolTip="{Binding AccountActionTooltip}">
+                                        ToolTip="{Binding AccountActionTooltip}"
+                                        AutomationProperties.Name="{Binding AccountActionTooltip}">
                                     <StackPanel Orientation="Horizontal">
                                         <controls:IconParkIcon Glyph="{Binding AccountActionGlyph}"
                                                                Width="13"
@@ -3247,13 +3427,14 @@
                                     </StackPanel>
                                 </Button>
                             </Grid>
-                            <Button Style="{StaticResource BaseButtonStyle}"
-                                    Height="38"
-                                    Margin="42,8,0,0"
-                                    HorizontalAlignment="Stretch"
-                                    Command="{Binding OpenAdminConsoleCommand}"
-                                    Visibility="{Binding IsAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                    ToolTip="在浏览器中打开安全管理后台">
+                        <Button Style="{StaticResource BaseButtonStyle}"
+                                Height="38"
+                                Margin="42,8,0,0"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding OpenAdminConsoleCommand}"
+                                Visibility="{Binding IsAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                ToolTip="在浏览器中打开安全管理后台"
+                                AutomationProperties.Name="打开管理后台">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="ExternalTransmission"
                                                            Width="13"
@@ -3400,12 +3581,13 @@
                                        FontSize="11"
                                        Foreground="{StaticResource InkFaintBrush}"
                                        VerticalAlignment="Center" />
-                            <Button x:Name="CancelMicrosoftSignInButton"
-                                    Grid.Column="1"
-                                    MinWidth="126"
-                                    Height="40"
-                                    Style="{StaticResource BaseButtonStyle}"
-                                    Command="{Binding CancelMicrosoftSignInCommand}">
+                        <Button x:Name="CancelMicrosoftSignInButton"
+                                Grid.Column="1"
+                                MinWidth="126"
+                                Height="40"
+                                Style="{StaticResource BaseButtonStyle}"
+                                Command="{Binding CancelMicrosoftSignInCommand}"
+                                AutomationProperties.Name="取消 Microsoft 登录">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="Close"
                                                            Width="14"
@@ -3531,27 +3713,32 @@
                             </Grid>
                         </Border>
 
-                        <Grid x:Name="LauncherUpdateProgressRegion"
-                              Grid.Row="3"
-                              Margin="0,20,0,0"
-                              Focusable="True"
-                              AutomationProperties.Name="启动器更新状态">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <controls:AnimatedProgressBar Grid.Row="0"
-                                                          Style="{StaticResource HechaoProgressBarStyle}"
-                                                          Maximum="100"
-                                                          Value="{Binding LauncherUpdateProgress, Mode=OneWay}" />
-                            <TextBlock Grid.Row="1"
-                                       Text="{Binding LauncherUpdateStatus}"
-                                       Margin="0,9,0,0"
-                                       FontSize="12"
-                                       Foreground="{StaticResource InkMutedBrush}"
-                                       TextWrapping="Wrap"
-                                       TextTrimming="None" />
-                        </Grid>
+                        <controls:LiveRegionBorder x:Name="LauncherUpdateProgressRegion"
+                                                   Grid.Row="3"
+                                                   Margin="0,20,0,0"
+                                                   Focusable="True"
+                                                   AutomationProperties.Name="启动器更新状态"
+                                                   AutomationProperties.ItemStatus="{Binding LauncherUpdateStatus}"
+                                                   AutomationProperties.LiveSetting="Polite">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <controls:AnimatedProgressBar Grid.Row="0"
+                                                              Style="{StaticResource HechaoProgressBarStyle}"
+                                                              Maximum="100"
+                                                              Value="{Binding LauncherUpdateProgress, Mode=OneWay}"
+                                                              AutomationProperties.Name="启动器更新进度" />
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding LauncherUpdateStatus}"
+                                           Margin="0,9,0,0"
+                                           FontSize="12"
+                                           Foreground="{StaticResource InkMutedBrush}"
+                                           TextWrapping="Wrap"
+                                           TextTrimming="None" />
+                            </Grid>
+                        </controls:LiveRegionBorder>
 
                         <Grid Grid.Row="4"
                               Margin="0,24,0,0"
@@ -3574,7 +3761,8 @@
                                     Padding="18,10"
                                     Foreground="White"
                                     Style="{StaticResource PrimaryButtonStyle}"
-                                    Command="{Binding InstallLauncherUpdateCommand}">
+                                    Command="{Binding InstallLauncherUpdateCommand}"
+                                    AutomationProperties.Name="下载更新并重启">
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Center">
                                     <controls:IconParkIcon Kind="Download"
@@ -3609,18 +3797,25 @@
                     AutomationProperties.ItemStatus="{Binding ToastAutomationStatus}"
                     AutomationProperties.LiveSetting="Polite"
                     Visibility="{Binding IsToastVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <StackPanel Orientation="Horizontal">
+                <Grid MaxWidth="760">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <controls:IconParkIcon Kind="{Binding ToastIconKind}"
                                            Width="12"
                                            Height="12"
                                            Foreground="#FFFF5A51"
-                                           Margin="0,0,8,0"
                                            VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding ToastMessage}"
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding ToastMessage}"
+                               Margin="8,0,0,0"
                                Foreground="White"
                                FontSize="13"
+                               TextWrapping="Wrap"
+                               TextTrimming="None"
                                VerticalAlignment="Center" />
-                </StackPanel>
+                </Grid>
             </controls:LiveRegionBorder>
         </Grid>
     </Border>

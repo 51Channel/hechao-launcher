@@ -186,6 +186,7 @@ public sealed class LauncherUpdateService
     {
         ArgumentNullException.ThrowIfNull(plan);
         LauncherUpdateFailureLog.TryDelete(_updateRoot);
+        LauncherUpdateFailureLog.TryDeleteAttempt(_updateRoot);
         var stage = "prepare-directory";
         try
         {
@@ -238,6 +239,9 @@ public sealed class LauncherUpdateService
                 version);
 
             stage = "start-updater";
+            LauncherUpdateFailureLog.WriteAttempt(
+                _updateRoot,
+                plan.LatestVersion.ToString(3));
             if (_processStarter(startInfo) is null)
             {
                 throw new InvalidOperationException(
@@ -447,6 +451,10 @@ internal static class LauncherUpdateBootstrap
                     "The installed launcher executable was not found.");
             }
 
+            LauncherUpdateFailureLog.TryDelete(
+                LauncherUpdateFailureLog.GetDefaultUpdateRoot());
+            LauncherUpdateFailureLog.TryDeleteAttempt(
+                LauncherUpdateFailureLog.GetDefaultUpdateRoot());
             Process.Start(new ProcessStartInfo(installedPath)
             {
                 UseShellExecute = true,
@@ -539,6 +547,7 @@ internal static class LauncherUpdateBootstrap
 internal static partial class LauncherUpdateFailureLog
 {
     private const string FileName = "last-update-error.log";
+    private const string AttemptFileName = "pending-update-attempt.log";
     private const int MaximumMessageLength = 1000;
 
     [GeneratedRegex(@"https?://[^\s]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -599,33 +608,71 @@ internal static partial class LauncherUpdateFailureLog
         }
     }
 
+    public static void WriteAttempt(string updateRoot, string targetVersion)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(updateRoot);
+        var normalizedVersion = SanitizeVersion(targetVersion);
+        if (normalizedVersion == "none")
+        {
+            throw new ArgumentException(
+                "A valid update version is required.",
+                nameof(targetVersion));
+        }
+
+        var normalizedRoot = Path.GetFullPath(updateRoot);
+        Directory.CreateDirectory(normalizedRoot);
+        File.WriteAllText(
+            Path.Combine(normalizedRoot, AttemptFileName),
+            $"target-version={normalizedVersion}{Environment.NewLine}");
+    }
+
     public static bool HasFailedVersion(string updateRoot, string targetVersion)
+    {
+        var normalizedVersion = SanitizeVersion(targetVersion);
+        if (normalizedVersion == "none")
+        {
+            return false;
+        }
+
+        try
+        {
+            var normalizedRoot = Path.GetFullPath(updateRoot);
+            return HasRecordedVersion(
+                       Path.Combine(normalizedRoot, FileName),
+                       normalizedVersion) ||
+                   HasRecordedVersion(
+                       Path.Combine(normalizedRoot, AttemptFileName),
+                       normalizedVersion);
+        }
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            ArgumentException or
+            NotSupportedException)
+        {
+            return true;
+        }
+    }
+
+    private static bool HasRecordedVersion(string path, string normalizedVersion)
     {
         try
         {
-            var normalizedVersion = SanitizeVersion(targetVersion);
-            if (normalizedVersion == "none")
-            {
-                return false;
-            }
-
-            var path = Path.Combine(Path.GetFullPath(updateRoot), FileName);
-            if (!File.Exists(path))
-            {
-                return false;
-            }
-
             const string prefix = "target-version=";
             var recordedVersion = File.ReadLines(path)
-                .FirstOrDefault(line => line.StartsWith(prefix, StringComparison.Ordinal));
-            return string.Equals(
-                recordedVersion?[prefix.Length..],
-                normalizedVersion,
-                StringComparison.Ordinal);
+                .FirstOrDefault(line =>
+                    line.StartsWith(prefix, StringComparison.Ordinal));
+            return recordedVersion is null ||
+                   string.Equals(
+                       recordedVersion[prefix.Length..],
+                       normalizedVersion,
+                       StringComparison.Ordinal);
         }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or
-                ArgumentException or NotSupportedException)
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
+        catch (DirectoryNotFoundException)
         {
             return false;
         }
@@ -640,6 +687,23 @@ internal static partial class LauncherUpdateFailureLog
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
                 ArgumentException or NotSupportedException)
+        {
+        }
+    }
+
+    public static void TryDeleteAttempt(string updateRoot)
+    {
+        try
+        {
+            File.Delete(Path.Combine(
+                Path.GetFullPath(updateRoot),
+                AttemptFileName));
+        }
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            ArgumentException or
+            NotSupportedException)
         {
         }
     }

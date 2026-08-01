@@ -1,10 +1,13 @@
 using System.Windows;
+using Hechao.Launcher.Infrastructure;
 using Hechao.Launcher.Services;
 
 namespace Hechao.Launcher;
 
 public partial class App : Application
 {
+    private SingleInstanceGuard? _singleInstanceGuard;
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -27,6 +30,23 @@ public partial class App : Application
             Shutdown(2);
             return;
         }
+
+        if (!SingleInstanceGuard.TryAcquire(out _singleInstanceGuard))
+        {
+            MessageBox.Show(
+                "赫朝启动器已经在运行，请切换到现有窗口。",
+                "赫朝启动器",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            Shutdown(0);
+            return;
+        }
+
+        Exit += (_, _) =>
+        {
+            _singleInstanceGuard?.Dispose();
+            _singleInstanceGuard = null;
+        };
 
         var window = new MainWindow();
         MainWindow = window;

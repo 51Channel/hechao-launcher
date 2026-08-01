@@ -19,6 +19,8 @@ public sealed class MainWindowViewModel : ObservableObject
 {
     private static readonly TimeSpan MaxCatalogBoundaryDelay = TimeSpan.FromDays(30);
     private static readonly TimeSpan CatalogBoundaryGracePeriod = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan RegistrationCodeCooldown = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan DefaultCatalogFallbackRetryDelay = TimeSpan.FromSeconds(15);
 
     private readonly IServerCatalogClient _catalogClient;
     private readonly ILauncherAuthenticationService _authenticationService;
@@ -32,6 +34,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly ILauncherUpdateService _launcherUpdateService;
     private readonly IMinecraftSkinService _minecraftSkinService;
     private readonly IPlayerGameSettingsService _playerGameSettingsService;
+    private readonly TimeSpan _catalogFallbackRetryDelay;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _profileJavaPaths =
@@ -66,11 +69,18 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _useSystemProxy;
     private string _selectedStartupPage;
     private bool _isCatalogLoading;
+    private bool _catalogRefreshPending;
+    private bool _hasCatalogLoadError;
+    private bool _isCatalogStale;
+    private string _catalogStatusMessage = "正在加载服务器目录...";
+    private int _catalogAnnouncementRevision;
     private CancellationTokenSource? _catalogLoadCancellation;
     private long _catalogLoadGeneration;
     private long _catalogAppliedGeneration;
     private long _clientStateRefreshGeneration;
+    private long _clientContextGeneration;
     private CancellationTokenSource? _catalogScheduleCancellation;
+    private CancellationTokenSource? _catalogRetryCancellation;
     private HechaoAccount? _currentAccount;
     private string? _accountStatusHint;
     private bool _isAccountBusy;
@@ -78,6 +88,9 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isMinecraftUnlinkFormVisible;
     private string _accountFormMessage = string.Empty;
     private bool _isAccountFormError;
+    private int _accountFormAnnouncementRevision;
+    private bool _isRegistrationCodeCooldownActive;
+    private CancellationTokenSource? _registrationCodeCooldownCancellation;
     private bool _isMicrosoftSignInVisible;
     private CancellationTokenSource? _microsoftSignInCancellation;
     private DownloadJobViewModel? _activeDownload;
@@ -90,6 +103,9 @@ public sealed class MainWindowViewModel : ObservableObject
     private string? _runningServerId;
     private string _diagnosticUploadStatus = "先在本机生成诊断包，再决定是否上传。";
     private LauncherUpdatePlan? _launcherUpdatePlan;
+    private bool _isLauncherUpdateChecking;
+    private long _launcherUpdateCheckGeneration;
+    private bool _launcherUpdateAutoInstallPending;
     private bool _isLauncherUpdateVisible;
     private bool _isLauncherUpdateBusy;
     private double _launcherUpdateProgress;
@@ -110,7 +126,8 @@ public sealed class MainWindowViewModel : ObservableObject
         ILauncherTelemetryService? telemetryService = null,
         ILauncherUpdateService? launcherUpdateService = null,
         IMinecraftSkinService? minecraftSkinService = null,
-        IPlayerGameSettingsService? playerGameSettingsService = null)
+        IPlayerGameSettingsService? playerGameSettingsService = null,
+        TimeSpan? catalogFallbackRetryDelay = null)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -128,6 +145,14 @@ public sealed class MainWindowViewModel : ObservableObject
             minecraftSkinService ?? NullMinecraftSkinService.Instance;
         _playerGameSettingsService =
             playerGameSettingsService ?? NullPlayerGameSettingsService.Instance;
+        _catalogFallbackRetryDelay =
+            catalogFallbackRetryDelay ?? DefaultCatalogFallbackRetryDelay;
+        if (_catalogFallbackRetryDelay <= TimeSpan.Zero ||
+            _catalogFallbackRetryDelay > TimeSpan.FromMinutes(5))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(catalogFallbackRetryDelay));
+        }
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
@@ -172,7 +197,9 @@ public sealed class MainWindowViewModel : ObservableObject
             () => InstallSelectedProfileAsync(isRepair: true),
             HandleUnexpectedPrimaryActionError,
             () => !IsProgressActive);
-        RefreshCommand = new RelayCommand(() => _ = LoadCatalogAsync(userInitiated: true), () => !_isCatalogLoading);
+        RefreshCommand = new RelayCommand(
+            () => _ = LoadCatalogAsync(userInitiated: true),
+            () => !_isCatalogLoading && !IsProgressActive);
         OpenClientDirectoryCommand = new RelayCommand(OpenClientDirectory);
         ToggleNotificationsCommand = new RelayCommand(ToggleNotifications);
         ToggleSettingsCommand = new RelayCommand(ToggleSettings);
@@ -227,11 +254,13 @@ public sealed class MainWindowViewModel : ObservableObject
         CheckLauncherUpdateCommand = new AsyncRelayCommand(
             () => TryCheckLauncherUpdateAsync(userInitiated: true),
             HandleUnexpectedLauncherUpdateError,
-            () => IsAuthenticated && !IsLauncherUpdateBusy);
+            () => IsAuthenticated &&
+                  !IsLauncherUpdateBusy &&
+                  !IsLauncherUpdateChecking);
         InstallLauncherUpdateCommand = new AsyncRelayCommand(
             InstallLauncherUpdateAsync,
             HandleUnexpectedLauncherUpdateError,
-            () => IsLauncherUpdateVisible && !IsLauncherUpdateBusy);
+            CanInstallLauncherUpdate);
         DismissLauncherUpdateCommand = new RelayCommand(
             DismissLauncherUpdate,
             () => IsLauncherUpdateVisible &&
@@ -305,11 +334,35 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    public bool IsServersPage => ActivePage == LauncherPage.Servers;
-    public bool IsDownloadsPage => ActivePage == LauncherPage.Downloads;
-    public bool IsActivitiesPage => ActivePage == LauncherPage.Activities;
-    public bool IsAccountPage => ActivePage == LauncherPage.Account;
-    public bool IsSettingsPage => ActivePage == LauncherPage.Settings;
+    public bool IsServersPage
+    {
+        get => ActivePage == LauncherPage.Servers;
+        set => SetNavigationPage(value, LauncherPage.Servers, nameof(IsServersPage));
+    }
+
+    public bool IsDownloadsPage
+    {
+        get => ActivePage == LauncherPage.Downloads;
+        set => SetNavigationPage(value, LauncherPage.Downloads, nameof(IsDownloadsPage));
+    }
+
+    public bool IsActivitiesPage
+    {
+        get => ActivePage == LauncherPage.Activities;
+        set => SetNavigationPage(value, LauncherPage.Activities, nameof(IsActivitiesPage));
+    }
+
+    public bool IsAccountPage
+    {
+        get => ActivePage == LauncherPage.Account;
+        set => SetNavigationPage(value, LauncherPage.Account, nameof(IsAccountPage));
+    }
+
+    public bool IsSettingsPage
+    {
+        get => ActivePage == LauncherPage.Settings;
+        set => SetNavigationPage(value, LauncherPage.Settings, nameof(IsSettingsPage));
+    }
     public string CurrentPageTitle => ActivePage switch
     {
         LauncherPage.Downloads => "下载中心",
@@ -342,6 +395,37 @@ public sealed class MainWindowViewModel : ObservableObject
     public int DownloadHistoryCount => DownloadHistory.Count;
     public int ActivityServerCount => ActivityServers.Count;
     public bool HasActivityServers => ActivityServers.Count > 0;
+    public bool IsCatalogLoading => _isCatalogLoading;
+    public bool HasCatalogLoadError => _hasCatalogLoadError;
+    public bool IsCatalogStale => _isCatalogStale;
+    public bool HasServerCatalogData => Servers.Count > 0;
+    public bool IsCatalogStatusVisible =>
+        IsCatalogLoading ||
+        HasCatalogLoadError ||
+        IsCatalogStale ||
+        (_hasLoadedCatalog && !HasServerCatalogData);
+    public bool IsActivityCatalogStateVisible =>
+        !HasActivityServers &&
+        (IsCatalogLoading || HasCatalogLoadError || _hasLoadedCatalog);
+    public string CatalogStatusMessage
+    {
+        get => _catalogStatusMessage;
+        private set => SetProperty(ref _catalogStatusMessage, value);
+    }
+
+    public string ActivityCatalogStateTitle => IsCatalogLoading
+        ? "正在读取活动目录"
+        : HasCatalogLoadError || IsCatalogStale
+            ? "活动目录暂时不可用"
+            : "当前没有活动服务器";
+
+    public string ActivityCatalogStateMessage => IsCatalogLoading
+        ? "正在同步活动开放状态和客户端档案，请稍候。"
+        : HasCatalogLoadError || IsCatalogStale
+            ? CatalogStatusMessage
+            : "目录同步正常，但目前没有可展示的活动档案。";
+
+    public int CatalogAnnouncementRevision => _catalogAnnouncementRevision;
     public string DownloadQueueStatusText => HasActiveDownload
         ? "1 个任务正在进行"
         : DownloadHistory.Count > 0
@@ -449,6 +533,15 @@ public sealed class MainWindowViewModel : ObservableObject
     }
     public bool HasAccountFormMessage =>
         !string.IsNullOrWhiteSpace(AccountFormMessage);
+    public int AccountFormAnnouncementRevision => _accountFormAnnouncementRevision;
+    public bool CanSubmitAccountForms => !IsAccountBusy;
+    public bool CanSendRegistrationCode =>
+        CanSubmitAccountForms && !_isRegistrationCodeCooldownActive;
+    public string RegistrationCodeActionText => _isRegistrationCodeCooldownActive
+        ? "验证码已发送"
+        : IsAccountBusy
+            ? "请稍候"
+            : "发送验证码";
     public bool IsAccountFormError
     {
         get => _isAccountFormError;
@@ -499,6 +592,9 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             OnPropertyChanged(nameof(AccountStatusText));
+            OnPropertyChanged(nameof(CanSubmitAccountForms));
+            OnPropertyChanged(nameof(CanSendRegistrationCode));
+            OnPropertyChanged(nameof(RegistrationCodeActionText));
             AccountActionCommand.RaiseCanExecuteChanged();
             LogoutAccountCommand.RaiseCanExecuteChanged();
             LinkMinecraftCommand.RaiseCanExecuteChanged();
@@ -533,6 +629,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            InvalidateClientContext();
             SetRollbackCandidate(null);
             _clientInstallPhase = null;
             _installStepFailed = false;
@@ -677,6 +774,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 PrimaryActionCommand.RaiseCanExecuteChanged();
                 SelectServerCommand.RaiseCanExecuteChanged();
                 ViewActivityServerCommand.RaiseCanExecuteChanged();
+                RefreshCommand.RaiseCanExecuteChanged();
+                InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(CanSelectServer));
                 OnPropertyChanged(nameof(CanChangeClientDirectory));
                 ResetLauncherSettingsCommand.RaiseCanExecuteChanged();
@@ -684,6 +783,17 @@ public sealed class MainWindowViewModel : ObservableObject
                 OnPropertyChanged(nameof(RollbackProfileToolTip));
                 OnPropertyChanged(nameof(CanDeleteSelectedProfile));
                 OnPropertyChanged(nameof(DeleteProfileToolTip));
+
+                if (!value && _catalogRefreshPending)
+                {
+                    _catalogRefreshPending = false;
+                    _ = LoadCatalogAsync();
+                }
+
+                if (!value && _launcherUpdatePlan is not null)
+                {
+                    TryPresentLauncherUpdatePlan();
+                }
             }
         }
     }
@@ -859,7 +969,18 @@ public sealed class MainWindowViewModel : ObservableObject
     public bool IsNotificationsOpen
     {
         get => _isNotificationsOpen;
-        private set => SetProperty(ref _isNotificationsOpen, value);
+        set
+        {
+            if (!SetProperty(ref _isNotificationsOpen, value))
+            {
+                return;
+            }
+
+            if (value)
+            {
+                IsSettingsOpen = false;
+            }
+        }
     }
 
     public bool IsSettingsOpen
@@ -954,6 +1075,18 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    public bool IsLauncherUpdateChecking
+    {
+        get => _isLauncherUpdateChecking;
+        private set
+        {
+            if (SetProperty(ref _isLauncherUpdateChecking, value))
+            {
+                CheckLauncherUpdateCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public bool IsLauncherUpdateRequired =>
         _launcherUpdatePlan?.IsRequired == true;
 
@@ -1034,9 +1167,16 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
+        var generation = Interlocked.Increment(ref _launcherUpdateCheckGeneration);
+        IsLauncherUpdateChecking = true;
         try
         {
             var plan = await _launcherUpdateService.CheckAsync();
+            if (Volatile.Read(ref _launcherUpdateCheckGeneration) != generation)
+            {
+                return;
+            }
+
             _hasCheckedLauncherUpdate = true;
             if (plan is null)
             {
@@ -1050,63 +1190,96 @@ public sealed class MainWindowViewModel : ObservableObject
 
             _launcherUpdatePlan = plan;
             LauncherUpdateProgress = 0;
-            LauncherUpdateStatus = plan.IsRequired
-                ? "必须更新后才能继续使用当前服务。"
-                : "安装前会校验文件完整性。";
             OnPropertyChanged(nameof(IsLauncherUpdateRequired));
             OnPropertyChanged(nameof(LauncherUpdateTitle));
             OnPropertyChanged(nameof(LauncherUpdateSummary));
             OnPropertyChanged(nameof(LauncherUpdateReleaseNotes));
             OnPropertyChanged(nameof(LauncherUpdateSizeText));
-            IsLauncherUpdateVisible = true;
 
-            if (_launcherUpdateService.HasPreviousInstallFailure(plan))
-            {
-                LauncherUpdateStatus =
-                    "这个版本上次安装失败。请检查提示后手动重试，启动器不会循环重启。";
-                return;
-            }
+            var previousInstallFailed =
+                _launcherUpdateService.HasPreviousInstallFailure(plan);
+            _launcherUpdateAutoInstallPending =
+                !userInitiated && !previousInstallFailed;
+            LauncherUpdateStatus = previousInstallFailed
+                ? "上次更新失败或状态未知，本次不会循环重启；请确认后手动重试。"
+                : plan.IsRequired
+                    ? "必须更新后才能继续使用当前服务。"
+                    : "发现新版本，准备自动下载更新。";
 
-            if (userInitiated)
-            {
-                LauncherUpdateStatus = "发现新版本，确认后即可下载并重启。";
-                return;
-            }
-
-            LauncherUpdateStatus = "发现新版本，正在自动下载更新…";
-            try
-            {
-                await InstallLauncherUpdateAsync();
-            }
-            catch (Exception exception)
-            {
-                HandleUnexpectedLauncherUpdateError(exception);
-            }
+            TryPresentLauncherUpdatePlan();
         }
         catch (Exception exception) when (
-            exception is HttpRequestException or TaskCanceledException or
-                LauncherApiException or InvalidDataException or
-                LauncherAuthenticationRequiredException)
+            exception is HttpRequestException or
+            TaskCanceledException or
+            LauncherApiException or
+            InvalidDataException or
+            LauncherAuthenticationRequiredException)
         {
-            if (userInitiated)
+            if (Volatile.Read(ref _launcherUpdateCheckGeneration) == generation)
             {
                 ShowToast("检查更新失败，请稍后重试", ToastLevel.Error);
+                Trace.TraceWarning(
+                    "Unable to check launcher update: {0}",
+                    exception.Message);
             }
+        }
+        finally
+        {
+            if (Volatile.Read(ref _launcherUpdateCheckGeneration) == generation)
+            {
+                IsLauncherUpdateChecking = false;
+            }
+        }
+    }
 
-            Trace.TraceWarning(
-                "Launcher update check was skipped: {0}",
-                exception.Message);
+    private bool CanInstallLauncherUpdate()
+    {
+        if (_launcherUpdatePlan is null ||
+            !IsLauncherUpdateVisible ||
+            IsLauncherUpdateBusy ||
+            IsProgressActive)
+        {
+            return false;
+        }
+
+        return _gameLauncherService.GetRunningGame() is null;
+    }
+
+    private void TryPresentLauncherUpdatePlan()
+    {
+        if (_launcherUpdatePlan is null)
+        {
+            return;
+        }
+
+        if (IsProgressActive || _gameLauncherService.GetRunningGame() is not null)
+        {
+            IsLauncherUpdateVisible = false;
+            LauncherUpdateStatus =
+                "当前任务或游戏结束后会继续准备启动器更新。";
+            return;
+        }
+
+        IsLauncherUpdateVisible = true;
+        InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
+        if (_launcherUpdateAutoInstallPending && CanInstallLauncherUpdate())
+        {
+            _launcherUpdateAutoInstallPending = false;
+            LauncherUpdateStatus = "发现新版本，正在自动下载更新...";
+            _ = InstallLauncherUpdateAsync();
         }
     }
 
     private async Task InstallLauncherUpdateAsync()
     {
-        if (_launcherUpdatePlan is not { } plan ||
-            IsLauncherUpdateBusy)
+        if (!CanInstallLauncherUpdate())
         {
+            LauncherUpdateStatus =
+                "请等待当前任务和游戏结束后再安装启动器更新。";
             return;
         }
 
+        var plan = _launcherUpdatePlan!;
         IsLauncherUpdateBusy = true;
         LauncherUpdateStatus = "正在下载启动器更新…";
         var progress = new InlineProgress<LauncherUpdateDownloadProgress>(
@@ -1141,6 +1314,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         IsLauncherUpdateVisible = false;
         _launcherUpdatePlan = null;
+        _launcherUpdateAutoInstallPending = false;
     }
 
     private async Task LoadCatalogAsync(bool userInitiated = false)
@@ -1153,8 +1327,11 @@ public sealed class MainWindowViewModel : ObservableObject
             cancellation);
         previousCancellation?.Cancel();
 
-        _isCatalogLoading = true;
-        RefreshCommand.RaiseCanExecuteChanged();
+        SetCatalogLoading(true);
+        SetCatalogStatus(
+            "正在刷新服务器目录...",
+            hasError: false,
+            isStale: false);
         try
         {
             var snapshot = await _catalogClient.GetCatalogAsync(cancellation.Token);
@@ -1163,10 +1340,39 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            if (IsProgressActive)
+            {
+                _catalogRefreshPending = true;
+                return;
+            }
+
+            var selectedProfileId = SelectedServer?.ClientProfileId;
+            var previousSelectedProfile = selectedProfileId is not null &&
+                                          _clientProfiles.TryGetValue(
+                                              selectedProfileId,
+                                              out var previousProfile)
+                ? previousProfile
+                : null;
+
             _clientProfiles.Clear();
             foreach (var profile in snapshot.ClientProfiles)
             {
                 _clientProfiles[profile.Id] = profile;
+            }
+
+            var selectedProfileChanged = selectedProfileId is not null &&
+                                         (!_clientProfiles.TryGetValue(
+                                              selectedProfileId,
+                                              out var currentProfile) ||
+                                          !AreClientProfilesEquivalent(
+                                              previousSelectedProfile,
+                                              currentProfile));
+            if (selectedProfileChanged)
+            {
+                InvalidateClientContext();
+                _selectedProfileState = LocalProfileState.Missing;
+                _selectedProfileStateChecked = false;
+                SetRollbackCandidate(null);
             }
             OnPropertyChanged(nameof(LatestGameExitText));
 
@@ -1186,12 +1392,25 @@ public sealed class MainWindowViewModel : ObservableObject
             var selectedServer =
                 Servers.FirstOrDefault(server => server.Id == _settings.SelectedServerId) ??
                 Servers.FirstOrDefault();
+            var selectedServerChanged = !Equals(SelectedServer, selectedServer);
             _suppressNextAutomaticProfileCheck =
                 !_hasLoadedCatalog &&
                 !CheckForUpdates &&
                 selectedServer is not null;
             SelectedServer = selectedServer;
+            if (selectedProfileChanged && !selectedServerChanged && selectedServer is not null)
+            {
+                OnPropertyChanged(nameof(SelectedProfileDisplayName));
+                OnPropertyChanged(nameof(SelectedProfileMetaText));
+                OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+                NotifySelectedProfileJavaPropertiesChanged();
+                UpdateProgress = 0;
+                ClientStatusText = "正在检查客户端";
+                UpdatePrimaryActionForState();
+                _ = RefreshClientStateAsync();
+            }
             _hasLoadedCatalog = true;
+            NotifyCatalogStateChanged();
             Volatile.Write(ref _catalogAppliedGeneration, generation);
             ScheduleCatalogBoundaryRefresh(snapshot.Servers);
 
@@ -1199,15 +1418,37 @@ public sealed class MainWindowViewModel : ObservableObject
             {
                 switch (sourceState.LastSource)
                 {
-                    case CatalogSource.Cache:
-                        ShowToast("目录服务暂时不可用，已显示上次成功数据");
-                        break;
-                    case CatalogSource.BuiltIn:
-                        ShowToast("目录服务暂时不可用，已显示内置应急目录");
-                        break;
-                    case CatalogSource.Live when userInitiated:
-                        ShowToast("服务器状态已刷新", ToastLevel.Success);
-                        break;
+                case CatalogSource.Cache:
+                    SetCatalogStatus(
+                        "目录服务暂时不可用，当前显示上次成功数据。",
+                        hasError: false,
+                        isStale: true);
+                    ScheduleCatalogFallbackRetry();
+                    ShowToast("目录服务暂时不可用，已显示上次成功数据");
+                    break;
+                case CatalogSource.BuiltIn:
+                    SetCatalogStatus(
+                        "目录服务暂时不可用，当前显示内置应急目录。",
+                        hasError: false,
+                        isStale: true);
+                    ScheduleCatalogFallbackRetry();
+                    ShowToast("目录服务暂时不可用，已显示内置应急目录");
+                    break;
+                case CatalogSource.Live when userInitiated:
+                    SetCatalogStatus(
+                        "服务器目录已刷新。",
+                        hasError: false,
+                        isStale: false);
+                    CancelCatalogFallbackRetry();
+                    ShowToast("服务器状态已刷新", ToastLevel.Success);
+                    break;
+                case CatalogSource.Live:
+                    SetCatalogStatus(
+                        "服务器目录已同步。",
+                        hasError: false,
+                        isStale: false);
+                    CancelCatalogFallbackRetry();
+                    break;
                 }
             }
         }
@@ -1219,6 +1460,11 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException or JsonException)
         {
+            SetCatalogStatus(
+                "暂时无法加载服务器目录，请检查网络后重试。",
+                hasError: true,
+                isStale: HasServerCatalogData || HasActivityServers);
+            ScheduleCatalogFallbackRetry();
             ShowToast("暂时无法加载服务器目录", ToastLevel.Error);
         }
         catch (LauncherAuthenticationRequiredException)
@@ -1228,10 +1474,19 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(ActivityServerCount));
             OnPropertyChanged(nameof(HasActivityServers));
             SelectedServer = null;
+            SetCatalogStatus(
+                "登录状态已失效，请重新登录赫朝账号。",
+                hasError: true,
+                isStale: false);
             ShowToast("请先登录赫朝账号");
         }
         catch (LauncherApiException exception)
         {
+            SetCatalogStatus(
+                exception.ApiDetail ?? "目录服务暂时不可用，请稍后重试。",
+                hasError: true,
+                isStale: HasServerCatalogData || HasActivityServers);
+            ScheduleCatalogFallbackRetry();
             ShowToast(exception.ApiDetail ?? "目录服务暂时不可用", ToastLevel.Error);
         }
         finally
@@ -1243,8 +1498,7 @@ public sealed class MainWindowViewModel : ObservableObject
                         cancellation),
                     cancellation))
                 {
-                    _isCatalogLoading = false;
-                    RefreshCommand.RaiseCanExecuteChanged();
+                    SetCatalogLoading(false);
                 }
 
                 cancellation.Dispose();
@@ -1259,13 +1513,94 @@ public sealed class MainWindowViewModel : ObservableObject
         ReferenceEquals(_catalogLoadCancellation, cancellation) &&
         _currentAccount?.UserId == accountId;
 
+    private void SetCatalogLoading(bool value)
+    {
+        if (_isCatalogLoading == value)
+        {
+            return;
+        }
+
+        _isCatalogLoading = value;
+        OnPropertyChanged(nameof(IsCatalogLoading));
+        NotifyCatalogStateChanged();
+        RefreshCommand.RaiseCanExecuteChanged();
+    }
+
+    private void SetCatalogStatus(
+        string message,
+        bool hasError,
+        bool isStale)
+    {
+        CatalogStatusMessage = message;
+        _hasCatalogLoadError = hasError;
+        _isCatalogStale = isStale;
+        NotifyCatalogStateChanged();
+        _catalogAnnouncementRevision++;
+        OnPropertyChanged(nameof(CatalogAnnouncementRevision));
+    }
+
+    private void NotifyCatalogStateChanged()
+    {
+        OnPropertyChanged(nameof(HasCatalogLoadError));
+        OnPropertyChanged(nameof(IsCatalogStale));
+        OnPropertyChanged(nameof(HasServerCatalogData));
+        OnPropertyChanged(nameof(IsCatalogStatusVisible));
+        OnPropertyChanged(nameof(IsActivityCatalogStateVisible));
+        OnPropertyChanged(nameof(ActivityCatalogStateTitle));
+        OnPropertyChanged(nameof(ActivityCatalogStateMessage));
+    }
+
     private void InvalidateCatalogLoad()
     {
         Interlocked.Increment(ref _catalogLoadGeneration);
         Interlocked.Exchange(ref _catalogLoadCancellation, null)?.Cancel();
         Interlocked.Exchange(ref _catalogScheduleCancellation, null)?.Cancel();
-        _isCatalogLoading = false;
-        RefreshCommand.RaiseCanExecuteChanged();
+        Interlocked.Exchange(ref _catalogRetryCancellation, null)?.Cancel();
+        SetCatalogLoading(false);
+    }
+
+    private void ScheduleCatalogFallbackRetry()
+    {
+        var cancellation = new CancellationTokenSource();
+        Interlocked.Exchange(
+            ref _catalogRetryCancellation,
+            cancellation)?.Cancel();
+        _ = RetryCatalogAfterFallbackAsync(cancellation);
+    }
+
+    private void CancelCatalogFallbackRetry()
+    {
+        Interlocked.Exchange(ref _catalogRetryCancellation, null)?.Cancel();
+    }
+
+    private async Task RetryCatalogAfterFallbackAsync(
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await Task.Delay(
+                _catalogFallbackRetryDelay,
+                cancellation.Token);
+            await LoadCatalogAsync();
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "服务器目录自动重试失败：{0}: {1}",
+                exception.GetType().Name,
+                exception.Message);
+        }
+        finally
+        {
+            Interlocked.CompareExchange(
+                ref _catalogRetryCancellation,
+                null,
+                cancellation);
+            cancellation.Dispose();
+        }
     }
 
     private void ScheduleCatalogBoundaryRefresh(IEnumerable<ServerSummary> servers)
@@ -1373,6 +1708,7 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         var selectedServer = SelectedServer;
         var dataRoot = ClientDirectory;
+        var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
         if (IsProgressActive || selectedServer is null)
         {
             return;
@@ -1389,7 +1725,8 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             if (!await RefreshActivityServerBeforeActionAsync(
                     selectedServer.Id,
-                    dataRoot))
+                    dataRoot,
+                    clientContextGeneration))
             {
                 return;
             }
@@ -1407,7 +1744,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            if (!IsClientContextCurrent(selectedServer.Id, dataRoot))
+        if (!IsClientContextCurrent(
+                selectedServer.Id,
+                dataRoot,
+                clientContextGeneration))
             {
                 return;
             }
@@ -1420,7 +1760,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            if (!IsClientContextCurrent(selectedServer.Id, dataRoot))
+        if (!IsClientContextCurrent(
+                selectedServer.Id,
+                dataRoot,
+                clientContextGeneration))
             {
                 return;
             }
@@ -1446,7 +1789,8 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task<bool> RefreshActivityServerBeforeActionAsync(
         string serverId,
-        string dataRoot)
+        string dataRoot,
+        long clientContextGeneration)
     {
         var previousGeneration = Volatile.Read(ref _catalogAppliedGeneration);
         await LoadCatalogAsync();
@@ -1456,7 +1800,10 @@ public sealed class MainWindowViewModel : ObservableObject
             sourceState.LastSource == CatalogSource.Live;
         if (refreshed &&
             hasAuthoritativeSource &&
-            IsClientContextCurrent(serverId, dataRoot))
+            IsClientContextCurrent(
+                serverId,
+                dataRoot,
+                clientContextGeneration))
         {
             return true;
         }
@@ -1469,6 +1816,7 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         var selectedServer = SelectedServer;
         var dataRoot = ClientDirectory;
+        var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
         var keepObjectCache = KeepDownloadsAfterClose;
         if (IsProgressActive || selectedServer is null ||
             !_clientProfiles.TryGetValue(selectedServer.ClientProfileId, out var profile))
@@ -1497,7 +1845,10 @@ public sealed class MainWindowViewModel : ObservableObject
             var progress = new InlineProgress<ClientInstallProgress>(
                 value => DispatchToUi(() =>
                 {
-                    if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                if (IsClientContextCurrent(
+                        selectedServer.Id,
+                        dataRoot,
+                        clientContextGeneration))
                     {
                         ApplyInstallProgress(value);
                     }
@@ -1507,12 +1858,22 @@ public sealed class MainWindowViewModel : ObservableObject
                 new ClientInstallationOptions(dataRoot, keepObjectCache),
                 progress,
                 _activeInstallCancellation.Token);
-            if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                if (IsClientContextCurrent(
+                        selectedServer.Id,
+                        dataRoot,
+                        clientContextGeneration))
             {
                 _selectedProfileState = LocalProfileState.Ready;
                 _selectedProfileStateChecked = true;
-                await RefreshRollbackCandidateAsync(profile, selectedServer.Id, dataRoot);
-                if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                await RefreshRollbackCandidateAsync(
+                    profile,
+                    selectedServer.Id,
+                    dataRoot,
+                    clientContextGeneration);
+                if (IsClientContextCurrent(
+                        selectedServer.Id,
+                        dataRoot,
+                        clientContextGeneration))
                 {
                     NotifySelectedProfileJavaPropertiesChanged();
                     CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
@@ -1613,7 +1974,8 @@ public sealed class MainWindowViewModel : ObservableObject
             var completedBytes = ActiveDownload?.CompletedBytes;
             completionMessage ??= succeeded ? null : ClientStatusText;
             CompleteActiveDownload(completionStatus, completionMessage);
-            await _telemetryService.RecordAsync(
+            IsProgressActive = false;
+            RecordTelemetryInBackground(() => _telemetryService.RecordAsync(
                 isRepair
                     ? LauncherTelemetryEventType.Repair
                     : LauncherTelemetryEventType.Install,
@@ -1622,12 +1984,15 @@ public sealed class MainWindowViewModel : ObservableObject
                 profile.Id,
                 profile.Version,
                 telemetryClock.Elapsed,
-                completedBytes);
+                completedBytes));
             _isInstallingClient = false;
             _activeInstallCancellation?.Dispose();
             _activeInstallCancellation = null;
             CancelDownloadCommand.RaiseCanExecuteChanged();
-            var targetStillSelected = IsClientContextCurrent(selectedServer.Id, dataRoot);
+            var targetStillSelected = IsClientContextCurrent(
+                selectedServer.Id,
+                dataRoot,
+                clientContextGeneration);
             if (!targetStillSelected)
             {
                 _clientInstallPhase = null;
@@ -1648,7 +2013,6 @@ public sealed class MainWindowViewModel : ObservableObject
                 _installStepFailed = false;
             }
             NotifyProgressStepStatesChanged();
-            IsProgressActive = false;
             if (targetStillSelected)
             {
                 UpdatePrimaryActionForState();
@@ -1690,6 +2054,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         var dataRoot = ClientDirectory;
+        var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
         var deleted = false;
         IsProgressActive = true;
         UpdateProgress = 10;
@@ -1702,6 +2067,16 @@ public sealed class MainWindowViewModel : ObservableObject
             ClientStatusText = "正在删除客户端文件";
             await _installationService.DeleteAsync(profile, dataRoot);
 
+            deleted = true;
+            if (!IsClientContextCurrent(
+                    selectedServer.Id,
+                    dataRoot,
+                    clientContextGeneration))
+            {
+                ShowToast("客户端已删除，当前目录或服务器选择已变化");
+                return true;
+            }
+
             _selectedProfileState = LocalProfileState.Missing;
             _selectedProfileStateChecked = true;
             SetRollbackCandidate(null);
@@ -1712,7 +2087,6 @@ public sealed class MainWindowViewModel : ObservableObject
             ShowToast(
                 $"已删除 {profile.DisplayName}，可随时重新安装",
                 ToastLevel.Success);
-            deleted = true;
         }
         catch (ProfileInstallInProgressException)
         {
@@ -1767,6 +2141,8 @@ public sealed class MainWindowViewModel : ObservableObject
             return false;
         }
 
+        var dataRoot = ClientDirectory;
+        var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
         var activatedVersion = _rollbackCandidate.Version;
         var telemetryClock = Stopwatch.StartNew();
         var telemetryOutcome = LauncherTelemetryOutcome.Failure;
@@ -1783,8 +2159,19 @@ public sealed class MainWindowViewModel : ObservableObject
                 value => DispatchToUi(() => ApplyInstallProgress(value)));
             var activatedState = await _installationService.RollbackAsync(
                 profile,
-                ClientDirectory,
+                dataRoot,
                 progress);
+
+            if (!IsClientContextCurrent(
+                    selectedServer.Id,
+                    dataRoot,
+                    clientContextGeneration))
+            {
+                telemetryOutcome = LauncherTelemetryOutcome.Success;
+                telemetryFailure = LauncherTelemetryFailureCode.None;
+                ShowToast("客户端已回滚，当前目录或服务器选择已变化");
+                return true;
+            }
             switched = true;
             _selectedProfileState = string.Equals(
                     activatedState.Version,
@@ -1851,15 +2238,19 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         finally
         {
-            await _telemetryService.RecordAsync(
+            IsProgressActive = false;
+            RecordTelemetryInBackground(() => _telemetryService.RecordAsync(
                 LauncherTelemetryEventType.Rollback,
                 telemetryOutcome,
                 telemetryFailure,
                 profile.Id,
                 activatedVersion,
-                telemetryClock.Elapsed);
-            IsProgressActive = false;
-            await RefreshRollbackCandidateAsync(profile, selectedServer.Id);
+                telemetryClock.Elapsed));
+            await RefreshRollbackCandidateAsync(
+                profile,
+                selectedServer.Id,
+                dataRoot,
+                clientContextGeneration);
             if (!switched)
             {
                 UpdateProgress = _selectedProfileState == LocalProfileState.Ready ? 100 : 0;
@@ -1879,6 +2270,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         var selectedServer = SelectedServer;
         var dataRoot = ClientDirectory;
+        var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
         var memoryMb = ParseMemoryInMiB(SelectedMemory);
         var customJavaPath = GetSelectedProfileCustomJavaPath();
         var profileVersion = _clientProfiles.TryGetValue(
@@ -1897,7 +2289,10 @@ public sealed class MainWindowViewModel : ObservableObject
         var progress = new InlineProgress<MinecraftLaunchProgress>(
             value => DispatchToUi(() =>
             {
-                if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                if (IsClientContextCurrent(
+                        selectedServer.Id,
+                        dataRoot,
+                        clientContextGeneration))
                 {
                     ApplyLaunchProgress(value);
                 }
@@ -1915,7 +2310,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 var stopProgress = new InlineProgress<MinecraftStopProgress>(
                     value => DispatchToUi(() =>
                     {
-                        if (IsClientContextCurrent(selectedServer.Id, dataRoot))
+                if (IsClientContextCurrent(
+                        selectedServer.Id,
+                        dataRoot,
+                        clientContextGeneration))
                         {
                             ApplyStopProgress(value);
                         }
@@ -2100,14 +2498,14 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         finally
         {
-            await _telemetryService.RecordAsync(
+            IsProgressActive = false;
+            RecordTelemetryInBackground(() => _telemetryService.RecordAsync(
                 LauncherTelemetryEventType.Launch,
                 telemetryOutcome,
                 telemetryFailure,
                 selectedServer.ClientProfileId,
                 profileVersion,
-                telemetryClock.Elapsed);
-            IsProgressActive = false;
+                telemetryClock.Elapsed));
             UpdatePrimaryActionForState();
         }
 
@@ -2396,7 +2794,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 out var profile)
             ? profile.Version
             : "unknown";
-        await _telemetryService.RecordAsync(
+        RecordTelemetryInBackground(() => _telemetryService.RecordAsync(
             LauncherTelemetryEventType.GameExit,
             exitKind != MinecraftProcessExitKind.Natural || record.ExitCode == 0
                 ? LauncherTelemetryOutcome.Success
@@ -2408,7 +2806,7 @@ public sealed class MainWindowViewModel : ObservableObject
                     : LauncherTelemetryFailureCode.GameExitedNonZero,
             record.ProfileId,
             profileVersion,
-            record.ExitedAt - record.StartedAt);
+            record.ExitedAt - record.StartedAt));
 
         DispatchToUi(() =>
         {
@@ -2419,10 +2817,15 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(CanDeleteSelectedProfile));
             OnPropertyChanged(nameof(DeleteProfileToolTip));
             OnPropertyChanged(nameof(CanChangeClientDirectory));
-            var runningGame = _gameLauncherService.GetRunningGame();
-            _runningServerId = runningGame?.ServerId;
-            ResetLauncherSettingsCommand.RaiseCanExecuteChanged();
-            if (runningGame is null && !IsProgressActive)
+        var runningGame = _gameLauncherService.GetRunningGame();
+        _runningServerId = runningGame?.ServerId;
+        ResetLauncherSettingsCommand.RaiseCanExecuteChanged();
+        InstallLauncherUpdateCommand.RaiseCanExecuteChanged();
+        if (runningGame is null && _launcherUpdatePlan is not null)
+        {
+            TryPresentLauncherUpdatePlan();
+        }
+        if (runningGame is null && !IsProgressActive)
             {
                 ClientStatusText =
                     exitKind != MinecraftProcessExitKind.Natural
@@ -2607,6 +3010,37 @@ public sealed class MainWindowViewModel : ObservableObject
         _uiContext.Post(_ => action(), null);
     }
 
+    private void RecordTelemetryInBackground(Func<Task> operation)
+    {
+        _ = RecordTelemetryWithTimeoutAsync(operation);
+    }
+
+    private static async Task RecordTelemetryWithTimeoutAsync(
+        Func<Task> operation)
+    {
+        try
+        {
+            await operation().WaitAsync(TimeSpan.FromSeconds(3));
+        }
+        catch (Exception exception) when (
+            exception is TimeoutException or
+            IOException or
+            UnauthorizedAccessException or
+            HttpRequestException or
+            TaskCanceledException)
+        {
+            Trace.TraceWarning(
+                "Launcher telemetry was deferred or dropped: {0}",
+                exception.Message);
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceWarning(
+                "Launcher telemetry failed: {0}",
+                exception.Message);
+        }
+    }
+
     private async Task<bool> RefreshClientStateAsync()
     {
         var selectedServer = SelectedServer;
@@ -2618,6 +3052,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         var dataRoot = ClientDirectory;
         var generation = Interlocked.Increment(ref _clientStateRefreshGeneration);
+        var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
         try
         {
             var stateTask = _installationService.GetLocalStateAsync(
@@ -2632,7 +3067,8 @@ public sealed class MainWindowViewModel : ObservableObject
             if (!IsClientStateRefreshCurrent(
                     generation,
                     selectedServer.Id,
-                    dataRoot))
+                    dataRoot,
+                    clientContextGeneration))
             {
                 return false;
             }
@@ -2668,7 +3104,8 @@ public sealed class MainWindowViewModel : ObservableObject
             if (IsClientStateRefreshCurrent(
                     generation,
                     selectedServer.Id,
-                    dataRoot))
+                    dataRoot,
+                    clientContextGeneration))
             {
                 _selectedProfileStateChecked = false;
                 UpdateProgress = 0;
@@ -2682,15 +3119,17 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool IsClientStateRefreshCurrent(
         long generation,
         string serverId,
-        string dataRoot) =>
+        string dataRoot,
+        long clientContextGeneration) =>
         generation == Volatile.Read(ref _clientStateRefreshGeneration) &&
         !IsProgressActive &&
-        IsClientContextCurrent(serverId, dataRoot);
+        IsClientContextCurrent(serverId, dataRoot, clientContextGeneration);
 
     private async Task RefreshRollbackCandidateAsync(
         ClientProfileSummary profile,
         string? selectedServerId,
-        string? dataRoot = null)
+        string? dataRoot = null,
+        long? clientContextGeneration = null)
     {
         var targetDataRoot = dataRoot ?? ClientDirectory;
         try
@@ -2698,7 +3137,10 @@ public sealed class MainWindowViewModel : ObservableObject
             var candidate = await _installationService.GetRollbackCandidateAsync(
                 profile,
                 targetDataRoot);
-            if (IsClientContextCurrent(selectedServerId, targetDataRoot))
+            if (IsClientContextCurrent(
+                    selectedServerId,
+                    targetDataRoot,
+                    clientContextGeneration))
             {
                 SetRollbackCandidate(candidate);
             }
@@ -2706,14 +3148,28 @@ public sealed class MainWindowViewModel : ObservableObject
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            if (IsClientContextCurrent(selectedServerId, targetDataRoot))
+            if (IsClientContextCurrent(
+                    selectedServerId,
+                    targetDataRoot,
+                    clientContextGeneration))
             {
                 SetRollbackCandidate(null);
             }
         }
     }
 
-    private bool IsClientContextCurrent(string? serverId, string dataRoot) =>
+    private void InvalidateClientContext()
+    {
+        Interlocked.Increment(ref _clientContextGeneration);
+        Interlocked.Increment(ref _clientStateRefreshGeneration);
+    }
+
+    private bool IsClientContextCurrent(
+        string? serverId,
+        string dataRoot,
+        long? expectedGeneration = null) =>
+        (!expectedGeneration.HasValue ||
+         Volatile.Read(ref _clientContextGeneration) == expectedGeneration.Value) &&
         string.Equals(SelectedServer?.Id, serverId, StringComparison.Ordinal) &&
         AreDirectoriesSame(ClientDirectory, dataRoot);
 
@@ -2774,6 +3230,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         _clientDirectory = normalized;
+        InvalidateClientContext();
         _selectedProfileState = LocalProfileState.Missing;
         _selectedProfileStateChecked = false;
         OnPropertyChanged(nameof(ClientDirectory));
@@ -2793,6 +3250,7 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         SelectedMemory = "6 GB";
         _clientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory;
+        InvalidateClientContext();
         _profileJavaPaths.Clear();
         _selectedProfileState = LocalProfileState.Missing;
         _selectedProfileStateChecked = false;
@@ -2970,6 +3428,7 @@ public sealed class MainWindowViewModel : ObservableObject
         try
         {
             await _authenticationService.SendRegistrationCodeAsync(email.Trim());
+            StartRegistrationCodeCooldown();
             SetAccountFormStatus(
                 "验证码已发送，请检查收件箱和垃圾邮件。",
                 isError: false);
@@ -3299,6 +3758,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private void SetCurrentAccount(HechaoAccount? account)
     {
         var accountChanged = _currentAccount?.UserId != account?.UserId;
+        if (accountChanged)
+        {
+            InvalidateClientContext();
+        }
         var keepCurrentSkin =
             _accountSkinSource is not null &&
             _currentAccount?.MinecraftUuid is Guid currentMinecraftUuid &&
@@ -3503,10 +3966,76 @@ public sealed class MainWindowViewModel : ObservableObject
                 StringComparison.OrdinalIgnoreCase),
         };
 
+    private static bool AreClientProfilesEquivalent(
+        ClientProfileSummary? left,
+        ClientProfileSummary? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return string.Equals(left.Id, right.Id, StringComparison.Ordinal) &&
+               string.Equals(left.Version, right.Version, StringComparison.Ordinal) &&
+               string.Equals(left.Sha256, right.Sha256, StringComparison.OrdinalIgnoreCase) &&
+               left.DownloadBytes == right.DownloadBytes;
+    }
+
+    private void StartRegistrationCodeCooldown()
+    {
+        Interlocked.Exchange(
+            ref _registrationCodeCooldownCancellation,
+            null)?.Cancel();
+
+        var cancellation = new CancellationTokenSource();
+        _registrationCodeCooldownCancellation = cancellation;
+        SetRegistrationCodeCooldownActive(true);
+        _ = EndRegistrationCodeCooldownAsync(cancellation);
+    }
+
+    private async Task EndRegistrationCodeCooldownAsync(
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await Task.Delay(RegistrationCodeCooldown, cancellation.Token);
+            DispatchToUi(() =>
+            {
+                if (ReferenceEquals(_registrationCodeCooldownCancellation, cancellation))
+                {
+                    _registrationCodeCooldownCancellation = null;
+                    SetRegistrationCodeCooldownActive(false);
+                }
+            });
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // A newer successful request owns the cooldown.
+        }
+        finally
+        {
+            cancellation.Dispose();
+        }
+    }
+
+    private void SetRegistrationCodeCooldownActive(bool value)
+    {
+        if (_isRegistrationCodeCooldownActive == value)
+        {
+            return;
+        }
+
+        _isRegistrationCodeCooldownActive = value;
+        OnPropertyChanged(nameof(CanSendRegistrationCode));
+        OnPropertyChanged(nameof(RegistrationCodeActionText));
+    }
+
     private void SetAccountFormStatus(string message, bool isError)
     {
         AccountFormMessage = message;
         IsAccountFormError = isError;
+        _accountFormAnnouncementRevision++;
+        OnPropertyChanged(nameof(AccountFormAnnouncementRevision));
     }
 
     private static string GetAccessTierText(AccessTier accessTier)
@@ -3568,6 +4097,23 @@ public sealed class MainWindowViewModel : ObservableObject
         return bytes >= bytesPerGibibyte
             ? $"{bytes / bytesPerGibibyte:0.##} GB"
             : $"{bytes / bytesPerMebibyte:0.#} MB";
+    }
+
+    private void SetNavigationPage(
+        bool isSelected,
+        LauncherPage page,
+        string propertyName)
+    {
+        if (isSelected)
+        {
+            ActivePage = page;
+            return;
+        }
+
+        if (ActivePage == page)
+        {
+            OnPropertyChanged(propertyName);
+        }
     }
 
     private void ToggleNotifications()

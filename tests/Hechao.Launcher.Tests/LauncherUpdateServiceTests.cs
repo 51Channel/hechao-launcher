@@ -208,6 +208,118 @@ public sealed class LauncherUpdateServiceTests
         Assert.False(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.2"));
     }
 
+    [Fact]
+    public void PendingAttempt_IdentifiesOnlyTheRecordedTargetVersion()
+    {
+        using var temporary = new TemporaryDirectory();
+
+        LauncherUpdateFailureLog.WriteAttempt(temporary.Path, "0.14.2");
+
+        Assert.True(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.2"));
+        Assert.False(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.3"));
+
+        LauncherUpdateFailureLog.TryDeleteAttempt(temporary.Path);
+
+        Assert.False(LauncherUpdateFailureLog.HasFailedVersion(temporary.Path, "0.14.2"));
+    }
+
+    [Fact]
+    public void HasPreviousInstallFailure_TreatsPendingAttemptAsFailure()
+    {
+        using var temporary = new TemporaryDirectory();
+        var service = new LauncherUpdateService(
+            null!,
+            null!,
+            temporary.Path,
+            static () => string.Empty,
+            static _ => null);
+        var plan = new LauncherUpdatePlan(
+            new Version(0, 14, 1),
+            new Version(0, 14, 2),
+            new Version(0, 12, 3),
+            1024,
+            Convert.ToHexString(SHA256.HashData("installer"u8)).ToLowerInvariant(),
+            PublishedAt,
+            "Release notes",
+            new Uri("https://download.hechao.world/releases/launcher/0.14.2/installer.exe"));
+
+        LauncherUpdateFailureLog.WriteAttempt(temporary.Path, "0.14.2");
+
+        Assert.True(service.HasPreviousInstallFailure(plan));
+    }
+
+    [Fact]
+    public async Task DownloadAndLaunchUpdaterAsync_FailureAfterPendingAttemptRemainsBlocked()
+    {
+        using var client = new HttpClient(new StaticResponseHandler(HttpStatusCode.Forbidden));
+        var downloader = new ResumableFileDownloader(client, 1);
+        using var temporary = new TemporaryDirectory();
+        var service = new LauncherUpdateService(
+            null!,
+            downloader,
+            temporary.Path,
+            static () => string.Empty,
+            static _ => null);
+        var plan = new LauncherUpdatePlan(
+            new Version(0, 14, 1),
+            new Version(0, 14, 2),
+            new Version(0, 12, 3),
+            1024 * 1024,
+            Convert.ToHexString(SHA256.HashData("installer"u8)).ToLowerInvariant(),
+            PublishedAt,
+            "Release notes",
+            new Uri("https://download.hechao.world/releases/launcher/0.14.2/installer.exe"));
+
+        LauncherUpdateFailureLog.WriteAttempt(temporary.Path, "0.14.2");
+
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => service.DownloadAndLaunchUpdaterAsync(
+                plan,
+                progress: null,
+                cancellationToken: CancellationToken.None));
+
+        Assert.True(service.HasPreviousInstallFailure(plan));
+        Assert.False(File.Exists(Path.Combine(temporary.Path, "pending-update-attempt.log")));
+        Assert.True(File.Exists(Path.Combine(temporary.Path, "last-update-error.log")));
+    }
+
+    [Fact]
+    public async Task DownloadAndLaunchUpdaterAsync_PersistsPendingAttemptBeforeUpdaterStartFailure()
+    {
+        var installer = Enumerable.Repeat((byte)0x5A, 1024).ToArray();
+        using var client = new HttpClient(new StaticContentResponseHandler(installer));
+        var downloader = new ResumableFileDownloader(client, 1);
+        using var temporary = new TemporaryDirectory();
+        var launcherPath = Path.Combine(temporary.Path, "Hechao.Launcher.exe");
+        File.WriteAllBytes(launcherPath, "launcher"u8.ToArray());
+        var service = new LauncherUpdateService(
+            null!,
+            downloader,
+            temporary.Path,
+            () => launcherPath,
+            static _ => null);
+        var plan = new LauncherUpdatePlan(
+            new Version(0, 14, 1),
+            new Version(0, 14, 2),
+            new Version(0, 12, 3),
+            installer.Length,
+            Convert.ToHexString(SHA256.HashData(installer)).ToLowerInvariant(),
+            PublishedAt,
+            "Release notes",
+            new Uri("https://download.hechao.world/releases/launcher/0.14.2/installer.exe"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.DownloadAndLaunchUpdaterAsync(
+                plan,
+                progress: null,
+                cancellationToken: CancellationToken.None));
+
+        var attemptPath = Path.Combine(temporary.Path, "pending-update-attempt.log");
+        Assert.True(File.Exists(attemptPath));
+        Assert.Contains("target-version=0.14.2", File.ReadAllText(attemptPath), StringComparison.Ordinal);
+        Assert.True(service.HasPreviousInstallFailure(plan));
+    }
+
     private static LauncherUpdateRelease CreateRelease(
         string version = "0.13.0",
         string minimumSupportedVersion = "0.11.0",
@@ -232,6 +344,20 @@ public sealed class LauncherUpdateServiceTests
             {
                 RequestMessage = request
             });
+    }
+
+    private sealed class StaticContentResponseHandler(byte[] content) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                RequestMessage = request,
+                Content = new ByteArrayContent(content)
+            });
+        }
     }
 
     private sealed class TemporaryDirectory : IDisposable

@@ -727,6 +727,239 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                 now));
     }
 
+    [Fact]
+    public void NavigationSelectionSetters_KeepExactlyOnePageSelected()
+    {
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService());
+        var selections = new Action[]
+        {
+            () => viewModel.IsServersPage = true,
+            () => viewModel.IsDownloadsPage = true,
+            () => viewModel.IsActivitiesPage = true,
+            () => viewModel.IsAccountPage = true,
+            () => viewModel.IsSettingsPage = true
+        };
+
+        foreach (var select in selections)
+        {
+            select();
+            Assert.Single(
+                new[]
+                {
+                    viewModel.IsServersPage,
+                    viewModel.IsDownloadsPage,
+                    viewModel.IsActivitiesPage,
+                    viewModel.IsAccountPage,
+                    viewModel.IsSettingsPage
+                },
+                isSelected => isSelected);
+        }
+
+        viewModel.IsSettingsPage = false;
+        Assert.True(viewModel.IsSettingsPage);
+    }
+
+    [Fact]
+    public async Task Catalog_SameServerProfileVersionAndHashChange_RechecksReadyClientState()
+    {
+        var initialCatalog = CreateCatalogSnapshot("catalog-test", "目录测试");
+        var changedCatalog = initialCatalog with
+        {
+            ClientProfiles =
+            [
+                initialCatalog.ClientProfiles[0] with
+                {
+                    Version = "1.0.1",
+                    Sha256 = new string('b', 64),
+                },
+            ],
+        };
+        var catalog = new ControllableCatalogClient();
+        var refreshedState = new TaskCompletionSource<LocalProfileState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var localStateChecks = 0;
+        var installation = new StubInstallationService
+        {
+            LocalStateHandler = (_, _, _) =>
+                Interlocked.Increment(ref localStateChecks) >= 2
+                ? refreshedState.Task
+                : Task.FromResult(LocalProfileState.Ready),
+        };
+
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            catalogClient: catalog);
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+        catalog.FirstResponse.SetResult(initialCatalog);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer is not null &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        viewModel.RefreshCommand.Execute(null);
+        await WaitUntilAsync(() => catalog.RequestCount == 2);
+        catalog.SecondResponse.SetResult(changedCatalog);
+        await WaitUntilAsync(() => installation.LocalStateRequestCount == 2);
+
+        Assert.Equal("正在检查客户端", viewModel.ClientStatusText);
+
+        refreshedState.SetResult(LocalProfileState.Ready);
+        await WaitUntilAsync(() => viewModel.ClientStatusText == "客户端已就绪");
+
+        Assert.Equal("catalog-test", viewModel.SelectedServer?.Id);
+        Assert.Equal(2, installation.LocalStateRequestCount);
+    }
+
+    [Fact]
+    public async Task LauncherUpdateCheck_OlderResponseCannotOverwriteNewerResponse()
+    {
+        var firstResponse = new TaskCompletionSource<LauncherUpdatePlan?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondResponse = new TaskCompletionSource<LauncherUpdatePlan?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var updateService = new StubLauncherUpdateService();
+        updateService.CheckResponses.Enqueue(firstResponse.Task);
+        updateService.CheckResponses.Enqueue(secondResponse.Task);
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            launcherUpdateService: updateService);
+
+        await WaitUntilAsync(() => updateService.CheckRequestCount == 1);
+
+        var newerCheck = InvokeLauncherUpdateCheckAsync(viewModel, userInitiated: true);
+        await WaitUntilAsync(() => updateService.CheckRequestCount == 2);
+        secondResponse.SetResult(CreateLauncherUpdatePlan(new Version(0, 15, 0)));
+        await newerCheck;
+        await WaitUntilAsync(() =>
+            viewModel.IsLauncherUpdateVisible &&
+            viewModel.LauncherUpdateTitle.Contains("0.15.0", StringComparison.Ordinal));
+
+        firstResponse.SetResult(CreateLauncherUpdatePlan(new Version(0, 14, 0)));
+        await Task.Delay(50);
+
+        Assert.Contains("0.15.0", viewModel.LauncherUpdateTitle, StringComparison.Ordinal);
+        Assert.DoesNotContain("0.14.0", viewModel.LauncherUpdateTitle, StringComparison.Ordinal);
+        Assert.Equal(0, updateService.DownloadRequestCount);
+    }
+
+    [Fact]
+    public async Task LauncherUpdate_AvailableDuringInstall_DefersAutoInstallUntilTaskCompletes()
+    {
+        var updateResponse = new TaskCompletionSource<LauncherUpdatePlan?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var updateService = new StubLauncherUpdateService();
+        updateService.CheckResponses.Enqueue(updateResponse.Task);
+        var installRelease = new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var installation = new StubInstallationService
+        {
+            LocalState = LocalProfileState.Missing,
+            InstallRelease = installRelease,
+        };
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            launcherUpdateService: updateService);
+
+        await WaitUntilAsync(() => viewModel.PrimaryActionText == "安装客户端");
+
+        var installAndLaunch = viewModel.PrimaryActionCommand.ExecuteAsync();
+        await installation.InstallStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        updateResponse.SetResult(CreateLauncherUpdatePlan(new Version(0, 15, 0)));
+        await WaitUntilAsync(() => updateService.CheckRequestCount == 1);
+        await Task.Delay(50);
+
+        Assert.Equal(0, updateService.DownloadRequestCount);
+        Assert.True(viewModel.IsProgressActive);
+
+        installRelease.SetResult(null);
+        await installAndLaunch;
+        await WaitUntilAsync(() => updateService.DownloadRequestCount == 1);
+
+    }
+
+    [Fact]
+    public async Task ActivityLaunch_WhenAuthoritativeRefreshTurnsServerOffline_DoesNotLaunch()
+    {
+        var catalog = new ControllableCatalogClient();
+        var gameLauncher = new StubGameLauncherService();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            gameLauncher,
+            catalogClient: catalog);
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+        catalog.FirstResponse.SetResult(CreateActivityCatalog(ServerStatus.Online));
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer?.Status == ServerStatus.Online &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        var action = viewModel.PrimaryActionCommand.ExecuteAsync();
+        await WaitUntilAsync(() => catalog.RequestCount == 2);
+        catalog.SecondResponse.SetResult(CreateActivityCatalog(ServerStatus.Closed));
+        await action;
+
+        Assert.Equal(ServerStatus.Closed, viewModel.SelectedServer?.Status);
+        Assert.Equal(0, gameLauncher.LaunchRequestCount);
+    }
+
+    [Fact]
+    public async Task Catalog_CacheFallbackAutomaticallyRetriesUntilLiveSnapshotArrives()
+    {
+        var catalog = new CacheThenLiveCatalogClient(CreateCatalogSnapshot("catalog-test", "目录测试"));
+        _ = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog,
+            catalogFallbackRetryDelay: TimeSpan.FromMilliseconds(20));
+
+        await WaitUntilAsync(() => catalog.RequestCount >= 2);
+
+        Assert.Equal(2, catalog.RequestCount);
+        Assert.Equal(CatalogSource.Live, catalog.LastSource);
+    }
+
+    [Fact]
+    public async Task TelemetryThatNeverCompletes_DoesNotKeepInstallProgressActive()
+    {
+        var telemetry = new NeverCompletingTelemetryService();
+        var installation = new StubInstallationService
+        {
+            LocalState = LocalProfileState.Missing,
+        };
+        var gameLauncher = new StubGameLauncherService();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            gameLauncher,
+            installation,
+            telemetryService: telemetry);
+
+        await WaitUntilAsync(() => viewModel.PrimaryActionText == "安装客户端");
+        await viewModel.PrimaryActionCommand.ExecuteAsync();
+
+        Assert.Equal(1, installation.InstallRequestCount);
+        Assert.Equal(1, gameLauncher.LaunchRequestCount);
+        Assert.False(viewModel.IsProgressActive);
+        Assert.True(telemetry.RecordRequestCount >= 2);
+    }
+
+    private static Task InvokeLauncherUpdateCheckAsync(
+        MainWindowViewModel viewModel,
+        bool userInitiated)
+    {
+        var method = typeof(MainWindowViewModel).GetMethod(
+            "TryCheckLauncherUpdateAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        return Assert.IsAssignableFrom<Task>(method?.Invoke(viewModel, [userInitiated]));
+    }
+
     private static MainWindowViewModel CreateViewModel(
         StubAuthenticationService authentication,
         StubGameLauncherService gameLauncher,
@@ -735,7 +968,9 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         ILauncherUpdateService? launcherUpdateService = null,
         IPlayerGameSettingsService? playerGameSettingsService = null,
         IServerCatalogClient? catalogClient = null,
-        IDownloadHistoryStore? downloadHistoryStore = null)
+        IDownloadHistoryStore? downloadHistoryStore = null,
+        ILauncherTelemetryService? telemetryService = null,
+        TimeSpan? catalogFallbackRetryDelay = null)
     {
         return new MainWindowViewModel(
             catalogClient ?? new StubCatalogClient(),
@@ -746,8 +981,10 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             downloadHistoryStore ?? new StubDownloadHistoryStore(),
             new StubGameDiagnosticsService(),
             new StubDiagnosticUploadService(),
+            telemetryService: telemetryService,
             launcherUpdateService: launcherUpdateService,
-            playerGameSettingsService: playerGameSettingsService);
+            playerGameSettingsService: playerGameSettingsService,
+            catalogFallbackRetryDelay: catalogFallbackRetryDelay);
     }
 
     private static InstalledProfileState CreateInstalledState(string version) =>
@@ -791,6 +1028,33 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                     DateTimeOffset.UtcNow)
             ]);
     }
+
+    private static LauncherCatalogSnapshot CreateActivityCatalog(ServerStatus status)
+    {
+        var snapshot = CreateCatalogSnapshot("activity-test", "活动测试");
+        return snapshot with
+        {
+            Servers =
+            [
+                snapshot.Servers[0] with
+                {
+                    Status = status,
+                    CatalogSection = ServerCatalogSection.Activity,
+                },
+            ],
+        };
+    }
+
+    private static LauncherUpdatePlan CreateLauncherUpdatePlan(Version targetVersion) =>
+        new(
+            new Version(0, 13, 7),
+            targetVersion,
+            new Version(0, 12, 3),
+            64 * 1024 * 1024,
+            new string('a', 64),
+            DateTimeOffset.UtcNow,
+            "自动更新测试",
+            new Uri("https://download.hechao.world/launcher.exe"));
 
     private static LauncherCatalogSnapshot CreateTwoProfileCatalog(
         ServerStatus firstStatus = ServerStatus.Online,
@@ -963,6 +1227,27 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             Task.FromResult(snapshot);
     }
 
+    private sealed class CacheThenLiveCatalogClient : IServerCatalogClient, ICatalogSourceState
+    {
+        private readonly LauncherCatalogSnapshot _snapshot;
+
+        public CacheThenLiveCatalogClient(LauncherCatalogSnapshot snapshot)
+        {
+            _snapshot = snapshot;
+        }
+
+        public int RequestCount { get; private set; }
+
+        public CatalogSource LastSource { get; private set; } = CatalogSource.BuiltIn;
+
+        public Task<LauncherCatalogSnapshot> GetCatalogAsync(CancellationToken cancellationToken = default)
+        {
+            RequestCount++;
+            LastSource = RequestCount == 1 ? CatalogSource.Cache : CatalogSource.Live;
+            return Task.FromResult(_snapshot);
+        }
+    }
+
     private sealed class StubAuthenticationService : ILauncherAuthenticationService
     {
         private static readonly Guid MinecraftUuid =
@@ -1106,6 +1391,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public int CheckFailuresRemaining { get; set; }
         public int CheckRequestCount { get; private set; }
         public int DownloadRequestCount { get; private set; }
+        public Queue<Task<LauncherUpdatePlan?>> CheckResponses { get; } = [];
 
         public Task<LauncherUpdatePlan?> CheckAsync(
             CancellationToken cancellationToken = default)
@@ -1116,6 +1402,11 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                 CheckFailuresRemaining--;
                 return Task.FromException<LauncherUpdatePlan?>(
                     new HttpRequestException("transient"));
+            }
+
+            if (CheckResponses.TryDequeue(out var response))
+            {
+                return response;
             }
 
             return Task.FromResult(Plan);
@@ -1362,6 +1653,31 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                     exitedAt,
                     exitKind,
                     dataRoot));
+        }
+    }
+
+    private sealed class NeverCompletingTelemetryService : ILauncherTelemetryService
+    {
+        private readonly TaskCompletionSource<object?> _neverCompletes = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int RecordRequestCount { get; private set; }
+
+        public Task RecordAsync(
+            LauncherTelemetryEventType type,
+            LauncherTelemetryOutcome outcome,
+            LauncherTelemetryFailureCode failureCode = LauncherTelemetryFailureCode.None,
+            string? profileId = null,
+            string? profileVersion = null,
+            TimeSpan? duration = null,
+            long? bytesTransferred = null)
+        {
+            RecordRequestCount++;
+            return _neverCompletes.Task;
+        }
+
+        public void TryFlush()
+        {
         }
     }
 

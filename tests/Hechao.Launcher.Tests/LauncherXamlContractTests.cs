@@ -5,6 +5,104 @@ namespace Hechao.Launcher.Tests;
 public sealed class LauncherXamlContractTests
 {
     [Fact]
+    public void ButtonStyles_MatchTheControlTypeThatUsesThem()
+    {
+        var launcher = LoadLauncherXaml();
+        var theme = LoadThemeXaml();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var styleTargets = theme
+            .Descendants(presentation + "Style")
+            .Where(style => style.Attribute(x + "Key") is not null)
+            .ToDictionary(
+                style => style.Attribute(x + "Key")!.Value,
+                style => style.Attribute("TargetType")?.Value,
+                StringComparer.Ordinal);
+
+        var styledButtons = launcher
+            .Descendants()
+            .Where(element =>
+                element.Name.Namespace == presentation &&
+                element.Name.LocalName is "Button" or "ToggleButton")
+            .Select(element => new
+            {
+                Element = element,
+                StyleKey = GetStaticResourceKey(element.Attribute("Style")?.Value)
+            })
+            .Where(item => item.StyleKey is not null && styleTargets.ContainsKey(item.StyleKey));
+
+        foreach (var item in styledButtons)
+        {
+            Assert.Equal(
+                item.Element.Name.LocalName,
+                styleTargets[item.StyleKey!]);
+        }
+    }
+
+    [Fact]
+    public void RailNavigation_IsTwoWayAndHasStableAutomationNames()
+    {
+        var launcher = LoadLauncherXaml();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        var pageBindings = new[]
+        {
+            "IsServersPage",
+            "IsDownloadsPage",
+            "IsActivitiesPage",
+            "IsAccountPage",
+            "IsSettingsPage"
+        };
+
+        foreach (var pageBinding in pageBindings)
+        {
+            var toggle = launcher
+                .Descendants(presentation + "ToggleButton")
+                .Single(element =>
+                    element.Attribute("IsChecked")?.Value.Contains(
+                        pageBinding,
+                        StringComparison.Ordinal) == true);
+
+            Assert.Contains("Mode=TwoWay", toggle.Attribute("IsChecked")!.Value);
+            Assert.False(string.IsNullOrWhiteSpace(
+                toggle.Attribute("AutomationProperties.Name")?.Value));
+        }
+    }
+
+    [Fact]
+    public void AccountAndCatalogItems_ExposeStableAutomationLabels()
+    {
+        var launcher = LoadLauncherXaml();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var linkButton = launcher
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Command")?.Value.Contains(
+                    "LinkMinecraftCommand",
+                    StringComparison.Ordinal) == true);
+        Assert.Equal(
+            "绑定 Microsoft 正版身份",
+            linkButton.Attribute("AutomationProperties.Name")?.Value);
+
+        foreach (var listName in new[] { "服务器目录", "下载历史", "活动服务器目录" })
+        {
+            var list = launcher
+                .Descendants(presentation + "ListBox")
+                .Single(element =>
+                    element.Attribute("AutomationProperties.Name")?.Value == listName);
+            var setters = list
+                .Descendants(presentation + "Setter")
+                .Select(setter => setter.Attribute("Property")?.Value)
+                .ToArray();
+
+            Assert.Contains("AutomationProperties.Name", setters);
+            Assert.Contains("AutomationProperties.ItemStatus", setters);
+            Assert.Contains("AutomationProperties.HelpText", setters);
+        }
+    }
+
+    [Fact]
     public void ActiveDownloadPercentBinding_IsExplicitlyOneWay()
     {
         var repositoryRoot = FindRepositoryRoot();
@@ -76,14 +174,14 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "LauncherUpdateDialog");
         var progressRegion = dialog
-            .Descendants(presentation + "Grid")
+            .Descendants()
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "LauncherUpdateProgressRegion");
         var progressBar = progressRegion
-            .Elements()
+            .Descendants()
             .Single(element => element.Name.LocalName == "AnimatedProgressBar");
         var status = progressRegion
-            .Elements(presentation + "TextBlock")
+            .Descendants(presentation + "TextBlock")
             .Single(element =>
                 (element.Attribute("Text")?.Value ?? string.Empty).Contains(
                     "LauncherUpdateStatus",
@@ -514,7 +612,9 @@ public sealed class LauncherXamlContractTests
 
         var toast = document
             .Descendants()
-            .Single(element => element.Name.LocalName == "LiveRegionBorder");
+            .Single(element =>
+                element.Attribute("AutomationProperties.Name")?.Value ==
+                "{Binding ToastMessage}");
         var toastIcon = toast
             .Descendants()
             .Single(element => element.Name.LocalName == "IconParkIcon");
@@ -724,6 +824,16 @@ public sealed class LauncherXamlContractTests
             "Hechao.Launcher",
             "Themes",
             "HechaoTheme.xaml"));
+    }
+
+    private static string? GetStaticResourceKey(string? value)
+    {
+        const string prefix = "{StaticResource ";
+        return value is not null &&
+               value.StartsWith(prefix, StringComparison.Ordinal) &&
+               value.EndsWith('}')
+            ? value[prefix.Length..^1]
+            : null;
     }
 
     private static double ContrastRatio(string first, string second)

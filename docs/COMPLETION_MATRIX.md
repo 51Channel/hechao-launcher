@@ -84,7 +84,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 活动目录和排期 | 候选已完成，未发布 | 显式 `ServerCatalogSection`、旧缓存兼容、本地时间排期、分段长延时、边界刷新及进服前权威目录复查均有测试 |
 | 玩家设置与真实运行目录 | 候选已完成，未发布 | 运行状态携带真实 `DataRoot`；切服前和退出后以实际运行目录同步 `options.txt` |
 | 自更新失败恢复 | 候选已完成，未发布 | 同一失败版本不会形成启动重启循环，保留当前版本和手动重试入口 |
-| 自动验证 | 候选已完成，未发布 | 完整解决方案 `532/532`，启动器 `170/170`；详见 [`LAUNCHER_FRONTEND_AUDIT_2026-08-01.md`](LAUNCHER_FRONTEND_AUDIT_2026-08-01.md) |
+| 自动验证 | 候选已完成，未发布 | 完整解决方案 `546/546`，启动器 `184/184`；详见 [`LAUNCHER_FRONTEND_AUDIT_2026-08-01.md`](LAUNCHER_FRONTEND_AUDIT_2026-08-01.md) |
 
 ## 2. 玩家端
 

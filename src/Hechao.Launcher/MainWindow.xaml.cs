@@ -15,6 +15,8 @@ namespace Hechao.Launcher;
 public partial class MainWindow : Window
 {
     private IInputElement? _focusBeforeModal;
+    private IInputElement? _focusBeforeNotifications;
+    private bool _allowUpdaterClose;
     private bool _modalFocusCaptured;
 
     public MainWindow()
@@ -64,10 +66,38 @@ public partial class MainWindow : Window
             return;
         }
 
-        viewModel.CloseRequested += (_, _) => Close();
+        viewModel.CloseRequested += ViewModel_OnCloseRequested;
         DataContext = viewModel;
         viewModel.PropertyChanged += ViewModel_OnPropertyChanged;
-        Closed += (_, _) => viewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
+        Closed += (_, _) =>
+        {
+            viewModel.CloseRequested -= ViewModel_OnCloseRequested;
+            viewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
+        };
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (!_allowUpdaterClose &&
+            DataContext is MainWindowViewModel viewModel &&
+            (viewModel.IsProgressActive || viewModel.IsLauncherUpdateBusy))
+        {
+            e.Cancel = true;
+            MessageBox.Show(
+                "当前任务尚未结束。请先等待任务完成，或在下载中心取消后再关闭启动器。",
+                "赫朝启动器",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        base.OnClosing(e);
+    }
+
+    private void ViewModel_OnCloseRequested(object? sender, EventArgs e)
+    {
+        _allowUpdaterClose = true;
+        Close();
     }
 
     private void ViewModel_OnPropertyChanged(
@@ -84,6 +114,13 @@ public partial class MainWindow : Window
                 UpdateModalKeyboardFocus);
         }
 
+        if (eventArgs.PropertyName == nameof(MainWindowViewModel.IsNotificationsOpen))
+        {
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.Input,
+                UpdateNotificationsKeyboardFocus);
+        }
+
         if (eventArgs.PropertyName ==
             nameof(MainWindowViewModel.ToastAnnouncementRevision))
         {
@@ -91,6 +128,62 @@ public partial class MainWindow : Window
                 DispatcherPriority.ContextIdle,
                 ToastLiveRegion.RaiseLiveRegionChanged);
         }
+
+        if (eventArgs.PropertyName == nameof(MainWindowViewModel.CatalogAnnouncementRevision))
+        {
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.ContextIdle,
+                () =>
+                {
+                    ServerCatalogStatusLiveRegion.RaiseLiveRegionChanged();
+                    ActivityCatalogStatusLiveRegion.RaiseLiveRegionChanged();
+                    ActivityCatalogStaleLiveRegion.RaiseLiveRegionChanged();
+                });
+        }
+
+        if (eventArgs.PropertyName == nameof(MainWindowViewModel.AccountFormAnnouncementRevision))
+        {
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.ContextIdle,
+                () =>
+                {
+                    AccountFormLiveRegion.RaiseLiveRegionChanged();
+                    AuthenticatedAccountFormLiveRegion.RaiseLiveRegionChanged();
+                });
+        }
+
+        if (eventArgs.PropertyName == nameof(MainWindowViewModel.LauncherUpdateStatus))
+        {
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.ContextIdle,
+                LauncherUpdateProgressRegion.RaiseLiveRegionChanged);
+        }
+    }
+
+    private void UpdateNotificationsKeyboardFocus()
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.IsNotificationsOpen)
+        {
+            _focusBeforeNotifications ??= Keyboard.FocusedElement;
+            CloseNotificationsButton.Focus();
+            Keyboard.Focus(CloseNotificationsButton);
+            return;
+        }
+
+        if (_focusBeforeNotifications is UIElement previousFocus &&
+            previousFocus.IsVisible &&
+            previousFocus.IsEnabled)
+        {
+            previousFocus.Focus();
+            Keyboard.Focus(previousFocus);
+        }
+
+        _focusBeforeNotifications = null;
     }
 
     private void UpdateModalKeyboardFocus()
@@ -137,6 +230,20 @@ public partial class MainWindow : Window
         }
 
         _focusBeforeModal = null;
+    }
+
+    private void MainWindow_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.IsNotificationsOpen || viewModel.IsSettingsOpen)
+        {
+            viewModel.CloseOverlaysCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
     private void TitleBar_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -216,19 +323,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        SendRegistrationCodeButton.IsEnabled = false;
-        var sent = await viewModel.SendRegistrationCodeAsync(RegisterEmailTextBox.Text);
-        if (!sent)
-        {
-            SendRegistrationCodeButton.IsEnabled = true;
-            return;
-        }
-
-        await Task.Delay(TimeSpan.FromSeconds(60));
-        if (IsLoaded)
-        {
-            SendRegistrationCodeButton.IsEnabled = true;
-        }
+        await viewModel.SendRegistrationCodeAsync(RegisterEmailTextBox.Text);
     }
 
     private async void ConfirmMinecraftUnlinkButton_OnClick(
