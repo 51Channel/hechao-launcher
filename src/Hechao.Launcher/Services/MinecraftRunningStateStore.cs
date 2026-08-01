@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using Hechao.Distribution;
+using Hechao.Launcher.Infrastructure;
 
 namespace Hechao.Launcher.Services;
 
@@ -43,18 +44,24 @@ internal sealed class NullMinecraftRunningStateStore : IMinecraftRunningStateSto
 internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateStore
 {
     private const int MaximumStateBytes = 16 * 1024;
+    private static readonly TimeSpan DefaultLockWaitTimeout = TimeSpan.FromSeconds(3);
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true
     };
 
-    private readonly object _gate = new();
     private readonly string _statePath;
+    private readonly string _lockPath;
+    private readonly TimeSpan _lockWaitTimeout;
 
-    public JsonMinecraftRunningStateStore(string statePath)
+    public JsonMinecraftRunningStateStore(
+        string statePath,
+        TimeSpan? lockWaitTimeout = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(statePath);
         _statePath = Path.GetFullPath(statePath);
+        _lockPath = _statePath + ".lock";
+        _lockWaitTimeout = lockWaitTimeout ?? DefaultLockWaitTimeout;
     }
 
     public static JsonMinecraftRunningStateStore CreateDefault()
@@ -70,10 +77,8 @@ internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateSto
 
     public PersistedMinecraftProcess? Load()
     {
-        lock (_gate)
-        {
-            return LoadCore();
-        }
+        using var stateLock = PathFileLock.Acquire(_statePath, _lockPath, _lockWaitTimeout);
+        return LoadCore();
     }
 
     public void Save(PersistedMinecraftProcess process)
@@ -81,7 +86,7 @@ internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateSto
         ArgumentNullException.ThrowIfNull(process);
         Validate(process);
 
-        lock (_gate)
+        using var stateLock = PathFileLock.Acquire(_statePath, _lockPath, _lockWaitTimeout);
         {
             var directory = Path.GetDirectoryName(_statePath)
                 ?? throw new InvalidOperationException(
@@ -114,7 +119,7 @@ internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateSto
 
     public void ClearIfMatches(int processId, DateTimeOffset startedAt)
     {
-        lock (_gate)
+        using var stateLock = PathFileLock.Acquire(_statePath, _lockPath, _lockWaitTimeout);
         {
             var current = LoadCore();
             if (current is null ||
@@ -133,6 +138,8 @@ internal sealed class JsonMinecraftRunningStateStore : IMinecraftRunningStateSto
             }
         }
     }
+
+    internal string LockPath => _lockPath;
 
     private PersistedMinecraftProcess? LoadCore()
     {

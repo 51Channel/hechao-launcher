@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using Hechao.Distribution;
+using Hechao.Launcher.Infrastructure;
 
 namespace Hechao.Launcher.Services;
 
@@ -58,7 +59,15 @@ public sealed class PlayerGameSettingsService : IPlayerGameSettingsService
         StringComparer.OrdinalIgnoreCase);
 
     private static readonly UTF8Encoding Utf8WithoutBom = new(false);
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private static readonly TimeSpan DefaultLockWaitTimeout = TimeSpan.FromSeconds(5);
+    private const string PlayerSettingsLockFileName = "player-settings.lock";
+
+    private readonly TimeSpan _lockWaitTimeout;
+
+    public PlayerGameSettingsService(TimeSpan? lockWaitTimeout = null)
+    {
+        _lockWaitTimeout = lockWaitTimeout ?? DefaultLockWaitTimeout;
+    }
 
     public Task ImportLatestAsync(
         string dataRoot,
@@ -139,12 +148,25 @@ public sealed class PlayerGameSettingsService : IPlayerGameSettingsService
         Func<ClientStorageLayout, CancellationToken, Task> action,
         CancellationToken cancellationToken)
     {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var layout = new ClientStorageLayout(dataRoot);
             layout.EnsureBaseDirectories();
+
+            using var playerSettingsLock = await PathFileLock.AcquireAsync(
+                    layout.DataRoot,
+                    Path.Combine(layout.LocksRoot, PlayerSettingsLockFileName),
+                    _lockWaitTimeout,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
             await action(layout, cancellationToken).ConfigureAwait(false);
+        }
+        catch (PathFileLockTimeoutException exception)
+        {
+            throw new PlayerGameSettingsException(
+                "Timed out waiting for exclusive access to Minecraft player settings.",
+                exception);
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -155,10 +177,12 @@ public sealed class PlayerGameSettingsService : IPlayerGameSettingsService
                 "Unable to synchronize Minecraft player settings.",
                 exception);
         }
-        finally
-        {
-            _gate.Release();
-        }
+    }
+
+    internal static string GetLockPath(string dataRoot)
+    {
+        var layout = new ClientStorageLayout(dataRoot);
+        return Path.Combine(layout.LocksRoot, PlayerSettingsLockFileName);
     }
 
     private static Task ImportLatestCoreAsync(

@@ -398,7 +398,8 @@
                                 <ColumnDefinition Width="40" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0"
+                            <Border x:Name="SidebarAccountAvatar"
+                                    Grid.Column="0"
                                     Width="46"
                                     Height="46"
                                     Background="#FFD1A071"
@@ -2376,19 +2377,55 @@
                                     Style="{StaticResource SurfacePanelStyle}"
                                     Padding="26">
                                 <StackPanel>
-                                    <Border Width="66"
+                                    <Border x:Name="AccountProfileAvatar"
+                                            Width="66"
                                             Height="66"
                                             HorizontalAlignment="Left"
                                             Background="{StaticResource HechaoRedSoftBrush}"
                                             BorderBrush="#FFD8B2AD"
                                             BorderThickness="1"
-                                            CornerRadius="5">
-                                        <controls:IconParkIcon Kind="User"
-                                                               Width="28"
-                                                               Height="28"
-                                                               Foreground="{StaticResource HechaoRedDarkBrush}"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center" />
+                                            CornerRadius="5"
+                                            ClipToBounds="True"
+                                            SnapsToDevicePixels="True"
+                                            RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                            AutomationProperties.Name="Minecraft 皮肤头像">
+                                        <Grid>
+                                            <controls:IconParkIcon Kind="User"
+                                                                   Width="28"
+                                                                   Height="28"
+                                                                   Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center">
+                                                <controls:IconParkIcon.Style>
+                                                    <Style TargetType="controls:IconParkIcon">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasAccountSkin}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </controls:IconParkIcon.Style>
+                                            </controls:IconParkIcon>
+                                            <Rectangle Visibility="{Binding HasAccountSkin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Rectangle.Fill>
+                                                    <ImageBrush ImageSource="{Binding AccountSkinSource}"
+                                                                Viewbox="8,8,8,8"
+                                                                ViewboxUnits="Absolute"
+                                                                Stretch="Fill"
+                                                                TileMode="None" />
+                                                </Rectangle.Fill>
+                                            </Rectangle>
+                                            <Rectangle Visibility="{Binding HasAccountSkin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Rectangle.Fill>
+                                                    <ImageBrush ImageSource="{Binding AccountSkinSource}"
+                                                                Viewbox="40,8,8,8"
+                                                                ViewboxUnits="Absolute"
+                                                                Stretch="Fill"
+                                                                TileMode="None" />
+                                                </Rectangle.Fill>
+                                            </Rectangle>
+                                        </Grid>
                                     </Border>
                                     <TextBlock Text="{Binding AccountDisplayName}"
                                                FontSize="24"

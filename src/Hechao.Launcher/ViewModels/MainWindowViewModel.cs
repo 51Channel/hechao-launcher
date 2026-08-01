@@ -76,7 +76,6 @@ public sealed class MainWindowViewModel : ObservableObject
     private int _catalogAnnouncementRevision;
     private CancellationTokenSource? _catalogLoadCancellation;
     private long _catalogLoadGeneration;
-    private long _catalogAppliedGeneration;
     private long _clientStateRefreshGeneration;
     private long _clientContextGeneration;
     private CancellationTokenSource? _catalogScheduleCancellation;
@@ -1188,6 +1187,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            var wasLauncherUpdateRequired = IsLauncherUpdateRequired;
             _launcherUpdatePlan = plan;
             LauncherUpdateProgress = 0;
             OnPropertyChanged(nameof(IsLauncherUpdateRequired));
@@ -1195,6 +1195,10 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(LauncherUpdateSummary));
             OnPropertyChanged(nameof(LauncherUpdateReleaseNotes));
             OnPropertyChanged(nameof(LauncherUpdateSizeText));
+            if (wasLauncherUpdateRequired != IsLauncherUpdateRequired)
+            {
+                PrimaryActionCommand.RaiseCanExecuteChanged();
+            }
 
             var previousInstallFailed =
                 _launcherUpdateService.HasPreviousInstallFailure(plan);
@@ -1317,8 +1321,25 @@ public sealed class MainWindowViewModel : ObservableObject
         _launcherUpdateAutoInstallPending = false;
     }
 
-    private async Task LoadCatalogAsync(bool userInitiated = false)
+    private async Task<bool> LoadCatalogAsync(
+        bool userInitiated = false,
+        CancellationTokenSource? fallbackRetryOwner = null)
     {
+        if (fallbackRetryOwner is null)
+        {
+            CancelCatalogFallbackRetry();
+        }
+        else
+        {
+            fallbackRetryOwner.Token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(
+                    Volatile.Read(ref _catalogRetryCancellation),
+                    fallbackRetryOwner))
+            {
+                return false;
+            }
+        }
+
         var generation = Interlocked.Increment(ref _catalogLoadGeneration);
         var accountId = _currentAccount?.UserId;
         using var cancellation = new CancellationTokenSource();
@@ -1334,16 +1355,17 @@ public sealed class MainWindowViewModel : ObservableObject
             isStale: false);
         try
         {
-            var snapshot = await _catalogClient.GetCatalogAsync(cancellation.Token);
+            var result = await _catalogClient.GetCatalogResultAsync(cancellation.Token);
+            var snapshot = result.Snapshot;
             if (!IsCatalogLoadCurrent(generation, cancellation, accountId))
             {
-                return;
+                return false;
             }
 
             if (IsProgressActive)
             {
                 _catalogRefreshPending = true;
-                return;
+                return false;
             }
 
             var selectedProfileId = SelectedServer?.ClientProfileId;
@@ -1411,46 +1433,44 @@ public sealed class MainWindowViewModel : ObservableObject
             }
             _hasLoadedCatalog = true;
             NotifyCatalogStateChanged();
-            Volatile.Write(ref _catalogAppliedGeneration, generation);
             ScheduleCatalogBoundaryRefresh(snapshot.Servers);
 
-            if (_catalogClient is ICatalogSourceState sourceState)
+            switch (result.Source)
             {
-                switch (sourceState.LastSource)
-                {
-                case CatalogSource.Cache:
-                    SetCatalogStatus(
-                        "目录服务暂时不可用，当前显示上次成功数据。",
-                        hasError: false,
-                        isStale: true);
-                    ScheduleCatalogFallbackRetry();
-                    ShowToast("目录服务暂时不可用，已显示上次成功数据");
-                    break;
-                case CatalogSource.BuiltIn:
-                    SetCatalogStatus(
-                        "目录服务暂时不可用，当前显示内置应急目录。",
-                        hasError: false,
-                        isStale: true);
-                    ScheduleCatalogFallbackRetry();
-                    ShowToast("目录服务暂时不可用，已显示内置应急目录");
-                    break;
-                case CatalogSource.Live when userInitiated:
-                    SetCatalogStatus(
-                        "服务器目录已刷新。",
-                        hasError: false,
-                        isStale: false);
-                    CancelCatalogFallbackRetry();
-                    ShowToast("服务器状态已刷新", ToastLevel.Success);
-                    break;
-                case CatalogSource.Live:
-                    SetCatalogStatus(
-                        "服务器目录已同步。",
-                        hasError: false,
-                        isStale: false);
-                    CancelCatalogFallbackRetry();
-                    break;
-                }
+            case CatalogSource.Cache:
+                SetCatalogStatus(
+                    "目录服务暂时不可用，当前显示上次成功数据。",
+                    hasError: false,
+                    isStale: true);
+                ScheduleCatalogFallbackRetry();
+                ShowToast("目录服务暂时不可用，已显示上次成功数据");
+                break;
+            case CatalogSource.BuiltIn:
+                SetCatalogStatus(
+                    "目录服务暂时不可用，当前显示内置应急目录。",
+                    hasError: false,
+                    isStale: true);
+                ScheduleCatalogFallbackRetry();
+                ShowToast("目录服务暂时不可用，已显示内置应急目录");
+                break;
+            case CatalogSource.Live when userInitiated:
+                SetCatalogStatus(
+                    "服务器目录已刷新。",
+                    hasError: false,
+                    isStale: false);
+                CancelCatalogFallbackRetry();
+                ShowToast("服务器状态已刷新", ToastLevel.Success);
+                break;
+            case CatalogSource.Live:
+                SetCatalogStatus(
+                    "服务器目录已同步。",
+                    hasError: false,
+                    isStale: false);
+                CancelCatalogFallbackRetry();
+                break;
             }
+
+            return result.Source == CatalogSource.Live;
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -1503,6 +1523,8 @@ public sealed class MainWindowViewModel : ObservableObject
 
                 cancellation.Dispose();
             }
+
+        return false;
     }
 
     private bool IsCatalogLoadCurrent(
@@ -1581,7 +1603,15 @@ public sealed class MainWindowViewModel : ObservableObject
             await Task.Delay(
                 _catalogFallbackRetryDelay,
                 cancellation.Token);
-            await LoadCatalogAsync();
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(
+                    Volatile.Read(ref _catalogRetryCancellation),
+                    cancellation))
+            {
+                return;
+            }
+
+            await LoadCatalogAsync(fallbackRetryOwner: cancellation);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -1706,6 +1736,13 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task StartPrimaryActionAsync()
     {
+        if (IsLauncherUpdateRequired)
+        {
+            IsLauncherUpdateVisible = true;
+            ShowToast("当前版本已停止支持，请先完成启动器更新", ToastLevel.Error);
+            return;
+        }
+
         var selectedServer = SelectedServer;
         var dataRoot = ClientDirectory;
         var clientContextGeneration = Volatile.Read(ref _clientContextGeneration);
@@ -1792,14 +1829,8 @@ public sealed class MainWindowViewModel : ObservableObject
         string dataRoot,
         long clientContextGeneration)
     {
-        var previousGeneration = Volatile.Read(ref _catalogAppliedGeneration);
-        await LoadCatalogAsync();
-        var refreshed = Volatile.Read(ref _catalogAppliedGeneration) > previousGeneration;
-        var hasAuthoritativeSource =
-            _catalogClient is not ICatalogSourceState sourceState ||
-            sourceState.LastSource == CatalogSource.Live;
-        if (refreshed &&
-            hasAuthoritativeSource &&
+        var appliedLiveCatalog = await LoadCatalogAsync();
+        if (appliedLiveCatalog &&
             IsClientContextCurrent(
                 serverId,
                 dataRoot,
@@ -3276,7 +3307,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private bool CanUseSelectedServer()
     {
-        if (IsProgressActive || SelectedServer is null)
+        if (IsLauncherUpdateRequired || IsProgressActive || SelectedServer is null)
         {
             return false;
         }
@@ -3390,6 +3421,17 @@ public sealed class MainWindowViewModel : ObservableObject
             SetAccountFormStatus(exception.Detail, isError: true);
             return false;
         }
+        catch (RegistrationLoginFailedException exception)
+        {
+            Trace.TraceWarning(
+                "Hechao account registration completed but automatic login failed: {0}",
+                exception.InnerException?.GetType().Name ?? exception.GetType().Name);
+            SetAccountFormStatus(
+                "赫朝账号已经创建，但自动登录失败。请在左侧使用邮箱或用户名登录。",
+                isError: false);
+            ShowToast("账号已创建，请重新登录", ToastLevel.Success);
+            return true;
+        }
         catch (LauncherApiException exception)
         {
             SetAccountFormStatus(
@@ -3402,6 +3444,16 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is HttpRequestException or TaskCanceledException or IOException)
         {
             SetAccountFormStatus("暂时无法连接赫朝账号服务。", isError: true);
+            return false;
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Unexpected Hechao account registration failure: {0}",
+                exception);
+            SetAccountFormStatus(
+                "账号请求未完成，请检查填写内容后重试。",
+                isError: true);
             return false;
         }
         finally
@@ -3443,6 +3495,16 @@ public sealed class MainWindowViewModel : ObservableObject
             exception is HttpRequestException or TaskCanceledException or IOException)
         {
             SetAccountFormStatus("暂时无法连接赫朝社区，请稍后再试。", isError: true);
+            return false;
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Unexpected registration-code request failure: {0}",
+                exception);
+            SetAccountFormStatus(
+                "验证码请求未完成，请检查邮箱后重试。",
+                isError: true);
             return false;
         }
         finally

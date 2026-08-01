@@ -1,4 +1,5 @@
 using Hechao.Distribution;
+using Hechao.Launcher.Infrastructure;
 using Hechao.Launcher.Services;
 
 namespace Hechao.Launcher.Tests;
@@ -123,6 +124,130 @@ public sealed class PlayerGameSettingsServiceTests
         var shared = ReadOptions(layout.PlayerOptionsPath);
         Assert.Equal("0.9", shared["mouseSensitivity"]);
         Assert.Equal("0.5", shared["fov"]);
+    }
+
+    [Fact]
+    public async Task SeparateInstances_SerializeConcurrentCapturesAcrossNormalizedDataRoot()
+    {
+        using var temporary = new TemporaryDirectory();
+        var layout = new ClientStorageLayout(temporary.Path);
+        layout.EnsureBaseDirectories();
+        await File.WriteAllTextAsync(layout.PlayerOptionsPath, "gamma:1.0");
+
+        var profileIds = Enumerable.Range(0, 8)
+            .Select(index => $"activity-{index:00}")
+            .ToArray();
+
+        foreach (var (profileId, index) in profileIds.Select((profileId, index) => (profileId, index)))
+        {
+            var optionsPath = CreateOptionsFile(
+                layout,
+                profileId,
+                $"key_concurrent.{index}:key.keyboard.{index}");
+            File.SetLastWriteTimeUtc(optionsPath, DateTime.UtcNow.AddMinutes(index + 1));
+        }
+
+        var services = new[]
+        {
+            new PlayerGameSettingsService(),
+            new PlayerGameSettingsService()
+        };
+        var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var captures = profileIds
+            .Select((profileId, index) => Task.Run(async () =>
+            {
+                await start.Task.ConfigureAwait(false);
+                var dataRoot = index % 2 == 0
+                    ? temporary.Path
+                    : Path.Combine(temporary.Path, ".");
+                await services[index % services.Length]
+                    .CaptureProfileAsync(dataRoot, profileId)
+                    .ConfigureAwait(false);
+            }))
+            .ToArray();
+
+        start.SetResult(true);
+        await Task.WhenAll(captures);
+
+        var shared = ReadOptions(layout.PlayerOptionsPath);
+        foreach (var (profileId, index) in profileIds.Select((profileId, index) => (profileId, index)))
+        {
+            Assert.Equal($"key.keyboard.{index}", shared[$"key_concurrent.{index}"]);
+        }
+
+        Assert.Empty(Directory.EnumerateFiles(layout.PlayerSettingsRoot, "*.tmp"));
+    }
+
+    [Fact]
+    public async Task HeldLock_TimesOutAndRecoversAfterOwnerHandleCloses()
+    {
+        using var temporary = new TemporaryDirectory();
+        var layout = new ClientStorageLayout(temporary.Path);
+        layout.EnsureBaseDirectories();
+        await File.WriteAllTextAsync(layout.PlayerOptionsPath, "mouseSensitivity:0.8");
+        var lockPath = PlayerGameSettingsService.GetLockPath(temporary.Path);
+        var contendingService = new PlayerGameSettingsService(TimeSpan.FromMilliseconds(100));
+
+        using (PathFileLock.Acquire(
+                   layout.DataRoot,
+                   lockPath,
+                   TimeSpan.FromSeconds(1)))
+        {
+            var waitStartedAt = DateTime.UtcNow;
+            var exception = await Assert.ThrowsAsync<PlayerGameSettingsException>(
+                () => contendingService.ApplyToProfileAsync(
+                    Path.Combine(temporary.Path, "."),
+                    "activity"));
+
+            var timeout = Assert.IsType<PathFileLockTimeoutException>(exception.InnerException);
+            Assert.InRange(DateTime.UtcNow - waitStartedAt, TimeSpan.Zero, TimeSpan.FromSeconds(2));
+            Assert.Equal(layout.DataRoot, timeout.ResourcePath);
+            Assert.Equal(Path.GetFullPath(lockPath), timeout.LockPath);
+        }
+
+        await contendingService.ApplyToProfileAsync(temporary.Path, "activity");
+
+        var target = ReadOptions(Path.Combine(
+            layout.GetProfileGameDirectory("activity"),
+            "options.txt"));
+        Assert.Equal("0.8", target["mouseSensitivity"]);
+        Assert.True(File.Exists(lockPath));
+    }
+
+    [Fact]
+    public async Task AsyncLock_CanReleaseFromAnotherThreadAndBeReacquired()
+    {
+        using var temporary = new TemporaryDirectory();
+        var resourcePath = temporary.Path;
+        var lockPath = PlayerGameSettingsService.GetLockPath(resourcePath);
+        var heldLock = await PathFileLock.AcquireAsync(
+                resourcePath,
+                lockPath,
+                TimeSpan.FromSeconds(1),
+                CancellationToken.None);
+        var acquisitionThreadId = Environment.CurrentManagedThreadId;
+        var released = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releasingThread = new Thread(() =>
+        {
+            try
+            {
+                heldLock.Dispose();
+                released.SetResult(Environment.CurrentManagedThreadId);
+            }
+            catch (Exception exception)
+            {
+                released.SetException(exception);
+            }
+        });
+
+        releasingThread.Start();
+        var releaseThreadId = await released.Task;
+
+        Assert.NotEqual(acquisitionThreadId, releaseThreadId);
+        using var recoveredLock = PathFileLock.Acquire(
+            resourcePath,
+            lockPath,
+            TimeSpan.FromSeconds(1));
     }
 
     private static string CreateOptionsFile(

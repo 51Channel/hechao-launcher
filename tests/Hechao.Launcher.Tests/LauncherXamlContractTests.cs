@@ -145,6 +145,29 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void AccountProfileAvatar_UsesLoadedMinecraftSkinWithFallback()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var avatar = document
+            .Descendants()
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "AccountProfileAvatar");
+        var skinBrushes = avatar
+            .Descendants(presentation + "ImageBrush")
+            .ToArray();
+
+        Assert.Equal("Minecraft 皮肤头像", avatar.Attribute("AutomationProperties.Name")?.Value);
+        Assert.Equal(2, skinBrushes.Length);
+        Assert.All(skinBrushes, brush =>
+            Assert.Equal("{Binding AccountSkinSource}", brush.Attribute("ImageSource")?.Value));
+        Assert.Contains(skinBrushes, brush => brush.Attribute("Viewbox")?.Value == "8,8,8,8");
+        Assert.Contains(skinBrushes, brush => brush.Attribute("Viewbox")?.Value == "40,8,8,8");
+        Assert.Contains("HasAccountSkin", avatar.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void LauncherUpdateProgressBinding_IsExplicitlyOneWay()
     {
         var document = LoadLauncherXaml();
@@ -401,8 +424,13 @@ public sealed class LauncherXamlContractTests
         var document = LoadLauncherXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var brushes = document
+        var avatar = document
+            .Descendants()
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "SidebarAccountAvatar");
+        var brushes = avatar
             .Descendants(presentation + "ImageBrush")
             .Where(element =>
                 element.Attribute("ImageSource")?.Value ==

@@ -99,10 +99,22 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
             password,
             code,
             cancellationToken);
-        return await _apiClient.LoginAccountAsync(
-            email,
-            password,
-            cancellationToken);
+
+        try
+        {
+            return await _apiClient.LoginAccountAsync(
+                email,
+                password,
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new RegistrationLoginFailedException(exception);
+        }
     }
 
     public Task<HechaoAccount> LoginAsync(
@@ -397,6 +409,16 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
             // The Hechao session is already revoked; stale Microsoft cache can be
             // retried or replaced on the next interactive authentication.
         }
+    }
+}
+
+public sealed class RegistrationLoginFailedException : Exception
+{
+    public RegistrationLoginFailedException(Exception innerException)
+        : base(
+            "The Hechao account was created, but automatic launcher login failed.",
+            innerException)
+    {
     }
 }
 

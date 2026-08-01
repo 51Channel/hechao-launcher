@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Hechao.Contracts;
 using Hechao.Distribution;
 using Hechao.Launcher.Services;
@@ -762,6 +763,359 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
+    public async Task Catalog_InitialLoadExposesLoadingThenActionableEmptyState()
+    {
+        var catalog = new ControllableCatalogClient();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog);
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+
+        Assert.True(viewModel.IsCatalogLoading);
+        Assert.True(viewModel.IsCatalogStatusVisible);
+
+        catalog.FirstResponse.SetResult(new LauncherCatalogSnapshot(
+            DateTimeOffset.UtcNow,
+            [],
+            []));
+        await WaitUntilAsync(() => !viewModel.IsCatalogLoading);
+
+        Assert.Empty(viewModel.Servers);
+        Assert.Empty(viewModel.ActivityServers);
+        Assert.False(viewModel.HasServerCatalogData);
+        Assert.False(viewModel.HasCatalogLoadError);
+        Assert.False(viewModel.IsCatalogStale);
+        Assert.True(viewModel.IsCatalogStatusVisible);
+        Assert.True(viewModel.IsActivityCatalogStateVisible);
+        Assert.True(viewModel.RefreshCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Catalog_RefreshFailureKeepsExistingDataAndMarksItStale()
+    {
+        var catalog = new ControllableCatalogClient();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog,
+            catalogFallbackRetryDelay: TimeSpan.FromMinutes(5));
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+        catalog.FirstResponse.SetResult(CreateCatalogSnapshot("catalog-test", "目录测试"));
+        await WaitUntilAsync(() =>
+            !viewModel.IsCatalogLoading &&
+            viewModel.SelectedServer?.Id == "catalog-test");
+
+        viewModel.RefreshCommand.Execute(null);
+        await WaitUntilAsync(() => catalog.RequestCount == 2);
+        catalog.SecondResponse.SetException(new HttpRequestException("offline"));
+        await WaitUntilAsync(() =>
+            !viewModel.IsCatalogLoading &&
+            viewModel.HasCatalogLoadError);
+
+        Assert.True(viewModel.IsCatalogStale);
+        Assert.True(viewModel.HasServerCatalogData);
+        Assert.Equal("catalog-test", viewModel.SelectedServer?.Id);
+        Assert.Contains(viewModel.Servers, server => server.Id == "catalog-test");
+        Assert.True(viewModel.RefreshCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task LoginWhileBusyRejectsDuplicateAndAnnouncesFailure()
+    {
+        var loginResponse = new TaskCompletionSource<HechaoAccount>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var authentication = new StubAuthenticationService
+        {
+            CurrentAccount = null,
+            LoginResponse = loginResponse
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            new StubGameLauncherService());
+        var initialRevision = viewModel.AccountFormAnnouncementRevision;
+
+        var firstLogin = viewModel.LoginAccountAsync("tester", "password");
+        await WaitUntilAsync(() => authentication.LoginRequestCount == 1);
+
+        Assert.True(viewModel.IsAccountBusy);
+        Assert.False(viewModel.CanSubmitAccountForms);
+        Assert.False(viewModel.IsAccountFormError);
+        Assert.True(viewModel.AccountFormAnnouncementRevision > initialRevision);
+        var busyRevision = viewModel.AccountFormAnnouncementRevision;
+
+        Assert.False(await viewModel.LoginAccountAsync("tester", "password"));
+        Assert.Equal(1, authentication.LoginRequestCount);
+
+        loginResponse.SetException(new HttpRequestException("offline"));
+        Assert.False(await firstLogin);
+
+        Assert.False(viewModel.IsAccountBusy);
+        Assert.True(viewModel.CanSubmitAccountForms);
+        Assert.True(viewModel.IsAccountFormError);
+        Assert.True(viewModel.AccountFormAnnouncementRevision > busyRevision);
+        Assert.False(string.IsNullOrWhiteSpace(viewModel.AccountFormMessage));
+    }
+
+    [Fact]
+    public async Task ActivityBoundaryAutomaticallyRefreshesCatalog()
+    {
+        var catalog = new ControllableCatalogClient();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog);
+        var initial = CreateActivityCatalog(ServerStatus.Closed);
+        initial = initial with
+        {
+            Servers =
+            [
+                initial.Servers[0] with
+                {
+                    OpensAt = DateTimeOffset.UtcNow.AddSeconds(1)
+                }
+            ]
+        };
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+        catalog.FirstResponse.SetResult(initial);
+        await WaitUntilAsync(() => catalog.RequestCount == 2);
+
+        catalog.SecondResponse.SetResult(CreateActivityCatalog(ServerStatus.Online));
+        await WaitUntilAsync(() =>
+            !viewModel.IsCatalogLoading &&
+            viewModel.SelectedServer?.Status == ServerStatus.Online);
+
+        Assert.Equal(2, catalog.RequestCount);
+    }
+
+    [Fact]
+    public async Task LauncherUpdateWhileGameRunsWaitsUntilGameExit()
+    {
+        var gameLauncher = new StubGameLauncherService
+        {
+            ProfileRunning = true,
+            RunningServerId = "survival2",
+            RunningDataRoot = Path.Combine(Path.GetTempPath(), "hechao-running-game")
+        };
+        var updateService = new StubLauncherUpdateService
+        {
+            Plan = CreateLauncherUpdatePlan(new Version(0, 15, 0))
+        };
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            gameLauncher,
+            launcherUpdateService: updateService);
+
+        await WaitUntilAsync(() => updateService.CheckRequestCount == 1);
+        await Task.Delay(50);
+
+        Assert.Equal(0, updateService.DownloadRequestCount);
+        Assert.False(viewModel.IsLauncherUpdateVisible);
+
+        gameLauncher.RaiseProcessExited(0, dataRoot: gameLauncher.RunningDataRoot);
+        await WaitUntilAsync(() => updateService.DownloadRequestCount == 1);
+
+        Assert.Equal(100, viewModel.LauncherUpdateProgress);
+    }
+
+    [Fact]
+    public async Task Catalog_InitialFailureWithoutDataShowsRetryableErrorState()
+    {
+        var catalog = new ControllableCatalogClient();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog,
+            catalogFallbackRetryDelay: TimeSpan.FromMinutes(5));
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+        var initialRevision = viewModel.CatalogAnnouncementRevision;
+        catalog.FirstResponse.SetException(new HttpRequestException("offline"));
+        await WaitUntilAsync(() =>
+            !viewModel.IsCatalogLoading &&
+            viewModel.HasCatalogLoadError);
+
+        Assert.False(viewModel.IsCatalogStale);
+        Assert.False(viewModel.HasServerCatalogData);
+        Assert.Empty(viewModel.Servers);
+        Assert.Empty(viewModel.ActivityServers);
+        Assert.True(viewModel.IsCatalogStatusVisible);
+        Assert.True(viewModel.IsActivityCatalogStateVisible);
+        Assert.True(viewModel.CatalogAnnouncementRevision > initialRevision);
+        Assert.True(viewModel.RefreshCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ActivityLaunch_WhenItsRefreshIsCanceledByNewerLoad_FailsClosed()
+    {
+        var catalog = new ControllableCatalogClient();
+        var gameLauncher = new StubGameLauncherService();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            gameLauncher,
+            catalogClient: catalog);
+
+        await WaitUntilAsync(() => catalog.RequestCount == 1);
+        catalog.FirstResponse.SetResult(CreateActivityCatalog(ServerStatus.Online));
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer?.Status == ServerStatus.Online &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        var activityAction = viewModel.PrimaryActionCommand.ExecuteAsync();
+        await WaitUntilAsync(() => catalog.RequestCount == 2);
+
+        var newerLoad = InvokeCatalogLoadAsync(viewModel, userInitiated: true);
+        await WaitUntilAsync(() => catalog.RequestCount == 3);
+
+        await activityAction.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(0, gameLauncher.LaunchRequestCount);
+
+        catalog.ThirdResponse.SetResult(CreateActivityCatalog(ServerStatus.Online));
+        Assert.True(await newerLoad);
+    }
+
+    [Fact]
+    public async Task RequiredLauncherUpdateDisablesAndDefensivelyRejectsServerAction()
+    {
+        var updateResponse = new TaskCompletionSource<LauncherUpdatePlan?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var updateService = new StubLauncherUpdateService
+        {
+            HasPreviousInstallFailureResult = true
+        };
+        updateService.CheckResponses.Enqueue(updateResponse.Task);
+        var gameLauncher = new StubGameLauncherService();
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            gameLauncher,
+            launcherUpdateService: updateService);
+
+        await WaitUntilAsync(() =>
+            updateService.CheckRequestCount == 1 &&
+            viewModel.ClientStatusText == "客户端已就绪" &&
+            viewModel.PrimaryActionCommand.CanExecute(null));
+        var canExecuteChangedCount = 0;
+        viewModel.PrimaryActionCommand.CanExecuteChanged += (_, _) =>
+            canExecuteChangedCount++;
+
+        updateResponse.SetResult(CreateLauncherUpdatePlan(
+            new Version(0, 15, 0),
+            isRequired: true));
+        await WaitUntilAsync(() =>
+            viewModel.IsLauncherUpdateRequired &&
+            viewModel.IsLauncherUpdateVisible);
+
+        Assert.True(canExecuteChangedCount > 0);
+        Assert.False(viewModel.PrimaryActionCommand.CanExecute(null));
+
+        await InvokePrimaryActionAsync(viewModel);
+
+        Assert.Equal(0, gameLauncher.LaunchRequestCount);
+        Assert.True(viewModel.IsLauncherUpdateVisible);
+        Assert.Contains("启动器更新", viewModel.ToastMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RegistrationCreatedButLoginFailedExplainsRecoveryAndRestoresForm()
+    {
+        var registerResponse = new TaskCompletionSource<HechaoAccount>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var authentication = new StubAuthenticationService
+        {
+            CurrentAccount = null,
+            RegisterResponse = registerResponse
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            new StubGameLauncherService());
+
+        var registration = viewModel.RegisterAccountAsync(
+            "tester",
+            "测试玩家",
+            "password",
+            "tester@example.com",
+            "123456");
+        await WaitUntilAsync(() => authentication.RegisterRequestCount == 1);
+
+        Assert.True(viewModel.IsAccountBusy);
+        Assert.False(await viewModel.RegisterAccountAsync(
+            "tester",
+            "测试玩家",
+            "password",
+            "tester@example.com",
+            "123456"));
+        Assert.Equal(1, authentication.RegisterRequestCount);
+
+        registerResponse.SetException(new RegistrationLoginFailedException(
+            new HttpRequestException("offline")));
+        Assert.True(await registration);
+
+        Assert.False(viewModel.IsAccountBusy);
+        Assert.True(viewModel.CanSubmitAccountForms);
+        Assert.False(viewModel.IsAccountFormError);
+        Assert.Contains("账号已经创建", viewModel.AccountFormMessage, StringComparison.Ordinal);
+        Assert.Contains("登录", viewModel.AccountFormMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RegistrationUnexpectedResponseDoesNotEscapeUiAction()
+    {
+        var registerResponse = new TaskCompletionSource<HechaoAccount>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var authentication = new StubAuthenticationService
+        {
+            CurrentAccount = null,
+            RegisterResponse = registerResponse
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            new StubGameLauncherService());
+
+        var registration = viewModel.RegisterAccountAsync(
+            "tester",
+            "测试玩家",
+            "password",
+            "tester@example.com",
+            "123456");
+        await WaitUntilAsync(() => authentication.RegisterRequestCount == 1);
+        registerResponse.SetException(new JsonException("malformed response"));
+
+        Assert.False(await registration);
+        Assert.False(viewModel.IsAccountBusy);
+        Assert.True(viewModel.IsAccountFormError);
+        Assert.True(viewModel.CanSubmitAccountForms);
+        Assert.False(string.IsNullOrWhiteSpace(viewModel.AccountFormMessage));
+    }
+
+    [Fact]
+    public async Task Catalog_ManualLiveRefreshCancelsPendingFallbackRetry()
+    {
+        var catalog = new CacheThenLiveCatalogClient(
+            CreateCatalogSnapshot("catalog-test", "目录测试"));
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog,
+            catalogFallbackRetryDelay: TimeSpan.FromMilliseconds(250));
+
+        await WaitUntilAsync(() =>
+            catalog.RequestCount == 1 &&
+            viewModel.IsCatalogStale);
+        viewModel.RefreshCommand.Execute(null);
+        await WaitUntilAsync(() =>
+            catalog.RequestCount == 2 &&
+            !viewModel.IsCatalogStale);
+
+        await Task.Delay(350);
+
+        Assert.Equal(2, catalog.RequestCount);
+        Assert.Equal(CatalogSource.Live, catalog.LastSource);
+    }
+
+    [Fact]
     public async Task Catalog_SameServerProfileVersionAndHashChange_RechecksReadyClientState()
     {
         var initialCatalog = CreateCatalogSnapshot("catalog-test", "目录测试");
@@ -949,6 +1303,28 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         Assert.True(telemetry.RecordRequestCount >= 2);
     }
 
+    private static Task<bool> InvokeCatalogLoadAsync(
+        MainWindowViewModel viewModel,
+        bool userInitiated)
+    {
+        var method = typeof(MainWindowViewModel).GetMethod(
+            "LoadCatalogAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        return Assert.IsAssignableFrom<Task<bool>>(method?.Invoke(
+            viewModel,
+            [userInitiated, null]));
+    }
+
+    private static Task InvokePrimaryActionAsync(MainWindowViewModel viewModel)
+    {
+        var method = typeof(MainWindowViewModel).GetMethod(
+            "StartPrimaryActionAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        return Assert.IsAssignableFrom<Task>(method?.Invoke(viewModel, null));
+    }
+
     private static Task InvokeLauncherUpdateCheckAsync(
         MainWindowViewModel viewModel,
         bool userInitiated)
@@ -1045,11 +1421,13 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         };
     }
 
-    private static LauncherUpdatePlan CreateLauncherUpdatePlan(Version targetVersion) =>
+    private static LauncherUpdatePlan CreateLauncherUpdatePlan(
+        Version targetVersion,
+        bool isRequired = false) =>
         new(
             new Version(0, 13, 7),
             targetVersion,
-            new Version(0, 12, 3),
+            isRequired ? targetVersion : new Version(0, 12, 3),
             64 * 1024 * 1024,
             new string('a', 64),
             DateTimeOffset.UtcNow,
@@ -1204,18 +1582,23 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public TaskCompletionSource<LauncherCatalogSnapshot> SecondResponse { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        public TaskCompletionSource<LauncherCatalogSnapshot> ThirdResponse { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public int RequestCount { get; private set; }
 
         public Task<LauncherCatalogSnapshot> GetCatalogAsync(
             CancellationToken cancellationToken = default)
         {
             RequestCount++;
-            return RequestCount switch
+            var response = RequestCount switch
             {
                 1 => FirstResponse.Task,
                 2 => SecondResponse.Task,
+                3 => ThirdResponse.Task,
                 _ => Task.FromResult(CreateCatalogSnapshot("latest-server", "最新目录"))
             };
+            return response.WaitAsync(cancellationToken);
         }
     }
 
@@ -1253,7 +1636,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         private static readonly Guid MinecraftUuid =
             Guid.Parse("12345678-1234-1234-1234-123456789abc");
 
-        public HechaoAccount? CurrentAccount { get; } = new(
+        public HechaoAccount? CurrentAccount { get; init; } = new(
             Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
             "tester",
             "测试玩家",
@@ -1271,6 +1654,10 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public int SilentSessionRequestCount { get; private set; }
         public int InteractiveSessionRequestCount { get; private set; }
         public int VelocityGrantRequestCount { get; private set; }
+        public int LoginRequestCount { get; private set; }
+        public int RegisterRequestCount { get; private set; }
+        public TaskCompletionSource<HechaoAccount>? LoginResponse { get; init; }
+        public TaskCompletionSource<HechaoAccount>? RegisterResponse { get; init; }
         public List<string>? OperationLog { get; init; }
 
         public Task<HechaoAccount?> TryRestoreAsync(
@@ -1329,14 +1716,22 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             string password,
             string email,
             string code,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+            CancellationToken cancellationToken = default)
+        {
+            RegisterRequestCount++;
+            return RegisterResponse?.Task.WaitAsync(cancellationToken) ??
+                   Task.FromException<HechaoAccount>(new NotSupportedException());
+        }
 
         public Task<HechaoAccount> LoginAsync(
             string usernameOrEmail,
             string password,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+            CancellationToken cancellationToken = default)
+        {
+            LoginRequestCount++;
+            return LoginResponse?.Task.WaitAsync(cancellationToken) ??
+                   Task.FromException<HechaoAccount>(new NotSupportedException());
+        }
 
         public Task<HechaoAccount> LinkMinecraftAsync(
             CancellationToken cancellationToken = default) =>

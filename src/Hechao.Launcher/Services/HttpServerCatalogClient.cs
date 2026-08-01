@@ -6,16 +6,13 @@ using Hechao.Contracts;
 
 namespace Hechao.Launcher.Services;
 
-public enum CatalogSource
-{
-    Live,
-    Cache,
-    BuiltIn
-}
-
-public interface ICatalogSourceState
+public interface ICatalogSourceState : IServerCatalogClient
 {
     CatalogSource LastSource { get; }
+
+    async Task<ServerCatalogResult> IServerCatalogClient.GetCatalogResultAsync(
+        CancellationToken cancellationToken) =>
+        new(await GetCatalogAsync(cancellationToken), LastSource);
 }
 
 public sealed class HttpServerCatalogClient : IServerCatalogClient, ICatalogSourceState
@@ -45,7 +42,12 @@ public sealed class HttpServerCatalogClient : IServerCatalogClient, ICatalogSour
         return new HttpServerCatalogClient(apiClient, builtInCatalog, cachePath);
     }
 
-    public async Task<LauncherCatalogSnapshot> GetCatalogAsync(CancellationToken cancellationToken = default)
+    public async Task<LauncherCatalogSnapshot> GetCatalogAsync(
+        CancellationToken cancellationToken = default) =>
+        (await GetCatalogResultAsync(cancellationToken)).Snapshot;
+
+    public async Task<ServerCatalogResult> GetCatalogResultAsync(
+        CancellationToken cancellationToken = default)
     {
         await _requestGate.WaitAsync(cancellationToken);
         try
@@ -55,7 +57,7 @@ public sealed class HttpServerCatalogClient : IServerCatalogClient, ICatalogSour
                 var liveSnapshot = await GetLiveCatalogAsync(cancellationToken);
                 LastSource = CatalogSource.Live;
                 await TryWriteCacheAsync(liveSnapshot, cancellationToken);
-                return liveSnapshot;
+                return new ServerCatalogResult(liveSnapshot, CatalogSource.Live);
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
@@ -83,17 +85,19 @@ public sealed class HttpServerCatalogClient : IServerCatalogClient, ICatalogSour
         return snapshot;
     }
 
-    private async Task<LauncherCatalogSnapshot> GetFallbackCatalogAsync(CancellationToken cancellationToken)
+    private async Task<ServerCatalogResult> GetFallbackCatalogAsync(
+        CancellationToken cancellationToken)
     {
         var cachedSnapshot = await TryReadCacheAsync(cancellationToken);
         if (cachedSnapshot is not null)
         {
             LastSource = CatalogSource.Cache;
-            return cachedSnapshot;
+            return new ServerCatalogResult(cachedSnapshot, CatalogSource.Cache);
         }
 
         LastSource = CatalogSource.BuiltIn;
-        return await _builtInCatalog.GetCatalogAsync(cancellationToken);
+        var builtInSnapshot = await _builtInCatalog.GetCatalogAsync(cancellationToken);
+        return new ServerCatalogResult(builtInSnapshot, CatalogSource.BuiltIn);
     }
 
     private async Task<LauncherCatalogSnapshot?> TryReadCacheAsync(CancellationToken cancellationToken)

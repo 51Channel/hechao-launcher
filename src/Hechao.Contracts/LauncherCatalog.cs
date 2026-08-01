@@ -257,7 +257,22 @@ public sealed record VelocityAuthorizationResponse(
     string? LuckPermsPrimaryGroup,
     DateTimeOffset EvaluatedAt);
 
+public enum CatalogSource
+{
+    Live,
+    Cache,
+    BuiltIn
+}
+
+public sealed record ServerCatalogResult(
+    LauncherCatalogSnapshot Snapshot,
+    CatalogSource Source);
+
 public interface IServerCatalogClient
 {
     Task<LauncherCatalogSnapshot> GetCatalogAsync(CancellationToken cancellationToken = default);
+
+    async Task<ServerCatalogResult> GetCatalogResultAsync(
+        CancellationToken cancellationToken = default) =>
+        new(await GetCatalogAsync(cancellationToken), CatalogSource.Live);
 }
