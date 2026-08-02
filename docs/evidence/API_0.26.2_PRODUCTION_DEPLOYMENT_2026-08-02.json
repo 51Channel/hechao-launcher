@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-02T13:02:47.2633119Z",
+  "component": "api",
+  "version": "0.26.2",
+  "releaseId": "0.26.2-20260802T093332Z",
+  "buildSourceCommit": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
+  "releaseTag": "api-v0.26.2",
+  "taggedAt": "2026-08-02T21:01:31+08:00",
+  "artifacts": {
+    "archive": {
+      "name": "hechao-api-0.26.2-20260802T093332Z.tar.gz",
+      "sizeBytes": 45790504,
+      "sha256": "00E3129F727E0EE022E34AF34CB7A0BF2983EC1BC7596C6D695EC1682DB322EF",
+      "entries": 152,
+      "directories": 5,
+      "fileCount": 147,
+      "adminStaticFileCount": 145,
+      "unsafePaths": 0,
+      "links": 0,
+      "reparsePoints": 0,
+      "forbiddenFiles": 0,
+      "sourceMaps": 0,
+      "frontendSourceFiles": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 104653363,
+      "sha256": "38C9A7C8F09FAE7E871E815808EDB4F50C0AA108CD5D707DA5F067B6DB45DAA2",
+      "deployedHashMatched": true
+    },
+    "adminAssets": {
+      "adminJsSha256": "B37CD7A2DB189D00809D38F75EA9C283D9EC9D504934275E241B905B653E3C1D",
+      "adminCssSha256": "1D4927E073ACD4264A8DB1DCB0C7B7B24A16BC7654E6358D94689C4B7992FBB4",
+      "deployedHashesMatched": true
+    }
+  },
+  "tests": {
+    "typeScriptPassed": true,
+    "vitestPassed": 8,
+    "vitestFailed": 0,
+    "playwrightPassed": 12,
+    "playwrightFailed": 0,
+    "distributionPassed": 45,
+    "apiPassed": 245,
+    "launcherPassed": 202,
+    "publisherPassed": 32,
+    "statusCollectorPassed": 16,
+    "backupPassed": 12,
+    "serverControlAgentPassed": 26,
+    "solutionPassed": 578,
+    "solutionFailed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z",
+    "binarySha256": "61D8E11F556FC215E52DE0295B106CC9C309F8CAB81ED283A5EE249B86C09DDF",
+    "serviceActive": true,
+    "mainPid": 1478889,
+    "nRestarts": 0,
+    "listener": "127.0.0.1:8090",
+    "databaseMigrationState": "21:21",
+    "errorJournalEntries": 0,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260802T094602Z.dump",
+      "sizeBytes": 2159128,
+      "sha256": "4A94625F75390A8C5BD7E5BD87D0C25916B19C9540FD181C15C2909E52461F8F",
+      "sidecarSha256Passed": true,
+      "pgRestoreListPassed": true,
+      "pgRestoreEntries": 207
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.26.2-20260802T093332Z",
+      "fileCount": 19,
+      "sha256SumsPassed": true,
+      "sha256SumsSha256": "796993D1B99B26E8691CCFE32169121B986A672B18982C8128652FE06C60D912",
+      "environmentIncluded": true,
+      "systemdUnitIncluded": true,
+      "nginxConfigurationIncluded": true,
+      "dataProtectionKeyRingIncluded": true,
+      "manifestStoreIncluded": true,
+      "contentsDisclosed": false
+    }
+  },
+  "deployment": {
+    "remoteArchiveHashMatched": true,
+    "remoteInstallScriptHashMatched": true,
+    "remoteServiceFileHashMatched": true,
+    "installScriptSha256": "54D4E224E2AC884D28C87943348E634BF939895BC37E6AC8F413EA15BA69E130",
+    "serviceFileSha256": "268DF991D2DD0FA2D06F83E8B0F72FA26813078EE1B0337E761D194AF7EFF59D",
+    "serviceFileUnchanged": true,
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.26.2-20260802T093332Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z",
+    "apiServiceRestartsByReleaseProcess": 1,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "mainPid": 1781088,
+    "nRestarts": 0,
+    "startedAt": "2026-08-02T17:48:48+08:00",
+    "listener": "127.0.0.1:8090",
+    "launcherApiHealthStatusCode": 200,
+    "launcherApiReadyStatusCode": 200,
+    "adminHealthStatusCode": 200,
+    "adminReadyStatusCode": 200,
+    "healthVersion": "0.26.2",
+    "databaseStatus": "ready",
+    "databaseMigrationState": "21:21",
+    "errorJournalEntriesSinceDeployment": 0,
+    "acceptanceRestartedApi": false,
+    "acceptanceChangedCatalog": false,
+    "acceptanceControlledGameServers": false
+  },
+  "adminWebAcceptance": {
+    "authenticatedProductionVisualAcceptancePerformed": false,
+    "reason": "The existing Chrome admin session had expired during release finalization.",
+    "playwrightLongDesktopPagePassed": true,
+    "playwrightShortViewportNavigationPassed": true,
+    "productionStaticHashesMatched": true,
+    "adminBusinessWritesPerformed": false,
+    "adminTicketCreated": false
+  },
+  "serverControlContinuity": {
+    "targetCount": 9,
+    "onlineAgentCount": 2,
+    "runningTargetCount": 4,
+    "staleTargetCount": 0,
+    "owl5AgentVersion": "0.2.4",
+    "owl5TargetCount": 7,
+    "owl5RunningTargetCount": 3,
+    "owl9AgentVersion": "0.2.1",
+    "owl9TargetCount": 2,
+    "owl9RunningTargetCount": 1,
+    "operationsSinceRelease": 0,
+    "activeOperationsSinceRelease": 0
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "trustedTokenIncluded": false,
+    "cookieIncluded": false,
+    "mfaCodeIncluded": false,
+    "environmentContentsIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

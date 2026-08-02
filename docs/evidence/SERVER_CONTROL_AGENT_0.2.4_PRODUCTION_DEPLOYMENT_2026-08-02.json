@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-02T13:02:47.2633119Z",
+  "component": "server-control-agent",
+  "version": "0.2.4",
+  "sourceCommit": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
+  "releaseTag": "server-control-agent-v0.2.4",
+  "taggedAt": "2026-08-02T21:02:17+08:00",
+  "artifact": {
+    "name": "hechao-server-control-agent-0.2.4-20260802T093332Z-win-x64.zip",
+    "sizeBytes": 33146240,
+    "sha256": "44F155DA30C8DFFF2A8B885FE7E2168C81566EBEBB69D2E7FAEC0815CC71BA90",
+    "entryCount": 1,
+    "entryName": "Hechao.ServerControlAgent.exe",
+    "executableSizeBytes": 73908430,
+    "executableSha256": "9BAE24B2B5A5491B7A926661D37B2BA806599C5164C0F83C1307B4D25449301E",
+    "fileVersion": "0.2.4.0",
+    "productVersion": "0.2.4+b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
+    "containsPdb": false,
+    "containsConfiguration": false,
+    "containsCredentials": false
+  },
+  "fixes": {
+    "bestEffortLocalLogging": true,
+    "heartbeatLoopSurvivesUnexpectedExceptions": true,
+    "commandLoopSurvivesUnexpectedExceptions": true,
+    "heartbeatAndCommandLoopsRemainIndependent": true,
+    "normalCancellationStillStopsImmediately": true
+  },
+  "tests": {
+    "serverControlAgentPassed": 26,
+    "serverControlAgentFailed": 0,
+    "backupPassed": 12,
+    "backupFailed": 0,
+    "solutionPassed": 578,
+    "solutionFailed": 0
+  },
+  "deployment": {
+    "host": "owl5",
+    "previousVersion": "0.2.3",
+    "previousAgentProcessId": 7436,
+    "agentProcessId": 8848,
+    "agentTaskName": "Hechao Launcher Server Control Agent",
+    "agentTaskState": "Running",
+    "executablePath": "C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
+    "rollbackExecutablePath": "C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.0.2.3.rollback-before-0.2.4-20260802T093332Z.exe",
+    "deployedExecutableHashMatched": true,
+    "preDeploymentJavaProcessIds": [
+      2576,
+      6008,
+      7748,
+      9428,
+      10412
+    ],
+    "postDeploymentJavaProcessIds": [
+      2576,
+      6008,
+      7748,
+      9428,
+      10412
+    ],
+    "javaProcessIdsUnchanged": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0,
+    "minecraftSettingsCommandsIssued": 0
+  },
+  "postDeployment": {
+    "owl5": {
+      "agentVersion": "0.2.4",
+      "targetCount": 7,
+      "runningTargetCount": 3,
+      "runningTargetProcessIds": [
+        2576,
+        6008,
+        9428
+      ],
+      "heartbeatFresh": true
+    },
+    "owl9": {
+      "agentVersion": "0.2.1",
+      "targetCount": 2,
+      "runningTargetCount": 1,
+      "heartbeatFresh": true,
+      "changedByThisDeployment": false
+    },
+    "totalTargetCount": 9,
+    "onlineAgentCount": 2,
+    "runningTargetCount": 4,
+    "staleTargetCount": 0,
+    "operationsSinceRelease": 0,
+    "activeOperationsSinceRelease": 0,
+    "apiVersion": "0.26.2",
+    "apiServiceActive": true,
+    "apiNRestarts": 0,
+    "apiPublicHealthStatusCode": 200,
+    "apiPublicReadyStatusCode": 200
+  },
+  "rollback": {
+    "armed": true,
+    "targetVersion": "0.2.3",
+    "stopsOnlyControlAgentTask": true,
+    "requiresJavaProcessIdentityCheck": true,
+    "controlsMinecraftServers": false
+  },
+  "privacy": {
+    "agentTokenIncluded": false,
+    "dpapiCiphertextIncluded": false,
+    "configurationIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

@@ -1,7 +1,7 @@
 # 赫朝服务端控制代理运维手册
 
-> 状态：已于 2026-07-31 在 owl5、owl9 与生产 API 启用；后台已显示 9 个目标、
-> 2 个代理和 5 个运行中实例，三项管理员启停操作均已成功。
+> 状态：生产 API `0.26.2`、owl5 代理 `0.2.4` 与 owl9 代理 `0.2.1` 已启用；
+> 当前登记 9 个目标和 2 个在线代理。运行实例数来自实时心跳，2026-08-02 只读快照为 4。
 >
 > 适用范围：管理员 Web 后台、API 控制队列、Windows 游戏 VPS 本机代理。
 >
@@ -192,21 +192,22 @@ pwsh.exe -NoLogo -NoProfile -File `
 [`server-control-agent.example.json`](../deploy/windows/server-control/server-control-agent.example.json)
 仅展示字段和冲突组，不代表任何生产路径。
 
-### 6.2 生产状态（2026-07-31）
+### 6.2 生产状态（2026-08-02）
 
-生产 API `0.24.2` 已启用 `ServerControl`。当前 owl5 代理为 `0.2.3`，owl9 代理为
+生产 API `0.26.2` 已启用 `ServerControl`。当前 owl5 代理为 `0.2.4`，owl9 代理为
 `0.2.1`，两台代理计划任务均为 `Running`。已接入 `9` 个受管目标，运行中目标数会随
 管理员手动启停动态变化，不应写成固定开放状态。
 
 `0.2.0` 新增 JVM 内存读写与单服硬上限；`0.2.1` 将心跳和命令拆为独立循环；
-`0.2.3` 在 owl5 修复受管 stdout 管道堵塞和空服无法关停。九个目标均上报 `Xms`、
-`Xmx` 和 `maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。
+`0.2.3` 在 owl5 修复受管 stdout 管道堵塞和空服无法关停；`0.2.4` 让两个循环在日志
+写入失败或未知单次异常后继续运行。九个目标均上报 `Xms`、`Xmx` 和
+`maximumAllowedMemoryMiB`；应用设置不会自动重启服务端。
 
 owl5 当前代理制品 SHA-256 为
-`633A9C7EB63D982E2E9A0AC450E54679E74DBE4BD21DD38EEAFF6A572F9647F1`，源码提交为
-`3916a86f408a15cefc89cbfce85e3fb2df992bd6`。内存基线见
+`9BAE24B2B5A5491B7A926661D37B2BA806599C5164C0F83C1307B4D25449301E`，源码提交为
+`b0b10140a3fb68b067987e2ddfc2f3b48ff682d5`。内存基线见
 [`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)；
-当前 owl5 发布见 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)，
+当前 owl5 发布见 [`SERVER_CONTROL_AGENT_RELEASE_0.2.4.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.4.md)，
 owl9 仍以 [`SERVER_CONTROL_AGENT_RELEASE_0.2.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.1.md)
 为正式版本。
 
@@ -253,6 +254,19 @@ Ctrl+C` 的结构化停止链。owl9 继续运行 `0.2.1`。升级只重启服�
 按照手动开服边界，没有为生产验收重新启动 Activity。发布与证据见
 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) 和
 [`evidence/SERVER_CONTROL_AGENT_0.2.3_PRODUCTION_DEPLOYMENT_2026-07-31.json`](evidence/SERVER_CONTROL_AGENT_0.2.3_PRODUCTION_DEPLOYMENT_2026-07-31.json)。
+
+### 6.7 代理循环自恢复（owl5 代理 0.2.4）
+
+`0.2.4` 将本机日志改为尽力写入，并使用统一恢复循环运行心跳和命令轮询。日志目录
+不可写、日志轮换失败或未预见的单次异常不再终止代理；正常取消仍会立即结束，两个循环
+仍相互独立。调度与日志故障回归为 `26/26`，完整解决方案为 `578/578`。
+
+owl5 升级只重启代理计划任务，代理 PID 从 `7436` 变为 `8848`，五个 Java PID
+`2576 / 6008 / 7748 / 9428 / 10412` 未变化。最终数据库快照显示 owl5 `7` 个目标中
+`3` 个运行、owl9 `2` 个目标中 `1` 个运行，九个目标均无过期心跳；本发布以来服控操作
+和待处理操作均为 `0`。发布与证据见
+[`SERVER_CONTROL_AGENT_RELEASE_0.2.4.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.4.md) 和
+[`evidence/SERVER_CONTROL_AGENT_0.2.4_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/SERVER_CONTROL_AGENT_0.2.4_PRODUCTION_DEPLOYMENT_2026-08-02.json)。
 
 ## 7. 验收与回滚
 

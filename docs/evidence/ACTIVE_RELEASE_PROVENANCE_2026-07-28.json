@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-02T02:07:06.9520074Z",
+  "generatedAtUtc": "2026-08-02T13:02:47.2633119Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,81 +45,81 @@
     },
     {
       "component": "api",
-      "version": "0.26.1-20260802T012527Z",
-      "releaseTag": "api-v0.26.1",
-      "releaseCommit": "3bfa13fbdc14acfdde551fc49150992824c0481f",
-      "taggedAt": "2026-08-02T10:01:26+08:00",
+      "version": "0.26.2-20260802T093332Z",
+      "releaseTag": "api-v0.26.2",
+      "releaseCommit": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
+      "taggedAt": "2026-08-02T21:01:31+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "3bfa13fbdc14acfdde551fc49150992824c0481f"
+        "value": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5"
       },
-      "deploymentState": "production-vue-admin-real-ticket-and-nine-route-accepted",
-      "historicalNote": "0.26.0-20260802T010000Z remains the immediate rollback release and is retained under api-v0.26.0. Migration 21, MFA, sessions, trusted devices and audit data are retained during rollback.",
+      "deploymentState": "production-vue-admin-scroll-resilience-deployed-health-ready",
+      "historicalNote": "0.26.1-20260802T012527Z remains the immediate rollback release under api-v0.26.1. Migration 21, MFA, sessions, trusted devices and audit data are retained during rollback.",
       "artifacts": [
         {
-          "name": "hechao-api-0.26.1-20260802T012527Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z",
-          "size": 45790438,
-          "sha256": "85E7BF9EBE0DEFF27FA306CE1A3BE5E9327884F06EC2C00D9DEFE23FFC12F5F8",
+          "name": "hechao-api-0.26.2-20260802T093332Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.26.2-20260802T093332Z",
+          "size": 45790504,
+          "sha256": "00E3129F727E0EE022E34AF34CB7A0BF2983EC1BC7596C6D695EC1682DB322EF",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z/Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.26.2-20260802T093332Z/Hechao.Api",
           "size": 104653363,
-          "sha256": "61D8E11F556FC215E52DE0295B106CC9C309F8CAB81ED283A5EE249B86C09DDF",
+          "sha256": "38C9A7C8F09FAE7E871E815808EDB4F50C0AA108CD5D707DA5F067B6DB45DAA2",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-symlink",
-        "target": "/opt/hechao-launcher-api/releases/0.26.0-20260802T010000Z"
+        "target": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.26.1.md",
+        "docs/API_RELEASE_0.26.2.md",
         "docs/ADMIN_WEB_OPERATIONS.md",
-        "docs/evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json"
+        "docs/evidence/API_0.26.2_PRODUCTION_DEPLOYMENT_2026-08-02.json"
       ]
     },
     {
       "component": "server-control-agent",
-      "version": "0.2.3",
-      "releaseTag": "server-control-agent-v0.2.3",
-      "releaseCommit": "3916a86f408a15cefc89cbfce85e3fb2df992bd6",
-      "taggedAt": "2026-08-01T00:30:14+08:00",
+      "version": "0.2.4",
+      "releaseTag": "server-control-agent-v0.2.4",
+      "releaseCommit": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
+      "taggedAt": "2026-08-02T21:02:17+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "3916a86f408a15cefc89cbfce85e3fb2df992bd6"
+        "value": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5"
       },
-      "deploymentState": "production-owl5-console-deadlock-fix-owl9-remains-0.2.1",
-      "historicalNote": "0.2.2 was an untagged owl5 intermediate. Owl5 can roll back to its deployment backup; owl9 remains on the formal 0.2.1 release.",
+      "deploymentState": "production-owl5-resilient-heartbeat-and-command-loops-owl9-remains-0.2.1",
+      "historicalNote": "Owl5 can roll back directly to the retained 0.2.3 executable; owl9 remains on the formal 0.2.1 release.",
       "artifacts": [
         {
-          "name": "hechao-server-control-agent-0.2.3-20260731T162812Z-win-x64.zip",
-          "location": "artifacts/releases/hechao-server-control-agent-0.2.3-20260731T162812Z-win-x64.zip",
-          "size": 33142794,
-          "sha256": "DCFCB19AE8F3301111E9283FE7C2E24B8A1F6E6746FC944003BD44686E9D27E0",
+          "name": "hechao-server-control-agent-0.2.4-20260802T093332Z-win-x64.zip",
+          "location": "artifacts/releases/hechao-server-control-agent-0.2.4-20260802T093332Z-win-x64.zip",
+          "size": 33146240,
+          "sha256": "44F155DA30C8DFFF2A8B885FE7E2168C81566EBEBB69D2E7FAEC0815CC71BA90",
           "primary": true
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
           "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
-          "size": 73899214,
-          "sha256": "633A9C7EB63D982E2E9A0AC450E54679E74DBE4BD21DD38EEAFF6A572F9647F1",
+          "size": 73908430,
+          "sha256": "9BAE24B2B5A5491B7A926661D37B2BA806599C5164C0F83C1307B4D25449301E",
           "primary": false
         }
       ],
       "rollback": {
-        "kind": "per-host-backup-directory",
-        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260731T162452Z"
+        "kind": "per-host-rollback-executable",
+        "target": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.0.2.3.rollback-before-0.2.4-20260802T093332Z.exe"
       },
       "evidence": [
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md",
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.2.4.md",
         "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
         "docs/evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json",
-        "docs/evidence/SERVER_CONTROL_AGENT_0.2.3_PRODUCTION_DEPLOYMENT_2026-07-31.json"
+        "docs/evidence/SERVER_CONTROL_AGENT_0.2.4_PRODUCTION_DEPLOYMENT_2026-08-02.json"
       ]
     },
     {

@@ -1,9 +1,9 @@
 # 赫朝启动器
 
-> `2026-08-02` 管理后台更新：生产 API 已升级到 `0.26.1`，九个管理模块已迁移到
-> Vue 3、TypeScript、Vite 和 Vue Router。真实启动器票据确认 fragment 会在路由启动前
-> 清除，同一可信浏览器仍可在 30 天内免重复 MFA；显式退出会撤销信任。发布证据见
-> [`docs/API_RELEASE_0.26.1.md`](docs/API_RELEASE_0.26.1.md)。
+> `2026-08-02` 管理后台更新：生产 API 已升级到 `0.26.2`。九个 Vue 管理模块保留
+> `0.26.1` 的票据预路由清理，并修复短窗口和长页面无法完整滚动、侧栏项目不可达的问题；
+> TypeScript、Vitest `8/8`、Playwright `12/12` 和完整解决方案 `578/578` 通过。发布证据见
+> [`docs/API_RELEASE_0.26.2.md`](docs/API_RELEASE_0.26.2.md)。
 >
 > `2026-08-01` 更新：启动器当前正式版本为 `0.14.2`，生产启动检查与自动更新通道已启用；
 > 系统代理可在设置中按需开启，默认保持直连。发布证据见
@@ -14,16 +14,17 @@
 > 完整解决方案 `564/564` 通过。审查记录见
 > [`docs/LAUNCHER_FRONTEND_AUDIT_2026-08-01.md`](docs/LAUNCHER_FRONTEND_AUDIT_2026-08-01.md)。
 
-> `2026-07-31` 服控更新：owl5 已部署 ServerControlAgent `0.2.3`，修复空服暂停后
-> stdout 管道堵塞导致无法关服的问题；owl9 保持 `0.2.1`。发布证据见
-> [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
+> `2026-08-02` 服控更新：owl5 已部署 ServerControlAgent `0.2.4`，在 `0.2.3` 的
+> stdout 管道修复上继续保证本机日志失败和未知轮询异常不会终止代理；owl9 保持
+> `0.2.1`。发布证据见
+> [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.4.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.4.md)。
 
 > `2026-08-01` owl9 状态采集器升级到 `0.2.2`：共享 `25565` 的
 > `pvp`（恐怖整蛊）与 `pvp-purpur`（真正 PVP）改为按监听 PID 的 Java 路径
 > 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.14.2`、API `0.26.1`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；四个制品、可回滚部署和自动验收均已完成，剩余门槛只涉及真实四级账号与 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作和最小权限服控的 Vue 管理控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.14.2`、API `0.26.2`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；四个制品、可回滚部署和自动验收均已完成，剩余门槛只涉及真实四级账号与 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作和最小权限服控的 Vue 管理控制台。
 
 2026-07-29 已确认新架构：赫朝启动器成为唯一服务器选择和切换入口；大厅继续作为 LuckPerms 等前置能力的内部承载器，但不再向玩家展示、授权、路由或回退。Velocity 继续负责统一公网入口、forwarding 和服务端二次授权。完整约束、回滚和验收标准见 [`docs/LAUNCHER_ONLY_SERVER_SWITCHING.md`](docs/LAUNCHER_ONLY_SERVER_SWITCHING.md)。
 
@@ -67,20 +68,20 @@
 - Windows 只读采集器每分钟查询各 Velocity 目标，并可按本机监听端口读取 Java 进程内存、CPU、启动时间和磁盘余量；Paper/Purpur 指标代理只把 TPS、MSPT 与累计 GC 时间原子写入本地 JSON。两者都不持有 RCON、控制台或服务器启停权限。
 - `Administrator` 可从启动器申请 90 秒一次性后台票据；票据只放 URL fragment，兑换后改用 `HttpOnly`、`Secure`、`SameSite=Strict` 的独立浏览器会话，不把启动器 Bearer 交给网页。
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复、公告、开放排期、玩家搜索、访问预览和单服规则，所有变更使用修订号并在同一事务中写入审计日志。
-- 管理后台已在生产迁移到 Vue 3、TypeScript、Vite 和 Vue Router；九个管理模块按路由拆分并按需加载，ASP.NET Core 构建和发布会自动生成 `wwwroot/admin` 静态产物。生产真实票据、九个深层路由、稳定数据态、零横向溢出和零浏览器 warning/error 已验收。
+- 管理后台已在生产迁移到 Vue 3、TypeScript、Vite 和 Vue Router；九个管理模块按路由拆分并按需加载，ASP.NET Core 构建和发布会自动生成 `wwwroot/admin` 静态产物。生产真实票据、九个深层路由、稳定数据态、零横向溢出和零浏览器 warning/error 已验收；`0.26.2` 进一步补齐长正文、短窗口和侧栏导航滚动边界。
 - 服控面板和最小权限 Windows 代理已接入生产：支持优雅启停、冲突服先停后启、
   `server.properties` 与 JVM 内存快捷设置，以及受限 Minecraft 控制台。当前登记
   9 个受管目标；代理在线数和运行中实例数来自实时心跳，执行动作前必须重新核验。
   内存设置下次启动生效，不会自动重启服务端。
 - 管理后台可排队四个固定 LuckPerms 全局组的等级变更；大厅代理通过 LuckPerms API 应用，不直接写 MariaDB，也不接受任意控制台命令。
 - 全部认证状态撤销和 UUID 封禁会通过可靠 outbox 联动论坛 `sessionVersion`，使已经签发的论坛 Cookie 失效。
-- 启动器 API 生产版本 `0.26.1` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控，Vue 管理后台支持从真实运行状态发现服务器。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
+- 启动器 API 生产版本 `0.26.2` 已通过 `https://launcher-api.hechao.world` 上线；玩家服务器与内部基础设施角色已拆分，大厅隐藏后仍保留监控，Vue 管理后台支持从真实运行状态发现服务器。对象签名入口使用独立令牌桶，登录与全局防刷限制保持分离。
 - API 私有对象重定向不会把短时 OSS 签名 URL 写入 journal；Nginx 访问日志只保留无查询参数的路径，不记录 Referer，避免密码重置和 OAuth 参数进入日志。
 - API 每分钟评估 5xx、延迟、登录失败、下载失败和服务器运行状态；独立监控器检查公网入口、私有 OSS 基线、TLS 证书与异地备份状态，只在新告警、级别变化和恢复时发送邮件，不控制游戏服进程。
 
-API `0.22.0-20260729T144953Z` 于 2026-07-29 首次完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；这些能力现由 `0.26.1-20260802T012527Z` 继续承载，迁移为 `021`，`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.1` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；Activity 零玩家时的 NeoForge 暂停会显式显示为空服暂停，不再误报指标过期。当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。该阶段生产发布基线测试为 `.NET 501/501`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`；当前 `0.26.1` 发布验收为完整解决方案 `576/576`、Vitest `8/8` 和 Playwright `11/11`。
+API `0.22.0-20260729T144953Z` 于 2026-07-29 首次完成一致性备份、哈希校验、迁移 `019`、原子切换、公网回归和大厅基础设施角色验收；这些能力现由 `0.26.2-20260802T093332Z` 继续承载，迁移为 `021`，`/healthz` 与 `/readyz` 当前均正常，公开目录对 `lobby` 为零命中。账号安全、论坛 Cookie 联动、客户端三通道、隐私受限遥测、服务器运行指标和统一告警均在线。Nginx 五个站点入口已启用无查询参数、无 Referer 的访问日志，合成重置 token 回归泄漏数为 `0`。状态采集器 `0.2.1` 与三类指标代理已实时上报大厅、Survival1、Survival2、Activity 和恐怖整蛊（历史目标 `pvp`）的进程、磁盘、TPS、MSPT 与累计 GC；Activity 零玩家时的 NeoForge 暂停会显式显示为空服暂停，不再误报指标过期。当前仅完成单用户空载基线，不替代多人负载验收。大厅 LuckPerms 等级代理、Lobby Guard `0.1.0` 和指标代理均已加载。生产 Velocity Authorizer `0.4.0` 保持 `monitor`，所有首次连接故障硬拒绝并永久拒绝基础设施目标。该阶段生产发布基线测试为 `.NET 501/501`、Velocity `26/26`、Lobby Guard `3/3`、等级代理 `4/4`、指标代理 `2/2`；当前 `0.26.2` 发布验收为完整解决方案 `578/578`、Vitest `8/8` 和 Playwright `12/12`。
 
-API `0.26.1` 与 owl5 服控代理 `0.2.3`、owl9 `0.2.1` 已在生产启用每服 JVM 内存展示、受控修改、目录实际状态同步和运行中服务器发现。九个目标均上报 `Xms`、`Xmx` 与硬上限；服控心跳与命令执行已拆为独立循环，长停止命令不再阻塞整台 VPS 的状态更新。发布与内存基线见 [`docs/API_RELEASE_0.24.0.md`](docs/API_RELEASE_0.24.0.md)，目录同步见 [`docs/API_RELEASE_0.24.1.md`](docs/API_RELEASE_0.24.1.md)，服务器发现见 [`docs/API_RELEASE_0.24.2.md`](docs/API_RELEASE_0.24.2.md)，可信后台设备见 [`docs/API_RELEASE_0.25.0.md`](docs/API_RELEASE_0.25.0.md)，Vue 后台上线见 [`docs/API_RELEASE_0.26.1.md`](docs/API_RELEASE_0.26.1.md)，代理修复见 [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
+API `0.26.2` 与 owl5 服控代理 `0.2.4`、owl9 `0.2.1` 已在生产启用每服 JVM 内存展示、受控修改、目录实际状态同步和运行中服务器发现。九个目标均上报 `Xms`、`Xmx` 与硬上限；服控心跳与命令执行使用独立、可恢复循环，长停止命令、本机日志失败或单次未知异常不会使整台 VPS 停止上报。发布与内存基线见 [`docs/API_RELEASE_0.24.0.md`](docs/API_RELEASE_0.24.0.md)，目录同步见 [`docs/API_RELEASE_0.24.1.md`](docs/API_RELEASE_0.24.1.md)，服务器发现见 [`docs/API_RELEASE_0.24.2.md`](docs/API_RELEASE_0.24.2.md)，可信后台设备见 [`docs/API_RELEASE_0.25.0.md`](docs/API_RELEASE_0.25.0.md)，Vue 后台上线见 [`docs/API_RELEASE_0.26.1.md`](docs/API_RELEASE_0.26.1.md)，当前 UI 修复见 [`docs/API_RELEASE_0.26.2.md`](docs/API_RELEASE_0.26.2.md)，代理修复见 [`docs/SERVER_CONTROL_AGENT_RELEASE_0.2.4.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.2.4.md)。
 
 真实管理员已完成 MFA 登记，`0.11.14` 已产生首条真实启动遥测，诊断上传、管理员下载、审计和本地 SHA-256 复验均已完成。基础客户端的 Lobby、Survival1、Survival2、Activity 与恐怖整蛊历史单账号首次路由均已通过；恐怖整蛊的 CrossStitch 修复、身份转发、直连拒绝、稳定连接和正常退出也已验收。Activity 在含 U+200C 的既有数据根目录下已由 `0.12.3` 改用 `%LocalAppData%\Hechao\Launcher\native-runs` 物理目录：`java.library.path`、`org.lwjgl.librarypath`、JNA、LWJGL 解压和 Netty 五个属性唯一指向该目录，不再依赖可能被 Windows 原生加载器解析回真实目标的目录联接。安装版启动器从“进入服务器”完成正版会话、连接 `mc.hehe11.fun`、进入 Activity 世界并以退出码 `0` 正常结束，全程未复现 `UnsatisfiedLinkError` 或 `Can't find dependent libraries`。同档案三轮 fresh grant 重进、NeoForge/Paper 跨档案三轮切换、15 分钟单进程采样、启动器重启接管、强制异常退出和新授权恢复也已用同一真实账号通过，全程未出现 Lobby 回退；Activity 运行时选择维护中的 DollNight 或已关闭的 Survival1，主操作均禁用且现有 PID 不变。跨版本回大厅曾在 API `0.21.0` 和 Velocity 4 隔离环境完成五轮真实客户端验证，相关证据仅保留用于审计；2026-07-29 的新架构已经取消 `/hub`、NPC 和 Via 回大厅方案。生产代理已迁移至 Velocity 4、独立 Java 25 和 Authorizer `0.4.0` monitor；API `0.22.0`、Lobby Guard `0.1.0`、旧回程移除及后端 `/hub` 禁用均已落地。大厅八个玩家交互 Skript 已在线禁用并保留哈希备份，只留每日备份；公网 `25566` 不可达，owl5 与 owl9 恐怖整蛊均无活动的旧转服路径。下一步只按 [`docs/PRELAUNCH_PILOT_0.12.3.md`](docs/PRELAUNCH_PILOT_0.12.3.md) 完成真实四级账号、离线/无权限拒绝、`enforce`、目录强制登录和 `2/3/5/20` 人灰度。
 
