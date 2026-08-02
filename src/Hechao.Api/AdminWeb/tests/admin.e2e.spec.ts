@@ -557,6 +557,52 @@ test("mobile navigation remains scrollable without covering page content", async
   await page.screenshot({ path: "../../../artifacts/admin-web-mobile.png", fullPage: true });
 });
 
+test("long desktop pages scroll inside content while the sidebar remains available", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const users = Array.from({ length: 48 }, (_, index) => ({
+    ...userSummary,
+    userId: `33333333-3333-3333-3333-${String(index).padStart(12, "0")}`,
+    username: `player-${String(index).padStart(2, "0")}`,
+    displayName: `测试玩家 ${index + 1}`,
+    email: `player-${index}@example.test`
+  }));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/users" && request.method() === "GET") {
+        await route.fulfill({ json: users });
+        return true;
+      }
+      return false;
+    }
+  });
+  await page.goto("/admin/users");
+  await expect(page.locator(".user-table tbody tr")).toHaveCount(users.length);
+
+  const metrics = await page.evaluate(() => {
+    const content = document.querySelector<HTMLElement>(".content");
+    if (!content) throw new Error("content region missing");
+    content.scrollTop = content.scrollHeight;
+    return {
+      documentScrollHeight: document.documentElement.scrollHeight,
+      documentClientHeight: document.documentElement.clientHeight,
+      bodyScrollHeight: document.body.scrollHeight,
+      bodyClientHeight: document.body.clientHeight,
+      contentScrollTop: content.scrollTop,
+      contentScrollHeight: content.scrollHeight,
+      contentClientHeight: content.clientHeight
+    };
+  });
+
+  expect(metrics.documentScrollHeight).toBe(metrics.documentClientHeight);
+  expect(metrics.bodyScrollHeight).toBe(metrics.bodyClientHeight);
+  expect(metrics.contentScrollHeight).toBeGreaterThan(metrics.contentClientHeight);
+  expect(metrics.contentScrollTop).toBeGreaterThan(0);
+  await expect(page.locator(".sidebar-brand")).toBeVisible();
+  await expect(page.locator(".primary-nav")).toBeVisible();
+  await expect(page.locator(".sidebar-account")).toBeVisible();
+  await page.screenshot({ path: "../../../artifacts/admin-web-users-long-desktop.png" });
+});
+
 test("all migrated routes remain contained on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockAdminApi(page);

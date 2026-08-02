@@ -7,16 +7,25 @@ internal sealed class AgentLog(string path)
     private readonly string _path = Path.GetFullPath(path);
     private readonly object _gate = new();
 
-    internal void Write(string level, string eventName, string message)
+    internal bool WriteBestEffort(string level, string eventName, string message)
     {
-        var safeMessage = Sanitize(message, 1600);
-        var line =
-            $"{DateTimeOffset.UtcNow:O}\t{level}\t{eventName}\t{safeMessage}{Environment.NewLine}";
-        lock (_gate)
+        try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            RotateIfNeeded();
-            File.AppendAllText(_path, line, new UTF8Encoding(false));
+            var safeMessage = Sanitize(message, 1600);
+            var line =
+                $"{DateTimeOffset.UtcNow:O}\t{level}\t{eventName}\t{safeMessage}{Environment.NewLine}";
+            lock (_gate)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+                RotateIfNeeded();
+                File.AppendAllText(_path, line, new UTF8Encoding(false));
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 

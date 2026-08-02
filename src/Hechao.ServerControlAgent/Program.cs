@@ -73,9 +73,9 @@ try
         cancellation.Cancel();
     };
     AppDomain.CurrentDomain.ProcessExit += (_, _) => cancellation.Cancel();
-    log.Write("INFO", "agent_started", configuration.AgentId);
+    log.WriteBestEffort("INFO", "agent_started", configuration.AgentId);
     await worker.RunAsync(cancellation.Token);
-    log.Write("INFO", "agent_stopped", configuration.AgentId);
+    log.WriteBestEffort("INFO", "agent_stopped", configuration.AgentId);
     return 0;
 }
 catch (Exception exception) when (
