@@ -42,9 +42,10 @@
    `pvp-fabric-1.20.1` 才构成正确组合。
 4. 真正 PVP 服运行时，当前赫朝启动器中的“恐怖整蛊”入口不得保持可进入状态；
    在为 PVP 建立独立目录记录、客户端档案和切换流程前，不把它纳入本项目验收。
-5. 状态采集器当前使用 `velocityTarget=pvp` 和
-   `dataPath=C:\mc\server`，只代表恐怖整蛊服。若改开真正 PVP 服，必须先停用或
-   切换该逻辑目标，不能让 PVP 的 `25565` 状态冒充恐怖整蛊。
+5. 状态采集器 `0.2.2` 同时登记 `pvp` 与 `pvp-purpur`，并在读取共享 `25565` 前
+   核对监听 PID 的 `java.exe` 路径。恐怖整蛊只接受
+   `C:\mc\jre\jdk-21.0.11+10-jre\bin\java.exe`，真正 PVP 只接受
+   `E:\MinecraftServer\jdk\bin\java.exe`；路径不匹配时不得上报另一目标的数据。
 
 ## 3. 操作前检查
 
@@ -67,8 +68,16 @@ Velocity / 启动器逻辑目标
 
 赫朝启动器当前发布的 Fabric `1.20.1` 客户端、modern forwarding、CrossStitch、
 真实进服、跨版本回程候选和 TPS/MSPT/GC 验收，全部属于恐怖整蛊服
-`C:\mc\server`。真正 PVP 服 `E:\MinecraftServer` 是独立服务端，本轮只完成
-只读识别，不修改、不启动、不停止。
+`C:\mc\server`。真正 PVP 服 `E:\MinecraftServer` 仍是独立服务端，没有玩家目录、
+Velocity 目标或客户端档案，不属于上述玩家进服验收。
+
+运维侧已经单独接入真正 PVP：2026-07-31，管理员通过服控目标 `pvp-purpur` 成功启动
+该服务端；2026-08-01，状态采集器 `0.2.2` 按 Java 路径确认其进程、玩家、CPU、内存和
+磁盘数据。`HechaoServerMetrics-0.1.0.jar` 已预置但没有为此重启服务端，TPS/MSPT/GC
+仍等待下一次管理员正常手动重启后生效。这些运维证据不代表真正 PVP 已向玩家开放，
+实时运行状态也必须在每次操作前重新核验。详见
+[`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 与
+[`STATUS_COLLECTOR_RELEASE_0.2.2.md`](STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
 ## 5. 恐怖整蛊运行与备份验收
 

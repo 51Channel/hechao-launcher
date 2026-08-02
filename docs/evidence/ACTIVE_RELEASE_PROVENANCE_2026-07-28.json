@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-01T11:15:27Z",
+  "generatedAtUtc": "2026-08-02T02:07:06.9520074Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,40 +45,41 @@
     },
     {
       "component": "api",
-      "version": "0.25.0-20260801T105011Z",
-      "releaseTag": "api-v0.25.0",
-      "releaseCommit": "950bfeb3d4aabe2ee95225bbace53ec023fa4828",
-      "taggedAt": "2026-08-01T19:13:42+08:00",
+      "version": "0.26.1-20260802T012527Z",
+      "releaseTag": "api-v0.26.1",
+      "releaseCommit": "3bfa13fbdc14acfdde551fc49150992824c0481f",
+      "taggedAt": "2026-08-02T10:01:26+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "950bfeb3d4aabe2ee95225bbace53ec023fa4828"
+        "value": "3bfa13fbdc14acfdde551fc49150992824c0481f"
       },
-      "deploymentState": "production-trusted-admin-devices",
-      "historicalNote": "0.24.2-20260731T141731Z remains the immediate rollback release. Trusted-device data introduced by migration 21 is retained during rollback.",
+      "deploymentState": "production-vue-admin-real-ticket-and-nine-route-accepted",
+      "historicalNote": "0.26.0-20260802T010000Z remains the immediate rollback release and is retained under api-v0.26.0. Migration 21, MFA, sessions, trusted devices and audit data are retained during rollback.",
       "artifacts": [
         {
-          "name": "hechao-api-0.25.0-20260801T105011Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.25.0-20260801T105011Z",
-          "size": 45661020,
-          "sha256": "C45DF2C7BF5C9D515864434E24B17FB64B8910F4F4B4BFF65A3B11F19A2EB422",
+          "name": "hechao-api-0.26.1-20260802T012527Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z",
+          "size": 45790438,
+          "sha256": "85E7BF9EBE0DEFF27FA306CE1A3BE5E9327884F06EC2C00D9DEFE23FFC12F5F8",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.25.0-20260801T105011Z/Hechao.Api",
-          "size": 104640051,
-          "sha256": "B69D32F1A374BE2BF96E875931861B7F09F786348B7C7AD7A1F26883559E2E9A",
+          "location": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z/Hechao.Api",
+          "size": 104653363,
+          "sha256": "61D8E11F556FC215E52DE0295B106CC9C309F8CAB81ED283A5EE249B86C09DDF",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-symlink",
-        "target": "/opt/hechao-launcher-api/releases/0.24.2-20260731T141731Z"
+        "target": "/opt/hechao-launcher-api/releases/0.26.0-20260802T010000Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.25.0.md",
-        "docs/evidence/API_0.25.0_PRODUCTION_DEPLOYMENT_2026-08-01.json"
+        "docs/API_RELEASE_0.26.1.md",
+        "docs/ADMIN_WEB_OPERATIONS.md",
+        "docs/evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json"
       ]
     },
     {

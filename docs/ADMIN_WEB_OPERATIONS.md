@@ -1,9 +1,9 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.14.2`、API `0.26.0` 候选
-> 生产状态：API `0.25.0` 已部署且 `AdminWeb__Enabled=true`；Vue 3 后台尚未部署生产，真实管理员已于 2026-07-27 完成首次 MFA 登记
+> 源码版本：启动器 `0.14.2`、API `0.26.1`
+> 生产状态：API `0.26.1-20260802T012527Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收
 > 管理入口：`https://admin.hechao.world/admin/`
-> 前端状态：生产仍使用既有原生页面；仓库中的 Vue 3 候选已完成迁移和本地验证，本轮尚未部署生产
+> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router 九页后台已部署生产；真实票据和九个深层路由已逐页验收
 > 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
@@ -12,7 +12,7 @@
 2. API 每次创建票据时重新确认当前 LuckPerms 映射等级为 `Administrator`。
 3. 启动器调用 `POST /v1/admin-auth/tickets`，取得 90 秒、一次性票据。
 4. 启动器用系统浏览器打开 `/admin/#ticket=<token>`。fragment 不会随 HTTP 请求、访问日志或 `Referer` 发送。
-5. 页面从地址栏移除 fragment，再以 JSON 将票据提交到 `POST /v1/admin-auth/redeem`。
+5. Vue 入口在创建 Router 前从地址栏移除 fragment，并且只消费一次票据，再以 JSON 将其提交到 `POST /v1/admin-auth/redeem`。
 6. API 校验票据哈希、过期时间、一次性状态、管理员状态和来源 IP，随后创建独立浏览器会话。
 7. 浏览器保存短期 `__Host-HechaoAdmin` Cookie；管理员显式启用本机信任后，另保存 `__Host-HechaoAdminTrusted`。启动器 Bearer 不进入网页、localStorage、sessionStorage 或 URL 查询参数。
 
@@ -133,7 +133,7 @@ location / {
 
 正式部署前：
 
-1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.22.0-20260729T144953Z`，启动器为 `0.12.3`。
+1. 生成目标 API 与启动器安装包并核对版本、提交号和 SHA-256；当前 API 基线为 `0.26.1-20260802T012527Z`，启动器为 `0.14.2`。
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
@@ -166,7 +166,7 @@ Cookie、来源地址和用户标识均未进入仓库证据。
 上游同名值；配置 reload 前后均通过 `nginx -t`，API PID 未变化。机器证据见
 [`evidence/PRODUCTION_CONTROL_PLANE_READINESS_2026-07-30.json`](evidence/PRODUCTION_CONTROL_PLANE_READINESS_2026-07-30.json)。
 
-当前 MFA 凭据仍为 `1`、恢复码哈希仍为 `8`。2026-07-30 10:22，管理员又从正确
+截至 2026-08-02，生产 MFA 凭据为 `2`、恢复码哈希为 `16`。2026-07-30 10:22，管理员又从正确
 启动器创建一次性票据并完成 MFA；生产审计页可见会话创建、票据兑换和双重验证完成。
 随后以只读方式逐页核对服务器目录、玩家与权限、客户端档案、运行数据、服务状态、
 告警中心、诊断包和审计记录。六个档案均启用，24 小时、7 天和 30 天窗口均正常加载，
@@ -174,6 +174,16 @@ Cookie、来源地址和用户标识均未进入仓库证据。
 为零；本轮未确认告警，也未执行目录、账号、档案或权限写入。脱敏证据见
 [`evidence/ADMIN_WEB_VISUAL_ACCEPTANCE_2026-07-30.json`](evidence/ADMIN_WEB_VISUAL_ACCEPTANCE_2026-07-30.json)。
 这次逐页目视验收不替代任何使用专门测试对象并带回滚的管理写入验收。
+
+2026-08-02 09:46 CST，API `0.26.1-20260802T012527Z` 将九个管理模块正式切换到
+Vue 3。数据库与配置备份、原子切换、本机/公网健康、九个深层路由、Host 锁定和静态
+资源哈希均通过。09:52 CST 又从正式启动器创建真实一次性票据；可信设备直接完成 MFA，
+地址栏最终为 `/admin/servers` 且 fragment 为空。随后逐页等待异步数据稳定，确认九页
+均无资源错误、骨架屏残留、横向溢出或破图，浏览器 warning/error 为 `0`。本轮未确认
+告警、未修改目录/账号/档案/权限/服控，也未操作 Minecraft 服务端。当前活动告警仍为
+两条停服心跳 Critical 与两条真正 PVP Warning，保持未确认。完整记录见
+[`API_RELEASE_0.26.1.md`](API_RELEASE_0.26.1.md) 与
+[`evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json)。
 
 API `0.16.0` 包含玩家账号安全抽屉、论坛 Cookie 联动、受控全局等级和管理端点，完整生效范围、
 迁移、审计和回滚见
@@ -222,7 +232,7 @@ Vue 页面每 3 秒读取轻量的 `GET /v1/admin/server-control/overview`，该
 ## 8. 回滚
 
 应用故障时可把 API `current` 链接切回直接回滚目标
-`0.19.0-20260727T005013Z`。迁移 5 至 21 均为加法或兼容变更，旧 API 不读取新增表与
+`0.26.0-20260802T010000Z`。迁移 5 至 21 均为加法或兼容变更，旧 API 不读取新增表与
 字段，回滚时不要删除 MFA、会话、访问规则、UUID 封禁、请求指标、告警或审计记录。
 
 若只需关闭可信设备功能，先把现有 `launcher.admin_trusted_devices` 行标记为撤销并回滚上一 API；不要删除 MFA 凭据。若需关闭整个管理后台，先将 `AdminWeb__Enabled=false`，再按 API 标准发布流程重启 `hechao-launcher-api.service`。这些操作不要求也不允许重启大厅、生存服、活动服、Velocity 或其他 Minecraft 服务。

@@ -1,8 +1,8 @@
 # 赫朝启动器完成矩阵
 
-> 更新时间：`2026-08-01`
+> 更新时间：`2026-08-02`
 >
-> 当前生产：启动器 `0.14.2`、API `0.25.0`、
+> 当前生产：启动器 `0.14.2`、API `0.26.1`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -36,11 +36,11 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.14.2` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.1` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
-| API `0.25.0` | 已完成 | 可信管理员设备已部署；迁移 21、数据库备份、原子切换、本机/公网健康、真实 MFA 创建及第二次启动器票据免 MFA 均通过，生产证据见 [`API_RELEASE_0.25.0.md`](API_RELEASE_0.25.0.md) 与 [`evidence/API_0.25.0_PRODUCTION_DEPLOYMENT_2026-08-01.json`](evidence/API_0.25.0_PRODUCTION_DEPLOYMENT_2026-08-01.json) |
+| API `0.26.1` | 已完成 | Vue 九页后台与票据预路由清理已部署；迁移 21、数据库与配置备份、原子切换、本机/公网健康、真实启动器票据、可信设备免 MFA 和九页稳定数据态均通过，生产证据见 [`API_RELEASE_0.26.1.md`](API_RELEASE_0.26.1.md) 与 [`evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
 | 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | .NET `564/564`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
+| 自动测试 | 已完成 | .NET `576/576`，Vue Vitest `8/8`、Playwright `11/11`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.14.2` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -62,14 +62,14 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
-| API 与代理版本 | 已完成 | API `0.25.0`、owl5 代理 `0.2.3`、owl9 代理 `0.2.1` 已部署；服务与任务均正常，见 [`API_RELEASE_0.25.0.md`](API_RELEASE_0.25.0.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) |
+| API 与代理版本 | 已完成 | API `0.26.1`、owl5 代理 `0.2.3`、owl9 代理 `0.2.1` 已部署；API 服务正常，代理在线状态按实时心跳故障关闭，见 [`API_RELEASE_0.26.1.md`](API_RELEASE_0.26.1.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md) |
 | 目录与物理服状态同步 | 已完成 | `Online` 只作为管理员开放策略；同名服控目标在线时开放、停止时自动关闭、服控失联时故障关闭。`activity` 在线自动开放，停止的恐怖整蛊 `pvp` 自动关闭，`dollnight` 显式维护保持优先 |
 | 代理心跳与命令隔离 | 已完成 | 心跳和命令使用独立循环；两台生产代理升级后持续上报，最近错误为 `0`，全部 Java PID 和启动时间不变 |
 | 单服内存展示 | 已完成 | 9 个目标均上报 `Xms`、`Xmx`、单服硬上限、代理、端口与 PID |
 | 单服内存调整 | 已完成 | 支持 `512 MiB` 起、`256 MiB` 步长的 `Xms/Xmx`；API 与代理双重校验，设置不自动重启游戏服 |
 | 文件事务与回滚 | 已完成 | `server.properties` 与显式 JVM 参数文件先备份、同卷替换，任一失败恢复原始字节 |
 | 生产进程隔离 | 已完成 | API/代理升级前后五个运行目标 PID 不变，待处理操作和命令均为 `0` |
-| 最终后台目视补拍 | 待补拍 | 最终复核时后台会话已过期；生产接口、静态资源、代理、文件与进程证据均已完成 |
+| 最终后台目视补拍 | 已完成 | `0.26.1` 生产真实票据进入 Vue 后台后，九页均等待稳定数据态再复核；服控和目录画面无重叠或横向溢出，浏览器 warning/error 为 `0`，见 [`evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json) |
 
 结构化验收见
 [`evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json)。
@@ -122,8 +122,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 能力 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
-| Vue 3 + TypeScript + Vite 后台迁移 | 代码完成，未生产部署 | 九个管理模块已迁移为 Vue Router 路由并接入 ASP.NET Core 自动构建；前端类型检查、`8/8` Vitest、`10/10` Playwright、九页 WCAG A/AA 与 390px 溢出检查、API `245/245` 和完整解决方案 `576/576` 均通过。生产仍使用既有页面，本轮没有部署、重启 API 或操作游戏服 |
-| 管理员独立会话、CSRF、TOTP 与恢复码 | 已完成 | 真实管理员已于 2026-07-27 完成首次登记；生产凭据 `1`、恢复码哈希 `8`、未完成登记 `0`，并存在登记开始和启用审计。2026-07-30 又从正确启动器创建新票据并完成 MFA，后台审计可见会话创建、票据兑换和双重验证完成，浏览器会话仍按 30 分钟过期 |
+| Vue 3 + TypeScript + Vite 后台迁移 | 已完成 | API `0.26.1` 已部署九个 Vue Router 模块并接入 ASP.NET Core 自动构建；前端类型检查、`8/8` Vitest、`11/11` Playwright、九页 WCAG A/AA 与 390px 溢出检查、API `245/245` 和完整解决方案 `576/576` 均通过。生产真实票据 fragment 已在 Router 前清除，九页稳定数据态、零资源错误、零横向溢出、零破图和零浏览器 warning/error 均已验收 |
+| 管理员独立会话、CSRF、TOTP 与恢复码 | 已完成 | 截至 2026-08-02，生产凭据 `2`、恢复码哈希 `16`、未完成登记 `0`；真实启动器票据、MFA、会话审计和可信设备免重复动态码均已验收，浏览器会话仍按 30 分钟过期 |
 | 服务器新增、编辑、归档、恢复 | 已完成 | API、Web、修订号冲突和事务审计均已部署；新增时会列出心跳正常、正在运行且尚未入目录的服控目标并辅助填表，不自动保存或启停服务器 |
 | 显示名、短名、图标、排序、状态、人数、版本、加载器、最低等级 | 已完成 | `AdminServerCreateRequest` / `AdminServerUpdateRequest` 与 Web 表单 |
 | 客户端档案与 Velocity 目标绑定 | 已完成 | 只允许绑定现有启用档案 |
@@ -131,12 +131,12 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 单服白名单、拒绝规则与有效期 | 已完成 | 允许/拒绝、原因、UTC 有效期、修订冲突与事务审计均已上线 |
 | 玩家实际目录/进服结果预览 | 已完成 | 管理员可按玩家预览每个服务器的最终允许结果及拒绝原因 |
 | 客户端档案创建、上传、签名与发布通道 | 已实现待生产验收 | API `0.17.0` 已生产部署，隔离生产副本真实验签与三通道闭环通过；真实管理员 MFA 已登记，仍待在生产管理页面完成创建、上传和发布操作验收 |
-| 下载量、失败率与版本分布 | 已实现待生产验收 | API `0.22.0` 保留迁移 15、30 天留存、幂等批次和后台“运行数据”，并对客户端下载失败率建立统一告警；真实基础、Activity 与恐怖整蛊安装样本已完成，仍需真实回滚、完整 Launch/GameExit 和多人样本 |
+| 下载量、失败率与版本分布 | 已实现待生产验收 | 当前 API `0.26.1` 保留迁移 15、30 天留存、幂等批次和后台“运行数据”，并对客户端下载失败率建立统一告警；真实基础、Activity 与恐怖整蛊安装样本已完成，仍需真实回滚、完整 Launch/GameExit 和多人样本 |
 | 暂停问题版本和主动回滚 | 已实现待生产验收 | API `0.17.0` 已完成暂停自动回滚、恢复不自动推广、修订冲突和审计；真实管理员 MFA 已登记，仍待在生产管理页面完成暂停与回滚操作验收 |
 | 玩家搜索、等级和单服授权管理 | 已实现待生产验收 | 玩家搜索、单服规则和受控四级全局等级入口均已上线；大厅代理已加载，仍需专门测试账号完成四级改回与拒绝路径 |
-| 账号、设备会话与 Minecraft UUID 封禁 | 已实现待生产验收 | 功能自 API `0.16.0` 上线并保留在当前 `0.22.0`；账号停用/恢复、单设备和全部会话撤销、UUID 定时封禁、论坛既有 Cookie 联动、并发保护、Velocity/目录拒绝及审计均通过隔离与生产链路验收。真实管理员 MFA 已登记，仍待在生产页面逐项操作验收 |
+| 账号、设备会话与 Minecraft UUID 封禁 | 已实现待生产验收 | 功能自 API `0.16.0` 上线并保留在当前 `0.26.1`；账号停用/恢复、单设备和全部会话撤销、UUID 定时封禁、论坛既有 Cookie 联动、并发保护、Velocity/目录拒绝及审计均通过隔离与生产链路验收。真实管理员 MFA 已登记，仍待在生产页面逐项操作验收 |
 | 审计日志查看 | 已完成 | 目录写入、登录与 MFA 事件可查询 |
-| 服控面板、冲突编排、快捷设置与终端 | 已上线待完整动作验收 | 结构化队列、双重校验、审计、快捷设置和命令白名单已接入生产。后台已正常渲染 9 个目标、2 个在线代理和 5 个运行中实例；管理员发起的 Survival1 启动、恐怖整蛊停止和真正 PVP 启动均一次成功。结构化重启、快捷设置、终端允许/拒绝和冲突组自动切换仍待逐项验收，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 和 [`evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json) |
+| 服控面板、冲突编排、快捷设置与终端 | 已上线待完整动作验收 | 结构化队列、双重校验、审计、快捷设置和命令白名单已接入生产。2026-07-31 动作验收时后台正常渲染 9 个目标、2 个在线代理和 5 个运行中实例；该数量只是不变证据中的历史快照，当前值必须按实时心跳核验。管理员发起的 Survival1 启动、恐怖整蛊停止和真正 PVP 启动均一次成功。结构化重启、快捷设置、终端允许/拒绝和冲突组自动切换仍待逐项验收，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 和 [`evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json) |
 
 ## 4. 服务端授权与状态
 
@@ -149,10 +149,10 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 基础设施大厅玩家隔离 | 已部署待外部验收 | API `0.22.0`、Authorizer `0.4.0`、Lobby Guard `0.1.0` 已生产部署；`25566` 仅回环监听、公网连接失败、强制空白名单，等级代理、指标、告警和备份保持在线，仍需四级真实账号旁路拒绝 |
 | Velocity `enforce` | 外部验收 | schema `2` 已能匿名核对 fresh grant、等级、拒绝原因、人数、性能与 Lobby 零玩家；切换工具默认只读，并在零连接窗口备份、只重启 Velocity、失败恢复原模式。当前仍需四级真实账号和五人 monitor 证据 |
 | 目录强制登录 | 外部验收 | 独立工具只接受通过的 enforce 五人证据，备份环境文件、只重启 API，并在健康或匿名目录检查失败时自动恢复；当前不得启用 |
-| 在线、人数、协议和软件版本心跳 | 已完成 | `owl5` 四目标与 owl9 恐怖整蛊持续上报；两机只读采集器均为 `0.2.1` 且计划任务返回 `0`。API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；真正 PVP 未接入该心跳 |
+| 在线、人数、协议和软件版本心跳 | 已完成 | owl5 采集器 `0.2.1` 持续采集四个目标；owl9 已升级到 `0.2.2`，按监听 PID 的 Java 路径分别识别恐怖整蛊 `pvp` 和真正 PVP `pvp-purpur`，不再互借共享 `25565` 的数据。API `0.22.0` 已拆分 `server_role` 与 `monitoring_enabled`，Lobby 隐藏后仍可采集告警；版本与实时运行状态见 [`STATUS_COLLECTOR_RELEASE_0.2.2.md`](STATUS_COLLECTOR_RELEASE_0.2.2.md) |
 | TPS、MSPT、进程内存和启动时间 | 已完成 | 五个运行目标的代理均已加载；采集器 `0.2.1` 将 Activity 在线零玩家时的 NeoForge Tick 暂停表示为 `paused-when-empty`，不发送旧数值或伪造时间，有玩家时仍硬拒绝过期指标。严格 60 秒预检中 API `22/22`、p95 `180.846 ms`、大厅始终 `0` 人且最终活动 Critical 为 `0`；20 至 30 人负载仍是独立外部门槛 |
-| 管理后台状态与错误摘要 | 已完成 | API `0.22.0` 的既有八个页面模块已完成服务器端 `32` 项技术检查，并于 2026-07-30 从正确启动器创建新票据、完成 MFA 后逐页目视复核；24 小时、7 天、30 天样本、五目标心跳、Lobby 零玩家、实时告警、诊断包与 MFA 审计均可见。当前仅有恐怖整蛊磁盘余量警告，未在只读验收中确认或修改，见 [`evidence/ADMIN_WEB_VISUAL_ACCEPTANCE_2026-07-30.json`](evidence/ADMIN_WEB_VISUAL_ACCEPTANCE_2026-07-30.json) |
-| 远程启动、停止、重启 | 已上线待重启验收 | 管理后台已显示 9 个目标、2 个在线代理和 5 个运行中实例；Survival1 启动、恐怖整蛊停止和真正 PVP 启动均成功，数据库结果与 VPS PID 一致。结构化 `Restart` 动作仍待单独验收 |
+| 管理后台状态与错误摘要 | 已完成 | API `0.26.1` 的九个 Vue 页面已用真实启动器票据逐页等待稳定数据态并目视复核；运行窗口、心跳、实时告警、诊断包与审计均可见。2026-08-02 验收时保留两条停服心跳 Critical 和两条真正 PVP Warning，均未确认、清除或用启服掩盖，见 [`evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/API_0.26.1_PRODUCTION_DEPLOYMENT_2026-08-02.json) |
+| 远程启动、停止、重启 | 已上线待重启验收 | 2026-07-31 动作验收快照显示 9 个目标、2 个在线代理和 5 个运行中实例；Survival1 启动、恐怖整蛊停止和真正 PVP 启动均成功，数据库结果与 VPS PID 一致。代理在线数和运行中实例数属于实时状态，不沿用该快照；结构化 `Restart` 动作仍待单独验收 |
 
 ## 5. 运维与正式上线
 
@@ -171,7 +171,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 生产剩余门槛只读审计 | 已完成 | 账号、MFA、诊断、遥测、档案、心跳、告警、代理加载、世界归档与 RAM v5 当前状态已做匿名聚合核对；证据和执行顺序见 [`PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md`](PRODUCTION_ACCEPTANCE_GATES_2026-07-28.md) |
 | 生产控制面实时只读验收 | 已完成 | API `0.22.0`、迁移 `19/19`、管理站八个页面模块、匿名拒绝、Host 隔离、安全响应头、六个档案、实时指标、队列和审计共 `32` 项技术检查全部通过；Nginx 重复安全头已在可回滚 reload 中修复，API PID 未变化。见 [`evidence/PRODUCTION_CONTROL_PLANE_READINESS_2026-07-30.json`](evidence/PRODUCTION_CONTROL_PLANE_READINESS_2026-07-30.json) |
 | TPS/MSPT/GC 与 20 至 30 人容量测试 | 外部验收 | 自动预检与零玩家基线已通过；schema `2` 灰度工具会把 fresh grant、在线人数、TPS/MSPT/GC、API p95、告警与 Lobby 零玩家收在同一窗口。Survival1 已按真实停服状态改为 `Closed`；仍需要活动窗口和真实玩家，并在扩大到 20 人前持续观察 owl9 低磁盘 Warning |
-| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB 与双服务端边界已盘点：恐怖整蛊为 `C:\mc\server` Fabric，真正 PVP 为 `E:\MinecraftServer` Purpur，两者共享 `25565` 且禁止同时启动。恐怖整蛊只出站采集器、modern forwarding、运行基线和正式世界备份/异机恢复已验收；真正 PVP 未接入、未启动、未修改。见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md) 及其机器证据 |
+| 第二台 VPS `owl9` 管理与状态基线 | 已完成 | 公钥登录、Windows Server 2022、4 逻辑核、8 GiB 与双服务端边界已盘点：恐怖整蛊为 `C:\mc\server` Fabric，真正 PVP 为 `E:\MinecraftServer` Purpur，两者共享 `25565` 且禁止同时启动。恐怖整蛊的 modern forwarding、运行基线和正式世界备份/异机恢复已验收；真正 PVP 已作为 `pvp-purpur` 接入服控与状态采集，并完成一次管理员真实启动和进程指标验收，但仍未接入玩家目录、Velocity 目标或客户端档案。TPS/MSPT/GC 插件已预置，等待下次管理员正常手动重启后生效；实时状态不得沿用历史快照。见 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md)、[`STATUS_COLLECTOR_RELEASE_0.2.2.md`](STATUS_COLLECTOR_RELEASE_0.2.2.md) 及其机器证据 |
 | 生产签名私钥离机恢复副本 | 已完成 | 发布器 `0.9.0` 恢复演练已通过；加密恢复包已写入私有 OSS 恢复前缀并完成回读逐字节复验 |
 | Authenticode | 明确不做 | 首版保持 `NotSigned`，公告提供来源、大小和 SHA-256 |
 
