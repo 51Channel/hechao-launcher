@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { api, resetCsrfToken } from "@/api/client";
 import type { AdminSession } from "@/api/types";
+import { takeInitialAdminTicket } from "@/auth/initialTicket";
 import AppShell from "@/components/AppShell.vue";
 import MfaView from "@/components/MfaView.vue";
 import SignInView from "@/components/SignInView.vue";
@@ -17,9 +18,8 @@ async function initialize(): Promise<void> {
   const generation = ++initializationGeneration;
   phase.value = "loading";
   signInMessage.value = "";
-  const ticket = new URLSearchParams(window.location.hash.slice(1)).get("ticket");
+  const ticket = takeInitialAdminTicket();
   if (ticket) {
-    history.replaceState(null, "", `${location.pathname}${location.search}`);
     try {
       await api("/v1/admin-auth/redeem", { method: "POST", body: { ticket }, csrf: false });
     } catch (reason) {

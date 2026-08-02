@@ -24,9 +24,9 @@ param(
 
     [uri]$RelayUrl = "http://api.hechao.world/",
 
-    [string]$ExpectedRelease = "0.26.0-20260802T010000Z",
+    [string]$ExpectedRelease = "0.26.1-20260802T012527Z",
 
-    [string]$ExpectedApiVersion = "0.26.0",
+    [string]$ExpectedApiVersion = "0.26.1",
 
     [ValidateRange(1, 1000)]
     [int]$ExpectedMigration = 21,

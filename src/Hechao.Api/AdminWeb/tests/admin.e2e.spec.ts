@@ -586,6 +586,30 @@ test("all migrated routes render independently without browser errors", async ({
   expect(browserErrors).toEqual([]);
 });
 
+test("redeemed admin ticket is removed before router initialization", async ({ page }) => {
+  let redeemedTicket: string | null = null;
+  let redeemCount = 0;
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path !== "/v1/admin-auth/redeem" || request.method() !== "POST") return false;
+      redeemCount += 1;
+      redeemedTicket = (request.postDataJSON() as { ticket?: string }).ticket ?? null;
+      await route.fulfill({ json: {} });
+      return true;
+    }
+  });
+
+  await page.goto("/admin/servers#ticket=single-use-ticket");
+  await expect(page.locator(".page-heading h1")).toHaveText("服务器目录");
+  await expect.poll(() => new URL(page.url()).hash).toBe("");
+  expect(redeemedTicket).toBe("single-use-ticket");
+  expect(redeemCount).toBe(1);
+
+  await page.reload();
+  await expect(page.locator(".page-heading h1")).toHaveText("服务器目录");
+  expect(redeemCount).toBe(1);
+});
+
 test("all migrated routes have no automated WCAG A or AA violations", async ({ page }) => {
   await mockAdminApi(page);
   for (const [route, heading] of migratedRoutes) {
