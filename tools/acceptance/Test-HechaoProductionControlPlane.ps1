@@ -24,12 +24,18 @@ param(
 
     [uri]$RelayUrl = "http://api.hechao.world/",
 
-    [string]$ExpectedRelease = "0.22.0-20260729T144953Z",
+    [string]$ExpectedRelease = "0.26.0-20260802T010000Z",
 
-    [string]$ExpectedApiVersion = "0.22.0",
+    [string]$ExpectedApiVersion = "0.26.0",
 
     [ValidateRange(1, 1000)]
-    [int]$ExpectedMigration = 19,
+    [int]$ExpectedMigration = 21,
+
+    [ValidateRange(1, 100)]
+    [int]$ExpectedMfaCredentialCount = 2,
+
+    [ValidateRange(1, 1000)]
+    [int]$ExpectedRecoveryCodeHashCount = 16,
 
     [ValidateRange(30, 3600)]
     [int]$MaximumRuntimeAgeSeconds = 120,
@@ -624,27 +630,47 @@ $readyProbe = Invoke-HttpProbe -Uri (
 $adminIndexProbe = Invoke-HttpProbe `
     -Uri ([uri]::new($AdminBaseUrl, "admin/")) `
     -BodyMarkers @(
-        'id="servers-section"',
-        'id="users-section"',
-        'id="profiles-section"',
-        'id="telemetry-section"',
-        'id="runtime-section"',
-        'id="alerts-section"',
-        'id="diagnostics-section"',
-        'id="audit-section"'
+        '<div id="app"></div>',
+        'type="module"',
+        '/admin/assets/admin.js',
+        '/admin/assets/admin.css'
     )
 $adminScriptProbe = Invoke-HttpProbe `
-    -Uri ([uri]::new($AdminBaseUrl, "admin/admin.js")) `
+    -Uri ([uri]::new($AdminBaseUrl, "admin/assets/admin.js")) `
     -BodyMarkers @(
-        'renderTelemetry',
-        'renderRuntime',
-        'renderAlerts',
-        '/v1/admin/audit-logs',
-        '/v1/admin/diagnostics'
+        'chunk-ServersView.js',
+        'chunk-UsersView.js',
+        'chunk-ProfilesView.js',
+        'chunk-TelemetryView.js',
+        'chunk-RuntimeView.js',
+        'chunk-ControlView.js',
+        'chunk-AlertsView.js',
+        'chunk-DiagnosticsView.js',
+        'chunk-AuditView.js'
     )
-$adminStyleProbe = Invoke-HttpProbe -Uri (
-    [uri]::new($AdminBaseUrl, "admin/admin.css")
-)
+$adminStyleProbe = Invoke-HttpProbe `
+    -Uri ([uri]::new($AdminBaseUrl, "admin/assets/admin.css")) `
+    -BodyMarkers @(
+        '.console-shell',
+        '.primary-nav',
+        '.brand-mark'
+    )
+$adminRouteProbes = [ordered]@{}
+foreach ($route in @(
+    "servers",
+    "users",
+    "profiles",
+    "telemetry",
+    "runtime",
+    "control",
+    "alerts",
+    "diagnostics",
+    "audit"
+)) {
+    $adminRouteProbes[$route] = Invoke-HttpProbe -Uri (
+        [uri]::new($AdminBaseUrl, "admin/$route")
+    )
+}
 $adminUnauthorizedProbe = Invoke-HttpProbe -Uri (
     [uri]::new($AdminBaseUrl, "v1/admin/catalog/servers")
 )
@@ -729,15 +755,28 @@ $adminScriptMarkersPassed = @(
     $adminScriptProbe.markers.GetEnumerator() |
         Where-Object { -not $_.Value }
 ).Count -eq 0
+$adminStyleMarkersPassed = @(
+    $adminStyleProbe.markers.GetEnumerator() |
+        Where-Object { -not $_.Value }
+).Count -eq 0
+$adminRoutesPassed = @(
+    $adminRouteProbes.GetEnumerator() |
+        Where-Object {
+            $_.Value.statusCode -ne 200 -or
+            $_.Value.contentSha256 -ne $adminIndexProbe.contentSha256
+        }
+).Count -eq 0
 Add-Check -Checks $checks -Kind Technical -Code "admin_static_assets" `
     -Passed (
         $adminIndexProbe.statusCode -eq 200 -and
         $adminScriptProbe.statusCode -eq 200 -and
         $adminStyleProbe.statusCode -eq 200 -and
         $adminIndexMarkersPassed -and
-        $adminScriptMarkersPassed
+        $adminScriptMarkersPassed -and
+        $adminStyleMarkersPassed -and
+        $adminRoutesPassed
     ) `
-    -Message "All production admin sections and rendering code must be deployed."
+    -Message "The Vue entry, nine lazy routes, styles, and rendering chunks must be deployed."
 Add-Check -Checks $checks -Kind Technical -Code "admin_security_headers" `
     -Passed (
         $adminIndexProbe.cacheControl -match "no-store" -and
@@ -771,8 +810,10 @@ Add-Check -Checks $checks -Kind Technical -Code "database_migrations" `
     -Message "The production database must contain migrations 1 through $ExpectedMigration."
 Add-Check -Checks $checks -Kind Technical -Code "administrator_mfa" `
     -Passed (
-        [int]$database.administratorSecurity.mfaCredentials -eq 1 -and
-        [int]$database.administratorSecurity.recoveryCodeHashes -eq 8 -and
+        [int]$database.administratorSecurity.mfaCredentials -eq
+            $ExpectedMfaCredentialCount -and
+        [int]$database.administratorSecurity.recoveryCodeHashes -eq
+            $ExpectedRecoveryCodeHashCount -and
         [int]$database.administratorSecurity.activeEnrollments -eq 0
     ) `
     -Message "The real administrator MFA credential and recovery hashes must remain intact."
@@ -989,6 +1030,7 @@ $result = [ordered]@{
         adminIndex = $adminIndexProbe
         adminScript = $adminScriptProbe
         adminStyle = $adminStyleProbe
+        adminRoutes = $adminRouteProbes
         anonymousAdmin = $adminUnauthorizedProbe
         anonymousSession = $sessionUnauthorizedProbe
         wrongHostAdmin = $wrongHostProbe
