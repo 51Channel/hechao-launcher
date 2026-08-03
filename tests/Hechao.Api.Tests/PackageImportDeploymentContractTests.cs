@@ -26,6 +26,24 @@ public sealed class PackageImportDeploymentContractTests
     }
 
     [Fact]
+    public void DistributionSetup_KeepsManifestRootReadOnlyAndOwnsReleaseSubtree()
+    {
+        var script = ReadRepositoryFile(
+            "deploy",
+            "linux",
+            "configure-distribution.sh");
+
+        Assert.Contains(
+            "install -d -o root -g hechao-api -m 0750 \"$manifest_directory\"",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "install -d -o hechao-api -g hechao-api -m 0750 \"$manifest_release_directory\"",
+            script,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Orchestration_OnlyQueuesDeployAndPublishesTestChannel()
     {
         var source = ReadRepositoryFile(

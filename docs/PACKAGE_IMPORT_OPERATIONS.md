@@ -105,6 +105,10 @@ systemd 单元必须允许 API 同时写入
 数据库备份、Publisher 和 owl5 代理均验收后，才重启 API。回滚开关使用同一脚本写入
 `false`，不删除暂存目录：
 
+`manifests` 根目录继续保持 `root:hechao-api 0750`，既有根级正式清单不放宽权限；
+`configure-distribution.sh` 只把 `manifests/releases` 预建为
+`hechao-api:hechao-api 0750`，供 API 创建按档案和摘要寻址的不可变发布清单。
+
 ```bash
 sudo bash deploy/linux/configure-package-imports.sh \
   /etc/hechao-launcher-api/environment false

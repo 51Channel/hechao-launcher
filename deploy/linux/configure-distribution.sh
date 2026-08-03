@@ -19,6 +19,7 @@ fi
 
 environment_file="/etc/hechao-launcher-api/environment"
 manifest_directory="/var/lib/hechao-launcher-api/manifests"
+manifest_release_directory="${manifest_directory}/releases"
 temporary_file="$(mktemp)"
 trap 'rm -f "$temporary_file"' EXIT
 
@@ -41,6 +42,7 @@ EOF
 
 install -d -o root -g root -m 0750 /etc/hechao-launcher-api
 install -d -o root -g hechao-api -m 0750 "$manifest_directory"
+install -d -o hechao-api -g hechao-api -m 0750 "$manifest_release_directory"
 install -o root -g root -m 0600 "$temporary_file" "$environment_file"
 echo 'distribution_configuration=ready'
 echo 'api_restart=not_performed'
