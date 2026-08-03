@@ -26,6 +26,7 @@ internal sealed class ServerTargetRuntime
     private readonly string _runtimeMarkerPath;
     private readonly bool _requiresManagedMarker;
     private readonly IProcessRunner _processRunner;
+    private readonly ServerPackageDeployer _packageDeployer;
     private readonly TimeSpan _saveFlushDelay;
     private readonly TimeSpan _stopCommandGracePeriod;
 
@@ -47,6 +48,7 @@ internal sealed class ServerTargetRuntime
             configuration.ServerId + ".json");
         _requiresManagedMarker = requiresManagedMarker;
         _processRunner = processRunner;
+        _packageDeployer = new ServerPackageDeployer(configuration, backupRoot);
         _saveFlushDelay = saveFlushDelay ?? DefaultSaveFlushDelay;
         _stopCommandGracePeriod =
             stopCommandGracePeriod ?? DefaultStopCommandGracePeriod;
@@ -237,13 +239,15 @@ internal sealed class ServerTargetRuntime
             settings,
             Configuration.AllowedCommandPrefixes,
             ConsoleTailReader.Read(logPath),
-            capturedAt);
+            capturedAt,
+            Configuration.PackageDeploymentEnabled);
     }
 
     internal async Task<AgentCommandResult> ExecuteAsync(
         ServerControlCommandDelivery command,
         IReadOnlyList<ServerTargetRuntime> allTargets,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? packageArchivePath = null)
     {
         if (!string.Equals(
                 command.ServerId,
@@ -267,6 +271,14 @@ internal sealed class ServerTargetRuntime
                     cancellationToken),
             ServerControlCommandKind.ApplySettings =>
                 ApplySettings(command.Settings),
+            ServerControlCommandKind.DeployPackage
+                when command.PackageDeployment is not null &&
+                     packageArchivePath is not null =>
+                await _packageDeployer.DeployAsync(
+                    command.PackageDeployment,
+                    packageArchivePath,
+                    FindProcessIdAsync,
+                    cancellationToken),
             _ => Failed("UNSUPPORTED_ACTION", "代理不支持该控制动作。")
         };
     }

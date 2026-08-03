@@ -10,6 +10,7 @@ public sealed class ServerControlOptions
     public bool Enabled { get; init; }
     public int AgentFreshnessSeconds { get; init; } = 30;
     public int ClaimLeaseSeconds { get; init; } = 300;
+    public int PackageDeploymentClaimLeaseMinutes { get; init; } = 180;
     public Dictionary<string, string> AgentTokenSha256 { get; init; } =
         new(StringComparer.Ordinal);
 
@@ -22,6 +23,7 @@ public sealed class ServerControlOptions
 
         return AgentFreshnessSeconds is >= 10 and <= 300 &&
                ClaimLeaseSeconds is >= 30 and <= 600 &&
+               PackageDeploymentClaimLeaseMinutes is >= 15 and <= 480 &&
                AgentTokenSha256.Count is >= 1 and <= 32 &&
                AgentTokenSha256.All(pair =>
                    ServerControlRules.IsValidAgentId(pair.Key) &&

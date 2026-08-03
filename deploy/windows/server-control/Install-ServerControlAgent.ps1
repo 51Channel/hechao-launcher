@@ -131,6 +131,56 @@ foreach ($target in @($configurationObject.targets)) {
             'contain exactly one -Xms and one -Xmx argument.'
         )
     }
+    $packageDeploymentEnabled = [bool]$target.packageDeploymentEnabled
+    $startScriptRelativePath = [string]$target.startScriptRelativePath
+    if ([string]::IsNullOrWhiteSpace($startScriptRelativePath)) {
+        $startScriptRelativePath = 'start.bat'
+    }
+    $serverDirectory = [System.IO.Path]::GetFullPath(
+        [string]$target.serverDirectory
+    ).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+    $startScriptPath = [System.IO.Path]::GetFullPath(
+        (Join-Path $target.serverDirectory $startScriptRelativePath)
+    )
+    if ($packageDeploymentEnabled) {
+        if (-not [string]::Equals(
+                [string]$configurationObject.agentId,
+                'owl5',
+                [System.StringComparison]::Ordinal
+            ) -or
+            -not [string]::Equals(
+                [string]$target.serverId,
+                'activity',
+                [System.StringComparison]::Ordinal
+            ) -or
+            -not [string]::Equals(
+                [string]$target.conflictGroup,
+                'owl5-activity-slot',
+                [System.StringComparison]::Ordinal
+            ) -or
+            [int]$target.port -ne 25568) {
+            throw 'Package deployment is restricted to the owl5 activity slot.'
+        }
+        if (-not $startScriptPath.StartsWith(
+                $serverDirectory,
+                [System.StringComparison]::OrdinalIgnoreCase
+            )) {
+            throw "Managed start script escapes target $($target.serverId)."
+        }
+        if (-not (Test-Path -LiteralPath $startScriptPath -PathType Leaf)) {
+            throw "Managed start script is missing for target $($target.serverId)."
+        }
+        $startScriptText = [System.IO.File]::ReadAllText($startScriptPath)
+        if ($startScriptText -notmatch '(?im)^[ \t]*if not defined HECHAO_MANAGED_START pause[ \t]*(?:\r)?$') {
+            throw (
+                "Managed start script for target $($target.serverId) is not " +
+                'managed-start aware.'
+            )
+        }
+    }
     $task = Get-ScheduledTask `
         -TaskName $target.startTaskName `
         -ErrorAction SilentlyContinue
@@ -141,6 +191,14 @@ foreach ($target in @($configurationObject.targets)) {
     $expectedServerId = "-ServerId `"$($target.serverId)`""
     $expectedMarkerDirectory =
         "-RuntimeMarkerDirectory `"$runtimeMarkerDirectory`""
+    $expectedStartScript = "-StartScript `"$startScriptPath`""
+    $startScriptMatches = -not $packageDeploymentEnabled
+    if ($packageDeploymentEnabled) {
+        $startScriptMatches = $taskArguments.IndexOf(
+            $expectedStartScript,
+            [System.StringComparison]::OrdinalIgnoreCase
+        ) -ge 0
+    }
     if ($taskArguments.IndexOf(
             $expectedServerId,
             [System.StringComparison]::OrdinalIgnoreCase
@@ -148,7 +206,8 @@ foreach ($target in @($configurationObject.targets)) {
         $taskArguments.IndexOf(
             $expectedMarkerDirectory,
             [System.StringComparison]::OrdinalIgnoreCase
-        ) -lt 0) {
+        ) -lt 0 -or
+        -not $startScriptMatches) {
         throw (
             "Managed start task $($target.startTaskName) is missing its " +
             'server identity runtime marker. Reinstall that launch task.'

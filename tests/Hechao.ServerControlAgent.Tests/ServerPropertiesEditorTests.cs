@@ -49,6 +49,24 @@ public sealed class ServerPropertiesEditorTests : IDisposable
         Assert.Equal(settings, ServerPropertiesEditor.Read(path));
     }
 
+    [Fact]
+    public async Task ApplyDeploymentBinding_ForcesLoopbackVelocityBackend()
+    {
+        Directory.CreateDirectory(_root);
+        var path = Path.Combine(_root, "deployment.properties");
+        await File.WriteAllTextAsync(
+            path,
+            "server-ip=0.0.0.0\nserver-port=25565\nonline-mode=true\nmotd=keep\n");
+
+        ServerPropertiesEditor.ApplyDeploymentBinding(path, 25568);
+
+        var result = await File.ReadAllTextAsync(path);
+        Assert.Contains("server-ip=127.0.0.1", result);
+        Assert.Contains("server-port=25568", result);
+        Assert.Contains("online-mode=false", result);
+        Assert.Contains("motd=keep", result);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

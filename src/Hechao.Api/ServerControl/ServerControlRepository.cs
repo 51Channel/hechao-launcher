@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hechao.Api.Admin;
+using Hechao.Api.PackageImports;
 using Hechao.Contracts;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -62,8 +63,9 @@ public sealed class ServerControlRepository(
                     (server_id, agent_id, agent_version, conflict_group, port,
                      reported_online, process_id, settings,
                      allowed_command_prefixes, console_tail,
-                     console_captured_at, last_seen_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+                     console_captured_at, package_deployment_enabled,
+                     last_seen_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
                 ON CONFLICT (server_id) DO UPDATE
                 SET agent_id = EXCLUDED.agent_id,
                     agent_version = EXCLUDED.agent_version,
@@ -75,6 +77,8 @@ public sealed class ServerControlRepository(
                     allowed_command_prefixes = EXCLUDED.allowed_command_prefixes,
                     console_tail = EXCLUDED.console_tail,
                     console_captured_at = EXCLUDED.console_captured_at,
+                    package_deployment_enabled =
+                        EXCLUDED.package_deployment_enabled,
                     last_seen_at = EXCLUDED.last_seen_at,
                     updated_at = EXCLUDED.updated_at
                 WHERE
@@ -111,8 +115,38 @@ public sealed class ServerControlRepository(
                 command.Parameters,
                 NpgsqlDbType.TimestampTz,
                 target.ConsoleCapturedAt);
+            command.Parameters.AddWithValue(target.PackageDeploymentEnabled);
             command.Parameters.AddWithValue(receivedAt);
             imported += await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        var activeDeploymentCommandIds =
+            request.ActiveDeploymentCommandIds?.ToArray() ?? [];
+        await using (var renewDeployments = new NpgsqlCommand(
+                         """
+                         UPDATE launcher.server_control_commands
+                         SET claim_expires_at = CASE
+                                 WHEN id = ANY($3) THEN $4
+                                 ELSE LEAST(claim_expires_at, $2)
+                             END
+                         WHERE agent_id = $1
+                           AND claimed_by = $1
+                           AND status = 'Claimed'
+                           AND kind = 'DeployPackage';
+                         """,
+                         connection,
+                         transaction))
+        {
+            renewDeployments.Parameters.AddWithValue(request.AgentId);
+            renewDeployments.Parameters.AddWithValue(
+                receivedAt.AddSeconds(_options.ClaimLeaseSeconds));
+            renewDeployments.Parameters.AddWithValue(
+                NpgsqlDbType.Array | NpgsqlDbType.Uuid,
+                activeDeploymentCommandIds);
+            renewDeployments.Parameters.AddWithValue(
+                receivedAt.AddMinutes(
+                    _options.PackageDeploymentClaimLeaseMinutes));
+            await renewDeployments.ExecuteNonQueryAsync(cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -144,7 +178,8 @@ public sealed class ServerControlRepository(
                    target.last_seen_at,
                    target.reported_online,
                    target.process_id,
-                   target.settings::text
+                   target.settings::text,
+                   target.package_deployment_enabled
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             ORDER BY COALESCE(server.sort_order, 2147483647),
@@ -173,7 +208,8 @@ public sealed class ServerControlRepository(
                     : JsonSerializer.Deserialize<ServerQuickSettings>(
                         reader.GetString(8),
                         JsonOptions),
-                activeByTarget.GetValueOrDefault(serverId)));
+                activeByTarget.GetValueOrDefault(serverId),
+                reader.GetBoolean(9)));
         }
 
         return new AdminServerControlOverview(
@@ -209,7 +245,8 @@ public sealed class ServerControlRepository(
                    target.settings::text,
                    target.allowed_command_prefixes,
                    target.console_tail,
-                   target.console_captured_at
+                   target.console_captured_at,
+                   target.package_deployment_enabled
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             WHERE target.server_id = $1;
@@ -244,7 +281,8 @@ public sealed class ServerControlRepository(
             reader.IsDBNull(11)
                 ? null
                 : new DateTimeOffset(reader.GetDateTime(11)),
-            activeOperation);
+            activeOperation,
+            reader.GetBoolean(12));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,
@@ -417,6 +455,8 @@ public sealed class ServerControlRepository(
         CancellationToken cancellationToken)
     {
         var leaseExpiresAt = now.AddSeconds(_options.ClaimLeaseSeconds);
+        var deploymentLeaseExpiresAt = now.AddMinutes(
+            _options.PackageDeploymentClaimLeaseMinutes);
         const string sql = """
             WITH due AS (
                 SELECT command.id
@@ -448,7 +488,10 @@ public sealed class ServerControlRepository(
                 SET status = 'Claimed',
                     claimed_by = $1,
                     claimed_at = $2,
-                    claim_expires_at = $4,
+                    claim_expires_at = CASE
+                        WHEN command.kind = 'DeployPackage' THEN $5
+                        ELSE $4
+                    END,
                     attempt_count = command.attempt_count + 1,
                     completed_at = NULL,
                     result_code = NULL,
@@ -476,6 +519,7 @@ public sealed class ServerControlRepository(
             command.Parameters.AddWithValue(now);
             command.Parameters.AddWithValue(limit);
             command.Parameters.AddWithValue(leaseExpiresAt);
+            command.Parameters.AddWithValue(deploymentLeaseExpiresAt);
             await using var reader =
                 await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
@@ -492,7 +536,8 @@ public sealed class ServerControlRepository(
                         ignoreCase: true),
                     reader.GetInt32(4),
                     payload.ConsoleCommand,
-                    payload.Settings));
+                    payload.Settings,
+                    payload.PackageDeployment));
             }
         }
 
@@ -669,6 +714,94 @@ public sealed class ServerControlRepository(
             transaction: null,
             operationId,
             cancellationToken);
+    }
+
+    public async Task<Guid?> GetAuthorizedPackageArchiveImportIdAsync(
+        Guid commandId,
+        string agentId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT package.id,
+                   package.analysis::text,
+                   package.plan::text,
+                   command.payload::text,
+                   command.server_id,
+                   target.server_id,
+                   target.agent_id,
+                   target.conflict_group,
+                   target.port
+            FROM launcher.server_control_commands AS command
+            JOIN launcher.package_imports AS package
+              ON package.deployment_operation_id = command.operation_id
+            JOIN launcher.server_control_targets AS target
+              ON target.server_id = command.server_id
+            WHERE command.id = $1
+              AND command.agent_id = $2
+              AND command.claimed_by = $2
+              AND command.status = 'Claimed'
+              AND command.kind = 'DeployPackage'
+              AND command.claim_expires_at >= $3
+              AND package.status = 'DeployingServer'
+              AND target.package_deployment_enabled;
+            """;
+        await using var connection =
+            await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue(commandId);
+        command.Parameters.AddWithValue(agentId);
+        command.Parameters.AddWithValue(now);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var importId = reader.GetGuid(0);
+        var analysis = JsonSerializer.Deserialize<PackageImportAnalysisRecord>(
+            reader.GetString(1),
+            JsonOptions);
+        var plan = JsonSerializer.Deserialize<PackageImportDeploymentPlanRecord>(
+            reader.GetString(2),
+            JsonOptions);
+        var payload = JsonSerializer.Deserialize<CommandPayload>(
+            reader.GetString(3),
+            JsonOptions);
+        var deployment = payload?.PackageDeployment;
+        var server = analysis?.Server;
+        return PackageImportRules.IsActivityTarget(
+                   reader.GetString(5),
+                   reader.GetString(6),
+                   reader.IsDBNull(7) ? null : reader.GetString(7),
+                   reader.GetInt32(8)) &&
+               deployment is not null &&
+               server is not null &&
+               plan is not null &&
+               deployment.ImportId == importId &&
+               string.Equals(
+                   deployment.ProfileId,
+                   plan.ProfileId,
+                   StringComparison.Ordinal) &&
+               string.Equals(
+                   deployment.Version,
+                   plan.Version,
+                   StringComparison.Ordinal) &&
+               string.Equals(
+                   plan.TargetServerId,
+                   reader.GetString(4),
+                   StringComparison.Ordinal) &&
+               deployment.ArchiveBytes == server.ArchiveBytes &&
+               string.Equals(
+                   deployment.ArchiveSha256,
+                   server.Sha256,
+                   StringComparison.Ordinal) &&
+               deployment.ExpandedBytes == server.ExpandedBytes &&
+               deployment.FileCount == server.FileCount &&
+               deployment.PreserveWorldData == plan.PreserveWorldData &&
+               deployment.MaximumMemoryMiB == plan.MaximumMemoryMiB
+            ? importId
+            : null;
     }
 
     private bool IsFresh(DateTimeOffset lastSeenAt, DateTimeOffset now) =>
@@ -1160,6 +1293,7 @@ public sealed class ServerControlRepository(
 
     private sealed record CommandPayload(
         string? ConsoleCommand = null,
-        ServerQuickSettings? Settings = null);
+        ServerQuickSettings? Settings = null,
+        ServerPackageDeploymentRequest? PackageDeployment = null);
 
 }

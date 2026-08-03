@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Hechao.Contracts\Hechao.Contracts.csproj" />
+    <ProjectReference Include="..\Hechao.Modpack\Hechao.Modpack.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,7 +17,7 @@
     <AssemblyName>Hechao.ServerControlAgent</AssemblyName>
     <RootNamespace>Hechao.ServerControlAgent</RootNamespace>
     <Product>Hechao Minecraft Server Control Agent</Product>
-    <Version>0.2.4</Version>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 
 </Project>

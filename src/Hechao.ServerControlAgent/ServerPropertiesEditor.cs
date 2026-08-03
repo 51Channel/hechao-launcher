@@ -98,6 +98,62 @@ internal static class ServerPropertiesEditor
         }
     }
 
+    internal static void ApplyDeploymentBinding(string path, int port)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                "server.properties does not exist.",
+                path);
+        }
+
+        if (port is < 1 or > 65535)
+        {
+            throw new ArgumentOutOfRangeException(nameof(port));
+        }
+
+        var protectedValues = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["server-ip"] = "127.0.0.1",
+            ["server-port"] = port.ToString(
+                System.Globalization.CultureInfo.InvariantCulture),
+            ["online-mode"] = "false"
+        };
+        var lines = File.ReadAllLines(path).ToList();
+        var updated = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < lines.Count; index++)
+        {
+            var parsed = TryParseLine(lines[index]);
+            if (parsed is null ||
+                !protectedValues.TryGetValue(parsed.Value.Key, out var value))
+            {
+                continue;
+            }
+
+            lines[index] = $"{parsed.Value.Key}={value}";
+            updated.Add(parsed.Value.Key);
+        }
+
+        foreach (var pair in protectedValues.Where(pair => !updated.Contains(pair.Key)))
+        {
+            lines.Add($"{pair.Key}={pair.Value}");
+        }
+
+        var temporary = path + $".hechao-{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllLines(
+                temporary,
+                lines,
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally
+        {
+            File.Delete(temporary);
+        }
+    }
+
     private static Dictionary<string, string> Parse(IEnumerable<string> lines)
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);

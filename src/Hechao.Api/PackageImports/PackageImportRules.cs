@@ -6,6 +6,9 @@ namespace Hechao.Api.PackageImports;
 
 public static partial class PackageImportRules
 {
+    public const string ActivityServerId = "activity";
+    public const string ActivityAgentId = "owl5";
+    public const string ActivityVelocityTarget = "activity";
     public const string ActivityConflictGroup = "owl5-activity-slot";
     public const int ActivityPort = 25568;
 
@@ -54,6 +57,14 @@ public static partial class PackageImportRules
         {
             errors["analysis"] = ["识别结果仍有阻断项，不能开始发布。"];
         }
+        else if (!Enum.TryParse<ModLoaderKind>(
+                     import.Analysis.Metadata.Loader,
+                     ignoreCase: true,
+                     out var loader) ||
+                 !Enum.IsDefined(loader))
+        {
+            errors["analysis"] = ["识别出的加载器不在启动器支持范围内。"];
+        }
 
         if (!AdminProfileReleaseRules.IsValidProfileId(request.ProfileId))
         {
@@ -95,11 +106,25 @@ public static partial class PackageImportRules
 
     public static bool IsActivityTarget(
         AdminServerControlTargetRecord target) =>
-        string.Equals(
+        target.PackageDeploymentEnabled &&
+        IsActivityTarget(
+            target.ServerId,
+            target.AgentId,
             target.ConflictGroup,
+            target.Port);
+
+    public static bool IsActivityTarget(
+        string serverId,
+        string agentId,
+        string? conflictGroup,
+        int port) =>
+        string.Equals(serverId, ActivityServerId, StringComparison.Ordinal) &&
+        string.Equals(agentId, ActivityAgentId, StringComparison.Ordinal) &&
+        string.Equals(
+            conflictGroup,
             ActivityConflictGroup,
             StringComparison.Ordinal) &&
-        target.Port == ActivityPort;
+        port == ActivityPort;
 
     public static bool IsValidPublisherAgentId(string? agentId) =>
         agentId is not null && PublisherAgentIdPattern().IsMatch(agentId);
@@ -124,6 +149,11 @@ public static partial class PackageImportRules
             request.CapturedAt > now.AddMinutes(2))
         {
             errors["capturedAt"] = ["发布代理时钟与 API 相差过大。"];
+        }
+
+        if (request.ActiveImportId == Guid.Empty)
+        {
+            errors["activeImportId"] = ["活动中的发布任务 ID 无效。"];
         }
 
         return errors;

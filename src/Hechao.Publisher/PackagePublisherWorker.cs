@@ -8,6 +8,8 @@ internal sealed class PackagePublisherWorker(
 {
     private readonly string agentVersion =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";
+    private readonly object activeJobLock = new();
+    private Guid? activeImportId;
 
     internal Task RunAsync(CancellationToken cancellationToken) =>
         Task.WhenAll(
@@ -20,7 +22,10 @@ internal sealed class PackagePublisherWorker(
         {
             try
             {
-                await apiClient.SendHeartbeatAsync(agentVersion, cancellationToken);
+                await apiClient.SendHeartbeatAsync(
+                    agentVersion,
+                    GetActiveImportId(),
+                    cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -57,7 +62,15 @@ internal sealed class PackagePublisherWorker(
                     continue;
                 }
 
-                await ProcessJobAsync(claim.Job, cancellationToken);
+                SetActiveImportId(claim.Job.ImportId);
+                try
+                {
+                    await ProcessJobAsync(claim.Job, cancellationToken);
+                }
+                finally
+                {
+                    ClearActiveImportId(claim.Job.ImportId);
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -145,7 +158,7 @@ internal sealed class PackagePublisherWorker(
                     upload.AlreadyPresent,
                     upload.UploadedBytes),
                 cancellationToken);
-            DeleteGeneratedDirectory(jobRoot);
+            TryDeleteGeneratedDirectory(jobRoot);
             WriteStatus("job_succeeded", job.ImportId.ToString("D"));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -183,6 +196,14 @@ internal sealed class PackagePublisherWorker(
         var root = Path.GetFullPath(configuration.StateDirectory)
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
             Path.DirectorySeparatorChar;
+        if (IsReparsePoint(root.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar)))
+        {
+            throw new InvalidDataException(
+                "The package publisher state directory cannot be a reparse point.");
+        }
+
         var path = Path.GetFullPath(Path.Combine(root, "jobs", importId.ToString("N")));
         if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase))
         {
@@ -191,6 +212,39 @@ internal sealed class PackagePublisherWorker(
         }
 
         return path;
+    }
+
+    private Guid? GetActiveImportId()
+    {
+        lock (activeJobLock)
+        {
+            return activeImportId;
+        }
+    }
+
+    private void SetActiveImportId(Guid importId)
+    {
+        lock (activeJobLock)
+        {
+            if (activeImportId is not null)
+            {
+                throw new InvalidOperationException(
+                    "Only one package publisher job can be active.");
+            }
+
+            activeImportId = importId;
+        }
+    }
+
+    private void ClearActiveImportId(Guid importId)
+    {
+        lock (activeJobLock)
+        {
+            if (activeImportId == importId)
+            {
+                activeImportId = null;
+            }
+        }
     }
 
     private void DeleteGeneratedDirectory(string path)
@@ -207,9 +261,56 @@ internal sealed class PackagePublisherWorker(
 
         if (Directory.Exists(fullPath))
         {
+            EnsureTreeHasNoReparsePoints(fullPath);
             Directory.Delete(fullPath, recursive: true);
         }
     }
+
+    private void TryDeleteGeneratedDirectory(string path)
+    {
+        try
+        {
+            DeleteGeneratedDirectory(path);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidDataException or NotSupportedException)
+        {
+            WriteStatus("job_cleanup_failed", exception.Message);
+        }
+    }
+
+    private static void EnsureTreeHasNoReparsePoints(string path)
+    {
+        if (IsReparsePoint(path))
+        {
+            throw new InvalidDataException(
+                "A package publisher job path is a reparse point.");
+        }
+
+        var pending = new Stack<string>();
+        pending.Push(path);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            foreach (var entry in Directory.EnumerateFileSystemEntries(current))
+            {
+                if (IsReparsePoint(entry))
+                {
+                    throw new InvalidDataException(
+                        "A package publisher job contains a reparse point.");
+                }
+
+                if (Directory.Exists(entry))
+                {
+                    pending.Push(entry);
+                }
+            }
+        }
+    }
+
+    private static bool IsReparsePoint(string path) =>
+        (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
 
     private static void WriteStatus(string code, string value)
     {

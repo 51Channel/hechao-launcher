@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\Hechao.Backup.Core\Hechao.Backup.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AlibabaCloud.OSS.V2" Version="0.2.0" />
   </ItemGroup>
 

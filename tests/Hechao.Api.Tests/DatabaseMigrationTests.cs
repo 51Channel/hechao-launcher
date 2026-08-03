@@ -118,4 +118,23 @@ public sealed class DatabaseMigrationTests
         Assert.DoesNotContain("access_key", sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("private_key", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void PackageDeploymentMigration_AddsOnlyStructuredDeploymentCommands()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.023_package_deployment.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("package_deployment_enabled", sql, StringComparison.Ordinal);
+        Assert.Contains("'DeployPackage'", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("shell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("server_directory", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

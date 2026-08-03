@@ -498,9 +498,11 @@ builder.Services.AddSingleton<ServerControlTokenValidator>();
 builder.Services.AddSingleton<ServerControlRepository>();
 builder.Services.AddSingleton<PackageImportRepository>();
 builder.Services.AddSingleton<PackageImportStorage>();
+builder.Services.AddSingleton<PackageImportOrchestrationRepository>();
 builder.Services.AddSingleton<PackagePublisherTokenValidator>();
 builder.Services.AddSingleton<PackagePublisherCompletionService>();
 builder.Services.AddHostedService<PackageImportAnalysisService>();
+builder.Services.AddHostedService<PackageImportOrchestrationService>();
 builder.Services.AddHostedService<ServerRuntimeSampleCleanupService>();
 builder.Services.AddSingleton<ApiRequestMetricsCollector>();
 builder.Services.AddSingleton<OperationalAlertTokenValidator>();
@@ -664,6 +666,7 @@ app.MapPost(
         "/v1/internal/server-control/commands/{commandId:guid}/complete",
         CompleteServerControlCommandAsync)
     .RequireRateLimiting("internal-server-control");
+app.MapServerControlPackageArchives();
 app.MapPackagePublisher();
 app.MapPost(
         "/v1/internal/operational-alerts/events",

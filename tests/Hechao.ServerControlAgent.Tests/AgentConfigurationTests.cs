@@ -86,6 +86,122 @@ public sealed class AgentConfigurationTests
             Assert.False(string.IsNullOrWhiteSpace(target.MemorySettingsRelativePath));
             Assert.InRange(target.MaximumAllowedMemoryMiB, 512, 65536);
         });
+        if (expectedAgentId == "owl5")
+        {
+            var deploymentTargets = configuration.Targets
+                .Where(target => target.PackageDeploymentEnabled)
+                .ToArray();
+            var activity = Assert.Single(deploymentTargets);
+            Assert.Equal("activity", activity.ServerId);
+            Assert.Equal("start.bat", activity.StartScriptRelativePath);
+            Assert.Equal(["forwarding.secret"], activity.HostManagedRelativePaths);
+            Assert.Equal(
+                ["world", "world_nether", "world_the_end"],
+                activity.WorldDataRelativePaths);
+        }
+        else
+        {
+            Assert.DoesNotContain(
+                configuration.Targets,
+                target => target.PackageDeploymentEnabled);
+        }
+    }
+
+    [Fact]
+    public void Validate_RejectsDeploymentPathsWhenCapabilityIsDisabled()
+    {
+        var target = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            "owl5-activity-slot") with
+        {
+            HostManagedRelativePaths = ["forwarding.secret"]
+        };
+
+        Assert.Throws<InvalidDataException>(target.Validate);
+    }
+
+    [Fact]
+    public void Validate_AcceptsPackageDeploymentOnlyOnOwl5ActivitySlot()
+    {
+        var target = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            "owl5-activity-slot") with
+        {
+            PackageDeploymentEnabled = true,
+            HostManagedRelativePaths = ["forwarding.secret"],
+            WorldDataRelativePaths = ["world", "world_nether", "world_the_end"]
+        };
+        var configuration = CreateConfiguration(target) with { AgentId = "owl5" };
+
+        configuration.Validate();
+    }
+
+    [Fact]
+    public void Validate_RejectsPackageDeploymentOutsideOwl5ActivitySlot()
+    {
+        var approvedTarget = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            "owl5-activity-slot") with
+        {
+            PackageDeploymentEnabled = true,
+            HostManagedRelativePaths = ["forwarding.secret"]
+        };
+        var invalidConfigurations = new[]
+        {
+            CreateConfiguration(approvedTarget),
+            CreateConfiguration(approvedTarget with { ServerId = "fanstreet" })
+                with { AgentId = "owl5" },
+            CreateConfiguration(approvedTarget with { Port = 25569 })
+                with { AgentId = "owl5" },
+            CreateConfiguration(approvedTarget with { ConflictGroup = "other-slot" })
+                with { AgentId = "owl5" }
+        };
+
+        Assert.All(invalidConfigurations, configuration =>
+            Assert.Throws<InvalidDataException>(configuration.Validate));
+    }
+
+    [Fact]
+    public void Validate_RejectsOverlappingOrProtectedPreservedPaths()
+    {
+        var target = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            "owl5-activity-slot") with
+        {
+            PackageDeploymentEnabled = true
+        };
+        var invalidTargets = new[]
+        {
+            target with
+            {
+                HostManagedRelativePaths = ["config", @"config\forwarding.secret"]
+            },
+            target with
+            {
+                HostManagedRelativePaths = ["server.properties"]
+            },
+            target with
+            {
+                HostManagedRelativePaths = ["scripts"],
+                StartScriptRelativePath = @"scripts\start.bat"
+            },
+            target with
+            {
+                HostManagedRelativePaths = ["forwarding.secret"],
+                WorldDataRelativePaths = ["forwarding.secret"]
+            }
+        };
+
+        Assert.All(invalidTargets, invalidTarget =>
+            Assert.Throws<InvalidDataException>(invalidTarget.Validate));
     }
 
     private static ServerControlAgentConfiguration CreateConfiguration(

@@ -5,6 +5,12 @@ namespace Hechao.ServerControlAgent;
 
 public sealed record ServerControlAgentConfiguration
 {
+    private const string PackageDeploymentAgentId = "owl5";
+    private const string PackageDeploymentServerId = "activity";
+    private const string PackageDeploymentConflictGroup =
+        "owl5-activity-slot";
+    private const int PackageDeploymentPort = 25568;
+
     public string ApiBaseUrl { get; init; } = string.Empty;
     public string AgentId { get; init; } = string.Empty;
     public string TokenPath { get; init; } = string.Empty;
@@ -79,6 +85,29 @@ public sealed record ServerControlAgentConfiguration
             target.Validate();
         }
 
+        var deploymentTargets = Targets
+            .Where(target => target.PackageDeploymentEnabled)
+            .ToArray();
+        if (deploymentTargets.Length > 1 ||
+            deploymentTargets.Any(target =>
+                !string.Equals(
+                    AgentId,
+                    PackageDeploymentAgentId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    target.ServerId,
+                    PackageDeploymentServerId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    target.ConflictGroup,
+                    PackageDeploymentConflictGroup,
+                    StringComparison.Ordinal) ||
+                target.Port != PackageDeploymentPort))
+        {
+            throw new InvalidDataException(
+                "Package deployment is restricted to the owl5 activity slot.");
+        }
+
         foreach (var samePort in Targets.GroupBy(target => target.Port))
         {
             if (samePort.Count() <= 1)
@@ -109,7 +138,11 @@ public sealed record ServerControlTargetConfiguration
     public string LogRelativePath { get; init; } = @"logs\latest.log";
     public string PropertiesRelativePath { get; init; } = "server.properties";
     public string MemorySettingsRelativePath { get; init; } = "start.bat";
+    public string StartScriptRelativePath { get; init; } = "start.bat";
     public int MaximumAllowedMemoryMiB { get; init; } = 65536;
+    public bool PackageDeploymentEnabled { get; init; }
+    public IReadOnlyList<string> HostManagedRelativePaths { get; init; } = [];
+    public IReadOnlyList<string> WorldDataRelativePaths { get; init; } = [];
     public IReadOnlyList<string> AllowedCommandPrefixes { get; init; } =
         ["list", "say", "whitelist", "save-all"];
 
@@ -117,6 +150,17 @@ public sealed record ServerControlTargetConfiguration
         this with
         {
             ServerDirectory = Path.GetFullPath(ServerDirectory),
+            LogRelativePath = NormalizeRelativePath(LogRelativePath),
+            PropertiesRelativePath = NormalizeRelativePath(
+                PropertiesRelativePath),
+            MemorySettingsRelativePath = NormalizeRelativePath(
+                MemorySettingsRelativePath),
+            StartScriptRelativePath = NormalizeRelativePath(
+                StartScriptRelativePath),
+            HostManagedRelativePaths = NormalizeRelativePaths(
+                HostManagedRelativePaths),
+            WorldDataRelativePaths = NormalizeRelativePaths(
+                WorldDataRelativePaths),
             AllowedCommandPrefixes = [.. AllowedCommandPrefixes
                 .Select(prefix => prefix.ToLowerInvariant())
                 .Distinct(StringComparer.Ordinal)
@@ -125,6 +169,20 @@ public sealed record ServerControlTargetConfiguration
 
     internal void Validate()
     {
+        var hostManagedPaths = HostManagedRelativePaths ?? [];
+        var worldDataPaths = WorldDataRelativePaths ?? [];
+        var deploymentPathsAreSafe =
+            HostManagedRelativePaths is not null &&
+            WorldDataRelativePaths is not null &&
+            hostManagedPaths.All(IsSafeRelativePath) &&
+            worldDataPaths.All(IsSafeRelativePath);
+        var protectedDeploymentPathsAreSafe =
+            IsSafeRelativePath(PropertiesRelativePath) &&
+            IsSafeRelativePath(MemorySettingsRelativePath) &&
+            IsSafeRelativePath(StartScriptRelativePath);
+        var deploymentPathsConflict = deploymentPathsAreSafe &&
+            protectedDeploymentPathsAreSafe &&
+            HasDeploymentPathConflict(hostManagedPaths, worldDataPaths);
         if (!ConfigurationPatterns.ServerId().IsMatch(ServerId) ||
             !Path.IsPathFullyQualified(ServerDirectory) ||
             !ConfigurationPatterns.TaskName().IsMatch(StartTaskName) ||
@@ -134,12 +192,24 @@ public sealed record ServerControlTargetConfiguration
             !IsSafeRelativePath(LogRelativePath) ||
             !IsSafeRelativePath(PropertiesRelativePath) ||
             !IsSafeRelativePath(MemorySettingsRelativePath) ||
+            !IsSafeRelativePath(StartScriptRelativePath) ||
             string.Equals(
                 PropertiesRelativePath,
                 MemorySettingsRelativePath,
                 StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                PropertiesRelativePath,
+                StartScriptRelativePath,
+                StringComparison.OrdinalIgnoreCase) ||
             MaximumAllowedMemoryMiB is < 512 or > 65536 ||
             MaximumAllowedMemoryMiB % 256 != 0 ||
+            !deploymentPathsAreSafe ||
+            hostManagedPaths.Count > 32 ||
+            worldDataPaths.Count > 32 ||
+            deploymentPathsConflict ||
+            (!PackageDeploymentEnabled &&
+             (hostManagedPaths.Count > 0 ||
+              worldDataPaths.Count > 0)) ||
             AllowedCommandPrefixes.Count is < 1 or > 64 ||
             AllowedCommandPrefixes.Any(prefix =>
                 !ConfigurationPatterns.CommandPrefix().IsMatch(prefix)))
@@ -158,6 +228,12 @@ public sealed record ServerControlTargetConfiguration
     internal string GetMemorySettingsPath() =>
         GetContainedPath(MemorySettingsRelativePath);
 
+    internal string GetStartScriptPath() =>
+        GetContainedPath(StartScriptRelativePath);
+
+    internal string GetContainedDeploymentPath(string relativePath) =>
+        GetContainedPath(relativePath);
+
     private string GetContainedPath(string relativePath)
     {
         var root = Path.GetFullPath(ServerDirectory)
@@ -175,11 +251,71 @@ public sealed record ServerControlTargetConfiguration
 
     private static bool IsSafeRelativePath(string value) =>
         !string.IsNullOrWhiteSpace(value) &&
+        !Path.IsPathRooted(value) &&
         !Path.IsPathFullyQualified(value) &&
         !value.Split(
                 [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
                 StringSplitOptions.RemoveEmptyEntries)
             .Any(segment => segment is "." or "..");
+
+    private static IReadOnlyList<string> NormalizeRelativePaths(
+        IReadOnlyList<string> paths) =>
+        [.. paths
+            .Select(NormalizeRelativePath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)];
+
+    private bool HasDeploymentPathConflict(
+        IReadOnlyList<string> hostManagedPaths,
+        IReadOnlyList<string> worldDataPaths)
+    {
+        var hostManaged = NormalizeRelativePaths(hostManagedPaths);
+        var worldData = NormalizeRelativePaths(worldDataPaths);
+        var preserved = hostManaged.Concat(worldData).ToArray();
+        var protectedPaths = new[]
+        {
+            NormalizeRelativePath(PropertiesRelativePath),
+            NormalizeRelativePath(MemorySettingsRelativePath),
+            NormalizeRelativePath(StartScriptRelativePath),
+            ServerPackageDeployer.DeploymentMarkerName
+        };
+        return hostManaged.Count != hostManagedPaths.Count ||
+               worldData.Count != worldDataPaths.Count ||
+               HasOverlappingPaths(preserved) ||
+               preserved.Any(path => protectedPaths.Any(
+                   protectedPath => PathsOverlap(path, protectedPath)));
+    }
+
+    private static bool HasOverlappingPaths(IReadOnlyList<string> paths)
+    {
+        for (var left = 0; left < paths.Count; left++)
+        {
+            for (var right = left + 1; right < paths.Count; right++)
+            {
+                if (PathsOverlap(paths[left], paths[right]))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool PathsOverlap(string left, string right) =>
+        string.Equals(left, right, StringComparison.OrdinalIgnoreCase) ||
+        left.StartsWith(
+            right + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase) ||
+        right.StartsWith(
+            left + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase);
+
+    private static string NormalizeRelativePath(string path) =>
+        path.Replace(
+                Path.AltDirectorySeparatorChar,
+                Path.DirectorySeparatorChar)
+            .TrimEnd(Path.DirectorySeparatorChar);
 }
 
 internal static partial class ConfigurationPatterns

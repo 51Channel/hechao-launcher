@@ -287,14 +287,24 @@ public static class PackageImportEndpoints
 
         var errors = new Dictionary<string, string[]>(
             PackageImportRules.Validate(request, import));
+        var now = timeProvider.GetUtcNow();
+        var publisher = await repository.GetPublisherAgentStateAsync(
+            now,
+            cancellationToken);
+        if (!publisher.Connected)
+        {
+            errors["publisher"] =
+                ["客户端发布代理当前不在线。"];
+        }
+
         var target = await serverControlRepository.GetTargetDetailAsync(
             request.TargetServerId,
-            timeProvider.GetUtcNow(),
+            now,
             cancellationToken);
         if (target is null || !PackageImportRules.IsActivityTarget(target.Target))
         {
             errors["targetServerId"] =
-                ["只能部署到已登记的 owl5 活动槽目标。"];
+                ["只能部署到已启用整合包能力的 owl5 活动目标。"];
         }
         else
         {
@@ -305,7 +315,14 @@ public static class PackageImportEndpoints
 
             if (target.Target.Online)
             {
-                errors["targetServerId"] = ["目标服务端仍在运行，请先从服控面板停止。"];
+                errors["targetServerId"] =
+                    ["目标服务端仍在运行，请先从服控面板停止。"];
+            }
+
+            if (target.Target.ActiveOperation is not null)
+            {
+                errors["targetServerId"] =
+                    ["目标服务端存在进行中的服控操作，请等待完成。"];
             }
 
             if (target.Target.Settings?.MaximumAllowedMemoryMiB is { } maximum &&
@@ -332,7 +349,7 @@ public static class PackageImportEndpoints
             request,
             actor.UserId,
             context.Connection.RemoteIpAddress,
-            timeProvider.GetUtcNow(),
+            now,
             cancellationToken);
         return result.Status == PackageImportMutationStatus.Success
             ? Results.Ok(result.Import)

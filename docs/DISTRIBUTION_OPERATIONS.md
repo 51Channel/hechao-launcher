@@ -1,7 +1,7 @@
 # 客户端分发与签名操作手册
 
 > 启动器源码版本：`0.12.3`
-> 发布器源码版本：`0.9.0`
+> 发布器源码候选：`1.0.0`；当前正式版本：`0.9.0`
 > 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案已由 API `0.22.0` 托管，启动器 `0.12.3` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录与私有 OSS 发布闭环。
 >
 > owl9 边界：上述恐怖整蛊档案只对应 `C:\mc\server`，不对应
@@ -73,7 +73,24 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 
 每个档案使用独立源目录。源目录不能包含私钥、输出目录、符号链接、`.hechao` 或 `.hechao-install.json`。
 
+### 4.1 后台整合包 Publisher Agent
+
+Publisher `1.0.0` 源码候选增加独立代理模式。它只领取管理员已经确认、仍持有有效租约
+的整合包任务；签名私钥、OSS 写凭据和明文代理令牌均只存在于同一 Windows 管理账号的
+DPAPI 边界，不进入 API 或游戏 VPS。代理上传后仍由 API 使用内嵌公钥重新验签，并且只
+创建 `Test` 通道发布，不触碰 `Gray` 或 `Production`。
+
+代理安装、配置、续租、缓存恢复和回滚见
+[`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。手工 `publish`、`verify`、
+`validate-release` 与正式通道推广流程继续有效，自动导入不能绕过这些发布边界。
+Publisher 专项测试 `39/39`、完整解决方案 `622/622` 和只含 Publisher EXE 的
+`win-x64` 自包含发布验证已通过；该结果仍是源码候选，不是生产发布记录。
+
 管理端发布器使用 `src/Hechao.Publisher/Properties/PublishProfiles/win-x64.pubxml` 构建自包含单文件。该配置明确关闭裁剪；裁剪会移除当前 JSON 序列化元数据，导致签名清单或 DPAPI 凭据命令在运行时失败。构建后不能只检查 `--help`，必须用正式信任包执行一次 `validate-release`。
+
+Publisher 与 `Hechao.Backup` CLI 共同引用 `Hechao.Backup.Core` 加密信封类库，互不
+引用对方的可执行入口。三者目标框架必须一致，并且每次候选都要真实执行 `win-x64`
+自包含单文件发布，确认 Publisher 目录不会夹带 Backup CLI，不能只依赖普通项目构建。
 
 活动 NeoForge 源必须先通过仓库工具从 PCL 隔离目录制作。工具不会修改原客户端，会排除账号缓存、日志、世界、截图、语音设备与玩家音量配置，并强制只保留与活动服同 SHA-256 的 Meccha：
 

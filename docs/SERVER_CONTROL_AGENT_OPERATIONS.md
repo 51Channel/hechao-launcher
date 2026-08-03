@@ -2,6 +2,7 @@
 
 > 状态：生产 API `0.26.2`、owl5 代理 `0.2.4` 与 owl9 代理 `0.2.1` 已启用；
 > 当前登记 9 个目标和 2 个在线代理。运行实例数来自实时心跳，2026-08-02 只读快照为 4。
+> 源码候选 `0.3.0` 新增仅限 owl5 `activity` 的结构化整合包部署；尚未部署生产。
 >
 > 适用范围：管理员 Web 后台、API 控制队列、Windows 游戏 VPS 本机代理。
 >
@@ -25,6 +26,8 @@
   `Ctrl+C`，触发 JVM 关机钩子并继续等待正常释放；
 - 修改 `server.properties` 中五个白名单字段并保留备份；
 - 读取并修改每服显式声明的 JVM `-Xms/-Xmx` 启动内存，按单服上限校验；
+- 对唯一获批的 owl5 活动目标执行带租约、摘要和文件清单的 `DeployPackage`，原子切换
+  服务端目录并保持停止；
 - 发送配置中明确允许的单行 Minecraft 命令。
 
 代理不提供 PowerShell、CMD、SSH、任意文件浏览或任意进程终止接口。`Ctrl+C`
@@ -158,7 +161,8 @@ owl9 的历史 Velocity 目标 `pvp` 实际是
 API 主机统一通过
 [`configure-server-control.sh`](../deploy/linux/configure-server-control.sh)
 写入总开关、心跳时效、命令租约和各代理令牌摘要。脚本会先备份环境文件，且启用时
-至少要求一个合法摘要。摘要不是明文令牌，但仍不得写入 Git、聊天或发布记录。
+至少要求一个合法摘要；整合包部署命令使用独立的 180 分钟租约。摘要不是明文令牌，
+但仍不得写入 Git、聊天或发布记录。
 
 示例任务安装：
 
@@ -268,6 +272,21 @@ owl5 升级只重启代理计划任务，代理 PID 从 `7436` 变为 `8848`，�
 [`SERVER_CONTROL_AGENT_RELEASE_0.2.4.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.4.md) 和
 [`evidence/SERVER_CONTROL_AGENT_0.2.4_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/SERVER_CONTROL_AGENT_0.2.4_PRODUCTION_DEPLOYMENT_2026-08-02.json)。
 
+### 6.8 整合包停服部署候选（0.3.0）
+
+`0.3.0` 只允许配置中显式启用 `packageDeploymentEnabled` 的目标领取 `DeployPackage`。
+当前 API 进一步固定为 `activity / owl5 / 25568 / owl5-activity-slot`，其他目标即使伪造
+管理员请求也会被拒绝。部署前后均重新核对目标没有受管 Java PID；归档通过摘要、大小、
+数量、解压总量和安全路径校验后，才进入同卷暂存目录。
+
+活动目标必须声明 `startScriptRelativePath=start.bat`，且脚本与计划任务同时满足
+`HECHAO_MANAGED_START` 契约。`forwarding.secret` 等主机固定文件只能从旧受控目录复制；
+世界仅在管理员明确选择时保留。目录切换失败会自动恢复旧版本，成功后保留一个受控
+回滚目录并保持停服。完整流程见
+[`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。该版本当前只是源码候选，
+不改变生产 `0.2.4 / 0.2.1` 代理和任何 Minecraft PID。代理专项测试 `37/37`、完整
+解决方案 `622/622` 和 `win-x64` 自包含单文件发布已经通过。
+
 ## 7. 验收与回滚
 
 首轮只使用专用、无玩家测试目标验证：
@@ -279,6 +298,8 @@ owl5 升级只重启代理计划任务，代理 PID 从 `7436` 变为 `8848`，�
 5. 冲突服停止失败时目标服绝不启动；
 6. 共享端口的不明占用被拒绝；
 7. 完成记录和管理员审计一致。
+8. 整合包只能部署到停止的 owl5 活动槽，且成功与失败均不自动开服；
+9. 固定文件、世界保留、启动脚本、重解析点和目录切换回滚分别通过。
 
 不得用生产玩家服作为首次启停验收目标。
 

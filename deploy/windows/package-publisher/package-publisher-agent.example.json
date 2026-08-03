@@ -1,0 +1,18 @@
+{
+  "apiBaseUrl": "https://launcher-api.hechao.world",
+  "agentId": "publisher-main",
+  "tokenPath": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\publisher-token.dpapi",
+  "stateDirectory": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\state",
+  "pollSeconds": 3,
+  "signingKeyId": "release-2026-07-primary",
+  "signingKeyPath": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\distribution-signing-private.dpapi",
+  "signingKeyEntropyLabel": "HechaoLauncherAdmin/DistributionSigningPrivate/v1",
+  "signingKeyBlobSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "ossBucket": "hechaoworld",
+  "ossRegion": "cn-shanghai",
+  "ossEndpoint": "https://oss-cn-shanghai.aliyuncs.com",
+  "ossObjectPrefix": "objects",
+  "ossCredentialPath": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\oss-publisher-credential.dpapi",
+  "ossCredentialEntropyLabel": "HechaoLauncherAdmin/OssPublisherCredential/v1",
+  "parallelism": 8
+}

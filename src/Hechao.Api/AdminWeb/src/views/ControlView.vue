@@ -267,7 +267,8 @@ function controlActionText(action: ControlAction): string {
     Stop: "停止",
     Restart: "重启",
     ConsoleCommand: "控制台命令",
-    ApplySettings: "快捷设置"
+    ApplySettings: "快捷设置",
+    DeployPackage: "部署整合包"
   }[action];
 }
 
@@ -287,7 +288,8 @@ function actionMessage(pending: PendingAction): string {
     Stop: `保存世界后正常停止 ${pending.displayName}`,
     Restart: `保存世界、停止并重新启动 ${pending.displayName}`,
     ConsoleCommand: `向 ${pending.displayName} 发送：${pending.consoleCommand}`,
-    ApplySettings: `更新 ${pending.displayName} 的 server.properties 与 JVM 启动内存；运行中的服务不会自动重启。`
+    ApplySettings: `更新 ${pending.displayName} 的 server.properties 与 JVM 启动内存；运行中的服务不会自动重启。`,
+    DeployPackage: `替换 ${pending.displayName} 的受控服务端目录；完成后保持停服。`
   }[pending.action];
 }
 
@@ -297,7 +299,8 @@ function actionTitle(action: ControlAction): string {
     Stop: "停止服务器",
     Restart: "重启服务器",
     ConsoleCommand: "发送 Minecraft 命令",
-    ApplySettings: "保存快捷设置"
+    ApplySettings: "保存快捷设置",
+    DeployPackage: "部署整合包"
   }[action];
 }
 

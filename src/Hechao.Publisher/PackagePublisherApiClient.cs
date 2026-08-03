@@ -9,12 +9,14 @@ using Hechao.Contracts;
 internal sealed class PackagePublisherApiClient(
     HttpClient httpClient,
     string agentId,
-    string token)
+    string token,
+    Func<int, TimeSpan>? packageRetryDelay = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
     internal async Task SendHeartbeatAsync(
         string agentVersion,
+        Guid? activeImportId,
         CancellationToken cancellationToken)
     {
         using var request = CreateRequest(
@@ -24,10 +26,14 @@ internal sealed class PackagePublisherApiClient(
             new PackagePublisherHeartbeatRequest(
                 agentId,
                 agentVersion,
-                DateTimeOffset.UtcNow),
+                DateTimeOffset.UtcNow,
+                activeImportId),
             options: JsonOptions);
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        using var requestCancellation = CreateRequestCancellation(cancellationToken);
+        using var response = await httpClient.SendAsync(
+            request,
+            requestCancellation.Token);
+        await EnsureSuccessAsync(response, requestCancellation.Token);
     }
 
     internal async Task<PackagePublisherClaimResponse> ClaimAsync(
@@ -39,11 +45,14 @@ internal sealed class PackagePublisherApiClient(
         request.Content = JsonContent.Create(
             new PackagePublisherClaimRequest(agentId),
             options: JsonOptions);
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        using var requestCancellation = CreateRequestCancellation(cancellationToken);
+        using var response = await httpClient.SendAsync(
+            request,
+            requestCancellation.Token);
+        await EnsureSuccessAsync(response, requestCancellation.Token);
         return await response.Content.ReadFromJsonAsync<PackagePublisherClaimResponse>(
                    JsonOptions,
-                   cancellationToken)
+                   requestCancellation.Token)
                ?? throw new InvalidDataException(
                    "The package publisher claim response is empty.");
     }
@@ -53,8 +62,56 @@ internal sealed class PackagePublisherApiClient(
         string destinationPath,
         CancellationToken cancellationToken)
     {
+        Exception? lastFailure = null;
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            try
+            {
+                await DownloadClientArchiveAttemptAsync(
+                    job,
+                    destinationPath,
+                    cancellationToken);
+                return;
+            }
+            catch (OperationCanceledException) when (
+                !cancellationToken.IsCancellationRequested)
+            {
+                lastFailure = new TimeoutException(
+                    "The client archive download timed out.");
+            }
+            catch (Exception exception) when (
+                exception is HttpRequestException or InvalidDataException)
+            {
+                lastFailure = exception;
+            }
+
+            if (attempt < 3)
+            {
+                await Task.Delay(
+                    packageRetryDelay?.Invoke(attempt) ??
+                    TimeSpan.FromSeconds(attempt * 2),
+                    cancellationToken);
+            }
+        }
+
+        throw lastFailure ?? new InvalidOperationException(
+            "The client archive download failed without an error.");
+    }
+
+    private async Task DownloadClientArchiveAttemptAsync(
+        PackagePublisherJobDelivery job,
+        string destinationPath,
+        CancellationToken cancellationToken)
+    {
         var path = Path.GetFullPath(destinationPath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        if (File.Exists(path) &&
+            (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new InvalidDataException(
+                "The client archive cache file cannot be a reparse point.");
+        }
+
         var existingBytes = File.Exists(path) ? new FileInfo(path).Length : 0;
         if (existingBytes > job.ClientArchiveBytes)
         {
@@ -70,22 +127,29 @@ internal sealed class PackagePublisherApiClient(
             request.Headers.Range = new RangeHeaderValue(existingBytes, null);
         }
 
+        using var requestCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        requestCancellation.CancelAfter(TimeSpan.FromHours(2));
         using var response = await httpClient.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
+            requestCancellation.Token);
         if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable &&
             existingBytes == job.ClientArchiveBytes)
         {
-            await ValidateDownloadedArchiveAsync(path, job, cancellationToken);
+            await ValidateDownloadedArchiveAsync(
+                path,
+                job,
+                requestCancellation.Token);
             return;
         }
 
-        await EnsureSuccessAsync(response, cancellationToken);
+        await EnsureSuccessAsync(response, requestCancellation.Token);
         var append = existingBytes > 0 &&
                      response.StatusCode == HttpStatusCode.PartialContent;
         var mode = append ? FileMode.Append : FileMode.Create;
-        await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var input = await response.Content.ReadAsStreamAsync(
+            requestCancellation.Token);
         await using (var output = new FileStream(
                          path,
                          mode,
@@ -98,7 +162,9 @@ internal sealed class PackagePublisherApiClient(
             long total = append ? existingBytes : 0;
             while (true)
             {
-                var read = await input.ReadAsync(buffer, cancellationToken);
+                var read = await input.ReadAsync(
+                    buffer,
+                    requestCancellation.Token);
                 if (read == 0)
                 {
                     break;
@@ -111,13 +177,18 @@ internal sealed class PackagePublisherApiClient(
                         "The client archive exceeded its declared size.");
                 }
 
-                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                await output.WriteAsync(
+                    buffer.AsMemory(0, read),
+                    requestCancellation.Token);
             }
 
-            await output.FlushAsync(cancellationToken);
+            await output.FlushAsync(requestCancellation.Token);
         }
 
-        await ValidateDownloadedArchiveAsync(path, job, cancellationToken);
+        await ValidateDownloadedArchiveAsync(
+            path,
+            job,
+            requestCancellation.Token);
     }
 
     internal async Task CompleteAsync(
@@ -129,8 +200,11 @@ internal sealed class PackagePublisherApiClient(
             HttpMethod.Post,
             $"v1/internal/package-imports/publisher/jobs/{importId:D}/complete");
         request.Content = JsonContent.Create(completion, options: JsonOptions);
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        using var requestCancellation = CreateRequestCancellation(cancellationToken);
+        using var response = await httpClient.SendAsync(
+            request,
+            requestCancellation.Token);
+        await EnsureSuccessAsync(response, requestCancellation.Token);
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string path)
@@ -153,15 +227,21 @@ internal sealed class PackagePublisherApiClient(
                 "The client archive download is incomplete.");
         }
 
-        await using var stream = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read,
-            256 * 1024,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
-        var digest = Convert.ToHexString(
-            await SHA256.HashDataAsync(stream, cancellationToken)).ToLowerInvariant();
+        string digest;
+        await using (var stream = new FileStream(
+                         path,
+                         FileMode.Open,
+                         FileAccess.Read,
+                         FileShare.Read,
+                         256 * 1024,
+                         FileOptions.Asynchronous |
+                         FileOptions.SequentialScan))
+        {
+            digest = Convert.ToHexString(
+                    await SHA256.HashDataAsync(stream, cancellationToken))
+                .ToLowerInvariant();
+        }
+
         if (!CryptographicOperations.FixedTimeEquals(
                 System.Text.Encoding.ASCII.GetBytes(digest),
                 System.Text.Encoding.ASCII.GetBytes(job.ClientArchiveSha256)))
@@ -170,6 +250,15 @@ internal sealed class PackagePublisherApiClient(
             throw new InvalidDataException(
                 "The client archive SHA-256 does not match the immutable job.");
         }
+    }
+
+    private static CancellationTokenSource CreateRequestCancellation(
+        CancellationToken cancellationToken)
+    {
+        var source = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken);
+        source.CancelAfter(TimeSpan.FromSeconds(30));
+        return source;
     }
 
     private static async Task EnsureSuccessAsync(

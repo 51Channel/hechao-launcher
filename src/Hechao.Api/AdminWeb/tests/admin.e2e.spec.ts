@@ -11,6 +11,7 @@ const migratedRoutes = [
   ["servers", "服务器目录"],
   ["users", "玩家与权限"],
   ["profiles", "客户端档案"],
+  ["package-imports", "整合包导入"],
   ["telemetry", "运行数据"],
   ["runtime", "服务状态"],
   ["control", "服控面板"],
@@ -61,7 +62,8 @@ function controlOverview(requestNumber: number) {
       online: true,
       processId: 18888,
       settings: quickSettings(requestNumber > 1 ? 99 : 30),
-      activeOperation: null
+      activeOperation: null,
+      packageDeploymentEnabled: true
     }, {
       serverId: "fanstreet",
       displayName: "范街活动服",
@@ -73,7 +75,8 @@ function controlOverview(requestNumber: number) {
       online: false,
       processId: null,
       settings: quickSettings(40),
-      activeOperation: null
+      activeOperation: null,
+      packageDeploymentEnabled: false
     }]
   };
 }
@@ -119,6 +122,71 @@ const releases = [
 ];
 
 const now = "2026-08-02T04:00:00Z";
+const packageImportId = "66666666-6666-6666-6666-666666666666";
+const packageAnalysis = {
+  layout: "Canonical",
+  metadata: {
+    suggestedProfileId: "summer-neoforge-1.21.11",
+    displayName: "夏日活动",
+    version: "1.0.0",
+    minecraftVersion: "1.21.11",
+    javaMajorVersion: 25,
+    loader: "NeoForge",
+    loaderVersion: "21.11.42",
+    maximumPlayers: 30,
+    serverLaunchPath: "start.bat"
+  },
+  client: { sha256: hashOne, archiveBytes: 524288, expandedBytes: 1048576, fileCount: 24 },
+  server: { sha256: hashTwo, archiveBytes: 262144, expandedBytes: 786432, fileCount: 18 },
+  clientFileCount: 20,
+  serverFileCount: 14,
+  sharedFileCount: 4,
+  fileSamples: [{ path: "mods/example.jar", side: "Shared", size: 4096, sha256: hashOne }],
+  issues: []
+};
+const completedPackageImport = {
+  importId: packageImportId,
+  fileName: "summer.zip",
+  expectedUploadBytes: 1048576,
+  uploadedBytes: 1048576,
+  sourceSha256: hashOne,
+  status: "Completed",
+  analysis: packageAnalysis,
+  plan: {
+    profileId: "summer-neoforge-1.21.11",
+    profileDisplayName: "夏日活动",
+    version: "1.0.0",
+    targetServerId: "activity",
+    preserveWorldData: false,
+    syncServerCatalog: true,
+    serverDisplayName: "夏日活动",
+    minimumTier: "Participant",
+    maximumMemoryMiB: 4096
+  },
+  manifestSha256: hashTwo,
+  deploymentOperationId: "77777777-7777-7777-7777-777777777777",
+  errorCode: null,
+  errorMessage: null,
+  createdBy: session.player.userId,
+  createdByDisplayName: session.player.minecraftName,
+  createdAt: now,
+  updatedAt: now,
+  completedAt: now,
+  revision: 8
+};
+type PackageImportMock = Omit<
+  typeof completedPackageImport,
+  "sourceSha256" | "status" | "analysis" | "plan" | "manifestSha256" |
+  "deploymentOperationId" | "completedAt"
+> & {
+  sourceSha256: string | null;
+  status: string;
+  analysis: typeof packageAnalysis | null;
+  plan: typeof completedPackageImport.plan | null;
+  manifestSha256: string | null;
+  deploymentOperationId: string | null;
+  completedAt: string | null;
+};
 const serverRecords = [{
   id: "activity",
   displayName: "活动服",
@@ -262,6 +330,14 @@ async function mockAdminApi(
       await route.fulfill({ json: session });
     } else if (path === "/v1/admin-auth/csrf") {
       await route.fulfill({ json: { requestToken: "e2e-csrf" } });
+    } else if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+      await route.fulfill({ json: {
+        imports: [completedPackageImport],
+        publisherAgentConnected: true,
+        publisherAgentLastSeenAt: now
+      } });
+    } else if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+      await route.fulfill({ json: completedPackageImport });
     } else if (path === "/v1/admin/server-control/overview") {
       controlRequests += 1;
       await route.fulfill({ json: controlOverview(controlRequests) });
@@ -438,6 +514,117 @@ test("every production channel change requires confirmation", async ({ page }) =
   await page.screenshot({ path: "../../../artifacts/admin-web-profiles-desktop.png", fullPage: true });
 });
 
+test("package import uploads a chunk and requires the exact deployment confirmation", async ({ page }) => {
+  const uploadBytes = 1024 * 1024;
+  let uploadOffset = 0;
+  let confirmedBody: Record<string, unknown> | null = null;
+  let record: PackageImportMock = {
+    ...completedPackageImport,
+    uploadedBytes: 0,
+    sourceSha256: null,
+    status: "Uploading",
+    analysis: null,
+    plan: null,
+    manifestSha256: null,
+    deploymentOperationId: null,
+    completedAt: null,
+    revision: 1
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview") {
+        const stopped = controlOverview(1);
+        stopped.targets[0] = {
+          ...stopped.targets[0],
+          online: false,
+          processId: null
+        };
+        await route.fulfill({ json: stopped });
+        return true;
+      }
+      if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+        await route.fulfill({ json: {
+          imports: [record],
+          publisherAgentConnected: true,
+          publisherAgentLastSeenAt: now
+        } });
+        return true;
+      }
+      if (path === "/v1/admin/package-imports/uploads" && request.method() === "POST") {
+        await route.fulfill({ status: 201, json: record });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        await route.fulfill({ json: record });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}/content` && request.method() === "PATCH") {
+        expect(request.headers()["upload-offset"]).toBe(String(uploadOffset));
+        uploadOffset += request.postDataBuffer()?.byteLength ?? 0;
+        record = { ...record, uploadedBytes: uploadOffset };
+        await route.fulfill({ json: {
+          importId: packageImportId,
+          uploadedBytes: uploadOffset,
+          expectedUploadBytes: uploadBytes,
+          complete: uploadOffset === uploadBytes
+        } });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}/complete` && request.method() === "POST") {
+        record = {
+          ...record,
+          uploadedBytes: uploadBytes,
+          sourceSha256: hashOne,
+          status: "AwaitingReview",
+          analysis: packageAnalysis,
+          revision: 4
+        };
+        await route.fulfill({ json: record });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}/confirm` && request.method() === "POST") {
+        confirmedBody = request.postDataJSON() as Record<string, unknown>;
+        record = {
+          ...record,
+          status: "QueuedForPublishing",
+          plan: completedPackageImport.plan,
+          revision: 5
+        };
+        await route.fulfill({ json: record });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/package-imports");
+  await page.locator('input[type="file"]').first().setInputFiles({
+    name: "summer.zip",
+    mimeType: "application/zip",
+    buffer: Buffer.alloc(uploadBytes, 7)
+  });
+  await page.getByRole("button", { name: "上传并识别" }).click();
+
+  const importDrawer = page.locator(".package-import-drawer");
+  await expect(importDrawer).toBeVisible();
+  await expect(importDrawer.getByRole("heading", { name: "等待确认" })).toBeVisible();
+  await importDrawer.getByLabel("精确确认").fill(`发布并部署 ${packageImportId}`);
+  await importDrawer.getByRole("button", { name: "发布并部署" }).click();
+
+  await expect.poll(() => confirmedBody).not.toBeNull();
+  expect(uploadOffset).toBe(uploadBytes);
+  expect(confirmedBody).toMatchObject({
+    expectedRevision: 4,
+    profileId: "summer-neoforge-1.21.11",
+    targetServerId: "activity",
+    preserveWorldData: false,
+    syncServerCatalog: true,
+    maximumMemoryMiB: 4096,
+    confirmation: `发布并部署 ${packageImportId}`
+  });
+  await page.screenshot({ path: "../../../artifacts/admin-web-package-import-desktop.png", fullPage: true });
+});
+
 test("server editor recovers from a revision conflict without losing the draft", async ({ page }) => {
   const updates: Record<string, unknown>[] = [];
   await mockAdminApi(page, {
@@ -555,6 +742,60 @@ test("mobile navigation remains scrollable without covering page content", async
   const topbarBox = await page.locator(".topbar").boundingBox();
   expect(headingBox && topbarBox && headingBox.y >= topbarBox.y + topbarBox.height).toBe(true);
   await page.screenshot({ path: "../../../artifacts/admin-web-mobile.png", fullPage: true });
+});
+
+test("package import review drawer remains contained on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const reviewRecord: PackageImportMock = {
+    ...completedPackageImport,
+    status: "AwaitingReview",
+    plan: null,
+    manifestSha256: null,
+    deploymentOperationId: null,
+    completedAt: null,
+    revision: 4
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview") {
+        const stopped = controlOverview(1);
+        stopped.targets[0] = { ...stopped.targets[0], online: false, processId: null };
+        await route.fulfill({ json: stopped });
+        return true;
+      }
+      if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+        await route.fulfill({ json: {
+          imports: [reviewRecord],
+          publisherAgentConnected: true,
+          publisherAgentLastSeenAt: now
+        } });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        await route.fulfill({ json: reviewRecord });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/package-imports");
+  await page.getByRole("button", { name: "查看整合包任务" }).click();
+  const importDrawer = page.locator(".package-import-drawer");
+  await expect(importDrawer.getByRole("heading", { name: "等待确认" })).toBeVisible();
+  const dimensions = await importDrawer.evaluate(element => ({
+    width: element.getBoundingClientRect().width,
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth
+  }));
+  expect(dimensions.width).toBeLessThanOrEqual(390);
+  expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+  await importDrawer.evaluate(async element => {
+    await Promise.all(
+      element.getAnimations({ subtree: true }).map(animation => animation.finished)
+    );
+  });
+  await page.screenshot({ path: "../../../artifacts/admin-web-package-import-mobile.png" });
 });
 
 test("long desktop pages scroll inside content while the sidebar remains available", async ({ page }) => {

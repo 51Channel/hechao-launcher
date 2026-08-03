@@ -554,7 +554,10 @@ public sealed class PackageImportRepository
         await using (var renew = new NpgsqlCommand(
                          """
                          UPDATE launcher.package_imports
-                         SET publisher_lease_expires_at = $2
+                         SET publisher_lease_expires_at = CASE
+                                 WHEN id = $3 THEN $2
+                                 ELSE LEAST(publisher_lease_expires_at, $4)
+                             END
                          WHERE status = 'PublishingClient'
                            AND publisher_claimed_by = $1;
                          """,
@@ -564,6 +567,13 @@ public sealed class PackageImportRepository
             renew.Parameters.AddWithValue(request.AgentId);
             renew.Parameters.AddWithValue(
                 receivedAt.AddMinutes(options.PublisherLeaseMinutes));
+            AdminPostgresParameters.AddPositional(
+                renew.Parameters,
+                NpgsqlDbType.Uuid,
+                request.ActiveImportId);
+            renew.Parameters.AddWithValue(
+                receivedAt.AddSeconds(
+                    options.PublisherAgentFreshnessSeconds));
             await renew.ExecuteNonQueryAsync(cancellationToken);
         }
 

@@ -1,5 +1,12 @@
 # 赫朝启动器
 
+> `2026-08-04` 源码候选：管理后台新增整合包导入，可安全识别 ZIP/MRPACK、续传上传、
+> 把客户端签名发布到私有 OSS，并把服务端原子部署到停止的 owl5 活动槽。候选版本为
+> API `0.27.0`、Publisher `1.0.0`、ServerControlAgent `0.3.0`；只进入客户端 `Test`
+> 通道，部署后保持停服，不修改 Velocity 路由。当前尚未部署生产，操作边界见
+> [`docs/PACKAGE_IMPORT_OPERATIONS.md`](docs/PACKAGE_IMPORT_OPERATIONS.md)。完整解决方案
+> `622/622`、Vitest `8/8`、Playwright `14/14` 和三个目标运行时发布均已通过。
+
 > `2026-08-02` 管理后台更新：生产 API 已升级到 `0.26.2`。九个 Vue 管理模块保留
 > `0.26.1` 的票据预路由清理，并修复短窗口和长页面无法完整滚动、侧栏项目不可达的问题；
 > TypeScript、Vitest `8/8`、Playwright `12/12` 和完整解决方案 `578/578` 通过。发布证据见
@@ -69,6 +76,9 @@
 - `Administrator` 可从启动器申请 90 秒一次性后台票据；票据只放 URL fragment，兑换后改用 `HttpOnly`、`Secure`、`SameSite=Strict` 的独立浏览器会话，不把启动器 Bearer 交给网页。
 - 管理后台强制 TOTP 双重验证，提供一次性恢复码和 CSRF 防护；支持服务器新增、编辑、归档、恢复、公告、开放排期、玩家搜索、访问预览和单服规则，所有变更使用修订号并在同一事务中写入审计日志。
 - 管理后台已在生产迁移到 Vue 3、TypeScript、Vite 和 Vue Router；九个管理模块按路由拆分并按需加载，ASP.NET Core 构建和发布会自动生成 `wwwroot/admin` 静态产物。生产真实票据、九个深层路由、稳定数据态、零横向溢出和零浏览器 warning/error 已验收；`0.26.2` 进一步补齐长正文、短窗口和侧栏导航滚动边界。
+- `0.27.0` 源码候选新增第十个“整合包导入”模块：8 MiB 分块续传、ZIP/MRPACK
+  安全识别、人工复核、独立 Publisher Agent、客户端 `Test` 发布和 owl5 活动槽停服
+  原子部署已经接入；尚未部署生产。
 - 服控面板和最小权限 Windows 代理已接入生产：支持优雅启停、冲突服先停后启、
   `server.properties` 与 JVM 内存快捷设置，以及受限 Minecraft 控制台。当前登记
   9 个受管目标；代理在线数和运行中实例数来自实时心跳，执行动作前必须重新核验。
@@ -92,7 +102,9 @@ API `0.26.2` 与 owl5 服控代理 `0.2.4`、owl9 `0.2.1` 已在生产启用每�
 - `src/Hechao.Launcher`：WPF 桌面客户端、视图模型、本地设置和演示服务。
 - `src/Hechao.Contracts`：服务器目录、客户端档案、权限等级和 API 接口模型。
 - `src/Hechao.Distribution`：签名清单、路径策略、断点续传、哈希校验、安装与回滚核心。
-- `src/Hechao.Publisher`：管理员离线生成密钥、内容寻址对象和签名清单，并使用 DPAPI 凭据上传 OSS 对象的命令行工具。
+- `src/Hechao.Publisher`：管理员离线生成密钥、内容寻址对象和签名清单，并使用 DPAPI 凭据上传 OSS 对象的命令行工具；也包含隔离运行的整合包 Publisher Agent。
+- `src/Hechao.Backup.Core`：Publisher 与备份 CLI 共用的 RSA/AES-GCM 加密信封类库，
+  不包含可执行入口。
 - `src/Hechao.Backup`：数据库与签名恢复材料的 RSA/AES-GCM 加密信封、私有 OSS 不可覆盖上传和下载复验工具。
 - `src/Hechao.Api`：独立启动器 API、管理员 Web 控制台、MFA、目录 CRUD 与审计；只监听 `127.0.0.1:8090`，由 Nginx 终止公网 TLS。
 - `src/Hechao.Api/AdminWeb`：Vue 3 + TypeScript + Vite 管理后台源码、Vitest 单元测试和 Playwright 浏览器测试；`wwwroot/admin` 只是构建产物。
@@ -186,3 +198,5 @@ pwsh -NoLogo -NoProfile -File .\tools\Test-ActivityDevelopmentHandoff.ps1 `
 [`docs/SERVER_CONTROL_AGENT_OPERATIONS.md`](docs/SERVER_CONTROL_AGENT_OPERATIONS.md)，
 启动器本体更新见
 [`docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md`](docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md)。
+后台整合包识别、客户端 Test 发布和 owl5 活动槽停服部署见
+[`docs/PACKAGE_IMPORT_OPERATIONS.md`](docs/PACKAGE_IMPORT_OPERATIONS.md)。

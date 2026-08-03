@@ -64,6 +64,7 @@ cat >> "$temporary" <<EOF
 ServerControl__Enabled=$enabled
 ServerControl__AgentFreshnessSeconds=$freshness_seconds
 ServerControl__ClaimLeaseSeconds=$claim_lease_seconds
+ServerControl__PackageDeploymentClaimLeaseMinutes=180
 EOF
 printf '%s\n' "${agent_lines[@]}" >> "$temporary"
 

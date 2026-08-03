@@ -6,7 +6,8 @@ public enum ServerControlAction
     Stop,
     Restart,
     ConsoleCommand,
-    ApplySettings
+    ApplySettings,
+    DeployPackage
 }
 
 public enum ServerControlOperationStatus
@@ -23,7 +24,8 @@ public enum ServerControlCommandKind
     Start,
     Stop,
     ConsoleCommand,
-    ApplySettings
+    ApplySettings,
+    DeployPackage
 }
 
 public enum ServerControlCommandOutcome
@@ -76,7 +78,8 @@ public sealed record AdminServerControlTargetSummaryRecord(
     bool Online,
     int? ProcessId,
     ServerQuickSettings? Settings,
-    AdminServerControlOperationRecord? ActiveOperation);
+    AdminServerControlOperationRecord? ActiveOperation,
+    bool PackageDeploymentEnabled = false);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -92,7 +95,8 @@ public sealed record AdminServerControlTargetRecord(
     IReadOnlyList<string> AllowedCommandPrefixes,
     string ConsoleTail,
     DateTimeOffset? ConsoleCapturedAt,
-    AdminServerControlOperationRecord? ActiveOperation);
+    AdminServerControlOperationRecord? ActiveOperation,
+    bool PackageDeploymentEnabled = false);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
@@ -118,13 +122,15 @@ public sealed record ServerControlAgentTargetHeartbeat(
     ServerQuickSettings? Settings,
     IReadOnlyList<string> AllowedCommandPrefixes,
     string ConsoleTail,
-    DateTimeOffset? ConsoleCapturedAt);
+    DateTimeOffset? ConsoleCapturedAt,
+    bool PackageDeploymentEnabled = false);
 
 public sealed record ServerControlAgentHeartbeatRequest(
     string AgentId,
     string AgentVersion,
     DateTimeOffset CapturedAt,
-    IReadOnlyList<ServerControlAgentTargetHeartbeat> Targets);
+    IReadOnlyList<ServerControlAgentTargetHeartbeat> Targets,
+    IReadOnlyList<Guid>? ActiveDeploymentCommandIds = null);
 
 public sealed record ServerControlAgentHeartbeatResponse(
     int ImportedTargets,
@@ -141,7 +147,20 @@ public sealed record ServerControlCommandDelivery(
     ServerControlCommandKind Kind,
     int AttemptCount,
     string? ConsoleCommand,
-    ServerQuickSettings? Settings);
+    ServerQuickSettings? Settings,
+    ServerPackageDeploymentRequest? PackageDeployment = null);
+
+public sealed record ServerPackageDeploymentRequest(
+    Guid ImportId,
+    string ProfileId,
+    string Version,
+    long ArchiveBytes,
+    string ArchiveSha256,
+    long ExpandedBytes,
+    int FileCount,
+    bool PreserveWorldData,
+    int InitialMemoryMiB,
+    int MaximumMemoryMiB);
 
 public sealed record ServerControlCommandClaimResponse(
     IReadOnlyList<ServerControlCommandDelivery> Commands,

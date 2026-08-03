@@ -34,7 +34,7 @@ try
         BaseAddress = new Uri(
             configuration.ApiBaseUrl.TrimEnd('/') + "/",
             UriKind.Absolute),
-        Timeout = TimeSpan.FromSeconds(30)
+        Timeout = Timeout.InfiniteTimeSpan
     };
     httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
         "Hechao.ServerControlAgent/0.1.0");

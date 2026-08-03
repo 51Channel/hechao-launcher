@@ -33,7 +33,11 @@
       "logRelativePath": "logs\\latest.log",
       "propertiesRelativePath": "server.properties",
       "memorySettingsRelativePath": "user_jvm_args.txt",
+      "startScriptRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 8192,
+      "packageDeploymentEnabled": true,
+      "hostManagedRelativePaths": ["forwarding.secret"],
+      "worldDataRelativePaths": ["world", "world_nether", "world_the_end"],
       "allowedCommandPrefixes": [
         "list",
         "save-all",

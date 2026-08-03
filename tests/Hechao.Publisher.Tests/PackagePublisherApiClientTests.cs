@@ -73,7 +73,8 @@ public sealed class PackagePublisherApiClientTests : IDisposable
         var client = new PackagePublisherApiClient(
             httpClient,
             "publisher-main",
-            new string('A', 48));
+            new string('A', 48),
+            _ => TimeSpan.Zero);
         var job = new PackagePublisherJobDelivery(
             Guid.NewGuid(), 1, "profile-id", "1.0.0", "1.20.1", 17,
             "Fabric", "0.16.14", 1, new string('a', 64));
@@ -83,6 +84,63 @@ public sealed class PackagePublisherApiClientTests : IDisposable
                 job,
                 Path.Combine(root, "redirect.zip"),
                 CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task DownloadClientArchiveAsync_RestartsAfterBadFullCache()
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(
+            "verified client archive");
+        var digest = Convert.ToHexString(SHA256.HashData(bytes))
+            .ToLowerInvariant();
+        var destination = Path.Combine(root, "client.zip");
+        Directory.CreateDirectory(root);
+        await File.WriteAllBytesAsync(destination, new byte[bytes.Length]);
+        var requests = 0;
+        using var handler = new RecordingHandler(request =>
+        {
+            requests += 1;
+            if (requests == 1)
+            {
+                Assert.Equal(bytes.Length, request.Headers.Range?.Ranges.Single().From);
+                return new HttpResponseMessage(
+                    HttpStatusCode.RequestedRangeNotSatisfiable);
+            }
+
+            Assert.Null(request.Headers.Range);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(bytes)
+            };
+        });
+        using var httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://launcher-api.example/")
+        };
+        var client = new PackagePublisherApiClient(
+            httpClient,
+            "publisher-main",
+            new string('A', 48),
+            _ => TimeSpan.Zero);
+        var job = new PackagePublisherJobDelivery(
+            Guid.NewGuid(),
+            1,
+            "profile-id",
+            "1.0.0",
+            "1.20.1",
+            17,
+            "Fabric",
+            "0.16.14",
+            bytes.Length,
+            digest);
+
+        await client.DownloadClientArchiveAsync(
+            job,
+            destination,
+            CancellationToken.None);
+
+        Assert.Equal(2, requests);
+        Assert.Equal(bytes, await File.ReadAllBytesAsync(destination));
     }
 
     public void Dispose()

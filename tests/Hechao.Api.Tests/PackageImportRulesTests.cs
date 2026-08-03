@@ -33,7 +33,7 @@ public sealed class PackageImportRulesTests
             "summer-fabric-1.20.1",
             "夏日活动",
             "1.0.0",
-            "fanstreet",
+            PackageImportRules.ActivityServerId,
             PreserveWorldData: false,
             SyncServerCatalog: true,
             "夏日活动",
@@ -56,9 +56,9 @@ public sealed class PackageImportRulesTests
     public void IsActivityTarget_RejectsSurvivalAndAcceptsOwl5ActivitySlot()
     {
         var target = new AdminServerControlTargetRecord(
-            "fanstreet",
+            PackageImportRules.ActivityServerId,
             "范街",
-            "owl5",
+            PackageImportRules.ActivityAgentId,
             PackageImportRules.ActivityConflictGroup,
             PackageImportRules.ActivityPort,
             true,
@@ -69,9 +69,16 @@ public sealed class PackageImportRulesTests
             ["list"],
             string.Empty,
             null,
-            null);
+            null,
+            PackageDeploymentEnabled: true);
 
         Assert.True(PackageImportRules.IsActivityTarget(target));
+        Assert.False(PackageImportRules.IsActivityTarget(
+            target with { ServerId = "fanstreet" }));
+        Assert.False(PackageImportRules.IsActivityTarget(
+            target with { AgentId = "owl9" }));
+        Assert.False(PackageImportRules.IsActivityTarget(
+            target with { PackageDeploymentEnabled = false }));
         Assert.False(PackageImportRules.IsActivityTarget(
             target with { ConflictGroup = "owl5-survival-slot", Port = 25565 }));
     }
@@ -89,6 +96,15 @@ public sealed class PackageImportRulesTests
 
         Assert.Contains("agentId", errors.Keys);
         Assert.Contains("capturedAt", errors.Keys);
+
+        var activeIdErrors = PackageImportRules.ValidatePublisherHeartbeat(
+            new PackagePublisherHeartbeatRequest(
+                "publisher-main",
+                "1.0.0",
+                now,
+                Guid.Empty),
+            now);
+        Assert.Contains("activeImportId", activeIdErrors.Keys);
     }
 
     [Fact]

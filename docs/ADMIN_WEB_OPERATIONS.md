@@ -1,9 +1,9 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.14.2`、API `0.26.1`
-> 生产状态：API `0.26.1-20260802T012527Z` 已部署且 `AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收
+> 源码版本：启动器 `0.14.2`、API 候选 `0.27.0`
+> 生产状态：API `0.26.2` 已部署且 `AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收
 > 管理入口：`https://admin.hechao.world/admin/`
-> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router 九页后台已部署生产；真实票据和九个深层路由已逐页验收
+> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router 九页后台已部署生产；源码候选新增第十页“整合包导入”，尚未部署
 > 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
@@ -50,8 +50,8 @@
 ### 3.1 Vue 前端工程
 
 管理后台源码位于 `src/Hechao.Api/AdminWeb`，使用 Vue 3、TypeScript、Vite 和
-Vue Router。九个页面分别对应 `/admin/servers`、`users`、`profiles`、
-`telemetry`、`runtime`、`control`、`alerts`、`diagnostics` 和 `audit`。
+Vue Router。源码候选的十个页面分别对应 `/admin/servers`、`users`、`profiles`、
+`package-imports`、`telemetry`、`runtime`、`control`、`alerts`、`diagnostics` 和 `audit`。
 ASP.NET Core 使用 `/admin/{*path:nonfile}` 回退到 Vue 入口，因此刷新深层路由仍由
 同一应用接管。
 
@@ -71,9 +71,21 @@ npm run test:e2e
 npm run build
 ```
 
-Playwright 覆盖九个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
+Playwright 覆盖十个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
 服控轮询期间的脏表单和控制台阅读位置、正式通道确认，以及修订冲突恢复。API 测试
 另验证静态资源 MIME、`/admin/control` 深层路由、Host 锁定和安全响应头。
+
+### 3.2 整合包导入
+
+`/admin/package-imports` 只对完成 MFA 的 `Administrator` 开放。页面提供分块上传、暂停、
+续传、取消、识别结果审阅和任务时间线；确认区只列出具备整合包能力、代理在线且当前
+停止的 owl5 活动目标。客户端只发布到 `Test`，服务端部署后保持停止。
+
+页面不会提供强制忽略阻断项、选择其他 VPS、自动关冲突服、自动开服或直接推进
+`Production` 的入口。API、Publisher、服控代理配置与回滚见
+[`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。
+候选前端已通过 TypeScript、Vitest `8/8`、Playwright `14/14`、十路由 WCAG A/AA、
+桌面与 390px 移动端溢出检查；Impeccable 检测为零项。
 
 ## 4. 配置
 

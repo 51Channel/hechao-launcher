@@ -262,7 +262,7 @@ export interface RuntimeSummary {
   issues: Array<{ issue: string; samples: number; targets: number }>;
 }
 
-export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings";
+export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings" | "DeployPackage";
 export type ControlOperationStatus = "Pending" | "Running" | "Succeeded" | "Failed" | "Cancelled";
 
 export interface QuickSettings {
@@ -304,6 +304,7 @@ export interface ControlTargetSummary {
   processId: number | null;
   settings: QuickSettings | null;
   activeOperation: ControlOperation | null;
+  packageDeploymentEnabled: boolean;
 }
 
 export interface ControlTarget extends ControlTargetSummary {
@@ -380,4 +381,102 @@ export interface AuditEntry {
   beforeData: unknown | null;
   afterData: unknown | null;
   createdAt: string;
+}
+
+export type PackageImportStatus =
+  | "Uploading" | "Uploaded" | "Analyzing" | "AwaitingReview"
+  | "QueuedForPublishing" | "PublishingClient" | "QueuedForDeployment"
+  | "DeployingServer" | "Finalizing" | "Completed" | "Failed" | "Cancelled";
+
+export type PackageImportIssueSeverity = "Information" | "Warning" | "Blocking";
+
+export interface PackageImportIssue {
+  code: string;
+  severity: PackageImportIssueSeverity;
+  message: string;
+  path: string | null;
+}
+
+export interface PackageImportMetadata {
+  suggestedProfileId: string;
+  displayName: string;
+  version: string;
+  minecraftVersion: string;
+  javaMajorVersion: number;
+  loader: string;
+  loaderVersion: string;
+  maximumPlayers: number | null;
+  serverLaunchPath: string | null;
+}
+
+export interface PackageImportPart {
+  sha256: string;
+  archiveBytes: number;
+  expandedBytes: number;
+  fileCount: number;
+}
+
+export interface PackageImportFileSample {
+  path: string;
+  side: string;
+  size: number;
+  sha256: string;
+}
+
+export interface PackageImportAnalysis {
+  layout: string;
+  metadata: PackageImportMetadata;
+  client: PackageImportPart | null;
+  server: PackageImportPart | null;
+  clientFileCount: number;
+  serverFileCount: number;
+  sharedFileCount: number;
+  fileSamples: PackageImportFileSample[];
+  issues: PackageImportIssue[];
+}
+
+export interface PackageImportDeploymentPlan {
+  profileId: string;
+  profileDisplayName: string;
+  version: string;
+  targetServerId: string;
+  preserveWorldData: boolean;
+  syncServerCatalog: boolean;
+  serverDisplayName: string;
+  minimumTier: AccessTier;
+  maximumMemoryMiB: number;
+}
+
+export interface PackageImportRecord {
+  importId: string;
+  fileName: string;
+  expectedUploadBytes: number;
+  uploadedBytes: number;
+  sourceSha256: string | null;
+  status: PackageImportStatus;
+  analysis: PackageImportAnalysis | null;
+  plan: PackageImportDeploymentPlan | null;
+  manifestSha256: string | null;
+  deploymentOperationId: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  createdBy: string;
+  createdByDisplayName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  revision: number;
+}
+
+export interface PackageImportListResponse {
+  imports: PackageImportRecord[];
+  publisherAgentConnected: boolean;
+  publisherAgentLastSeenAt: string | null;
+}
+
+export interface PackageUploadAppendResponse {
+  importId: string;
+  uploadedBytes: number;
+  expectedUploadBytes: number;
+  complete: boolean;
 }

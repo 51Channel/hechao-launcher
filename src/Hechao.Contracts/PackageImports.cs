@@ -133,7 +133,8 @@ public sealed record AdminPackageImportCancelRequest(
 public sealed record PackagePublisherHeartbeatRequest(
     string AgentId,
     string AgentVersion,
-    DateTimeOffset CapturedAt);
+    DateTimeOffset CapturedAt,
+    Guid? ActiveImportId = null);
 
 public sealed record PackagePublisherHeartbeatResponse(
     DateTimeOffset ReceivedAt);

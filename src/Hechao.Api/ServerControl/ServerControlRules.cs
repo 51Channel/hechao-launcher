@@ -72,6 +72,11 @@ public static partial class ServerControlRules
             errors["settings"] = ["当前操作不能携带服务器设置。"];
         }
 
+        if (request.Action == ServerControlAction.DeployPackage)
+        {
+            errors["action"] = ["整合包部署只能由已确认的导入任务创建。"];
+        }
+
         return errors;
     }
 
@@ -98,6 +103,17 @@ public static partial class ServerControlRules
         {
             errors["targets"] = ["代理目标列表无效。"];
             return errors;
+        }
+
+        var activeDeploymentCommandIds =
+            request.ActiveDeploymentCommandIds ?? [];
+        if (activeDeploymentCommandIds.Count > 1 ||
+            activeDeploymentCommandIds.Any(id => id == Guid.Empty) ||
+            activeDeploymentCommandIds.Distinct().Count() !=
+            activeDeploymentCommandIds.Count)
+        {
+            errors["activeDeploymentCommandIds"] =
+                ["代理同时只能续租一个有效的整合包部署命令。"];
         }
 
         if (request.Targets.Any(target =>

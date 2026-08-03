@@ -106,6 +106,37 @@ public sealed class ServerControlRulesTests
     }
 
     [Fact]
+    public void Validate_RejectsAdministratorForgedPackageDeployment()
+    {
+        var request = new AdminServerControlRequest(
+            ServerControlAction.DeployPackage,
+            "activity",
+            "尝试绕过整合包确认门");
+
+        var errors = ServerControlRules.Validate("activity", request);
+
+        Assert.Contains("action", errors);
+    }
+
+    [Theory]
+    [InlineData(14)]
+    [InlineData(481)]
+    public void Options_RejectPackageDeploymentLeaseOutsideBoundaries(int minutes)
+    {
+        var options = new ServerControlOptions
+        {
+            Enabled = true,
+            PackageDeploymentClaimLeaseMinutes = minutes,
+            AgentTokenSha256 = new Dictionary<string, string>
+            {
+                ["owl5"] = new string('a', 64)
+            }
+        };
+
+        Assert.False(options.IsValid());
+    }
+
+    [Fact]
     public void Validate_RejectsDuplicateHeartbeatTargets()
     {
         var target = new ServerControlAgentTargetHeartbeat(
@@ -151,6 +182,32 @@ public sealed class ServerControlRulesTests
         var errors = ServerControlRules.Validate(request);
 
         Assert.Contains("targets", errors);
+    }
+
+    [Fact]
+    public void Validate_RejectsMoreThanOneActivePackageDeployment()
+    {
+        var target = new ServerControlAgentTargetHeartbeat(
+            "activity",
+            "owl5-activity-slot",
+            25568,
+            false,
+            null,
+            null,
+            ["list"],
+            string.Empty,
+            DateTimeOffset.UtcNow,
+            PackageDeploymentEnabled: true);
+        var request = new ServerControlAgentHeartbeatRequest(
+            "owl5",
+            "0.3.0",
+            DateTimeOffset.UtcNow,
+            [target],
+            [Guid.NewGuid(), Guid.NewGuid()]);
+
+        var errors = ServerControlRules.Validate(request);
+
+        Assert.Contains("activeDeploymentCommandIds", errors);
     }
 
     [Fact]
