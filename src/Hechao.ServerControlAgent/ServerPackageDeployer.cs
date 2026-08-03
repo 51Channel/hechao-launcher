@@ -8,7 +8,8 @@ namespace Hechao.ServerControlAgent;
 
 internal sealed partial class ServerPackageDeployer(
     ServerControlTargetConfiguration configuration,
-    string backupRoot)
+    string backupRoot,
+    ServerDirectoryAccessGate? directoryAccessGate = null)
 {
     private const int OwnerSchemaVersion = 1;
     internal const string DeploymentMarkerName = ".hechao-deployment.json";
@@ -17,6 +18,8 @@ internal sealed partial class ServerPackageDeployer(
     {
         WriteIndented = true
     };
+    private readonly ServerDirectoryAccessGate directoryAccessGate =
+        directoryAccessGate ?? new ServerDirectoryAccessGate();
 
     internal async Task<AgentCommandResult> DeployAsync(
         ServerPackageDeploymentRequest deployment,
@@ -74,28 +77,31 @@ internal sealed partial class ServerPackageDeployer(
 
         try
         {
-            RecoverInterruptedSwitch(
-                serverDirectory,
-                stagingDirectory,
-                rollbackDirectory,
-                stagingOwnerPath,
-                rollbackOwnerPath);
-            if (!Directory.Exists(serverDirectory) ||
-                IsReparsePoint(serverDirectory))
+            using (await directoryAccessGate.EnterAsync(cancellationToken))
             {
-                throw new InvalidDataException(
-                    "The recovered server directory is missing or unsafe.");
-            }
-            if (TryReadDeploymentMarker(serverDirectory, out var active) &&
-                active.ImportId == deployment.ImportId &&
-                string.Equals(
-                    active.ArchiveSha256,
-                    deployment.ArchiveSha256,
-                    StringComparison.Ordinal))
-            {
-                return Succeeded(
-                    "PACKAGE_ALREADY_DEPLOYED",
-                    "该整合包已经部署，服务端保持停止。 ");
+                RecoverInterruptedSwitch(
+                    serverDirectory,
+                    stagingDirectory,
+                    rollbackDirectory,
+                    stagingOwnerPath,
+                    rollbackOwnerPath);
+                if (!Directory.Exists(serverDirectory) ||
+                    IsReparsePoint(serverDirectory))
+                {
+                    throw new InvalidDataException(
+                        "The recovered server directory is missing or unsafe.");
+                }
+                if (TryReadDeploymentMarker(serverDirectory, out var active) &&
+                    active.ImportId == deployment.ImportId &&
+                    string.Equals(
+                        active.ArchiveSha256,
+                        deployment.ArchiveSha256,
+                        StringComparison.Ordinal))
+                {
+                    return Succeeded(
+                        "PACKAGE_ALREADY_DEPLOYED",
+                        "该整合包已经部署，服务端保持停止。 ");
+                }
             }
 
             await ValidateArchiveAsync(
@@ -192,68 +198,77 @@ internal sealed partial class ServerPackageDeployer(
             }
 
             DeleteControlledRollback(rollbackDirectory, rollbackOwnerPath);
-            await WriteJsonAtomicallyAsync(
-                rollbackOwnerPath,
-                owner,
-                cancellationToken);
-            var oldMoved = false;
-            var newActivated = false;
-            try
+            using (await directoryAccessGate.EnterAsync(cancellationToken))
             {
-                Directory.Move(serverDirectory, rollbackDirectory);
-                oldMoved = true;
-                foreach (var relativePath in preservedPaths)
-                {
-                    MovePreservedPath(
-                        rollbackDirectory,
-                        stagingDirectory,
-                        relativePath);
-                }
-
-                Directory.Move(stagingDirectory, serverDirectory);
-                newActivated = true;
-                if (!TryReadDeploymentMarker(serverDirectory, out var marker) ||
-                    marker.ImportId != deployment.ImportId ||
-                    !string.Equals(
-                        marker.ArchiveSha256,
-                        deployment.ArchiveSha256,
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidDataException(
-                        "The activated server directory failed marker verification.");
-                }
-            }
-            catch (Exception exception) when (
-                exception is IOException or UnauthorizedAccessException or
-                    InvalidDataException or InvalidOperationException or
-                    NotSupportedException)
-            {
-                var rollbackErrors = RestoreAfterFailedSwitch(
-                    serverDirectory,
-                    stagingDirectory,
-                    rollbackDirectory,
+                await WriteJsonAtomicallyAsync(
                     rollbackOwnerPath,
-                    preservedPaths,
-                    oldMoved,
-                    newActivated);
-                if (rollbackErrors.Count == 0)
+                    owner,
+                    cancellationToken);
+                var oldMoved = false;
+                var newActivated = false;
+                try
                 {
-                    TryDeleteControlledStaging(
-                        stagingDirectory,
-                        stagingOwnerPath,
-                        owner);
-                }
+                    TransientFileSystem.MoveDirectory(
+                        serverDirectory,
+                        rollbackDirectory);
+                    oldMoved = true;
+                    foreach (var relativePath in preservedPaths)
+                    {
+                        MovePreservedPath(
+                            rollbackDirectory,
+                            stagingDirectory,
+                            relativePath);
+                    }
 
-                return Failed(
-                    rollbackErrors.Count == 0
-                        ? "PACKAGE_SWITCH_FAILED"
-                        : "PACKAGE_ROLLBACK_FAILED",
-                    AgentLog.Sanitize(
+                    TransientFileSystem.MoveDirectory(
+                        stagingDirectory,
+                        serverDirectory);
+                    newActivated = true;
+                    if (!TryReadDeploymentMarker(
+                            serverDirectory,
+                            out var marker) ||
+                        marker.ImportId != deployment.ImportId ||
+                        !string.Equals(
+                            marker.ArchiveSha256,
+                            deployment.ArchiveSha256,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidDataException(
+                            "The activated server directory failed marker verification.");
+                    }
+                }
+                catch (Exception exception) when (
+                    exception is IOException or UnauthorizedAccessException or
+                        InvalidDataException or InvalidOperationException or
+                        NotSupportedException)
+                {
+                    var rollbackErrors = RestoreAfterFailedSwitch(
+                        serverDirectory,
+                        stagingDirectory,
+                        rollbackDirectory,
+                        rollbackOwnerPath,
+                        preservedPaths,
+                        oldMoved,
+                        newActivated);
+                    if (rollbackErrors.Count == 0)
+                    {
+                        TryDeleteControlledStaging(
+                            stagingDirectory,
+                            stagingOwnerPath,
+                            owner);
+                    }
+
+                    return Failed(
                         rollbackErrors.Count == 0
-                            ? $"服务端目录切换失败，旧版本已恢复：{exception.Message}"
-                            : $"服务端目录切换失败，自动恢复不完整：{exception.Message}；" +
-                              string.Join("；", rollbackErrors),
-                        1800));
+                            ? "PACKAGE_SWITCH_FAILED"
+                            : "PACKAGE_ROLLBACK_FAILED",
+                        AgentLog.Sanitize(
+                            rollbackErrors.Count == 0
+                                ? $"服务端目录切换失败，旧版本已恢复：{exception.Message}"
+                                : $"服务端目录切换失败，自动恢复不完整：{exception.Message}；" +
+                                  string.Join("；", rollbackErrors),
+                            1800));
+                }
             }
 
             TryDeleteFile(stagingOwnerPath);
@@ -354,7 +369,9 @@ internal sealed partial class ServerPackageDeployer(
             }
         }
 
-        Directory.Move(rollbackDirectory, serverDirectory);
+        TransientFileSystem.MoveDirectory(
+            rollbackDirectory,
+            serverDirectory);
         TryDeleteFile(rollbackOwnerPath);
         TryDeleteControlledStaging(
             stagingDirectory,
@@ -382,7 +399,9 @@ internal sealed partial class ServerPackageDeployer(
         {
             if (newActivated && Directory.Exists(serverDirectory))
             {
-                Directory.Move(serverDirectory, stagingDirectory);
+                TransientFileSystem.MoveDirectory(
+                    serverDirectory,
+                    stagingDirectory);
             }
 
             foreach (var relativePath in preservedPaths.Reverse())
@@ -396,7 +415,9 @@ internal sealed partial class ServerPackageDeployer(
             if (!Directory.Exists(serverDirectory) &&
                 Directory.Exists(rollbackDirectory))
             {
-                Directory.Move(rollbackDirectory, serverDirectory);
+                TransientFileSystem.MoveDirectory(
+                    rollbackDirectory,
+                    serverDirectory);
             }
 
             TryDeleteFile(rollbackOwnerPath);
@@ -517,11 +538,11 @@ internal sealed partial class ServerPackageDeployer(
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         if (Directory.Exists(source))
         {
-            Directory.Move(source, destination);
+            TransientFileSystem.MoveDirectory(source, destination);
         }
         else
         {
-            File.Move(source, destination);
+            TransientFileSystem.MoveFile(source, destination);
         }
     }
 
@@ -541,11 +562,11 @@ internal sealed partial class ServerPackageDeployer(
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         if (Directory.Exists(source))
         {
-            Directory.Move(source, destination);
+            TransientFileSystem.MoveDirectory(source, destination);
         }
         else
         {
-            File.Move(source, destination);
+            TransientFileSystem.MoveFile(source, destination);
         }
     }
 

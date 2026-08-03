@@ -27,6 +27,7 @@ internal sealed class ServerTargetRuntime
     private readonly bool _requiresManagedMarker;
     private readonly IProcessRunner _processRunner;
     private readonly ServerPackageDeployer _packageDeployer;
+    private readonly ServerDirectoryAccessGate _serverDirectoryAccessGate = new();
     private readonly TimeSpan _saveFlushDelay;
     private readonly TimeSpan _stopCommandGracePeriod;
 
@@ -48,7 +49,10 @@ internal sealed class ServerTargetRuntime
             configuration.ServerId + ".json");
         _requiresManagedMarker = requiresManagedMarker;
         _processRunner = processRunner;
-        _packageDeployer = new ServerPackageDeployer(configuration, backupRoot);
+        _packageDeployer = new ServerPackageDeployer(
+            configuration,
+            backupRoot,
+            _serverDirectoryAccessGate);
         _saveFlushDelay = saveFlushDelay ?? DefaultSaveFlushDelay;
         _stopCommandGracePeriod =
             stopCommandGracePeriod ?? DefaultStopCommandGracePeriod;
@@ -212,35 +216,40 @@ internal sealed class ServerTargetRuntime
         CancellationToken cancellationToken)
     {
         var processId = await FindProcessIdAsync(cancellationToken);
-        var logPath = Configuration.GetLogPath();
-        DateTimeOffset? capturedAt = File.Exists(logPath)
-            ? File.GetLastWriteTimeUtc(logPath)
-            : null;
-        var settings = ServerPropertiesEditor.Read(Configuration.GetPropertiesPath());
-        var memorySettings = JvmMemorySettingsEditor.Read(
-            Configuration.GetMemorySettingsPath(),
-            Configuration.MaximumAllowedMemoryMiB);
-        if (settings is not null && memorySettings is not null)
+        using (await _serverDirectoryAccessGate.EnterAsync(cancellationToken))
         {
-            settings = settings with
+            var logPath = Configuration.GetLogPath();
+            DateTimeOffset? capturedAt = File.Exists(logPath)
+                ? File.GetLastWriteTimeUtc(logPath)
+                : null;
+            var settings = ServerPropertiesEditor.Read(
+                Configuration.GetPropertiesPath());
+            var memorySettings = JvmMemorySettingsEditor.Read(
+                Configuration.GetMemorySettingsPath(),
+                Configuration.MaximumAllowedMemoryMiB);
+            if (settings is not null && memorySettings is not null)
             {
-                InitialMemoryMiB = memorySettings.InitialMemoryMiB,
-                MaximumMemoryMiB = memorySettings.MaximumMemoryMiB,
-                MaximumAllowedMemoryMiB = Configuration.MaximumAllowedMemoryMiB
-            };
-        }
+                settings = settings with
+                {
+                    InitialMemoryMiB = memorySettings.InitialMemoryMiB,
+                    MaximumMemoryMiB = memorySettings.MaximumMemoryMiB,
+                    MaximumAllowedMemoryMiB =
+                        Configuration.MaximumAllowedMemoryMiB
+                };
+            }
 
-        return new ServerControlAgentTargetHeartbeat(
-            Configuration.ServerId,
-            Configuration.ConflictGroup,
-            Configuration.Port,
-            processId is not null,
-            processId,
-            settings,
-            Configuration.AllowedCommandPrefixes,
-            ConsoleTailReader.Read(logPath),
-            capturedAt,
-            Configuration.PackageDeploymentEnabled);
+            return new ServerControlAgentTargetHeartbeat(
+                Configuration.ServerId,
+                Configuration.ConflictGroup,
+                Configuration.Port,
+                processId is not null,
+                processId,
+                settings,
+                Configuration.AllowedCommandPrefixes,
+                ConsoleTailReader.Read(logPath),
+                capturedAt,
+                Configuration.PackageDeploymentEnabled);
+        }
     }
 
     internal async Task<AgentCommandResult> ExecuteAsync(
@@ -270,7 +279,9 @@ internal sealed class ServerTargetRuntime
                     command.ConsoleCommand,
                     cancellationToken),
             ServerControlCommandKind.ApplySettings =>
-                ApplySettings(command.Settings),
+                await ApplySettingsAsync(
+                    command.Settings,
+                    cancellationToken),
             ServerControlCommandKind.DeployPackage
                 when command.PackageDeployment is not null &&
                      packageArchivePath is not null =>
@@ -440,7 +451,9 @@ internal sealed class ServerTargetRuntime
             : Failed("COMMAND_FAILED", Message);
     }
 
-    private AgentCommandResult ApplySettings(ServerQuickSettings? settings)
+    private async Task<AgentCommandResult> ApplySettingsAsync(
+        ServerQuickSettings? settings,
+        CancellationToken cancellationToken)
     {
         if (settings is null ||
             settings.MaxPlayers is < 1 or > 1000 ||
@@ -459,50 +472,62 @@ internal sealed class ServerTargetRuntime
             return Failed("INVALID_SETTINGS", "服务器快捷设置无效。");
         }
 
-        var propertiesPath = Configuration.GetPropertiesPath();
-        var memorySettingsPath = Configuration.GetMemorySettingsPath();
-        byte[]? originalProperties = null;
-        byte[]? originalMemorySettings = null;
-        try
+        using (await _serverDirectoryAccessGate.EnterAsync(cancellationToken))
         {
-            JvmMemorySettingsEditor.EnsureCanApply(
-                memorySettingsPath,
-                initialMemoryMiB,
-                maximumMemoryMiB,
-                Configuration.MaximumAllowedMemoryMiB);
-            originalProperties = File.ReadAllBytes(propertiesPath);
-            originalMemorySettings = File.ReadAllBytes(memorySettingsPath);
-            ServerPropertiesEditor.Apply(
-                propertiesPath,
-                _backupRoot,
-                Configuration.ServerId,
-                settings);
-            JvmMemorySettingsEditor.Apply(
-                memorySettingsPath,
-                _backupRoot,
-                Configuration.ServerId,
-                initialMemoryMiB,
-                maximumMemoryMiB,
-                Configuration.MaximumAllowedMemoryMiB);
-            return Succeeded(
-                "SETTINGS_APPLIED",
-                "快捷设置和 JVM 启动内存已写入并备份；运行中的服务器不会自动重启，内存将在下次启动生效。");
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or
-                InvalidDataException or NotSupportedException)
-        {
-            var rollbackErrors = new List<string>();
-            TryRestoreFile(propertiesPath, originalProperties, rollbackErrors);
-            TryRestoreFile(memorySettingsPath, originalMemorySettings, rollbackErrors);
-            var rollbackMessage = rollbackErrors.Count == 0
-                ? "修改已自动回滚。"
-                : $"自动回滚失败：{string.Join("；", rollbackErrors)}";
-            return Failed(
-                rollbackErrors.Count == 0
-                    ? "SETTINGS_WRITE_FAILED"
-                    : "SETTINGS_ROLLBACK_FAILED",
-                AgentLog.Sanitize($"{exception.Message} {rollbackMessage}", 1000));
+            var propertiesPath = Configuration.GetPropertiesPath();
+            var memorySettingsPath = Configuration.GetMemorySettingsPath();
+            byte[]? originalProperties = null;
+            byte[]? originalMemorySettings = null;
+            try
+            {
+                JvmMemorySettingsEditor.EnsureCanApply(
+                    memorySettingsPath,
+                    initialMemoryMiB,
+                    maximumMemoryMiB,
+                    Configuration.MaximumAllowedMemoryMiB);
+                originalProperties = SharedFileReader.ReadAllBytes(propertiesPath);
+                originalMemorySettings =
+                    SharedFileReader.ReadAllBytes(memorySettingsPath);
+                ServerPropertiesEditor.Apply(
+                    propertiesPath,
+                    _backupRoot,
+                    Configuration.ServerId,
+                    settings);
+                JvmMemorySettingsEditor.Apply(
+                    memorySettingsPath,
+                    _backupRoot,
+                    Configuration.ServerId,
+                    initialMemoryMiB,
+                    maximumMemoryMiB,
+                    Configuration.MaximumAllowedMemoryMiB);
+                return Succeeded(
+                    "SETTINGS_APPLIED",
+                    "快捷设置和 JVM 启动内存已写入并备份；运行中的服务器不会自动重启，内存将在下次启动生效。");
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException or
+                    InvalidDataException or NotSupportedException)
+            {
+                var rollbackErrors = new List<string>();
+                TryRestoreFile(
+                    propertiesPath,
+                    originalProperties,
+                    rollbackErrors);
+                TryRestoreFile(
+                    memorySettingsPath,
+                    originalMemorySettings,
+                    rollbackErrors);
+                var rollbackMessage = rollbackErrors.Count == 0
+                    ? "修改已自动回滚。"
+                    : $"自动回滚失败：{string.Join("；", rollbackErrors)}";
+                return Failed(
+                    rollbackErrors.Count == 0
+                        ? "SETTINGS_WRITE_FAILED"
+                        : "SETTINGS_ROLLBACK_FAILED",
+                    AgentLog.Sanitize(
+                        $"{exception.Message} {rollbackMessage}",
+                        1000));
+            }
         }
     }
 

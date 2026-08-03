@@ -28,7 +28,7 @@ internal static class ServerPropertiesEditor
             return null;
         }
 
-        var values = Parse(File.ReadAllLines(path));
+        var values = Parse(SharedFileReader.ReadAllLines(path));
         return int.TryParse(values.GetValueOrDefault("max-players"), out var maxPlayers) &&
                int.TryParse(values.GetValueOrDefault("view-distance"), out var viewDistance) &&
                int.TryParse(
@@ -58,7 +58,7 @@ internal static class ServerPropertiesEditor
                 path);
         }
 
-        var lines = File.ReadAllLines(path).ToList();
+        var lines = SharedFileReader.ReadAllLines(path).ToList();
         var updated = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 0; index < lines.Count; index++)
         {
@@ -119,7 +119,7 @@ internal static class ServerPropertiesEditor
                 System.Globalization.CultureInfo.InvariantCulture),
             ["online-mode"] = "false"
         };
-        var lines = File.ReadAllLines(path).ToList();
+        var lines = SharedFileReader.ReadAllLines(path).ToList();
         var updated = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 0; index < lines.Count; index++)
         {

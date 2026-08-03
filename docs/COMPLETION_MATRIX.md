@@ -37,7 +37,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.14.2` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.1` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
 | API `0.26.2` | 已完成 | Vue 九页、票据预路由清理及长正文/短窗口滚动修复已部署；迁移 21、数据库与配置备份、原子切换、本机/公网健康及静态哈希均通过，生产证据见 [`API_RELEASE_0.26.2.md`](API_RELEASE_0.26.2.md) 与 [`evidence/API_0.26.2_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/API_0.26.2_PRODUCTION_DEPLOYMENT_2026-08-02.json) |
-| 整合包导入候选 | 已实现待生产验收 | API `0.27.0`、Publisher `1.0.0`、ServerControlAgent `0.3.0` 已实现 ZIP/MRPACK 分块续传、安全识别、人工复核、客户端 Test-only 私有 OSS 发布和 owl5 活动槽停服原子部署。固定目标、Velocity 保留、不可覆盖、主机固定文件、世界保留和失败回滚均有双层约束；完整解决方案 `622/622`、Vitest `8/8`、Playwright `14/14`、Impeccable 零项及三个目标运行时发布通过。尚未部署生产，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) |
+| 整合包导入 | 生产验收进行中 | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.0` 已部署。固定试包完成上传、识别和客户端 Test-only 发布；首次清单目录写入失败与第二次活动目录切换失败均自动回滚，正式通道、活动服停止状态和其他 Java PID 未变化。ServerControlAgent `0.3.1` 已修复独立心跳读取与 Windows 目录切换竞争，代理 `46/46`、完整解决方案 `633/633` 通过；仍待部署 `0.3.1`、第三次固定试包、隐藏关闭目录和原活动目录恢复验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
 | 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |

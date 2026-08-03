@@ -78,7 +78,7 @@ internal static partial class JvmMemorySettingsEditor
             maximumMemoryMiB,
             maximumAllowedMemoryMiB);
 
-        var originalBytes = File.ReadAllBytes(path);
+        var originalBytes = SharedFileReader.ReadAllBytes(path);
         var text = Encoding.Latin1.GetString(originalBytes);
         var updated = InitialMemoryRegex().Replace(
             text,
@@ -115,7 +115,7 @@ internal static partial class JvmMemorySettingsEditor
     }
 
     private static string ReadBytePreservingText(string path) =>
-        Encoding.Latin1.GetString(File.ReadAllBytes(path));
+        Encoding.Latin1.GetString(SharedFileReader.ReadAllBytes(path));
 
     private static bool IsValid(
         int initialMemoryMiB,
