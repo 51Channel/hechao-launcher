@@ -26,6 +26,28 @@ public sealed record PackagePublisherAgentState(
     bool Connected,
     DateTimeOffset? LastSeenAt);
 
+public enum PackagePublisherClaimStatus
+{
+    Valid,
+    NotFound,
+    Conflict
+}
+
+public sealed record PackagePublisherClaimResult(
+    PackagePublisherClaimStatus Status,
+    AdminPackageImportRecord? Import = null);
+
+public enum PackagePublisherMutationStatus
+{
+    Success,
+    NotFound,
+    ClaimConflict
+}
+
+public sealed record PackagePublisherMutationResult(
+    PackagePublisherMutationStatus Status,
+    AdminPackageImportRecord? Import = null);
+
 public sealed class PackageImportRepository
 {
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
@@ -508,22 +530,44 @@ public sealed class PackageImportRepository
         CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(
-            """
-            INSERT INTO launcher.package_publisher_agents
-                (agent_id, agent_version, captured_at, last_seen_at)
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT (agent_id) DO UPDATE
-            SET agent_version = EXCLUDED.agent_version,
-                captured_at = EXCLUDED.captured_at,
-                last_seen_at = EXCLUDED.last_seen_at;
-            """,
-            connection);
-        command.Parameters.AddWithValue(request.AgentId);
-        command.Parameters.AddWithValue(request.AgentVersion);
-        command.Parameters.AddWithValue(request.CapturedAt);
-        command.Parameters.AddWithValue(receivedAt);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var command = new NpgsqlCommand(
+                         """
+                         INSERT INTO launcher.package_publisher_agents
+                             (agent_id, agent_version, captured_at, last_seen_at)
+                         VALUES ($1, $2, $3, $4)
+                         ON CONFLICT (agent_id) DO UPDATE
+                         SET agent_version = EXCLUDED.agent_version,
+                             captured_at = EXCLUDED.captured_at,
+                             last_seen_at = EXCLUDED.last_seen_at;
+                         """,
+                         connection,
+                         transaction))
+        {
+            command.Parameters.AddWithValue(request.AgentId);
+            command.Parameters.AddWithValue(request.AgentVersion.Trim());
+            command.Parameters.AddWithValue(request.CapturedAt);
+            command.Parameters.AddWithValue(receivedAt);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var renew = new NpgsqlCommand(
+                         """
+                         UPDATE launcher.package_imports
+                         SET publisher_lease_expires_at = $2
+                         WHERE status = 'PublishingClient'
+                           AND publisher_claimed_by = $1;
+                         """,
+                         connection,
+                         transaction))
+        {
+            renew.Parameters.AddWithValue(request.AgentId);
+            renew.Parameters.AddWithValue(
+                receivedAt.AddMinutes(options.PublisherLeaseMinutes));
+            await renew.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task<PackagePublisherAgentState> GetPublisherAgentStateAsync(
@@ -617,6 +661,240 @@ public sealed class PackageImportRepository
 
         await transaction.CommitAsync(cancellationToken);
         return new PackagePublisherClaimResponse(delivery, now);
+    }
+
+    public async Task<bool> CanOpenPublisherArchiveAsync(
+        Guid importId,
+        string agentId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM launcher.package_imports
+                WHERE id = $1
+                  AND status = 'PublishingClient'
+                  AND publisher_claimed_by = $2
+                  AND publisher_lease_expires_at >= $3
+            );
+            """,
+            connection);
+        command.Parameters.AddWithValue(importId);
+        command.Parameters.AddWithValue(agentId);
+        command.Parameters.AddWithValue(now);
+        return await command.ExecuteScalarAsync(cancellationToken) is true;
+    }
+
+    public async Task<PackagePublisherClaimResult> GetPublisherClaimAsync(
+        Guid importId,
+        string agentId,
+        int attemptCount,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT status, publisher_claimed_by, publisher_attempt_count,
+                   publisher_lease_expires_at
+            FROM launcher.package_imports
+            WHERE id = $1;
+            """,
+            connection);
+        command.Parameters.AddWithValue(importId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return new PackagePublisherClaimResult(
+                PackagePublisherClaimStatus.NotFound);
+        }
+
+        var valid = string.Equals(
+                        reader.GetString(0),
+                        PackageImportStatus.PublishingClient.ToString(),
+                        StringComparison.Ordinal) &&
+                    !reader.IsDBNull(1) &&
+                    string.Equals(reader.GetString(1), agentId, StringComparison.Ordinal) &&
+                    reader.GetInt32(2) == attemptCount &&
+                    !reader.IsDBNull(3) &&
+                    new DateTimeOffset(reader.GetDateTime(3)) >= now;
+        await reader.CloseAsync();
+        return valid
+            ? new PackagePublisherClaimResult(
+                PackagePublisherClaimStatus.Valid,
+                await GetAsync(importId, cancellationToken))
+            : new PackagePublisherClaimResult(PackagePublisherClaimStatus.Conflict);
+    }
+
+    public async Task<PackagePublisherMutationResult> CompletePublisherSuccessAsync(
+        Guid importId,
+        string agentId,
+        int attemptCount,
+        string manifestSha256,
+        int uploadedObjects,
+        int existingObjects,
+        long uploadedBytes,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.package_imports
+            SET status = 'QueuedForDeployment',
+                manifest_sha256 = $5,
+                publisher_uploaded_objects = $6,
+                publisher_existing_objects = $7,
+                publisher_uploaded_bytes = $8,
+                publisher_claimed_by = NULL,
+                publisher_claimed_at = NULL,
+                publisher_lease_expires_at = NULL,
+                error_code = NULL,
+                error_message = NULL,
+                revision = revision + 1,
+                updated_at = $4
+            WHERE id = $1
+              AND status = 'PublishingClient'
+              AND publisher_claimed_by = $2
+              AND publisher_attempt_count = $3
+              AND publisher_lease_expires_at >= $4;
+            """,
+            connection,
+            transaction);
+        command.Parameters.AddWithValue(importId);
+        command.Parameters.AddWithValue(agentId);
+        command.Parameters.AddWithValue(attemptCount);
+        command.Parameters.AddWithValue(now);
+        command.Parameters.AddWithValue(manifestSha256);
+        command.Parameters.AddWithValue(uploadedObjects);
+        command.Parameters.AddWithValue(existingObjects);
+        command.Parameters.AddWithValue(uploadedBytes);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+        {
+            return new PackagePublisherMutationResult(
+                await ExistsAsync(connection, transaction, importId, cancellationToken)
+                    ? PackagePublisherMutationStatus.ClaimConflict
+                    : PackagePublisherMutationStatus.NotFound);
+        }
+
+        await WriteEventAsync(
+            connection,
+            transaction,
+            importId,
+            PackageImportStatus.QueuedForDeployment,
+            "CLIENT_PUBLISHED",
+            "客户端对象和签名清单已校验，等待服务端原子部署。",
+            now,
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new PackagePublisherMutationResult(
+            PackagePublisherMutationStatus.Success,
+            await GetAsync(importId, cancellationToken));
+    }
+
+    public async Task<PackagePublisherMutationResult> CompletePublisherFailureAsync(
+        Guid importId,
+        string agentId,
+        int attemptCount,
+        string code,
+        string message,
+        bool retryable,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var safeMessage = message.Trim();
+        if (safeMessage.Length > 2000)
+        {
+            safeMessage = safeMessage[..2000];
+        }
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        string? status = null;
+        await using (var command = new NpgsqlCommand(
+                         """
+                         UPDATE launcher.package_imports
+                         SET status = CASE
+                                 WHEN $6 AND publisher_attempt_count < 5
+                                     THEN 'QueuedForPublishing'
+                                 ELSE 'Failed'
+                             END,
+                             publisher_claimed_by = NULL,
+                             publisher_claimed_at = NULL,
+                             publisher_lease_expires_at = NULL,
+                             error_code = $5,
+                             error_message = $7,
+                             completed_at = CASE
+                                 WHEN $6 AND publisher_attempt_count < 5
+                                     THEN NULL
+                                 ELSE $4
+                             END,
+                             revision = revision + 1,
+                             updated_at = $4
+                         WHERE id = $1
+                           AND status = 'PublishingClient'
+                           AND publisher_claimed_by = $2
+                           AND publisher_attempt_count = $3
+                           AND publisher_lease_expires_at >= $4
+                         RETURNING status;
+                         """,
+                         connection,
+                         transaction))
+        {
+            command.Parameters.AddWithValue(importId);
+            command.Parameters.AddWithValue(agentId);
+            command.Parameters.AddWithValue(attemptCount);
+            command.Parameters.AddWithValue(now);
+            command.Parameters.AddWithValue(code);
+            command.Parameters.AddWithValue(retryable);
+            command.Parameters.AddWithValue(safeMessage);
+            status = await command.ExecuteScalarAsync(cancellationToken) as string;
+        }
+
+        if (status is null)
+        {
+            return new PackagePublisherMutationResult(
+                await ExistsAsync(connection, transaction, importId, cancellationToken)
+                    ? PackagePublisherMutationStatus.ClaimConflict
+                    : PackagePublisherMutationStatus.NotFound);
+        }
+
+        var nextStatus = Enum.Parse<PackageImportStatus>(status);
+        await WriteEventAsync(
+            connection,
+            transaction,
+            importId,
+            nextStatus,
+            nextStatus == PackageImportStatus.Failed
+                ? code
+                : "PUBLISH_RETRY_QUEUED",
+            nextStatus == PackageImportStatus.Failed
+                ? safeMessage
+                : "客户端发布未完成，任务已保留并等待下一次代理重试。",
+            now,
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new PackagePublisherMutationResult(
+            PackagePublisherMutationStatus.Success,
+            await GetAsync(importId, cancellationToken));
+    }
+
+    private static async Task<bool> ExistsAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid importId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            "SELECT EXISTS (SELECT 1 FROM launcher.package_imports WHERE id = $1);",
+            connection,
+            transaction);
+        command.Parameters.AddWithValue(importId);
+        return await command.ExecuteScalarAsync(cancellationToken) is true;
     }
 
     private static AdminPackageImportRecord ReadImport(NpgsqlDataReader reader) =>

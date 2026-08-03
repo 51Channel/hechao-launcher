@@ -305,6 +305,16 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+    options.AddPolicy("internal-package-publisher", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 240,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
     options.AddPolicy("internal-alerts", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
@@ -488,6 +498,8 @@ builder.Services.AddSingleton<ServerControlTokenValidator>();
 builder.Services.AddSingleton<ServerControlRepository>();
 builder.Services.AddSingleton<PackageImportRepository>();
 builder.Services.AddSingleton<PackageImportStorage>();
+builder.Services.AddSingleton<PackagePublisherTokenValidator>();
+builder.Services.AddSingleton<PackagePublisherCompletionService>();
 builder.Services.AddHostedService<PackageImportAnalysisService>();
 builder.Services.AddHostedService<ServerRuntimeSampleCleanupService>();
 builder.Services.AddSingleton<ApiRequestMetricsCollector>();
@@ -652,6 +664,7 @@ app.MapPost(
         "/v1/internal/server-control/commands/{commandId:guid}/complete",
         CompleteServerControlCommandAsync)
     .RequireRateLimiting("internal-server-control");
+app.MapPackagePublisher();
 app.MapPost(
         "/v1/internal/operational-alerts/events",
         ImportOperationalAlertEventAsync)

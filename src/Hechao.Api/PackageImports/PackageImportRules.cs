@@ -101,6 +101,83 @@ public static partial class PackageImportRules
             StringComparison.Ordinal) &&
         target.Port == ActivityPort;
 
+    public static bool IsValidPublisherAgentId(string? agentId) =>
+        agentId is not null && PublisherAgentIdPattern().IsMatch(agentId);
+
+    public static IReadOnlyDictionary<string, string[]> ValidatePublisherHeartbeat(
+        PackagePublisherHeartbeatRequest request,
+        DateTimeOffset now)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (!IsValidPublisherAgentId(request.AgentId))
+        {
+            errors["agentId"] = ["发布代理 ID 无效。"];
+        }
+
+        var version = request.AgentVersion?.Trim() ?? string.Empty;
+        if (version.Length is < 1 or > 40 || version.Any(char.IsControl))
+        {
+            errors["agentVersion"] = ["发布代理版本无效。"];
+        }
+
+        if (request.CapturedAt < now.AddMinutes(-10) ||
+            request.CapturedAt > now.AddMinutes(2))
+        {
+            errors["capturedAt"] = ["发布代理时钟与 API 相差过大。"];
+        }
+
+        return errors;
+    }
+
+    public static IReadOnlyDictionary<string, string[]> ValidatePublisherCompletion(
+        PackagePublisherCompletionRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (!IsValidPublisherAgentId(request.AgentId))
+        {
+            errors["agentId"] = ["发布代理 ID 无效。"];
+        }
+
+        if (request.AttemptCount is < 1 or > 5)
+        {
+            errors["attemptCount"] = ["发布任务尝试次数无效。"];
+        }
+
+        if (!ResultCodePattern().IsMatch(request.ResultCode ?? string.Empty))
+        {
+            errors["resultCode"] = ["发布结果代码无效。"];
+        }
+
+        var message = request.ResultMessage?.Trim() ?? string.Empty;
+        if (message.Length is < 1 or > 2000 || message.Any(char.IsControl))
+        {
+            errors["resultMessage"] = ["发布结果说明必须为 1 至 2000 个可显示字符。"];
+        }
+
+        if (request.UploadedObjects < 0 ||
+            request.ExistingObjects < 0 ||
+            request.UploadedBytes < 0 ||
+            request.UploadedObjects > 200_000 ||
+            request.ExistingObjects > 200_000)
+        {
+            errors["statistics"] = ["发布对象统计无效。"];
+        }
+
+        if (request.Outcome == PackagePublisherJobOutcome.Succeeded &&
+            string.IsNullOrWhiteSpace(request.ManifestEnvelopeBase64))
+        {
+            errors["manifestEnvelopeBase64"] = ["成功结果必须包含签名清单。"];
+        }
+
+        if (request.Outcome == PackagePublisherJobOutcome.Failed &&
+            request.ManifestEnvelopeBase64 is not null)
+        {
+            errors["manifestEnvelopeBase64"] = ["失败结果不能包含签名清单。"];
+        }
+
+        return errors;
+    }
+
     private static void ValidateText(
         string? value,
         string field,
@@ -119,6 +196,12 @@ public static partial class PackageImportRules
 
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$", RegexOptions.CultureInvariant)]
     private static partial Regex ServerIdPattern();
+
+    [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$", RegexOptions.CultureInvariant)]
+    private static partial Regex PublisherAgentIdPattern();
+
+    [GeneratedRegex("^[A-Z][A-Z0-9_]{0,79}$", RegexOptions.CultureInvariant)]
+    private static partial Regex ResultCodePattern();
 
     [GeneratedRegex("^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$", RegexOptions.CultureInvariant)]
     private static partial Regex VersionPattern();

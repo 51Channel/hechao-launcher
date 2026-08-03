@@ -76,6 +76,50 @@ public sealed class PackageImportRulesTests
             target with { ConflictGroup = "owl5-survival-slot", Port = 25565 }));
     }
 
+    [Fact]
+    public void ValidatePublisherHeartbeat_RejectsClockDriftAndInvalidAgent()
+    {
+        var now = DateTimeOffset.Parse("2026-08-03T08:00:00Z");
+        var errors = PackageImportRules.ValidatePublisherHeartbeat(
+            new PackagePublisherHeartbeatRequest(
+                "Publisher Main",
+                "1.0.0",
+                now.AddMinutes(-11)),
+            now);
+
+        Assert.Contains("agentId", errors.Keys);
+        Assert.Contains("capturedAt", errors.Keys);
+    }
+
+    [Fact]
+    public void ValidatePublisherCompletion_RequiresManifestOnlyOnSuccess()
+    {
+        var success = new PackagePublisherCompletionRequest(
+            "publisher-main",
+            1,
+            PackagePublisherJobOutcome.Succeeded,
+            "PUBLISHED",
+            "发布完成。",
+            Convert.ToBase64String([1, 2, 3]),
+            1,
+            2,
+            3);
+
+        Assert.Empty(PackageImportRules.ValidatePublisherCompletion(success));
+        Assert.Contains(
+            "manifestEnvelopeBase64",
+            PackageImportRules.ValidatePublisherCompletion(
+                success with { ManifestEnvelopeBase64 = null }).Keys);
+        Assert.Contains(
+            "manifestEnvelopeBase64",
+            PackageImportRules.ValidatePublisherCompletion(
+                success with
+                {
+                    Outcome = PackagePublisherJobOutcome.Failed,
+                    ResultCode = "PUBLISH_FAILED"
+                }).Keys);
+    }
+
     private static AdminPackageImportRecord CreateImport(Guid importId, bool blocking)
     {
         var issue = blocking
