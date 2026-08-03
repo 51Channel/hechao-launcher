@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Hechao.Contracts\Hechao.Contracts.csproj" />
     <ProjectReference Include="..\Hechao.Distribution\Hechao.Distribution.csproj" />
+    <ProjectReference Include="..\Hechao.Modpack\Hechao.Modpack.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -15,6 +15,7 @@ using Hechao.Api.Diagnostics;
 using Hechao.Api.Distribution;
 using Hechao.Api.LuckPerms;
 using Hechao.Api.Monitoring;
+using Hechao.Api.PackageImports;
 using Hechao.Api.ServerControl;
 using Hechao.Api.Telemetry;
 using Hechao.Api.Velocity;
@@ -188,6 +189,12 @@ builder.Services.AddOptions<DiagnosticUploadOptions>()
     .Validate(
         options => options.CleanupMinutes is >= 5 and <= 1440,
         "DiagnosticUploads:CleanupMinutes must be between 5 and 1440.")
+    .ValidateOnStart();
+builder.Services.AddOptions<PackageImportOptions>()
+    .Bind(builder.Configuration.GetSection(PackageImportOptions.SectionName))
+    .Validate(
+        options => options.IsValid(),
+        "PackageImports configuration is invalid.")
     .ValidateOnStart();
 builder.Services.AddOptions<LauncherTelemetryOptions>()
     .Bind(builder.Configuration.GetSection(LauncherTelemetryOptions.SectionName))
@@ -479,6 +486,9 @@ builder.Services.AddSingleton<ServerHeartbeatRepository>();
 builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
 builder.Services.AddSingleton<ServerControlTokenValidator>();
 builder.Services.AddSingleton<ServerControlRepository>();
+builder.Services.AddSingleton<PackageImportRepository>();
+builder.Services.AddSingleton<PackageImportStorage>();
+builder.Services.AddHostedService<PackageImportAnalysisService>();
 builder.Services.AddHostedService<ServerRuntimeSampleCleanupService>();
 builder.Services.AddSingleton<ApiRequestMetricsCollector>();
 builder.Services.AddSingleton<OperationalAlertTokenValidator>();
@@ -765,6 +775,7 @@ adminApi.MapPost(
         AcknowledgeAdminOperationalAlertAsync)
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 app.MapDiagnosticUploads(adminApi);
+adminApi.MapAdminPackageImports();
 
 app.MapAdminWebEndpoints();
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");

@@ -97,4 +97,25 @@ public sealed class DatabaseMigrationTests
         Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("cmd.exe", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void PackageImportMigration_UsesReviewGateAndLeasedPublisherJobs()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.022_package_imports.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("package_imports", sql, StringComparison.Ordinal);
+        Assert.Contains("AwaitingReview", sql, StringComparison.Ordinal);
+        Assert.Contains("QueuedForPublishing", sql, StringComparison.Ordinal);
+        Assert.Contains("publisher_lease_expires_at", sql, StringComparison.Ordinal);
+        Assert.Contains("package_import_events", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("access_key", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("private_key", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }
