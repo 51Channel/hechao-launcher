@@ -47,6 +47,12 @@ internal static class PublisherProgram
                 case "restore-signing-recovery":
                     RestoreSigningRecovery(options);
                     return 0;
+                case "protect-package-agent-token":
+                    ProtectPackageAgentToken(options);
+                    return 0;
+                case "run-package-agent":
+                    await RunPackageAgentAsync(options);
+                    return 0;
                 default:
                     throw new PublisherUsageException($"Unknown command: {args[0]}");
             }
@@ -118,75 +124,27 @@ internal static class PublisherProgram
             ? DateTimeOffset.Parse(publishedAtValue, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)
             : DateTimeOffset.UtcNow;
 
-        if (!Directory.Exists(sourceDirectory))
-        {
-            throw new PublisherUsageException($"Source directory does not exist: {sourceDirectory}");
-        }
-
-        if (!File.Exists(signingKeyInput.Path))
-        {
-            throw new PublisherUsageException($"Private key does not exist: {signingKeyInput.Path}");
-        }
-
-        if (IsWithin(sourceDirectory, outputDirectory) ||
-            IsWithin(sourceDirectory, signingKeyInput.Path))
-        {
-            throw new PublisherUsageException(
-                "Output directories and private keys must not be placed inside the client source directory.");
-        }
-
-        ManifestValidator.ValidateProfileId(profileId);
-        var files = new List<ClientManifestFile>();
-        long totalBytes = 0;
-        foreach (var filePath in EnumerateSourceFiles(sourceDirectory)
-                     .OrderBy(
-                         path => Path.GetRelativePath(sourceDirectory, path).Replace('\\', '/'),
-                         StringComparer.Ordinal))
-        {
-            var relativePath = Path.GetRelativePath(sourceDirectory, filePath).Replace('\\', '/');
-            ManifestValidator.ValidateManagedPath(relativePath);
-            var file = new FileInfo(filePath);
-            var digest = await FileHashing.ComputeSha256Async(filePath);
-            var objectRelativePath = $"objects/{digest[..2]}/{digest}";
-            var objectPath = Path.Combine(outputDirectory, objectRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            await CopyObjectAsync(filePath, objectPath, file.Length, digest);
-
-            files.Add(new ClientManifestFile(
-                relativePath,
-                file.Length,
-                digest,
-                new Uri(objectBaseUri, objectRelativePath).AbsoluteUri,
-                Required: true));
-            totalBytes = checked(totalBytes + file.Length);
-        }
-
         var deletePaths = options.All("delete").ToArray();
-        var manifest = new ClientManifest(
-            ManifestValidator.CurrentSchemaVersion,
+        var result = await ClientDistributionBuilder.BuildAsync(
+            new ClientDistributionBuildOptions(
+            sourceDirectory,
+            outputDirectory,
             profileId,
             version,
             minecraftVersion,
             javaVersion,
             loader,
             loaderVersion,
-            publishedAt.ToUniversalTime(),
-            files,
-            deletePaths);
-
-        using var signingKey = signingKeyInput.Load();
-        var envelope = SignedManifestCodec.Sign(manifest, keyId, signingKey);
-        var envelopeBytes = ManifestJson.SerializeEnvelope(envelope);
-        var manifestDirectory = Path.Combine(outputDirectory, "manifests");
-        var manifestPath = Path.Combine(manifestDirectory, profileId + ".json");
-        Directory.CreateDirectory(manifestDirectory);
-        await WriteAtomicallyAsync(manifestPath, envelopeBytes);
-
-        var envelopeDigest = Convert.ToHexString(SHA256.HashData(envelopeBytes)).ToLowerInvariant();
+            keyId,
+            signingKeyInput,
+            objectBaseUri,
+            publishedAt,
+            deletePaths));
         Console.WriteLine($"Published profile: {profileId} {version}");
-        Console.WriteLine($"Files: {files.Count}");
-        Console.WriteLine($"Bytes: {totalBytes}");
-        Console.WriteLine($"Manifest: {manifestPath}");
-        Console.WriteLine($"Manifest SHA-256: {envelopeDigest}");
+        Console.WriteLine($"Files: {result.FileCount}");
+        Console.WriteLine($"Bytes: {result.TotalBytes}");
+        Console.WriteLine($"Manifest: {result.ManifestPath}");
+        Console.WriteLine($"Manifest SHA-256: {result.ManifestSha256}");
     }
 
     private static void Verify(CommandOptions options)
@@ -366,76 +324,62 @@ internal static class PublisherProgram
         Console.WriteLine($"Encrypted blob SHA-256: {metadata.EncryptedBlobSha256}");
     }
 
-    private static IEnumerable<string> EnumerateSourceFiles(string sourceDirectory)
+    private static void ProtectPackageAgentToken(CommandOptions options)
     {
-        var pending = new Stack<DirectoryInfo>();
-        pending.Push(new DirectoryInfo(sourceDirectory));
-        while (pending.Count > 0)
+        if (!Console.IsInputRedirected)
         {
-            var directory = pending.Pop();
-            if ((directory.Attributes & FileAttributes.ReparsePoint) != 0)
-            {
-                throw new IOException($"Symbolic links and reparse points are not allowed: {directory.FullName}");
-            }
-
-            foreach (var childDirectory in directory.EnumerateDirectories().OrderBy(item => item.Name, StringComparer.Ordinal))
-            {
-                pending.Push(childDirectory);
-            }
-
-            foreach (var file in directory.EnumerateFiles().OrderBy(item => item.Name, StringComparer.Ordinal))
-            {
-                if ((file.Attributes & FileAttributes.ReparsePoint) != 0)
-                {
-                    throw new IOException($"Symbolic links and reparse points are not allowed: {file.FullName}");
-                }
-
-                yield return file.FullName;
-            }
+            throw new PublisherUsageException(
+                "The package publisher token must be provided as one redirected input line.");
         }
+
+        var token = Console.ReadLine() ?? string.Empty;
+        PackagePublisherProtectedTokenStore.Protect(
+            token,
+            options.Required("output"));
+        Console.WriteLine("Protected package publisher agent token.");
     }
 
-    private static async Task CopyObjectAsync(
-        string sourcePath,
-        string objectPath,
-        long expectedSize,
-        string expectedSha256)
+    private static async Task RunPackageAgentAsync(CommandOptions options)
     {
-        if (await FileHashing.MatchesAsync(objectPath, expectedSize, expectedSha256))
+        var configuration = PackagePublisherAgentConfiguration.Load(
+            options.Required("config"));
+        Directory.CreateDirectory(configuration.StateDirectory);
+        var token = PackagePublisherProtectedTokenStore.Read(
+            configuration.TokenPath);
+        var handler = new SocketsHttpHandler
         {
-            return;
-        }
-
-        Directory.CreateDirectory(Path.GetDirectoryName(objectPath)!);
-        var temporaryPath = objectPath + ".tmp-" + Guid.NewGuid().ToString("N");
-        try
+            AllowAutoRedirect = false,
+            AutomaticDecompression =
+                System.Net.DecompressionMethods.GZip |
+                System.Net.DecompressionMethods.Deflate |
+                System.Net.DecompressionMethods.Brotli,
+            ConnectTimeout = TimeSpan.FromSeconds(10),
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            UseProxy = false
+        };
+        using var httpClient = new HttpClient(handler)
         {
-            File.Copy(sourcePath, temporaryPath, overwrite: false);
-            if (!await FileHashing.MatchesAsync(temporaryPath, expectedSize, expectedSha256))
-            {
-                throw new ManifestIntegrityException($"Object verification failed after copying {sourcePath}.");
-            }
-
-            File.Move(temporaryPath, objectPath, overwrite: true);
-        }
-        finally
+            BaseAddress = new Uri(
+                configuration.ApiBaseUrl.TrimEnd('/') + "/",
+                UriKind.Absolute),
+            Timeout = Timeout.InfiniteTimeSpan
+        };
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            PublisherProductInfo.UserAgent);
+        var worker = new PackagePublisherWorker(
+            configuration,
+            new PackagePublisherApiClient(
+                httpClient,
+                configuration.AgentId,
+                token));
+        using var cancellation = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, eventArgs) =>
         {
-            File.Delete(temporaryPath);
-        }
-    }
-
-    private static async Task WriteAtomicallyAsync(string path, byte[] content)
-    {
-        var temporaryPath = path + ".tmp-" + Guid.NewGuid().ToString("N");
-        try
-        {
-            await File.WriteAllBytesAsync(temporaryPath, content);
-            File.Move(temporaryPath, path, overwrite: true);
-        }
-        finally
-        {
-            File.Delete(temporaryPath);
-        }
+            eventArgs.Cancel = true;
+            cancellation.Cancel();
+        };
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => cancellation.Cancel();
+        await worker.RunAsync(cancellation.Token);
     }
 
     private static Uri ParseObjectBaseUri(string value)
@@ -461,21 +405,6 @@ internal static class PublisherProgram
         {
             throw new PublisherUsageException($"Refusing to overwrite an existing key file: {path}");
         }
-    }
-
-    private static bool IsWithin(string rootPath, string candidatePath)
-    {
-        var root = Path.GetFullPath(rootPath);
-        var candidate = Path.GetFullPath(candidatePath);
-        if (string.Equals(root, candidate, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        var rootPrefix = root.EndsWith(Path.DirectorySeparatorChar)
-            ? root
-            : root + Path.DirectorySeparatorChar;
-        return candidate.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase);
     }
 
     private static void PrintUsage()
@@ -531,6 +460,12 @@ internal static class PublisherProgram
         Console.WriteLine("          --key-id <id> --trust-bundle <path>");
         Console.WriteLine("          --output-dpapi <path> --metadata-output <path>");
         Console.WriteLine("          --dpapi-entropy-label <label>");
+        Console.WriteLine();
+        Console.WriteLine("Protect the package publisher API token from one redirected input line:");
+        Console.WriteLine("  protect-package-agent-token --output <path>");
+        Console.WriteLine();
+        Console.WriteLine("Run the resumable package publisher agent:");
+        Console.WriteLine("  run-package-agent --config <absolute-json-path>");
     }
 }
 
