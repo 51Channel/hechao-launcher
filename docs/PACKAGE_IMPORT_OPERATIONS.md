@@ -97,10 +97,13 @@ sudo bash deploy/linux/configure-package-imports.sh \
   /etc/hechao-launcher-api/environment true <publisher-token-sha256>
 ```
 
-systemd 单元必须允许 API 写入
-`/var/lib/hechao-launcher-api/package-imports`。正式启用前先部署更新后的单元并执行
-`systemctl daemon-reload`；只有制品、数据库备份、Publisher 和 owl5 代理均验收后，
-才重启 API。回滚开关使用同一脚本写入 `false`，不删除暂存目录：
+systemd 单元必须允许 API 同时写入
+`/var/lib/hechao-launcher-api/package-imports` 和
+`/var/lib/hechao-launcher-api/manifests`。前者保存上传与分析状态，后者在 Publisher
+完成客户端发布回调后落盘签名发布清单；任一路径在 `ProtectSystem=strict` 下遗漏都会让
+任务失败。正式启用前先部署更新后的单元并执行 `systemctl daemon-reload`；只有制品、
+数据库备份、Publisher 和 owl5 代理均验收后，才重启 API。回滚开关使用同一脚本写入
+`false`，不删除暂存目录：
 
 ```bash
 sudo bash deploy/linux/configure-package-imports.sh \

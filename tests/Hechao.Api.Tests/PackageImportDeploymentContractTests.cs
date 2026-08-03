@@ -5,6 +5,27 @@ namespace Hechao.Api.Tests;
 public sealed class PackageImportDeploymentContractTests
 {
     [Fact]
+    public void SystemdSandbox_AllowsPackageAndReleaseManifestWrites()
+    {
+        var unit = ReadRepositoryFile(
+            "deploy",
+            "linux",
+            "hechao-launcher-api.service");
+        var readWritePaths = unit
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Single(line => line.StartsWith("ReadWritePaths=", StringComparison.Ordinal));
+
+        Assert.Contains(
+            "-/var/lib/hechao-launcher-api/package-imports",
+            readWritePaths,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-/var/lib/hechao-launcher-api/manifests",
+            readWritePaths,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Orchestration_OnlyQueuesDeployAndPublishesTestChannel()
     {
         var source = ReadRepositoryFile(
