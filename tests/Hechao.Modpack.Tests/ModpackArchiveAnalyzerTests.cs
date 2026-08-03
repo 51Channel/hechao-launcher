@@ -1,0 +1,170 @@
+using System.IO.Compression;
+using System.Text;
+using System.Text.Json;
+using Hechao.Modpack;
+
+namespace Hechao.Modpack.Tests;
+
+public sealed class ModpackArchiveAnalyzerTests : IDisposable
+{
+    private readonly string root = Path.Combine(
+        Path.GetTempPath(),
+        "hechao-modpack-tests-" + Guid.NewGuid().ToString("N"));
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_CanonicalArchiveCreatesTwoSafeParts()
+    {
+        var source = CreateArchive(
+            ("Pack/hechao-pack.json", JsonSerializer.Serialize(new
+            {
+                schemaVersion = 1,
+                id = "summer-fabric-1.20.1",
+                displayName = "夏日活动",
+                version = "1.2.3",
+                minecraftVersion = "1.20.1",
+                javaMajorVersion = 17,
+                loader = "Fabric",
+                loaderVersion = "0.16.14",
+                clientRoot = "client",
+                serverRoot = "server",
+                sharedRoot = "shared"
+            })),
+            ("Pack/client/versions/1.20.1/1.20.1.json", "{}"),
+            ("Pack/shared/mods/common.jar", "shared-mod"),
+            ("Pack/server/server.properties", "max-players=24\nserver-port=25568\n"),
+            ("Pack/server/start.bat", "java -jar fabric-server-launch.jar nogui\n"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "out"));
+
+        Assert.Equal(ModpackLayoutKind.Canonical, result.Layout);
+        Assert.False(result.HasBlockingIssues);
+        Assert.Equal("summer-fabric-1.20.1", result.Metadata.SuggestedProfileId);
+        Assert.Equal("1.2.3", result.Metadata.Version);
+        Assert.Equal("Fabric", result.Metadata.Loader);
+        Assert.Equal(24, result.Metadata.MaximumPlayers);
+        Assert.NotNull(result.Client);
+        Assert.NotNull(result.Server);
+        Assert.Equal(2, result.Client!.FileCount);
+        Assert.Equal(3, result.Server!.FileCount);
+        Assert.Equal(
+            ["mods/common.jar", "versions/1.20.1/1.20.1.json"],
+            ReadPaths(result.Client.Path));
+        Assert.Equal(
+            ["mods/common.jar", "server.properties", "start.bat"],
+            ReadPaths(result.Server.Path));
+    }
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_RejectsTraversalAndCaseCollision()
+    {
+        var source = CreateArchive(
+            ("client/mods/Test.jar", "a"),
+            ("client/mods/test.jar", "b"),
+            ("server/server.properties", "max-players=20"),
+            ("../escape.txt", "bad"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "unsafe-out"));
+
+        Assert.True(result.HasBlockingIssues);
+        Assert.Contains(result.Issues, issue => issue.Code == "PATH_COLLISION");
+        Assert.Contains(result.Issues, issue => issue.Code == "UNSAFE_ARCHIVE_ENTRY");
+    }
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_CurseForgeReferencePackFailsClosed()
+    {
+        var source = CreateArchive(
+            ("manifest.json", """
+                {
+                  "name":"Reference only",
+                  "version":"2.0.0",
+                  "minecraft":{
+                    "version":"1.20.1",
+                    "modLoaders":[{"id":"forge-47.4.0","primary":true}]
+                  },
+                  "files":[{"projectID":1,"fileID":2,"required":true}]
+                }
+                """),
+            ("overrides/config/example.toml", "enabled=true"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "curse-out"));
+
+        Assert.Equal(ModpackLayoutKind.CurseForge, result.Layout);
+        Assert.True(result.HasBlockingIssues);
+        Assert.Equal("Forge", result.Metadata.Loader);
+        Assert.Equal("47.4.0", result.Metadata.LoaderVersion);
+        Assert.Contains(result.Issues, issue => issue.Code == "CURSEFORGE_REMOTE_FILES");
+        Assert.Contains(result.Issues, issue => issue.Code == "SERVER_PART_MISSING");
+    }
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_DoesNotTreatClientRootAsWrapper()
+    {
+        var source = CreateArchive(
+            ("client/versions/1.21.1/1.21.1.json", "{}"),
+            ("client/mods/example.jar", "mod"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "client-only-out"));
+
+        Assert.NotNull(result.Client);
+        Assert.Equal(
+            ["mods/example.jar", "versions/1.21.1/1.21.1.json"],
+            ReadPaths(result.Client!.Path));
+        Assert.Contains(result.Issues, issue => issue.Code == "SERVER_PART_MISSING");
+    }
+
+    [Fact]
+    public async Task SafeZipExtractor_DeletesPartialDestinationAfterFailure()
+    {
+        var source = CreateArchive(
+            ("safe.txt", "safe"),
+            ("CON/config.txt", "unsafe"));
+        var destination = Path.Combine(root, "extract");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            SafeZipExtractor.ExtractAsync(source, destination));
+
+        Assert.False(Directory.Exists(destination));
+    }
+
+    private string CreateArchive(params (string Path, string Content)[] files)
+    {
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, Guid.NewGuid().ToString("N") + ".zip");
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
+        foreach (var file in files)
+        {
+            var entry = archive.CreateEntry(file.Path, CompressionLevel.Fastest);
+            using var writer = new StreamWriter(entry.Open(), new UTF8Encoding(false));
+            writer.Write(file.Content);
+        }
+
+        return path;
+    }
+
+    private static string[] ReadPaths(string path)
+    {
+        using var archive = ZipFile.OpenRead(path);
+        return archive.Entries
+            .Where(entry => !string.IsNullOrEmpty(entry.Name))
+            .Select(entry => entry.FullName)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+}
