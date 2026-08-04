@@ -317,3 +317,21 @@ owner 和临时目录均已清理。
 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json)
 和
 [`evidence/SERVER_CONTROL_AGENT_0.3.1_PRODUCTION_DEPLOYMENT_2026-08-05.json`](evidence/SERVER_CONTROL_AGENT_0.3.1_PRODUCTION_DEPLOYMENT_2026-08-05.json)。
+
+## 10. 后台分块上传网关修复（2026-08-05）
+
+生产后台最初只有 `launcher-api.hechao.world` 配置了 `client_max_body_size 10m`，
+`admin.hechao.world` 因此使用 Nginx 默认 `1m`，导致后台发送的每个 `8 MiB` 分块在到达
+API 前返回 `413 Request Entity Too Large`。提交 `4a30a71` 为两个 HTTPS server
+统一设置 `10m`，并增加 Bash 部署门禁和 API 仓库契约测试。
+
+生产配置于 2026-08-05 05:49 CST 原子替换并只 reload Nginx；备份位于
+`/var/backups/hechao-nginx-upload-limit/20260804T214925Z`。正式配置 SHA-256 为
+`bc960ede7d87fcb14bc869fec1bbcc6774fc3b2f2c683507bbea009aae8e97df`。两个域名的
+`8 MiB` 未授权 PATCH 均返回 `401`，`10 MiB + 1 byte` 均返回 `413`；API 测试
+`269/269`、Nginx 配置与上传限制契约、内外网健康和就绪检查均通过。
+
+Nginx、API 和 Publisher 的 `NRestarts` 均保持 `0`，API 与 Publisher 错误级 journal
+为 `0`。两个由失败尝试创建的导入任务继续保持 `Uploading / 0 / 576941497`，未直接修改
+或取消；管理员应在后台选择正确的同名同大小文件继续上传。本次没有重启 API、Publisher，
+也没有操作 Minecraft、Velocity 或 owl5 游戏服务。
