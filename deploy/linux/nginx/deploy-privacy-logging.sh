@@ -10,6 +10,7 @@ source_dir=${1:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)}
 format_source="$source_dir/00-hechao-privacy-log.conf"
 snippet_source="$source_dir/hechao-privacy-access-log.conf"
 launcher_source="$source_dir/hechao-launcher.conf"
+launcher_contract="$source_dir/test-hechao-launcher-config.sh"
 
 format_target=/etc/nginx/conf.d/00-hechao-privacy-log.conf
 snippet_target=/etc/nginx/snippets/hechao-privacy-access-log.conf
@@ -17,12 +18,14 @@ site_target=/etc/nginx/sites-available/hechao.conf
 launcher_target=/etc/nginx/sites-available/hechao-launcher.conf
 include_line='    include /etc/nginx/snippets/hechao-privacy-access-log.conf;'
 
-for required in "$format_source" "$snippet_source" "$launcher_source" "$site_target" "$launcher_target"; do
+for required in "$format_source" "$snippet_source" "$launcher_source" "$launcher_contract" "$site_target" "$launcher_target"; do
     if [[ ! -f "$required" ]]; then
         printf 'Required file is missing: %s\n' "$required" >&2
         exit 1
     fi
 done
+
+bash "$launcher_contract" "$launcher_source"
 
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 backup_dir="/var/backups/hechao-nginx-privacy/$stamp"

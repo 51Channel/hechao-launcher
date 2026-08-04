@@ -35,6 +35,20 @@
 中按 8 MiB 分块接收，支持暂停、断点续传和取消。完成后重新计算完整 SHA-256，再由
 安全归档分析器检查：
 
+上传网关必须保留以下固定契约：前端和 API 的单块大小为 `8 MiB`，
+`launcher-api.hechao.world` 与 `admin.hechao.world` 两个 HTTPS server 的 Nginx
+`client_max_body_size` 均为 `10m`。额外的 `2 MiB` 用于请求开销；上限不应按整包大小
+设置，否则会掩盖前端绕过分块上传或错误路由。修改 Nginx 模板后必须先执行：
+
+```bash
+bash deploy/linux/nginx/test-hechao-launcher-config.sh \
+  deploy/linux/nginx/hechao-launcher.conf
+nginx -t
+```
+
+生产验证应确认 `8 MiB` 请求能到达 API 鉴权层（未授权请求返回 `401` 或 `403`，而不是
+`413`），同时 `10 MiB + 1 byte` 仍由 Nginx 返回 `413`。
+
 - 路径穿越、绝对路径、重复路径、符号链接、重解析点和危险设备名；
 - 文件数量、单文件大小、总解压大小和压缩比；
 - Minecraft 版本、加载器、客户端与服务端文件归属；

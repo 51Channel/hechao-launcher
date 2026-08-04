@@ -1,9 +1,27 @@
 using Hechao.Api.PackageImports;
+using System.Text.RegularExpressions;
 
 namespace Hechao.Api.Tests;
 
 public sealed class PackageImportDeploymentContractTests
 {
+    [Fact]
+    public void NginxUploadGate_AllowsEightMibChunksOnBothAdminHosts()
+    {
+        var config = ReadRepositoryFile(
+            "deploy",
+            "linux",
+            "nginx",
+            "hechao-launcher.conf");
+
+        foreach (var host in new[] { "launcher-api.hechao.world", "admin.hechao.world" })
+        {
+            var server = ExtractServerBlock(config, host);
+            Assert.Single(Regex.Matches(server, @"client_max_body_size\s+[^;]+;"));
+            Assert.Single(Regex.Matches(server, @"client_max_body_size\s+10m\s*;"));
+        }
+    }
+
     [Fact]
     public void SystemdSandbox_AllowsPackageAndReleaseManifestWrites()
     {
@@ -144,6 +162,36 @@ public sealed class PackageImportDeploymentContractTests
 
     private static string ReadRepositoryFile(params string[] segments) =>
         File.ReadAllText(Path.Combine(FindRepositoryRoot(), Path.Combine(segments)));
+
+    private static string ExtractServerBlock(string config, string host)
+    {
+        var markerIndex = config.IndexOf($"server_name {host};", StringComparison.Ordinal);
+        Assert.True(markerIndex >= 0, $"Nginx server for {host} was not found.");
+
+        var blockStart = config.LastIndexOf("server {", markerIndex, StringComparison.Ordinal);
+        Assert.True(blockStart >= 0, $"Nginx server block start for {host} was not found.");
+
+        var openingBrace = config.IndexOf('{', blockStart);
+        Assert.True(openingBrace >= 0, $"Nginx server opening brace for {host} was not found.");
+
+        var depth = 0;
+        for (var index = openingBrace; index < config.Length; index++)
+        {
+            depth += config[index] switch
+            {
+                '{' => 1,
+                '}' => -1,
+                _ => 0,
+            };
+
+            if (depth == 0 && index > blockStart)
+            {
+                return config[blockStart..(index + 1)];
+            }
+        }
+
+        throw new InvalidDataException($"Nginx server block for {host} was not closed.");
+    }
 
     private static string FindRepositoryRoot()
     {
