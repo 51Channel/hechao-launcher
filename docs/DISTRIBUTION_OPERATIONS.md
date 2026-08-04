@@ -1,7 +1,7 @@
 # 客户端分发与签名操作手册
 
 > 启动器正式版本：`0.14.2`
-> 当前发布器：手工管理命令与独立 Package Publisher Agent 均为正式版本 `1.0.0`
+> 当前发布器：手工管理命令与独立 Package Publisher Agent 均为正式版本 `1.1.0`
 > 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.27.0` 托管，启动器 `0.14.2` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录与私有 OSS 发布闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
 >
 > owl9 边界：上述恐怖整蛊档案只对应 `C:\mc\server`，不对应
@@ -79,6 +79,12 @@ Publisher `1.0.0` 增加独立代理模式。它只领取管理员已经确认�
 的整合包任务；签名私钥、OSS 写凭据和明文代理令牌均只存在于同一 Windows 管理账号的
 DPAPI 边界，不进入 API 或游戏 VPS。代理上传后仍由 API 使用内嵌公钥重新验签，并且只
 创建 `Test` 通道发布，不触碰 `Gray` 或 `Production`。
+
+Publisher `1.1.0` 保留上述协议并把生产代理迁移到 API 同机阿里云 systemd。令牌、
+签名私钥和 OSS 写凭据使用主机绑定的 `systemd-credentials`，Windows DPAPI 实例停止
+保留为回滚。Linux 工作空间会按压缩包大小和展开倍率预留磁盘，空间不足时继续心跳与
+续租但不开始下载。正式部署见
+[`PUBLISHER_RELEASE_1.1.0.md`](PUBLISHER_RELEASE_1.1.0.md)。
 
 代理安装、配置、续租、缓存恢复和回滚见
 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。手工 `publish`、`verify`、

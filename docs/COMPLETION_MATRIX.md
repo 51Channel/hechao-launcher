@@ -2,7 +2,7 @@
 
 > 更新时间：`2026-08-05`
 >
-> 当前生产：启动器 `0.14.2`、API `0.27.0`、Publisher Agent `1.0.0`、
+> 当前生产：启动器 `0.14.2`、API `0.27.0`、Publisher Agent `1.1.0`、
 > owl5 ServerControlAgent `0.3.1`、owl9 ServerControlAgent `0.2.1`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
@@ -38,11 +38,11 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.14.2` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.1` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
 | API `0.27.0` | 已完成 | Vue 十页、迁移 22/23、整合包任务编排、客户端发布闭合验证和活动槽固定边界均已部署；数据库与配置备份、原子切换、内外网健康、固定试包和恢复后回归通过，见 [`API_RELEASE_0.27.0.md`](API_RELEASE_0.27.0.md) |
-| 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
+| 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.1.0` 与 owl5 ServerControlAgent `0.3.1` 已部署；固定试包在 Publisher `1.0.0` 时完成，随后发布器已无并发迁移到阿里云 systemd。试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)、[`PUBLISHER_RELEASE_1.1.0.md`](PUBLISHER_RELEASE_1.1.0.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
 | 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | 当前整合包基线为 .NET `633/633`、API `268/268`、Publisher `39/39`、ServerControlAgent `46/46`、Vue Vitest `8/8`、Playwright `14/14`；Velocity、Lobby、LuckPerms 和指标代理保持各自既有正式基线 |
+| 自动测试 | 已完成 | 当前整合包基线为 .NET `633/633`、API `268/268`、ServerControlAgent `46/46`、Vue Vitest `8/8`、Playwright `14/14`；Publisher `1.1.0` 专项为 `48/48`。Velocity、Lobby、LuckPerms 和指标代理保持各自既有正式基线 |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.14.2` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 

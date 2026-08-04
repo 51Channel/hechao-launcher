@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-05T05:03:36+08:00",
+  "scope": "Package Publisher Agent Windows-to-Aliyun migration",
+  "source": {
+    "branch": "codex/publisher-cloud-aliyun",
+    "featureCommit": "2f41d25ba2ac490cedb63e381c51c8cf048cb3bb",
+    "compatibilityFixCommit": "3f20007308e33ac8ea3c7eb2b7564241a44f730b"
+  },
+  "artifact": {
+    "rid": "linux-x64",
+    "version": "1.1.0",
+    "bytes": 74602011,
+    "sha256": "599A068E07872A6E655AF034B110F751F0547C557A0C83688B433D77150F6928"
+  },
+  "production": {
+    "host": "8.148.207.171",
+    "service": "hechao-package-publisher.service",
+    "releaseDirectory": "/opt/hechao-package-publisher/releases/1.1.0-3f20007",
+    "serviceUser": "hechao-publisher",
+    "active": true,
+    "enabled": true,
+    "heartbeatVersion": "1.1.0",
+    "apiHealthStatus": 200,
+    "apiReadyStatus": 200,
+    "systemdSecurityExposure": "2.9 OK",
+    "journalErrorCount": 0,
+    "journalSensitivePatternMatches": 0,
+    "queue": {
+      "Completed": 1,
+      "Failed": 3,
+      "QueuedForPublishing": 0,
+      "PublishingClient": 0
+    },
+    "restartRecovery": {
+      "passed": true,
+      "pidBefore": 4027576,
+      "pidAfter": 4028581
+    }
+  },
+  "windowsRollback": {
+    "scheduledTask": "Hechao Launcher Package Publisher Agent",
+    "taskState": "Ready",
+    "processCount": 0,
+    "executableRetained": true,
+    "configurationRetained": true,
+    "dpapiInputsRetained": true
+  },
+  "tests": {
+    "publisher": "48/48",
+    "apiCompatibility": "268/268",
+    "powershellAst": "passed",
+    "productionCredentialOfflineValidation": "passed",
+    "serviceAccountCredentialValidation": "passed"
+  },
+  "unchanged": [
+    "Hechao API 0.27.0",
+    "OSS objects",
+    "Minecraft servers",
+    "Velocity",
+    "owl5 game services"
+  ],
+  "containsSecrets": false
+}
