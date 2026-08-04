@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-02T13:02:47.2633119Z",
+  "generatedAtUtc": "2026-08-04T18:29:04Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,81 +45,82 @@
     },
     {
       "component": "api",
-      "version": "0.26.2-20260802T093332Z",
-      "releaseTag": "api-v0.26.2",
-      "releaseCommit": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
-      "taggedAt": "2026-08-02T21:01:31+08:00",
+      "version": "0.27.0-20260803T174833Z",
+      "releaseTag": "api-v0.27.0",
+      "releaseCommit": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b",
+      "taggedAt": "2026-08-05T02:29:04+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5"
+        "value": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b"
       },
-      "deploymentState": "production-vue-admin-scroll-resilience-deployed-health-ready",
-      "historicalNote": "0.26.1-20260802T012527Z remains the immediate rollback release under api-v0.26.1. Migration 21, MFA, sessions, trusted devices and audit data are retained during rollback.",
+      "deploymentState": "production-package-import-test-only-stopped-activity-slot-accepted-health-ready",
+      "historicalNote": "0.26.2 is retained only as a same-point disaster recovery baseline. Migration 22/23 and DeployPackage records prohibit a binary-only downgrade; normal rollback disables package imports and fixes forward on 0.27.x.",
       "artifacts": [
         {
-          "name": "hechao-api-0.26.2-20260802T093332Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.26.2-20260802T093332Z",
-          "size": 45790504,
-          "sha256": "00E3129F727E0EE022E34AF34CB7A0BF2983EC1BC7596C6D695EC1682DB322EF",
+          "name": "hechao-api-0.27.0-20260803T174833Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z",
+          "size": 45936390,
+          "sha256": "4E15B64EA706AA6D3B64BC6AFB1CCA635A205385D1E1CBC3145DC37FCA335C10",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.26.2-20260802T093332Z/Hechao.Api",
-          "size": 104653363,
-          "sha256": "38C9A7C8F09FAE7E871E815808EDB4F50C0AA108CD5D707DA5F067B6DB45DAA2",
+          "location": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z/Hechao.Api",
+          "size": 105011140,
+          "sha256": "14FC6D22338A368B26556FAF108A814A0B1C3CB20C03791FF9E7356DC7D58AD8",
           "primary": false
         }
       ],
       "rollback": {
-        "kind": "release-symlink",
-        "target": "/opt/hechao-launcher-api/releases/0.26.1-20260802T012527Z"
+        "kind": "feature-disable-and-forward-fix",
+        "target": "disable PackageImports and remain on 0.27.x; restore 0.26.2 only with its same-point full database and configuration backup"
       },
       "evidence": [
-        "docs/API_RELEASE_0.26.2.md",
+        "docs/API_RELEASE_0.27.0.md",
         "docs/ADMIN_WEB_OPERATIONS.md",
-        "docs/evidence/API_0.26.2_PRODUCTION_DEPLOYMENT_2026-08-02.json"
+        "docs/PACKAGE_IMPORT_OPERATIONS.md",
+        "docs/evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json"
       ]
     },
     {
       "component": "server-control-agent",
-      "version": "0.2.4",
-      "releaseTag": "server-control-agent-v0.2.4",
-      "releaseCommit": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5",
-      "taggedAt": "2026-08-02T21:02:17+08:00",
+      "version": "0.3.1",
+      "releaseTag": "server-control-agent-v0.3.1",
+      "releaseCommit": "784c05d8ba172a594a8d95c47c14db253e1cb53a",
+      "taggedAt": "2026-08-05T02:29:04+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "b0b10140a3fb68b067987e2ddfc2f3b48ff682d5"
+        "value": "784c05d8ba172a594a8d95c47c14db253e1cb53a"
       },
-      "deploymentState": "production-owl5-resilient-heartbeat-and-command-loops-owl9-remains-0.2.1",
-      "historicalNote": "Owl5 can roll back directly to the retained 0.2.3 executable; owl9 remains on the formal 0.2.1 release.",
+      "deploymentState": "production-owl5-package-directory-access-serialized-fixed-test-and-original-restore-accepted-owl9-remains-0.2.1",
+      "historicalNote": "Owl5 can restore the retained 0.3.0 executable only after package imports are disabled and no DeployPackage command is pending. Owl9 remains on the formal 0.2.1 release.",
       "artifacts": [
         {
-          "name": "hechao-server-control-agent-0.2.4-20260802T093332Z-win-x64.zip",
-          "location": "artifacts/releases/hechao-server-control-agent-0.2.4-20260802T093332Z-win-x64.zip",
-          "size": 33146240,
-          "sha256": "44F155DA30C8DFFF2A8B885FE7E2168C81566EBEBB69D2E7FAEC0815CC71BA90",
+          "name": "hechao-server-control-agent-0.3.1-20260803T201139Z-win-x64.zip",
+          "location": "artifacts/production-acceptance/hechao-server-control-agent-0.3.1-20260803T201139Z-win-x64.zip",
+          "size": 33208851,
+          "sha256": "E5BC0262AADCAD48C7E60931EF4D16B0073EA51E08AB02DFCA981625E2623769",
           "primary": true
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
           "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
-          "size": 73908430,
-          "sha256": "9BAE24B2B5A5491B7A926661D37B2BA806599C5164C0F83C1307B4D25449301E",
+          "size": 74082911,
+          "sha256": "9229F5C7B69C1FC7D35DE10C3BE4B750A519970A5F42BDC54AB32EB3724C8FA9",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "per-host-rollback-executable",
-        "target": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.0.2.3.rollback-before-0.2.4-20260802T093332Z.exe"
+        "target": "owl5:C:\\ProgramData\\Hechao\\Backups\\server-control-agent-0.3.1-cli-20260804T161730Z"
       },
       "evidence": [
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.2.4.md",
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.3.1.md",
         "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
-        "docs/evidence/SERVER_CONTROL_MEMORY_MANAGEMENT_ACCEPTANCE_2026-07-31.json",
-        "docs/evidence/SERVER_CONTROL_AGENT_0.2.4_PRODUCTION_DEPLOYMENT_2026-08-02.json"
+        "docs/evidence/SERVER_CONTROL_AGENT_0.3.1_PRODUCTION_DEPLOYMENT_2026-08-05.json",
+        "docs/evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json"
       ]
     },
     {
@@ -187,54 +188,41 @@
     },
     {
       "component": "publisher",
-      "version": "0.9.0",
-      "releaseTag": "publisher-v0.9.0",
-      "releaseCommit": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9",
-      "taggedAt": "2026-07-27T18:56:06+08:00",
+      "version": "1.0.0",
+      "releaseTag": "publisher-v1.0.0",
+      "releaseCommit": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b",
+      "taggedAt": "2026-08-05T02:29:04+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "dc1d1d527d106fbbc41a58add4bfbd7ae2d12cc9"
+        "value": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b"
       },
-      "deploymentState": "administrator-tool",
-      "historicalNote": "The executable used for the first 0.9.0 recovery drill was not archived separately. The listed executable and ZIP are a provenance rebuild from the exact annotated tag; they are not claimed to be byte-identical to the first drill binary.",
+      "deploymentState": "production-single-instance-package-publisher-test-only-fixed-package-accepted",
+      "historicalNote": "0.9.0 remains the historical signing-key recovery release. 1.0.0 adds the production Package Publisher Agent while retaining the existing manual signing and recovery commands.",
       "artifacts": [
         {
-          "name": "Hechao-Publisher-0.9.0-win-x64-provenance-rebuild.zip",
-          "location": "artifacts/releases/Hechao-Publisher-0.9.0-win-x64-provenance-rebuild.zip",
-          "size": 32120425,
-          "sha256": "AA15C30694E1189DA684E297EF55C82C4FF9654FE3A35F4FB2C1AFF0976AF6C1",
-          "primary": true,
-          "reconstructedFromTag": true
+          "name": "Hechao-Publisher-1.0.0-win-x64.zip",
+          "location": "artifacts/releases/Hechao-Publisher-1.0.0-win-x64.zip",
+          "size": 33374660,
+          "sha256": "99B354A320B03F5FC09CC571D65C3E01F30DEF1236735628CD73605123D625CC",
+          "primary": true
         },
         {
           "name": "Hechao.Publisher.exe",
-          "location": "artifacts/publish/publisher-win-x64-0.9.0-provenance-rebuild/Hechao.Publisher.exe",
-          "size": 74113791,
-          "sha256": "947480D3B3566542AECD84246B6C8C6CEE1128D7A3CE1675ED4C0D9089F60C93",
-          "primary": false,
-          "reconstructedFromTag": true
-        },
-        {
-          "name": "distribution-signing-private.hcbackup",
-          "location": "backups/recovery/signing-key-v1/distribution-signing-private.hcbackup",
-          "sha256": "271F2311F727D81E7C29D22B096681FC9F041C97636C7CF980129035AC61722E",
-          "primary": false
-        },
-        {
-          "name": "production-signing-public-key",
-          "location": "production trust bundle",
-          "sha256": "6D4ACA1E787CFEDA1C3A5D7B772FB1F0E03C298848538D272B12BCFAF1C94F9E",
+          "location": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\Hechao.Publisher.exe",
+          "size": 74534899,
+          "sha256": "A924AC39B639B143356C6EC3EB6D77E9F75F8D1DA7BE96B8C8BE81E1F3DC81EA",
           "primary": false
         }
       ],
       "rollback": {
-        "kind": "release-tag",
-        "target": "publisher-v0.8.1"
+        "kind": "disable-agent",
+        "target": "stop Hechao Launcher Package Publisher Agent and disable PackageImports while retaining immutable objects and protected state"
       },
       "evidence": [
-        "docs/PUBLISHER_RELEASE_0.9.0.md",
-        "docs/evidence/OFFSITE_BACKUP_RECOVERY_2026-07-27.json"
+        "docs/PUBLISHER_RELEASE_1.0.0.md",
+        "docs/DISTRIBUTION_OPERATIONS.md",
+        "docs/evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json"
       ]
     },
     {
