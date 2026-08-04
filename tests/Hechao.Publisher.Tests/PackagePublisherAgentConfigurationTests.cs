@@ -168,6 +168,48 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
             PackagePublisherSystemdCredentialStore.ReadToken(path));
     }
 
+    [Fact]
+    public void SystemdCredentialStore_ReadsSystemdServiceUserMode()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "publisher-token-systemd");
+        var token = new string('C', 48);
+        File.WriteAllText(path, token);
+        File.SetUnixFileMode(
+            path,
+            UnixFileMode.UserRead | UnixFileMode.GroupRead);
+
+        Assert.Equal(
+            token,
+            PackagePublisherSystemdCredentialStore.ReadToken(path));
+    }
+
+    [Fact]
+    public void SystemdCredentialStore_RejectsWorldReadableTokenFile()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "publisher-token-public");
+        File.WriteAllText(path, new string('D', 48));
+        File.SetUnixFileMode(
+            path,
+            UnixFileMode.UserRead |
+            UnixFileMode.UserWrite |
+            UnixFileMode.OtherRead);
+
+        Assert.Throws<PublisherUsageException>(() =>
+            PackagePublisherSystemdCredentialStore.ReadToken(path));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(root))

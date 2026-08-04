@@ -27,8 +27,8 @@
 | --- | --- |
 | RID | `linux-x64` |
 | 类型 | 自包含单文件 |
-| 大小 | `74,603,547` 字节 |
-| SHA-256 | `7027683F803C4DAAB1C42C5C4D9FF490E98A6CD6B2B202A8C8211E58D2D916E7` |
+| 大小 | `74,602,011` 字节 |
+| SHA-256 | `599A068E07872A6E655AF034B110F751F0547C557A0C83688B433D77150F6928` |
 
 制品由当前候选源码使用仓库固定的 .NET 10 SDK 重建：
 
@@ -41,10 +41,11 @@ dotnet publish src\Hechao.Publisher\Hechao.Publisher.csproj `
 
 ## 已完成验证
 
-- Publisher 单元测试：`46/46`。
+- Publisher 单元测试：`48/48`。
 - API 兼容测试：`268/268`，代码最终未要求升级 API。
 - PowerShell 7 AST 解析通过。
 - Linux 单文件在阿里云隔离目录完成离线凭据校验。
+- systemd 为非 root 服务账号提供的 `0440` 运行时凭据已兼容，other 可读权限仍被拒绝。
 - 宽权限凭据文件被拒绝，恢复为 `0600` 后通过。
 - 使用假的 Windows DPAPI 输入完成
   `DPAPI -> SSH stdin -> systemd-creds -> systemd-run` 全链路预检；测试凭据随后删除。

@@ -54,14 +54,17 @@ internal static class PackagePublisherSystemdCredentialStore
         if (!OperatingSystem.IsWindows())
         {
             var mode = File.GetUnixFileMode(path);
+            // systemd exposes service-user credentials as 0440 on an
+            // id-mapped private mount.
             const UnixFileMode forbidden =
-                UnixFileMode.GroupRead |
+                UnixFileMode.UserExecute |
                 UnixFileMode.GroupWrite |
                 UnixFileMode.GroupExecute |
                 UnixFileMode.OtherRead |
                 UnixFileMode.OtherWrite |
                 UnixFileMode.OtherExecute;
-            if ((mode & forbidden) != 0)
+            if ((mode & UnixFileMode.UserRead) == 0 ||
+                (mode & forbidden) != 0)
             {
                 throw new PublisherUsageException(
                     $"The systemd {description} file permissions are too broad.");
