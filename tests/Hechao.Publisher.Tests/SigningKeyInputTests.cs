@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,6 +9,11 @@ public sealed class SigningKeyInputTests
     [Fact]
     public void Load_DecryptsCurrentUserDpapiKeyAndChecksDigest()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         const string entropyLabel = "Hechao.Publisher.Tests/SigningKey/v1";
         using var fixture = DpapiKeyFixture.Create(entropyLabel);
         var options = CommandOptions.Parse(
@@ -28,6 +34,11 @@ public sealed class SigningKeyInputTests
     [Fact]
     public void Load_RejectsWrongEncryptedBlobDigest()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         const string entropyLabel = "Hechao.Publisher.Tests/SigningKey/v1";
         using var fixture = DpapiKeyFixture.Create(entropyLabel);
         var options = CommandOptions.Parse(
@@ -67,6 +78,7 @@ public sealed class SigningKeyInputTests
         public string EncryptedSha256 { get; } = encryptedSha256;
         public byte[] PublicKey { get; } = publicKey;
 
+        [SupportedOSPlatform("windows")]
         public static DpapiKeyFixture Create(string entropyLabel)
         {
             var directory = Path.Combine(

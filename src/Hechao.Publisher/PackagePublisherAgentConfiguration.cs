@@ -3,24 +3,47 @@ using System.Text.RegularExpressions;
 
 internal sealed partial record PackagePublisherAgentConfiguration
 {
+    internal const string WindowsDpapiSecretStorage = "windows-dpapi";
+    internal const string SystemdCredentialSecretStorage = "systemd-credentials";
+
     public string ApiBaseUrl { get; init; } = string.Empty;
     public string AgentId { get; init; } = string.Empty;
+    public string SecretStorage { get; init; } = WindowsDpapiSecretStorage;
     public string TokenPath { get; init; } = string.Empty;
     public string StateDirectory { get; init; } = string.Empty;
     public int PollSeconds { get; init; } = 3;
     public string SigningKeyId { get; init; } = string.Empty;
     public string SigningKeyPath { get; init; } = string.Empty;
-    public string SigningKeyEntropyLabel { get; init; } = string.Empty;
+    public string? SigningKeyEntropyLabel { get; init; }
     public string? SigningKeyBlobSha256 { get; init; }
     public string OssBucket { get; init; } = string.Empty;
     public string OssRegion { get; init; } = string.Empty;
     public string OssEndpoint { get; init; } = string.Empty;
     public string OssObjectPrefix { get; init; } = "objects";
     public string OssCredentialPath { get; init; } = string.Empty;
-    public string OssCredentialEntropyLabel { get; init; } = string.Empty;
+    public string? OssCredentialEntropyLabel { get; init; }
     public int Parallelism { get; init; } = 8;
+    public long MinimumFreeBytes { get; init; } = 1024L * 1024 * 1024;
+    public int WorkingSpaceExpansionMultiplier { get; init; } = 4;
 
-    internal static PackagePublisherAgentConfiguration Load(string path)
+    internal bool UsesWindowsDpapi =>
+        string.Equals(
+            SecretStorage,
+            WindowsDpapiSecretStorage,
+            StringComparison.Ordinal);
+
+    internal bool UsesSystemdCredentials =>
+        string.Equals(
+            SecretStorage,
+            SystemdCredentialSecretStorage,
+            StringComparison.Ordinal);
+
+    internal static PackagePublisherAgentConfiguration Load(string path) =>
+        Load(path, Environment.GetEnvironmentVariable("CREDENTIALS_DIRECTORY"));
+
+    internal static PackagePublisherAgentConfiguration Load(
+        string path,
+        string? credentialsDirectory)
     {
         var fullPath = Path.GetFullPath(path);
         var file = new FileInfo(fullPath);
@@ -37,12 +60,25 @@ internal sealed partial record PackagePublisherAgentConfiguration
             new JsonSerializerOptions(JsonSerializerDefaults.Web))
             ?? throw new InvalidDataException(
                 "The package publisher agent configuration is empty.");
+        var secretStorage = (configuration.SecretStorage ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant();
         configuration = configuration with
         {
-            TokenPath = Path.GetFullPath(configuration.TokenPath),
+            SecretStorage = secretStorage,
+            TokenPath = ResolveSecretPath(
+                configuration.TokenPath,
+                secretStorage,
+                credentialsDirectory),
             StateDirectory = Path.GetFullPath(configuration.StateDirectory),
-            SigningKeyPath = Path.GetFullPath(configuration.SigningKeyPath),
-            OssCredentialPath = Path.GetFullPath(configuration.OssCredentialPath),
+            SigningKeyPath = ResolveSecretPath(
+                configuration.SigningKeyPath,
+                secretStorage,
+                credentialsDirectory),
+            OssCredentialPath = ResolveSecretPath(
+                configuration.OssCredentialPath,
+                secretStorage,
+                credentialsDirectory),
             OssObjectPrefix = configuration.OssObjectPrefix.Trim('/')
         };
         configuration.Validate();
@@ -51,23 +87,32 @@ internal sealed partial record PackagePublisherAgentConfiguration
 
     internal void Validate()
     {
+        var validSecretStorage =
+            (UsesWindowsDpapi &&
+             SigningKeyEntropyLabel?.Length is >= 8 and <= 512 &&
+             OssCredentialEntropyLabel?.Length is >= 8 and <= 512) ||
+            (UsesSystemdCredentials &&
+             string.IsNullOrEmpty(SigningKeyEntropyLabel) &&
+             string.IsNullOrEmpty(OssCredentialEntropyLabel) &&
+             SigningKeyBlobSha256 is null);
         if (!TryGetApiBaseUri(out _) ||
             !AgentIdPattern().IsMatch(AgentId) ||
+            !validSecretStorage ||
             !Path.IsPathFullyQualified(TokenPath) ||
             !Path.IsPathFullyQualified(StateDirectory) ||
             !Path.IsPathFullyQualified(SigningKeyPath) ||
             !Path.IsPathFullyQualified(OssCredentialPath) ||
             PollSeconds is < 1 or > 30 ||
             !SigningKeyIdPattern().IsMatch(SigningKeyId) ||
-            SigningKeyEntropyLabel.Length is < 8 or > 512 ||
             (SigningKeyBlobSha256 is not null &&
              !Sha256Pattern().IsMatch(SigningKeyBlobSha256)) ||
             !BucketPattern().IsMatch(OssBucket) ||
             !RegionPattern().IsMatch(OssRegion) ||
             !TryGetOssEndpoint(out _) ||
             !ObjectPrefixPattern().IsMatch(OssObjectPrefix) ||
-            OssCredentialEntropyLabel.Length is < 8 or > 512 ||
-            Parallelism is < 1 or > 32)
+            Parallelism is < 1 or > 32 ||
+            MinimumFreeBytes is < 512L * 1024 * 1024 or > 100L * 1024 * 1024 * 1024 ||
+            WorkingSpaceExpansionMultiplier is < 2 or > 250)
         {
             throw new InvalidDataException(
                 "The package publisher agent configuration is invalid.");
@@ -79,11 +124,29 @@ internal sealed partial record PackagePublisherAgentConfiguration
             SigningKeyPath,
             OssCredentialPath
         };
-        if (protectedPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
+        var pathComparer = OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+        if (protectedPaths.Distinct(pathComparer).Count() !=
             protectedPaths.Length)
         {
             throw new InvalidDataException(
                 "The package publisher protected files must use distinct paths.");
+        }
+    }
+
+    internal void ValidateRuntimePlatform()
+    {
+        if (UsesWindowsDpapi && !OperatingSystem.IsWindows())
+        {
+            throw new PublisherUsageException(
+                "Windows DPAPI package publisher credentials require Windows.");
+        }
+
+        if (UsesSystemdCredentials && OperatingSystem.IsWindows())
+        {
+            throw new PublisherUsageException(
+                "systemd package publisher credentials require Linux.");
         }
     }
 
@@ -111,8 +174,48 @@ internal sealed partial record PackagePublisherAgentConfiguration
         return false;
     }
 
+    private static string ResolveSecretPath(
+        string value,
+        string secretStorage,
+        string? credentialsDirectory)
+    {
+        if (!string.Equals(
+                secretStorage,
+                SystemdCredentialSecretStorage,
+                StringComparison.Ordinal))
+        {
+            return Path.GetFullPath(value);
+        }
+
+        if (!CredentialNamePattern().IsMatch(value) ||
+            string.IsNullOrWhiteSpace(credentialsDirectory) ||
+            !Path.IsPathFullyQualified(credentialsDirectory))
+        {
+            throw new InvalidDataException(
+                "The systemd credential directory or credential name is invalid.");
+        }
+
+        var root = Path.GetFullPath(credentialsDirectory);
+        var resolved = Path.GetFullPath(Path.Combine(root, value));
+        if (!string.Equals(
+                Path.GetDirectoryName(resolved),
+                root.TrimEnd(Path.DirectorySeparatorChar),
+                OperatingSystem.IsWindows()
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                "The systemd credential path escaped its credential directory.");
+        }
+
+        return resolved;
+    }
+
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$", RegexOptions.CultureInvariant)]
     private static partial Regex AgentIdPattern();
+
+    [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", RegexOptions.CultureInvariant)]
+    private static partial Regex CredentialNamePattern();
 
     [GeneratedRegex("^[A-Za-z0-9._-]{2,80}$", RegexOptions.CultureInvariant)]
     private static partial Regex SigningKeyIdPattern();

@@ -65,6 +65,73 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
     }
 
     [Fact]
+    public void Load_ResolvesSystemdCredentialNamesInsideRuntimeDirectory()
+    {
+        Directory.CreateDirectory(root);
+        var credentials = Path.Combine(root, "credentials");
+        Directory.CreateDirectory(credentials);
+        var path = Path.Combine(root, "agent-systemd.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(new
+        {
+            apiBaseUrl = "http://127.0.0.1:8090",
+            agentId = "publisher-main",
+            secretStorage = "systemd-credentials",
+            tokenPath = "publisher-token",
+            stateDirectory = Path.Combine(root, "state"),
+            signingKeyId = "release-primary",
+            signingKeyPath = "distribution-signing-key",
+            ossBucket = "hechaoworld",
+            ossRegion = "cn-shanghai",
+            ossEndpoint = "https://oss-cn-shanghai.aliyuncs.com",
+            ossObjectPrefix = "objects",
+            ossCredentialPath = "oss-publisher-credential",
+            parallelism = 4,
+            minimumFreeBytes = 2L * 1024 * 1024 * 1024
+        }));
+
+        var configuration = PackagePublisherAgentConfiguration.Load(
+            path,
+            credentials);
+
+        Assert.True(configuration.UsesSystemdCredentials);
+        Assert.Equal(
+            Path.Combine(credentials, "publisher-token"),
+            configuration.TokenPath);
+        Assert.Equal(
+            Path.Combine(credentials, "distribution-signing-key"),
+            configuration.SigningKeyPath);
+        Assert.Null(configuration.SigningKeyEntropyLabel);
+        Assert.Null(configuration.OssCredentialEntropyLabel);
+    }
+
+    [Fact]
+    public void Load_RejectsSystemdCredentialPathTraversal()
+    {
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "agent-systemd-invalid.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(new
+        {
+            apiBaseUrl = "http://127.0.0.1:8090",
+            agentId = "publisher-main",
+            secretStorage = "systemd-credentials",
+            tokenPath = "../publisher-token",
+            stateDirectory = Path.Combine(root, "state"),
+            signingKeyId = "release-primary",
+            signingKeyPath = "distribution-signing-key",
+            ossBucket = "hechaoworld",
+            ossRegion = "cn-shanghai",
+            ossEndpoint = "https://oss-cn-shanghai.aliyuncs.com",
+            ossObjectPrefix = "objects",
+            ossCredentialPath = "oss-publisher-credential"
+        }));
+
+        Assert.Throws<InvalidDataException>(() =>
+            PackagePublisherAgentConfiguration.Load(
+                path,
+                Path.Combine(root, "credentials")));
+    }
+
+    [Fact]
     public void ProtectedTokenStore_RoundTripsCurrentUserDpapi()
     {
         if (!OperatingSystem.IsWindows())
@@ -80,6 +147,25 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
 
         Assert.Equal(token, PackagePublisherProtectedTokenStore.Read(path));
         Assert.DoesNotContain(token, Convert.ToBase64String(File.ReadAllBytes(path)));
+    }
+
+    [Fact]
+    public void SystemdCredentialStore_ReadsStrictTokenFile()
+    {
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "publisher-token");
+        var token = new string('B', 48);
+        File.WriteAllText(path, token + Environment.NewLine);
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(
+                path,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
+        Assert.Equal(
+            token,
+            PackagePublisherSystemdCredentialStore.ReadToken(path));
     }
 
     public void Dispose()

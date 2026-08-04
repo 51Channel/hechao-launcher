@@ -65,6 +65,7 @@ internal sealed class PackagePublisherWorker(
                 SetActiveImportId(claim.Job.ImportId);
                 try
                 {
+                    await WaitForWorkingSpaceAsync(claim.Job, cancellationToken);
                     await ProcessJobAsync(claim.Job, cancellationToken);
                 }
                 finally
@@ -81,6 +82,37 @@ internal sealed class PackagePublisherWorker(
                 WriteStatus("job_loop_failed", exception.Message);
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
             }
+        }
+    }
+
+    private async Task WaitForWorkingSpaceAsync(
+        PackagePublisherJobDelivery job,
+        CancellationToken cancellationToken)
+    {
+        var nextReportAt = DateTimeOffset.MinValue;
+        while (true)
+        {
+            var snapshot = PackagePublisherWorkingSpace.Inspect(
+                configuration.StateDirectory,
+                job,
+                configuration.MinimumFreeBytes,
+                configuration.WorkingSpaceExpansionMultiplier);
+            if (snapshot.AvailableBytes >= snapshot.RequiredBytes)
+            {
+                return;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            if (now >= nextReportAt)
+            {
+                WriteStatus(
+                    "working_space_wait",
+                    $"import={job.ImportId:D} required_bytes={snapshot.RequiredBytes} " +
+                    $"available_bytes={snapshot.AvailableBytes}");
+                nextReportAt = now.AddMinutes(5);
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
         }
     }
 

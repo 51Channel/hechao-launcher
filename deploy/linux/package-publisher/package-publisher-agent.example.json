@@ -1,0 +1,18 @@
+{
+  "apiBaseUrl": "http://127.0.0.1:8090",
+  "agentId": "publisher-main",
+  "secretStorage": "systemd-credentials",
+  "tokenPath": "publisher-token",
+  "stateDirectory": "/var/lib/hechao-package-publisher",
+  "pollSeconds": 3,
+  "signingKeyId": "replace-with-production-signing-key-id",
+  "signingKeyPath": "distribution-signing-key",
+  "ossBucket": "hechaoworld",
+  "ossRegion": "cn-shanghai",
+  "ossEndpoint": "https://oss-cn-shanghai.aliyuncs.com",
+  "ossObjectPrefix": "objects",
+  "ossCredentialPath": "oss-publisher-credential",
+  "parallelism": 4,
+  "minimumFreeBytes": 2147483648,
+  "workingSpaceExpansionMultiplier": 4
+}
