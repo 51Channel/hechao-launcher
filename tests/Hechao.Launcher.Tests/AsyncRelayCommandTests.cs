@@ -49,4 +49,27 @@ public sealed class AsyncRelayCommandTests
 
         Assert.True(command.CanExecute(null));
     }
+
+    [Fact]
+    public async Task GenericExecuteAsync_ForwardsParameterAndRestoresCommandState()
+    {
+        string? received = null;
+        var command = new AsyncRelayCommand<string>(
+            value =>
+            {
+                received = value;
+                return Task.CompletedTask;
+            },
+            _ => Assert.Fail("The command should not fail."),
+            value => !string.IsNullOrWhiteSpace(value));
+
+        Assert.False(command.CanExecute(null));
+        Assert.True(command.CanExecute("activity"));
+
+        await command.ExecuteAsync("activity");
+
+        Assert.Equal("activity", received);
+        Assert.False(command.IsExecuting);
+        Assert.True(command.CanExecute("activity"));
+    }
 }

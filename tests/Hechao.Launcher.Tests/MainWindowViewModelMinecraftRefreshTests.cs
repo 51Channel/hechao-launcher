@@ -162,12 +162,12 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             viewModel.SelectedServer is not null &&
             viewModel.ClientStatusText == "启动检查已关闭");
 
-        Assert.Equal(0, installation.LocalStateRequestCount);
+        Assert.Equal(1, installation.LocalStateRequestCount);
         Assert.Equal("检查客户端", viewModel.PrimaryActionText);
 
         await viewModel.PrimaryActionCommand.ExecuteAsync();
 
-        Assert.Equal(1, installation.LocalStateRequestCount);
+        Assert.Equal(2, installation.LocalStateRequestCount);
         Assert.Equal(1, gameLauncher.LaunchRequestCount);
         Assert.Equal("游戏已启动", viewModel.ClientStatusText);
     }
@@ -190,7 +190,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         viewModel.CheckForUpdates = true;
 
         await WaitUntilAsync(() =>
-            installation.LocalStateRequestCount == 1 &&
+            installation.LocalStateRequestCount == 2 &&
             viewModel.ClientStatusText == "客户端已就绪");
         Assert.Equal("进入服务器", viewModel.PrimaryActionText);
     }
@@ -283,9 +283,181 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
 
         var activity = Assert.Single(viewModel.ActivityServers);
         Assert.Equal("activity", activity.Server.Id);
+        Assert.Equal(
+            "activity",
+            Assert.Single(viewModel.ActivityCalendar.UnscheduledActivities).Id);
         Assert.DoesNotContain(
             viewModel.ActivityServers,
             item => item.Server.Id == "survival2");
+    }
+
+    [Fact]
+    public async Task Catalog_ActivityWithoutLocalClientStaysInCalendarButNotServerHome()
+    {
+        var installation = new StubInstallationService();
+        installation.LocalStates["activity-profile"] = LocalProfileState.Missing;
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            catalogClient: new StaticCatalogClient(
+                CreatePermanentAndActivityCatalog()));
+
+        await WaitUntilAsync(() =>
+            viewModel.ActivityServers.Count == 1 &&
+            viewModel.ActivityServers[0].IsClientStateChecked &&
+            viewModel.SelectedServer is not null);
+
+        var activity = Assert.Single(viewModel.ActivityServers);
+        Assert.Equal(LocalProfileState.Missing, activity.LocalProfileState);
+        Assert.False(activity.IsClientInstalled);
+        Assert.Equal("activity-test", Assert.Single(
+            viewModel.ActivityCalendar.UnscheduledActivities).Id);
+        Assert.DoesNotContain(
+            viewModel.Servers,
+            server => server.Id == "activity-test");
+        Assert.Contains(
+            viewModel.Servers,
+            server => server.Id == "permanent-test");
+    }
+
+    [Theory]
+    [InlineData(LocalProfileState.Ready)]
+    [InlineData(LocalProfileState.UpdateRequired)]
+    public async Task Catalog_InstalledActivityAppearsInServerHome(
+        LocalProfileState localState)
+    {
+        var installation = new StubInstallationService();
+        installation.LocalStates["activity-profile"] = localState;
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            catalogClient: new StaticCatalogClient(
+                CreatePermanentAndActivityCatalog()));
+
+        await WaitUntilAsync(() =>
+            viewModel.ActivityServers.Count == 1 &&
+            viewModel.ActivityServers[0].IsClientStateChecked);
+
+        var activity = Assert.Single(viewModel.ActivityServers);
+        Assert.Equal(localState, activity.LocalProfileState);
+        Assert.True(activity.IsClientInstalled);
+        Assert.Contains(
+            viewModel.Servers,
+            server => server.Id == "activity-test");
+    }
+
+    [Fact]
+    public async Task ActivityCalendarDownload_InstallsClientAndAddsServerHomeEntry()
+    {
+        var installation = new StubInstallationService();
+        installation.LocalStates["activity-profile"] = LocalProfileState.Missing;
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            new LauncherSettings(
+                OpenDownloadsWhenInstalling: false,
+                StartupPage: "活动"),
+            catalogClient: new StaticCatalogClient(
+                CreatePermanentAndActivityCatalog()));
+        await WaitUntilAsync(() =>
+            viewModel.ActivityServers.Count == 1 &&
+            viewModel.ActivityServers[0].IsClientStateChecked);
+        var activity = Assert.Single(viewModel.ActivityServers);
+
+        await viewModel.PrepareActivityClientCommand.ExecuteAsync(activity);
+
+        Assert.Equal(1, installation.InstallRequestCount);
+        Assert.Equal("activity-profile", installation.LastInstalledProfileId);
+        Assert.Equal(LocalProfileState.Ready, activity.LocalProfileState);
+        Assert.True(activity.IsClientInstalled);
+        Assert.Equal("activity-test", viewModel.SelectedServer?.Id);
+        Assert.Contains(
+            viewModel.Servers,
+            server => server.Id == "activity-test");
+    }
+
+    [Fact]
+    public async Task DeleteActivityClient_RemovesServerHomeEntryButKeepsCalendarEntry()
+    {
+        var installation = new StubInstallationService();
+        installation.LocalStates["activity-profile"] = LocalProfileState.Ready;
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            catalogClient: new StaticCatalogClient(
+                CreatePermanentAndActivityCatalog()));
+        await WaitUntilAsync(() => viewModel.Servers.Any(
+            server => server.Id == "activity-test"));
+        viewModel.SelectServerCommand.Execute(viewModel.Servers.Single(
+            server => server.Id == "activity-test"));
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer?.Id == "activity-test" &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        Assert.True(await viewModel.DeleteSelectedProfileAsync());
+
+        var activity = Assert.Single(viewModel.ActivityServers);
+        Assert.Equal(LocalProfileState.Missing, activity.LocalProfileState);
+        Assert.DoesNotContain(
+            viewModel.Servers,
+            server => server.Id == "activity-test");
+        Assert.Equal("activity-test", Assert.Single(
+            viewModel.ActivityCalendar.UnscheduledActivities).Id);
+        Assert.NotEqual("activity-test", viewModel.SelectedServer?.Id);
+    }
+
+    [Fact]
+    public async Task ActivityState_OldDirectoryResultCannotExposeClientInNewDirectory()
+    {
+        var firstDataRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"hechao-activity-state-a-{Guid.NewGuid():N}");
+        var secondDataRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"hechao-activity-state-b-{Guid.NewGuid():N}");
+        var firstResponse = new TaskCompletionSource<LocalProfileState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var installation = new StubInstallationService
+        {
+            LocalStateHandler = (profile, dataRoot, cancellationToken) =>
+                profile.Id == "activity-profile" &&
+                string.Equals(
+                    Path.GetFullPath(dataRoot),
+                    Path.GetFullPath(firstDataRoot),
+                    StringComparison.OrdinalIgnoreCase)
+                    ? firstResponse.Task.WaitAsync(cancellationToken)
+                    : Task.FromResult(
+                        profile.Id == "activity-profile"
+                            ? LocalProfileState.Missing
+                            : LocalProfileState.Ready),
+        };
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            installation,
+            new LauncherSettings(ClientDirectory: firstDataRoot),
+            catalogClient: new StaticCatalogClient(
+                CreatePermanentAndActivityCatalog()));
+        await WaitUntilAsync(() => installation.LocalStateRequestCount == 1);
+
+        viewModel.UpdateClientDirectory(secondDataRoot);
+        firstResponse.SetResult(LocalProfileState.Ready);
+        await WaitUntilAsync(() =>
+            installation.LocalStateRequestCount >= 2 &&
+            viewModel.ActivityServers.Count == 1 &&
+            viewModel.ActivityServers[0].IsClientStateChecked);
+
+        Assert.Equal(Path.GetFullPath(secondDataRoot), viewModel.ClientDirectory);
+        Assert.Equal(
+            LocalProfileState.Missing,
+            Assert.Single(viewModel.ActivityServers).LocalProfileState);
+        Assert.DoesNotContain(
+            viewModel.Servers,
+            server => server.Id == "activity-test");
     }
 
     [Fact]
@@ -676,7 +848,9 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             new StubAuthenticationService(),
             new StubGameLauncherService(),
             installation,
-            new LauncherSettings(ClientDirectory: firstDataRoot));
+            new LauncherSettings(ClientDirectory: firstDataRoot),
+            catalogClient: new StaticCatalogClient(
+                CreateCatalogSnapshot("catalog-test", "目录测试")));
         await WaitUntilAsync(() =>
             viewModel.SelectedServer is not null &&
             installation.LocalStateRequestCount >= 1);
@@ -784,6 +958,9 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
 
         Assert.Empty(viewModel.Servers);
         Assert.Empty(viewModel.ActivityServers);
+        Assert.Equal(42, viewModel.ActivityCalendar.Days.Count);
+        Assert.Empty(viewModel.ActivityCalendar.SelectedActivities);
+        Assert.Empty(viewModel.ActivityCalendar.UnscheduledActivities);
         Assert.False(viewModel.HasServerCatalogData);
         Assert.False(viewModel.HasCatalogLoadError);
         Assert.False(viewModel.IsCatalogStale);
@@ -1421,6 +1598,54 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         };
     }
 
+    private static LauncherCatalogSnapshot CreatePermanentAndActivityCatalog() =>
+        new(
+            DateTimeOffset.UtcNow,
+            [
+                new ServerSummary(
+                    "permanent-test",
+                    "常驻测试服",
+                    "常",
+                    "常",
+                    ServerStatus.Online,
+                    0,
+                    20,
+                    "1.21.11",
+                    ModLoaderKind.Paper,
+                    AccessTier.Member,
+                    "permanent-profile",
+                    CatalogSection: ServerCatalogSection.Permanent),
+                new ServerSummary(
+                    "activity-test",
+                    "活动测试服",
+                    "活",
+                    "活",
+                    ServerStatus.Closed,
+                    0,
+                    30,
+                    "1.21.11",
+                    ModLoaderKind.NeoForge,
+                    AccessTier.Participant,
+                    "activity-profile",
+                    CatalogSection: ServerCatalogSection.Activity),
+            ],
+            [
+                new ClientProfileSummary(
+                    "permanent-profile",
+                    "常驻测试客户端",
+                    "1.0.0",
+                    1024,
+                    string.Empty,
+                    DateTimeOffset.UtcNow),
+                new ClientProfileSummary(
+                    "activity-profile",
+                    "活动测试客户端",
+                    "1.0.0",
+                    2048,
+                    string.Empty,
+                    DateTimeOffset.UtcNow),
+            ]);
+
     private static LauncherUpdatePlan CreateLauncherUpdatePlan(
         Version targetVersion,
         bool isRequired = false) =>
@@ -1876,7 +2101,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             ClientProfileSummary,
             string,
             CancellationToken,
-            Task<LocalProfileState>>? LocalStateHandler { get; init; }
+            Task<LocalProfileState>>? LocalStateHandler
+        { get; init; }
         public int LocalStateRequestCount { get; private set; }
         public int InstallRequestCount { get; private set; }
         public int RollbackRequestCount { get; private set; }

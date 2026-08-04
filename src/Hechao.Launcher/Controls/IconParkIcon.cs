@@ -24,6 +24,7 @@ public enum IconParkKind
     History,
     IdCard,
     Install,
+    Left,
     Lock,
     Minus,
     PlayOne,

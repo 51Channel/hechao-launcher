@@ -134,6 +134,10 @@ internal static class IconParkGeometryRegistry
             Part("M32 27L24 35L16 27", fill: false, stroke: true, strokeWidth: 4d, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round),
             Part("M23.9917 19V35", fill: false, stroke: true, strokeWidth: 4d, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round)
         ],
+        [IconParkKind.Left] =
+        [
+            Part("M31 36L19 24L31 12", fill: false, stroke: true, strokeWidth: 4d, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round)
+        ],
         [IconParkKind.Lock] =
         [
             Part("M 8 22 H 40 A 2 2 0 0 1 42 24 V 42 A 2 2 0 0 1 40 44 H 8 A 2 2 0 0 1 6 42 V 24 A 2 2 0 0 1 8 22 Z", fill: false, stroke: true, strokeWidth: 4d, lineCap: PenLineCap.Flat, lineJoin: PenLineJoin.Round),

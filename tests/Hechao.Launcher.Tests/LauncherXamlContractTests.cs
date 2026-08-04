@@ -45,6 +45,7 @@ public sealed class LauncherXamlContractTests
     {
         var launcher = LoadLauncherXaml();
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
         var pageBindings = new[]
         {
             "IsServersPage",
@@ -74,6 +75,7 @@ public sealed class LauncherXamlContractTests
     {
         var launcher = LoadLauncherXaml();
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
         var linkButton = launcher
             .Descendants(presentation + "Button")
@@ -85,7 +87,7 @@ public sealed class LauncherXamlContractTests
             "绑定 Microsoft 正版身份",
             linkButton.Attribute("AutomationProperties.Name")?.Value);
 
-        foreach (var listName in new[] { "服务器目录", "下载历史", "活动服务器目录" })
+        foreach (var listName in new[] { "服务器目录", "下载历史" })
         {
             var list = launcher
                 .Descendants(presentation + "ListBox")
@@ -99,6 +101,30 @@ public sealed class LauncherXamlContractTests
             Assert.Contains("AutomationProperties.Name", setters);
             Assert.Contains("AutomationProperties.ItemStatus", setters);
             Assert.Contains("AutomationProperties.HelpText", setters);
+        }
+
+        var activityItemStyle = launcher
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ActivityCalendarDetailItemStyle");
+        var activityAutomationSetters = activityItemStyle
+            .Elements(presentation + "Setter")
+            .Select(setter => setter.Attribute("Property")?.Value)
+            .ToArray();
+        Assert.Contains("AutomationProperties.Name", activityAutomationSetters);
+        Assert.Contains("AutomationProperties.ItemStatus", activityAutomationSetters);
+        Assert.Contains("AutomationProperties.HelpText", activityAutomationSetters);
+
+        foreach (var listName in new[] { "所选日期的活动", "待排期活动" })
+        {
+            var list = launcher
+                .Descendants(presentation + "ListBox")
+                .Single(element =>
+                    element.Attribute("AutomationProperties.Name")?.Value == listName);
+            Assert.Equal(
+                "{StaticResource ActivityCalendarDetailItemStyle}",
+                list.Attribute("ItemContainerStyle")?.Value);
         }
     }
 
@@ -736,70 +762,192 @@ public sealed class LauncherXamlContractTests
         var document = LoadLauncherXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
 
         var serverList = document
             .Descendants(presentation + "ListBox")
             .Single(element =>
                 element.Attribute("ItemsSource")?.Value ==
                 "{Binding Servers}");
-        var activityList = document
+        var activityLists = document
             .Descendants(presentation + "ListBox")
-            .Single(element =>
-                element.Attribute("ItemsSource")?.Value ==
-                "{Binding ActivityServers}");
+            .Where(element =>
+                element.Attribute(x + "Name")?.Value is
+                    "SelectedActivityList" or "UnscheduledActivityList")
+            .ToArray();
         Assert.Equal(
             "{Binding CanSelectServer}",
             serverList.Attribute("IsEnabled")?.Value);
-        Assert.Equal(
-            "{Binding CanSelectServer}",
-            activityList.Attribute("IsEnabled")?.Value);
+        Assert.Equal(2, activityLists.Length);
+        Assert.All(
+            activityLists,
+            activityList => Assert.Equal(
+                "{Binding CanSelectServer}",
+                activityList.Attribute("IsEnabled")?.Value));
 
-        var viewButton = activityList
+        var detailTemplate = document
+            .Descendants(presentation + "DataTemplate")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ActivityCalendarDetailTemplate");
+        var prepareButton = detailTemplate
             .Descendants(presentation + "Button")
             .Single(element =>
                 element.Attribute("Command")?.Value.Contains(
-                    "ViewActivityServerCommand",
+                    "PrepareActivityClientCommand",
                     StringComparison.Ordinal) == true);
         Assert.Equal(
-            "{Binding DataContext.CanSelectServer, RelativeSource={RelativeSource AncestorType=ListBox}}",
-            viewButton.Attribute("IsEnabled")?.Value);
+            "{Binding CanPrepareClient}",
+            prepareButton.Attribute("IsEnabled")?.Value);
         Assert.Equal(
             "{Binding}",
-            viewButton.Attribute("CommandParameter")?.Value);
+            prepareButton.Attribute("CommandParameter")?.Value);
     }
 
     [Fact]
-    public void ActivityCards_UseWrapperServerAndShowScheduleDetails()
+    public void ActivityCalendarDetails_UseWrapperServerAndShowScheduleDetails()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var activityList = document
-            .Descendants(presentation + "ListBox")
-            .Single(element =>
-                element.Attribute("ItemsSource")?.Value ==
-                "{Binding ActivityServers}");
-        var template = activityList
+        var template = document
             .Descendants(presentation + "DataTemplate")
-            .Single();
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ActivityCalendarDetailTemplate");
         var attributeValues = template
             .DescendantsAndSelf()
             .Attributes()
             .Select(attribute => attribute.Value)
             .ToArray();
 
-        Assert.Null(template.Attribute("DataType"));
         Assert.Contains("{Binding ScheduleText}", attributeValues);
         Assert.Contains("{Binding AnnouncementText}", attributeValues);
-        Assert.Contains("{Binding Server.IconGlyph}", attributeValues);
         Assert.Contains("{Binding Server.Name}", attributeValues);
-        Assert.Contains("{Binding Server.ShortName}", attributeValues);
-        Assert.Contains("{Binding Server.Status}", attributeValues);
         Assert.Contains("{Binding Server.MinecraftVersion}", attributeValues);
         Assert.Contains("{Binding Server.Loader}", attributeValues);
         Assert.Contains("{Binding Server.OnlinePlayers}", attributeValues);
         Assert.Contains("{Binding Server.MaxPlayers}", attributeValues);
+        Assert.Contains("{Binding ClientStateText}", attributeValues);
+        Assert.Contains("{Binding ClientActionText}", attributeValues);
+        Assert.Contains("{Binding ClientActionIcon}", attributeValues);
+        Assert.Contains("{Binding ClientActionHint}", attributeValues);
+
+        var prepareButton = template
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Command")?.Value.Contains(
+                    "PrepareActivityClientCommand",
+                    StringComparison.Ordinal) == true);
+        Assert.Equal("5", prepareButton.Attribute("Grid.Row")?.Value);
+        Assert.Contains(
+            prepareButton.Descendants(),
+            element => element.Name.LocalName == "IconParkIcon");
+
+        var statusDotStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ActivityStatusDotStyle");
+        Assert.Contains(
+            statusDotStyle.Descendants(presentation + "DataTrigger"),
+            trigger =>
+                trigger.Attribute("Binding")?.Value ==
+                    "{Binding Server.Status}");
+    }
+
+    [Fact]
+    public void ServerHome_ShowsActivityScheduleInListAndSelectedDetails()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        Assert.Contains(
+            document.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value ==
+                "{Binding Converter={StaticResource ServerListMetaTextConverter}}");
+
+        var selectedSchedule = document
+            .Descendants(presentation + "TextBlock")
+            .Single(element => element.Attribute("Text")?.Value ==
+                "{Binding SelectedServerScheduleText}");
+        var schedulePanel = Assert.IsType<XElement>(selectedSchedule.Parent);
+        Assert.Equal(
+            "{Binding HasSelectedServerSchedule, Converter={StaticResource BooleanToVisibilityConverter}}",
+            schedulePanel.Attribute("Visibility")?.Value);
+        Assert.Contains(
+            schedulePanel.Descendants(),
+            element =>
+                element.Name.LocalName == "IconParkIcon" &&
+                element.Attribute("Kind")?.Value == "Calendar");
+    }
+
+    [Fact]
+    public void ActivityPage_UsesSixWeekCalendarAndIconParkMonthNavigation()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var calendarDays = document
+            .Descendants(presentation + "ItemsControl")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "ActivityCalendarDays");
+        var dayGrid = calendarDays
+            .Element(presentation + "ItemsControl.ItemsPanel")!
+            .Descendants(presentation + "UniformGrid")
+            .Single();
+        var selectDayButton = calendarDays
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Command")?.Value?.Contains(
+                    "SelectDayCommand",
+                    StringComparison.Ordinal) == true);
+
+        Assert.Equal(
+            "{Binding ActivityCalendar.Days}",
+            calendarDays.Attribute("ItemsSource")?.Value);
+        Assert.Equal("7", dayGrid.Attribute("Columns")?.Value);
+        Assert.Equal(
+            "{Binding}",
+            selectDayButton.Attribute("CommandParameter")?.Value);
+
+        var navigation = new Dictionary<string, string>
+        {
+            ["{Binding ActivityCalendar.PreviousMonthCommand}"] = "Left",
+            ["{Binding ActivityCalendar.GoToTodayCommand}"] = "Calendar",
+            ["{Binding ActivityCalendar.NextMonthCommand}"] = "Right",
+        };
+        foreach (var (command, iconKind) in navigation)
+        {
+            var button = document
+                .Descendants(presentation + "Button")
+                .Single(element => element.Attribute("Command")?.Value == command);
+            Assert.Contains(
+                button.Descendants(),
+                element =>
+                    element.Name.LocalName == "IconParkIcon" &&
+                    element.Attribute("Kind")?.Value == iconKind);
+        }
+
+        Assert.Contains(
+            document.Descendants(presentation + "ListBox"),
+            element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding ActivityCalendar.SelectedActivities}");
+        Assert.Contains(
+            document.Descendants(presentation + "ListBox"),
+            element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding ActivityCalendar.UnscheduledActivities}");
     }
 
     [Fact]

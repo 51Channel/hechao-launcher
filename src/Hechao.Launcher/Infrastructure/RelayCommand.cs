@@ -100,3 +100,66 @@ public sealed class AsyncRelayCommand : ICommand
     public void RaiseCanExecuteChanged() =>
         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
+
+public sealed class AsyncRelayCommand<T> : ICommand
+{
+    private readonly Func<T?, Task> _execute;
+    private readonly Predicate<T?>? _canExecute;
+    private readonly Action<Exception> _onException;
+    private int _isExecuting;
+
+    public AsyncRelayCommand(
+        Func<T?, Task> execute,
+        Action<Exception> onException,
+        Predicate<T?>? canExecute = null)
+    {
+        _execute = execute;
+        _onException = onException;
+        _canExecute = canExecute;
+    }
+
+    public event EventHandler? CanExecuteChanged;
+
+    public bool IsExecuting => Volatile.Read(ref _isExecuting) != 0;
+
+    public bool CanExecute(object? parameter)
+    {
+        var value = Coerce(parameter);
+        return !IsExecuting && (_canExecute?.Invoke(value) ?? true);
+    }
+
+    public async void Execute(object? parameter)
+    {
+        await ExecuteAsync(Coerce(parameter));
+    }
+
+    public async Task ExecuteAsync(T? parameter)
+    {
+        if (!CanExecute(parameter) ||
+            Interlocked.CompareExchange(ref _isExecuting, 1, 0) != 0)
+        {
+            return;
+        }
+
+        RaiseCanExecuteChanged();
+        try
+        {
+            await _execute(parameter);
+        }
+        catch (Exception exception)
+        {
+            _onException(exception);
+        }
+        finally
+        {
+            Volatile.Write(ref _isExecuting, 0);
+            RaiseCanExecuteChanged();
+        }
+    }
+
+    public void RaiseCanExecuteChanged() =>
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+
+    private static T? Coerce(object? parameter) =>
+        parameter is T value ? value : default;
+}

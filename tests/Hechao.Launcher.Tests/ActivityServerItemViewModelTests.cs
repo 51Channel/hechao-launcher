@@ -1,4 +1,6 @@
 using Hechao.Contracts;
+using Hechao.Distribution;
+using Hechao.Launcher.Controls;
 using Hechao.Launcher.ViewModels;
 
 namespace Hechao.Launcher.Tests;
@@ -24,6 +26,44 @@ public sealed class ActivityServerItemViewModelTests
 
         Assert.Equal("开放时间待定", item.ScheduleText);
         Assert.Equal("今晚开放", item.AnnouncementText);
+    }
+
+    [Fact]
+    public void ClientAction_TracksMissingUpdateAndReadyStates()
+    {
+        var item = new ActivityServerItemViewModel(
+            CreateServer(null, null, "今晚开放"));
+
+        Assert.Equal("检查客户端", item.ClientActionText);
+        Assert.Equal(IconParkKind.Refresh, item.ClientActionIcon);
+        Assert.False(item.IsClientInstalled);
+
+        item.ApplyClientState(LocalProfileState.Missing);
+        Assert.Equal("下载活动客户端", item.ClientActionText);
+        Assert.Equal(IconParkKind.Download, item.ClientActionIcon);
+        Assert.False(item.IsClientInstalled);
+
+        item.ApplyClientState(LocalProfileState.UpdateRequired);
+        Assert.Equal("更新活动客户端", item.ClientActionText);
+        Assert.True(item.IsClientInstalled);
+
+        item.ApplyClientState(LocalProfileState.Ready);
+        Assert.Equal("在服务器主页查看", item.ClientActionText);
+        Assert.Equal(IconParkKind.Right, item.ClientActionIcon);
+        Assert.True(item.IsClientInstalled);
+    }
+
+    [Fact]
+    public void MissingCatalogProfile_DisablesClientPreparation()
+    {
+        var item = new ActivityServerItemViewModel(
+            CreateServer(null, null, null));
+
+        item.MarkClientProfileUnavailable();
+
+        Assert.False(item.CanPrepareClient);
+        Assert.Equal("客户端暂未发布", item.ClientActionText);
+        Assert.False(item.IsClientInstalled);
     }
 
     private static ServerSummary CreateServer(

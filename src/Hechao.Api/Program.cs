@@ -690,6 +690,12 @@ app.MapPost("/v1/internal/forum/accounts/profile", UpdateForumAccountProfileAsyn
     .RequireRateLimiting("internal-forum");
 app.MapGet("/v1/catalog", GetCatalogAsync)
     .RequireRateLimiting("catalog");
+app.MapGet("/v1/public/activities", GetPublicActivitiesAsync)
+    .RequireRateLimiting("catalog");
+app.MapGet("/v1/public/launcher/latest", GetPublicLauncherRelease)
+    .RequireRateLimiting("catalog");
+app.MapGet("/v1/public/launcher/download", DownloadPublicLauncher)
+    .RequireRateLimiting("downloads");
 app.MapGet("/v1/launcher/update", GetLauncherUpdate)
     .RequireAuthorization()
     .RequireRateLimiting("catalog");
@@ -1798,6 +1804,56 @@ async Task<IResult> GetCatalogAsync(
         account?.AccessTier,
         cancellationToken);
     return Results.Ok(snapshot);
+}
+
+async Task<IResult> GetPublicActivitiesAsync(
+    CatalogRepository repository,
+    CancellationToken cancellationToken)
+{
+    var catalog = await repository.GetSnapshotAsync(
+        userId: null,
+        accessTier: null,
+        cancellationToken: cancellationToken);
+    return Results.Ok(PublicActivityCatalogProjector.Create(catalog));
+}
+
+IResult GetPublicLauncherRelease(IOptions<LauncherUpdateOptions> options)
+{
+    var release = options.Value;
+    if (!release.Enabled)
+    {
+        return Results.NoContent();
+    }
+
+    return Results.Ok(new PublicLauncherRelease(
+        release.LatestVersion,
+        release.InstallerBytes,
+        release.InstallerSha256.ToLowerInvariant(),
+        release.PublishedAt,
+        release.ReleaseNotes));
+}
+
+IResult DownloadPublicLauncher(
+    IOptions<LauncherUpdateOptions> options,
+    OssPresignedUrlFactory urlFactory)
+{
+    var release = options.Value;
+    if (!release.Enabled)
+    {
+        return Results.Problem(
+            title: "启动器下载暂未开放",
+            detail: "当前没有可供下载的正式版本。",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var installerUrl = urlFactory.TryCreateLauncherInstallerUrl(
+        release.LatestVersion);
+    return installerUrl is null
+        ? Results.Problem(
+            title: "启动器下载暂时不可用",
+            detail: "安装文件尚未准备完成，请稍后重试。",
+            statusCode: StatusCodes.Status503ServiceUnavailable)
+        : new PrivateDownloadRedirectResult(installerUrl);
 }
 
 IResult GetLauncherUpdate(

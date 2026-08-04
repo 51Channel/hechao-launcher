@@ -29,6 +29,7 @@ const iconNames = [
   "History",
   "IdCard",
   "Install",
+  "Left",
   "Lock",
   "Minus",
   "PlayOne",

@@ -6,6 +6,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:contracts="clr-namespace:Hechao.Contracts;assembly=Hechao.Contracts"
         xmlns:controls="clr-namespace:Hechao.Launcher.Controls"
+        xmlns:converters="clr-namespace:Hechao.Launcher.Converters"
         mc:Ignorable="d"
         Title="赫朝启动器"
         Width="1500"
@@ -24,6 +25,10 @@
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         PreviewKeyDown="MainWindow_OnPreviewKeyDown">
+    <Window.Resources>
+        <converters:ServerListMetaTextConverter x:Key="ServerListMetaTextConverter" />
+    </Window.Resources>
+
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
                             ResizeBorderThickness="6"
@@ -116,8 +121,8 @@
                     <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
                                   IsChecked="{Binding IsActivitiesPage, Mode=TwoWay}"
                                   Command="{Binding ShowActivitiesCommand}"
-                                  ToolTip="活动服目录"
-                                  AutomationProperties.Name="活动服目录">
+                                  ToolTip="活动日历"
+                                  AutomationProperties.Name="活动日历">
                             <StackPanel>
                                 <controls:IconParkIcon Kind="Calendar"
                                                        Width="20"
@@ -267,7 +272,8 @@
                                        BasedOn="{StaticResource ServerListItemStyle}">
                                     <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
                                     <Setter Property="AutomationProperties.ItemStatus" Value="{Binding Status}" />
-                                    <Setter Property="AutomationProperties.HelpText" Value="{Binding MinecraftVersion}" />
+                                    <Setter Property="AutomationProperties.HelpText"
+                                            Value="{Binding Converter={StaticResource ServerListMetaTextConverter}}" />
                                 </Style>
                             </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
@@ -358,7 +364,8 @@
                                                 </TextBlock.Style>
                                             </TextBlock>
                                         </StackPanel>
-                                        <TextBlock Text="{Binding MinecraftVersion}"
+                                        <TextBlock Text="{Binding Converter={StaticResource ServerListMetaTextConverter}}"
+                                                   ToolTip="{Binding Converter={StaticResource ServerListMetaTextConverter}}"
                                                    FontFamily="Segoe UI"
                                                    FontSize="11"
                                                    Foreground="{StaticResource InkFaintBrush}"
@@ -727,6 +734,23 @@
                                            FontSize="12"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            VerticalAlignment="Center" />
+                                <StackPanel Orientation="Horizontal"
+                                            Visibility="{Binding HasSelectedServerSchedule, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Border Width="1"
+                                            Height="12"
+                                            Background="{StaticResource BorderBrush}"
+                                            Margin="13,0" />
+                                    <controls:IconParkIcon Kind="Calendar"
+                                                           Width="12"
+                                                           Height="12"
+                                                           Foreground="{StaticResource SteelBrush}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding SelectedServerScheduleText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource InkMutedBrush}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
                             </WrapPanel>
                         </StackPanel>
 
@@ -1727,36 +1751,233 @@
                   Grid.Row="1"
                   Background="{StaticResource CanvasBrush}"
                   Visibility="{Binding IsActivitiesPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.Resources>
+                    <Style x:Key="ActivityCalendarDayButtonStyle" TargetType="Button">
+                        <Setter Property="MinHeight" Value="88" />
+                        <Setter Property="Padding" Value="8,7" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                        <Setter Property="Cursor" Value="Hand" />
+                        <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid Background="Transparent">
+                                        <Border x:Name="DaySurface"
+                                                Background="{StaticResource SurfaceBrush}"
+                                                BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="0,0,1,1" />
+                                        <ContentPresenter x:Name="DayContent"
+                                                          Margin="{TemplateBinding Padding}"
+                                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                        <Border x:Name="DaySelection"
+                                                Margin="2"
+                                                BorderBrush="{StaticResource HechaoRedBrush}"
+                                                BorderThickness="2"
+                                                CornerRadius="4"
+                                                Visibility="Collapsed" />
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="DaySurface" Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="DaySurface" Property="Background" Value="{StaticResource SurfacePressedBrush}" />
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                            <Setter TargetName="DaySurface" Property="Background" Value="{StaticResource StripBrush}" />
+                                            <Setter TargetName="DayContent" Property="Opacity" Value="0.62" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="DaySurface" Property="Background" Value="{StaticResource HechaoRedSoftBrush}" />
+                                            <Setter TargetName="DayContent" Property="Opacity" Value="1" />
+                                            <Setter TargetName="DaySelection" Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
+                    <Style x:Key="ActivityStatusDotStyle" TargetType="Ellipse">
+                        <Setter Property="Width" Value="6" />
+                        <Setter Property="Height" Value="6" />
+                        <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Server.Status}"
+                                         Value="{x:Static contracts:ServerStatus.Online}">
+                                <Setter Property="Fill" Value="{StaticResource OnlineBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Server.Status}"
+                                         Value="{x:Static contracts:ServerStatus.Maintenance}">
+                                <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+
+                    <Style x:Key="ActivityStatusTextStyle" TargetType="TextBlock">
+                        <Setter Property="Text" Value="未开放" />
+                        <Setter Property="FontSize" Value="11" />
+                        <Setter Property="FontWeight" Value="Bold" />
+                        <Setter Property="Foreground" Value="{StaticResource InkMutedBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Server.Status}"
+                                         Value="{x:Static contracts:ServerStatus.Online}">
+                                <Setter Property="Text" Value="开放中" />
+                                <Setter Property="Foreground" Value="{StaticResource OnlineBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Server.Status}"
+                                         Value="{x:Static contracts:ServerStatus.Maintenance}">
+                                <Setter Property="Text" Value="维护中" />
+                                <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+
+                    <Style x:Key="ActivityCalendarDetailItemStyle" TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
+                        <Setter Property="AutomationProperties.Name" Value="{Binding Server.Name}" />
+                        <Setter Property="AutomationProperties.ItemStatus" Value="{Binding ScheduleText}" />
+                        <Setter Property="AutomationProperties.HelpText" Value="{Binding AnnouncementText}" />
+                    </Style>
+
+                    <DataTemplate x:Key="ActivityCalendarDetailTemplate">
+                        <Border Padding="18,16"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Style="{StaticResource ActivityStatusDotStyle}"
+                                             Margin="0,0,8,0"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Server.Name}"
+                                               FontSize="14"
+                                               FontWeight="Black"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None" />
+                                    <TextBlock Grid.Column="2"
+                                               Margin="10,1,0,0"
+                                               Style="{StaticResource ActivityStatusTextStyle}"
+                                               VerticalAlignment="Top" />
+                                </Grid>
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding ScheduleText}"
+                                           Margin="14,8,0,0"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HechaoRedDarkBrush}"
+                                           TextWrapping="Wrap"
+                                           TextTrimming="None" />
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding AnnouncementText}"
+                                           Margin="14,6,0,0"
+                                           FontSize="11"
+                                           LineHeight="17"
+                                           Foreground="{StaticResource InkMutedBrush}"
+                                           TextWrapping="Wrap"
+                                           TextTrimming="None" />
+                                <Grid Grid.Row="3" Margin="14,11,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock FontFamily="Segoe UI"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkFaintBrush}"
+                                               TextTrimming="CharacterEllipsis">
+                                        <Run Text="{Binding Server.MinecraftVersion}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding Server.Loader}" />
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="1"
+                                               FontFamily="Segoe UI"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkFaintBrush}"
+                                               Margin="10,0,0,0">
+                                        <Run Text="{Binding Server.OnlinePlayers}" />
+                                        <Run Text="/" />
+                                        <Run Text="{Binding Server.MaxPlayers}" />
+                                        <Run Text=" 在线" />
+                                    </TextBlock>
+                                </Grid>
+                                <TextBlock Grid.Row="4"
+                                           Text="{Binding ClientStateText}"
+                                           Margin="14,10,0,0"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource InkMutedBrush}" />
+                                <Button Grid.Row="5"
+                                         Height="38"
+                                         Margin="14,13,0,0"
+                                         Style="{StaticResource BaseButtonStyle}"
+                                         Command="{Binding DataContext.PrepareActivityClientCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                         IsEnabled="{Binding CanPrepareClient}"
+                                         CommandParameter="{Binding}"
+                                         ToolTip="{Binding ClientActionHint}"
+                                         AutomationProperties.Name="{Binding ClientActionAutomationName}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:IconParkIcon Kind="{Binding ClientActionIcon}"
+                                                               Width="14"
+                                                               Height="14"
+                                                               Margin="0,0,8,0" />
+                                        <TextBlock Text="{Binding ClientActionText}" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </Grid.Resources>
+
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <Grid Margin="34,28,34,34" MaxWidth="1260">
+                    <Grid Margin="30,24,30,30" MaxWidth="1320">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="LIMITED OPERATIONS"
-                                           Style="{StaticResource PageEyebrowStyle}" />
-                                <TextBlock Text="活动服目录"
-                                           Style="{StaticResource PageHeaderTitleStyle}"
-                                           Margin="0,5,0,0" />
-                                <TextBlock Text="每场活动都使用独立客户端档案，启动器会自动准备对应模组与资源。"
+                                <TextBlock Text="活动日历"
+                                           Style="{StaticResource PageHeaderTitleStyle}" />
+                                <TextBlock Text="按日期查看活动开放时间；未开放时也可以提前准备对应客户端。"
+                                           Margin="0,7,0,0"
                                            FontSize="13"
                                            Foreground="{StaticResource InkMutedBrush}"
                                            TextWrapping="Wrap"
-                                           TextTrimming="None"
-                                           Margin="0,7,0,0" />
+                                           TextTrimming="None" />
                             </StackPanel>
                             <Button Grid.Column="1"
                                     Style="{StaticResource BaseButtonStyle}"
                                     Command="{Binding RefreshCommand}"
-                                    VerticalAlignment="Bottom"
+                                    VerticalAlignment="Center"
                                     AutomationProperties.Name="刷新活动状态">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:IconParkIcon Kind="Refresh"
@@ -1768,270 +1989,344 @@
                             </Button>
                         </Grid>
 
-                        <Border Grid.Row="1"
-                                Margin="0,24,0,20"
-                                Background="{StaticResource StripBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="1,0"
-                                Padding="18,12">
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <controls:IconParkIcon Kind="VolumeNotice"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Foreground="{StaticResource HechaoRedBrush}"
-                                                           Margin="0,0,10,0" />
-                                    <TextBlock Text="活动录制以公告时间为准，未开放的活动仍可提前安装客户端。"
-                                               FontSize="12"
-                                               Foreground="{StaticResource InkMutedBrush}" />
-                                </StackPanel>
-                                <TextBlock Text="{Binding ActivityServerCount, StringFormat={}{0} 个活动档案}"
-                                           FontFamily="Segoe UI"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           HorizontalAlignment="Right" />
-                            </Grid>
-                        </Border>
-
-                        <controls:LiveRegionBorder x:Name="ActivityCatalogStaleLiveRegion"
-                                                   Grid.Row="2"
-                                                   Margin="0,0,0,12"
-                                                   Padding="14,10"
+                        <controls:LiveRegionBorder x:Name="ActivityCalendarStatusLiveRegion"
+                                                   Grid.Row="1"
+                                                   Margin="0,18,0,0"
+                                                   Padding="14,11"
                                                    Background="{StaticResource StripBrush}"
                                                    BorderBrush="{StaticResource BorderBrush}"
                                                    BorderThickness="1"
                                                    CornerRadius="4"
-                                                   AutomationProperties.Name="活动目录数据状态"
-                                                   AutomationProperties.ItemStatus="{Binding CatalogStatusMessage}"
+                                                   AutomationProperties.Name="活动日历状态"
+                                                   AutomationProperties.ItemStatus="{Binding ActivityCalendarStatusMessage}"
                                                    AutomationProperties.LiveSetting="Polite"
-                                                   Visibility="{Binding IsCatalogStale, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="{Binding CatalogStatusMessage}"
-                                       FontSize="12"
-                                       Foreground="{StaticResource InkMutedBrush}"
-                                       TextWrapping="Wrap" />
+                                                   Visibility="{Binding IsActivityCalendarStatusVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <controls:IconParkIcon Kind="Calendar"
+                                                       Width="18"
+                                                       Height="18"
+                                                       Margin="0,1,11,0"
+                                                       Foreground="{StaticResource HechaoRedDarkBrush}" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding ActivityCalendarStatusTitle}"
+                                               FontSize="12"
+                                               FontWeight="Bold" />
+                                    <TextBlock Text="{Binding ActivityCalendarStatusMessage}"
+                                               Margin="0,3,0,0"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkMutedBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None" />
+                                </StackPanel>
+                                <Button Grid.Column="2"
+                                        MinWidth="94"
+                                        Height="34"
+                                        Margin="16,0,0,0"
+                                        Padding="12,5"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        Content="重新加载"
+                                        Command="{Binding RefreshCommand}"
+                                        AutomationProperties.Name="重新加载活动日历" />
+                            </Grid>
                         </controls:LiveRegionBorder>
 
-                        <Grid Grid.Row="3">
-                            <ListBox ItemsSource="{Binding ActivityServers}"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     IsEnabled="{Binding CanSelectServer}"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                     AutomationProperties.Name="活动服务器目录">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem"
-                                           BasedOn="{StaticResource PageListItemStyle}">
-                                        <Setter Property="AutomationProperties.Name" Value="{Binding Server.Name}" />
-                                        <Setter Property="AutomationProperties.ItemStatus" Value="{Binding ScheduleText}" />
-                                        <Setter Property="AutomationProperties.HelpText" Value="{Binding AnnouncementText}" />
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Width="370"
-                                                MinHeight="286"
-                                                Margin="0,0,10,2"
-                                                Padding="20"
-                                                Style="{StaticResource SurfacePanelStyle}">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="*" />
-                                                    <RowDefinition Height="Auto" />
-                                                </Grid.RowDefinitions>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="52" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                     <Border Width="42"
-                                                             Height="42"
-                                                             Background="{StaticResource HechaoRedSoftBrush}"
-                                                             CornerRadius="4">
-                                                        <TextBlock Text="{Binding Server.IconGlyph}"
-                                                                   FontSize="18"
-                                                                   FontWeight="Black"
-                                                                   Foreground="{StaticResource HechaoRedDarkBrush}"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center" />
-                                                    </Border>
-                                                    <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="{Binding Server.Name}"
-                                                                   FontSize="16"
-                                                                   FontWeight="Black" />
-                                                        <TextBlock Text="{Binding Server.ShortName}"
-                                                                   FontFamily="Segoe UI"
-                                                                   FontSize="11"
-                                                                   Foreground="{StaticResource InkMutedBrush}"
-                                                                   Margin="0,4,0,0" />
+                        <Grid Grid.Row="2" Margin="0,18,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="7*" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="3*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource SurfacePanelStyle}"
+                                    ClipToBounds="True">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Border Padding="16,12"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ActivityCalendar.DisplayedMonthText}"
+                                                           FontSize="17"
+                                                           FontWeight="Black" />
+                                                <TextBlock Text="{Binding ActivityCalendar.MonthSummaryText}"
+                                                           Margin="0,3,0,0"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource InkMutedBrush}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <Button Width="34"
+                                                        Height="34"
+                                                        MinHeight="34"
+                                                        Padding="0"
+                                                        Style="{StaticResource BaseButtonStyle}"
+                                                        Command="{Binding ActivityCalendar.PreviousMonthCommand}"
+                                                        ToolTip="上个月"
+                                                        AutomationProperties.Name="查看上个月">
+                                                    <controls:IconParkIcon Kind="Left"
+                                                                           Width="14"
+                                                                           Height="14" />
+                                                </Button>
+                                                <Button Height="34"
+                                                        MinHeight="34"
+                                                        Margin="6,0"
+                                                        Padding="10,5"
+                                                        Style="{StaticResource BaseButtonStyle}"
+                                                        Command="{Binding ActivityCalendar.GoToTodayCommand}"
+                                                        AutomationProperties.Name="回到今天">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <controls:IconParkIcon Kind="Calendar"
+                                                                               Width="14"
+                                                                               Height="14"
+                                                                               Margin="0,0,6,0" />
+                                                        <TextBlock Text="今天" />
                                                     </StackPanel>
-                                                    <Border Grid.Column="2"
-                                                            Padding="9,5"
-                                                            Background="{StaticResource SurfaceMutedBrush}"
-                                                            BorderBrush="{StaticResource BorderBrush}"
-                                                            BorderThickness="1"
-                                                            CornerRadius="4"
-                                                            VerticalAlignment="Top">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Ellipse Width="7"
-                                                                     Height="7"
-                                                                     Margin="0,0,6,0"
-                                                                     VerticalAlignment="Center">
-                                                                <Ellipse.Style>
-                                                                    <Style TargetType="Ellipse">
-                                                                        <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding Server.Status}"
-                                                                                         Value="{x:Static contracts:ServerStatus.Online}">
-                                                                                <Setter Property="Fill" Value="{StaticResource OnlineBrush}" />
-                                                                            </DataTrigger>
-                                                                            <DataTrigger Binding="{Binding Server.Status}"
-                                                                                         Value="{x:Static contracts:ServerStatus.Maintenance}">
-                                                                                <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Ellipse.Style>
-                                                            </Ellipse>
-                                                            <TextBlock FontSize="11" FontWeight="Bold">
+                                                </Button>
+                                                <Button Width="34"
+                                                        Height="34"
+                                                        MinHeight="34"
+                                                        Padding="0"
+                                                        Style="{StaticResource BaseButtonStyle}"
+                                                        Command="{Binding ActivityCalendar.NextMonthCommand}"
+                                                        ToolTip="下个月"
+                                                        AutomationProperties.Name="查看下个月">
+                                                    <controls:IconParkIcon Kind="Right"
+                                                                           Width="14"
+                                                                           Height="14" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Grid.Row="1"
+                                            Background="{StaticResource StripBrush}"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="0,9">
+                                        <UniformGrid Columns="7">
+                                            <TextBlock Text="周一" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                            <TextBlock Text="周二" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                            <TextBlock Text="周三" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                            <TextBlock Text="周四" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                            <TextBlock Text="周五" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                            <TextBlock Text="周六" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                            <TextBlock Text="周日" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkMutedBrush}" TextAlignment="Center" />
+                                        </UniformGrid>
+                                    </Border>
+
+                                    <ItemsControl x:Name="ActivityCalendarDays"
+                                                  Grid.Row="2"
+                                                  ItemsSource="{Binding ActivityCalendar.Days}"
+                                                  AutomationProperties.Name="活动月历日期">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="7" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource ActivityCalendarDayButtonStyle}"
+                                                        Command="{Binding DataContext.ActivityCalendar.SelectDayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="{Binding AutomationName}"
+                                                        AutomationProperties.Name="{Binding AutomationName}">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+                                                        <Border Width="26"
+                                                                Height="26"
+                                                                HorizontalAlignment="Left"
+                                                                CornerRadius="13">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="Transparent" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                            <Setter Property="Background" Value="{StaticResource HechaoRedBrush}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="{Binding DayNumber}"
+                                                                       FontFamily="Segoe UI"
+                                                                       FontSize="12"
+                                                                       FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center">
                                                                 <TextBlock.Style>
                                                                     <Style TargetType="TextBlock">
-                                                                        <Setter Property="Text" Value="未开放" />
+                                                                        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
                                                                         <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding Server.Status}"
-                                                                                         Value="{x:Static contracts:ServerStatus.Online}">
-                                                                                <Setter Property="Text" Value="在线" />
+                                                                            <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                                                                <Setter Property="Foreground" Value="{StaticResource InkFaintBrush}" />
                                                                             </DataTrigger>
-                                                                            <DataTrigger Binding="{Binding Server.Status}"
-                                                                                         Value="{x:Static contracts:ServerStatus.Maintenance}">
-                                                                                <Setter Property="Text" Value="维护中" />
+                                                                            <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                                <Setter Property="Foreground" Value="White" />
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
                                                                 </TextBlock.Style>
                                                             </TextBlock>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </Grid>
+                                                        </Border>
 
-                                                <StackPanel Grid.Row="1"
-                                                            Margin="0,16,0,0">
-                                                    <TextBlock Text="{Binding ScheduleText}"
-                                                               FontSize="12"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{StaticResource HechaoRedDarkBrush}"
-                                                               TextWrapping="Wrap"
-                                                               TextTrimming="None" />
-                                                    <TextBlock Text="{Binding AnnouncementText}"
-                                                               Margin="0,5,0,0"
-                                                               FontSize="11"
-                                                               LineHeight="17"
-                                                               Foreground="{StaticResource InkMutedBrush}"
-                                                               TextWrapping="Wrap"
-                                                               TextTrimming="None" />
-                                                </StackPanel>
+                                                        <ItemsControl Grid.Row="1"
+                                                                      Margin="0,5,0,0"
+                                                                      ItemsSource="{Binding VisibleActivities}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Height="23"
+                                                                            Margin="0,0,0,3"
+                                                                            Padding="6,0"
+                                                                            Background="{StaticResource SurfaceMutedBrush}"
+                                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                                            BorderThickness="1"
+                                                                            CornerRadius="3">
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <Ellipse Style="{StaticResource ActivityStatusDotStyle}"
+                                                                                     Margin="0,0,5,0"
+                                                                                     VerticalAlignment="Center" />
+                                                                            <TextBlock Grid.Column="1"
+                                                                                       Text="{Binding Server.Name}"
+                                                                                       FontSize="10"
+                                                                                       FontWeight="SemiBold"
+                                                                                       VerticalAlignment="Center"
+                                                                                       TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
 
-                                                <Grid Grid.Row="2" Margin="0,18,0,16">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <StackPanel>
-                                                        <TextBlock Text="版本" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
-                                                        <TextBlock Text="{Binding Server.MinecraftVersion}"
-                                                                   FontFamily="Segoe UI"
-                                                                   FontSize="13"
-                                                                   FontWeight="Bold"
-                                                                   Margin="0,5,0,0" />
-                                                    </StackPanel>
-                                                    <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="加载器" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
-                                                        <TextBlock Text="{Binding Server.Loader}"
-                                                                   FontFamily="Segoe UI"
-                                                                   FontSize="13"
-                                                                   FontWeight="Bold"
-                                                                   Margin="0,5,0,0" />
-                                                    </StackPanel>
-                                                    <StackPanel Grid.Column="2">
-                                                        <TextBlock Text="在线" FontSize="11" Foreground="{StaticResource InkFaintBrush}" />
-                                                        <TextBlock FontFamily="Segoe UI"
-                                                                   FontSize="13"
-                                                                   FontWeight="Bold"
-                                                                   Margin="0,5,0,0">
-                                                            <Run Text="{Binding Server.OnlinePlayers}" />
-                                                            <Run Text="/" />
-                                                            <Run Text="{Binding Server.MaxPlayers}" />
-                                                        </TextBlock>
-                                                    </StackPanel>
-                                                </Grid>
-
-                                                <Button Grid.Row="3"
-                                                        Height="42"
-                                                        Style="{StaticResource BaseButtonStyle}"
-                                                Command="{Binding DataContext.ViewActivityServerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                IsEnabled="{Binding DataContext.CanSelectServer, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                CommandParameter="{Binding}"
-                                                AutomationProperties.Name="查看活动客户端与进入条件">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <controls:IconParkIcon Kind="Right"
-                                                                               Width="14"
-                                                                               Height="14"
-                                                                               Margin="0,0,8,0" />
-                                                        <TextBlock Text="查看客户端与进入条件" />
-                                                    </StackPanel>
+                                                        <TextBlock Grid.Row="2"
+                                                                   Text="{Binding HiddenActivityText}"
+                                                                   FontSize="10"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                                   Visibility="{Binding HasHiddenActivities, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                    </Grid>
                                                 </Button>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <controls:LiveRegionBorder x:Name="ActivityCatalogStatusLiveRegion"
-                                                       Padding="28"
-                                                       AutomationProperties.Name="活动目录状态"
-                                                       AutomationProperties.ItemStatus="{Binding ActivityCatalogStateMessage}"
-                                                       AutomationProperties.LiveSetting="Polite"
-                                                       Visibility="{Binding IsActivityCatalogStateVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Border Style="{StaticResource SurfacePanelStyle}"
-                                        Padding="28">
-                                    <StackPanel HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                MaxWidth="420">
-                                        <controls:IconParkIcon Kind="Refresh"
-                                                               Width="24"
-                                                               Height="24"
-                                                               Foreground="{StaticResource HechaoRedDarkBrush}"
-                                                               HorizontalAlignment="Center" />
-                                        <TextBlock Text="{Binding ActivityCatalogStateTitle}"
-                                                   Margin="0,14,0,0"
-                                                   FontSize="16"
-                                                   FontWeight="Bold"
-                                                   TextAlignment="Center" />
-                                        <TextBlock Text="{Binding ActivityCatalogStateMessage}"
-                                                   Margin="0,7,0,0"
-                                                   FontSize="12"
-                                                   Foreground="{StaticResource InkMutedBrush}"
-                                                   TextWrapping="Wrap"
-                                                   TextAlignment="Center" />
-                                        <Button MinWidth="108"
-                                                Height="38"
-                                                Margin="0,18,0,0"
-                                                Padding="14,7"
-                                                HorizontalAlignment="Center"
-                                                Style="{StaticResource BaseButtonStyle}"
-                                                Content="重新加载"
-                                                Command="{Binding RefreshCommand}"
-                                                AutomationProperties.Name="重新加载活动目录" />
-                                    </StackPanel>
-                                </Border>
-                            </controls:LiveRegionBorder>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    MinHeight="460"
+                                    Style="{StaticResource SurfacePanelStyle}"
+                                    VerticalAlignment="Top"
+                                    ClipToBounds="True">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Border Padding="18,16"
+                                            Background="{StaticResource StripBrush}"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="0,0,0,1">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ActivityCalendar.SelectedDateText}"
+                                                       FontSize="16"
+                                                       FontWeight="Black" />
+                                            <TextBlock Text="{Binding ActivityCalendar.SelectedDateSummaryText}"
+                                                       Margin="0,3,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource InkMutedBrush}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Grid Grid.Row="1" MinHeight="250">
+                                        <ListBox x:Name="SelectedActivityList"
+                                                 ItemsSource="{Binding ActivityCalendar.SelectedActivities}"
+                                                 ItemTemplate="{StaticResource ActivityCalendarDetailTemplate}"
+                                                 ItemContainerStyle="{StaticResource ActivityCalendarDetailItemStyle}"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"
+                                                 IsEnabled="{Binding CanSelectServer}"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                 AutomationProperties.Name="所选日期的活动" />
+                                        <StackPanel Margin="22"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    MaxWidth="250"
+                                                    Visibility="{Binding ActivityCalendar.HasNoSelectedActivities, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <controls:IconParkIcon Kind="Calendar"
+                                                                   Width="24"
+                                                                   Height="24"
+                                                                   Foreground="{StaticResource HechaoRedDarkBrush}"
+                                                                   HorizontalAlignment="Center" />
+                                            <TextBlock Text="当天暂无活动"
+                                                       Margin="0,12,0,0"
+                                                       FontSize="14"
+                                                       FontWeight="Bold"
+                                                       TextAlignment="Center" />
+                                            <TextBlock Text="选择带有活动标记的日期，查看开放时间和客户端准备入口。"
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       LineHeight="17"
+                                                       Foreground="{StaticResource InkMutedBrush}"
+                                                       TextWrapping="Wrap"
+                                                       TextTrimming="None"
+                                                       TextAlignment="Center" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Grid.Row="2"
+                                            Padding="18,15,18,8"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="0,1,0,0"
+                                            Visibility="{Binding ActivityCalendar.HasUnscheduledActivities, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <StackPanel>
+                                            <TextBlock Text="待排期"
+                                                       FontSize="13"
+                                                       FontWeight="Black" />
+                                            <TextBlock Text="这些活动已经提供客户端档案，开放时间仍待公告。"
+                                                       Margin="0,4,0,9"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource InkMutedBrush}"
+                                                       TextWrapping="Wrap"
+                                                       TextTrimming="None" />
+                                            <ListBox x:Name="UnscheduledActivityList"
+                                                     MaxHeight="280"
+                                                     ItemsSource="{Binding ActivityCalendar.UnscheduledActivities}"
+                                                     ItemTemplate="{StaticResource ActivityCalendarDetailTemplate}"
+                                                     ItemContainerStyle="{StaticResource ActivityCalendarDetailItemStyle}"
+                                                     BorderThickness="0"
+                                                     Background="Transparent"
+                                                     IsEnabled="{Binding CanSelectServer}"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                     AutomationProperties.Name="待排期活动" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Grid>
                 </ScrollViewer>

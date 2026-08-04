@@ -1,9 +1,16 @@
 using Hechao.Contracts;
+using Hechao.Distribution;
+using Hechao.Launcher.Controls;
+using Hechao.Launcher.Infrastructure;
 
 namespace Hechao.Launcher.ViewModels;
 
-public sealed class ActivityServerItemViewModel
+public sealed class ActivityServerItemViewModel : ObservableObject
 {
+    private LocalProfileState _localProfileState = LocalProfileState.Missing;
+    private bool _isClientStateChecked;
+    private bool _isClientProfileAvailable = true;
+
     public ActivityServerItemViewModel(ServerSummary server)
     {
         Server = server ?? throw new ArgumentNullException(nameof(server));
@@ -33,27 +40,103 @@ public sealed class ActivityServerItemViewModel
         ? "暂无活动公告"
         : Server.Announcement;
 
-    public string ScheduleText => FormatSchedule(Server.OpensAt, Server.ClosesAt);
+    public string ScheduleText => ServerCatalogPresentation.FormatSchedule(
+        Server.OpensAt,
+        Server.ClosesAt);
 
-    private static string FormatSchedule(
-        DateTimeOffset? opensAt,
-        DateTimeOffset? closesAt)
+    public LocalProfileState LocalProfileState => _localProfileState;
+
+    public bool IsClientStateChecked => _isClientStateChecked;
+
+    public bool IsClientProfileAvailable => _isClientProfileAvailable;
+
+    public bool IsClientInstalled =>
+        IsClientProfileAvailable &&
+        IsClientStateChecked &&
+        LocalProfileState != LocalProfileState.Missing;
+
+    public bool CanPrepareClient => IsClientProfileAvailable;
+
+    public string ClientStateText => !IsClientProfileAvailable
+        ? "客户端暂未发布"
+        : !IsClientStateChecked
+            ? "客户端状态待检查"
+            : LocalProfileState switch
+            {
+                LocalProfileState.Ready => "客户端已准备",
+                LocalProfileState.UpdateRequired => "客户端有可用更新",
+                _ => "客户端尚未下载",
+            };
+
+    public string ClientActionText => !IsClientProfileAvailable
+        ? "客户端暂未发布"
+        : !IsClientStateChecked
+            ? "检查客户端"
+            : LocalProfileState switch
+            {
+                LocalProfileState.Ready => "在服务器主页查看",
+                LocalProfileState.UpdateRequired => "更新活动客户端",
+                _ => "下载活动客户端",
+            };
+
+    public string ClientActionAutomationName => $"{ClientActionText}：{Name}";
+
+    public string ClientActionHint => !IsClientProfileAvailable
+        ? "该活动尚未提供可下载的客户端档案"
+        : LocalProfileState == LocalProfileState.Ready && IsClientStateChecked
+            ? "客户端已准备，打开服务器主页"
+            : "使用赫朝签名清单下载并准备活动客户端";
+
+    public IconParkKind ClientActionIcon =>
+        IsClientStateChecked && LocalProfileState == LocalProfileState.Ready
+            ? IconParkKind.Right
+            : IsClientStateChecked
+                ? IconParkKind.Download
+                : IconParkKind.Refresh;
+
+    internal void ApplyClientState(LocalProfileState state)
     {
-        if (opensAt is null && closesAt is null)
-        {
-            return "开放时间待定";
-        }
-
-        if (opensAt is not null && closesAt is not null)
-        {
-            return $"本地时间 {FormatLocalTime(opensAt.Value)} - {FormatLocalTime(closesAt.Value)}";
-        }
-
-        return opensAt is not null
-            ? $"本地时间 {FormatLocalTime(opensAt.Value)} 开放"
-            : $"开放至本地时间 {FormatLocalTime(closesAt!.Value)}";
+        _localProfileState = state;
+        _isClientStateChecked = true;
+        _isClientProfileAvailable = true;
+        NotifyClientStateChanged();
     }
 
-    private static string FormatLocalTime(DateTimeOffset value) =>
-        value.ToLocalTime().ToString("M月d日 HH:mm");
+    internal void MarkClientStateCheckFailed()
+    {
+        _localProfileState = LocalProfileState.Missing;
+        _isClientStateChecked = false;
+        _isClientProfileAvailable = true;
+        NotifyClientStateChanged();
+    }
+
+    internal void MarkClientProfileUnavailable()
+    {
+        _localProfileState = LocalProfileState.Missing;
+        _isClientStateChecked = true;
+        _isClientProfileAvailable = false;
+        NotifyClientStateChanged();
+    }
+
+    internal void ResetClientState()
+    {
+        _localProfileState = LocalProfileState.Missing;
+        _isClientStateChecked = false;
+        _isClientProfileAvailable = true;
+        NotifyClientStateChanged();
+    }
+
+    private void NotifyClientStateChanged()
+    {
+        OnPropertyChanged(nameof(LocalProfileState));
+        OnPropertyChanged(nameof(IsClientStateChecked));
+        OnPropertyChanged(nameof(IsClientProfileAvailable));
+        OnPropertyChanged(nameof(IsClientInstalled));
+        OnPropertyChanged(nameof(CanPrepareClient));
+        OnPropertyChanged(nameof(ClientStateText));
+        OnPropertyChanged(nameof(ClientActionText));
+        OnPropertyChanged(nameof(ClientActionAutomationName));
+        OnPropertyChanged(nameof(ClientActionHint));
+        OnPropertyChanged(nameof(ClientActionIcon));
+    }
 }

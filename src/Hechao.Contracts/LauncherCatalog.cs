@@ -60,6 +60,22 @@ public sealed record LauncherCatalogSnapshot(
     IReadOnlyList<ServerSummary> Servers,
     IReadOnlyList<ClientProfileSummary> ClientProfiles);
 
+public sealed record PublicActivitySummary(
+    string Id,
+    string Name,
+    ServerStatus Status,
+    string Announcement,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt,
+    int MaxPlayers,
+    string MinecraftVersion,
+    ModLoaderKind Loader,
+    AccessTier MinimumTier);
+
+public sealed record PublicActivityCatalogSnapshot(
+    DateTimeOffset GeneratedAt,
+    IReadOnlyList<PublicActivitySummary> Activities);
+
 public sealed record AuthenticatedPlayer(
     Guid UserId,
     Guid MinecraftUuid,

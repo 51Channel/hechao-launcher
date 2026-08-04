@@ -136,8 +136,7 @@ public partial class MainWindow : Window
                 () =>
                 {
                     ServerCatalogStatusLiveRegion.RaiseLiveRegionChanged();
-                    ActivityCatalogStatusLiveRegion.RaiseLiveRegionChanged();
-                    ActivityCatalogStaleLiveRegion.RaiseLiveRegionChanged();
+                    ActivityCalendarStatusLiveRegion.RaiseLiveRegionChanged();
                 });
         }
 
