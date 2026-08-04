@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-04T18:04:38.971885Z",
+  "scope": "Production package import, Test-only client publication, stopped owl5 deployment, and original activity restoration",
+  "components": {
+    "api": {
+      "version": "0.27.0",
+      "releaseId": "0.27.0-20260803T174833Z",
+      "sourceCommit": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b",
+      "releaseTag": "api-v0.27.0",
+      "artifactBytes": 45936390,
+      "artifactSha256": "4E15B64EA706AA6D3B64BC6AFB1CCA635A205385D1E1CBC3145DC37FCA335C10",
+      "executableBytes": 105011140,
+      "executableSha256": "14FC6D22338A368B26556FAF108A814A0B1C3CB20C03791FF9E7356DC7D58AD8"
+    },
+    "publisher": {
+      "version": "1.0.0",
+      "productVersion": "1.0.0+f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b",
+      "sourceCommit": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b",
+      "releaseTag": "publisher-v1.0.0",
+      "archiveBytes": 33374660,
+      "archiveSha256": "99B354A320B03F5FC09CC571D65C3E01F30DEF1236735628CD73605123D625CC",
+      "executableBytes": 74534899,
+      "executableSha256": "A924AC39B639B143356C6EC3EB6D77E9F75F8D1DA7BE96B8C8BE81E1F3DC81EA"
+    },
+    "owl5ServerControlAgent": {
+      "version": "0.3.1",
+      "productVersion": "0.3.1+784c05d8ba172a594a8d95c47c14db253e1cb53a",
+      "sourceCommit": "784c05d8ba172a594a8d95c47c14db253e1cb53a",
+      "releaseTag": "server-control-agent-v0.3.1",
+      "archiveBytes": 33208851,
+      "archiveSha256": "E5BC0262AADCAD48C7E60931EF4D16B0073EA51E08AB02DFCA981625E2623769",
+      "executableBytes": 74082911,
+      "executableSha256": "9229F5C7B69C1FC7D35DE10C3BE4B750A519970A5F42BDC54AB32EB3724C8FA9"
+    },
+    "owl9ServerControlAgent": {
+      "version": "0.2.1",
+      "changed": false
+    }
+  },
+  "tests": {
+    "apiPassed": 268,
+    "apiFailed": 0,
+    "publisherPassed": 39,
+    "publisherFailed": 0,
+    "serverControlAgentPassed": 46,
+    "serverControlAgentFailed": 0,
+    "solutionPassed": 633,
+    "solutionFailed": 0,
+    "vitestPassed": 8,
+    "vitestFailed": 0,
+    "playwrightPassed": 14,
+    "playwrightFailed": 0,
+    "powerShellAstPassed": true,
+    "secretScanPassed": true
+  },
+  "apiDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z",
+    "migrationCount": 23,
+    "migrationMaximum": 23,
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "processId": 3062711,
+    "nRestarts": 0,
+    "loopbackHealth": "ok",
+    "loopbackReady": "ready",
+    "publicHealth": "ok",
+    "publicReady": "ready",
+    "database": "ready",
+    "errorJournalLinesSinceFinalProcessStart": 0,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260803T175449Z.dump",
+      "bytes": 2617754,
+      "sha256": "292A714EBB4BD902AACF279E5550781C80129E975A1CCDB678CFE5049F321605",
+      "sidecarVerified": true
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.27.0-20260803T174833Z",
+      "manifestSha256": "491B3234EF2580A658ED3E4FC8C37D72AFCD611055E57B4EBB209D01E02E85B0",
+      "allEntriesVerified": true
+    }
+  },
+  "publisherDeployment": {
+    "taskName": "Hechao Launcher Package Publisher Agent",
+    "taskState": "Running",
+    "processCount": 1,
+    "databaseAgentId": "publisher-main",
+    "databaseVersion": "1.0.0",
+    "heartbeatFresh": true,
+    "productionExecutableHashMatched": true
+  },
+  "fixedPackage": {
+    "importId": "b4620e53-f125-4749-b220-101d17189cc4",
+    "finalStatus": "Completed",
+    "archiveBytes": 3942,
+    "archiveSha256": "39A2C49DC8E10835C7A46D484B40E9D1E13ABD8BCEE69479F30101BE3B4EAA7F",
+    "profileId": "ops-package-e2e-20260804-022606",
+    "profileVersion": "0.0.3-e2e.20260804.022606",
+    "manifestSha256": "9a6938025ad7e2c620d87e83579e669c27ca8676d79e07798694c2b542af7f50",
+    "deploymentOperationId": "34eb401b-dd9e-4dcb-a495-88a3022bc258",
+    "publisherUploadedObjects": 0,
+    "publisherExistingObjects": 4,
+    "publisherUploadedBytes": 0,
+    "channels": {
+      "test": {
+        "rolloutPercentage": 100,
+        "version": "0.0.3-e2e.20260804.022606"
+      },
+      "gray": {
+        "rolloutPercentage": 0,
+        "hasRelease": false
+      },
+      "production": {
+        "rolloutPercentage": 100,
+        "hasRelease": false
+      }
+    },
+    "catalog": {
+      "id": "activity",
+      "velocityTarget": "activity",
+      "status": "Closed",
+      "isVisible": false
+    }
+  },
+  "failureSafety": {
+    "manifestStorageFailureLeftNoPartialRelease": true,
+    "agent030DirectorySwitchFailureRestoredOriginal": true,
+    "externalDirectoryHandleFailureRestoredOriginal": true,
+    "externalHandleOwnerWasOrphanedWrapperWithoutJavaChild": true,
+    "unknownProcessesTerminated": 0,
+    "minecraftProcessesTerminated": 0
+  },
+  "originalActivityRestoration": {
+    "completedAtUtc": "2026-08-04T17:52:37.2097212Z",
+    "originalFileCount": 326,
+    "originalBytes": 212626569,
+    "controlledTreeMatched": true,
+    "hostManagedFilePreserved": true,
+    "requiredWorldPresent": true,
+    "requiredStartScriptPresent": true,
+    "requiredServerPropertiesPresent": true,
+    "testDeploymentMarkerPresent": false,
+    "reparsePointCount": 0,
+    "rollbackDirectoryPresent": false,
+    "rollbackOwnerPresent": false,
+    "testDirectoryPresent": false,
+    "testArchive": {
+      "path": "E:\\manual-backups\\package-import-e2e\\activity-e2e-b4620e53f1254749b220101d17189cc4.zip",
+      "bytes": 1586,
+      "sha256": "C8F525BADA5D9F223477506530552282775C4AC7E498D1CE8CD9A23C17406293",
+      "fileCount": 8,
+      "hasDeploymentMarker": true,
+      "hasHostManagedFile": false
+    }
+  },
+  "finalRuntime": {
+    "activityTaskState": "Ready",
+    "port25568ListenerCount": 0,
+    "activityReportedOnline": false,
+    "activityProcessId": null,
+    "serverControlAgentTaskState": "Running",
+    "serverControlAgentProcessCount": 1,
+    "serverControlAgentProcessId": 1884,
+    "owl5HeartbeatFresh": true,
+    "owl5TargetCountOn031": 7,
+    "owl5ActiveCommands": 0,
+    "owl5ActiveOperations": 0,
+    "activePackageImports": 0,
+    "javaProcessIds": [
+      2576,
+      6008,
+      7748,
+      9428,
+      10412
+    ],
+    "javaProcessIdsUnchanged": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "velocityChanged": false
+  },
+  "privacy": {
+    "passwordIncluded": false,
+    "accessTokenIncluded": false,
+    "refreshTokenIncluded": false,
+    "cookieIncluded": false,
+    "accessKeyIncluded": false,
+    "privateKeyIncluded": false,
+    "dpapiCiphertextIncluded": false,
+    "hostManagedFileContentIncluded": false,
+    "hostManagedFileDigestIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

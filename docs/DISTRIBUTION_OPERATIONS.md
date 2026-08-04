@@ -1,8 +1,8 @@
 # 客户端分发与签名操作手册
 
-> 启动器源码版本：`0.12.3`
-> 发布器源码候选：`1.0.0`；当前正式版本：`0.9.0`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案已由 API `0.22.0` 托管，启动器 `0.12.3` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录与私有 OSS 发布闭环。
+> 启动器正式版本：`0.14.2`
+> 当前发布器：手工管理命令与独立 Package Publisher Agent 均为正式版本 `1.0.0`
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.27.0` 托管，启动器 `0.14.2` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录与私有 OSS 发布闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
 >
 > owl9 边界：上述恐怖整蛊档案只对应 `C:\mc\server`，不对应
 > `E:\MinecraftServer` 的真正 PVP 服。
@@ -75,7 +75,7 @@ dotnet run --project src\Hechao.Publisher -c Release -- keygen `
 
 ### 4.1 后台整合包 Publisher Agent
 
-Publisher `1.0.0` 源码候选增加独立代理模式。它只领取管理员已经确认、仍持有有效租约
+Publisher `1.0.0` 增加独立代理模式。它只领取管理员已经确认、仍持有有效租约
 的整合包任务；签名私钥、OSS 写凭据和明文代理令牌均只存在于同一 Windows 管理账号的
 DPAPI 边界，不进入 API 或游戏 VPS。代理上传后仍由 API 使用内嵌公钥重新验签，并且只
 创建 `Test` 通道发布，不触碰 `Gray` 或 `Production`。
@@ -84,7 +84,11 @@ DPAPI 边界，不进入 API 或游戏 VPS。代理上传后仍由 API 使用内
 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。手工 `publish`、`verify`、
 `validate-release` 与正式通道推广流程继续有效，自动导入不能绕过这些发布边界。
 Publisher 专项测试 `39/39`、完整解决方案 `622/622` 和只含 Publisher EXE 的
-`win-x64` 自包含发布验证已通过；该结果仍是源码候选，不是生产发布记录。
+`win-x64` 自包含发布验证已通过。生产代理为单实例计划任务，固定试包复核并跳过 `4`
+个已存在对象、上传新对象 `0` 个，API 再次验签后只把测试版本设到 `Test=100%`；Gray
+与 Production 未变化。正式记录见
+[`PUBLISHER_RELEASE_1.0.0.md`](PUBLISHER_RELEASE_1.0.0.md) 和
+[`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json)。
 
 管理端发布器使用 `src/Hechao.Publisher/Properties/PublishProfiles/win-x64.pubxml` 构建自包含单文件。该配置明确关闭裁剪；裁剪会移除当前 JSON 序列化元数据，导致签名清单或 DPAPI 凭据命令在运行时失败。构建后不能只检查 `--help`，必须用正式信任包执行一次 `validate-release`。
 

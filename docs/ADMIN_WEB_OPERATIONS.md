@@ -1,9 +1,9 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.14.2`、API 候选 `0.27.0`
-> 生产状态：API `0.26.2` 已部署且 `AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收
+> 源码版本：启动器 `0.14.2`、API `0.27.0`
+> 生产状态：API `0.27.0` 已部署且 `AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收
 > 管理入口：`https://admin.hechao.world/admin/`
-> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router 九页后台已部署生产；源码候选新增第十页“整合包导入”，尚未部署
+> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router 十页后台已部署生产；第十页“整合包导入”已完成固定试包
 > 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
@@ -84,8 +84,10 @@ Playwright 覆盖十个路由的真实数据形态、移动端横向溢出、WCA
 页面不会提供强制忽略阻断项、选择其他 VPS、自动关冲突服、自动开服或直接推进
 `Production` 的入口。API、Publisher、服控代理配置与回滚见
 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。
-候选前端已通过 TypeScript、Vitest `8/8`、Playwright `14/14`、十路由 WCAG A/AA、
-桌面与 390px 移动端溢出检查；Impeccable 检测为零项。
+正式前端已通过 TypeScript、Vitest `8/8`、Playwright `14/14`、十路由 WCAG A/AA、
+桌面与 390px 移动端溢出检查；Impeccable 检测为零项。生产固定试包完成上传、识别、
+人工确认、任务时间线、Test-only 发布和停止活动槽部署；原活动目录随后
+恢复，页面没有自动开服或推进正式通道。
 
 ## 4. 配置
 

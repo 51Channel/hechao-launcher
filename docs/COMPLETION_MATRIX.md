@@ -1,8 +1,9 @@
 # 赫朝启动器完成矩阵
 
-> 更新时间：`2026-08-04`
+> 更新时间：`2026-08-05`
 >
-> 当前生产：启动器 `0.14.2`、API `0.26.2`、
+> 当前生产：启动器 `0.14.2`、API `0.27.0`、Publisher Agent `1.0.0`、
+> owl5 ServerControlAgent `0.3.1`、owl9 ServerControlAgent `0.2.1`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -36,12 +37,12 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.14.2` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.1` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
-| API `0.26.2` | 已完成 | Vue 九页、票据预路由清理及长正文/短窗口滚动修复已部署；迁移 21、数据库与配置备份、原子切换、本机/公网健康及静态哈希均通过，生产证据见 [`API_RELEASE_0.26.2.md`](API_RELEASE_0.26.2.md) 与 [`evidence/API_0.26.2_PRODUCTION_DEPLOYMENT_2026-08-02.json`](evidence/API_0.26.2_PRODUCTION_DEPLOYMENT_2026-08-02.json) |
-| 整合包导入 | 生产验收进行中 | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.0` 已部署。固定试包完成上传、识别和客户端 Test-only 发布；首次清单目录写入失败与第二次活动目录切换失败均自动回滚，正式通道、活动服停止状态和其他 Java PID 未变化。ServerControlAgent `0.3.1` 已修复独立心跳读取与 Windows 目录切换竞争，代理 `46/46`、完整解决方案 `633/633` 通过；仍待部署 `0.3.1`、第三次固定试包、隐藏关闭目录和原活动目录恢复验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) |
+| API `0.27.0` | 已完成 | Vue 十页、迁移 22/23、整合包任务编排、客户端发布闭合验证和活动槽固定边界均已部署；数据库与配置备份、原子切换、内外网健康、固定试包和恢复后回归通过，见 [`API_RELEASE_0.27.0.md`](API_RELEASE_0.27.0.md) |
+| 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
 | 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | .NET `578/578`，Vue Vitest `8/8`、Playwright `12/12`，Velocity `26/26`，Lobby `3/3`，LuckPerms `4/4`，Paper/Purpur `2/2`，授权切换闸门 `4/4` |
+| 自动测试 | 已完成 | 当前整合包基线为 .NET `633/633`、API `268/268`、Publisher `39/39`、ServerControlAgent `46/46`、Vue Vitest `8/8`、Playwright `14/14`；Velocity、Lobby、LuckPerms 和指标代理保持各自既有正式基线 |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.14.2` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -63,13 +64,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
-| API 与代理版本 | 已完成 | API `0.26.2`、owl5 代理 `0.2.4`、owl9 代理 `0.2.1` 已部署；API 服务正常，代理在线状态按实时心跳故障关闭，见 [`API_RELEASE_0.26.2.md`](API_RELEASE_0.26.2.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.2.4.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.4.md) |
+| API 与代理版本 | 已完成 | API `0.27.0`、owl5 代理 `0.3.1`、owl9 代理 `0.2.1` 已部署；API 服务正常，代理在线状态按实时心跳故障关闭，见 [`API_RELEASE_0.27.0.md`](API_RELEASE_0.27.0.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.3.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.3.1.md) |
 | 目录与物理服状态同步 | 已完成 | `Online` 只作为管理员开放策略；同名服控目标在线时开放、停止时自动关闭、服控失联时故障关闭。`activity` 在线自动开放，停止的恐怖整蛊 `pvp` 自动关闭，`dollnight` 显式维护保持优先 |
-| 代理心跳与命令隔离 | 已完成 | 心跳和命令使用独立循环；owl5 `0.2.4` 在本机日志失败或未知单次异常后继续轮询，owl9 保持 `0.2.1`。两台代理持续上报，升级前后 owl5 五个 Java PID 不变 |
+| 代理心跳与命令隔离 | 已完成 | 心跳和命令使用独立循环；owl5 `0.3.1` 继续保留循环自恢复，并用目标级门闩隔离目录心跳、快捷设置和整合包切换；owl9 保持 `0.2.1`。两台代理持续上报，升级、试包和原目录恢复前后 owl5 五个 Java PID 不变 |
 | 单服内存展示 | 已完成 | 9 个目标均上报 `Xms`、`Xmx`、单服硬上限、代理、端口与 PID |
 | 单服内存调整 | 已完成 | 支持 `512 MiB` 起、`256 MiB` 步长的 `Xms/Xmx`；API 与代理双重校验，设置不自动重启游戏服 |
 | 文件事务与回滚 | 已完成 | `server.properties` 与显式 JVM 参数文件先备份、同卷替换，任一失败恢复原始字节 |
-| 生产进程隔离 | 已完成 | API/代理升级前后 owl5 五个 Java PID 不变；`0.26.2 / 0.2.4` 发布以来服控操作、待处理操作和命令均为 `0` |
+| 生产进程隔离 | 已完成 | API/代理升级、固定试包和原目录恢复前后 owl5 五个 Java PID 不变；最终活动任务 `Ready`、`25568` 无监听，进行中的 owl5 命令、操作和整合包任务均为 `0` |
 | 最终后台目视补拍 | 已完成 | `0.26.1` 已用生产真实票据完成九页稳定数据态目视验收；`0.26.2` 只修改滚动 CSS，并以新增长页面/短窗口场景、`12/12` Playwright 和生产静态哈希验收。最终复核时既有浏览器会话已过期，未伪造新的登录态验收，见两版 API 生产证据 |
 
 结构化验收见
@@ -132,11 +133,11 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 单服白名单、拒绝规则与有效期 | 已完成 | 允许/拒绝、原因、UTC 有效期、修订冲突与事务审计均已上线 |
 | 玩家实际目录/进服结果预览 | 已完成 | 管理员可按玩家预览每个服务器的最终允许结果及拒绝原因 |
 | 客户端档案创建、上传、签名与发布通道 | 已实现待生产验收 | API `0.17.0` 已生产部署，隔离生产副本真实验签与三通道闭环通过；真实管理员 MFA 已登记，仍待在生产管理页面完成创建、上传和发布操作验收 |
-| ZIP/MRPACK 客户端与服务端自动导入 | 已实现待生产验收 | 第十个 Vue 路由支持 8 MiB 分块续传、取消、识别结果和精确确认；独立 Publisher 只写 Test，服控只向停止的 owl5 `activity` 部署并保持停服。源码、自动测试、截图和无秘密配置已完成，仍待 API/两个代理生产部署、专用试包、真实 OSS、活动槽回滚和真人进服验收 |
-| 下载量、失败率与版本分布 | 已实现待生产验收 | 当前 API `0.26.2` 保留迁移 15、30 天留存、幂等批次和后台“运行数据”，并对客户端下载失败率建立统一告警；真实基础、Activity 与恐怖整蛊安装样本已完成，仍需真实回滚、完整 Launch/GameExit 和多人样本 |
+| ZIP/MRPACK 客户端与服务端自动导入 | 已完成（停止槽固定试包） | 第十个 Vue 路由支持 8 MiB 分块续传、取消、识别结果和精确确认；独立 Publisher 只写 Test，服控只向停止的 owl5 `activity` 部署并保持停服。API、Publisher 和 owl5 代理已正式部署，固定试包完成真实 OSS、活动槽切换和原目录恢复；真实玩法包与真人进服仍按活动单独验收 |
+| 下载量、失败率与版本分布 | 已实现待生产验收 | 当前 API `0.27.0` 保留迁移 15、30 天留存、幂等批次和后台“运行数据”，并对客户端下载失败率建立统一告警；真实基础、Activity 与恐怖整蛊安装样本已完成，仍需真实回滚、完整 Launch/GameExit 和多人样本 |
 | 暂停问题版本和主动回滚 | 已实现待生产验收 | API `0.17.0` 已完成暂停自动回滚、恢复不自动推广、修订冲突和审计；真实管理员 MFA 已登记，仍待在生产管理页面完成暂停与回滚操作验收 |
 | 玩家搜索、等级和单服授权管理 | 已实现待生产验收 | 玩家搜索、单服规则和受控四级全局等级入口均已上线；大厅代理已加载，仍需专门测试账号完成四级改回与拒绝路径 |
-| 账号、设备会话与 Minecraft UUID 封禁 | 已实现待生产验收 | 功能自 API `0.16.0` 上线并保留在当前 `0.26.2`；账号停用/恢复、单设备和全部会话撤销、UUID 定时封禁、论坛既有 Cookie 联动、并发保护、Velocity/目录拒绝及审计均通过隔离与生产链路验收。真实管理员 MFA 已登记，仍待在生产页面逐项操作验收 |
+| 账号、设备会话与 Minecraft UUID 封禁 | 已实现待生产验收 | 功能自 API `0.16.0` 上线并保留在当前 `0.27.0`；账号停用/恢复、单设备和全部会话撤销、UUID 定时封禁、论坛既有 Cookie 联动、并发保护、Velocity/目录拒绝及审计均通过隔离与生产链路验收。真实管理员 MFA 已登记，仍待在生产页面逐项操作验收 |
 | 审计日志查看 | 已完成 | 目录写入、登录与 MFA 事件可查询 |
 | 服控面板、冲突编排、快捷设置与终端 | 已上线待完整动作验收 | 结构化队列、双重校验、审计、快捷设置和命令白名单已接入生产。2026-07-31 动作验收时后台正常渲染 9 个目标、2 个在线代理和 5 个运行中实例；该数量只是不变证据中的历史快照，当前值必须按实时心跳核验。管理员发起的 Survival1 启动、恐怖整蛊停止和真正 PVP 启动均一次成功。结构化重启、快捷设置、终端允许/拒绝和冲突组自动切换仍待逐项验收，见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md) 和 [`evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json`](evidence/SERVER_CONTROL_PRODUCTION_ACTION_ACCEPTANCE_2026-07-31.json) |
 

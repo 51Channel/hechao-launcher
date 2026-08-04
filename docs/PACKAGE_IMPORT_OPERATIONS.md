@@ -1,14 +1,13 @@
 # 整合包自动导入与活动槽部署手册
 
-> 当前生产：API `0.27.0`、Publisher Agent `1.0.0`、ServerControlAgent
-> `0.3.0`；ServerControlAgent `0.3.1` 为目录切换锁冲突修复候选。
+> 当前生产：API `0.27.0`、Publisher Agent `1.0.0`、owl5 ServerControlAgent
+> `0.3.1`；owl9 ServerControlAgent 保持 `0.2.1`。
 >
-> 当前状态：生产固定试包已经完成上传、识别和客户端 `Test` 发布；首次清单目录写入
-> 失败与第二次活动目录切换失败均自动回滚，正式通道和活动服停止状态未变化。
+> 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；
+> Gray/Production 未变化。测试服务端随后归档，原活动服从受控回滚目录恢复并保持停止。
 > `0.3.1` 使用目标级目录访问门闩隔离独立心跳与切换阶段，并对 Windows 瞬时目录占用
 > 做短时有界重试。完整解决方案 `633/633`、API `268/268`、Publisher `39/39`、
-> ServerControlAgent `46/46`、Vitest `8/8` 和 Playwright `14/14` 已通过；第三次生产
-> 试包与原活动目录恢复仍待执行。
+> ServerControlAgent `46/46`、Vitest `8/8` 和 Playwright `14/14` 已通过。
 
 本功能允许管理员在后台上传一个 ZIP 或 MRPACK 整合包，先自动识别并拆分客户端与
 服务端，再经人工确认完成客户端私有 OSS 发布和 owl5 活动槽服务端部署。自动识别只
@@ -160,6 +159,10 @@ ACL。任一步失败会恢复旧文件和旧任务。默认不启动代理；�
 标记，并确认 `Hechao-Server-Activity` 计划任务明确引用同一绝对路径。该检查只验证
 下一次启动契约，不会启动、停止或重启 Minecraft。
 
+owl5 当前正式代理为 `0.3.1`。目录心跳、快捷设置和目录切换使用同一目标级访问门闩；
+外部进程持续持有目录句柄时仍会失败并恢复旧目录，不会绕过 Windows 文件锁或终止未知
+进程。管理员必须先确认占用者确实是无 Java 子进程的遗留包装进程，才能单独处理它。
+
 ## 7. 发布顺序与回滚
 
 首次生产接入顺序：
@@ -197,5 +200,47 @@ Publisher 异常时停止其计划任务并使用安装器备份恢复。服务�
   重解析点、原子切换和失败回滚均通过；
 - 桌面和 390px 移动后台无横向溢出、遮挡或不可达操作，浏览器控制台无错误；
 - 完整解决方案、前端单元与 Playwright 全部通过，Git 差异无秘密和构建产物；
-- 生产首次试包、真实 OSS、真实 owl5 停服部署、手工回滚和真人进服仍分别留有证据，
-  未完成前只能称为源码候选。
+- 生产固定试包、真实 OSS、真实 owl5 停服部署和原活动目录人工恢复均已有独立证据；
+  真人进服与真实玩法整合包仍属于后续活动验收，不能由固定空包替代。
+
+## 9. 生产验收（2026-08-05）
+
+生产组件与构建来源：
+
+- API `0.27.0-20260803T174833Z`、Publisher Agent `1.0.0` 来自提交
+  `f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b`；
+- owl5 ServerControlAgent `0.3.1` 来自提交
+  `784c05d8ba172a594a8d95c47c14db253e1cb53a`；
+- owl9 保持 `0.2.1`，Velocity、游戏服启动任务和客户端正式通道均未修改。
+
+失败路径先于成功路径得到验证：清单落盘权限缺口和 `0.3.0` 心跳读取竞争均没有留下
+半成品；`0.3.1` 遇到一个由旧计划任务遗留、没有 Java 子进程的 `cmd.exe` 持续占用
+活动目录时，也按设计失败并恢复原目录。使用 Microsoft 签名的 Handle 工具确认唯一
+占用者后，只终止该孤立包装进程；五个 Minecraft Java PID 未变化。
+
+最终固定试包结果：
+
+- Import ID：`b4620e53-f125-4749-b220-101d17189cc4`；
+- 客户端版本：`0.0.3-e2e.20260804.022606`；
+- Manifest SHA-256：
+  `9a6938025ad7e2c620d87e83579e669c27ca8676d79e07798694c2b542af7f50`；
+- 服务端操作 ID：`34eb401b-dd9e-4dcb-a495-88a3022bc258`；
+- Publisher 复核并跳过 `4` 个已存在对象，上传新对象 `0` 个；
+- `Test` 通道为 `100%`，Gray 和 Production 继续没有该测试发布；
+- 同步目录 `activity` 为隐藏、`Closed`，活动目标上报离线。
+
+部署完成后，在活动任务 `Ready`、`25568` 无监听、API 无进行中命令或导入任务的条件下，
+原活动服从 `E:\.ActivityNeoForge.hechao-rollback` 原子恢复。恢复前后的原服受控树摘要
+一致；最终 `E:\ActivityNeoForge` 为 `326` 个文件、`212,626,569` 字节，包含世界、
+启动脚本、服务端配置和主机固定转发文件，不包含测试部署标记。无秘密测试目录以 `8`
+个文件归档到 `E:\manual-backups\package-import-e2e`，归档不含主机固定文件；回滚目录、
+owner 和临时目录均已清理。
+
+最终五个 Java PID 仍为 `2576 / 6008 / 7748 / 9428 / 10412`，活动任务为 `Ready`，
+`25568` 无监听，服控代理为单实例 `Running`。API 内外网健康与就绪均正常、数据库
+`ready`、迁移 `23/23`、`NRestarts=0`，恢复窗口以来错误级日志为 `0`。
+
+结构化证据见
+[`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json)
+和
+[`evidence/SERVER_CONTROL_AGENT_0.3.1_PRODUCTION_DEPLOYMENT_2026-08-05.json`](evidence/SERVER_CONTROL_AGENT_0.3.1_PRODUCTION_DEPLOYMENT_2026-08-05.json)。
