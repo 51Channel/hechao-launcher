@@ -179,7 +179,8 @@ function serializeReview(): string {
     syncServerCatalog: review.syncServerCatalog,
     serverDisplayName: review.serverDisplayName,
     minimumTier: review.minimumTier,
-    maximumMemoryGiB: review.maximumMemoryGiB
+    maximumMemoryGiB: review.maximumMemoryGiB,
+    confirmation: review.confirmation
   });
 }
 

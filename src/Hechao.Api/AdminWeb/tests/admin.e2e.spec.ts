@@ -660,6 +660,7 @@ test("every production channel change requires confirmation", async ({ page }) =
 test("package import uploads a chunk and requires the exact deployment confirmation", async ({ page }) => {
   const uploadBytes = 1024 * 1024;
   let uploadOffset = 0;
+  let detailReads = 0;
   let confirmedBody: Record<string, unknown> | null = null;
   let record: PackageImportMock = {
     ...completedPackageImport,
@@ -698,6 +699,7 @@ test("package import uploads a chunk and requires the exact deployment confirmat
         return true;
       }
       if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        detailReads += 1;
         await route.fulfill({ json: record });
         return true;
       }
@@ -751,7 +753,14 @@ test("package import uploads a chunk and requires the exact deployment confirmat
   const importDrawer = page.locator(".package-import-drawer");
   await expect(importDrawer).toBeVisible();
   await expect(importDrawer.getByRole("heading", { name: "等待确认" })).toBeVisible();
-  await importDrawer.getByLabel("精确确认").fill(`发布并部署 ${packageImportId}`);
+  const confirmationInput = importDrawer.getByLabel("精确确认");
+  const confirmation = `发布并部署 ${packageImportId}`;
+  await confirmationInput.fill(confirmation);
+  const readsAfterTyping = detailReads;
+  await expect.poll(() => detailReads, { timeout: 7_000 }).toBeGreaterThan(readsAfterTyping);
+  await expect(confirmationInput).toHaveValue(confirmation);
+  await expect(importDrawer.getByText("有未提交更改")).toBeVisible();
+  await expect(importDrawer.getByRole("button", { name: "发布并部署" })).toBeEnabled();
   await importDrawer.getByRole("button", { name: "发布并部署" }).click();
 
   await expect.poll(() => confirmedBody).not.toBeNull();
