@@ -68,10 +68,20 @@ const actionError = ref("");
 const consoleOutput = ref<HTMLElement | null>(null);
 const followConsole = ref(true);
 
-const targets = computed(() => overview.data.value?.targets ?? []);
+function targetVisible(target: Pick<
+  ControlTargetDetail["target"],
+  "serverFilesPresent" | "deletionCleanupPending" | "activeOperation"
+>): boolean {
+  return target.serverFilesPresent || target.deletionCleanupPending || target.activeOperation !== null;
+}
+
+const targets = computed(() => (overview.data.value?.targets ?? []).filter(targetVisible));
 const selectedTarget = computed(() => {
   const target = targetDetail.data.value?.target;
-  return target?.serverId === selectedServerId.value ? target : null;
+  return target?.serverId === selectedServerId.value &&
+    targets.value.some(candidate => candidate.serverId === target.serverId)
+    ? target
+    : null;
 });
 const connectedAgentCount = computed(() =>
   new Set(targets.value.filter(target => target.agentConnected).map(target => target.agentId)).size
@@ -199,7 +209,9 @@ async function refreshControl(): Promise<void> {
     overview.refresh(),
     detailPromise
   ]);
-  const availableTargets = overviewResult?.targets ?? overview.data.value?.targets ?? [];
+  const availableTargets = (
+    overviewResult?.targets ?? overview.data.value?.targets ?? []
+  ).filter(targetVisible);
   const nextServerId = availableTargets.some(
     target => target.serverId === selectedServerId.value
   )
@@ -515,12 +527,12 @@ function operationResult(operation: ControlOperation): string {
             <div><dt>服务端文件</dt><dd>{{ selectedTarget.serverFilesPresent ? selectedTarget.deletionCleanupPending ? "目录存在 · 有待清理文件" : "目录存在" : selectedTarget.deletionCleanupPending ? "已移除 · 后台清理中" : "已删除" }}</dd></div>
           </dl>
 
-          <section v-if="selectedTarget.serverDeletionEnabled" class="control-danger-zone" aria-labelledby="server-files-title">
+          <section v-if="selectedTarget.serverDeletionEnabled && (selectedTarget.serverFilesPresent || selectedTarget.deletionCleanupPending)" class="control-danger-zone" aria-labelledby="server-files-title">
             <div class="control-danger-copy">
               <AppIcon name="trash-2" />
               <div><h3 id="server-files-title">服务端文件</h3><p v-if="selectedTarget.serverFilesPresent">永久删除受控运行目录以释放 VPS 空间。服务器必须先停止；外置备份和 OSS 客户端不受影响。</p><p v-else>{{ selectedTarget.deletionCleanupPending ? "运行目录已移除，代理正在重试清理暂存文件。" : "运行目录已删除。以后仍可通过整合包部署重新创建这个目标。" }}</p></div>
             </div>
-            <button class="button button-danger" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || selectedTarget.online || !selectedTarget.serverFilesPresent" @click="requestAction('DeleteServerFiles')"><AppIcon name="trash-2" />删除服务端文件</button>
+            <button v-if="selectedTarget.serverFilesPresent" class="button button-danger" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || selectedTarget.online" @click="requestAction('DeleteServerFiles')"><AppIcon name="trash-2" />删除服务端文件</button>
           </section>
 
           <div class="control-workspace-grid">

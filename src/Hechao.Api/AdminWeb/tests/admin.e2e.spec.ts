@@ -572,6 +572,68 @@ test("server file deletion requires stopped state and exact destructive confirma
   });
 });
 
+test("completed server deletion leaves the active list and returns after redeployment", async ({ page }) => {
+  let deleted = false;
+  let redeployed = false;
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview") {
+        const result = controlOverview(1);
+        result.targets[0] = {
+          ...result.targets[0],
+          online: false,
+          processId: null,
+          serverFilesPresent: !deleted || redeployed,
+          deletionCleanupPending: false
+        };
+        await route.fulfill({ json: result });
+        return true;
+      }
+      if (path === "/v1/admin/server-control/targets/activity" && request.method() === "GET") {
+        const result = controlDetail(1);
+        result.target = {
+          ...result.target,
+          online: false,
+          processId: null,
+          serverFilesPresent: !deleted || redeployed,
+          deletionCleanupPending: false
+        };
+        await route.fulfill({ json: result });
+        return true;
+      }
+      if (path === "/v1/admin/server-control/targets/fanstreet" && request.method() === "GET") {
+        const result = controlDetail(1);
+        result.target = {
+          ...result.target,
+          ...controlOverview(1).targets[1],
+          allowedCommandPrefixes: ["list", "save-all", "whitelist"],
+          consoleTail: ""
+        };
+        await route.fulfill({ json: result });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/control");
+  const targetList = page.locator(".control-target-list");
+  await expect(targetList.getByText("活动服", { exact: true })).toBeVisible();
+  await expect(page.locator(".control-pane-heading")).toContainText("2 个目标");
+
+  deleted = true;
+  await page.getByRole("button", { name: "刷新" }).click();
+  await expect(targetList.getByText("活动服", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".control-pane-heading")).toContainText("1 个目标");
+  await expect(page.locator(".control-detail-heading h3")).toHaveText("范街活动服");
+  await expect(page.getByRole("button", { name: "删除服务端文件", exact: true })).toBeVisible();
+
+  redeployed = true;
+  await page.getByRole("button", { name: "刷新" }).click();
+  await expect(targetList.getByText("活动服", { exact: true })).toBeVisible();
+  await expect(page.locator(".control-pane-heading")).toContainText("2 个目标");
+});
+
 test("every production channel change requires confirmation", async ({ page }) => {
   let productionBody: Record<string, unknown> | null = null;
   await mockAdminApi(page, { onProductionUpdate: body => { productionBody = body; } });

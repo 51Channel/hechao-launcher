@@ -208,6 +208,17 @@ public sealed class ServerControlRepository(
         {
             var serverId = reader.GetString(0);
             var lastSeenAt = new DateTimeOffset(reader.GetDateTime(5));
+            var serverFilesPresent = reader.GetBoolean(11);
+            var deletionCleanupPending = reader.GetBoolean(12);
+            var activeOperation = activeByTarget.GetValueOrDefault(serverId);
+            if (!ServerControlTargetVisibility.IncludeInOverview(
+                    serverFilesPresent,
+                    deletionCleanupPending,
+                    activeOperation is not null))
+            {
+                continue;
+            }
+
             targets.Add(new AdminServerControlTargetSummaryRecord(
                 serverId,
                 reader.GetString(1),
@@ -224,11 +235,11 @@ public sealed class ServerControlRepository(
                     : JsonSerializer.Deserialize<ServerQuickSettings>(
                         reader.GetString(8),
                         JsonOptions),
-                activeByTarget.GetValueOrDefault(serverId),
+                activeOperation,
                 reader.GetBoolean(9),
                 reader.GetBoolean(10),
-                reader.GetBoolean(11),
-                reader.GetBoolean(12)));
+                serverFilesPresent,
+                deletionCleanupPending));
         }
 
         return new AdminServerControlOverview(
