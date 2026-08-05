@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-05T21:56:30Z",
+  "feature": "hide-completed-deleted-server-control-targets",
+  "sourceCommit": "e0974a63efd32bb8a9e5afdfe46391d39f0fc209",
+  "releaseTags": [
+    "api-v0.28.1"
+  ],
+  "api": {
+    "version": "0.28.1",
+    "releaseId": "0.28.1-20260805T214936Z",
+    "archive": {
+      "sizeBytes": 45947724,
+      "sha256": "E831F14C4779A9C2146AAB3A1899661848AD303C4FDACE6D0FE2CA3E63A01C91",
+      "entryCount": 158,
+      "containsPdb": false,
+      "containsConfiguration": false,
+      "containsCredentials": false,
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "sizeBytes": 105033668,
+      "sha256": "C3771C9CF816D1BA091362FF7D67E76C63740EA19E9F29FBFCEFE43A15C583D3",
+      "deployedHashMatched": true
+    },
+    "adminJavaScript": {
+      "sizeBytes": 111574,
+      "sha256": "0773062D4C61E0A0FF8E9375717FFA9999B0A046B53469AA55C76B6FBD6FC925",
+      "deployedHashMatched": true
+    },
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260805T215035Z.dump",
+      "sha256": "980B6CCEAE5F257F1BE874F0B5F51B1173E5049E74210F90543E57162A91385B",
+      "sizeBytes": 3404181,
+      "restoreListLineCount": 225,
+      "restoreListPassed": true
+    },
+    "configurationBackup": "/var/backups/hechao-launcher/releases/0.28.1-20260805T214936Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.28.1-20260805T214936Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.28.0-20260805T201046Z",
+    "migrationCount": 24,
+    "mainPid": 780568,
+    "nRestarts": 0,
+    "healthVersion": "0.28.1",
+    "databaseStatus": "ready",
+    "warningErrorLinesSinceDeployment": 0,
+    "loopbackOnlyPort8090": true,
+    "publicPort8090Reachable": false
+  },
+  "tests": {
+    "apiPassed": 282,
+    "serverControlAgentPassed": 51,
+    "solutionPassed": 670,
+    "vitestPassed": 8,
+    "playwrightPassed": 16,
+    "typeScriptPassed": true,
+    "viteProductionBuildPassed": true,
+    "impeccableFindings": 0
+  },
+  "productionState": {
+    "targetRecordCount": 9,
+    "overviewVisibleTargetCount": 6,
+    "overviewHiddenTargetCount": 3,
+    "activeOperationCount": 0,
+    "hiddenTargets": [
+      {
+        "serverId": "activity",
+        "serverFilesPresent": false,
+        "deletionCleanupPending": false,
+        "activeOperationCount": 0,
+        "latestDeleteStatus": "Succeeded"
+      },
+      {
+        "serverId": "fanstreet",
+        "serverFilesPresent": false,
+        "deletionCleanupPending": false,
+        "activeOperationCount": 0,
+        "latestDeleteStatus": "Succeeded"
+      },
+      {
+        "serverId": "yugong",
+        "serverFilesPresent": false,
+        "deletionCleanupPending": false,
+        "activeOperationCount": 0,
+        "latestDeleteStatus": "Succeeded"
+      }
+    ],
+    "minecraftControlCommandsSent": 0,
+    "velocityControlCommandsSent": 0,
+    "publisherControlCommandsSent": 0,
+    "serverControlAgentCommandsSent": 0
+  },
+  "publicRegression": {
+    "launcherApiHealthStatus": 200,
+    "launcherApiReadyStatus": 200,
+    "adminHealthStatus": 200,
+    "adminReadyStatus": 200,
+    "adminPageStatus": 200,
+    "wrongHostAdminPageStatus": 404,
+    "websiteStatus": 200,
+    "legacyApiStatus": 200
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

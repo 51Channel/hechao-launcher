@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-05T20:33:15Z",
+  "generatedAtUtc": "2026-08-05T21:56:30Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,41 +45,41 @@
     },
     {
       "component": "api",
-      "version": "0.28.0-20260805T201046Z",
-      "releaseTag": "api-v0.28.0",
-      "releaseCommit": "8423af7c451ad163c138d9de62954cfb43c4bd23",
-      "taggedAt": "2026-08-06T04:32:22+08:00",
+      "version": "0.28.1-20260805T214936Z",
+      "releaseTag": "api-v0.28.1",
+      "releaseCommit": "e0974a63efd32bb8a9e5afdfe46391d39f0fc209",
+      "taggedAt": "2026-08-06T05:56:25+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "8423af7c451ad163c138d9de62954cfb43c4bd23"
+        "value": "e0974a63efd32bb8a9e5afdfe46391d39f0fc209"
       },
-      "deploymentState": "production-server-directory-deletion-enabled-on-five-allowlisted-targets-health-ready-no-real-deletion-executed",
-      "historicalNote": "0.27.3 is the direct rollback target only while no DeleteServerFiles operation record exists. After the first such record, use a compatible forward fix because 0.27.3 cannot deserialize the new operation type.",
+      "deploymentState": "production-completed-deleted-server-targets-hidden-and-redeploy-restores-visibility-health-ready",
+      "historicalNote": "Production contains DeleteServerFiles records. 0.28.0 is the direct rollback target; 0.27.3 cannot deserialize the operation type and must not be used.",
       "artifacts": [
         {
-          "name": "0.28.0-20260805T201046Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.28.0-20260805T201046Z",
-          "size": 45947055,
-          "sha256": "B30C5C28F9A3890E46122D0ECF9D1697E6A24972D62968B99E67EA35D2E1DE94",
+          "name": "hechao-launcher-api-0.28.1-20260805T214936Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.28.1-20260805T214936Z",
+          "size": 45947724,
+          "sha256": "E831F14C4779A9C2146AAB3A1899661848AD303C4FDACE6D0FE2CA3E63A01C91",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.28.0-20260805T201046Z/Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.28.1-20260805T214936Z/Hechao.Api",
           "size": 105033668,
-          "sha256": "87DC3054EB2C91FA6E7060A3521588AA25A3E8182E25542F4919110D33838108",
+          "sha256": "C3771C9CF816D1BA091362FF7D67E76C63740EA19E9F29FBFCEFE43A15C583D3",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.27.3-20260805T184018Z"
+        "target": "/opt/hechao-launcher-api/releases/0.28.0-20260805T201046Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.28.0.md",
+        "docs/API_RELEASE_0.28.1.md",
         "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
-        "docs/evidence/SERVER_DIRECTORY_DELETION_PRODUCTION_DEPLOYMENT_2026-08-06.json"
+        "docs/evidence/SERVER_CONTROL_TARGET_VISIBILITY_PRODUCTION_DEPLOYMENT_2026-08-06.json"
       ]
     },
     {
@@ -93,7 +93,7 @@
         "kind": "git-commit",
         "value": "8423af7c451ad163c138d9de62954cfb43c4bd23"
       },
-      "deploymentState": "production-owl5-and-owl9-five-target-server-directory-deletion-allowlist-enabled-no-real-deletion-executed",
+      "deploymentState": "production-owl5-and-owl9-five-target-server-directory-deletion-allowlist-enabled-three-owl5-targets-deleted-and-cleaned",
       "historicalNote": "Each host has an independent retained rollback directory. An older agent closes deletion capability in its heartbeat, but the API must not be downgraded to 0.27.3 after any DeleteServerFiles operation record exists.",
       "artifacts": [
         {
