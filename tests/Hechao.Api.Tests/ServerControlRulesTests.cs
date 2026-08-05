@@ -118,6 +118,21 @@ public sealed class ServerControlRulesTests
         Assert.Contains("action", errors);
     }
 
+    [Fact]
+    public void Validate_RequiresExplicitDeletePhraseForServerFiles()
+    {
+        var rejected = new AdminServerControlRequest(
+            ServerControlAction.DeleteServerFiles,
+            "activity",
+            "本次活动结束并释放 VPS 空间");
+        var accepted = rejected with { Confirmation = "DELETE activity" };
+
+        Assert.Contains(
+            "confirmation",
+            ServerControlRules.Validate("activity", rejected));
+        Assert.Empty(ServerControlRules.Validate("activity", accepted));
+    }
+
     [Theory]
     [InlineData(14)]
     [InlineData(481)]

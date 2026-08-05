@@ -25,7 +25,11 @@ public sealed class ServerControlAdminPayloadContractTests
                 true,
                 1234,
                 new ServerQuickSettings(30, 10, 8, "normal", false),
-                CreateOperation())]);
+                CreateOperation(),
+                PackageDeploymentEnabled: true,
+                ServerDeletionEnabled: true,
+                ServerFilesPresent: false,
+                DeletionCleanupPending: true)]);
 
         var json = JsonSerializer.Serialize(overview, JsonOptions);
 
@@ -34,6 +38,9 @@ public sealed class ServerControlAdminPayloadContractTests
         Assert.DoesNotContain("consoleCapturedAt", json, StringComparison.Ordinal);
         Assert.DoesNotContain("allowedCommandPrefixes", json, StringComparison.Ordinal);
         Assert.DoesNotContain("recentOperations", json, StringComparison.Ordinal);
+        Assert.Contains("\"serverDeletionEnabled\":true", json, StringComparison.Ordinal);
+        Assert.Contains("\"serverFilesPresent\":false", json, StringComparison.Ordinal);
+        Assert.Contains("\"deletionCleanupPending\":true", json, StringComparison.Ordinal);
     }
 
     [Fact]

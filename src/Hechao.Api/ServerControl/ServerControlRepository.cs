@@ -19,7 +19,10 @@ public enum ServerControlQueueStatus
     StateStale,
     OperationInProgress,
     CommandNotAllowed,
-    TargetOffline
+    TargetOffline,
+    TargetOnline,
+    TargetFilesMissing,
+    ServerDeletionDisabled
 }
 
 public enum ServerControlCompletionStatus
@@ -64,8 +67,10 @@ public sealed class ServerControlRepository(
                      reported_online, process_id, settings,
                      allowed_command_prefixes, console_tail,
                      console_captured_at, package_deployment_enabled,
-                     last_seen_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
+                     server_deletion_enabled, server_files_present,
+                     deletion_cleanup_pending, last_seen_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                        $13, $14, $15, $16, $16)
                 ON CONFLICT (server_id) DO UPDATE
                 SET agent_id = EXCLUDED.agent_id,
                     agent_version = EXCLUDED.agent_version,
@@ -79,6 +84,11 @@ public sealed class ServerControlRepository(
                     console_captured_at = EXCLUDED.console_captured_at,
                     package_deployment_enabled =
                         EXCLUDED.package_deployment_enabled,
+                    server_deletion_enabled =
+                        EXCLUDED.server_deletion_enabled,
+                    server_files_present = EXCLUDED.server_files_present,
+                    deletion_cleanup_pending =
+                        EXCLUDED.deletion_cleanup_pending,
                     last_seen_at = EXCLUDED.last_seen_at,
                     updated_at = EXCLUDED.updated_at
                 WHERE
@@ -116,6 +126,9 @@ public sealed class ServerControlRepository(
                 NpgsqlDbType.TimestampTz,
                 target.ConsoleCapturedAt);
             command.Parameters.AddWithValue(target.PackageDeploymentEnabled);
+            command.Parameters.AddWithValue(target.ServerDeletionEnabled);
+            command.Parameters.AddWithValue(target.ServerFilesPresent);
+            command.Parameters.AddWithValue(target.DeletionCleanupPending);
             command.Parameters.AddWithValue(receivedAt);
             imported += await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -179,7 +192,10 @@ public sealed class ServerControlRepository(
                    target.reported_online,
                    target.process_id,
                    target.settings::text,
-                   target.package_deployment_enabled
+                   target.package_deployment_enabled,
+                   target.server_deletion_enabled,
+                   target.server_files_present,
+                   target.deletion_cleanup_pending
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             ORDER BY COALESCE(server.sort_order, 2147483647),
@@ -209,7 +225,10 @@ public sealed class ServerControlRepository(
                         reader.GetString(8),
                         JsonOptions),
                 activeByTarget.GetValueOrDefault(serverId),
-                reader.GetBoolean(9)));
+                reader.GetBoolean(9),
+                reader.GetBoolean(10),
+                reader.GetBoolean(11),
+                reader.GetBoolean(12)));
         }
 
         return new AdminServerControlOverview(
@@ -246,7 +265,10 @@ public sealed class ServerControlRepository(
                    target.allowed_command_prefixes,
                    target.console_tail,
                    target.console_captured_at,
-                   target.package_deployment_enabled
+                   target.package_deployment_enabled,
+                   target.server_deletion_enabled,
+                   target.server_files_present,
+                   target.deletion_cleanup_pending
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             WHERE target.server_id = $1;
@@ -282,7 +304,10 @@ public sealed class ServerControlRepository(
                 ? null
                 : new DateTimeOffset(reader.GetDateTime(11)),
             activeOperation,
-            reader.GetBoolean(12));
+            reader.GetBoolean(12),
+            reader.GetBoolean(13),
+            reader.GetBoolean(14),
+            reader.GetBoolean(15));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,
@@ -387,6 +412,30 @@ public sealed class ServerControlRepository(
             {
                 return new ServerControlQueueMutationResult(
                     ServerControlQueueStatus.CommandNotAllowed);
+            }
+        }
+
+        if ((request.Action is ServerControlAction.Start or
+                ServerControlAction.Restart or
+                ServerControlAction.ApplySettings) &&
+            !target.ServerFilesPresent)
+        {
+            return new ServerControlQueueMutationResult(
+                ServerControlQueueStatus.TargetFilesMissing);
+        }
+
+        if (request.Action == ServerControlAction.DeleteServerFiles)
+        {
+            if (!target.ServerDeletionEnabled)
+            {
+                return new ServerControlQueueMutationResult(
+                    ServerControlQueueStatus.ServerDeletionDisabled);
+            }
+
+            if (target.Online)
+            {
+                return new ServerControlQueueMutationResult(
+                    ServerControlQueueStatus.TargetOnline);
             }
         }
 
@@ -818,6 +867,7 @@ public sealed class ServerControlRepository(
                 when online && automaticallyStoppingCount == 0 =>
                 "ALREADY_RUNNING",
             ServerControlAction.Stop when !online => "ALREADY_STOPPED",
+            ServerControlAction.DeleteServerFiles when !online => null,
             _ => null
         };
 
@@ -845,7 +895,9 @@ public sealed class ServerControlRepository(
                    target.conflict_group,
                    target.reported_online,
                    target.allowed_command_prefixes,
-                   target.last_seen_at
+                   target.last_seen_at,
+                   target.server_deletion_enabled,
+                   target.server_files_present
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             WHERE target.server_id = $1
@@ -874,7 +926,9 @@ public sealed class ServerControlRepository(
                    target.conflict_group,
                    target.reported_online,
                    target.allowed_command_prefixes,
-                   target.last_seen_at
+                   target.last_seen_at,
+                   target.server_deletion_enabled,
+                   target.server_files_present
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             WHERE target.conflict_group = $1
@@ -903,7 +957,9 @@ public sealed class ServerControlRepository(
             reader.IsDBNull(3) ? null : reader.GetString(3),
             reader.GetBoolean(4),
             reader.GetFieldValue<string[]>(5),
-            new DateTimeOffset(reader.GetDateTime(6)));
+            new DateTimeOffset(reader.GetDateTime(6)),
+            reader.GetBoolean(7),
+            reader.GetBoolean(8));
 
     private static async Task<bool> HasActiveCommandsAsync(
         NpgsqlConnection connection,
@@ -1289,7 +1345,9 @@ public sealed class ServerControlRepository(
         string? ConflictGroup,
         bool Online,
         IReadOnlyList<string> AllowedCommandPrefixes,
-        DateTimeOffset LastSeenAt);
+        DateTimeOffset LastSeenAt,
+        bool ServerDeletionEnabled,
+        bool ServerFilesPresent);
 
     private sealed record CommandPayload(
         string? ConsoleCommand = null,

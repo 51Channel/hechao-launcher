@@ -63,7 +63,10 @@ function controlOverview(requestNumber: number) {
       processId: 18888,
       settings: quickSettings(requestNumber > 1 ? 99 : 30),
       activeOperation: null,
-      packageDeploymentEnabled: true
+      packageDeploymentEnabled: true,
+      serverDeletionEnabled: true,
+      serverFilesPresent: true,
+      deletionCleanupPending: false
     }, {
       serverId: "fanstreet",
       displayName: "范街活动服",
@@ -76,7 +79,10 @@ function controlOverview(requestNumber: number) {
       processId: null,
       settings: quickSettings(40),
       activeOperation: null,
-      packageDeploymentEnabled: false
+      packageDeploymentEnabled: false,
+      serverDeletionEnabled: true,
+      serverFilesPresent: true,
+      deletionCleanupPending: false
     }]
   };
 }
@@ -489,6 +495,81 @@ test("control polling preserves dirty settings and console reading position", as
   const after = await output.evaluate(element => element.scrollTop);
   expect(Math.abs(after - before)).toBeLessThanOrEqual(2);
   await page.screenshot({ path: "../../../artifacts/admin-web-control-desktop.png", fullPage: true });
+});
+
+test("server file deletion requires stopped state and exact destructive confirmation", async ({ page }) => {
+  let deleteBody: Record<string, unknown> | null = null;
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview") {
+        const stopped = controlOverview(1);
+        stopped.targets[0] = {
+          ...stopped.targets[0],
+          online: false,
+          processId: null
+        };
+        await route.fulfill({ json: stopped });
+        return true;
+      }
+      if (path === "/v1/admin/server-control/targets/activity" && request.method() === "GET") {
+        const stopped = controlDetail(1);
+        stopped.target = {
+          ...stopped.target,
+          online: false,
+          processId: null
+        };
+        await route.fulfill({ json: stopped });
+        return true;
+      }
+      if (path === "/v1/admin/server-control/targets/activity/operations" && request.method() === "POST") {
+        deleteBody = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 202,
+          json: {
+            operation: {
+              operationId: "99999999-9999-9999-9999-999999999999",
+              serverId: "activity",
+              displayName: "活动服",
+              action: "DeleteServerFiles",
+              status: "Pending",
+              reason: deleteBody.reason,
+              requestedBy: session.player.userId,
+              requestedAt: now,
+              startedAt: null,
+              completedAt: null,
+              resultCode: null,
+              resultMessage: null,
+              automaticallyStoppingServerIds: []
+            },
+            automaticallyStoppingServerIds: []
+          }
+        });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/control");
+  await page.getByRole("button", { name: "删除服务端文件", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "永久删除服务端文件" })).toBeVisible();
+  await expect(page.getByText("此操作不可恢复。", { exact: false })).toBeVisible();
+  await page.getByLabel("操作原因").fill("活动录制结束，释放 VPS 磁盘空间");
+  await page.getByLabel("二次确认").fill("DELETE activity");
+  await page.getByRole("button", { name: "确认删除服务端文件" }).click();
+
+  await expect.poll(() => deleteBody).not.toBeNull();
+  expect(deleteBody).toMatchObject({
+    action: "DeleteServerFiles",
+    confirmation: "DELETE activity",
+    reason: "活动录制结束，释放 VPS 磁盘空间",
+    consoleCommand: null,
+    settings: null
+  });
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-control-delete-server.png",
+    fullPage: true
+  });
 });
 
 test("every production channel change requires confirmation", async ({ page }) => {

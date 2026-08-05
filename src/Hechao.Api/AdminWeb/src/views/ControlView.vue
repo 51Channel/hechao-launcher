@@ -268,7 +268,8 @@ function controlActionText(action: ControlAction): string {
     Restart: "重启",
     ConsoleCommand: "控制台命令",
     ApplySettings: "快捷设置",
-    DeployPackage: "部署整合包"
+    DeployPackage: "部署整合包",
+    DeleteServerFiles: "删除服务端文件"
   }[action];
 }
 
@@ -289,7 +290,8 @@ function actionMessage(pending: PendingAction): string {
     Restart: `保存世界、停止并重新启动 ${pending.displayName}`,
     ConsoleCommand: `向 ${pending.displayName} 发送：${pending.consoleCommand}`,
     ApplySettings: `更新 ${pending.displayName} 的 server.properties 与 JVM 启动内存；运行中的服务不会自动重启。`,
-    DeployPackage: `替换 ${pending.displayName} 的受控服务端目录；完成后保持停服。`
+    DeployPackage: `替换 ${pending.displayName} 的受控服务端目录；完成后保持停服。`,
+    DeleteServerFiles: `永久删除 ${pending.displayName} 的整个受控运行目录，包括世界、模组、插件、配置和日志；VPS 外置备份不会被删除。`
   }[pending.action];
 }
 
@@ -300,7 +302,8 @@ function actionTitle(action: ControlAction): string {
     Restart: "重启服务器",
     ConsoleCommand: "发送 Minecraft 命令",
     ApplySettings: "保存快捷设置",
-    DeployPackage: "部署整合包"
+    DeployPackage: "部署整合包",
+    DeleteServerFiles: "永久删除服务端文件"
   }[action];
 }
 
@@ -349,6 +352,20 @@ function requestAction(action: ControlAction): void {
   if (!target?.agentConnected || target.activeOperation) {
     showToast("该服务器当前不能执行控制动作。", true);
     return;
+  }
+  if (action === "DeleteServerFiles") {
+    if (!target.serverDeletionEnabled) {
+      showToast("该服务器未在 VPS 代理中开放文件删除权限。", true);
+      return;
+    }
+    if (target.online) {
+      showToast("请先正常停止服务器并等待状态刷新，再删除文件。", true);
+      return;
+    }
+    if (!target.serverFilesPresent) {
+      showToast("该服务器的运行目录已经不存在。", true);
+      return;
+    }
   }
   let consoleCommand: string | null = null;
   let settings: QuickSettings | null = null;
@@ -472,7 +489,7 @@ function operationResult(operation: ControlOperation): string {
             <button v-for="target in targets" :key="target.serverId" class="control-target-item" :class="{ active: target.serverId === selectedServerId }" type="button" @click="selectTarget(target.serverId)">
               <i class="control-target-marker" :class="!target.agentConnected ? 'offline' : target.online ? 'online' : 'stopped'"></i>
               <strong>{{ target.displayName }}</strong>
-              <span>{{ target.online ? "运行中" : "已停止" }} · {{ target.agentConnected ? target.agentId : "代理离线" }} · {{ target.settings?.maximumMemoryMiB ? `Xmx ${formatMemoryMiB(target.settings.maximumMemoryMiB)}` : "内存未上报" }}</span>
+              <span>{{ target.online ? "运行中" : target.serverFilesPresent ? "已停止" : "文件已删除" }} · {{ target.agentConnected ? target.agentId : "代理离线" }} · {{ target.settings?.maximumMemoryMiB ? `Xmx ${formatMemoryMiB(target.settings.maximumMemoryMiB)}` : "内存未上报" }}</span>
             </button>
           </div>
         </aside>
@@ -481,9 +498,9 @@ function operationResult(operation: ControlOperation): string {
           <header class="control-detail-heading">
             <div><span class="control-server-id">{{ selectedTarget.serverId }}</span><h3>{{ selectedTarget.displayName }}</h3><p>{{ selectedTarget.online ? `运行中 · PID ${selectedTarget.processId || "未上报"} · 端口 ${selectedTarget.port}` : `已停止 · 端口 ${selectedTarget.port}` }}　{{ selectedTarget.agentConnected ? `代理 ${selectedTarget.agentId} 在线` : `代理 ${selectedTarget.agentId} 离线` }}　最后上报 {{ formatRelativeTime(selectedTarget.lastSeenAt) }}</p></div>
             <div class="control-actions">
-              <button class="button button-primary" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || (selectedTarget.online && conflicts.length === 0)" @click="requestAction('Start')"><AppIcon name="play" />启动</button>
+              <button class="button button-primary" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || !selectedTarget.serverFilesPresent || (selectedTarget.online && conflicts.length === 0)" @click="requestAction('Start')"><AppIcon name="play" />启动</button>
               <button class="button button-danger" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || !selectedTarget.online" @click="requestAction('Stop')"><AppIcon name="square" />停止</button>
-              <button class="button button-secondary" type="button" :disabled="!selectedTarget.agentConnected || controlBusy" @click="requestAction('Restart')"><AppIcon name="refresh-cw" />重启</button>
+              <button class="button button-secondary" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || !selectedTarget.serverFilesPresent" @click="requestAction('Restart')"><AppIcon name="refresh-cw" />重启</button>
             </div>
           </header>
 
@@ -495,7 +512,16 @@ function operationResult(operation: ControlOperation): string {
             <div><dt>端口 / PID</dt><dd>{{ selectedTarget.port }} / {{ selectedTarget.processId || "未上报" }}</dd></div>
             <div><dt>启动内存</dt><dd>{{ hasMemorySettings ? `Xms ${formatMemoryMiB(selectedTarget.settings?.initialMemoryMiB)} · Xmx ${formatMemoryMiB(selectedTarget.settings?.maximumMemoryMiB)}` : "未上报" }}</dd></div>
             <div><dt>单服上限</dt><dd>{{ formatMemoryMiB(selectedTarget.settings?.maximumAllowedMemoryMiB) }}</dd></div>
+            <div><dt>服务端文件</dt><dd>{{ selectedTarget.serverFilesPresent ? selectedTarget.deletionCleanupPending ? "目录存在 · 有待清理文件" : "目录存在" : selectedTarget.deletionCleanupPending ? "已移除 · 后台清理中" : "已删除" }}</dd></div>
           </dl>
+
+          <section v-if="selectedTarget.serverDeletionEnabled" class="control-danger-zone" aria-labelledby="server-files-title">
+            <div class="control-danger-copy">
+              <AppIcon name="trash-2" />
+              <div><h3 id="server-files-title">服务端文件</h3><p v-if="selectedTarget.serverFilesPresent">永久删除受控运行目录以释放 VPS 空间。服务器必须先停止；外置备份和 OSS 客户端不受影响。</p><p v-else>{{ selectedTarget.deletionCleanupPending ? "运行目录已移除，代理正在重试清理暂存文件。" : "运行目录已删除。以后仍可通过整合包部署重新创建这个目标。" }}</p></div>
+            </div>
+            <button class="button button-danger" type="button" :disabled="!selectedTarget.agentConnected || controlBusy || selectedTarget.online || !selectedTarget.serverFilesPresent" @click="requestAction('DeleteServerFiles')"><AppIcon name="trash-2" />删除服务端文件</button>
+          </section>
 
           <div class="control-workspace-grid">
             <section class="control-settings">
@@ -544,15 +570,16 @@ function operationResult(operation: ControlOperation): string {
       :title="pendingAction ? actionTitle(pendingAction.action) : '确认服务器操作'"
       :message="pendingAction ? actionMessage(pendingAction) : ''"
       :confirm-label="pendingAction ? `确认${controlActionText(pendingAction.action)}` : '确认操作'"
-      :danger="pendingAction?.action === 'Stop' || pendingAction?.action === 'Restart'"
+      :danger="pendingAction?.action === 'Stop' || pendingAction?.action === 'Restart' || pendingAction?.action === 'DeleteServerFiles'"
       :busy="actionBusy"
       require-reason
-      :confirmation-text="pendingAction?.serverId || ''"
+      :confirmation-text="pendingAction ? pendingAction.action === 'DeleteServerFiles' ? `DELETE ${pendingAction.serverId}` : pendingAction.serverId : ''"
       :error="actionError"
       @close="pendingAction = null; actionError = ''"
       @confirm="submitAction"
     >
       <div v-if="pendingAction?.conflictDisplayNames.length" class="control-dialog-warning">将先自动保存并关闭：{{ pendingAction.conflictDisplayNames.join("、") }}。任何一个停止失败都会取消本次启动。</div>
+      <div v-if="pendingAction?.action === 'DeleteServerFiles'" class="control-dialog-danger">此操作不可恢复。世界、模组、插件、配置和日志都会从该 VPS 的运行目录中删除。请先确认所需世界已有正式外置备份。</div>
     </ConfirmDialog>
   </section>
 </template>

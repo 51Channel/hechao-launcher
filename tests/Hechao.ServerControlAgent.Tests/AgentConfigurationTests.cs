@@ -88,6 +88,13 @@ public sealed class AgentConfigurationTests
         });
         if (expectedAgentId == "owl5")
         {
+            Assert.Equal(
+                ["activity", "dollnight", "fanstreet", "yugong"],
+                configuration.Targets
+                    .Where(target => target.ServerDeletionEnabled)
+                    .Select(target => target.ServerId)
+                    .Order(StringComparer.Ordinal)
+                    .ToArray());
             var deploymentTargets = configuration.Targets
                 .Where(target => target.PackageDeploymentEnabled)
                 .ToArray();
@@ -101,6 +108,12 @@ public sealed class AgentConfigurationTests
         }
         else
         {
+            Assert.Equal(
+                ["pvp"],
+                configuration.Targets
+                    .Where(target => target.ServerDeletionEnabled)
+                    .Select(target => target.ServerId)
+                    .ToArray());
             Assert.DoesNotContain(
                 configuration.Targets,
                 target => target.PackageDeploymentEnabled);
@@ -202,6 +215,63 @@ public sealed class AgentConfigurationTests
 
         Assert.All(invalidTargets, invalidTarget =>
             Assert.Throws<InvalidDataException>(invalidTarget.Validate));
+    }
+
+    [Fact]
+    public void Validate_RejectsDeletionRootContainingAnotherManagedServer()
+    {
+        var parent = CreateTarget(
+            "activity-root",
+            @"E:\Activities",
+            25568,
+            null) with
+        {
+            ServerDeletionEnabled = true
+        };
+        var child = CreateTarget(
+            "activity-child",
+            @"E:\Activities\Current",
+            25569,
+            null);
+        var configuration = CreateConfiguration(parent, child);
+
+        Assert.Throws<InvalidDataException>(configuration.Validate);
+    }
+
+    [Fact]
+    public void Validate_RejectsDeletionRootInsideAnotherManagedServer()
+    {
+        var parent = CreateTarget(
+            "activity-root",
+            @"E:\Activities",
+            25568,
+            null);
+        var child = CreateTarget(
+            "activity-child",
+            @"E:\Activities\Current",
+            25569,
+            null) with
+        {
+            ServerDeletionEnabled = true
+        };
+        var configuration = CreateConfiguration(parent, child);
+
+        Assert.Throws<InvalidDataException>(configuration.Validate);
+    }
+
+    [Fact]
+    public void Validate_RejectsVolumeRootDeletionTarget()
+    {
+        var target = CreateTarget(
+            "activity",
+            @"E:\",
+            25568,
+            null) with
+        {
+            ServerDeletionEnabled = true
+        };
+
+        Assert.Throws<InvalidDataException>(target.Validate);
     }
 
     private static ServerControlAgentConfiguration CreateConfiguration(

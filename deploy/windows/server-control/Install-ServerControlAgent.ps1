@@ -100,36 +100,46 @@ if (-not (
 }
 
 foreach ($target in @($configurationObject.targets)) {
-    if (-not (Test-Path -LiteralPath $target.serverDirectory -PathType Container)) {
-        throw "Server directory is missing: $($target.serverDirectory)"
+    $serverDeletionEnabled = [bool]$target.serverDeletionEnabled
+    $serverDirectoryExists = Test-Path -LiteralPath $target.serverDirectory
+    $serverDirectoryPresent = Test-Path `
+        -LiteralPath $target.serverDirectory `
+        -PathType Container
+    if ($serverDirectoryExists -and -not $serverDirectoryPresent) {
+        throw "Server directory path is not a directory: $($target.serverDirectory)"
     }
-    if (-not (
-        Test-Path -LiteralPath (
-            Join-Path $target.serverDirectory $target.propertiesRelativePath
-        ) -PathType Leaf
-    )) {
-        throw "server.properties is missing for target $($target.serverId)."
+    if (-not $serverDirectoryPresent -and -not $serverDeletionEnabled) {
+        throw "Server directory is missing: $($target.serverDirectory)"
     }
     $memorySettingsPath = Join-Path (
         [System.IO.Path]::GetFullPath([string]$target.serverDirectory)
     ) ([string]$target.memorySettingsRelativePath)
-    if (-not (Test-Path -LiteralPath $memorySettingsPath -PathType Leaf)) {
-        throw "JVM memory settings file is missing for target $($target.serverId)."
-    }
-    $memorySettingsText = [System.Text.Encoding]::Latin1.GetString(
-        [System.IO.File]::ReadAllBytes($memorySettingsPath))
-    $initialMemoryMatches = [regex]::Matches(
-        $memorySettingsText,
-        '(?i)(?<!\S)-Xms[1-9][0-9]*[KMG](?=\s|$)')
-    $maximumMemoryMatches = [regex]::Matches(
-        $memorySettingsText,
-        '(?i)(?<!\S)-Xmx[1-9][0-9]*[KMG](?=\s|$)')
-    if ($initialMemoryMatches.Count -ne 1 -or
-        $maximumMemoryMatches.Count -ne 1) {
-        throw (
-            "JVM memory settings file for target $($target.serverId) must " +
-            'contain exactly one -Xms and one -Xmx argument.'
-        )
+    if ($serverDirectoryPresent) {
+        if (-not (
+            Test-Path -LiteralPath (
+                Join-Path $target.serverDirectory $target.propertiesRelativePath
+            ) -PathType Leaf
+        )) {
+            throw "server.properties is missing for target $($target.serverId)."
+        }
+        if (-not (Test-Path -LiteralPath $memorySettingsPath -PathType Leaf)) {
+            throw "JVM memory settings file is missing for target $($target.serverId)."
+        }
+        $memorySettingsText = [System.Text.Encoding]::Latin1.GetString(
+            [System.IO.File]::ReadAllBytes($memorySettingsPath))
+        $initialMemoryMatches = [regex]::Matches(
+            $memorySettingsText,
+            '(?i)(?<!\S)-Xms[1-9][0-9]*[KMG](?=\s|$)')
+        $maximumMemoryMatches = [regex]::Matches(
+            $memorySettingsText,
+            '(?i)(?<!\S)-Xmx[1-9][0-9]*[KMG](?=\s|$)')
+        if ($initialMemoryMatches.Count -ne 1 -or
+            $maximumMemoryMatches.Count -ne 1) {
+            throw (
+                "JVM memory settings file for target $($target.serverId) must " +
+                'contain exactly one -Xms and one -Xmx argument.'
+            )
+        }
     }
     $packageDeploymentEnabled = [bool]$target.packageDeploymentEnabled
     $startScriptRelativePath = [string]$target.startScriptRelativePath
@@ -145,6 +155,7 @@ foreach ($target in @($configurationObject.targets)) {
     $startScriptPath = [System.IO.Path]::GetFullPath(
         (Join-Path $target.serverDirectory $startScriptRelativePath)
     )
+    $startScriptText = $null
     if ($packageDeploymentEnabled) {
         if (-not [string]::Equals(
                 [string]$configurationObject.agentId,
@@ -170,11 +181,16 @@ foreach ($target in @($configurationObject.targets)) {
             )) {
             throw "Managed start script escapes target $($target.serverId)."
         }
-        if (-not (Test-Path -LiteralPath $startScriptPath -PathType Leaf)) {
+        if ($serverDirectoryPresent -and -not (
+            Test-Path -LiteralPath $startScriptPath -PathType Leaf
+        )) {
             throw "Managed start script is missing for target $($target.serverId)."
         }
-        $startScriptText = [System.IO.File]::ReadAllText($startScriptPath)
-        if ($startScriptText -notmatch '(?im)^[ \t]*if not defined HECHAO_MANAGED_START pause[ \t]*(?:\r)?$') {
+        if ($serverDirectoryPresent) {
+            $startScriptText = [System.IO.File]::ReadAllText($startScriptPath)
+        }
+        if ($serverDirectoryPresent -and
+            $startScriptText -notmatch '(?im)^[ \t]*if not defined HECHAO_MANAGED_START pause[ \t]*(?:\r)?$') {
             throw (
                 "Managed start script for target $($target.serverId) is not " +
                 'managed-start aware.'

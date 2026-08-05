@@ -6,6 +6,105 @@ namespace Hechao.ServerControlAgent.Tests;
 public sealed class ServerTargetRuntimeTests
 {
     [Fact]
+    public async Task DeleteServerFiles_RemovesOnlyStoppedConfiguredDirectory()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "hechao-server-delete-" + Guid.NewGuid().ToString("N"));
+        var serverDirectory = Path.Combine(root, "activity");
+        var externalBackup = Path.Combine(root, "backups", "world.zip");
+        Directory.CreateDirectory(Path.Combine(serverDirectory, "world"));
+        Directory.CreateDirectory(Path.GetDirectoryName(externalBackup)!);
+        File.WriteAllText(
+            Path.Combine(serverDirectory, "world", "level.dat"),
+            "world-data");
+        File.WriteAllText(externalBackup, "backup-data");
+        var runner = new RecordingProcessRunner((_, _) =>
+            new ProcessRunResult(0, string.Empty, string.Empty));
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            serverDirectory: serverDirectory,
+            serverDeletionEnabled: true,
+            runtimeMarkerDirectory: Path.Combine(root, "runtime"));
+        var command = new ServerControlCommandDelivery(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "activity",
+            ServerControlCommandKind.DeleteServerFiles,
+            1,
+            null,
+            null);
+
+        try
+        {
+            var result = await runtime.ExecuteAsync(
+                command,
+                [runtime],
+                CancellationToken.None);
+
+            Assert.Equal(ServerControlCommandOutcome.Succeeded, result.Outcome);
+            Assert.Equal("SERVER_FILES_DELETED", result.ResultCode);
+            Assert.False(Directory.Exists(serverDirectory));
+            Assert.True(File.Exists(externalBackup));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task DeleteServerFiles_RejectsRunningServerWithoutMovingFiles()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "hechao-server-delete-running-" + Guid.NewGuid().ToString("N"));
+        var serverDirectory = Path.Combine(root, "activity");
+        Directory.CreateDirectory(serverDirectory);
+        File.WriteAllText(Path.Combine(serverDirectory, "server.jar"), "jar");
+        var runner = new RecordingProcessRunner((_, _) =>
+            new ProcessRunResult(0, "1234", string.Empty));
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            serverDirectory: serverDirectory,
+            serverDeletionEnabled: true,
+            runtimeMarkerDirectory: Path.Combine(root, "runtime"));
+        var command = new ServerControlCommandDelivery(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "activity",
+            ServerControlCommandKind.DeleteServerFiles,
+            1,
+            null,
+            null);
+
+        try
+        {
+            var result = await runtime.ExecuteAsync(
+                command,
+                [runtime],
+                CancellationToken.None);
+
+            Assert.Equal(ServerControlCommandOutcome.Conflict, result.Outcome);
+            Assert.Equal("SERVER_STILL_RUNNING", result.ResultCode);
+            Assert.True(File.Exists(Path.Combine(serverDirectory, "server.jar")));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task ConsoleCommand_UsesOnlyFixedPowerShellBridge()
     {
         var runner = new RecordingProcessRunner((executable, arguments) =>
@@ -401,16 +500,19 @@ public sealed class ServerTargetRuntimeTests
         bool requiresManagedMarker = false,
         string? runtimeMarkerDirectory = null,
         TimeSpan? saveFlushDelay = null,
-        TimeSpan? stopCommandGracePeriod = null)
+        TimeSpan? stopCommandGracePeriod = null,
+        string? serverDirectory = null,
+        bool serverDeletionEnabled = false)
     {
         var configuration = new ServerControlTargetConfiguration
         {
             ServerId = serverId,
-            ServerDirectory = $@"C:\servers\{serverId}",
+            ServerDirectory = serverDirectory ?? $@"C:\servers\{serverId}",
             StartTaskName = $"Hechao-Server-{serverId}",
             Port = port,
             ConflictGroup = conflictGroup,
-            AllowedCommandPrefixes = prefixes ?? ["list", "say", "save-all"]
+            AllowedCommandPrefixes = prefixes ?? ["list", "say", "save-all"],
+            ServerDeletionEnabled = serverDeletionEnabled
         };
         return new ServerTargetRuntime(
             configuration,

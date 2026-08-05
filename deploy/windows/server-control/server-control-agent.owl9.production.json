@@ -17,6 +17,7 @@
       "propertiesRelativePath": "server.properties",
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 6144,
+      "serverDeletionEnabled": true,
       "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
     },
     {

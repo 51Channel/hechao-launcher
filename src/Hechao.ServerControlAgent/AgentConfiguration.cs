@@ -40,8 +40,7 @@ public sealed record ServerControlAgentConfiguration
             new JsonSerializerOptions(JsonSerializerDefaults.Web))
             ?? throw new InvalidDataException(
                 "The server control agent configuration is empty.");
-        configuration.Validate();
-        return configuration with
+        var normalized = configuration with
         {
             TokenPath = Path.GetFullPath(configuration.TokenPath),
             StateDirectory = Path.GetFullPath(configuration.StateDirectory),
@@ -49,6 +48,8 @@ public sealed record ServerControlAgentConfiguration
                 Path.GetFullPath(configuration.ConsoleSubmitScript),
             Targets = [.. configuration.Targets.Select(target => target.Normalize())]
         };
+        normalized.Validate();
+        return normalized;
     }
 
     public void Validate()
@@ -83,6 +84,28 @@ public sealed record ServerControlAgentConfiguration
         foreach (var target in Targets)
         {
             target.Validate();
+        }
+
+        var deletionTargets = Targets
+            .Where(target => target.ServerDeletionEnabled)
+            .ToArray();
+        foreach (var target in deletionTargets)
+        {
+            if (ContainsPath(target.ServerDirectory, TokenPath) ||
+                ContainsPath(target.ServerDirectory, StateDirectory) ||
+                ContainsPath(target.ServerDirectory, ConsoleSubmitScript) ||
+                Targets.Any(other =>
+                    !ReferenceEquals(target, other) &&
+                    (ContainsPath(
+                         target.ServerDirectory,
+                         other.ServerDirectory) ||
+                     ContainsPath(
+                         other.ServerDirectory,
+                         target.ServerDirectory))))
+            {
+                throw new InvalidDataException(
+                    $"Deletion target '{target.ServerId}' overlaps protected agent data or another managed server.");
+            }
         }
 
         var deploymentTargets = Targets
@@ -126,6 +149,22 @@ public sealed record ServerControlAgentConfiguration
             }
         }
     }
+
+    private static bool ContainsPath(string rootPath, string candidatePath)
+    {
+        var root = Path.GetFullPath(rootPath)
+            .TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+        var candidate = Path.GetFullPath(candidatePath)
+            .TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+        return string.Equals(root, candidate, StringComparison.OrdinalIgnoreCase) ||
+               candidate.StartsWith(
+                   root + Path.DirectorySeparatorChar,
+                   StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 public sealed record ServerControlTargetConfiguration
@@ -141,6 +180,7 @@ public sealed record ServerControlTargetConfiguration
     public string StartScriptRelativePath { get; init; } = "start.bat";
     public int MaximumAllowedMemoryMiB { get; init; } = 65536;
     public bool PackageDeploymentEnabled { get; init; }
+    public bool ServerDeletionEnabled { get; init; }
     public IReadOnlyList<string> HostManagedRelativePaths { get; init; } = [];
     public IReadOnlyList<string> WorldDataRelativePaths { get; init; } = [];
     public IReadOnlyList<string> AllowedCommandPrefixes { get; init; } =
@@ -210,6 +250,7 @@ public sealed record ServerControlTargetConfiguration
             (!PackageDeploymentEnabled &&
              (hostManagedPaths.Count > 0 ||
               worldDataPaths.Count > 0)) ||
+            (ServerDeletionEnabled && !IsSafeDeletionRoot()) ||
             AllowedCommandPrefixes.Count is < 1 or > 64 ||
             AllowedCommandPrefixes.Any(prefix =>
                 !ConfigurationPatterns.CommandPrefix().IsMatch(prefix)))
@@ -233,6 +274,20 @@ public sealed record ServerControlTargetConfiguration
 
     internal string GetContainedDeploymentPath(string relativePath) =>
         GetContainedPath(relativePath);
+
+    private bool IsSafeDeletionRoot()
+    {
+        var path = Path.GetFullPath(ServerDirectory)
+            .TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+        var volumeRoot = Path.GetPathRoot(path)?.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar);
+        return !string.IsNullOrWhiteSpace(volumeRoot) &&
+               !string.Equals(path, volumeRoot, StringComparison.OrdinalIgnoreCase) &&
+               Directory.GetParent(path) is not null;
+    }
 
     private string GetContainedPath(string relativePath)
     {

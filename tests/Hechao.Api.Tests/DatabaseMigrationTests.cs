@@ -137,4 +137,24 @@ public sealed class DatabaseMigrationTests
         Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("server_directory", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ServerDirectoryDeletionMigration_IsExplicitAndStructured()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.024_server_directory_deletion.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("server_deletion_enabled", sql, StringComparison.Ordinal);
+        Assert.Contains("server_files_present", sql, StringComparison.Ordinal);
+        Assert.Contains("'DeleteServerFiles'", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("shell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("server_directory text", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

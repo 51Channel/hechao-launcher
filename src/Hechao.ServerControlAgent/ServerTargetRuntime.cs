@@ -28,6 +28,7 @@ internal sealed class ServerTargetRuntime
     private readonly IProcessRunner _processRunner;
     private readonly ServerPackageDeployer _packageDeployer;
     private readonly ServerDirectoryAccessGate _serverDirectoryAccessGate = new();
+    private readonly ServerDirectoryDeletionManager _directoryDeletionManager;
     private readonly TimeSpan _saveFlushDelay;
     private readonly TimeSpan _stopCommandGracePeriod;
 
@@ -53,6 +54,10 @@ internal sealed class ServerTargetRuntime
             configuration,
             backupRoot,
             _serverDirectoryAccessGate);
+        _directoryDeletionManager = new ServerDirectoryDeletionManager(
+            configuration,
+            _serverDirectoryAccessGate,
+            _runtimeMarkerPath);
         _saveFlushDelay = saveFlushDelay ?? DefaultSaveFlushDelay;
         _stopCommandGracePeriod =
             stopCommandGracePeriod ?? DefaultStopCommandGracePeriod;
@@ -218,6 +223,7 @@ internal sealed class ServerTargetRuntime
         var processId = await FindProcessIdAsync(cancellationToken);
         using (await _serverDirectoryAccessGate.EnterAsync(cancellationToken))
         {
+            var deletionState = _directoryDeletionManager.CaptureState();
             var logPath = Configuration.GetLogPath();
             DateTimeOffset? capturedAt = File.Exists(logPath)
                 ? File.GetLastWriteTimeUtc(logPath)
@@ -248,7 +254,10 @@ internal sealed class ServerTargetRuntime
                 Configuration.AllowedCommandPrefixes,
                 ConsoleTailReader.Read(logPath),
                 capturedAt,
-                Configuration.PackageDeploymentEnabled);
+                Configuration.PackageDeploymentEnabled,
+                Configuration.ServerDeletionEnabled,
+                deletionState.FilesPresent,
+                deletionState.CleanupPending);
         }
     }
 
@@ -281,6 +290,11 @@ internal sealed class ServerTargetRuntime
             ServerControlCommandKind.ApplySettings =>
                 await ApplySettingsAsync(
                     command.Settings,
+                    cancellationToken),
+            ServerControlCommandKind.DeleteServerFiles =>
+                await _directoryDeletionManager.DeleteAsync(
+                    command.CommandId,
+                    FindProcessIdAsync,
                     cancellationToken),
             ServerControlCommandKind.DeployPackage
                 when command.PackageDeployment is not null &&
@@ -330,6 +344,13 @@ internal sealed class ServerTargetRuntime
                 ServerControlCommandOutcome.Conflict,
                 "LOCAL_PORT_OCCUPIED",
                 $"端口 {Configuration.Port} 已被未归属到当前服务端的进程占用，已拒绝启动。");
+        }
+
+        if (!Directory.Exists(Configuration.ServerDirectory))
+        {
+            return Failed(
+                "SERVER_FILES_MISSING",
+                "服务端运行目录不存在，无法启动；请先重新部署服务端文件。");
         }
 
         var start = await _processRunner.RunAsync(

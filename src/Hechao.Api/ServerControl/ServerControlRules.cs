@@ -32,12 +32,19 @@ public static partial class ServerControlRules
             errors["serverId"] = ["服务器 ID 无效。"];
         }
 
+        var expectedConfirmation =
+            request.Action == ServerControlAction.DeleteServerFiles
+                ? $"DELETE {serverId}"
+                : serverId;
         if (!string.Equals(
                 request.Confirmation?.Trim(),
-                serverId,
+                expectedConfirmation,
                 StringComparison.Ordinal))
         {
-            errors["confirmation"] = ["请输入完整服务器 ID 进行二次确认。"];
+            errors["confirmation"] = request.Action ==
+                ServerControlAction.DeleteServerFiles
+                    ? [$"请输入“DELETE {serverId}”确认永久删除服务端文件。"]
+                    : ["请输入完整服务器 ID 进行二次确认。"];
         }
 
         if (string.IsNullOrWhiteSpace(request.Reason) ||

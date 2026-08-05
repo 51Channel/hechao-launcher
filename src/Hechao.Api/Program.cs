@@ -2598,6 +2598,18 @@ async Task<IResult> QueueAdminServerControlOperationAsync(
         {
             message = "服务器未运行，不能发送控制台命令。"
         }),
+        ServerControlQueueStatus.TargetOnline => Results.Conflict(new
+        {
+            message = "服务器仍在运行。请先正常停止并等待状态刷新，再删除服务端文件。"
+        }),
+        ServerControlQueueStatus.TargetFilesMissing => Results.Conflict(new
+        {
+            message = "服务端运行目录已经不存在，不能执行该操作。"
+        }),
+        ServerControlQueueStatus.ServerDeletionDisabled => Results.Conflict(new
+        {
+            message = "该目标未在 VPS 代理配置中显式开放服务端文件删除权限。"
+        }),
         _ => Results.Problem(
             title: "服务器控制动作排队失败",
             statusCode: StatusCodes.Status500InternalServerError)

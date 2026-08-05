@@ -88,6 +88,29 @@ public sealed class ServerControlCommandPlannerTests
         Assert.Null(command.Settings);
     }
 
+    [Fact]
+    public void DeleteServerFiles_QueuesOnlyStructuredDeleteCommand()
+    {
+        var target = Target("activity", "owl5", online: false);
+
+        var commands = ServerControlCommandPlanner.Build(
+            target,
+            [target],
+            new AdminServerControlRequest(
+                ServerControlAction.DeleteServerFiles,
+                "DELETE activity",
+                "本次活动结束并释放 VPS 空间"));
+
+        var command = Assert.Single(commands);
+        AssertCommand(
+            command,
+            0,
+            "activity",
+            ServerControlCommandKind.DeleteServerFiles);
+        Assert.Null(command.ConsoleCommand);
+        Assert.Null(command.Settings);
+    }
+
     private static ServerControlPlanningTarget Target(
         string serverId,
         string agentId,

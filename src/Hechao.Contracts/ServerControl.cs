@@ -7,7 +7,8 @@ public enum ServerControlAction
     Restart,
     ConsoleCommand,
     ApplySettings,
-    DeployPackage
+    DeployPackage,
+    DeleteServerFiles
 }
 
 public enum ServerControlOperationStatus
@@ -25,7 +26,8 @@ public enum ServerControlCommandKind
     Stop,
     ConsoleCommand,
     ApplySettings,
-    DeployPackage
+    DeployPackage,
+    DeleteServerFiles
 }
 
 public enum ServerControlCommandOutcome
@@ -79,7 +81,10 @@ public sealed record AdminServerControlTargetSummaryRecord(
     int? ProcessId,
     ServerQuickSettings? Settings,
     AdminServerControlOperationRecord? ActiveOperation,
-    bool PackageDeploymentEnabled = false);
+    bool PackageDeploymentEnabled = false,
+    bool ServerDeletionEnabled = false,
+    bool ServerFilesPresent = true,
+    bool DeletionCleanupPending = false);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -96,7 +101,10 @@ public sealed record AdminServerControlTargetRecord(
     string ConsoleTail,
     DateTimeOffset? ConsoleCapturedAt,
     AdminServerControlOperationRecord? ActiveOperation,
-    bool PackageDeploymentEnabled = false);
+    bool PackageDeploymentEnabled = false,
+    bool ServerDeletionEnabled = false,
+    bool ServerFilesPresent = true,
+    bool DeletionCleanupPending = false);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
@@ -123,7 +131,10 @@ public sealed record ServerControlAgentTargetHeartbeat(
     IReadOnlyList<string> AllowedCommandPrefixes,
     string ConsoleTail,
     DateTimeOffset? ConsoleCapturedAt,
-    bool PackageDeploymentEnabled = false);
+    bool PackageDeploymentEnabled = false,
+    bool ServerDeletionEnabled = false,
+    bool ServerFilesPresent = true,
+    bool DeletionCleanupPending = false);
 
 public sealed record ServerControlAgentHeartbeatRequest(
     string AgentId,

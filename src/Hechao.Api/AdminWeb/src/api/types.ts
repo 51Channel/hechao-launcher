@@ -262,7 +262,7 @@ export interface RuntimeSummary {
   issues: Array<{ issue: string; samples: number; targets: number }>;
 }
 
-export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings" | "DeployPackage";
+export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings" | "DeployPackage" | "DeleteServerFiles";
 export type ControlOperationStatus = "Pending" | "Running" | "Succeeded" | "Failed" | "Cancelled";
 
 export interface QuickSettings {
@@ -305,6 +305,9 @@ export interface ControlTargetSummary {
   settings: QuickSettings | null;
   activeOperation: ControlOperation | null;
   packageDeploymentEnabled: boolean;
+  serverDeletionEnabled: boolean;
+  serverFilesPresent: boolean;
+  deletionCleanupPending: boolean;
 }
 
 export interface ControlTarget extends ControlTargetSummary {

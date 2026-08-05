@@ -37,7 +37,7 @@ try
         Timeout = Timeout.InfiniteTimeSpan
     };
     httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-        "Hechao.ServerControlAgent/0.1.0");
+        "Hechao.ServerControlAgent/0.4.0");
     var processRunner = new ProcessRunner();
     var backupRoot = Path.Combine(
         configuration.StateDirectory,

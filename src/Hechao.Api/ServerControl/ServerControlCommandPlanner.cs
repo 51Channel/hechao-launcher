@@ -70,6 +70,12 @@ internal static class ServerControlCommandPlanner
                     ServerControlCommandKind.ApplySettings,
                     settings: request.Settings));
                 break;
+            case ServerControlAction.DeleteServerFiles:
+                commands.Add(Create(
+                    0,
+                    target,
+                    ServerControlCommandKind.DeleteServerFiles));
+                break;
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(request),
