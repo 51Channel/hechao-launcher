@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-05T18:05:34Z",
+  "component": "api",
+  "version": "0.27.2",
+  "releaseId": "0.27.2-20260805T180006Z",
+  "buildSourceCommit": "36b6c96589c25e9f22a918f933cea5beea6a9c3f",
+  "releaseTag": "api-v0.27.2",
+  "artifacts": {
+    "archive": {
+      "name": "0.27.2-20260805T180006Z.tar.gz",
+      "sizeBytes": 45939173,
+      "sha256": "AE640434CB1F708A4DA94C68E3E3F2F4F971B72FB4C0E705518A1EEEDD767D55",
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105020356,
+      "sha256": "053FB17E85E0BAC4EC0C161BF4366287D9CB0F8BF89B96E8826BB141C51FEAA7",
+      "deployedHashMatched": true
+    }
+  },
+  "tests": {
+    "apiPassed": 274,
+    "apiFailed": 0,
+    "vitestPassed": 8,
+    "vitestFailed": 0,
+    "playwrightPassed": 14,
+    "playwrightFailed": 0,
+    "adminProductionBuildPassed": true,
+    "impeccableDetectorFindings": 0,
+    "disabledHoverComputedStyleStable": true
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.1-20260804T211905Z",
+    "apiAndConfigurationBackup": "/var/backups/hechao-launcher/releases/20260805T180303Z",
+    "databaseBackup": "/var/backups/hechao-launcher/database/hechao-launcher-20260805T180309Z.dump"
+  },
+  "deployment": {
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.2-20260805T180006Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.27.1-20260804T211905Z",
+    "databaseMigrationsApplied": 0,
+    "publisherRestarts": 0,
+    "nginxRestarts": 0,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "mainPid": 630306,
+    "nRestarts": 0,
+    "startedAt": "2026-08-06T02:03:28+08:00",
+    "listener": "127.0.0.1:8090",
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "healthVersion": "0.27.2",
+    "databaseStatus": "ready",
+    "errorJournalEntriesSinceDeployment": 0,
+    "nginxMainPidUnchanged": true,
+    "publisherStateUnchanged": true,
+    "publicCssNotDisabledHoverCount": 6,
+    "publicCssRevertLayerCount": 0
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "trustedTokenIncluded": false,
+    "cookieIncluded": false,
+    "mfaCodeIncluded": false,
+    "environmentContentsIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}
