@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-05T20:33:15Z",
+  "feature": "server-directory-deletion",
+  "sourceCommit": "8423af7c451ad163c138d9de62954cfb43c4bd23",
+  "releaseTags": [
+    "api-v0.28.0",
+    "server-control-agent-v0.4.0"
+  ],
+  "api": {
+    "version": "0.28.0",
+    "releaseId": "0.28.0-20260805T201046Z",
+    "archive": {
+      "sizeBytes": 45947055,
+      "sha256": "B30C5C28F9A3890E46122D0ECF9D1697E6A24972D62968B99E67EA35D2E1DE94",
+      "entryCount": 157,
+      "containsPdb": false,
+      "containsConfiguration": false,
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "sizeBytes": 105033668,
+      "sha256": "87DC3054EB2C91FA6E7060A3521588AA25A3E8182E25542F4919110D33838108",
+      "deployedHashMatched": true
+    },
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260805T201409Z.dump",
+      "sha256": "D3042D5F383ACD605FB62E5264501BE4B8403C8871160DBB634DC096409F94F1",
+      "catalogEntryCount": 210,
+      "restoreListPassed": true
+    },
+    "configurationBackup": "/var/backups/hechao-launcher/releases/20260805T201409Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.28.0-20260805T201046Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.27.3-20260805T184018Z",
+    "migrationCount": 24,
+    "mainPid": 719600,
+    "nRestarts": 0,
+    "healthVersion": "0.28.0",
+    "databaseStatus": "ready",
+    "warningErrorLinesSinceDeployment": 0,
+    "loopbackOnlyPort8090": true
+  },
+  "agent": {
+    "version": "0.4.0",
+    "executable": {
+      "sizeBytes": 74109535,
+      "sha256": "088BDC8DA9AE3EF0FBE2F103FC2EB026A1A7A7A6BFDB657E8C3819A2BE7442F8",
+      "productVersion": "0.4.0+8423af7c451ad163c138d9de62954cfb43c4bd23"
+    },
+    "archive": {
+      "sizeBytes": 33219561,
+      "sha256": "24A9EC3775D0517B823C754FF2F37534C5088DF0F7EE0575F198AC9A1653A271"
+    },
+    "owl5": {
+      "targetCount": 7,
+      "deletionTargets": ["activity", "dollnight", "fanstreet", "yugong"],
+      "rollbackDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260805T202552Z",
+      "javaProcessIds": [2576, 6008, 7748, 9428, 10412],
+      "javaIdentityUnchanged": true
+    },
+    "owl9": {
+      "targetCount": 2,
+      "deletionTargets": ["pvp"],
+      "rollbackDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260805T202707Z",
+      "javaProcessIds": [2912],
+      "javaIdentityUnchanged": true
+    }
+  },
+  "tests": {
+    "apiPassed": 278,
+    "serverControlAgentPassed": 51,
+    "solutionPassed": 666,
+    "vitestPassed": 8,
+    "playwrightPassed": 15,
+    "powerShell7CompliancePassed": true,
+    "releaseLedgerPassed": true
+  },
+  "productionState": {
+    "agentCount": 2,
+    "targetCount": 9,
+    "onlineTargetCount": 4,
+    "deletionCapabilityCount": 5,
+    "serverFilesPresentCount": 9,
+    "cleanupPendingCount": 0,
+    "deleteOperationCount": 0,
+    "activeOperationCount": 0,
+    "activeCommandCount": 0,
+    "minecraftProcessesStarted": 0,
+    "minecraftProcessesStopped": 0,
+    "minecraftProcessesRestarted": 0,
+    "velocityProcessesChanged": 0,
+    "realDeletionExecuted": false
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}
