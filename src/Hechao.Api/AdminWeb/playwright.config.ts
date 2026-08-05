@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const executablePath = process.env.HECHAO_PLAYWRIGHT_EXECUTABLE_PATH?.trim();
+
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.e2e.spec.ts",
@@ -11,6 +13,7 @@ export default defineConfig({
     viewport: { width: 1440, height: 900 },
     locale: "zh-CN",
     colorScheme: "light",
+    launchOptions: executablePath ? { executablePath } : undefined,
     trace: "retain-on-failure",
     screenshot: "only-on-failure"
   },
