@@ -2497,11 +2497,13 @@ async Task<IResult> GetAdminServerRuntimeSummaryAsync(
     Results.Ok(await repository.GetSummaryAsync(cancellationToken));
 
 async Task<IResult> GetAdminServerControlOverviewAsync(
+    bool? includeDeletedTargets,
     ServerControlRepository repository,
     CancellationToken cancellationToken) =>
     Results.Ok(await repository.GetOverviewAsync(
         DateTimeOffset.UtcNow,
-        cancellationToken));
+        cancellationToken,
+        includeDeletedTargets ?? false));
 
 async Task<IResult> GetAdminServerControlTargetAsync(
     string serverId,

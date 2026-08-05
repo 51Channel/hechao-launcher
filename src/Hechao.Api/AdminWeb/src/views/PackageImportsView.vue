@@ -68,7 +68,10 @@ const imports = useResource(signal =>
   api<PackageImportListResponse>("/v1/admin/package-imports", { signal })
 );
 const controls = useResource(signal =>
-  api<ControlOverview>("/v1/admin/server-control/overview", { signal })
+  api<ControlOverview>(
+    "/v1/admin/server-control/overview?includeDeletedTargets=true",
+    { signal }
+  )
 );
 const selectedImportId = ref("");
 const selectedImport = useResource(signal =>

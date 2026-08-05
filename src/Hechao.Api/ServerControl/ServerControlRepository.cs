@@ -168,7 +168,8 @@ public sealed class ServerControlRepository(
 
     public async Task<AdminServerControlOverview> GetOverviewAsync(
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeDeletedTargets = false)
     {
         await using var connection =
             await dataSource.OpenConnectionAsync(cancellationToken);
@@ -214,7 +215,8 @@ public sealed class ServerControlRepository(
             if (!ServerControlTargetVisibility.IncludeInOverview(
                     serverFilesPresent,
                     deletionCleanupPending,
-                    activeOperation is not null))
+                    activeOperation is not null,
+                    includeDeletedTargets))
             {
                 continue;
             }

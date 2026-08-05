@@ -22,4 +22,14 @@ public sealed class ServerControlTargetVisibilityTests
                 deletionCleanupPending,
                 hasActiveOperation));
     }
+
+    [Fact]
+    public void IncludeInOverview_CanReturnCompletedDeletedTargetsForRedeployment()
+    {
+        Assert.True(ServerControlTargetVisibility.IncludeInOverview(
+            serverFilesPresent: false,
+            deletionCleanupPending: false,
+            hasActiveOperation: false,
+            includeDeletedTargets: true));
+    }
 }

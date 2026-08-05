@@ -677,11 +677,13 @@ test("package import uploads a chunk and requires the exact deployment confirmat
   await mockAdminApi(page, {
     intercept: async (route, request, path) => {
       if (path === "/v1/admin/server-control/overview") {
+        expect(new URL(request.url()).searchParams.get("includeDeletedTargets")).toBe("true");
         const stopped = controlOverview(1);
         stopped.targets[0] = {
           ...stopped.targets[0],
           online: false,
-          processId: null
+          processId: null,
+          serverFilesPresent: false
         };
         await route.fulfill({ json: stopped });
         return true;
@@ -753,6 +755,8 @@ test("package import uploads a chunk and requires the exact deployment confirmat
   const importDrawer = page.locator(".package-import-drawer");
   await expect(importDrawer).toBeVisible();
   await expect(importDrawer.getByRole("heading", { name: "等待确认" })).toBeVisible();
+  await expect(importDrawer.getByText("服控代理", { exact: true })).toHaveClass(/ready/);
+  await expect(importDrawer.getByText("目标已停服", { exact: true })).toHaveClass(/ready/);
   const confirmationInput = importDrawer.getByLabel("精确确认");
   const confirmation = `发布并部署 ${packageImportId}`;
   await confirmationInput.fill(confirmation);
