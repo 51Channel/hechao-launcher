@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-05T22:29:30Z",
+  "feature": "preserve-package-import-confirmation-during-polling",
+  "sourceCommit": "fc28e6d7858263b058b13e469f829f684409c556",
+  "releaseTags": [
+    "api-v0.28.2"
+  ],
+  "api": {
+    "version": "0.28.2",
+    "releaseId": "0.28.2-20260805T222544Z",
+    "archive": {
+      "sizeBytes": 45947737,
+      "sha256": "07C41FDAE80103AC16A03CE10FBFE2D89332CB4EEC48B6500244654BD60F7E50",
+      "entryCount": 158,
+      "containsPdb": false,
+      "containsConfiguration": false,
+      "containsCredentials": false,
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "sizeBytes": 105033668,
+      "sha256": "94551BDF1296DFD7FB513004D10461C321619D24CA042605D607DB60E46F7DB7",
+      "deployedHashMatched": true
+    },
+    "packageImportsJavaScript": {
+      "sizeBytes": 27628,
+      "sha256": "526A055A339AA5DCC520EBE123E7436354B91E3FFA93CF65543474F466E75A0D",
+      "deployedHashMatched": true
+    },
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260805T222643Z.dump",
+      "sha256": "E7BD819DB678DF5F310D71D9C2FAA09ED1B4DBA8E98F402BCFF9F7EEDFEAF826",
+      "sizeBytes": 3414377,
+      "restoreListLineCount": 225,
+      "restoreListPassed": true
+    },
+    "configurationBackup": "/var/backups/hechao-launcher/releases/0.28.2-20260805T222544Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.28.2-20260805T222544Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.28.1-20260805T214936Z",
+    "migrationCount": 24,
+    "mainPid": 803929,
+    "nRestarts": 0,
+    "healthVersion": "0.28.2",
+    "databaseStatus": "ready",
+    "warningErrorLinesSinceDeployment": 0,
+    "loopbackOnlyPort8090": true,
+    "publicPort8090Reachable": false
+  },
+  "tests": {
+    "apiPassed": 282,
+    "solutionPassed": 670,
+    "vitestPassed": 8,
+    "playwrightPassed": 16,
+    "focusedPollingScenarioPassed": true,
+    "focusedPollingObservedDetailRefresh": true,
+    "confirmationValuePreserved": true,
+    "dirtyIndicatorPreserved": true,
+    "submitButtonEnabled": true,
+    "typeScriptPassed": true,
+    "viteProductionBuildPassed": true,
+    "impeccableFindings": 0
+  },
+  "publicRegression": {
+    "launcherApiHealthStatus": 200,
+    "launcherApiReadyStatus": 200,
+    "adminPageStatus": 200,
+    "wrongHostAdminPageStatus": 404,
+    "websiteStatus": 200,
+    "legacyApiStatus": 200
+  },
+  "productionIsolation": {
+    "minecraftControlCommandsSent": 0,
+    "velocityControlCommandsSent": 0,
+    "publisherControlCommandsSent": 0,
+    "serverControlAgentCommandsSent": 0
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}
