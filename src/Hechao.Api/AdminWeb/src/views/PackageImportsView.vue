@@ -651,7 +651,7 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
                 <span :class="{ ready: publisherConnected }"><AppIcon :name="publisherConnected ? 'check' : 'circle-alert'" />发布代理</span>
                 <span :class="{ ready: Boolean(activityTarget?.agentConnected) }"><AppIcon :name="activityTarget?.agentConnected ? 'check' : 'circle-alert'" />服控代理</span>
                 <span :class="{ ready: Boolean(activityTarget && !activityTarget.online) }"><AppIcon :name="activityTarget && !activityTarget.online ? 'check' : 'circle-alert'" />目标已停服</span>
-                <span :class="{ ready: !reviewHasBlockingIssues }"><AppIcon :name="!reviewHasBlockingIssues ? 'check' : 'circle-alert'" />识别无阻断</span>
+                <span :class="{ ready: !reviewHasBlockingIssues }"><AppIcon :name="!reviewHasBlockingIssues ? 'check' : 'circle-alert'" />{{ reviewHasBlockingIssues ? "识别存在阻断" : "识别无阻断" }}</span>
               </div>
               <form class="package-review-form" @submit.prevent="confirmImport">
                 <label>客户端档案 ID<input v-model="review.profileId" pattern="[a-z0-9][a-z0-9._-]{1,63}" maxlength="64" required></label>

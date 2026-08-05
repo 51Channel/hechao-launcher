@@ -18,7 +18,7 @@ public static partial class ModpackArchiveAnalyzer
 
     private static readonly string[] ClientMarkers =
     [
-        "assets/", "versions/", "launcher_profiles.json", "options.txt",
+        ".minecraft/", "assets/", "versions/", "launcher_profiles.json", "options.txt",
         "mmc-pack.json", "instance.cfg"
     ];
 
@@ -67,7 +67,7 @@ public static partial class ModpackArchiveAnalyzer
             .Where(entry => !string.IsNullOrEmpty(entry.Name))
             .ToArray();
         var wrapper = DetectWrapper(entries);
-        var paths = new Dictionary<ZipArchiveEntry, string>();
+        var rawPaths = new Dictionary<ZipArchiveEntry, string>();
         var uniqueSourcePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         long expandedBytes = 0;
         foreach (var entry in entries)
@@ -95,7 +95,7 @@ public static partial class ModpackArchiveAnalyzer
                     continue;
                 }
 
-                paths.Add(entry, normalized);
+                rawPaths.Add(entry, normalized);
             }
             catch (Exception exception) when (
                 exception is InvalidDataException or OverflowException)
@@ -108,7 +108,10 @@ public static partial class ModpackArchiveAnalyzer
             }
         }
 
-        var descriptor = TryReadDescriptor(archive, paths, issues);
+        var descriptor = TryReadDescriptor(archive, rawPaths, issues);
+        var paths = descriptor is null
+            ? CanonicalizeDetectedSideRoots(rawPaths, issues)
+            : rawPaths;
         var layout = DetectLayout(paths.Values, descriptor);
         var metadata = DetectMetadata(
             archive,
@@ -336,7 +339,7 @@ public static partial class ModpackArchiveAnalyzer
             return ModpackFileSide.Client;
         }
 
-        if (IsServerMarker(path) || IsServerJar(path))
+        if (IsServerMarker(path) || IsRootServerJar(path))
         {
             return ModpackFileSide.Server;
         }
@@ -373,7 +376,7 @@ public static partial class ModpackArchiveAnalyzer
         }
 
         var hasClient = values.Any(IsClientMarker);
-        var hasServer = values.Any(path => IsServerMarker(path) || IsServerJar(path));
+        var hasServer = values.Any(IsServerLayoutMarker);
         return (hasClient, hasServer) switch
         {
             (true, true) => ModpackLayoutKind.Combined,
@@ -682,6 +685,97 @@ public static partial class ModpackArchiveAnalyzer
             : null;
     }
 
+    private static Dictionary<ZipArchiveEntry, string> CanonicalizeDetectedSideRoots(
+        IReadOnlyDictionary<ZipArchiveEntry, string> paths,
+        ICollection<ModpackIssue> issues)
+    {
+        var roots = DetectSideRoots(paths.Values);
+        if (roots is null)
+        {
+            return paths.ToDictionary(item => item.Key, item => item.Value);
+        }
+
+        var result = new Dictionary<ZipArchiveEntry, string>();
+        var uniquePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in paths)
+        {
+            var normalized = CanonicalizeSideRoot(item.Value, roots);
+            if (!uniquePaths.Add(normalized))
+            {
+                issues.Add(new ModpackIssue(
+                    "PATH_COLLISION",
+                    ModpackIssueSeverity.Blocking,
+                    "客户端与服务端目录归一化后存在 Windows 下会冲突的同名路径。",
+                    normalized));
+                continue;
+            }
+
+            result.Add(item.Key, normalized);
+        }
+
+        return result;
+    }
+
+    private static DetectedSideRoots? DetectSideRoots(IEnumerable<string> paths)
+    {
+        var groups = paths
+            .Select(path =>
+            {
+                var separator = path.IndexOf('/');
+                return separator <= 0
+                    ? null
+                    : new
+                    {
+                        Root = path[..separator],
+                        RelativePath = path[(separator + 1)..]
+                    };
+            })
+            .Where(item => item is not null)
+            .GroupBy(item => item!.Root, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new
+            {
+                Root = group.Key,
+                Paths = group.Select(item => item!.RelativePath).ToArray()
+            })
+            .ToArray();
+        var clientRoots = groups
+            .Where(group => group.Paths.Any(IsClientMarker))
+            .Select(group => group.Root)
+            .ToArray();
+        var serverRoots = groups
+            .Where(group => group.Paths.Any(IsServerLayoutMarker))
+            .Select(group => group.Root)
+            .ToArray();
+
+        return clientRoots.Length == 1 && serverRoots.Length == 1 &&
+               !clientRoots[0].Equals(serverRoots[0], StringComparison.OrdinalIgnoreCase)
+            ? new DetectedSideRoots(clientRoots[0], serverRoots[0])
+            : null;
+    }
+
+    private static string CanonicalizeSideRoot(string path, DetectedSideRoots roots)
+    {
+        if (StartsWithRoot(path, roots.ClientRoot))
+        {
+            var relativePath = path[(roots.ClientRoot.Length + 1)..];
+            const string minecraftRoot = ".minecraft/";
+            if (relativePath.StartsWith(minecraftRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = relativePath[minecraftRoot.Length..];
+            }
+
+            return SafeArchivePath.Normalize("client/" + relativePath);
+        }
+
+        if (StartsWithRoot(path, roots.ServerRoot))
+        {
+            return SafeArchivePath.Normalize(
+                "server/" + path[(roots.ServerRoot.Length + 1)..]);
+        }
+
+        return path;
+    }
+
     private static bool StartsWithRoot(string path, string root)
     {
         var normalizedRoot = root.Replace('\\', '/').Trim('/');
@@ -707,9 +801,17 @@ public static partial class ModpackArchiveAnalyzer
                (fileName.StartsWith("paper-", StringComparison.OrdinalIgnoreCase) ||
                 fileName.StartsWith("purpur-", StringComparison.OrdinalIgnoreCase) ||
                 fileName.StartsWith("server", StringComparison.OrdinalIgnoreCase) ||
+                fileName.StartsWith("minecraft_server", StringComparison.OrdinalIgnoreCase) ||
                 fileName.Equals("forge.jar", StringComparison.OrdinalIgnoreCase) ||
                 fileName.Equals("neoforge.jar", StringComparison.OrdinalIgnoreCase));
     }
+
+    private static bool IsRootServerJar(string path) =>
+        !path.Contains('/') && IsServerJar(path);
+
+    private static bool IsServerLayoutMarker(string path) =>
+        ServerMarkers.Any(marker => path.Equals(marker, StringComparison.OrdinalIgnoreCase)) ||
+        IsRootServerJar(path);
 
     private static string? DetectLaunchPath(IEnumerable<string> paths)
     {
@@ -891,6 +993,8 @@ public static partial class ModpackArchiveAnalyzer
         ZipArchiveEntry Entry,
         string SourcePath,
         ModpackFileSide Side);
+
+    private sealed record DetectedSideRoots(string ClientRoot, string ServerRoot);
 
     [GeneratedRegex(@"libraries/net/neoforged/neoforge/([^/]+)/", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex NeoForgePath();

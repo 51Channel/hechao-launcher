@@ -5,6 +5,17 @@ namespace Hechao.Api.Tests;
 public sealed class AdminWebStyleContractTests
 {
     [Fact]
+    public void PackageImportReadiness_LabelsBlockingAnalysisExplicitly()
+    {
+        var view = ReadAdminWebSource("src", "views", "PackageImportsView.vue");
+
+        Assert.Contains(
+            "reviewHasBlockingIssues ? \"识别存在阻断\" : \"识别无阻断\"",
+            view,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DisabledButtons_KeepTheirVariantBackgroundOnHover()
     {
         var css = ReadAdminWebSource("src", "styles", "admin.css");

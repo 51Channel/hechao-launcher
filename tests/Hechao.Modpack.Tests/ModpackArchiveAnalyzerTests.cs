@@ -122,6 +122,42 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public async Task AnalyzeAndSplitAsync_DetectsArbitrarilyNamedClientAndServerRoots()
+    {
+        var source = CreateArchive(
+            ("商业街 客户端/.minecraft/versions/1.12.2/1.12.2.json", "{}"),
+            ("商业街 客户端/.minecraft/mods/example.jar", "client-mod"),
+            ("商业街 客户端/.minecraft/libraries/net/minecraftforge/forge/1.12.2-14.23.5.2859/forge.jar", "forge"),
+            ("商业街 客户端/.minecraft/libraries/minecraft_server.1.12.2.jar", "client-library"),
+            ("商业街 服务端/server.properties", "max-players=24\n"),
+            ("商业街 服务端/minecraft_server.1.12.2.jar", "server"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "named-roots-out"));
+
+        Assert.Equal(ModpackLayoutKind.Canonical, result.Layout);
+        Assert.False(
+            result.HasBlockingIssues,
+            string.Join("; ", result.Issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+        Assert.NotNull(result.Client);
+        Assert.NotNull(result.Server);
+        Assert.Equal(
+            [
+                "libraries/minecraft_server.1.12.2.jar",
+                "libraries/net/minecraftforge/forge/1.12.2-14.23.5.2859/forge.jar",
+                "mods/example.jar",
+                "versions/1.12.2/1.12.2.json"
+            ],
+            ReadPaths(result.Client!.Path));
+        Assert.Equal(
+            ["minecraft_server.1.12.2.jar", "server.properties"],
+            ReadPaths(result.Server!.Path));
+        Assert.DoesNotContain(result.Issues, issue => issue.Code == "CLIENT_PART_MISSING");
+        Assert.DoesNotContain(result.Issues, issue => issue.Code == "SERVER_PART_MISSING");
+    }
+
+    [Fact]
     public async Task SafeZipExtractor_DeletesPartialDestinationAfterFailure()
     {
         var source = CreateArchive(
