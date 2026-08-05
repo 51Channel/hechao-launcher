@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-05T18:44:15Z",
+  "component": "api",
+  "version": "0.27.3",
+  "releaseId": "0.27.3-20260805T184018Z",
+  "buildSourceCommit": "a99fc915fdf271326cc8247078076ff4e0b5bf56",
+  "releaseTag": "api-v0.27.3",
+  "artifacts": {
+    "archive": {
+      "name": "0.27.3-20260805T184018Z.tar.gz",
+      "sizeBytes": 45941391,
+      "sha256": "86C994DE0B1BEE9640419D1A78AC1E98BC78089505DE4839198FF3F769080AA0",
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105026500,
+      "sha256": "7D0ED116BA90992A2493104F56DC697E1A0046EE9AA88CA70D7DD6DB7568C44B",
+      "deployedHashMatched": true
+    }
+  },
+  "tests": {
+    "modpackPassed": 6,
+    "modpackFailed": 0,
+    "apiPassed": 275,
+    "apiFailed": 0,
+    "vitestPassed": 8,
+    "vitestFailed": 0,
+    "playwrightPassed": 14,
+    "playwrightFailed": 0,
+    "adminProductionBuildPassed": true,
+    "targetProjectFormattingPassed": true,
+    "impeccableDetectorFindings": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.2-20260805T180006Z",
+    "apiAndConfigurationBackup": "/var/backups/hechao-launcher/releases/20260805T184220Z",
+    "databaseBackup": "/var/backups/hechao-launcher/database/hechao-launcher-20260805T184226Z.dump",
+    "taskStatus": "AwaitingReview",
+    "taskRevision": 4,
+    "taskLayout": "ServerOnly"
+  },
+  "deployment": {
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.3-20260805T184018Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.27.2-20260805T180006Z",
+    "databaseMigrationsApplied": 0,
+    "existingTaskRequeuedConditionally": true,
+    "originalUploadReused": true,
+    "publisherJobsCreated": 0,
+    "serverDeploymentsCreated": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "realPackageVerification": {
+    "importId": "777a31bf-acc9-4754-9f4b-a3a2e5be95f1",
+    "status": "AwaitingReview",
+    "revision": 7,
+    "layout": "Canonical",
+    "clientFileCount": 4355,
+    "serverFileCount": 2303,
+    "blockingIssueCount": 0,
+    "clientArchiveSha256": "F38A1EF5B05B6793184F98475FE90BCB0E88A137298D33BE004020102FA8DBC7",
+    "serverArchiveSha256": "5C9DE42780618671E5DD48A4C92E82EEB0335AA8B68C61D9EDE5AD6B64C0B5AB"
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "mainPid": 657987,
+    "nRestarts": 0,
+    "startedAt": "2026-08-06T02:42:46+08:00",
+    "healthVersion": "0.27.3",
+    "databaseStatus": "ready",
+    "errorJournalEntriesSinceDeployment": 0,
+    "nginxMainPidUnchanged": true,
+    "publisherStateUnchanged": true,
+    "publicBlockingLabelPresent": true,
+    "rootDiskUsagePercent": 90
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false,
+    "archiveContentsIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}
