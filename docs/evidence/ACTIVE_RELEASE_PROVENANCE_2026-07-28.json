@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-04T18:29:04Z",
+  "generatedAtUtc": "2026-08-04T21:56:04Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,42 +45,41 @@
     },
     {
       "component": "api",
-      "version": "0.27.0-20260803T174833Z",
-      "releaseTag": "api-v0.27.0",
-      "releaseCommit": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b",
-      "taggedAt": "2026-08-05T02:29:04+08:00",
+      "version": "0.27.1-20260804T211905Z",
+      "releaseTag": "api-v0.27.1",
+      "releaseCommit": "b1f049563774c8a941afbe283bc072c011f4fb8e",
+      "taggedAt": "2026-08-05T05:56:04+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "f0616a69e95a6dd6ff172369a4bb8883e4e6ab0b"
+        "value": "b1f049563774c8a941afbe283bc072c011f4fb8e"
       },
-      "deploymentState": "production-package-import-test-only-stopped-activity-slot-accepted-health-ready",
-      "historicalNote": "0.26.2 is retained only as a same-point disaster recovery baseline. Migration 22/23 and DeployPackage records prohibit a binary-only downgrade; normal rollback disables package imports and fixes forward on 0.27.x.",
+      "deploymentState": "production-public-activity-and-launcher-download-feeds-website-integrated-health-ready",
+      "historicalNote": "0.27.0 is the direct binary rollback target because 0.27.1 adds no migration. Migration 22/23 and DeployPackage records still prohibit a binary-only downgrade below 0.27.0; normal package-import recovery remains a forward fix on 0.27.x.",
       "artifacts": [
         {
-          "name": "hechao-api-0.27.0-20260803T174833Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z",
-          "size": 45936390,
-          "sha256": "4E15B64EA706AA6D3B64BC6AFB1CCA635A205385D1E1CBC3145DC37FCA335C10",
+          "name": "hechao-api-0.27.1-20260804T211905Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.27.1-20260804T211905Z",
+          "sha256": "706969132DAD49D5B69CE91858FBC423CE2A4F85F60DFA62C0DCF37D3477AABC",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z/Hechao.Api",
-          "size": 105011140,
-          "sha256": "14FC6D22338A368B26556FAF108A814A0B1C3CB20C03791FF9E7356DC7D58AD8",
+          "location": "/opt/hechao-launcher-api/releases/0.27.1-20260804T211905Z/Hechao.Api",
+          "size": 105020356,
+          "sha256": "F68790888A1DBFF6AC8C973F530E28697B6A901A98458179C4D7D37C8DE2D796",
           "primary": false
         }
       ],
       "rollback": {
-        "kind": "feature-disable-and-forward-fix",
-        "target": "disable PackageImports and remain on 0.27.x; restore 0.26.2 only with its same-point full database and configuration backup"
+        "kind": "release-directory",
+        "target": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.27.0.md",
-        "docs/ADMIN_WEB_OPERATIONS.md",
-        "docs/PACKAGE_IMPORT_OPERATIONS.md",
-        "docs/evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json"
+        "docs/API_RELEASE_0.27.1.md",
+        "docs/ADMIN_CATALOG_OPERATIONS.md",
+        "docs/DISTRIBUTION_OPERATIONS.md",
+        "docs/evidence/API_0.27.1_PRODUCTION_DEPLOYMENT_2026-08-05.json"
       ]
     },
     {

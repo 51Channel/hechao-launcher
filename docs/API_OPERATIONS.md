@@ -1,6 +1,6 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.27.0-20260803T174833Z`
+> 当前线上版本：`0.27.1-20260804T211905Z`
 > 当前迁移：`023`
 > 当前阶段：跨版本回大厅方案已取消；基础设施大厅隔离已部署，待真实玩家灰度
 >
@@ -390,6 +390,7 @@ systemctl reload nginx
 | `0.26.0-20260802T010000Z` | `40E2B24EC1D2AD1E61156430AE2D522EB662061A00DB2F3EEEDB9E19911F0204` | Vue 九页首次生产版本；因票据 fragment 在 Router 启动后回写而被 `0.26.1` 热修替代；历史版本 |
 | `0.26.1-20260802T012527Z` | `61D8E11F556FC215E52DE0295B106CC9C309F8CAB81ED283A5EE249B86C09DDF` | Vue 九页、真实票据预路由清理、完整备份、原子切换、生产稳定数据态和公网回归通过；`0.26.2` 的直接回滚目标 |
 | `0.26.2-20260802T093332Z` | `38C9A7C8F09FAE7E871E815808EDB4F50C0AA108CD5D707DA5F067B6DB45DAA2` | 长正文、短窗口与侧栏滚动边界修复，`12/12` Playwright、完整备份、原子切换和公网回归通过；`0.27.0` 的灾难恢复基线，已有 `DeployPackage` 记录后不可单独回退二进制 |
-| `0.27.0-20260803T174833Z` | `14FC6D22338A368B26556FAF108A814A0B1C3CB20C03791FF9E7356DC7D58AD8` | 迁移 022/023、Vue 第十页、整合包续传识别、Publisher 编排、Test-only 发布和固定活动槽部署已上线；固定试包、原活动目录恢复、内外网健康与数据库就绪通过，当前线上版本 |
+| `0.27.0-20260803T174833Z` | `14FC6D22338A368B26556FAF108A814A0B1C3CB20C03791FF9E7356DC7D58AD8` | 迁移 022/023、Vue 第十页、整合包续传识别、Publisher 编排、Test-only 发布和固定活动槽部署已上线；固定试包、原活动目录恢复、内外网健康与数据库就绪通过；`0.27.1` 的直接回滚目标 |
+| `0.27.1-20260804T211905Z` | `F68790888A1DBFF6AC8C973F530E28697B6A901A98458179C4D7D37C8DE2D796` | 增加严格脱敏的公开活动投影、公开启动器元数据和短期下载重定向；无迁移，官网日程与下载页已接入，当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.27.0`、启动器 `0.14.2`、Publisher Agent `1.0.0`、owl5 ServerControlAgent `0.3.1`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 十页、固定整合包 Test-only 发布、停止活动槽部署和原活动目录恢复均已验收。五服指标代理已经加载，Activity 单账号路由、特殊路径物理原生库加载和安装版真实进服已通过，恐怖整蛊服务端兼容修复已完成历史真实验收；四级真实账号、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.27.1`、启动器 `0.14.2`、Publisher Agent `1.0.0`、owl5 ServerControlAgent `0.3.1`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 十页、固定整合包 Test-only 发布、停止活动槽部署、原活动目录恢复，以及官网活动投影与启动器下载桥接均已验收。五服指标代理已经加载，Activity 单账号路由、特殊路径物理原生库加载和安装版真实进服已通过，恐怖整蛊服务端兼容修复已完成历史真实验收；四级真实账号、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

@@ -1,6 +1,6 @@
 # 整合包自动导入与活动槽部署手册
 
-> 当前生产：API `0.27.0`、Publisher Agent `1.0.0`、owl5 ServerControlAgent
+> 当前生产：API `0.27.1`、Publisher Agent `1.0.0`、owl5 ServerControlAgent
 > `0.3.1`；owl9 ServerControlAgent 保持 `0.2.1`。
 >
 > 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-04T21:52:06Z",
+  "component": "api",
+  "version": "0.27.1",
+  "releaseId": "0.27.1-20260804T211905Z",
+  "buildSourceCommit": "b1f049563774c8a941afbe283bc072c011f4fb8e",
+  "releaseTag": "api-v0.27.1",
+  "taggedAt": "2026-08-05T05:56:04+08:00",
+  "artifacts": {
+    "archive": {
+      "name": "hechao-api-0.27.1-20260804T211905Z.tar.gz",
+      "sha256": "706969132DAD49D5B69CE91858FBC423CE2A4F85F60DFA62C0DCF37D3477AABC",
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105020356,
+      "sha256": "F68790888A1DBFF6AC8C973F530E28697B6A901A98458179C4D7D37C8DE2D796",
+      "deployedHashMatched": true
+    }
+  },
+  "tests": {
+    "apiPassed": 273,
+    "apiFailed": 0,
+    "launcherPassed": 219,
+    "launcherFailed": 0,
+    "solutionPassed": 655,
+    "solutionFailed": 0,
+    "changedFileFormatPassed": true,
+    "powerShell7CompliancePassed": true
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z",
+    "databaseMigrationState": "23:23",
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.27.1-20260804T211905Z",
+      "fileCount": 12,
+      "sha256SumsPassed": true,
+      "sha256SumsSha256": "28D599F5180F1DADA4952A272D35791E2B3F3481BF0CFC639A345E99FD7EF81",
+      "contentsDisclosed": false
+    }
+  },
+  "deployment": {
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.27.1-20260804T211905Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.27.0-20260803T174833Z",
+    "databaseMigrationsApplied": 0,
+    "launcherInstallerObjectsChanged": 0,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "mainPid": 4041901,
+    "nRestarts": 0,
+    "startedAt": "2026-08-05T05:23:05+08:00",
+    "listener": "127.0.0.1:8090",
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "healthVersion": "0.27.1",
+    "databaseStatus": "ready",
+    "databaseMigrationState": "23:23",
+    "errorJournalEntriesSinceDeployment": 0,
+    "publicPort8090Reachable": false
+  },
+  "publicWebsiteFeeds": {
+    "publicActivityStatusCode": 200,
+    "publicActivityCount": 0,
+    "publicActivityProjectionRedacted": true,
+    "launcherLatestStatusCode": 200,
+    "launcherLatestVersion": "0.14.2",
+    "launcherDownloadStatusCode": 302,
+    "launcherDownloadTargetHttps": true,
+    "anonymousLegacyUpdateStatusCode": 401,
+    "wrongHostAdminStatusCode": 404,
+    "websiteDownloadPageStatusCode": 200
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "trustedTokenIncluded": false,
+    "cookieIncluded": false,
+    "mfaCodeIncluded": false,
+    "environmentContentsIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}
