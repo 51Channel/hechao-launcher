@@ -1,0 +1,90 @@
+{
+  "capturedAt": "2026-08-07T00:34:12+08:00",
+  "scope": "整合包发布进度、Publisher 公网对象地址和空活动槽重新部署的生产收口",
+  "sourceCommits": {
+    "progress": "740a2ed044ab1148608ac38531dbc035c67af3a8",
+    "publisherPublicOrigin": "1c4d97cac0cd1ae3c4d91aa85e43c4499db0c679",
+    "emptyActivitySlot": "7ecfddffec8cdc3bd18eafdd588f4f1c7eedda39"
+  },
+  "api": {
+    "version": "0.28.6",
+    "release": "/opt/hechao-launcher-api/releases/0.28.6-20260806T150509Z",
+    "binaryBytes": 105054148,
+    "binarySha256": "974A67212B477F0E37CE435CAD6C3369D6C4C5F791BE8A1009924CA1186786C3",
+    "migration": 26,
+    "service": "active/running",
+    "restartCount": 0,
+    "health": "ok",
+    "readiness": "ready",
+    "database": "ready"
+  },
+  "publisher": {
+    "version": "1.2.1",
+    "release": "/opt/hechao-package-publisher/releases/1.2.1-20260806T153324Z",
+    "binaryBytes": 74638875,
+    "binarySha256": "B54C39C4AA3DCF31FBD9D80E9A12323BA1B0A149F6E6961CF8B4B88567F3A736",
+    "service": "active/running",
+    "restartCount": 0,
+    "internalApiBaseUrl": "http://127.0.0.1:8090",
+    "publicObjectBaseUrl": "https://launcher-api.hechao.world"
+  },
+  "serverControlAgent": {
+    "host": "owl5",
+    "version": "0.4.2",
+    "binaryBytes": 74122335,
+    "binarySha256": "D29F6504B69CE01ABEE0F5323E1BEC9AEE044203AF9F7AC266B5CB24A19C19B6",
+    "rollbackDirectory": "C:\\ProgramData\\Hechao\\Backups\\server-control-agent-20260806T161917Z",
+    "javaPidsUnchanged": [2576, 6008, 7748, 9428, 10412],
+    "owl9Changed": false
+  },
+  "databaseBackups": [
+    {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260806T162321Z.dump",
+      "bytes": 3707620,
+      "sha256": "9794890A3FC84E70F88032D8EA6B39842A67D45BE5E8A6DD68FA9E92C59C62D5",
+      "restoreListEntries": 225
+    },
+    {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260806T163005Z.dump",
+      "verified": true
+    }
+  ],
+  "acceptanceImport": {
+    "id": "777a31bf-acc9-4754-9f4b-a3a2e5be95f1",
+    "status": "Completed",
+    "revision": 24,
+    "publisherAttemptCount": 4,
+    "manifestSha256": "9697471F7A3581032BB77A67C2FF57A60193973FC27FF1FBFD120C0C29E2619A",
+    "deploymentOperationId": "65026438-91f2-4bf2-aac9-4877a846396d",
+    "serverArchiveSha256": "347D5F41136F29BA16D6A4300CA7EDE8E3D621F182CECB5489C9E4EC45FB588",
+    "serverArchiveBytes": 310165964,
+    "serverExpandedBytes": 309691362,
+    "serverFileCount": 2305,
+    "serverArtifactBackup": "/var/backups/hechao-launcher/package-server-normalization-20260806T1630Z",
+    "serverDirectory": "E:\\ActivityNeoForge",
+    "serverTaskState": "Ready",
+    "port25568Listening": false,
+    "managedStartGuard": true,
+    "memory": {
+      "initialMiB": 2048,
+      "maximumMiB": 4096
+    },
+    "serverBinding": {
+      "ip": "127.0.0.1",
+      "port": 25568,
+      "onlineMode": false
+    }
+  },
+  "tests": {
+    "vitest": "8/8",
+    "playwright": "17/17",
+    "serverControlAgent": "57/57",
+    "dotnetFull": "695/695",
+    "impeccableFindings": 0
+  },
+  "security": {
+    "secretBodiesReadOrRecorded": false,
+    "minecraftOrVelocityStarted": false,
+    "temporaryOwl5UploadRemoved": true
+  }
+}
