@@ -18,7 +18,11 @@ public sealed class ServerTargetRuntimeTests
         File.WriteAllText(
             Path.Combine(serverDirectory, "world", "level.dat"),
             "world-data");
+        File.WriteAllText(
+            Path.Combine(serverDirectory, "forwarding.secret"),
+            "host-secret");
         File.WriteAllText(externalBackup, "backup-data");
+        var agentBackupRoot = Path.Combine(root, "agent-backups");
         var runner = new RecordingProcessRunner((_, _) =>
             new ProcessRunResult(0, string.Empty, string.Empty));
         var runtime = CreateRuntime(
@@ -28,6 +32,9 @@ public sealed class ServerTargetRuntimeTests
             runner,
             serverDirectory: serverDirectory,
             serverDeletionEnabled: true,
+            packageDeploymentEnabled: true,
+            hostManagedRelativePaths: ["forwarding.secret"],
+            backupRoot: agentBackupRoot,
             runtimeMarkerDirectory: Path.Combine(root, "runtime"));
         var command = new ServerControlCommandDelivery(
             Guid.NewGuid(),
@@ -49,6 +56,13 @@ public sealed class ServerTargetRuntimeTests
             Assert.Equal("SERVER_FILES_DELETED", result.ResultCode);
             Assert.False(Directory.Exists(serverDirectory));
             Assert.True(File.Exists(externalBackup));
+            Assert.Equal(
+                "host-secret",
+                File.ReadAllText(Path.Combine(
+                    agentBackupRoot,
+                    "host-managed",
+                    "activity",
+                    "forwarding.secret")));
         }
         finally
         {
@@ -502,7 +516,10 @@ public sealed class ServerTargetRuntimeTests
         TimeSpan? saveFlushDelay = null,
         TimeSpan? stopCommandGracePeriod = null,
         string? serverDirectory = null,
-        bool serverDeletionEnabled = false)
+        bool serverDeletionEnabled = false,
+        bool packageDeploymentEnabled = false,
+        IReadOnlyList<string>? hostManagedRelativePaths = null,
+        string? backupRoot = null)
     {
         var configuration = new ServerControlTargetConfiguration
         {
@@ -512,12 +529,14 @@ public sealed class ServerTargetRuntimeTests
             Port = port,
             ConflictGroup = conflictGroup,
             AllowedCommandPrefixes = prefixes ?? ["list", "say", "save-all"],
-            ServerDeletionEnabled = serverDeletionEnabled
+            ServerDeletionEnabled = serverDeletionEnabled,
+            PackageDeploymentEnabled = packageDeploymentEnabled,
+            HostManagedRelativePaths = hostManagedRelativePaths ?? []
         };
         return new ServerTargetRuntime(
             configuration,
             @"C:\ProgramData\Hechao\ServerControl\Submit-MinecraftConsoleCommand.ps1",
-            @"C:\ProgramData\Hechao\ServerControlAgent\backups",
+            backupRoot ?? @"C:\ProgramData\Hechao\ServerControlAgent\backups",
             runtimeMarkerDirectory ??
                 @"C:\ProgramData\Hechao\ServerControlAgent\runtime",
             requiresManagedMarker,

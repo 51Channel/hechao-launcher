@@ -12,6 +12,52 @@ public sealed class ServerPackageDeployerTests : IDisposable
         "hechao-package-deployer-" + Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public async Task DeployAsync_DeploysFreshSlotFromHostManagedSnapshot()
+    {
+        var server = Path.Combine(root, "ActivityNeoForge");
+        var backup = Path.Combine(root, "agent-backups");
+        Directory.CreateDirectory(server);
+        await File.WriteAllTextAsync(
+            Path.Combine(server, "forwarding.secret"),
+            "host-secret");
+        var configuration = CreateConfiguration(server);
+        new HostManagedSnapshotStore(configuration, backup).CaptureFromServer();
+        Directory.Delete(server, recursive: true);
+        var archive = CreateServerArchive();
+        var metadata = await ReadArchiveMetadataAsync(archive);
+        var deployment = new ServerPackageDeploymentRequest(
+            Guid.NewGuid(),
+            "summer-neoforge-1.21.11",
+            "1.0.0",
+            new FileInfo(archive).Length,
+            await ComputeSha256Async(archive),
+            metadata.ExpandedBytes,
+            metadata.FileCount,
+            PreserveWorldData: false,
+            InitialMemoryMiB: 2048,
+            MaximumMemoryMiB: 4096);
+        var deployer = new ServerPackageDeployer(
+            configuration,
+            backup);
+
+        var result = await deployer.DeployAsync(
+            deployment,
+            archive,
+            _ => Task.FromResult<int?>(null),
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Succeeded, result.Outcome);
+        Assert.Equal("PACKAGE_DEPLOYED_FRESH_STOPPED", result.ResultCode);
+        Assert.Equal(
+            "host-secret",
+            await File.ReadAllTextAsync(
+                Path.Combine(server, "forwarding.secret")));
+        Assert.True(File.Exists(Path.Combine(server, "new-server.jar")));
+        Assert.False(Directory.Exists(
+            Path.Combine(root, ".ActivityNeoForge.hechao-rollback")));
+    }
+
+    [Fact]
     public async Task DeployAsync_ReplacesServerAtomicallyAndPreservesFixedData()
     {
         var server = Path.Combine(root, "ActivityNeoForge");

@@ -59,10 +59,14 @@ internal sealed class ServerTargetRuntime
             backupRoot,
             _serverDirectoryAccessGate,
             _managedMaximumMemoryMiB);
+        var hostManagedSnapshotStore = new HostManagedSnapshotStore(
+            configuration,
+            backupRoot);
         _directoryDeletionManager = new ServerDirectoryDeletionManager(
             configuration,
             _serverDirectoryAccessGate,
-            _runtimeMarkerPath);
+            _runtimeMarkerPath,
+            hostManagedSnapshotStore);
         _saveFlushDelay = saveFlushDelay ?? DefaultSaveFlushDelay;
         _stopCommandGracePeriod =
             stopCommandGracePeriod ?? DefaultStopCommandGracePeriod;

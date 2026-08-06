@@ -23,6 +23,9 @@ internal sealed partial class ServerPackageDeployer(
         directoryAccessGate ?? new ServerDirectoryAccessGate();
     private readonly int managedMaximumMemoryMiB = managedMaximumMemoryMiB ??
         configuration.MaximumAllowedMemoryMiB;
+    private readonly HostManagedSnapshotStore hostManagedSnapshotStore = new(
+        configuration,
+        backupRoot);
 
     internal async Task<AgentCommandResult> DeployAsync(
         ServerPackageDeploymentRequest deployment,
@@ -80,16 +83,19 @@ internal sealed partial class ServerPackageDeployer(
 
         try
         {
+            var freshDeployment = false;
             using (await directoryAccessGate.EnterAsync(cancellationToken))
             {
-                RecoverInterruptedSwitch(
+                freshDeployment = RecoverInterruptedSwitch(
                     serverDirectory,
                     stagingDirectory,
                     rollbackDirectory,
                     stagingOwnerPath,
-                    rollbackOwnerPath);
-                if (!Directory.Exists(serverDirectory) ||
-                    IsReparsePoint(serverDirectory))
+                    rollbackOwnerPath,
+                    deployment.PreserveWorldData);
+                if ((!freshDeployment && !Directory.Exists(serverDirectory)) ||
+                    (Directory.Exists(serverDirectory) &&
+                     IsReparsePoint(serverDirectory)))
                 {
                     throw new InvalidDataException(
                         "The recovered server directory is missing or unsafe.");
@@ -172,9 +178,16 @@ internal sealed partial class ServerPackageDeployer(
                     DateTimeOffset.UtcNow),
                 cancellationToken);
 
+            if (freshDeployment)
+            {
+                hostManagedSnapshotStore.CopyInto(stagingDirectory);
+            }
+
             foreach (var relativePath in configuration.HostManagedRelativePaths)
             {
-                var source = configuration.GetContainedDeploymentPath(relativePath);
+                var source = freshDeployment
+                    ? GetContainedPath(stagingDirectory, relativePath)
+                    : configuration.GetContainedDeploymentPath(relativePath);
                 if (!PathExists(source))
                 {
                     throw new InvalidDataException(
@@ -203,6 +216,56 @@ internal sealed partial class ServerPackageDeployer(
             DeleteControlledRollback(rollbackDirectory, rollbackOwnerPath);
             using (await directoryAccessGate.EnterAsync(cancellationToken))
             {
+                if (freshDeployment)
+                {
+                    try
+                    {
+                        TransientFileSystem.MoveDirectory(
+                            stagingDirectory,
+                            serverDirectory);
+                        if (!TryReadDeploymentMarker(
+                                serverDirectory,
+                                out var freshMarker) ||
+                            freshMarker.ImportId != deployment.ImportId ||
+                            !string.Equals(
+                                freshMarker.ArchiveSha256,
+                                deployment.ArchiveSha256,
+                                StringComparison.Ordinal))
+                        {
+                            throw new InvalidDataException(
+                                "The activated fresh server directory failed marker verification.");
+                        }
+                    }
+                    catch (Exception exception) when (
+                        exception is IOException or UnauthorizedAccessException or
+                            InvalidDataException or InvalidOperationException or
+                            NotSupportedException)
+                    {
+                        if (Directory.Exists(serverDirectory) &&
+                            !Directory.Exists(stagingDirectory))
+                        {
+                            TransientFileSystem.MoveDirectory(
+                                serverDirectory,
+                                stagingDirectory);
+                        }
+
+                        TryDeleteControlledStaging(
+                            stagingDirectory,
+                            stagingOwnerPath,
+                            owner);
+                        return Failed(
+                            "PACKAGE_FRESH_SWITCH_FAILED",
+                            AgentLog.Sanitize(
+                                $"空活动槽切换失败，运行目录保持缺失：{exception.Message}",
+                                1800));
+                    }
+
+                    TryDeleteFile(stagingOwnerPath);
+                    return Succeeded(
+                        "PACKAGE_DEPLOYED_FRESH_STOPPED",
+                        "服务端整合包已部署到空活动槽；服务端保持停止。 ");
+                }
+
                 await WriteJsonAtomicallyAsync(
                     rollbackOwnerPath,
                     owner,
@@ -321,12 +384,13 @@ internal sealed partial class ServerPackageDeployer(
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Order(StringComparer.OrdinalIgnoreCase)];
 
-    private void RecoverInterruptedSwitch(
+    private bool RecoverInterruptedSwitch(
         string serverDirectory,
         string stagingDirectory,
         string rollbackDirectory,
         string stagingOwnerPath,
-        string rollbackOwnerPath)
+        string rollbackOwnerPath,
+        bool preserveWorldData)
     {
         if (Directory.Exists(serverDirectory))
         {
@@ -337,13 +401,19 @@ internal sealed partial class ServerPackageDeployer(
                 File.Delete(rollbackOwnerPath);
             }
 
-            return;
+            return false;
         }
 
         if (!Directory.Exists(rollbackDirectory))
         {
-            throw new InvalidDataException(
-                "The server directory is missing and no controlled rollback exists.");
+            if (preserveWorldData)
+            {
+                throw new InvalidDataException(
+                    "The server directory is missing, so world data cannot be preserved.");
+            }
+
+            hostManagedSnapshotStore.EnsureAvailable();
+            return true;
         }
 
         var rollbackOwner = ReadOwner(rollbackOwnerPath);
@@ -380,6 +450,7 @@ internal sealed partial class ServerPackageDeployer(
             stagingDirectory,
             stagingOwnerPath,
             rollbackOwner);
+        return false;
     }
 
     private static List<string> RestoreAfterFailedSwitch(

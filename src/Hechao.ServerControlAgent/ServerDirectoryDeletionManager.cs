@@ -5,7 +5,8 @@ namespace Hechao.ServerControlAgent;
 internal sealed class ServerDirectoryDeletionManager(
     ServerControlTargetConfiguration configuration,
     ServerDirectoryAccessGate accessGate,
-    string runtimeMarkerPath)
+    string runtimeMarkerPath,
+    HostManagedSnapshotStore hostManagedSnapshotStore)
 {
     private readonly string _serverDirectory =
         Path.GetFullPath(configuration.ServerDirectory)
@@ -63,6 +64,7 @@ internal sealed class ServerDirectoryDeletionManager(
             try
             {
                 EnsureDeletionRootIsSafe();
+                hostManagedSnapshotStore.CaptureFromServer();
                 var pendingDirectories = TryFindPendingDirectories();
                 if (pendingDirectories is null)
                 {
