@@ -46,7 +46,9 @@
     },
     {
       "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260806T163005Z.dump",
-      "verified": true
+      "bytes": 3709891,
+      "sha256": "2E997481BB1908E3FE03063D9A2E780E5414A9498B03AC16CED91010A09B7398",
+      "restoreListEntries": 225
     }
   ],
   "acceptanceImport": {
