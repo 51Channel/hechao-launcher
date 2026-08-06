@@ -185,6 +185,40 @@ public sealed class PackageImportRulesTests
                 }).Keys);
     }
 
+    [Fact]
+    public void ValidatePublisherProgress_RequiresBoundedRealTotals()
+    {
+        var valid = new PackagePublisherProgressRequest(
+            "publisher-main",
+            1,
+            PackagePublisherProgressPhase.PublishingObjects,
+            40,
+            100,
+            4096,
+            8192);
+
+        Assert.Empty(PackageImportRules.ValidatePublisherProgress(valid));
+        Assert.Contains(
+            "objects",
+            PackageImportRules.ValidatePublisherProgress(
+                valid with { CompletedObjects = 101 }).Keys);
+        Assert.Contains(
+            "bytes",
+            PackageImportRules.ValidatePublisherProgress(
+                valid with { ProcessedBytes = 8193 }).Keys);
+        Assert.Contains(
+            "totalBytes",
+            PackageImportRules.ValidatePublisherProgress(
+                valid with
+                {
+                    Phase = PackagePublisherProgressPhase.DownloadingArchive,
+                    CompletedObjects = 0,
+                    TotalObjects = 0,
+                    ProcessedBytes = 0,
+                    TotalBytes = 0
+                }).Keys);
+    }
+
     private static AdminPackageImportRecord CreateImport(Guid importId, bool blocking)
     {
         var issue = blocking

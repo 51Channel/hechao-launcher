@@ -92,19 +92,56 @@ internal sealed class PackagePublisherWorker(
         var archivePath = Path.Combine(jobRoot, "client.zip");
         var sourceDirectory = Path.Combine(jobRoot, "source");
         var distributionDirectory = Path.Combine(jobRoot, "distribution");
+        var progress = new PackagePublisherProgressReporter(
+            apiClient,
+            job,
+            configuration.AgentId,
+            WriteStatus);
         try
         {
             Directory.CreateDirectory(jobRoot);
+            await progress.ReportAsync(
+                PackagePublisherProgressPhase.DownloadingArchive,
+                0,
+                0,
+                0,
+                job.ClientArchiveBytes,
+                force: true,
+                cancellationToken);
             await apiClient.DownloadClientArchiveAsync(
                 job,
                 archivePath,
+                (processed, total, token) => progress.ReportAsync(
+                    PackagePublisherProgressPhase.DownloadingArchive,
+                    0,
+                    0,
+                    processed,
+                    total,
+                    force: processed == total,
+                    token),
                 cancellationToken);
             DeleteGeneratedDirectory(sourceDirectory);
             DeleteGeneratedDirectory(distributionDirectory);
+            await progress.ReportAsync(
+                PackagePublisherProgressPhase.ExtractingArchive,
+                0,
+                0,
+                0,
+                0,
+                force: true,
+                cancellationToken);
             await SafeZipExtractor.ExtractAsync(
                 archivePath,
                 sourceDirectory,
                 new ModpackInspectionLimits(),
+                cancellationToken);
+            await progress.ReportAsync(
+                PackagePublisherProgressPhase.BuildingDistribution,
+                0,
+                0,
+                0,
+                0,
+                force: true,
                 cancellationToken);
             var signingKey = new SigningKeyInput(
                 configuration.SigningKeyPath,
@@ -141,9 +178,28 @@ internal sealed class PackagePublisherWorker(
                     configuration.OssCredentialPath,
                     configuration.OssCredentialEntropyLabel,
                     configuration.Parallelism))
-                .UploadAsync(cancellationToken);
+                .UploadAsync(
+                    (uploadProgress, token) => progress.ReportAsync(
+                        PackagePublisherProgressPhase.PublishingObjects,
+                        uploadProgress.CompletedObjects,
+                        uploadProgress.TotalObjects,
+                        uploadProgress.ProcessedBytes,
+                        uploadProgress.TotalBytes,
+                        force: uploadProgress.CompletedObjects == 0 ||
+                               uploadProgress.CompletedObjects ==
+                               uploadProgress.TotalObjects,
+                        token),
+                    cancellationToken);
             var envelope = await File.ReadAllBytesAsync(
                 build.ManifestPath,
+                cancellationToken);
+            await progress.ReportAsync(
+                PackagePublisherProgressPhase.Finalizing,
+                0,
+                0,
+                1,
+                1,
+                force: true,
                 cancellationToken);
             await apiClient.CompleteAsync(
                 job.ImportId,

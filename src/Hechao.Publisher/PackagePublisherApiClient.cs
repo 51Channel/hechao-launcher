@@ -61,6 +61,17 @@ internal sealed class PackagePublisherApiClient(
         PackagePublisherJobDelivery job,
         string destinationPath,
         CancellationToken cancellationToken)
+        => await DownloadClientArchiveAsync(
+            job,
+            destinationPath,
+            progress: null,
+            cancellationToken);
+
+    internal async Task DownloadClientArchiveAsync(
+        PackagePublisherJobDelivery job,
+        string destinationPath,
+        Func<long, long, CancellationToken, Task>? progress,
+        CancellationToken cancellationToken)
     {
         Exception? lastFailure = null;
         for (var attempt = 1; attempt <= 3; attempt++)
@@ -70,6 +81,7 @@ internal sealed class PackagePublisherApiClient(
                 await DownloadClientArchiveAttemptAsync(
                     job,
                     destinationPath,
+                    progress,
                     cancellationToken);
                 return;
             }
@@ -101,6 +113,7 @@ internal sealed class PackagePublisherApiClient(
     private async Task DownloadClientArchiveAttemptAsync(
         PackagePublisherJobDelivery job,
         string destinationPath,
+        Func<long, long, CancellationToken, Task>? progress,
         CancellationToken cancellationToken)
     {
         var path = Path.GetFullPath(destinationPath);
@@ -137,6 +150,10 @@ internal sealed class PackagePublisherApiClient(
         if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable &&
             existingBytes == job.ClientArchiveBytes)
         {
+            if (progress is not null)
+            {
+                await progress(existingBytes, job.ClientArchiveBytes, requestCancellation.Token);
+            }
             await ValidateDownloadedArchiveAsync(
                 path,
                 job,
@@ -160,6 +177,10 @@ internal sealed class PackagePublisherApiClient(
         {
             var buffer = new byte[256 * 1024];
             long total = append ? existingBytes : 0;
+            if (progress is not null)
+            {
+                await progress(total, job.ClientArchiveBytes, requestCancellation.Token);
+            }
             while (true)
             {
                 var read = await input.ReadAsync(
@@ -180,6 +201,10 @@ internal sealed class PackagePublisherApiClient(
                 await output.WriteAsync(
                     buffer.AsMemory(0, read),
                     requestCancellation.Token);
+                if (progress is not null)
+                {
+                    await progress(total, job.ClientArchiveBytes, requestCancellation.Token);
+                }
             }
 
             await output.FlushAsync(requestCancellation.Token);
@@ -200,6 +225,22 @@ internal sealed class PackagePublisherApiClient(
             HttpMethod.Post,
             $"v1/internal/package-imports/publisher/jobs/{importId:D}/complete");
         request.Content = JsonContent.Create(completion, options: JsonOptions);
+        using var requestCancellation = CreateRequestCancellation(cancellationToken);
+        using var response = await httpClient.SendAsync(
+            request,
+            requestCancellation.Token);
+        await EnsureSuccessAsync(response, requestCancellation.Token);
+    }
+
+    internal async Task ReportProgressAsync(
+        Guid importId,
+        PackagePublisherProgressRequest progress,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            $"v1/internal/package-imports/publisher/jobs/{importId:D}/progress");
+        request.Content = JsonContent.Create(progress, options: JsonOptions);
         using var requestCancellation = CreateRequestCancellation(cancellationToken);
         using var response = await httpClient.SendAsync(
             request,

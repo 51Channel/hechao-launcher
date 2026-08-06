@@ -143,6 +143,43 @@ public sealed class PackagePublisherApiClientTests : IDisposable
         Assert.Equal(bytes, await File.ReadAllBytesAsync(destination));
     }
 
+    [Fact]
+    public async Task ReportProgressAsync_UsesAuthenticatedJobEndpoint()
+    {
+        var importId = Guid.NewGuid();
+        using var handler = new RecordingHandler(request =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.Equal(
+                $"/v1/internal/package-imports/publisher/jobs/{importId:D}/progress",
+                request.RequestUri?.AbsolutePath);
+            Assert.Equal(
+                "publisher-main",
+                request.Headers.GetValues("X-Hechao-Package-Publisher-Agent").Single());
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        using var httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://launcher-api.example/")
+        };
+        var client = new PackagePublisherApiClient(
+            httpClient,
+            "publisher-main",
+            new string('A', 48));
+
+        await client.ReportProgressAsync(
+            importId,
+            new PackagePublisherProgressRequest(
+                "publisher-main",
+                2,
+                PackagePublisherProgressPhase.PublishingObjects,
+                25,
+                100,
+                1024,
+                4096),
+            CancellationToken.None);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(root))

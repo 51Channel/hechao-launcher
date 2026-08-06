@@ -78,6 +78,23 @@ public sealed record PackageImportDeploymentPlanRecord(
     AccessTier MinimumTier,
     int MaximumMemoryMiB);
 
+public enum PackagePublisherProgressPhase
+{
+    DownloadingArchive,
+    ExtractingArchive,
+    BuildingDistribution,
+    PublishingObjects,
+    Finalizing
+}
+
+public sealed record PackagePublisherProgressRecord(
+    PackagePublisherProgressPhase Phase,
+    int CompletedObjects,
+    int TotalObjects,
+    long ProcessedBytes,
+    long TotalBytes,
+    DateTimeOffset SampledAt);
+
 public sealed record AdminPackageImportRecord(
     Guid ImportId,
     string FileName,
@@ -96,7 +113,8 @@ public sealed record AdminPackageImportRecord(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? CompletedAt,
-    long Revision);
+    long Revision,
+    PackagePublisherProgressRecord? PublisherProgress = null);
 
 public sealed record AdminPackageImportListResponse(
     IReadOnlyList<AdminPackageImportRecord> Imports,
@@ -157,6 +175,15 @@ public sealed record PackagePublisherJobDelivery(
 public sealed record PackagePublisherClaimResponse(
     PackagePublisherJobDelivery? Job,
     DateTimeOffset ClaimedAt);
+
+public sealed record PackagePublisherProgressRequest(
+    string AgentId,
+    int AttemptCount,
+    PackagePublisherProgressPhase Phase,
+    int CompletedObjects,
+    int TotalObjects,
+    long ProcessedBytes,
+    long TotalBytes);
 
 public enum PackagePublisherJobOutcome
 {

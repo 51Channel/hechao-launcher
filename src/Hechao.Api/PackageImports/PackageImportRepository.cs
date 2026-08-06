@@ -129,7 +129,13 @@ public sealed class PackageImportRepository
                    package.manifest_sha256, package.deployment_operation_id,
                    package.error_code, package.error_message, package.created_by,
                    account.display_name, package.created_at, package.updated_at,
-                   package.completed_at, package.revision
+                   package.completed_at, package.revision,
+                   package.publisher_progress_phase,
+                   package.publisher_progress_completed_objects,
+                   package.publisher_progress_total_objects,
+                   package.publisher_progress_processed_bytes,
+                   package.publisher_progress_total_bytes,
+                   package.publisher_progress_sampled_at
             FROM launcher.package_imports package
             LEFT JOIN launcher.users account
                 ON account.id = package.created_by
@@ -160,7 +166,13 @@ public sealed class PackageImportRepository
                    package.manifest_sha256, package.deployment_operation_id,
                    package.error_code, package.error_message, package.created_by,
                    account.display_name, package.created_at, package.updated_at,
-                   package.completed_at, package.revision
+                   package.completed_at, package.revision,
+                   package.publisher_progress_phase,
+                   package.publisher_progress_completed_objects,
+                   package.publisher_progress_total_objects,
+                   package.publisher_progress_processed_bytes,
+                   package.publisher_progress_total_bytes,
+                   package.publisher_progress_sampled_at
             FROM launcher.package_imports package
             LEFT JOIN launcher.users account
                 ON account.id = package.created_by
@@ -627,6 +639,12 @@ public sealed class PackageImportRepository
                 publisher_claimed_at = $2,
                 publisher_lease_expires_at = $3,
                 publisher_attempt_count = publisher_attempt_count + 1,
+                publisher_progress_phase = NULL,
+                publisher_progress_completed_objects = NULL,
+                publisher_progress_total_objects = NULL,
+                publisher_progress_processed_bytes = NULL,
+                publisher_progress_total_bytes = NULL,
+                publisher_progress_sampled_at = NULL,
                 error_code = NULL,
                 error_message = NULL,
                 revision = revision + 1,
@@ -737,6 +755,50 @@ public sealed class PackageImportRepository
                 PackagePublisherClaimStatus.Valid,
                 await GetAsync(importId, cancellationToken))
             : new PackagePublisherClaimResult(PackagePublisherClaimStatus.Conflict);
+    }
+
+    public async Task<PackagePublisherMutationResult> ReportPublisherProgressAsync(
+        Guid importId,
+        PackagePublisherProgressRequest request,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            """
+            UPDATE launcher.package_imports
+            SET publisher_progress_phase = $4,
+                publisher_progress_completed_objects = $5,
+                publisher_progress_total_objects = $6,
+                publisher_progress_processed_bytes = $7,
+                publisher_progress_total_bytes = $8,
+                publisher_progress_sampled_at = $9,
+                updated_at = $9
+            WHERE id = $1
+              AND status = 'PublishingClient'
+              AND publisher_claimed_by = $2
+              AND publisher_attempt_count = $3
+              AND publisher_lease_expires_at >= $9;
+            """,
+            connection);
+        command.Parameters.AddWithValue(importId);
+        command.Parameters.AddWithValue(request.AgentId);
+        command.Parameters.AddWithValue(request.AttemptCount);
+        command.Parameters.AddWithValue(request.Phase.ToString());
+        command.Parameters.AddWithValue(request.CompletedObjects);
+        command.Parameters.AddWithValue(request.TotalObjects);
+        command.Parameters.AddWithValue(request.ProcessedBytes);
+        command.Parameters.AddWithValue(request.TotalBytes);
+        command.Parameters.AddWithValue(now);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 1)
+        {
+            return new PackagePublisherMutationResult(PackagePublisherMutationStatus.Success);
+        }
+
+        return new PackagePublisherMutationResult(
+            await ExistsAsync(connection, null, importId, cancellationToken)
+                ? PackagePublisherMutationStatus.ClaimConflict
+                : PackagePublisherMutationStatus.NotFound);
     }
 
     public async Task<PackagePublisherMutationResult> CompletePublisherSuccessAsync(
@@ -895,7 +957,7 @@ public sealed class PackageImportRepository
 
     private static async Task<bool> ExistsAsync(
         NpgsqlConnection connection,
-        NpgsqlTransaction transaction,
+        NpgsqlTransaction? transaction,
         Guid importId,
         CancellationToken cancellationToken)
     {
@@ -930,7 +992,18 @@ public sealed class PackageImportRepository
             new DateTimeOffset(reader.GetDateTime(14)),
             new DateTimeOffset(reader.GetDateTime(15)),
             reader.IsDBNull(16) ? null : new DateTimeOffset(reader.GetDateTime(16)),
-            reader.GetInt64(17));
+            reader.GetInt64(17),
+            reader.IsDBNull(18)
+                ? null
+                : new PackagePublisherProgressRecord(
+                    Enum.Parse<PackagePublisherProgressPhase>(
+                        reader.GetString(18),
+                        ignoreCase: false),
+                    reader.GetInt32(19),
+                    reader.GetInt32(20),
+                    reader.GetInt64(21),
+                    reader.GetInt64(22),
+                    new DateTimeOffset(reader.GetDateTime(23))));
 
     private static T Deserialize<T>(string json) =>
         JsonSerializer.Deserialize<T>(json, JsonOptions)

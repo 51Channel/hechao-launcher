@@ -137,6 +137,29 @@ public sealed class OssDistributionUploaderTests
     }
 
     [Fact]
+    public async Task UploadAsync_ReportsProcessedObjectsAndBytes()
+    {
+        using var distribution = TestDistribution.Create("content"u8.ToArray());
+        var store = new FakeObjectStore(remoteObject: null);
+        var samples = new List<OssUploadProgress>();
+        var uploader = new OssDistributionUploader(
+            CreateOptions(distribution.Path),
+            store);
+
+        await uploader.UploadAsync(
+            (sample, _) =>
+            {
+                samples.Add(sample);
+                return Task.CompletedTask;
+            },
+            CancellationToken.None);
+
+        Assert.Equal(2, samples.Count);
+        Assert.Equal(new OssUploadProgress(0, 1, 0, 0, 0, 7), samples[0]);
+        Assert.Equal(new OssUploadProgress(1, 1, 1, 0, 7, 7), samples[1]);
+    }
+
+    [Fact]
     public async Task UploadAsync_RejectsRemoteLengthMismatchWithoutUploading()
     {
         using var distribution = TestDistribution.Create("content"u8.ToArray());

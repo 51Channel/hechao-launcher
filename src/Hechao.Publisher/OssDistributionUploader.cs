@@ -19,6 +19,14 @@ internal sealed record OssUploadResult(
     int AlreadyPresent,
     long UploadedBytes);
 
+internal sealed record OssUploadProgress(
+    int CompletedObjects,
+    int TotalObjects,
+    int UploadedObjects,
+    int ExistingObjects,
+    long ProcessedBytes,
+    long TotalBytes);
+
 internal sealed record OssRemoteObject(
     long ContentLength,
     IReadOnlyDictionary<string, string> Metadata);
@@ -176,8 +184,14 @@ internal sealed class OssDistributionUploader
     }
 
     public async Task<OssUploadResult> UploadAsync(CancellationToken cancellationToken)
+        => await UploadAsync(progress: null, cancellationToken);
+
+    public async Task<OssUploadResult> UploadAsync(
+        Func<OssUploadProgress, CancellationToken, Task>? progress,
+        CancellationToken cancellationToken)
     {
         var objects = ValidateAndEnumerateObjects(options.DistributionDirectory);
+        var totalBytes = objects.Sum(item => item.Length);
         var bucket = ValidateSimpleName(options.Bucket, "bucket");
         var region = ValidateSimpleName(options.Region, "region");
         var endpoint = ValidateHttpsEndpoint(options.Endpoint);
@@ -186,7 +200,16 @@ internal sealed class OssDistributionUploader
         var uploaded = 0;
         var alreadyPresent = 0;
         long uploadedBytes = 0;
+        long processedBytes = 0;
         var failures = new ConcurrentQueue<Exception>();
+        await ReportProgressAsync(
+            objects.Count,
+            totalBytes,
+            uploaded,
+            alreadyPresent,
+            processedBytes,
+            progress,
+            cancellationToken);
         await Parallel.ForEachAsync(
             objects,
             new ParallelOptions
@@ -204,10 +227,15 @@ internal sealed class OssDistributionUploader
                     {
                         ValidateRemoteObject(key, item, remoteObject);
                         Interlocked.Increment(ref alreadyPresent);
-                        ReportProgress(
+                        Interlocked.Add(ref processedBytes, item.Length);
+                        await ReportProgressAsync(
                             objects.Count,
+                            totalBytes,
                             uploaded,
-                            alreadyPresent);
+                            alreadyPresent,
+                            processedBytes,
+                            progress,
+                            token);
                         return;
                     }
 
@@ -258,10 +286,15 @@ internal sealed class OssDistributionUploader
                         Interlocked.Increment(ref alreadyPresent);
                     }
 
-                    ReportProgress(
+                    Interlocked.Add(ref processedBytes, item.Length);
+                    await ReportProgressAsync(
                         objects.Count,
+                        totalBytes,
                         uploaded,
-                        alreadyPresent);
+                        alreadyPresent,
+                        processedBytes,
+                        progress,
+                        token);
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
@@ -335,6 +368,32 @@ internal sealed class OssDistributionUploader
                 $"uploaded={Volatile.Read(ref uploaded)} " +
                 $"existing={Volatile.Read(ref alreadyPresent)}");
         }
+    }
+
+    private static async Task ReportProgressAsync(
+        int totalObjects,
+        long totalBytes,
+        int uploaded,
+        int alreadyPresent,
+        long processedBytes,
+        Func<OssUploadProgress, CancellationToken, Task>? progress,
+        CancellationToken cancellationToken)
+    {
+        ReportProgress(totalObjects, uploaded, alreadyPresent);
+        if (progress is null)
+        {
+            return;
+        }
+
+        await progress(
+            new OssUploadProgress(
+                Volatile.Read(ref uploaded) + Volatile.Read(ref alreadyPresent),
+                totalObjects,
+                Volatile.Read(ref uploaded),
+                Volatile.Read(ref alreadyPresent),
+                Volatile.Read(ref processedBytes),
+                totalBytes),
+            cancellationToken);
     }
 
     internal static IReadOnlyList<DistributionObject> ValidateAndEnumerateObjects(

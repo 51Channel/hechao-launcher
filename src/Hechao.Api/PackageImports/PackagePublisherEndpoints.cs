@@ -18,8 +18,51 @@ public static class PackagePublisherEndpoints
             "/jobs/{importId:guid}/client-archive",
             DownloadClientArchiveAsync);
         publisher.MapPost(
+            "/jobs/{importId:guid}/progress",
+            ProgressAsync);
+        publisher.MapPost(
             "/jobs/{importId:guid}/complete",
             CompleteAsync);
+    }
+
+    private static async Task<IResult> ProgressAsync(
+        Guid importId,
+        PackagePublisherProgressRequest request,
+        PackagePublisherTokenValidator tokenValidator,
+        PackageImportRepository repository,
+        TimeProvider timeProvider,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        var authenticationFailure = Authenticate(
+            request.AgentId,
+            tokenValidator,
+            context);
+        if (authenticationFailure is not null)
+        {
+            return authenticationFailure;
+        }
+
+        var errors = PackageImportRules.ValidatePublisherProgress(request);
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var result = await repository.ReportPublisherProgressAsync(
+            importId,
+            request,
+            timeProvider.GetUtcNow(),
+            cancellationToken);
+        return result.Status switch
+        {
+            PackagePublisherMutationStatus.Success => Results.NoContent(),
+            PackagePublisherMutationStatus.NotFound => Results.NotFound(),
+            _ => Results.Conflict(new
+            {
+                message = "发布任务租约已过期、尝试次数不一致或已由其他代理接管。"
+            })
+        };
     }
 
     private static async Task<IResult> HeartbeatAsync(

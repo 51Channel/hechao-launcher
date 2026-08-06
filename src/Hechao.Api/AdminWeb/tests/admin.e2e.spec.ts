@@ -837,6 +837,69 @@ test("package import uploads a chunk and requires the exact deployment confirmat
   await page.screenshot({ path: "../../../artifacts/admin-web-package-import-desktop.png", fullPage: true });
 });
 
+test("package publishing shows real progress and estimates remaining time", async ({ page }) => {
+  let detailReads = 0;
+  const publishingRecord = {
+    ...completedPackageImport,
+    status: "PublishingClient",
+    completedAt: null,
+    revision: 9,
+    publisherProgress: {
+      phase: "PublishingObjects",
+      completedObjects: 20,
+      totalObjects: 100,
+      processedBytes: 2_097_152,
+      totalBytes: 10_485_760,
+      sampledAt: "2026-08-06T04:00:00Z"
+    }
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+        await route.fulfill({ json: {
+          imports: [publishingRecord],
+          publisherAgentConnected: true,
+          publisherAgentLastSeenAt: now
+        } });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        detailReads += 1;
+        await route.fulfill({ json: {
+          ...publishingRecord,
+          publisherProgress: detailReads === 1
+            ? publishingRecord.publisherProgress
+            : {
+                ...publishingRecord.publisherProgress,
+                completedObjects: 40,
+                processedBytes: 4_194_304,
+                sampledAt: "2026-08-06T04:00:03Z"
+              }
+        } });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/package-imports");
+  await page.getByRole("button", { name: "查看整合包任务" }).click();
+  const drawer = page.locator(".package-import-drawer");
+  const progressbar = drawer.getByRole("progressbar", { name: "客户端发布进度" });
+  await expect(progressbar).toHaveAttribute("aria-valuenow", "20");
+  await expect(drawer.getByText("正在计算剩余时间")).toBeVisible();
+  await expect(progressbar).toHaveAttribute("aria-valuenow", "40", { timeout: 7_000 });
+  await expect(drawer.getByText("40% · 预计剩余 9 秒")).toBeVisible();
+  await expect(drawer.getByText("40 / 100 个对象 · 4.0 MiB / 10 MiB")).toBeVisible();
+  await page.screenshot({ path: "../../../artifacts/admin-web-package-progress-desktop.png", fullPage: true });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(progressbar).toBeVisible();
+  const progressBox = await progressbar.boundingBox();
+  expect(progressBox && progressBox.x >= 0 && progressBox.x + progressBox.width <= 390).toBe(true);
+  await page.screenshot({ path: "../../../artifacts/admin-web-package-progress-mobile.png", fullPage: true });
+});
+
 test("server editor recovers from a revision conflict without losing the draft", async ({ page }) => {
   const updates: Record<string, unknown>[] = [];
   await mockAdminApi(page, {

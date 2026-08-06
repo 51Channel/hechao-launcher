@@ -457,6 +457,19 @@ export interface PackageImportDeploymentPlan {
   maximumMemoryMiB: number;
 }
 
+export type PackagePublisherProgressPhase =
+  | "DownloadingArchive" | "ExtractingArchive" | "BuildingDistribution"
+  | "PublishingObjects" | "Finalizing";
+
+export interface PackagePublisherProgress {
+  phase: PackagePublisherProgressPhase;
+  completedObjects: number;
+  totalObjects: number;
+  processedBytes: number;
+  totalBytes: number;
+  sampledAt: string;
+}
+
 export interface PackageImportRecord {
   importId: string;
   fileName: string;
@@ -476,6 +489,7 @@ export interface PackageImportRecord {
   updatedAt: string;
   completedAt: string | null;
   revision: number;
+  publisherProgress?: PackagePublisherProgress | null;
 }
 
 export interface PackageImportListResponse {

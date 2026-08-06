@@ -50,6 +50,13 @@ const phaseDefinitions = [
   { label: "服务端部署", statuses: ["QueuedForDeployment", "DeployingServer"] },
   { label: "测试通道", statuses: ["Finalizing", "Completed"] }
 ] as const;
+const publisherPhaseLabels = {
+  DownloadingArchive: "下载客户端归档",
+  ExtractingArchive: "解压客户端文件",
+  BuildingDistribution: "生成分发清单",
+  PublishingObjects: "校验并上传 OSS 对象",
+  Finalizing: "提交发布结果"
+} as const;
 
 interface ReviewDraft {
   profileId: string;
@@ -98,6 +105,12 @@ const upload = reactive({
   error: ""
 });
 let uploadController: AbortController | null = null;
+let publisherProgressSample: {
+  key: string;
+  sampledAt: number;
+  metric: number;
+} | null = null;
+const publisherEtaSeconds = ref<number | null>(null);
 const pendingCancel = ref<PackageImportRecord | null>(null);
 const cancelBusy = ref(false);
 const cancelError = ref("");
@@ -180,6 +193,43 @@ const uploadPercentage = computed(() =>
     ? Math.min(100, Math.round(upload.uploadedBytes / upload.totalBytes * 100))
     : 0
 );
+const publisherProgress = computed(() =>
+  selectedImport.data.value?.publisherProgress ?? null
+);
+const publisherProgressPercentage = computed<number | null>(() => {
+  const progress = publisherProgress.value;
+  if (!progress) return null;
+  if (progress.totalObjects > 0) {
+    return Math.min(100, Math.round(
+      progress.completedObjects / progress.totalObjects * 100
+    ));
+  }
+  if (progress.totalBytes > 0) {
+    return Math.min(100, Math.round(
+      progress.processedBytes / progress.totalBytes * 100
+    ));
+  }
+  return null;
+});
+const publisherProgressDetail = computed(() => {
+  const progress = publisherProgress.value;
+  if (!progress) return "等待发布代理上报";
+  if (progress.phase === "PublishingObjects") {
+    return `${progress.completedObjects} / ${progress.totalObjects} 个对象 · ` +
+      `${formatBytes(progress.processedBytes)} / ${formatBytes(progress.totalBytes)}`;
+  }
+  if (progress.phase === "DownloadingArchive") {
+    return `${formatBytes(progress.processedBytes)} / ${formatBytes(progress.totalBytes)}`;
+  }
+  return "该阶段完成后会自动进入下一步";
+});
+const publisherEtaText = computed(() => {
+  const percentage = publisherProgressPercentage.value;
+  if (percentage === 100) return "即将完成";
+  if (percentage === null) return "当前阶段暂时无法估算";
+  if (publisherEtaSeconds.value === null) return "正在计算剩余时间";
+  return `预计剩余 ${formatEta(publisherEtaSeconds.value)}`;
+});
 
 function isPackageDeploymentTarget(target: ControlTargetSummary): boolean {
   return target.serverId === "activity" &&
@@ -228,7 +278,10 @@ function initializeReview(record: PackageImportRecord, force = false): void {
 async function refreshSelected(): Promise<PackageImportRecord | null> {
   if (!selectedImportId.value) return null;
   const result = await selectedImport.refresh();
-  if (result) initializeReview(result);
+  if (result) {
+    initializeReview(result);
+    observePublisherProgress(result);
+  }
   return result;
 }
 
@@ -238,7 +291,10 @@ async function refreshPage(): Promise<void> {
     controls.refresh(),
     selectedImportId.value ? selectedImport.refresh() : Promise.resolve(null)
   ]);
-  if (detail) initializeReview(detail);
+  if (detail) {
+    initializeReview(detail);
+    observePublisherProgress(detail);
+  }
 }
 
 const unregister = registerPageRefresh(refreshPage);
@@ -254,7 +310,10 @@ async function openImport(importId: string): Promise<void> {
   selectedImport.cancel();
   await nextTick();
   const result = await selectedImport.refresh();
-  if (result) initializeReview(result, true);
+  if (result) {
+    initializeReview(result, true);
+    observePublisherProgress(result);
+  }
   if (!drawer.value?.open) drawer.value?.showModal();
   await nextTick();
   if (drawerBody.value) drawerBody.value.scrollTop = 0;
@@ -264,6 +323,8 @@ function closeImport(): void {
   drawer.value?.close();
   selectedImport.cancel();
   selectedImportId.value = "";
+  publisherProgressSample = null;
+  publisherEtaSeconds.value = null;
   confirmError.value = "";
 }
 
@@ -497,6 +558,49 @@ function statusText(status: PackageImportStatus): string {
   return statusLabels[status];
 }
 
+function observePublisherProgress(record: PackageImportRecord): void {
+  const progress = record.publisherProgress;
+  if (!progress || record.status !== "PublishingClient") {
+    publisherProgressSample = null;
+    publisherEtaSeconds.value = null;
+    return;
+  }
+
+  const sampledAt = Date.parse(progress.sampledAt);
+  const usesObjects = progress.totalObjects > 0;
+  const metric = usesObjects ? progress.completedObjects : progress.processedBytes;
+  const total = usesObjects ? progress.totalObjects : progress.totalBytes;
+  const key = `${record.importId}:${progress.phase}:${total}`;
+  if (!Number.isFinite(sampledAt) || total <= 0) {
+    publisherProgressSample = null;
+    publisherEtaSeconds.value = null;
+    return;
+  }
+
+  const previous = publisherProgressSample;
+  if (!previous || previous.key !== key || sampledAt <= previous.sampledAt) {
+    if (!previous || previous.key !== key) publisherEtaSeconds.value = null;
+    publisherProgressSample = { key, sampledAt, metric };
+    return;
+  }
+
+  const elapsedSeconds = (sampledAt - previous.sampledAt) / 1000;
+  const completedDelta = metric - previous.metric;
+  if (elapsedSeconds > 0 && completedDelta > 0 && metric < total) {
+    const estimate = (total - metric) / (completedDelta / elapsedSeconds);
+    publisherEtaSeconds.value = Math.max(1, Math.ceil(estimate));
+  }
+  publisherProgressSample = { key, sampledAt, metric };
+}
+
+function formatEta(seconds: number): string {
+  if (seconds < 60) return `${seconds} 秒`;
+  if (seconds < 3600) return `${Math.ceil(seconds / 60)} 分钟`;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.ceil(seconds % 3600 / 60);
+  return minutes > 0 ? `${hours} 小时 ${minutes} 分钟` : `${hours} 小时`;
+}
+
 function packageIdentity(record: PackageImportRecord): string {
   const metadata = record.analysis?.metadata;
   return metadata
@@ -644,6 +748,31 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
             <div class="package-phase-track" aria-label="导入进度">
               <div v-for="(phase, index) in phaseDefinitions" :key="phase.label" :class="phaseClass(selectedImport.data.value, index)"><span>{{ index + 1 }}</span><strong>{{ phase.label }}</strong></div>
             </div>
+
+            <section v-if="selectedImport.data.value.status === 'PublishingClient'" class="package-publisher-progress" aria-live="polite">
+              <div class="package-publisher-progress-heading">
+                <div><AppIcon name="package" /><span>客户端发布进度</span></div>
+                <strong>{{ publisherProgress ? publisherPhaseLabels[publisherProgress.phase] : "等待代理上报" }}</strong>
+              </div>
+              <div
+                class="package-publisher-meter"
+                role="progressbar"
+                aria-label="客户端发布进度"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                :aria-valuenow="publisherProgressPercentage ?? undefined"
+                :aria-valuetext="publisherProgressPercentage === null ? publisherEtaText : `${publisherProgressPercentage}% · ${publisherEtaText}`"
+              >
+                <span
+                  :class="{ indeterminate: publisherProgressPercentage === null }"
+                  :style="publisherProgressPercentage === null ? undefined : { transform: `scaleX(${publisherProgressPercentage / 100})` }"
+                />
+              </div>
+              <div class="package-publisher-progress-meta">
+                <span>{{ publisherProgressDetail }}</span>
+                <strong>{{ publisherProgressPercentage === null ? publisherEtaText : `${publisherProgressPercentage}% · ${publisherEtaText}` }}</strong>
+              </div>
+            </section>
 
             <div v-if="selectedImport.data.value.errorMessage" class="inline-alert compact-alert" role="alert"><AppIcon name="circle-alert" /><span><strong>{{ selectedImport.data.value.errorCode }}</strong>{{ selectedImport.data.value.errorMessage }}</span></div>
 

@@ -241,6 +241,50 @@ public static partial class PackageImportRules
         return errors;
     }
 
+    public static IReadOnlyDictionary<string, string[]> ValidatePublisherProgress(
+        PackagePublisherProgressRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (!IsValidPublisherAgentId(request.AgentId))
+        {
+            errors["agentId"] = ["发布代理 ID 无效。"];
+        }
+
+        if (request.AttemptCount is < 1 or > 5)
+        {
+            errors["attemptCount"] = ["发布任务尝试次数无效。"];
+        }
+
+        if (request.CompletedObjects < 0 ||
+            request.TotalObjects < 0 ||
+            request.CompletedObjects > request.TotalObjects ||
+            request.TotalObjects > 200_000)
+        {
+            errors["objects"] = ["发布对象进度无效。"];
+        }
+
+        if (request.ProcessedBytes < 0 ||
+            request.TotalBytes < 0 ||
+            request.ProcessedBytes > request.TotalBytes)
+        {
+            errors["bytes"] = ["发布字节进度无效。"];
+        }
+
+        if (request.Phase == PackagePublisherProgressPhase.DownloadingArchive &&
+            request.TotalBytes == 0)
+        {
+            errors["totalBytes"] = ["下载阶段必须包含归档总大小。"];
+        }
+
+        if (request.Phase == PackagePublisherProgressPhase.PublishingObjects &&
+            request.TotalObjects == 0)
+        {
+            errors["totalObjects"] = ["对象发布阶段必须包含对象总数。"];
+        }
+
+        return errors;
+    }
+
     private static void ValidateText(
         string? value,
         string field,

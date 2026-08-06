@@ -148,6 +148,33 @@ public sealed class PackageImportDeploymentContractTests
         Assert.Contains("request.ActiveImportId", repository, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void PublisherProgress_IsPersistedAndLeaseProtected()
+    {
+        var repository = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "PackageImports",
+            "PackageImportRepository.cs");
+        var endpoint = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "PackageImports",
+            "PackagePublisherEndpoints.cs");
+        var migration = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "Database",
+            "Migrations",
+            "026_package_publisher_progress.sql");
+
+        Assert.Contains("/jobs/{importId:guid}/progress", endpoint, StringComparison.Ordinal);
+        Assert.Contains("publisher_lease_expires_at >= $9", repository, StringComparison.Ordinal);
+        Assert.Contains("publisher_progress_sampled_at", repository, StringComparison.Ordinal);
+        Assert.Contains("publisher_progress_processed_bytes", migration, StringComparison.Ordinal);
+        Assert.Contains("publisher_progress_total_objects", migration, StringComparison.Ordinal);
+    }
+
     private static string ReadRepositoryFile(params string[] segments) =>
         File.ReadAllText(Path.Combine(FindRepositoryRoot(), Path.Combine(segments)));
 

@@ -3903,6 +3903,100 @@ textarea::placeholder {
     background: var(--brand-soft);
 }
 
+.package-publisher-progress {
+    display: grid;
+    gap: 10px;
+    margin: -6px 0 22px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    background: var(--surface-subtle);
+}
+
+.package-publisher-progress-heading,
+.package-publisher-progress-meta,
+.package-publisher-progress-heading > div {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.package-publisher-progress-heading,
+.package-publisher-progress-meta {
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.package-publisher-progress-heading > div {
+    gap: 7px;
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.package-publisher-progress-heading strong {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.package-publisher-meter {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    background: var(--surface-pressed);
+}
+
+.package-publisher-meter > span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--brand);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 220ms ease;
+}
+
+.package-publisher-meter > .indeterminate {
+    width: 32%;
+    animation: package-progress-indeterminate 1.4s ease-in-out infinite;
+}
+
+.package-publisher-progress-meta span,
+.package-publisher-progress-meta strong {
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.package-publisher-progress-meta span {
+    color: var(--ink-muted);
+}
+
+.package-publisher-progress-meta strong {
+    color: var(--ink);
+    font-weight: 650;
+}
+
+@keyframes package-progress-indeterminate {
+    from { transform: translateX(-110%); }
+    to { transform: translateX(330%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .package-publisher-meter > span {
+        transition: none;
+    }
+
+    .package-publisher-meter > .indeterminate {
+        animation: none;
+        transform: translateX(105%);
+    }
+}
+
 .package-detail-section {
     padding: 0 0 22px;
     margin: 0 0 22px;
