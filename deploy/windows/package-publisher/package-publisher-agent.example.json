@@ -1,5 +1,6 @@
 {
   "apiBaseUrl": "https://launcher-api.hechao.world",
+  "publicObjectBaseUrl": "https://launcher-api.hechao.world",
   "agentId": "publisher-main",
   "tokenPath": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\publisher-token.dpapi",
   "stateDirectory": "C:\\ProgramData\\Hechao\\PackagePublisherAgent\\state",

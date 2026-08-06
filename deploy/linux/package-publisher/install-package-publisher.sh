@@ -50,6 +50,7 @@ python3 - "$config" <<'PY'
 import json
 import pathlib
 import sys
+import urllib.parse
 
 path = pathlib.Path(sys.argv[1])
 data = json.loads(path.read_text(encoding="utf-8"))
@@ -66,6 +67,12 @@ for key, value in expected.items():
 for forbidden in ("token", "accessKeyId", "accessKeySecret", "privateKey"):
     if forbidden in data:
         raise SystemExit(f"publisher config contains forbidden field {forbidden}")
+public_base = urllib.parse.urlsplit(data.get("publicObjectBaseUrl", ""))
+if (public_base.scheme != "https" or not public_base.hostname or
+        public_base.username or public_base.password or
+        public_base.path not in ("", "/") or public_base.query or
+        public_base.fragment):
+    raise SystemExit("publisher config has invalid publicObjectBaseUrl")
 PY
 
 for credential in \

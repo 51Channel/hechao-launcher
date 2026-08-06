@@ -7,6 +7,7 @@ internal sealed partial record PackagePublisherAgentConfiguration
     internal const string SystemdCredentialSecretStorage = "systemd-credentials";
 
     public string ApiBaseUrl { get; init; } = string.Empty;
+    public string PublicObjectBaseUrl { get; init; } = string.Empty;
     public string AgentId { get; init; } = string.Empty;
     public string SecretStorage { get; init; } = WindowsDpapiSecretStorage;
     public string TokenPath { get; init; } = string.Empty;
@@ -96,6 +97,7 @@ internal sealed partial record PackagePublisherAgentConfiguration
              string.IsNullOrEmpty(OssCredentialEntropyLabel) &&
              SigningKeyBlobSha256 is null);
         if (!TryGetApiBaseUri(out _) ||
+            !TryGetPublicObjectBaseUri(out _) ||
             !AgentIdPattern().IsMatch(AgentId) ||
             !validSecretStorage ||
             !Path.IsPathFullyQualified(TokenPath) ||
@@ -151,15 +153,35 @@ internal sealed partial record PackagePublisherAgentConfiguration
     }
 
     internal bool TryGetApiBaseUri(out Uri uri) =>
-        TryGetHttpsOrigin(ApiBaseUrl, out uri);
+        TryGetServiceOrigin(ApiBaseUrl, allowLoopbackHttp: true, out uri);
+
+    internal bool TryGetPublicObjectBaseUri(out Uri uri) =>
+        TryGetServiceOrigin(PublicObjectBaseUrl, allowLoopbackHttp: false, out uri);
 
     internal bool TryGetOssEndpoint(out Uri uri) =>
-        TryGetHttpsOrigin(OssEndpoint, out uri);
+        TryGetServiceOrigin(OssEndpoint, allowLoopbackHttp: false, out uri);
 
-    private static bool TryGetHttpsOrigin(string value, out Uri uri)
+    internal Uri GetProfileObjectBaseUri(string profileId)
+    {
+        if (!TryGetPublicObjectBaseUri(out var origin))
+        {
+            throw new InvalidDataException(
+                "The package publisher public object base URL is invalid.");
+        }
+
+        return new Uri(
+            origin,
+            $"/v1/profiles/{Uri.EscapeDataString(profileId)}/");
+    }
+
+    private static bool TryGetServiceOrigin(
+        string value,
+        bool allowLoopbackHttp,
+        out Uri uri)
     {
         if (Uri.TryCreate(value, UriKind.Absolute, out uri!) &&
             (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+             allowLoopbackHttp &&
              string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
              uri.IsLoopback) &&
             string.IsNullOrEmpty(uri.Query) &&

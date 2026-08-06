@@ -193,10 +193,7 @@ internal sealed class PackagePublisherWorker(
                 configuration.SigningKeyPath,
                 configuration.SigningKeyEntropyLabel,
                 configuration.SigningKeyBlobSha256?.ToUpperInvariant());
-            var objectBaseUri = new Uri(
-                configuration.ApiBaseUrl.TrimEnd('/') +
-                $"/v1/profiles/{job.ProfileId}/",
-                UriKind.Absolute);
+            var objectBaseUri = configuration.GetProfileObjectBaseUri(job.ProfileId);
             var build = await ClientDistributionBuilder.BuildAsync(
                 new ClientDistributionBuildOptions(
                     sourceDirectory,

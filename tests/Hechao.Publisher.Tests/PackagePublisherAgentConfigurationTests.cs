@@ -16,6 +16,7 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
         File.WriteAllText(path, JsonSerializer.Serialize(new
         {
             apiBaseUrl = "https://launcher-api.example",
+            publicObjectBaseUrl = "https://launcher-api.example",
             agentId = "publisher-main",
             tokenPath = Path.Combine(root, "token.dat"),
             stateDirectory = Path.Combine(root, "state"),
@@ -47,6 +48,7 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
         var configuration = new PackagePublisherAgentConfiguration
         {
             ApiBaseUrl = "https://launcher-api.example/not-an-origin",
+            PublicObjectBaseUrl = "https://launcher-api.example",
             AgentId = "publisher-main",
             TokenPath = sharedPath,
             StateDirectory = Path.Combine(root, "state"),
@@ -74,6 +76,7 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
         File.WriteAllText(path, JsonSerializer.Serialize(new
         {
             apiBaseUrl = "http://127.0.0.1:8090",
+            publicObjectBaseUrl = "https://launcher-api.example",
             agentId = "publisher-main",
             secretStorage = "systemd-credentials",
             tokenPath = "publisher-token",
@@ -102,6 +105,33 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
             configuration.SigningKeyPath);
         Assert.Null(configuration.SigningKeyEntropyLabel);
         Assert.Null(configuration.OssCredentialEntropyLabel);
+        Assert.Equal(
+            "https://launcher-api.example/v1/profiles/activity-neoforge/",
+            configuration.GetProfileObjectBaseUri("activity-neoforge").AbsoluteUri);
+    }
+
+    [Fact]
+    public void Load_RejectsLoopbackHttpPublicObjectBaseUrl()
+    {
+        var configuration = new PackagePublisherAgentConfiguration
+        {
+            ApiBaseUrl = "http://127.0.0.1:8090",
+            PublicObjectBaseUrl = "http://127.0.0.1:8090",
+            AgentId = "publisher-main",
+            TokenPath = Path.Combine(root, "token.dat"),
+            StateDirectory = Path.Combine(root, "state"),
+            SigningKeyId = "release-primary",
+            SigningKeyPath = Path.Combine(root, "signing.dat"),
+            SigningKeyEntropyLabel = "Hechao/Signing/v1",
+            OssBucket = "hechaoworld",
+            OssRegion = "cn-shanghai",
+            OssEndpoint = "https://oss-cn-shanghai.aliyuncs.com",
+            OssObjectPrefix = "objects",
+            OssCredentialPath = Path.Combine(root, "oss.dat"),
+            OssCredentialEntropyLabel = "Hechao/Oss/v1"
+        };
+
+        Assert.Throws<InvalidDataException>(configuration.Validate);
     }
 
     [Fact]
@@ -112,6 +142,7 @@ public sealed class PackagePublisherAgentConfigurationTests : IDisposable
         File.WriteAllText(path, JsonSerializer.Serialize(new
         {
             apiBaseUrl = "http://127.0.0.1:8090",
+            publicObjectBaseUrl = "https://launcher-api.example",
             agentId = "publisher-main",
             secretStorage = "systemd-credentials",
             tokenPath = "../publisher-token",

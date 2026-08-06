@@ -1,5 +1,6 @@
 {
   "apiBaseUrl": "http://127.0.0.1:8090",
+  "publicObjectBaseUrl": "https://launcher-api.hechao.world",
   "agentId": "publisher-main",
   "secretStorage": "systemd-credentials",
   "tokenPath": "publisher-token",
