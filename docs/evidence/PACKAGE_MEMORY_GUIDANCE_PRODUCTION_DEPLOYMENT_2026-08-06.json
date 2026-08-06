@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-06T13:11:33Z",
+  "feature": "package-deployment-memory-guidance",
+  "sourceCommit": "fb6b9975d6ecea62533f002ab473e8c66b4e7cad",
+  "releaseTags": [
+    "api-v0.28.5",
+    "server-control-agent-v0.4.1"
+  ],
+  "api": {
+    "version": "0.28.5",
+    "releaseId": "0.28.5-20260806T125215Z",
+    "archive": {
+      "sizeBytes": 45949985,
+      "sha256": "7348C65B5FED89CCA136E234F1CA1A5DC6EB608B44297A39B2EC8DBB56AEBB55",
+      "entryCount": 158,
+      "fileCount": 153,
+      "containsPdb": false,
+      "containsConfiguration": false,
+      "containsCredentials": false,
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "sizeBytes": 105038788,
+      "sha256": "D24FDBC352E2485FF8C5992F21CA4074B26E4C77CD4DAFF68EF379D7647F4C22",
+      "deployedHashMatched": true
+    },
+    "packageImportsJavaScript": {
+      "sizeBytes": 28488,
+      "sha256": "7E5FA0DEF6B2BCC1302A4548409B9D0B5514F8E038877F5B3415BC38A89368E9",
+      "deployedHashMatched": true,
+      "cacheControl": "no-store"
+    },
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260806T125340Z.dump",
+      "sizeBytes": 3647812,
+      "sha256": "C02D45AF6A65205835D90D9D6026B36B60004C5B6A3E797C4F68628E9F18A858",
+      "restoreListPassed": true
+    },
+    "configurationBackup": "/var/backups/hechao-launcher/releases/0.28.5-20260806T125215Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.28.5-20260806T125215Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.28.4-20260806T002900Z",
+    "migrationCount": 25,
+    "hostMemoryColumnNullable": true,
+    "mainPid": 1348497,
+    "nRestarts": 0,
+    "healthVersion": "0.28.5",
+    "databaseStatus": "ready",
+    "warningErrorLinesSinceDeployment": 0,
+    "loopbackOnlyPort8090": true,
+    "publicAssetHashMatched": true,
+    "temporaryUploadFilesRemoved": 3
+  },
+  "agent": {
+    "owl5Version": "0.4.1",
+    "owl9Version": "0.4.0",
+    "archive": {
+      "sizeBytes": 33222552,
+      "sha256": "BEA41CD1386C7098853CFEC2A60270E307FDF8C3243160D5CB538B5980AA6FE7"
+    },
+    "executable": {
+      "sizeBytes": 74109535,
+      "sha256": "EAB5360968B79479726568FA439E957BBEEACFA617284475679380C5838C7D78",
+      "productVersion": "0.4.1+fb6b9975d6ecea62533f002ab473e8c66b4e7cad"
+    },
+    "owl5": {
+      "targetCount": 7,
+      "taskState": "Running",
+      "hostTotalPhysicalMemoryBytes": 19326763008,
+      "reportedHostTotalMemoryMiB": 18431,
+      "recommendedMinimumMemoryMiB": 4096,
+      "recommendedMaximumMemoryMiB": 8960,
+      "packageDeploymentEnabled": true,
+      "rollbackDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260806T130640Z",
+      "javaProcessIds": [2576, 6008, 7748, 9428, 10412],
+      "javaIdentityUnchanged": true,
+      "stagingFilesRemoved": 4
+    }
+  },
+  "tests": {
+    "apiPassed": 287,
+    "serverControlAgentPassed": 56,
+    "solutionPassed": 680,
+    "vitestPassed": 8,
+    "playwrightPassed": 16,
+    "typeScriptPassed": true,
+    "viteProductionBuildPassed": true,
+    "impeccableFindings": 0,
+    "outsideGuidanceStillSubmittable": true
+  },
+  "productionState": {
+    "publisherPidBefore": 4028581,
+    "publisherPidAfter": 4028581,
+    "packagePublishDeployQueueCount": 0,
+    "awaitingReviewCount": 1,
+    "activeServerControlCommandCount": 0,
+    "minecraftProcessesStarted": 0,
+    "minecraftProcessesStopped": 0,
+    "minecraftProcessesRestarted": 0,
+    "velocityProcessesChanged": 0,
+    "publisherProcessesChanged": 0
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

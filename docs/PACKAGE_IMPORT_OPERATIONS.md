@@ -1,13 +1,12 @@
 # 整合包自动导入与活动槽部署手册
 
-> 当前生产：API `0.28.4`、Publisher Agent `1.1.0`、owl5 与 owl9
-> ServerControlAgent `0.4.0`。API `0.28.5` 与 owl5 ServerControlAgent `0.4.1`
-> 为待发布候选。
+> 当前生产：API `0.28.5`、Publisher Agent `1.1.0`、owl5
+> ServerControlAgent `0.4.1`、owl9 ServerControlAgent `0.4.0`。
 >
 > 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；
 > Gray/Production 未变化。测试服务端随后归档，原活动服从受控回滚目录恢复并保持停止。
-> `0.4.0` 保留目标级目录访问门闩和 Windows 瞬时目录占用重试，并增加受控服务端目录
-> 删除。当前候选完整解决方案 `680/680`、API `287/287`、Publisher `39/39`、
+> `0.4.1` 保留目标级目录访问门闩、Windows 瞬时目录占用重试和受控服务端目录删除，
+> 并上报 VPS 物理内存。当前完整解决方案 `680/680`、API `287/287`、Publisher `39/39`、
 > ServerControlAgent `56/56`、Vitest `8/8` 和 Playwright `16/16` 已通过。
 
 本功能允许管理员在后台上传一个 ZIP 或 MRPACK 整合包，先自动识别并拆分客户端与

@@ -1,7 +1,7 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.28.4-20260806T002900Z`
-> 当前迁移：`024`
+> 当前线上版本：`0.28.5-20260806T125215Z`
+> 当前迁移：`025`
 > 当前阶段：跨版本回大厅方案已取消；基础设施大厅隔离已部署，待真实玩家灰度
 >
 > owl9 边界：API 中现有 server ID `pvp` 实际代表恐怖整蛊服
@@ -396,6 +396,7 @@ systemctl reload nginx
 | `0.28.1-20260805T214936Z` | `C3771C9CF816D1BA091362FF7D67E76C63740EA19E9F29FBFCEFE43A15C583D3` | 已删除、已清理且无活动操作的目标从服控概览隐藏，重新部署后自动恢复；完整备份、原子切换、公网回归和生产数据条件核验通过；`0.28.2` 的直接回滚目标 |
 | `0.28.2-20260805T222544Z` | `94551BDF1296DFD7FB513004D10461C321619D24CA042605D607DB60E46F7DB7` | 整合包精确确认文本纳入草稿快照，3 秒轮询不再清空输入；Playwright `16/16`、完整备份、原子切换和公网回归通过；`0.28.3` 的直接回滚目标 |
 | `0.28.3-20260805T234331Z` | `EBF43D83FD3D883464180C227D8B64701FC3FD851FBCFB48CF138EF86185DFB4` | 整合包页可读取已删除目录但仍可重新部署的固定活动槽，普通服控列表继续隐藏已删除目标；生产 9 个总目标、普通概览 6 个、整合包概览 9 个。`0.28.4` 的直接回滚目标 |
-| `0.28.4-20260806T002900Z` | `BECAAF0660EC5E56C2DD26A2A0D52AE5417B635F4369A2BF70C577CD3917DD8D` | 已删除固定活动槽在 `settings=null` 时使用受控 `4096 MiB` 部署上限，页面、确认接口和编排保持一致。当前线上版本，直接回滚目标为 `0.28.3` |
+| `0.28.4-20260806T002900Z` | `BECAAF0660EC5E56C2DD26A2A0D52AE5417B635F4369A2BF70C577CD3917DD8D` | 已删除固定活动槽在 `settings=null` 时使用受控 `4096 MiB` 部署上限，页面、确认接口和编排保持一致。`0.28.5` 的直接回滚目标 |
+| `0.28.5-20260806T125215Z` | `D24FDBC352E2485FF8C5992F21CA4074B26E4C77CD4DAFF68EF379D7647F4C22` | 迁移 025 保存 VPS 真实物理内存；整合包页显示总内存和推荐最小/最大值，推荐区间不禁用提交；移除 `4096 MiB` 回退上限。当前线上版本，直接回滚目标为 `0.28.4` |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.28.4`、启动器 `0.14.2`、Publisher Agent `1.0.0`、owl5 与 owl9 ServerControlAgent `0.4.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 十页、固定整合包 Test-only 发布、停止活动槽部署、原活动目录恢复、官网活动投影、启动器下载桥接和白名单服务端文件删除均已验收；整合包精确确认输入在后台轮询期间保持，生产已有三个成功删除记录，其目标在清理完成后从日常服控列表隐藏，但固定活动槽仍可由整合包页重新部署。五服指标代理已经加载，Activity 单账号路由、特殊路径物理原生库加载和安装版真实进服已通过，恐怖整蛊服务端兼容修复已完成历史真实验收；四级真实账号、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.28.5`、启动器 `0.14.2`、Publisher Agent `1.1.0`、owl5 ServerControlAgent `0.4.1`、owl9 ServerControlAgent `0.4.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 十页、固定整合包 Test-only 发布、停止活动槽部署、原活动目录恢复、官网活动投影、启动器下载桥接和白名单服务端文件删除均已验收；整合包精确确认输入在后台轮询期间保持，生产已有三个成功删除记录，其目标在清理完成后从日常服控列表隐藏，但固定活动槽仍可由整合包页重新部署。整合包页当前显示 owl5 VPS 总内存 `18431 MiB` 和 `4096-8960 MiB` 推荐区间，区间外合法值仍可提交。五服指标代理已经加载，Activity 单账号路由、特殊路径物理原生库加载和安装版真实进服已通过，恐怖整蛊服务端兼容修复已完成历史真实验收；四级真实账号、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

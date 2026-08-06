@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-06T00:40:00Z",
+  "generatedAtUtc": "2026-08-06T13:12:59Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,69 +45,69 @@
     },
     {
       "component": "api",
-      "version": "0.28.4-20260806T002900Z",
-      "releaseTag": "api-v0.28.4",
-      "releaseCommit": "6df2765dde8e66503ba24f97529e8fd36285569a",
-      "taggedAt": "2026-08-06T08:26:44+08:00",
+      "version": "0.28.5-20260806T125215Z",
+      "releaseTag": "api-v0.28.5",
+      "releaseCommit": "fb6b9975d6ecea62533f002ab473e8c66b4e7cad",
+      "taggedAt": "2026-08-06T21:12:59+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "6df2765dde8e66503ba24f97529e8fd36285569a"
+        "value": "fb6b9975d6ecea62533f002ab473e8c66b4e7cad"
       },
-      "deploymentState": "production-package-import-deleted-activity-memory-limit-health-ready",
-      "historicalNote": "Production contains DeleteServerFiles records. 0.28.3 is the direct rollback target; 0.27.3 cannot deserialize the operation type and must not be used.",
+      "deploymentState": "production-package-memory-guidance-health-ready",
+      "historicalNote": "Production contains DeleteServerFiles records. 0.28.4 is the direct rollback target; 0.27.3 cannot deserialize the operation type and must not be used.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.28.4-20260806T002900Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.28.4-20260806T002900Z",
-          "size": 45964802,
-          "sha256": "076B7BFF056129709F45B78D06F0704FF102506862CDB1380F256B3736907181",
+          "name": "hechao-launcher-api-0.28.5-20260806T125215Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.28.5-20260806T125215Z",
+          "size": 45949985,
+          "sha256": "7348C65B5FED89CCA136E234F1CA1A5DC6EB608B44297A39B2EC8DBB56AEBB55",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.28.4-20260806T002900Z/Hechao.Api",
-          "size": 105043908,
-          "sha256": "BECAAF0660EC5E56C2DD26A2A0D52AE5417B635F4369A2BF70C577CD3917DD8D",
+          "location": "/opt/hechao-launcher-api/releases/0.28.5-20260806T125215Z/Hechao.Api",
+          "size": 105038788,
+          "sha256": "D24FDBC352E2485FF8C5992F21CA4074B26E4C77CD4DAFF68EF379D7647F4C22",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.28.3-20260805T234331Z"
+        "target": "/opt/hechao-launcher-api/releases/0.28.4-20260806T002900Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.28.4.md",
+        "docs/API_RELEASE_0.28.5.md",
         "docs/PACKAGE_IMPORT_OPERATIONS.md",
-        "docs/evidence/PACKAGE_IMPORT_DELETED_ACTIVITY_MEMORY_LIMIT_PRODUCTION_DEPLOYMENT_2026-08-06.json"
+        "docs/evidence/PACKAGE_MEMORY_GUIDANCE_PRODUCTION_DEPLOYMENT_2026-08-06.json"
       ]
     },
     {
       "component": "server-control-agent",
-      "version": "0.4.0",
-      "releaseTag": "server-control-agent-v0.4.0",
-      "releaseCommit": "8423af7c451ad163c138d9de62954cfb43c4bd23",
-      "taggedAt": "2026-08-06T04:32:22+08:00",
+      "version": "owl5 0.4.1 / owl9 0.4.0",
+      "releaseTag": "server-control-agent-v0.4.1",
+      "releaseCommit": "fb6b9975d6ecea62533f002ab473e8c66b4e7cad",
+      "taggedAt": "2026-08-06T21:12:59+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "8423af7c451ad163c138d9de62954cfb43c4bd23"
+        "value": "fb6b9975d6ecea62533f002ab473e8c66b4e7cad"
       },
-      "deploymentState": "production-owl5-and-owl9-five-target-server-directory-deletion-allowlist-enabled-three-owl5-targets-deleted-and-cleaned",
-      "historicalNote": "Each host has an independent retained rollback directory. An older agent closes deletion capability in its heartbeat, but the API must not be downgraded to 0.27.3 after any DeleteServerFiles operation record exists.",
+      "deploymentState": "production-owl5-host-memory-guidance-owl9-retained-0.4.0",
+      "historicalNote": "Only owl5 requires 0.4.1 host-memory reporting. Owl9 remains on 0.4.0. Each host has an independent retained rollback directory, and the API must not be downgraded to 0.27.3 after any DeleteServerFiles operation record exists.",
       "artifacts": [
         {
-          "name": "hechao-server-control-agent-0.4.0-20260805T201046Z-win-x64.zip",
-          "location": "artifacts/production-acceptance/hechao-server-control-agent-0.4.0-20260805T201046Z-win-x64.zip",
-          "size": 33219561,
-          "sha256": "24A9EC3775D0517B823C754FF2F37534C5088DF0F7EE0575F198AC9A1653A271",
+          "name": "hechao-server-control-agent-0.4.1-20260806T125215Z-win-x64.zip",
+          "location": "artifacts/production-acceptance/hechao-server-control-agent-0.4.1-20260806T125215Z-win-x64.zip",
+          "size": 33222552,
+          "sha256": "BEA41CD1386C7098853CFEC2A60270E307FDF8C3243160D5CB538B5980AA6FE7",
           "primary": true
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
           "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
           "size": 74109535,
-          "sha256": "088BDC8DA9AE3EF0FBE2F103FC2EB026A1A7A7A6BFDB657E8C3819A2BE7442F8",
+          "sha256": "EAB5360968B79479726568FA439E957BBEEACFA617284475679380C5838C7D78",
           "primary": false
         },
         {
@@ -120,12 +120,12 @@
       ],
       "rollback": {
         "kind": "per-host-rollback-executable",
-        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260805T202552Z; owl9:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260805T202707Z"
+        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260806T130640Z; owl9:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260805T202707Z"
       },
       "evidence": [
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.4.0.md",
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.4.1.md",
         "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
-        "docs/evidence/SERVER_DIRECTORY_DELETION_PRODUCTION_DEPLOYMENT_2026-08-06.json"
+        "docs/evidence/PACKAGE_MEMORY_GUIDANCE_PRODUCTION_DEPLOYMENT_2026-08-06.json"
       ]
     },
     {
