@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-05T23:51:27Z",
+  "feature": "package-import-redeploys-completed-deleted-activity-target",
+  "sourceCommit": "ec91f1734f46d5d9220d78e95a88513731ca75c1",
+  "releaseTags": ["api-v0.28.3"],
+  "api": {
+    "version": "0.28.3",
+    "releaseId": "0.28.3-20260805T234331Z",
+    "archive": {
+      "sizeBytes": 45947709,
+      "sha256": "2AA0DC281C25E4E592DC4DC6DADFF0FE9E7D285E05E791F22CDC00B1C145D59A",
+      "entryCount": 158,
+      "containsPdb": false,
+      "containsConfiguration": false,
+      "containsCredentials": false,
+      "remoteHashMatched": true
+    },
+    "binary": {
+      "sizeBytes": 105034180,
+      "sha256": "EBF43D83FD3D883464180C227D8B64701FC3FD851FBCFB48CF138EF86185DFB4",
+      "deployedHashMatched": true
+    },
+    "packageImportsJavaScript": {
+      "sizeBytes": 27655,
+      "sha256": "A2DA6FDA70460A4BFE5EA2081ED8811EFCD3531010021B53558DDA16A9024A24",
+      "deployedHashMatched": true,
+      "includesDeletedTargetQuery": true,
+      "cacheControl": "no-store"
+    },
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260805T234331Z.dump",
+      "sha256": "03BF650D9C570057007F3507B0B245A4F00CBA23F87A203BB34C2CACF4790099",
+      "sizeBytes": 3438009,
+      "restoreListLineCount": 225,
+      "restoreListPassed": true
+    },
+    "configurationBackup": "/var/backups/hechao-launcher/releases/0.28.3-20260805T234331Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.28.3-20260805T234331Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.28.2-20260805T222544Z",
+    "migrationCount": 24,
+    "mainPid": 855217,
+    "nRestarts": 0,
+    "healthVersion": "0.28.3",
+    "databaseStatus": "ready",
+    "warningErrorLinesSinceDeployment": 0,
+    "loopbackOnlyPort8090": true,
+    "publicPort8090Reachable": false
+  },
+  "targetVisibility": {
+    "totalTargets": 9,
+    "ordinaryOverviewTargets": 6,
+    "redeploymentOverviewTargets": 9,
+    "activity": {
+      "agentId": "owl5",
+      "agentVersion": "0.4.0",
+      "agentFresh": true,
+      "reportedOnline": false,
+      "stopped": true,
+      "serverFilesPresent": false,
+      "deletionCleanupPending": false,
+      "packageDeploymentEnabled": true,
+      "activeOperations": 0
+    }
+  },
+  "tests": {
+    "apiPassed": 283,
+    "solutionPassed": 671,
+    "visibilityTestsPassed": 5,
+    "vitestPassed": 8,
+    "playwrightPassed": 16,
+    "focusedRedeploymentScenarioPassed": true,
+    "ordinaryOverviewStillHidesDeletedTargets": true,
+    "typeScriptPassed": true,
+    "viteProductionBuildPassed": true,
+    "impeccableFindings": 0,
+    "diffSecretScanPassed": true
+  },
+  "publicRegression": {
+    "launcherApiHealthStatus": 200,
+    "launcherApiReadyStatus": 200,
+    "catalogStatus": 200,
+    "invalidBearerStatus": 401,
+    "adminPageStatus": 200,
+    "wrongHostAdminPageStatus": 404,
+    "websiteStatus": 200,
+    "legacyApiStatus": 200
+  },
+  "productionIsolation": {
+    "minecraftControlCommandsSent": 0,
+    "velocityControlCommandsSent": 0,
+    "publisherControlCommandsSent": 0,
+    "serverControlAgentCommandsSent": 0,
+    "publisherPidUnchanged": true
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

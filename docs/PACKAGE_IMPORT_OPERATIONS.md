@@ -1,13 +1,13 @@
 # 整合包自动导入与活动槽部署手册
 
-> 当前生产：API `0.27.1`、Publisher Agent `1.0.0`、owl5 ServerControlAgent
-> `0.3.1`；owl9 ServerControlAgent 保持 `0.2.1`。
+> 当前生产：API `0.28.3`、Publisher Agent `1.0.0`、owl5 与 owl9
+> ServerControlAgent `0.4.0`。
 >
 > 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；
 > Gray/Production 未变化。测试服务端随后归档，原活动服从受控回滚目录恢复并保持停止。
-> `0.3.1` 使用目标级目录访问门闩隔离独立心跳与切换阶段，并对 Windows 瞬时目录占用
-> 做短时有界重试。完整解决方案 `633/633`、API `268/268`、Publisher `39/39`、
-> ServerControlAgent `46/46`、Vitest `8/8` 和 Playwright `14/14` 已通过。
+> `0.4.0` 保留目标级目录访问门闩和 Windows 瞬时目录占用重试，并增加受控服务端目录
+> 删除。完整解决方案 `671/671`、API `283/283`、Publisher `39/39`、
+> ServerControlAgent `51/51`、Vitest `8/8` 和 Playwright `16/16` 已通过。
 
 本功能允许管理员在后台上传一个 ZIP 或 MRPACK 整合包，先自动识别并拆分客户端与
 服务端，再经人工确认完成客户端私有 OSS 发布和 owl5 活动槽服务端部署。自动识别只
@@ -21,6 +21,8 @@
   `survival2`、`lobby`、`pvp`、`fanstreet`、`yugong` 和其他目标均被 API 与代理双重拒绝。
 - 确认发布前，owl5 代理必须在线、目标必须停止且不能有其他活动操作。流程不会为了
   导入自动停止冲突服，也不会在部署成功后自动启动 Minecraft。
+- 已删除并完成清理的 `activity` 目录不会出现在普通服控列表，但整合包页会显式读取
+  保留的活动槽配置；代理在线、目标停止且部署能力有效时可以直接重新部署新服务端。
 - 客户端签名发布只进入 `Test` 通道，不覆盖或推进 `Gray`、`Production`，也不覆盖
   已存在的 OSS 对象、签名清单或 Git 标签。
 - 可选的目录同步只创建或更新隐藏且 `Closed` 的活动记录。玩家可见性和正式开放仍需
