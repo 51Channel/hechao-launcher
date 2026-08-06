@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-05T23:51:27Z",
+  "generatedAtUtc": "2026-08-06T00:40:00Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,41 +45,41 @@
     },
     {
       "component": "api",
-      "version": "0.28.3-20260805T234331Z",
-      "releaseTag": "api-v0.28.3",
-      "releaseCommit": "ec91f1734f46d5d9220d78e95a88513731ca75c1",
-      "taggedAt": "2026-08-06T07:42:15+08:00",
+      "version": "0.28.4-20260806T002900Z",
+      "releaseTag": "api-v0.28.4",
+      "releaseCommit": "6df2765dde8e66503ba24f97529e8fd36285569a",
+      "taggedAt": "2026-08-06T08:26:44+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "ec91f1734f46d5d9220d78e95a88513731ca75c1"
+        "value": "6df2765dde8e66503ba24f97529e8fd36285569a"
       },
-      "deploymentState": "production-package-import-deleted-activity-target-redeployment-health-ready",
-      "historicalNote": "Production contains DeleteServerFiles records. 0.28.2 is the direct rollback target; 0.27.3 cannot deserialize the operation type and must not be used.",
+      "deploymentState": "production-package-import-deleted-activity-memory-limit-health-ready",
+      "historicalNote": "Production contains DeleteServerFiles records. 0.28.3 is the direct rollback target; 0.27.3 cannot deserialize the operation type and must not be used.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.28.3-20260805T234331Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.28.3-20260805T234331Z",
-          "size": 45947709,
-          "sha256": "2AA0DC281C25E4E592DC4DC6DADFF0FE9E7D285E05E791F22CDC00B1C145D59A",
+          "name": "hechao-launcher-api-0.28.4-20260806T002900Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.28.4-20260806T002900Z",
+          "size": 45964802,
+          "sha256": "076B7BFF056129709F45B78D06F0704FF102506862CDB1380F256B3736907181",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.28.3-20260805T234331Z/Hechao.Api",
-          "size": 105034180,
-          "sha256": "EBF43D83FD3D883464180C227D8B64701FC3FD851FBCFB48CF138EF86185DFB4",
+          "location": "/opt/hechao-launcher-api/releases/0.28.4-20260806T002900Z/Hechao.Api",
+          "size": 105043908,
+          "sha256": "BECAAF0660EC5E56C2DD26A2A0D52AE5417B635F4369A2BF70C577CD3917DD8D",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.28.2-20260805T222544Z"
+        "target": "/opt/hechao-launcher-api/releases/0.28.3-20260805T234331Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.28.3.md",
+        "docs/API_RELEASE_0.28.4.md",
         "docs/PACKAGE_IMPORT_OPERATIONS.md",
-        "docs/evidence/PACKAGE_IMPORT_DELETED_TARGET_REDEPLOYMENT_PRODUCTION_DEPLOYMENT_2026-08-06.json"
+        "docs/evidence/PACKAGE_IMPORT_DELETED_ACTIVITY_MEMORY_LIMIT_PRODUCTION_DEPLOYMENT_2026-08-06.json"
       ]
     },
     {
