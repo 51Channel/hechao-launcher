@@ -124,6 +124,9 @@ const publisherConnected = computed(() =>
 const activityTarget = computed(() =>
   controls.data.value?.targets.find(isPackageDeploymentTarget) ?? null
 );
+const packageDeploymentMaximumMemoryMiB = computed(() =>
+  activityTarget.value?.packageDeploymentMaximumMemoryMiB ?? null
+);
 const awaitingReviewCount = computed(() =>
   list.value.filter(item => item.status === "AwaitingReview").length
 );
@@ -155,7 +158,8 @@ const reviewValid = computed(() => {
     review.targetServerId === "activity" &&
     review.serverDisplayName.trim().length >= 2 &&
     Number.isInteger(memoryMiB) && memoryMiB >= 1024 && memoryMiB % 256 === 0 &&
-    memoryMiB <= (activityTarget.value?.settings?.maximumAllowedMemoryMiB ?? 0) &&
+    packageDeploymentMaximumMemoryMiB.value !== null &&
+    memoryMiB <= packageDeploymentMaximumMemoryMiB.value &&
     review.confirmation.trim() === exactConfirmation.value;
 });
 const uploadPercentage = computed(() =>
@@ -191,8 +195,9 @@ function initializeReview(record: PackageImportRecord, force = false): void {
   if (record.status !== "AwaitingReview" || !record.analysis) return;
   if (!force && reviewBaseline.value && reviewDirty.value) return;
   const metadata = record.analysis.metadata;
-  const targetMemory = activityTarget.value?.settings?.maximumMemoryMiB ?? 4096;
-  const hardLimit = activityTarget.value?.settings?.maximumAllowedMemoryMiB ?? targetMemory;
+  const hardLimit = packageDeploymentMaximumMemoryMiB.value ?? 4096;
+  const targetMemory = activityTarget.value?.settings?.maximumMemoryMiB ??
+    Math.min(4096, hardLimit);
   review.profileId = record.plan?.profileId ?? metadata.suggestedProfileId;
   review.profileDisplayName = record.plan?.profileDisplayName ?? metadata.displayName;
   review.version = record.plan?.version ?? metadata.version;
@@ -664,7 +669,7 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
                 <label>部署目标<select v-model="review.targetServerId" required><option value="activity">activity · owl5:25568</option></select></label>
                 <label>服务器显示名称<input v-model="review.serverDisplayName" minlength="2" maxlength="80" required></label>
                 <label>最低称号<select v-model="review.minimumTier"><option value="Member">{{ tierText('Member') }}</option><option value="Participant">{{ tierText('Participant') }}</option><option value="Collaborator">{{ tierText('Collaborator') }}</option></select></label>
-                <label>最大内存（GiB）<input v-model.number="review.maximumMemoryGiB" type="number" min="1" :max="(activityTarget?.settings?.maximumAllowedMemoryMiB || 1024) / 1024" step="0.25" required><span>硬上限 {{ formatBytes((activityTarget?.settings?.maximumAllowedMemoryMiB || 0) * 1024 * 1024) }}</span></label>
+                <label>最大内存（GiB）<input v-model.number="review.maximumMemoryGiB" type="number" min="1" :max="(packageDeploymentMaximumMemoryMiB || 1024) / 1024" step="0.25" required><span>硬上限 {{ formatBytes((packageDeploymentMaximumMemoryMiB || 0) * 1024 * 1024) }}</span></label>
                 <div class="package-review-options">
                   <label class="checkbox-row"><input v-model="review.preserveWorldData" type="checkbox"><span>保留当前活动服世界目录</span></label>
                   <label class="checkbox-row"><input v-model="review.syncServerCatalog" type="checkbox"><span>同步隐藏且关闭的服务器目录记录</span></label>

@@ -47,7 +47,43 @@ function quickSettings(maxPlayers: number) {
   };
 }
 
-function controlOverview(requestNumber: number) {
+interface ControlTargetMock {
+  serverId: string;
+  displayName: string;
+  agentId: string;
+  conflictGroup: string | null;
+  port: number;
+  agentConnected: boolean;
+  lastSeenAt: string;
+  online: boolean;
+  processId: number | null;
+  settings: ReturnType<typeof quickSettings> | null;
+  activeOperation: null;
+  packageDeploymentEnabled: boolean;
+  serverDeletionEnabled: boolean;
+  serverFilesPresent: boolean;
+  deletionCleanupPending: boolean;
+  packageDeploymentMaximumMemoryMiB: number | null;
+}
+
+interface ControlOverviewMock {
+  generatedAt: string;
+  agentFreshnessSeconds: number;
+  targets: ControlTargetMock[];
+}
+
+interface ControlTargetDetailMock {
+  generatedAt: string;
+  agentFreshnessSeconds: number;
+  target: ControlTargetMock & {
+    allowedCommandPrefixes: string[];
+    consoleTail: string;
+    consoleCapturedAt: string;
+  };
+  recentOperations: never[];
+}
+
+function controlOverview(requestNumber: number): ControlOverviewMock {
   return {
     generatedAt: "2026-08-02T04:00:00Z",
     agentFreshnessSeconds: 45,
@@ -66,7 +102,8 @@ function controlOverview(requestNumber: number) {
       packageDeploymentEnabled: true,
       serverDeletionEnabled: true,
       serverFilesPresent: true,
-      deletionCleanupPending: false
+      deletionCleanupPending: false,
+      packageDeploymentMaximumMemoryMiB: 8192
     }, {
       serverId: "fanstreet",
       displayName: "范街活动服",
@@ -82,12 +119,13 @@ function controlOverview(requestNumber: number) {
       packageDeploymentEnabled: false,
       serverDeletionEnabled: true,
       serverFilesPresent: true,
-      deletionCleanupPending: false
+      deletionCleanupPending: false,
+      packageDeploymentMaximumMemoryMiB: null
     }]
   };
 }
 
-function controlDetail(requestNumber: number) {
+function controlDetail(requestNumber: number): ControlTargetDetailMock {
   const lines = Array.from({ length: 80 }, (_, index) =>
     `[04:${String(index).padStart(2, "0")}:00 INFO] ${requestNumber > 1 ? "refreshed" : "initial"} log line ${index}`
   );
@@ -683,7 +721,9 @@ test("package import uploads a chunk and requires the exact deployment confirmat
           ...stopped.targets[0],
           online: false,
           processId: null,
-          serverFilesPresent: false
+          settings: null,
+          serverFilesPresent: false,
+          packageDeploymentMaximumMemoryMiB: 4096
         };
         await route.fulfill({ json: stopped });
         return true;

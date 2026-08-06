@@ -84,7 +84,8 @@ public sealed record AdminServerControlTargetSummaryRecord(
     bool PackageDeploymentEnabled = false,
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
-    bool DeletionCleanupPending = false);
+    bool DeletionCleanupPending = false,
+    int? PackageDeploymentMaximumMemoryMiB = null);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -104,7 +105,8 @@ public sealed record AdminServerControlTargetRecord(
     bool PackageDeploymentEnabled = false,
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
-    bool DeletionCleanupPending = false);
+    bool DeletionCleanupPending = false,
+    int? PackageDeploymentMaximumMemoryMiB = null);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,

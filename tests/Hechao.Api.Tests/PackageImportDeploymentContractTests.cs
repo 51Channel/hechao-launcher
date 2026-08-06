@@ -81,6 +81,14 @@ public sealed class PackageImportDeploymentContractTests
             "target.Target.ActiveOperation is not null",
             endpoints,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "ResolvePackageDeploymentMaximumMemoryMiB",
+            endpoints,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "server_files_present",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]

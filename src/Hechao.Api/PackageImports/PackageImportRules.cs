@@ -11,6 +11,7 @@ public static partial class PackageImportRules
     public const string ActivityVelocityTarget = "activity";
     public const string ActivityConflictGroup = "owl5-activity-slot";
     public const int ActivityPort = 25568;
+    public const int DeletedActivityTargetMaximumMemoryMiB = 4096;
 
     public static IReadOnlyDictionary<string, string[]> Validate(
         AdminPackageUploadCreateRequest request,
@@ -125,6 +126,27 @@ public static partial class PackageImportRules
             ActivityConflictGroup,
             StringComparison.Ordinal) &&
         port == ActivityPort;
+
+    public static int? ResolvePackageDeploymentMaximumMemoryMiB(
+        string serverId,
+        string agentId,
+        string? conflictGroup,
+        int port,
+        bool packageDeploymentEnabled,
+        bool serverFilesPresent,
+        ServerQuickSettings? settings)
+    {
+        if (settings?.MaximumAllowedMemoryMiB is { } reportedMaximum)
+        {
+            return reportedMaximum;
+        }
+
+        return packageDeploymentEnabled &&
+               !serverFilesPresent &&
+               IsActivityTarget(serverId, agentId, conflictGroup, port)
+            ? DeletedActivityTargetMaximumMemoryMiB
+            : null;
+    }
 
     public static bool IsValidPublisherAgentId(string? agentId) =>
         agentId is not null && PublisherAgentIdPattern().IsMatch(agentId);

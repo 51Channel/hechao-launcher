@@ -29,7 +29,8 @@ public sealed class ServerControlAdminPayloadContractTests
                 PackageDeploymentEnabled: true,
                 ServerDeletionEnabled: true,
                 ServerFilesPresent: false,
-                DeletionCleanupPending: true)]);
+                DeletionCleanupPending: true,
+                PackageDeploymentMaximumMemoryMiB: 4096)]);
 
         var json = JsonSerializer.Serialize(overview, JsonOptions);
 
@@ -41,6 +42,10 @@ public sealed class ServerControlAdminPayloadContractTests
         Assert.Contains("\"serverDeletionEnabled\":true", json, StringComparison.Ordinal);
         Assert.Contains("\"serverFilesPresent\":false", json, StringComparison.Ordinal);
         Assert.Contains("\"deletionCleanupPending\":true", json, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"packageDeploymentMaximumMemoryMiB\":4096",
+            json,
+            StringComparison.Ordinal);
     }
 
     [Fact]

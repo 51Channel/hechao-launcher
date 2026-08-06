@@ -84,6 +84,54 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
+    public void ResolvePackageDeploymentMaximumMemory_UsesReportedLimitFirst()
+    {
+        var settings = new ServerQuickSettings(
+            20, 10, 8, "normal", false, 2048, 4096, 8192);
+
+        var maximum = PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+            "other",
+            "owl9",
+            null,
+            25565,
+            packageDeploymentEnabled: false,
+            serverFilesPresent: true,
+            settings);
+
+        Assert.Equal(8192, maximum);
+    }
+
+    [Fact]
+    public void ResolvePackageDeploymentMaximumMemory_AllowsOnlyDeletedActivitySlotFallback()
+    {
+        static int? Resolve(
+            string serverId = PackageImportRules.ActivityServerId,
+            string agentId = PackageImportRules.ActivityAgentId,
+            string? conflictGroup = PackageImportRules.ActivityConflictGroup,
+            int port = PackageImportRules.ActivityPort,
+            bool packageDeploymentEnabled = true,
+            bool serverFilesPresent = false) =>
+            PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+                serverId,
+                agentId,
+                conflictGroup,
+                port,
+                packageDeploymentEnabled,
+                serverFilesPresent,
+                settings: null);
+
+        Assert.Equal(
+            PackageImportRules.DeletedActivityTargetMaximumMemoryMiB,
+            Resolve());
+        Assert.Null(Resolve(serverFilesPresent: true));
+        Assert.Null(Resolve(packageDeploymentEnabled: false));
+        Assert.Null(Resolve(serverId: "fanstreet"));
+        Assert.Null(Resolve(agentId: "owl9"));
+        Assert.Null(Resolve(conflictGroup: "other"));
+        Assert.Null(Resolve(port: 25569));
+    }
+
+    [Fact]
     public void ValidatePublisherHeartbeat_RejectsClockDriftAndInvalidAgent()
     {
         var now = DateTimeOffset.Parse("2026-08-03T08:00:00Z");

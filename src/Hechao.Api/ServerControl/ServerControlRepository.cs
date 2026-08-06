@@ -211,6 +211,15 @@ public sealed class ServerControlRepository(
             var lastSeenAt = new DateTimeOffset(reader.GetDateTime(5));
             var serverFilesPresent = reader.GetBoolean(11);
             var deletionCleanupPending = reader.GetBoolean(12);
+            var agentId = reader.GetString(2);
+            var conflictGroup = reader.IsDBNull(3) ? null : reader.GetString(3);
+            var port = reader.GetInt32(4);
+            var settings = reader.IsDBNull(8)
+                ? null
+                : JsonSerializer.Deserialize<ServerQuickSettings>(
+                    reader.GetString(8),
+                    JsonOptions);
+            var packageDeploymentEnabled = reader.GetBoolean(9);
             var activeOperation = activeByTarget.GetValueOrDefault(serverId);
             if (!ServerControlTargetVisibility.IncludeInOverview(
                     serverFilesPresent,
@@ -224,24 +233,28 @@ public sealed class ServerControlRepository(
             targets.Add(new AdminServerControlTargetSummaryRecord(
                 serverId,
                 reader.GetString(1),
-                reader.GetString(2),
-                reader.IsDBNull(3) ? null : reader.GetString(3),
-                reader.GetInt32(4),
+                agentId,
+                conflictGroup,
+                port,
                 now - lastSeenAt <=
                     TimeSpan.FromSeconds(_options.AgentFreshnessSeconds),
                 lastSeenAt,
                 reader.GetBoolean(6),
                 reader.IsDBNull(7) ? null : reader.GetInt32(7),
-                reader.IsDBNull(8)
-                    ? null
-                    : JsonSerializer.Deserialize<ServerQuickSettings>(
-                        reader.GetString(8),
-                        JsonOptions),
+                settings,
                 activeOperation,
-                reader.GetBoolean(9),
+                packageDeploymentEnabled,
                 reader.GetBoolean(10),
                 serverFilesPresent,
-                deletionCleanupPending));
+                deletionCleanupPending,
+                PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+                    serverId,
+                    agentId,
+                    conflictGroup,
+                    port,
+                    packageDeploymentEnabled,
+                    serverFilesPresent,
+                    settings)));
         }
 
         return new AdminServerControlOverview(
@@ -295,32 +308,47 @@ public sealed class ServerControlRepository(
         }
 
         var lastSeenAt = new DateTimeOffset(reader.GetDateTime(5));
+        var targetServerId = reader.GetString(0);
+        var targetAgentId = reader.GetString(2);
+        var targetConflictGroup = reader.IsDBNull(3) ? null : reader.GetString(3);
+        var targetPort = reader.GetInt32(4);
+        var targetSettings = reader.IsDBNull(8)
+            ? null
+            : JsonSerializer.Deserialize<ServerQuickSettings>(
+                reader.GetString(8),
+                JsonOptions);
+        var packageDeploymentEnabled = reader.GetBoolean(12);
+        var serverFilesPresent = reader.GetBoolean(14);
         var target = new AdminServerControlTargetRecord(
-            reader.GetString(0),
+            targetServerId,
             reader.GetString(1),
-            reader.GetString(2),
-            reader.IsDBNull(3) ? null : reader.GetString(3),
-            reader.GetInt32(4),
+            targetAgentId,
+            targetConflictGroup,
+            targetPort,
             now - lastSeenAt <=
                 TimeSpan.FromSeconds(_options.AgentFreshnessSeconds),
             lastSeenAt,
             reader.GetBoolean(6),
             reader.IsDBNull(7) ? null : reader.GetInt32(7),
-            reader.IsDBNull(8)
-                ? null
-                : JsonSerializer.Deserialize<ServerQuickSettings>(
-                    reader.GetString(8),
-                    JsonOptions),
+            targetSettings,
             reader.GetFieldValue<string[]>(9),
             reader.GetString(10),
             reader.IsDBNull(11)
                 ? null
                 : new DateTimeOffset(reader.GetDateTime(11)),
             activeOperation,
-            reader.GetBoolean(12),
+            packageDeploymentEnabled,
             reader.GetBoolean(13),
-            reader.GetBoolean(14),
-            reader.GetBoolean(15));
+            serverFilesPresent,
+            reader.GetBoolean(15),
+            PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+                targetServerId,
+                targetAgentId,
+                targetConflictGroup,
+                targetPort,
+                packageDeploymentEnabled,
+                serverFilesPresent,
+                targetSettings));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,

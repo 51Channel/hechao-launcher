@@ -108,7 +108,15 @@ internal sealed class PackageImportOrchestrationRepository(
             return PackageImportOrchestrationOutcome.Waiting;
         }
 
-        if (target.Settings?.MaximumAllowedMemoryMiB is not { } hardLimit ||
+        var hardLimit = PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+            target.ServerId,
+            target.AgentId,
+            target.ConflictGroup,
+            target.Port,
+            target.PackageDeploymentEnabled,
+            target.ServerFilesPresent,
+            target.Settings);
+        if (hardLimit is null ||
             package.Plan.MaximumMemoryMiB > hardLimit)
         {
             await FailPackageAsync(
@@ -123,7 +131,7 @@ internal sealed class PackageImportOrchestrationRepository(
             return PackageImportOrchestrationOutcome.Progressed;
         }
 
-        var initialMemoryMiB = target.Settings.InitialMemoryMiB ??
+        var initialMemoryMiB = target.Settings?.InitialMemoryMiB ??
             Math.Min(2048, package.Plan.MaximumMemoryMiB);
         initialMemoryMiB = Math.Min(initialMemoryMiB, package.Plan.MaximumMemoryMiB);
         if (initialMemoryMiB < 512 || initialMemoryMiB % 256 != 0)
@@ -451,7 +459,8 @@ internal sealed class PackageImportOrchestrationRepository(
     {
         const string sql = """
             SELECT server_id, agent_id, conflict_group, port, reported_online,
-                   last_seen_at, package_deployment_enabled, settings::text
+                   last_seen_at, package_deployment_enabled, settings::text,
+                   server_files_present
             FROM launcher.server_control_targets
             WHERE server_id = $1
             FOR UPDATE;
@@ -474,7 +483,8 @@ internal sealed class PackageImportOrchestrationRepository(
             reader.GetBoolean(6),
             reader.IsDBNull(7)
                 ? null
-                : Deserialize<ServerQuickSettings>(reader.GetString(7)));
+                : Deserialize<ServerQuickSettings>(reader.GetString(7)),
+            reader.GetBoolean(8));
     }
 
     private static async Task<bool> HasActiveCommandAsync(
@@ -1107,7 +1117,8 @@ internal sealed class PackageImportOrchestrationRepository(
         bool Online,
         DateTimeOffset LastSeenAt,
         bool PackageDeploymentEnabled,
-        ServerQuickSettings? Settings);
+        ServerQuickSettings? Settings,
+        bool ServerFilesPresent);
 
     private sealed record DeploymentCommandPayload(
         string? ConsoleCommand = null,

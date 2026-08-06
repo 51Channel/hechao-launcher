@@ -308,6 +308,7 @@ export interface ControlTargetSummary {
   serverDeletionEnabled: boolean;
   serverFilesPresent: boolean;
   deletionCleanupPending: boolean;
+  packageDeploymentMaximumMemoryMiB: number | null;
 }
 
 export interface ControlTarget extends ControlTargetSummary {
