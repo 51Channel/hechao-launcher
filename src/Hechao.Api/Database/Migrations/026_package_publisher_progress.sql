@@ -7,8 +7,8 @@ ALTER TABLE launcher.package_imports
     ADD COLUMN publisher_progress_sampled_at timestamp with time zone,
     ADD CONSTRAINT package_imports_publisher_progress_phase_check CHECK (
         publisher_progress_phase IS NULL OR publisher_progress_phase IN (
-            'DownloadingArchive', 'ExtractingArchive', 'BuildingDistribution',
-            'PublishingObjects', 'Finalizing'
+            'WaitingForWorkingSpace', 'DownloadingArchive', 'ExtractingArchive',
+            'BuildingDistribution', 'PublishingObjects', 'Finalizing'
         )
     ),
     ADD CONSTRAINT package_imports_publisher_progress_values_check CHECK (

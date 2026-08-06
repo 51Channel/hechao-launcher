@@ -51,6 +51,7 @@ const phaseDefinitions = [
   { label: "测试通道", statuses: ["Finalizing", "Completed"] }
 ] as const;
 const publisherPhaseLabels = {
+  WaitingForWorkingSpace: "等待 Publisher 工作空间",
   DownloadingArchive: "下载客户端归档",
   ExtractingArchive: "解压客户端文件",
   BuildingDistribution: "生成分发清单",
@@ -199,6 +200,7 @@ const publisherProgress = computed(() =>
 const publisherProgressPercentage = computed<number | null>(() => {
   const progress = publisherProgress.value;
   if (!progress) return null;
+  if (progress.phase === "WaitingForWorkingSpace") return null;
   if (progress.totalObjects > 0) {
     return Math.min(100, Math.round(
       progress.completedObjects / progress.totalObjects * 100
@@ -214,6 +216,10 @@ const publisherProgressPercentage = computed<number | null>(() => {
 const publisherProgressDetail = computed(() => {
   const progress = publisherProgress.value;
   if (!progress) return "等待发布代理上报";
+  if (progress.phase === "WaitingForWorkingSpace") {
+    return `可用 ${formatBytes(progress.processedBytes)} · ` +
+      `需要 ${formatBytes(progress.totalBytes)}`;
+  }
   if (progress.phase === "PublishingObjects") {
     return `${progress.completedObjects} / ${progress.totalObjects} 个对象 · ` +
       `${formatBytes(progress.processedBytes)} / ${formatBytes(progress.totalBytes)}`;

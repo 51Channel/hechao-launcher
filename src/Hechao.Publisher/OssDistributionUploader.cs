@@ -11,7 +11,7 @@ internal sealed record OssUploadOptions(
     string Endpoint,
     string ObjectPrefix,
     string CredentialPath,
-    string CredentialEntropyLabel,
+    string? CredentialEntropyLabel,
     int Parallelism);
 
 internal sealed record OssUploadResult(

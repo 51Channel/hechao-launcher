@@ -7,6 +7,11 @@ public sealed class OssCredentialStoreTests
     [Fact]
     public void ProtectAndLoad_RoundTripsCredentialWithoutPlaintextFile()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         const string entropyLabel = "Hechao.Publisher.Tests/OssCredential/v1";
         using var directory = new TemporaryDirectory();
         var encryptedPath = Path.Combine(directory.Path, "credential.dpapi");
@@ -42,6 +47,11 @@ public sealed class OssCredentialStoreTests
     [Fact]
     public void Protect_RefusesToOverwriteExistingCredential()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         const string entropyLabel = "Hechao.Publisher.Tests/OssCredential/v1";
         using var directory = new TemporaryDirectory();
         var encryptedPath = Path.Combine(directory.Path, "credential.dpapi");
@@ -66,6 +76,36 @@ public sealed class OssCredentialStoreTests
                 entropyLabel,
                 DateTimeOffset.UtcNow,
                 string.Empty)));
+    }
+
+    [Fact]
+    public void Load_ReadsSystemdCredentialJson()
+    {
+        using var directory = new TemporaryDirectory();
+        var credentialPath = Path.Combine(directory.Path, "oss-credential");
+        File.WriteAllText(
+            credentialPath,
+            """
+            {
+              "accessKeyId": "TestAccessKeyId012345",
+              "accessKeySecret": "TestAccessKeySecret0123456789"
+            }
+            """);
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(
+                credentialPath,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
+        var credential = OssCredentialStore.Load(
+            credentialPath,
+            entropyLabel: null);
+
+        Assert.Equal("TestAccessKeyId012345", credential.AccessKeyId);
+        Assert.Equal(
+            "TestAccessKeySecret0123456789",
+            credential.AccessKeySecret);
     }
 
     private sealed class TemporaryDirectory : IDisposable

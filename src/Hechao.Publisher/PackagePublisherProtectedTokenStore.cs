@@ -6,7 +6,7 @@ internal static partial class PackagePublisherProtectedTokenStore
 {
     internal static void Protect(string token, string outputPath)
     {
-        if (!OperatingSystem.IsWindows() || !TokenPattern().IsMatch(token))
+        if (!OperatingSystem.IsWindows() || !IsValidToken(token))
         {
             throw new PublisherUsageException(
                 "The package publisher token is invalid or DPAPI is unavailable.");
@@ -60,7 +60,7 @@ internal static partial class PackagePublisherProtectedTokenStore
                 optionalEntropy: null,
                 DataProtectionScope.CurrentUser);
             var token = Encoding.UTF8.GetString(clearBytes);
-            if (!TokenPattern().IsMatch(token))
+            if (!IsValidToken(token))
             {
                 throw new InvalidDataException(
                     "The protected package publisher token is invalid.");
@@ -77,6 +77,9 @@ internal static partial class PackagePublisherProtectedTokenStore
             }
         }
     }
+
+    internal static bool IsValidToken(string token) =>
+        TokenPattern().IsMatch(token);
 
     [GeneratedRegex("^[A-Za-z0-9_-]{32,256}$", RegexOptions.CultureInvariant)]
     private static partial Regex TokenPattern();

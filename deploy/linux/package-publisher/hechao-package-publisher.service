@@ -1,0 +1,53 @@
+[Unit]
+Description=Hechao Package Publisher Agent
+Wants=network-online.target
+After=network-online.target hechao-launcher-api.service
+
+[Service]
+Type=simple
+User=hechao-publisher
+Group=hechao-publisher
+WorkingDirectory=/var/lib/hechao-package-publisher
+ExecStart=/opt/hechao-package-publisher/current/Hechao.Publisher run-package-agent --config /etc/hechao-package-publisher/agent.json
+LoadCredentialEncrypted=publisher-token:/etc/credstore.encrypted/hechao-package-publisher/publisher-token.cred
+LoadCredentialEncrypted=distribution-signing-key:/etc/credstore.encrypted/hechao-package-publisher/distribution-signing-key.cred
+LoadCredentialEncrypted=oss-publisher-credential:/etc/credstore.encrypted/hechao-package-publisher/oss-publisher-credential.cred
+StateDirectory=hechao-package-publisher
+StateDirectoryMode=0700
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+KillSignal=SIGTERM
+UMask=0077
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+CPUQuota=150%
+MemoryHigh=1G
+MemoryMax=1536M
+TasksMax=256
+Environment=DOTNET_EnableDiagnostics=0
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectProc=invisible
+ProcSubset=pid
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

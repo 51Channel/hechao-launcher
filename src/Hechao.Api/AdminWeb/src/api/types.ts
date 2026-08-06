@@ -458,7 +458,8 @@ export interface PackageImportDeploymentPlan {
 }
 
 export type PackagePublisherProgressPhase =
-  | "DownloadingArchive" | "ExtractingArchive" | "BuildingDistribution"
+  | "WaitingForWorkingSpace" | "DownloadingArchive"
+  | "ExtractingArchive" | "BuildingDistribution"
   | "PublishingObjects" | "Finalizing";
 
 export interface PackagePublisherProgress {

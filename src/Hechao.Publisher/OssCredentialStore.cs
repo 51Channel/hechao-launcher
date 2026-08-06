@@ -117,17 +117,22 @@ internal static class OssCredentialStore
     }
 
     public static OssCredential Load(
-        string encryptedPath,
-        string entropyLabel)
+        string credentialPath,
+        string? entropyLabel)
     {
+        if (entropyLabel is null)
+        {
+            return LoadSystemdCredential(credentialPath);
+        }
+
         if (!OperatingSystem.IsWindows())
         {
             throw new PublisherUsageException("DPAPI credentials can only be decrypted on Windows.");
         }
 
         ValidateEntropyLabel(entropyLabel);
-        encryptedPath = Path.GetFullPath(encryptedPath);
-        var file = new FileInfo(encryptedPath);
+        credentialPath = Path.GetFullPath(credentialPath);
+        var file = new FileInfo(credentialPath);
         if (!file.Exists ||
             file.Length is <= 0 or > MaximumCredentialBytes ||
             (file.Attributes & FileAttributes.ReparsePoint) != 0)
@@ -135,7 +140,7 @@ internal static class OssCredentialStore
             throw new PublisherUsageException("The encrypted OSS credential file is invalid.");
         }
 
-        var ciphertext = File.ReadAllBytes(encryptedPath);
+        var ciphertext = File.ReadAllBytes(credentialPath);
         byte[]? plaintext = null;
         try
         {
@@ -165,7 +170,33 @@ internal static class OssCredentialStore
         }
     }
 
-    private static void ValidateCredential(OssCredential credential)
+    private static OssCredential LoadSystemdCredential(string path)
+    {
+        var plaintext = PackagePublisherSystemdCredentialStore.ReadBytes(
+            path,
+            MaximumCredentialBytes,
+            "OSS credential");
+        try
+        {
+            var credential = JsonSerializer.Deserialize<OssCredential>(
+                plaintext,
+                SerializerOptions) ?? throw new PublisherUsageException(
+                "The OSS credential payload is empty.");
+            ValidateCredential(credential);
+            return credential;
+        }
+        catch (JsonException exception)
+        {
+            throw new PublisherUsageException(
+                $"The OSS credential payload is invalid: {exception.Message}");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+        }
+    }
+
+    internal static void ValidateCredential(OssCredential credential)
     {
         if (!IsAsciiAlphaNumeric(credential.AccessKeyId, 8, 128) ||
             !IsAsciiAlphaNumeric(credential.AccessKeySecret, 16, 128))

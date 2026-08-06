@@ -42,7 +42,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
 | 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | 当前基线为完整解决方案 `680/680`、API `287/287`、Publisher `39/39`、ServerControlAgent `56/56`、Vue Vitest `8/8`、Playwright `16/16`；Velocity、Lobby、LuckPerms 和指标代理保持各自既有正式基线 |
+| 自动测试 | 已完成 | 当前候选为完整解决方案 `693/693`、API `289/289`、Publisher `50/50`、ServerControlAgent `56/56`、Vue Vitest `8/8`、Playwright `17/17`；Velocity、Lobby、LuckPerms 和指标代理保持各自既有正式基线 |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.14.2` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 

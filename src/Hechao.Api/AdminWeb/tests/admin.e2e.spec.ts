@@ -845,11 +845,11 @@ test("package publishing shows real progress and estimates remaining time", asyn
     completedAt: null,
     revision: 9,
     publisherProgress: {
-      phase: "PublishingObjects",
-      completedObjects: 20,
-      totalObjects: 100,
-      processedBytes: 2_097_152,
-      totalBytes: 10_485_760,
+      phase: "WaitingForWorkingSpace",
+      completedObjects: 0,
+      totalObjects: 0,
+      processedBytes: 3_650_000_000,
+      totalBytes: 7_311_430_775,
       sampledAt: "2026-08-06T04:00:00Z"
     }
   };
@@ -870,10 +870,14 @@ test("package publishing shows real progress and estimates remaining time", asyn
           publisherProgress: detailReads === 1
             ? publishingRecord.publisherProgress
             : {
-                ...publishingRecord.publisherProgress,
-                completedObjects: 40,
-                processedBytes: 4_194_304,
-                sampledAt: "2026-08-06T04:00:03Z"
+                phase: "PublishingObjects",
+                completedObjects: detailReads === 2 ? 20 : 40,
+                totalObjects: 100,
+                processedBytes: detailReads === 2 ? 2_097_152 : 4_194_304,
+                totalBytes: 10_485_760,
+                sampledAt: detailReads === 2
+                  ? "2026-08-06T04:00:00Z"
+                  : "2026-08-06T04:00:03Z"
               }
         } });
         return true;
@@ -886,7 +890,10 @@ test("package publishing shows real progress and estimates remaining time", asyn
   await page.getByRole("button", { name: "查看整合包任务" }).click();
   const drawer = page.locator(".package-import-drawer");
   const progressbar = drawer.getByRole("progressbar", { name: "客户端发布进度" });
-  await expect(progressbar).toHaveAttribute("aria-valuenow", "20");
+  await expect(progressbar).not.toHaveAttribute("aria-valuenow", /.+/);
+  await expect(drawer.getByText("等待 Publisher 工作空间")).toBeVisible();
+  await expect(drawer.getByText(/可用 3\.4 GiB · 需要 6\.8 GiB/)).toBeVisible();
+  await expect(progressbar).toHaveAttribute("aria-valuenow", "20", { timeout: 7_000 });
   await expect(drawer.getByText("正在计算剩余时间")).toBeVisible();
   await expect(progressbar).toHaveAttribute("aria-valuenow", "40", { timeout: 7_000 });
   await expect(drawer.getByText("40% · 预计剩余 9 秒")).toBeVisible();

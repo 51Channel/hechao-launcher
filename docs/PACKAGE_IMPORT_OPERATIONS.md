@@ -4,10 +4,11 @@
 > ServerControlAgent `0.4.1`、owl9 ServerControlAgent `0.4.0`。
 >
 > 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；
+> Publisher 已迁移到 API 同机阿里云 systemd，Windows 计划任务保持停止回滚状态。
 > Gray/Production 未变化。测试服务端随后归档，原活动服从受控回滚目录恢复并保持停止。
 > `0.4.1` 保留目标级目录访问门闩、Windows 瞬时目录占用重试和受控服务端目录删除，
-> 并上报 VPS 物理内存。当前完整解决方案 `680/680`、API `287/287`、Publisher `39/39`、
-> ServerControlAgent `56/56`、Vitest `8/8` 和 Playwright `16/16` 已通过。
+> 并上报 VPS 物理内存。当前候选完整解决方案 `693/693`、API `289/289`、Publisher
+> `50/50`、ServerControlAgent `56/56`、Vitest `8/8` 和 Playwright `17/17` 已通过。
 
 本功能允许管理员在后台上传一个 ZIP 或 MRPACK 整合包，先自动识别并拆分客户端与
 服务端，再经人工确认完成客户端私有 OSS 发布和 owl5 活动槽服务端部署。自动识别只
@@ -72,7 +73,7 @@ if not defined HECHAO_MANAGED_START pause
 3. 管理员填写档案 ID、显示名、语义版本、最低称号、最大内存、世界保留策略和目录
    同步策略，并输入任务专属确认文本。页面同时显示 VPS 总内存和推荐区间；超出推荐
    区间会提示但仍可提交。
-4. 独立 Windows Publisher Agent 领取带租约的任务，下载客户端归档，使用现有生产
+4. 独立 Publisher Agent 领取带租约的任务，下载客户端归档，使用现有生产
    P-256 私钥生成签名清单，并以内容 SHA-256 上传缺失 OSS 对象。已存在对象必须同时
    匹配长度和摘要元数据，否则拒绝覆盖。
 5. API 验证签名清单、公钥信任、档案元数据和对象闭合关系，创建不可变发布记录，并
@@ -91,13 +92,14 @@ Publisher 下载客户端归档时最多执行三次可续传重试；API 重启
 对象数和字节数。后台沿用 3 秒任务轮询显示真实进度条；下载归档和 OSS 对象阶段显示
 百分比，解压与构建阶段显示不确定进度。预计剩余时间只在同一阶段取得两个递增样本后
 计算，样本不足时明确显示“正在计算剩余时间”。OSS 中已存在且通过长度、摘要复核的
-对象同样计入已处理进度，失败或取消任务保留最后一次进度用于排查。
+对象同样计入已处理进度，失败或取消任务保留最后一次进度用于排查。Publisher 因磁盘
+门禁等待工作空间时只显示当前可用量和所需量，不把磁盘空闲量伪装成发布百分比或 ETA。
 
 ## 4. API 配置
 
-先使用 Publisher 令牌脚本生成 DPAPI `CurrentUser` 密文。脚本必须在将要运行计划任务
-的同一 Windows 账号下，以提升权限的 PowerShell 7 执行；它只输出令牌文件路径和
-SHA-256，不输出明文令牌：
+首次启用时使用 Publisher 令牌脚本生成 DPAPI `CurrentUser` 密文。脚本必须在运行
+Windows 回滚代理的同一账号下，以提升权限的 PowerShell 7 执行；它只输出令牌文件
+路径和 SHA-256，不输出明文令牌：
 
 ```powershell
 pwsh -NoLogo -NoProfile -File `
@@ -130,7 +132,64 @@ sudo bash deploy/linux/configure-package-imports.sh \
   /etc/hechao-launcher-api/environment false
 ```
 
-## 5. Publisher Agent 安装
+## 5. Publisher Agent 安装与迁移
+
+### 5.1 阿里云 Linux 主实例
+
+Publisher `1.1.0` 支持 Linux `systemd-credentials`。生产主实例使用独立
+`hechao-publisher` 无登录账户，程序、配置、状态和凭据分别位于：
+
+- `/opt/hechao-package-publisher`；
+- `/etc/hechao-package-publisher/agent.json`；
+- `/var/lib/hechao-package-publisher`；
+- `/etc/credstore.encrypted/hechao-package-publisher`。
+
+配置使用
+[`package-publisher-agent.example.json`](../deploy/linux/package-publisher/package-publisher-agent.example.json)
+作为模板。`tokenPath`、`signingKeyPath` 和 `ossCredentialPath` 只能填写三个固定的
+systemd 凭据名，不能填写绝对路径或明文。`minimumFreeBytes` 是任务完成后仍需保留的
+磁盘余量；实际领取后还会按
+`压缩包 + 2 * 压缩包 * workingSpaceExpansionMultiplier` 预留工作空间。空间不足时
+代理继续心跳并持有租约等待，不下载、不解压，也不把任务误报为失败。
+
+先构建自包含单文件 `linux-x64` 制品，并记录大小和 SHA-256。现有 DPAPI 令牌、签名
+私钥和 OSS 凭据只能通过下面的 PowerShell 7 脚本迁移；脚本在内存中解密后直接写入
+SSH 标准输入，由远端 `systemd-creds --with-key=host` 加密，不创建本地或远端明文
+中间文件：
+
+```powershell
+pwsh -NoLogo -NoProfile -File `
+  .\deploy\windows\package-publisher\Install-PackagePublisherSystemdCredentials.ps1 `
+  -WindowsConfiguration <现有 Windows agent.json> `
+  -Remote root@<阿里云主机> `
+  -IdentityFile <运维私钥> `
+  -KnownHostsFile <固定主机密钥文件>
+```
+
+迁移签名私钥到 API 所在主机会扩大单机失陷影响面。必须保留独立加密恢复材料，限制
+SSH root 登录，使用最小权限 Publisher RAM 凭据，并保持 API 进程无权读取 Publisher
+的加密凭据目录。加密凭据与当前阿里云系统主机密钥绑定，不能把三个 `.cred` 文件单独
+复制到另一台机器当作恢复方案。
+
+使用实际制品、配置、SHA-256、发布 ID 和仓库中的 systemd 单元安装。默认只暂存且不
+启用服务；只有确认发布队列为空、本机 Windows 代理已停止后，才加 `--start`：
+
+```bash
+sudo bash deploy/linux/package-publisher/install-package-publisher.sh \
+  <Hechao.Publisher> <agent.json> <sha256> <release-id> \
+  deploy/linux/package-publisher/hechao-package-publisher.service
+
+sudo bash deploy/linux/package-publisher/install-package-publisher.sh \
+  <Hechao.Publisher> <agent.json> <sha256> <release-id> \
+  deploy/linux/package-publisher/hechao-package-publisher.service --start
+```
+
+切换成功必须同时满足：Linux 服务 `active`、版本心跳为 `1.1.0`、队列没有
+`QueuedForPublishing`/`PublishingClient`、API 健康与就绪仍为 `200`、journal 无
+秘密或持续错误，并通过一次系统服务重启恢复。失败时先停止并禁用 Linux 服务，再恢复
+本机计划任务；同一时刻禁止两端共同领取任务。
+
+### 5.2 Windows 回滚实例
 
 复制
 [`package-publisher-agent.example.json`](../deploy/windows/package-publisher/package-publisher-agent.example.json)
@@ -148,9 +207,10 @@ pwsh -NoLogo -NoProfile -File `
 ```
 
 安装器核对 EXE、配置和三个受保护输入，备份旧 EXE、配置与计划任务，再原子替换并收紧
-ACL。任一步失败会恢复旧文件和旧任务。默认不启动代理；只有完成只读配置复核后才显式
-加 `-StartAgent`，或由管理员手工启动计划任务。计划任务使用 DPAPI 同一用户登录会话，
-更换运行账号会导致启动失败。
+ACL。任一步失败会恢复旧文件和旧任务。迁移完成后 Windows 计划任务保持停止，但不删除
+EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，先停用 Linux 服务，再由
+原账号手工恢复 Windows 计划任务。计划任务使用 DPAPI 同一用户登录会话，更换运行账号
+会导致启动失败。
 
 ## 6. owl5 代理配置
 

@@ -80,6 +80,7 @@ public sealed record PackageImportDeploymentPlanRecord(
 
 public enum PackagePublisherProgressPhase
 {
+    WaitingForWorkingSpace,
     DownloadingArchive,
     ExtractingArchive,
     BuildingDistribution,

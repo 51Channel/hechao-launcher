@@ -65,7 +65,16 @@ internal sealed class PackagePublisherWorker(
                 SetActiveImportId(claim.Job.ImportId);
                 try
                 {
-                    await ProcessJobAsync(claim.Job, cancellationToken);
+                    var progress = new PackagePublisherProgressReporter(
+                        apiClient,
+                        claim.Job,
+                        configuration.AgentId,
+                        WriteStatus);
+                    await WaitForWorkingSpaceAsync(
+                        claim.Job,
+                        progress,
+                        cancellationToken);
+                    await ProcessJobAsync(claim.Job, progress, cancellationToken);
                 }
                 finally
                 {
@@ -84,19 +93,56 @@ internal sealed class PackagePublisherWorker(
         }
     }
 
+    private async Task WaitForWorkingSpaceAsync(
+        PackagePublisherJobDelivery job,
+        PackagePublisherProgressReporter progress,
+        CancellationToken cancellationToken)
+    {
+        var nextReportAt = DateTimeOffset.MinValue;
+        while (true)
+        {
+            var snapshot = PackagePublisherWorkingSpace.Inspect(
+                configuration.StateDirectory,
+                job,
+                configuration.MinimumFreeBytes,
+                configuration.WorkingSpaceExpansionMultiplier);
+            if (snapshot.AvailableBytes >= snapshot.RequiredBytes)
+            {
+                return;
+            }
+
+            await progress.ReportAsync(
+                PackagePublisherProgressPhase.WaitingForWorkingSpace,
+                0,
+                0,
+                Math.Min(snapshot.AvailableBytes, snapshot.RequiredBytes),
+                snapshot.RequiredBytes,
+                force: nextReportAt == DateTimeOffset.MinValue,
+                cancellationToken);
+
+            var now = DateTimeOffset.UtcNow;
+            if (now >= nextReportAt)
+            {
+                WriteStatus(
+                    "working_space_wait",
+                    $"import={job.ImportId:D} required_bytes={snapshot.RequiredBytes} " +
+                    $"available_bytes={snapshot.AvailableBytes}");
+                nextReportAt = now.AddMinutes(5);
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+        }
+    }
+
     private async Task ProcessJobAsync(
         PackagePublisherJobDelivery job,
+        PackagePublisherProgressReporter progress,
         CancellationToken cancellationToken)
     {
         var jobRoot = GetJobRoot(job.ImportId);
         var archivePath = Path.Combine(jobRoot, "client.zip");
         var sourceDirectory = Path.Combine(jobRoot, "source");
         var distributionDirectory = Path.Combine(jobRoot, "distribution");
-        var progress = new PackagePublisherProgressReporter(
-            apiClient,
-            job,
-            configuration.AgentId,
-            WriteStatus);
         try
         {
             Directory.CreateDirectory(jobRoot);

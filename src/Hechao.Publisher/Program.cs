@@ -50,6 +50,9 @@ internal static class PublisherProgram
                 case "protect-package-agent-token":
                     ProtectPackageAgentToken(options);
                     return 0;
+                case "validate-package-agent":
+                    ValidatePackageAgent(options);
+                    return 0;
                 case "run-package-agent":
                     await RunPackageAgentAsync(options);
                     return 0;
@@ -343,9 +346,11 @@ internal static class PublisherProgram
     {
         var configuration = PackagePublisherAgentConfiguration.Load(
             options.Required("config"));
+        configuration.ValidateRuntimePlatform();
         Directory.CreateDirectory(configuration.StateDirectory);
-        var token = PackagePublisherProtectedTokenStore.Read(
-            configuration.TokenPath);
+        var token = configuration.UsesWindowsDpapi
+            ? PackagePublisherProtectedTokenStore.Read(configuration.TokenPath)
+            : PackagePublisherSystemdCredentialStore.ReadToken(configuration.TokenPath);
         var handler = new SocketsHttpHandler
         {
             AllowAutoRedirect = false,
@@ -380,6 +385,30 @@ internal static class PublisherProgram
         };
         AppDomain.CurrentDomain.ProcessExit += (_, _) => cancellation.Cancel();
         await worker.RunAsync(cancellation.Token);
+    }
+
+    private static void ValidatePackageAgent(CommandOptions options)
+    {
+        var configuration = PackagePublisherAgentConfiguration.Load(
+            options.Required("config"));
+        configuration.ValidateRuntimePlatform();
+        var token = configuration.UsesWindowsDpapi
+            ? PackagePublisherProtectedTokenStore.Read(configuration.TokenPath)
+            : PackagePublisherSystemdCredentialStore.ReadToken(configuration.TokenPath);
+        if (!PackagePublisherProtectedTokenStore.IsValidToken(token))
+        {
+            throw new PublisherUsageException(
+                "The package publisher token is invalid.");
+        }
+
+        using var signingKey = new SigningKeyInput(
+            configuration.SigningKeyPath,
+            configuration.SigningKeyEntropyLabel,
+            configuration.SigningKeyBlobSha256?.ToUpperInvariant()).Load();
+        _ = OssCredentialStore.Load(
+            configuration.OssCredentialPath,
+            configuration.OssCredentialEntropyLabel);
+        Console.WriteLine("Package publisher agent configuration is valid.");
     }
 
     private static Uri ParseObjectBaseUri(string value)
@@ -463,6 +492,9 @@ internal static class PublisherProgram
         Console.WriteLine();
         Console.WriteLine("Protect the package publisher API token from one redirected input line:");
         Console.WriteLine("  protect-package-agent-token --output <path>");
+        Console.WriteLine();
+        Console.WriteLine("Validate package publisher credentials without network access:");
+        Console.WriteLine("  validate-package-agent --config <absolute-json-path>");
         Console.WriteLine();
         Console.WriteLine("Run the resumable package publisher agent:");
         Console.WriteLine("  run-package-agent --config <absolute-json-path>");
