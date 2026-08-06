@@ -9,7 +9,8 @@ namespace Hechao.ServerControlAgent;
 internal sealed partial class ServerPackageDeployer(
     ServerControlTargetConfiguration configuration,
     string backupRoot,
-    ServerDirectoryAccessGate? directoryAccessGate = null)
+    ServerDirectoryAccessGate? directoryAccessGate = null,
+    int? managedMaximumMemoryMiB = null)
 {
     private const int OwnerSchemaVersion = 1;
     internal const string DeploymentMarkerName = ".hechao-deployment.json";
@@ -20,6 +21,8 @@ internal sealed partial class ServerPackageDeployer(
     };
     private readonly ServerDirectoryAccessGate directoryAccessGate =
         directoryAccessGate ?? new ServerDirectoryAccessGate();
+    private readonly int managedMaximumMemoryMiB = managedMaximumMemoryMiB ??
+        configuration.MaximumAllowedMemoryMiB;
 
     internal async Task<AgentCommandResult> DeployAsync(
         ServerPackageDeploymentRequest deployment,
@@ -157,7 +160,7 @@ internal sealed partial class ServerPackageDeployer(
                 configuration.ServerId,
                 deployment.InitialMemoryMiB,
                 deployment.MaximumMemoryMiB,
-                configuration.MaximumAllowedMemoryMiB);
+                managedMaximumMemoryMiB);
             await WriteJsonAtomicallyAsync(
                 Path.Combine(stagingDirectory, DeploymentMarkerName),
                 new DeploymentMarker(
@@ -308,7 +311,7 @@ internal sealed partial class ServerPackageDeployer(
         deployment.InitialMemoryMiB % 256 == 0 &&
         deployment.MaximumMemoryMiB % 256 == 0 &&
         deployment.InitialMemoryMiB <= deployment.MaximumMemoryMiB &&
-        deployment.MaximumMemoryMiB <= configuration.MaximumAllowedMemoryMiB;
+        deployment.MaximumMemoryMiB <= managedMaximumMemoryMiB;
 
     private IReadOnlyList<string> GetPreservedPaths(bool preserveWorldData) =>
         [.. configuration.HostManagedRelativePaths

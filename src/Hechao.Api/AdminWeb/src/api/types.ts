@@ -276,6 +276,12 @@ export interface QuickSettings {
   maximumAllowedMemoryMiB: number | null;
 }
 
+export interface ServerMemoryGuidance {
+  hostTotalMemoryMiB: number;
+  recommendedMinimumMemoryMiB: number;
+  recommendedMaximumMemoryMiB: number;
+}
+
 export interface ControlOperation {
   operationId: string;
   serverId: string;
@@ -308,7 +314,7 @@ export interface ControlTargetSummary {
   serverDeletionEnabled: boolean;
   serverFilesPresent: boolean;
   deletionCleanupPending: boolean;
-  packageDeploymentMaximumMemoryMiB: number | null;
+  packageDeploymentMemoryGuidance: ServerMemoryGuidance | null;
 }
 
 export interface ControlTarget extends ControlTargetSummary {

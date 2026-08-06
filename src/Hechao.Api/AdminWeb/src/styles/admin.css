@@ -4055,9 +4055,46 @@ textarea::placeholder {
 }
 
 .package-review-options,
+.package-memory-guidance,
 .package-confirmation-field,
 .package-review-submit {
     grid-column: 1 / -1;
+}
+
+.package-memory-guidance {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--line);
+}
+
+.package-memory-guidance > div {
+    min-width: 0;
+    padding: 11px 12px;
+    background: var(--surface-muted);
+}
+
+.package-memory-guidance dt {
+    color: var(--ink-muted);
+    font-size: 11px;
+}
+
+.package-memory-guidance dd {
+    margin: 4px 0 0;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.memory-guidance-above,
+.memory-guidance-below {
+    color: var(--warning) !important;
+}
+
+.memory-guidance-recommended {
+    color: var(--success) !important;
 }
 
 .package-review-options {
@@ -4151,7 +4188,8 @@ textarea::placeholder {
     .readiness-list,
     .package-fact-grid,
     .package-review-form,
-    .package-review-options {
+    .package-review-options,
+    .package-memory-guidance {
         grid-template-columns: 1fr;
     }
 

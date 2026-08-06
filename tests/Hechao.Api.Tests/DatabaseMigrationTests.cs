@@ -157,4 +157,21 @@ public sealed class DatabaseMigrationTests
         Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("server_directory text", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ServerControlHostMemoryMigration_StoresValidatedCapacity()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.025_server_control_host_memory.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("host_total_memory_mib integer", sql, StringComparison.Ordinal);
+        Assert.Contains("BETWEEN 1024 AND 1048576", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("DEFAULT", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

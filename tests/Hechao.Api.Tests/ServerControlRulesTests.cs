@@ -226,6 +226,32 @@ public sealed class ServerControlRulesTests
     }
 
     [Fact]
+    public void Validate_RejectsInvalidHostMemoryCapacity()
+    {
+        var target = new ServerControlAgentTargetHeartbeat(
+            "activity",
+            "owl5-activity-slot",
+            25568,
+            false,
+            null,
+            null,
+            ["list"],
+            string.Empty,
+            DateTimeOffset.UtcNow,
+            PackageDeploymentEnabled: true);
+        var request = new ServerControlAgentHeartbeatRequest(
+            "owl5",
+            "0.4.1",
+            DateTimeOffset.UtcNow,
+            [target],
+            HostTotalMemoryMiB: 512);
+
+        Assert.Contains(
+            "hostTotalMemoryMiB",
+            ServerControlRules.Validate(request));
+    }
+
+    [Fact]
     public void TokenValidator_BindsTokenToExactAgent()
     {
         const string token = "abcdefghijklmnopqrstuvwxyz_0123456789-ABCDE";

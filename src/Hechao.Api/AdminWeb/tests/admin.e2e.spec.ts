@@ -63,7 +63,11 @@ interface ControlTargetMock {
   serverDeletionEnabled: boolean;
   serverFilesPresent: boolean;
   deletionCleanupPending: boolean;
-  packageDeploymentMaximumMemoryMiB: number | null;
+  packageDeploymentMemoryGuidance: {
+    hostTotalMemoryMiB: number;
+    recommendedMinimumMemoryMiB: number;
+    recommendedMaximumMemoryMiB: number;
+  } | null;
 }
 
 interface ControlOverviewMock {
@@ -103,7 +107,11 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
       serverDeletionEnabled: true,
       serverFilesPresent: true,
       deletionCleanupPending: false,
-      packageDeploymentMaximumMemoryMiB: 8192
+      packageDeploymentMemoryGuidance: {
+        hostTotalMemoryMiB: 32768,
+        recommendedMinimumMemoryMiB: 4096,
+        recommendedMaximumMemoryMiB: 16384
+      }
     }, {
       serverId: "fanstreet",
       displayName: "范街活动服",
@@ -120,7 +128,7 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
       serverDeletionEnabled: true,
       serverFilesPresent: true,
       deletionCleanupPending: false,
-      packageDeploymentMaximumMemoryMiB: null
+      packageDeploymentMemoryGuidance: null
     }]
   };
 }
@@ -723,7 +731,11 @@ test("package import uploads a chunk and requires the exact deployment confirmat
           processId: null,
           settings: null,
           serverFilesPresent: false,
-          packageDeploymentMaximumMemoryMiB: 4096
+          packageDeploymentMemoryGuidance: {
+            hostTotalMemoryMiB: 32768,
+            recommendedMinimumMemoryMiB: 4096,
+            recommendedMaximumMemoryMiB: 16384
+          }
         };
         await route.fulfill({ json: stopped });
         return true;
@@ -797,6 +809,10 @@ test("package import uploads a chunk and requires the exact deployment confirmat
   await expect(importDrawer.getByRole("heading", { name: "等待确认" })).toBeVisible();
   await expect(importDrawer.getByText("服控代理", { exact: true })).toHaveClass(/ready/);
   await expect(importDrawer.getByText("目标已停服", { exact: true })).toHaveClass(/ready/);
+  await expect(importDrawer.getByText("VPS 总内存")).toBeVisible();
+  await expect(importDrawer.getByText("32 GiB")).toBeVisible();
+  await importDrawer.getByLabel("最大内存（GiB）").fill("20");
+  await expect(importDrawer.getByText("高于推荐区间，仍可提交")).toBeVisible();
   const confirmationInput = importDrawer.getByLabel("精确确认");
   const confirmation = `发布并部署 ${packageImportId}`;
   await confirmationInput.fill(confirmation);
@@ -815,7 +831,7 @@ test("package import uploads a chunk and requires the exact deployment confirmat
     targetServerId: "activity",
     preserveWorldData: false,
     syncServerCatalog: true,
-    maximumMemoryMiB: 4096,
+    maximumMemoryMiB: 20480,
     confirmation: `发布并部署 ${packageImportId}`
   });
   await page.screenshot({ path: "../../../artifacts/admin-web-package-import-desktop.png", fullPage: true });

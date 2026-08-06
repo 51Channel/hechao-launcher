@@ -50,6 +50,14 @@ public sealed class PackageImportRulesTests
         Assert.Contains(
             "analysis",
             PackageImportRules.Validate(request, CreateImport(importId, blocking: true)).Keys);
+        Assert.Empty(PackageImportRules.Validate(
+            request with { MaximumMemoryMiB = 32768 },
+            import));
+        Assert.Contains(
+            "maximumMemoryMiB",
+            PackageImportRules.Validate(
+                request with { MaximumMemoryMiB = 65792 },
+                import).Keys);
     }
 
     [Fact]
@@ -84,51 +92,44 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
-    public void ResolvePackageDeploymentMaximumMemory_UsesReportedLimitFirst()
+    public void ResolvePackageDeploymentMemoryGuidance_UsesHostCapacity()
     {
-        var settings = new ServerQuickSettings(
-            20, 10, 8, "normal", false, 2048, 4096, 8192);
+        var guidance = PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
+            PackageImportRules.ActivityServerId,
+            PackageImportRules.ActivityAgentId,
+            PackageImportRules.ActivityConflictGroup,
+            PackageImportRules.ActivityPort,
+            packageDeploymentEnabled: true,
+            hostTotalMemoryMiB: 32768);
 
-        var maximum = PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
-            "other",
-            "owl9",
-            null,
-            25565,
-            packageDeploymentEnabled: false,
-            serverFilesPresent: true,
-            settings);
-
-        Assert.Equal(8192, maximum);
+        Assert.Equal(new ServerMemoryGuidance(32768, 4096, 16384), guidance);
     }
 
     [Fact]
-    public void ResolvePackageDeploymentMaximumMemory_AllowsOnlyDeletedActivitySlotFallback()
+    public void ResolvePackageDeploymentMemoryGuidance_RequiresActivityIdentityAndCapacity()
     {
-        static int? Resolve(
+        static ServerMemoryGuidance? Resolve(
             string serverId = PackageImportRules.ActivityServerId,
             string agentId = PackageImportRules.ActivityAgentId,
             string? conflictGroup = PackageImportRules.ActivityConflictGroup,
             int port = PackageImportRules.ActivityPort,
             bool packageDeploymentEnabled = true,
-            bool serverFilesPresent = false) =>
-            PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+            int? hostTotalMemoryMiB = 16384) =>
+            PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                 serverId,
                 agentId,
                 conflictGroup,
                 port,
                 packageDeploymentEnabled,
-                serverFilesPresent,
-                settings: null);
+                hostTotalMemoryMiB);
 
-        Assert.Equal(
-            PackageImportRules.DeletedActivityTargetMaximumMemoryMiB,
-            Resolve());
-        Assert.Null(Resolve(serverFilesPresent: true));
+        Assert.Equal(new ServerMemoryGuidance(16384, 4096, 8192), Resolve());
         Assert.Null(Resolve(packageDeploymentEnabled: false));
         Assert.Null(Resolve(serverId: "fanstreet"));
         Assert.Null(Resolve(agentId: "owl9"));
         Assert.Null(Resolve(conflictGroup: "other"));
         Assert.Null(Resolve(port: 25569));
+        Assert.Null(Resolve(hostTotalMemoryMiB: null));
     }
 
     [Fact]

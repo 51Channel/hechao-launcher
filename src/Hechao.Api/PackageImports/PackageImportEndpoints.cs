@@ -325,24 +325,6 @@ public static class PackageImportEndpoints
                     ["目标服务端存在进行中的服控操作，请等待完成。"];
             }
 
-            var maximum = PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
-                target.Target.ServerId,
-                target.Target.AgentId,
-                target.Target.ConflictGroup,
-                target.Target.Port,
-                target.Target.PackageDeploymentEnabled,
-                target.Target.ServerFilesPresent,
-                target.Target.Settings);
-            if (maximum is null)
-            {
-                errors["maximumMemoryMiB"] =
-                    ["目标服务端未上报可用的内存硬上限。"];
-            }
-            else if (request.MaximumMemoryMiB > maximum)
-            {
-                errors["maximumMemoryMiB"] =
-                    [$"目标服务端内存硬上限为 {maximum} MiB。"];
-            }
         }
 
         if (errors.Count > 0)

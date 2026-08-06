@@ -124,8 +124,8 @@ const publisherConnected = computed(() =>
 const activityTarget = computed(() =>
   controls.data.value?.targets.find(isPackageDeploymentTarget) ?? null
 );
-const packageDeploymentMaximumMemoryMiB = computed(() =>
-  activityTarget.value?.packageDeploymentMaximumMemoryMiB ?? null
+const packageDeploymentMemoryGuidance = computed(() =>
+  activityTarget.value?.packageDeploymentMemoryGuidance ?? null
 );
 const awaitingReviewCount = computed(() =>
   list.value.filter(item => item.status === "AwaitingReview").length
@@ -157,10 +157,23 @@ const reviewValid = computed(() => {
     /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(review.version) &&
     review.targetServerId === "activity" &&
     review.serverDisplayName.trim().length >= 2 &&
-    Number.isInteger(memoryMiB) && memoryMiB >= 1024 && memoryMiB % 256 === 0 &&
-    packageDeploymentMaximumMemoryMiB.value !== null &&
-    memoryMiB <= packageDeploymentMaximumMemoryMiB.value &&
+    Number.isInteger(memoryMiB) && memoryMiB >= 1024 &&
+    memoryMiB <= 65536 && memoryMiB % 256 === 0 &&
     review.confirmation.trim() === exactConfirmation.value;
+});
+const memoryGuidanceState = computed(() => {
+  const guidance = packageDeploymentMemoryGuidance.value;
+  const memoryMiB = review.maximumMemoryGiB * 1024;
+  if (!guidance || !Number.isFinite(memoryMiB)) return "unknown";
+  if (memoryMiB < guidance.recommendedMinimumMemoryMiB) return "below";
+  if (memoryMiB > guidance.recommendedMaximumMemoryMiB) return "above";
+  return "recommended";
+});
+const memoryGuidanceMessage = computed(() => {
+  if (memoryGuidanceState.value === "below") return "低于推荐区间，仍可提交";
+  if (memoryGuidanceState.value === "above") return "高于推荐区间，仍可提交";
+  if (memoryGuidanceState.value === "recommended") return "当前设置位于推荐区间";
+  return "等待服控代理上报 VPS 内存";
 });
 const uploadPercentage = computed(() =>
   upload.totalBytes > 0
@@ -195,9 +208,8 @@ function initializeReview(record: PackageImportRecord, force = false): void {
   if (record.status !== "AwaitingReview" || !record.analysis) return;
   if (!force && reviewBaseline.value && reviewDirty.value) return;
   const metadata = record.analysis.metadata;
-  const hardLimit = packageDeploymentMaximumMemoryMiB.value ?? 4096;
   const targetMemory = activityTarget.value?.settings?.maximumMemoryMiB ??
-    Math.min(4096, hardLimit);
+    packageDeploymentMemoryGuidance.value?.recommendedMinimumMemoryMiB ?? 4096;
   review.profileId = record.plan?.profileId ?? metadata.suggestedProfileId;
   review.profileDisplayName = record.plan?.profileDisplayName ?? metadata.displayName;
   review.version = record.plan?.version ?? metadata.version;
@@ -206,10 +218,8 @@ function initializeReview(record: PackageImportRecord, force = false): void {
   review.syncServerCatalog = record.plan?.syncServerCatalog ?? true;
   review.serverDisplayName = record.plan?.serverDisplayName ?? metadata.displayName;
   review.minimumTier = record.plan?.minimumTier ?? "Participant";
-  review.maximumMemoryGiB = Math.min(
-    record.plan?.maximumMemoryMiB ?? targetMemory,
-    hardLimit
-  ) / 1024;
+  review.maximumMemoryGiB =
+    (record.plan?.maximumMemoryMiB ?? targetMemory) / 1024;
   review.confirmation = "";
   reviewBaseline.value = serializeReview();
   confirmError.value = "";
@@ -669,7 +679,12 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
                 <label>部署目标<select v-model="review.targetServerId" required><option value="activity">activity · owl5:25568</option></select></label>
                 <label>服务器显示名称<input v-model="review.serverDisplayName" minlength="2" maxlength="80" required></label>
                 <label>最低称号<select v-model="review.minimumTier"><option value="Member">{{ tierText('Member') }}</option><option value="Participant">{{ tierText('Participant') }}</option><option value="Collaborator">{{ tierText('Collaborator') }}</option></select></label>
-                <label>最大内存（GiB）<input v-model.number="review.maximumMemoryGiB" type="number" min="1" :max="(packageDeploymentMaximumMemoryMiB || 1024) / 1024" step="0.25" required><span>硬上限 {{ formatBytes((packageDeploymentMaximumMemoryMiB || 0) * 1024 * 1024) }}</span></label>
+                <label>最大内存（GiB）<input v-model.number="review.maximumMemoryGiB" type="number" min="1" step="0.25" required><span :class="`memory-guidance-${memoryGuidanceState}`">{{ memoryGuidanceMessage }}</span></label>
+                <dl class="package-memory-guidance" aria-label="活动服内存建议">
+                  <div><dt>VPS 总内存</dt><dd>{{ packageDeploymentMemoryGuidance ? formatBytes(packageDeploymentMemoryGuidance.hostTotalMemoryMiB * 1024 * 1024) : "等待上报" }}</dd></div>
+                  <div><dt>推荐最小内存</dt><dd>{{ packageDeploymentMemoryGuidance ? formatBytes(packageDeploymentMemoryGuidance.recommendedMinimumMemoryMiB * 1024 * 1024) : "--" }}</dd></div>
+                  <div><dt>推荐最大内存</dt><dd>{{ packageDeploymentMemoryGuidance ? formatBytes(packageDeploymentMemoryGuidance.recommendedMaximumMemoryMiB * 1024 * 1024) : "--" }}</dd></div>
+                </dl>
                 <div class="package-review-options">
                   <label class="checkbox-row"><input v-model="review.preserveWorldData" type="checkbox"><span>保留当前活动服世界目录</span></label>
                   <label class="checkbox-row"><input v-model="review.syncServerCatalog" type="checkbox"><span>同步隐藏且关闭的服务器目录记录</span></label>

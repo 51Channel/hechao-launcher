@@ -123,6 +123,12 @@ public static partial class ServerControlRules
                 ["代理同时只能续租一个有效的整合包部署命令。"];
         }
 
+        if (request.HostTotalMemoryMiB is not null and
+            not (>= 1024 and <= 1_048_576))
+        {
+            errors["hostTotalMemoryMiB"] = ["VPS 物理内存上报值无效。"];
+        }
+
         if (request.Targets.Any(target =>
                 !IsValidServerId(target.ServerId) ||
                 target.Port is < 1 or > 65535 ||

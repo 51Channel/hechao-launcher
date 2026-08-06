@@ -47,6 +47,11 @@ public sealed record ServerQuickSettings(
     int? MaximumMemoryMiB = null,
     int? MaximumAllowedMemoryMiB = null);
 
+public sealed record ServerMemoryGuidance(
+    int HostTotalMemoryMiB,
+    int RecommendedMinimumMemoryMiB,
+    int RecommendedMaximumMemoryMiB);
+
 public sealed record AdminServerControlRequest(
     ServerControlAction Action,
     string Confirmation,
@@ -85,7 +90,7 @@ public sealed record AdminServerControlTargetSummaryRecord(
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
     bool DeletionCleanupPending = false,
-    int? PackageDeploymentMaximumMemoryMiB = null);
+    ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -106,7 +111,7 @@ public sealed record AdminServerControlTargetRecord(
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
     bool DeletionCleanupPending = false,
-    int? PackageDeploymentMaximumMemoryMiB = null);
+    ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
@@ -143,7 +148,8 @@ public sealed record ServerControlAgentHeartbeatRequest(
     string AgentVersion,
     DateTimeOffset CapturedAt,
     IReadOnlyList<ServerControlAgentTargetHeartbeat> Targets,
-    IReadOnlyList<Guid>? ActiveDeploymentCommandIds = null);
+    IReadOnlyList<Guid>? ActiveDeploymentCommandIds = null,
+    int? HostTotalMemoryMiB = null);
 
 public sealed record ServerControlAgentHeartbeatResponse(
     int ImportedTargets,

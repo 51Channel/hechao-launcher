@@ -68,9 +68,10 @@ public sealed class ServerControlRepository(
                      allowed_command_prefixes, console_tail,
                      console_captured_at, package_deployment_enabled,
                      server_deletion_enabled, server_files_present,
-                     deletion_cleanup_pending, last_seen_at, updated_at)
+                     deletion_cleanup_pending, host_total_memory_mib,
+                     last_seen_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-                        $13, $14, $15, $16, $16)
+                        $13, $14, $15, $16, $17, $17)
                 ON CONFLICT (server_id) DO UPDATE
                 SET agent_id = EXCLUDED.agent_id,
                     agent_version = EXCLUDED.agent_version,
@@ -89,6 +90,7 @@ public sealed class ServerControlRepository(
                     server_files_present = EXCLUDED.server_files_present,
                     deletion_cleanup_pending =
                         EXCLUDED.deletion_cleanup_pending,
+                    host_total_memory_mib = EXCLUDED.host_total_memory_mib,
                     last_seen_at = EXCLUDED.last_seen_at,
                     updated_at = EXCLUDED.updated_at
                 WHERE
@@ -129,6 +131,10 @@ public sealed class ServerControlRepository(
             command.Parameters.AddWithValue(target.ServerDeletionEnabled);
             command.Parameters.AddWithValue(target.ServerFilesPresent);
             command.Parameters.AddWithValue(target.DeletionCleanupPending);
+            AdminPostgresParameters.AddPositional(
+                command.Parameters,
+                NpgsqlDbType.Integer,
+                request.HostTotalMemoryMiB);
             command.Parameters.AddWithValue(receivedAt);
             imported += await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -196,7 +202,8 @@ public sealed class ServerControlRepository(
                    target.package_deployment_enabled,
                    target.server_deletion_enabled,
                    target.server_files_present,
-                   target.deletion_cleanup_pending
+                   target.deletion_cleanup_pending,
+                   target.host_total_memory_mib
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             ORDER BY COALESCE(server.sort_order, 2147483647),
@@ -247,14 +254,13 @@ public sealed class ServerControlRepository(
                 reader.GetBoolean(10),
                 serverFilesPresent,
                 deletionCleanupPending,
-                PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+                PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                     serverId,
                     agentId,
                     conflictGroup,
                     port,
                     packageDeploymentEnabled,
-                    serverFilesPresent,
-                    settings)));
+                    reader.IsDBNull(13) ? null : reader.GetInt32(13))));
         }
 
         return new AdminServerControlOverview(
@@ -294,7 +300,8 @@ public sealed class ServerControlRepository(
                    target.package_deployment_enabled,
                    target.server_deletion_enabled,
                    target.server_files_present,
-                   target.deletion_cleanup_pending
+                   target.deletion_cleanup_pending,
+                   target.host_total_memory_mib
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             WHERE target.server_id = $1;
@@ -341,14 +348,13 @@ public sealed class ServerControlRepository(
             reader.GetBoolean(13),
             serverFilesPresent,
             reader.GetBoolean(15),
-            PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
+            PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                 targetServerId,
                 targetAgentId,
                 targetConflictGroup,
                 targetPort,
                 packageDeploymentEnabled,
-                serverFilesPresent,
-                targetSettings));
+                reader.IsDBNull(16) ? null : reader.GetInt32(16)));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,

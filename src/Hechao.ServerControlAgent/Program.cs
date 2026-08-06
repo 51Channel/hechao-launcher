@@ -37,8 +37,9 @@ try
         Timeout = Timeout.InfiniteTimeSpan
     };
     httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-        "Hechao.ServerControlAgent/0.4.0");
+        "Hechao.ServerControlAgent/0.4.1");
     var processRunner = new ProcessRunner();
+    var hostMemory = HostMemoryCapacity.Capture();
     var backupRoot = Path.Combine(
         configuration.StateDirectory,
         "backups");
@@ -58,14 +59,17 @@ try
             backupRoot,
             runtimeMarkerDirectory,
             sharedPorts.Contains(target.Port),
-            processRunner))
+            processRunner,
+            managedMaximumMemoryMiB:
+                hostMemory.ResolveManagedMaximumMemoryMiB(target)))
         .ToArray();
     var worker = new ServerControlWorker(
         configuration,
         new AgentApiClient(httpClient, configuration.AgentId, token),
         targets,
         new CommandReceiptStore(configuration.StateDirectory),
-        log);
+        log,
+        hostMemory.TotalMemoryMiB);
     using var cancellation = new CancellationTokenSource();
     Console.CancelKeyPress += (_, eventArgs) =>
     {

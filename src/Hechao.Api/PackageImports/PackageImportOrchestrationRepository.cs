@@ -108,29 +108,6 @@ internal sealed class PackageImportOrchestrationRepository(
             return PackageImportOrchestrationOutcome.Waiting;
         }
 
-        var hardLimit = PackageImportRules.ResolvePackageDeploymentMaximumMemoryMiB(
-            target.ServerId,
-            target.AgentId,
-            target.ConflictGroup,
-            target.Port,
-            target.PackageDeploymentEnabled,
-            target.ServerFilesPresent,
-            target.Settings);
-        if (hardLimit is null ||
-            package.Plan.MaximumMemoryMiB > hardLimit)
-        {
-            await FailPackageAsync(
-                connection,
-                transaction,
-                package.ImportId,
-                "DEPLOYMENT_MEMORY_INVALID",
-                "目标服务端内存上限已经变化，服务端未切换。",
-                now,
-                cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return PackageImportOrchestrationOutcome.Progressed;
-        }
-
         var initialMemoryMiB = target.Settings?.InitialMemoryMiB ??
             Math.Min(2048, package.Plan.MaximumMemoryMiB);
         initialMemoryMiB = Math.Min(initialMemoryMiB, package.Plan.MaximumMemoryMiB);

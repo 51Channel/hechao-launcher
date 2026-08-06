@@ -31,6 +31,7 @@ internal sealed class ServerTargetRuntime
     private readonly ServerDirectoryDeletionManager _directoryDeletionManager;
     private readonly TimeSpan _saveFlushDelay;
     private readonly TimeSpan _stopCommandGracePeriod;
+    private readonly int _managedMaximumMemoryMiB;
 
     internal ServerTargetRuntime(
         ServerControlTargetConfiguration configuration,
@@ -40,7 +41,8 @@ internal sealed class ServerTargetRuntime
         bool requiresManagedMarker,
         IProcessRunner processRunner,
         TimeSpan? saveFlushDelay = null,
-        TimeSpan? stopCommandGracePeriod = null)
+        TimeSpan? stopCommandGracePeriod = null,
+        int? managedMaximumMemoryMiB = null)
     {
         Configuration = configuration;
         _consoleSubmitScript = consoleSubmitScript;
@@ -50,10 +52,13 @@ internal sealed class ServerTargetRuntime
             configuration.ServerId + ".json");
         _requiresManagedMarker = requiresManagedMarker;
         _processRunner = processRunner;
+        _managedMaximumMemoryMiB = managedMaximumMemoryMiB ??
+            configuration.MaximumAllowedMemoryMiB;
         _packageDeployer = new ServerPackageDeployer(
             configuration,
             backupRoot,
-            _serverDirectoryAccessGate);
+            _serverDirectoryAccessGate,
+            _managedMaximumMemoryMiB);
         _directoryDeletionManager = new ServerDirectoryDeletionManager(
             configuration,
             _serverDirectoryAccessGate,
@@ -232,15 +237,14 @@ internal sealed class ServerTargetRuntime
                 Configuration.GetPropertiesPath());
             var memorySettings = JvmMemorySettingsEditor.Read(
                 Configuration.GetMemorySettingsPath(),
-                Configuration.MaximumAllowedMemoryMiB);
+                _managedMaximumMemoryMiB);
             if (settings is not null && memorySettings is not null)
             {
                 settings = settings with
                 {
                     InitialMemoryMiB = memorySettings.InitialMemoryMiB,
                     MaximumMemoryMiB = memorySettings.MaximumMemoryMiB,
-                    MaximumAllowedMemoryMiB =
-                        Configuration.MaximumAllowedMemoryMiB
+                    MaximumAllowedMemoryMiB = _managedMaximumMemoryMiB
                 };
             }
 
@@ -488,7 +492,7 @@ internal sealed class ServerTargetRuntime
             initialMemoryMiB % 256 != 0 ||
             maximumMemoryMiB % 256 != 0 ||
             initialMemoryMiB > maximumMemoryMiB ||
-            maximumMemoryMiB > Configuration.MaximumAllowedMemoryMiB)
+            maximumMemoryMiB > _managedMaximumMemoryMiB)
         {
             return Failed("INVALID_SETTINGS", "服务器快捷设置无效。");
         }
@@ -505,7 +509,7 @@ internal sealed class ServerTargetRuntime
                     memorySettingsPath,
                     initialMemoryMiB,
                     maximumMemoryMiB,
-                    Configuration.MaximumAllowedMemoryMiB);
+                    _managedMaximumMemoryMiB);
                 originalProperties = SharedFileReader.ReadAllBytes(propertiesPath);
                 originalMemorySettings =
                     SharedFileReader.ReadAllBytes(memorySettingsPath);
@@ -520,7 +524,7 @@ internal sealed class ServerTargetRuntime
                     Configuration.ServerId,
                     initialMemoryMiB,
                     maximumMemoryMiB,
-                    Configuration.MaximumAllowedMemoryMiB);
+                    _managedMaximumMemoryMiB);
                 return Succeeded(
                     "SETTINGS_APPLIED",
                     "快捷设置和 JVM 启动内存已写入并备份；运行中的服务器不会自动重启，内存将在下次启动生效。");

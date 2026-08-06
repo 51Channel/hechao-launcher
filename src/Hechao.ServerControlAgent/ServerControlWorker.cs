@@ -8,7 +8,8 @@ internal sealed class ServerControlWorker(
     AgentApiClient apiClient,
     IReadOnlyList<ServerTargetRuntime> targets,
     CommandReceiptStore receipts,
-    AgentLog log)
+    AgentLog log,
+    int? hostTotalMemoryMiB)
 {
     private readonly string _version =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ??
@@ -59,7 +60,8 @@ internal sealed class ServerControlWorker(
                 _version,
                 DateTimeOffset.UtcNow,
                 captured,
-                GetActiveDeploymentCommandIds()),
+                GetActiveDeploymentCommandIds(),
+                hostTotalMemoryMiB),
             cancellationToken);
     }
 

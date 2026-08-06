@@ -11,7 +11,6 @@ public static partial class PackageImportRules
     public const string ActivityVelocityTarget = "activity";
     public const string ActivityConflictGroup = "owl5-activity-slot";
     public const int ActivityPort = 25568;
-    public const int DeletedActivityTargetMaximumMemoryMiB = 4096;
 
     public static IReadOnlyDictionary<string, string[]> Validate(
         AdminPackageUploadCreateRequest request,
@@ -90,10 +89,10 @@ public static partial class PackageImportRules
             errors["minimumTier"] = ["最低称号只能是成员、活动成员或协作者。"];
         }
 
-        if (request.MaximumMemoryMiB is < 1024 or > 32768 ||
+        if (request.MaximumMemoryMiB is < 1024 or > 65536 ||
             request.MaximumMemoryMiB % 256 != 0)
         {
-            errors["maximumMemoryMiB"] = ["最大内存必须为 1024 至 32768 MiB 的 256 MiB 整数倍。"];
+            errors["maximumMemoryMiB"] = ["最大内存必须为 1024 至 65536 MiB 的 256 MiB 整数倍。"];
         }
 
         var expectedConfirmation = $"发布并部署 {import.ImportId:D}";
@@ -127,26 +126,38 @@ public static partial class PackageImportRules
             StringComparison.Ordinal) &&
         port == ActivityPort;
 
-    public static int? ResolvePackageDeploymentMaximumMemoryMiB(
+    public static ServerMemoryGuidance? ResolvePackageDeploymentMemoryGuidance(
         string serverId,
         string agentId,
         string? conflictGroup,
         int port,
         bool packageDeploymentEnabled,
-        bool serverFilesPresent,
-        ServerQuickSettings? settings)
+        int? hostTotalMemoryMiB)
     {
-        if (settings?.MaximumAllowedMemoryMiB is { } reportedMaximum)
+        if (!packageDeploymentEnabled ||
+            !IsActivityTarget(serverId, agentId, conflictGroup, port) ||
+            hostTotalMemoryMiB is not (>= 1024 and <= 1_048_576))
         {
-            return reportedMaximum;
+            return null;
         }
 
-        return packageDeploymentEnabled &&
-               !serverFilesPresent &&
-               IsActivityTarget(serverId, agentId, conflictGroup, port)
-            ? DeletedActivityTargetMaximumMemoryMiB
-            : null;
+        var recommendedMaximum = RoundDownToMemoryStep(Math.Clamp(
+            hostTotalMemoryMiB.Value / 2,
+            1024,
+            16384));
+        var recommendedMinimum = Math.Min(
+            recommendedMaximum,
+            RoundDownToMemoryStep(Math.Clamp(
+                hostTotalMemoryMiB.Value / 8,
+                4096,
+                8192)));
+        return new ServerMemoryGuidance(
+            hostTotalMemoryMiB.Value,
+            recommendedMinimum,
+            recommendedMaximum);
     }
+
+    private static int RoundDownToMemoryStep(int value) => value / 256 * 256;
 
     public static bool IsValidPublisherAgentId(string? agentId) =>
         agentId is not null && PublisherAgentIdPattern().IsMatch(agentId);
