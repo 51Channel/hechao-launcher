@@ -945,6 +945,49 @@ test("server editor recovers from a revision conflict without losing the draft",
   expect(updates[1].expectedRevision).toBe(2);
 });
 
+test("server editor form fills the drawer without overlapping its chrome", async ({ page }) => {
+  await mockAdminApi(page);
+  await page.goto("/admin/servers");
+  await page.getByRole("button", { name: "新增服务器" }).click();
+
+  const drawer = page.locator(".vue-drawer");
+  const form = drawer.locator(":scope > form");
+  const header = form.locator(":scope > .drawer-header");
+  const body = form.locator(":scope > .drawer-body");
+  const footer = form.locator(":scope > .drawer-footer");
+  await expect(drawer).toBeVisible();
+  await expect(page.getByLabel("服务器 ID")).toBeVisible();
+
+  const [drawerBox, formBox, headerBox, bodyBox, footerBox] = await Promise.all([
+    drawer.boundingBox(),
+    form.boundingBox(),
+    header.boundingBox(),
+    body.boundingBox(),
+    footer.boundingBox()
+  ]);
+  expect(drawerBox && formBox && headerBox && bodyBox && footerBox).toBeTruthy();
+  expect(Math.abs(formBox!.height - drawerBox!.height)).toBeLessThanOrEqual(1);
+  expect(bodyBox!.height).toBeGreaterThan(300);
+  expect(bodyBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height - 1);
+  expect(footerBox!.y).toBeGreaterThanOrEqual(bodyBox!.y + bodyBox!.height - 1);
+  expect(footerBox!.y + footerBox!.height).toBeLessThanOrEqual(drawerBox!.y + drawerBox!.height + 1);
+  await page.screenshot({ path: "../../../artifacts/admin-web-server-drawer-desktop.png", fullPage: true });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const [mobileDrawerBox, mobileFormBox, mobileBodyBox] = await Promise.all([
+    drawer.boundingBox(),
+    form.boundingBox(),
+    body.boundingBox()
+  ]);
+  expect(mobileDrawerBox && mobileFormBox && mobileBodyBox).toBeTruthy();
+  expect(Math.abs(mobileFormBox!.height - mobileDrawerBox!.height)).toBeLessThanOrEqual(1);
+  expect(mobileBodyBox!.height).toBeGreaterThan(300);
+  await page.getByLabel("公告").scrollIntoViewIfNeeded();
+  await expect(page.getByLabel("公告")).toBeVisible();
+  await expect(page.getByRole("button", { name: "保存服务器" })).toBeVisible();
+  await page.screenshot({ path: "../../../artifacts/admin-web-server-drawer-mobile.png", fullPage: true });
+});
+
 test("profile conflict does not claim stale data is the latest revision", async ({ page }) => {
   let detailRequests = 0;
   await mockAdminApi(page, {
