@@ -1,5 +1,11 @@
 # 赫朝启动器
 
+> `2026-08-07` 管理后台抽屉布局修复：生产 API `0.28.7` 已修复服务器新增/编辑和
+> 单服权限等表单型抽屉被压缩到顶部的问题。Playwright `18/18`、API `289/289`、
+> 完整解决方案 `695/695` 通过；发布只重启 API，没有操作 Publisher、Nginx、
+> Minecraft、Velocity 或服控代理。证据见
+> [`docs/API_RELEASE_0.28.7.md`](docs/API_RELEASE_0.28.7.md)。
+
 > `2026-08-06` 活动槽内存校验修复：生产 API `0.28.4` 已在已删除固定活动目录且
 > `settings=null` 时提供受控 `4096 MiB` 部署上限，管理后台、确认接口与部署编排使用
 > 同一规则。“发布并部署”不再被误判为超过 `0 MiB`，其他缺失设置目标仍保持拒绝。
@@ -79,7 +85,7 @@
 > 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.14.2`、API `0.28.5`、Publisher Agent `1.1.0`、owl5 ServerControlAgent `0.4.1`、owl9 ServerControlAgent `0.4.0`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；可回滚部署、固定整合包、官网活动投影、公开下载桥接与一次性服务端文件清理验收均已完成，剩余门槛只涉及真实四级账号、真实活动玩法包和 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作、整合包导入和最小权限服控的 Vue 管理控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.14.2`、API `0.28.7`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.4.2`、owl9 ServerControlAgent `0.4.0`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；可回滚部署、固定整合包、官网活动投影、公开下载桥接与一次性服务端文件清理验收均已完成，剩余门槛只涉及真实四级账号、真实活动玩法包和 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一运行告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作、整合包导入和最小权限服控的 Vue 管理控制台。
 
 2026-07-29 已确认新架构：赫朝启动器成为唯一服务器选择和切换入口；大厅继续作为 LuckPerms 等前置能力的内部承载器，但不再向玩家展示、授权、路由或回退。Velocity 继续负责统一公网入口、forwarding 和服务端二次授权。完整约束、回滚和验收标准见 [`docs/LAUNCHER_ONLY_SERVER_SWITCHING.md`](docs/LAUNCHER_ONLY_SERVER_SWITCHING.md)。
 
