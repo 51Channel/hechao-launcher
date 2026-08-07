@@ -11,7 +11,8 @@
 
 - 等级命令共 `5` 条，全部为 `Applied`，没有 `Pending`、`Claimed`、`Conflict` 或
   `Failed`；最近命令均由 `owl5-lobby` 一次领取并在数秒内回执；
-- 最近发生变更的 `3` 位玩家，其赫朝等级、身份主组和 LuckPerms 快照随后全部回到旧值；
+- 存在最新 `Applied` 记录的 `3` 位玩家，其赫朝等级、身份主组和 LuckPerms 快照随后
+  全部回到旧值；
 - `Administrator -> owner` 回到 `Collaborator / admin`，两次
   `Member -> Participant` 回到 `Member / default`；诊断未读取或记录玩家名、UUID、
   用户 ID 和管理员身份；
@@ -38,6 +39,22 @@
 - SHA-256：`F3B8871D55914CD403987A4AAEF901F1AF6FC12B44395FCACDFE99BB8C0AA450`；
 - Manifest `Implementation-Version` 与 `plugin.yml` 均为 `0.1.1`；
 - 构建只使用新建临时目录和构建 Java 进程，没有操作大厅、Velocity 或其他游戏服进程。
+
+## 生产安装状态
+
+2026-08-07 21:05 CST 已执行无重启安装：
+
+- 生产磁盘 JAR：
+  `E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.1.jar`；
+- 大小与 SHA-256 和候选制品完全一致；
+- `0.1.0` JAR 与原配置已备份到
+  `E:\manual-backups\luckperms-tier-agent-20260807T130519Z`，旧 JAR 哈希仍为
+  `35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B`；
+- 新配置 ACL 继承关闭，仍只有 `3` 条受限访问规则，备份配置存在；
+- 安装前后 Java PID 均为 `2576,6008,7748,9428,10412`，没有启动、停止或重启任何
+  Java 进程；等级命令队列为空，API `0.28.7` 健康与就绪均正常；
+- 当前大厅进程仍加载内存中的 `0.1.0`。磁盘安装不等于修复上线，只有获得明确授权并重启
+  内部大厅后才会加载 `0.1.1`。
 
 ## 发布与验收
 
