@@ -100,7 +100,7 @@ try {
     $backupDirectory =
         Join-Path $resolvedBackupRoot "luckperms-tier-agent-$timestamp"
     $destinationJar =
-        Join-Path $pluginsDirectory 'HechaoLuckPermsTierAgent-0.1.0.jar'
+        Join-Path $pluginsDirectory 'HechaoLuckPermsTierAgent-0.1.1.jar'
     $stagingJar = "$destinationJar.uploading"
 
     New-Item -ItemType Directory -Path $pluginsDirectory -Force | Out-Null

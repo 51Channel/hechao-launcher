@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.types.InheritanceNode;
@@ -13,9 +14,19 @@ final class LuckPermsTierMutationService implements TierMutationService {
             Set.of("default", "vip", "admin", "owner");
 
     private final LuckPerms luckPerms;
+    private final Function<String, InheritanceNode> inheritanceNodeFactory;
 
     LuckPermsTierMutationService(LuckPerms luckPerms) {
+        this(
+                luckPerms,
+                group -> InheritanceNode.builder(group).build());
+    }
+
+    LuckPermsTierMutationService(
+            LuckPerms luckPerms,
+            Function<String, InheritanceNode> inheritanceNodeFactory) {
         this.luckPerms = luckPerms;
+        this.inheritanceNodeFactory = inheritanceNodeFactory;
     }
 
     @Override
@@ -52,6 +63,14 @@ final class LuckPermsTierMutationService implements TierMutationService {
                     TierMutationResult.conflict(current));
         }
 
+        var primaryGroupResult = user.setPrimaryGroup(target);
+        if (!primaryGroupResult.wasSuccessful()) {
+            return CompletableFuture.completedFuture(
+                    TierMutationResult.failed(
+                            current,
+                            "primary_group_update_failed"));
+        }
+
         var managedGlobalNodes = user.data().toCollection().stream()
                 .filter(InheritanceNode.class::isInstance)
                 .map(InheritanceNode.class::cast)
@@ -60,7 +79,7 @@ final class LuckPermsTierMutationService implements TierMutationService {
                         normalize(node.getGroupName())))
                 .toList();
         managedGlobalNodes.forEach(user.data()::remove);
-        user.data().add(InheritanceNode.builder(target).build());
+        user.data().add(inheritanceNodeFactory.apply(target));
 
         return luckPerms.getUserManager()
                 .saveUser(user)

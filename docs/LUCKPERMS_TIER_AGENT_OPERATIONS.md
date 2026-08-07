@@ -1,10 +1,12 @@
 # LuckPerms 全局等级代理运维
 
-> 组件版本：`HechaoLuckPermsTierAgent 0.1.0`
+> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.0`
 >
-> 目标 API：`0.20.2`（协议自 `0.16.0` 起保持兼容）
+> 待激活修复版本：`HechaoLuckPermsTierAgent 0.1.1`
 >
-> 生产状态：JAR 与受限配置已在大厅加载，真实 `owner` 映射已读回；四级账号往返写入仍待分档灰度
+> 目标 API：`0.28.7`（协议自 `0.16.0` 起保持兼容）
+>
+> 生产状态：`0.1.0` 仍由大厅进程加载；`0.1.1` 已通过候选构建，生产替换与大厅重启状态以对应发布记录为准
 >
 > 边界：只修改四个固定全局组，不执行控制台命令，不启动、停止或重启任何服务器
 
@@ -23,8 +25,9 @@
 | `Collaborator` | `admin` |
 | `Administrator` | `owner` |
 
-插件没有可注册命令，也没有任意组名或任意控制台命令入口。它只会移除上述四个组的全局
-继承节点并增加目标组；带上下文的节点和其他业务组保持不变。
+插件没有可注册命令，也没有任意组名或任意控制台命令入口。它会显式更新 LuckPerms 的
+持久化主组，再移除上述四个组的全局继承节点并增加目标组；带上下文的节点和其他业务组
+保持不变。
 
 ## 2. 并发与失败边界
 
@@ -64,6 +67,16 @@ claim-limit=10
 
 ## 4. 构建与安装
 
+### 4.1 `0.1.1` 持久化修复
+
+`0.1.0` 只替换全局继承节点，并在保存后读取计算得到的 `User#getPrimaryGroup()` 作为
+成功依据。LuckPerms 的该值受主组计算策略影响，不等同于 `players.primary_group` 的
+持久化 stored value，因此代理可能回执 `Applied`，而下一轮只读同步仍读到旧主组。
+
+`0.1.1` 在替换节点前调用 `User#setPrimaryGroup`。调用被 LuckPerms 拒绝时返回固定错误码
+`primary_group_update_failed`，不再保存节点或误报成功。自动测试必须覆盖 stored value
+更新、节点替换、保存顺序和拒绝分支。
+
 构建：
 
 ```powershell
@@ -75,7 +88,7 @@ claim-limit=10
 
 ```powershell
 .\deploy\windows\luckperms-tier-agent\Install-LuckPermsTierAgent.ps1 `
-  -JarPath .\src\Hechao.LuckPermsTierAgent\build\libs\HechaoLuckPermsTierAgent-0.1.0.jar
+  -JarPath .\src\Hechao.LuckPermsTierAgent\build\libs\HechaoLuckPermsTierAgent-0.1.1.jar
 ```
 
 脚本会：
@@ -86,7 +99,9 @@ claim-limit=10
 4. 写入并收紧配置 ACL。
 5. 返回 `ServerRestartPerformed=false`。
 
-安装不会启动或重启大厅。插件只有在服主下一次自行启动大厅时才加载。
+安装不会启动或重启大厅。磁盘上的 JAR 替换成功不代表修复已经生效；插件只有在获得明确
+授权并重启大厅后才会加载。重启前后必须记录全部 Java PID，且不得操作 Velocity 或其他
+游戏服务。
 
 2026-07-27 已部署：
 
