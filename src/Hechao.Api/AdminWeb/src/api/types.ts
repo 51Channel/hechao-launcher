@@ -68,6 +68,11 @@ export interface ClientProfile {
   sha256: string;
   publishedAt: string;
   isActive: boolean;
+  isArchived: boolean;
+  archivedAt: string | null;
+  archiveReason: string;
+  serverReferenceCount: number;
+  canDelete: boolean;
   updatedAt: string;
   revision: number;
   releaseCount: number;

@@ -13,7 +13,7 @@ const entries = ref<AuditEntry[]>([]); const loading = ref(false); const error =
 const search = ref(""); const category = ref("all"); const selected = ref<AuditEntry | null>(null); const dialog = ref<HTMLDialogElement | null>(null);
 const labels: Record<string, string> = {
   "catalog.server.created":"新增服务器","catalog.server.updated":"编辑服务器","catalog.server.archived":"归档服务器","catalog.server.restored":"恢复服务器",
-  "catalog.client_profile.created":"创建客户端档案","catalog.client_profile.updated":"编辑客户端档案","catalog.client_profile.enabled":"启用客户端档案","catalog.client_profile.disabled":"停用客户端档案",
+  "catalog.client_profile.created":"创建客户端档案","catalog.client_profile.updated":"编辑客户端档案","catalog.client_profile.enabled":"启用客户端档案","catalog.client_profile.disabled":"停用客户端档案","catalog.client_profile.archived":"归档客户端档案","catalog.client_profile.restored":"恢复客户端档案","catalog.client_profile.deleted":"永久删除客户端档案",
   "catalog.client_profile_release.imported":"导入签名客户端版本","catalog.client_profile_release.hydrated":"补全迁移版本元数据","catalog.client_profile_release.paused":"暂停客户端版本","catalog.client_profile_release.resumed":"恢复客户端版本",
   "catalog.client_profile_channel.updated":"更新客户端发布通道","catalog.client_profile_channel.rolled_back":"回滚客户端发布通道",
   "access.server_rule.created":"新增单服权限规则","access.server_rule.updated":"编辑单服权限规则","access.server_rule.deleted":"清除单服权限规则",

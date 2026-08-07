@@ -26,11 +26,22 @@ type Confirmation =
   | { kind: "update-production"; channel: ProfileChannel; manifestSha256: string | null; version: string | null }
   | { kind: "rollback"; channel: ProfileChannel };
 
+type ProfileFilter = "current" | "archived" | "all";
+type LifecycleConfirmation = {
+  kind: "archive" | "restore" | "delete";
+  profile: ClientProfile;
+};
+
 const channelOrder: ReleaseChannel[] = ["Test", "Gray", "Production"];
 const profiles = useResource(signal =>
   api<ClientProfile[]>("/v1/admin/catalog/client-profiles", { signal })
 );
-const list = computed(() => profiles.data.value ?? []);
+const filter = ref<ProfileFilter>("current");
+const allProfiles = computed(() => profiles.data.value ?? []);
+const list = computed(() => allProfiles.value.filter(profile =>
+  filter.value === "all" ||
+  (filter.value === "archived" ? profile.isArchived : !profile.isArchived)
+));
 const createDialog = ref<HTMLDialogElement | null>(null);
 const createForm = reactive({ id: "", displayName: "" });
 const createBusy = ref(false);
@@ -55,6 +66,8 @@ const pendingConfirmation = ref<Confirmation | null>(null);
 const confirmationBusy = ref(false);
 const pendingRelease = ref<{ release: ProfileRelease; pausing: boolean } | null>(null);
 const releaseBusy = ref(false);
+const pendingLifecycle = ref<LifecycleConfirmation | null>(null);
+const lifecycleBusy = ref(false);
 
 const selectedProfile = computed(() => detail.value?.profile ?? null);
 const orderedChannels = computed(() => {
@@ -66,9 +79,31 @@ const orderedChannels = computed(() => {
 });
 const metadataDirty = computed(() => {
   const profile = selectedProfile.value;
-  return Boolean(profile) &&
+  return Boolean(profile) && !profile!.isArchived &&
     (metadata.displayName.trim() !== profile!.displayName || metadata.isActive !== profile!.isActive);
 });
+
+function profileStatus(profile: ClientProfile): { label: string; className: string } {
+  if (profile.isArchived) return { label: "已归档", className: "status-archived" };
+  if (profile.isActive) return { label: "启用", className: "status-online" };
+  if (profile.releaseCount === 0) return { label: "草稿", className: "status-maintenance" };
+  return { label: "停用", className: "status-archived" };
+}
+
+function archiveRestriction(profile: ClientProfile): string {
+  return profile.serverReferenceCount > 0
+    ? `仍有 ${profile.serverReferenceCount} 个服务器引用，请先在服务器目录改绑。`
+    : "";
+}
+
+function deleteRestriction(profile: ClientProfile): string {
+  const reasons: string[] = [];
+  if (profile.releaseCount > 0) reasons.push(`保留 ${profile.releaseCount} 个不可变版本`);
+  if (profile.serverReferenceCount > 0) reasons.push(`仍被 ${profile.serverReferenceCount} 个服务器引用`);
+  return reasons.length > 0
+    ? `${reasons.join("，")}，因此只能归档，不能永久删除。`
+    : "只有已归档的空草稿可以永久删除。";
+}
 
 function channelText(channel: ReleaseChannel): string {
   return { Test: "测试", Gray: "灰度", Production: "正式" }[channel];
@@ -164,6 +199,7 @@ function closeProfile(): void {
   drawer.value?.close();
   detail.value = null;
   detailError.value = "";
+  pendingLifecycle.value = null;
   manifestFile.value = null;
   if (manifestInput.value) manifestInput.value.value = "";
 }
@@ -194,6 +230,14 @@ async function handleMutationError(reason: unknown): Promise<void> {
   const message = reason instanceof Error ? reason.message : "操作失败。";
   detailError.value = message;
   if (reason instanceof ApiError && reason.status === 409) {
+    const code = reason.payload && typeof reason.payload === "object" && "code" in reason.payload
+      ? (reason.payload as { code?: unknown }).code
+      : null;
+    if (typeof code === "string" && code !== "revision_conflict") {
+      await refreshSelected();
+      detailError.value = message;
+      return;
+    }
     const refreshed = await refreshSelected();
     detailError.value = refreshed
       ? "数据已被其他管理员修改，已载入最新修订，请核对后重试。"
@@ -407,6 +451,78 @@ async function setReleasePaused(payload: { reason: string }): Promise<void> {
   }
 }
 
+async function executeLifecycle(payload: { reason: string; confirmation: string }): Promise<void> {
+  const pending = pendingLifecycle.value;
+  if (!pending) return;
+  lifecycleBusy.value = true;
+  detailError.value = "";
+  const path = `/v1/admin/catalog/client-profiles/${encodeURIComponent(pending.profile.id)}`;
+  try {
+    if (pending.kind === "delete") {
+      await api<void>(path, {
+        method: "DELETE",
+        body: {
+          reason: payload.reason,
+          confirmation: payload.confirmation,
+          expectedRevision: pending.profile.revision
+        }
+      });
+      pendingLifecycle.value = null;
+      closeProfile();
+      await profiles.refresh();
+      showToast("空客户端档案已永久删除");
+      return;
+    }
+
+    const updated = await api<ProfileDetail>(
+      `${path}/${pending.kind}`,
+      {
+        method: "POST",
+        body: pending.kind === "archive"
+          ? { reason: payload.reason, expectedRevision: pending.profile.revision }
+          : { expectedRevision: pending.profile.revision }
+      }
+    );
+    pendingLifecycle.value = null;
+    applyDetail(updated);
+    await profiles.refresh();
+    showToast(pending.kind === "archive"
+      ? "客户端档案已归档"
+      : "客户端档案已恢复为停用状态");
+  } catch (reason) {
+    pendingLifecycle.value = null;
+    await handleMutationError(reason);
+  } finally {
+    lifecycleBusy.value = false;
+  }
+}
+
+function lifecycleTitle(): string {
+  const kind = pendingLifecycle.value?.kind;
+  return kind === "archive" ? "归档客户端档案"
+    : kind === "restore" ? "恢复客户端档案"
+      : "永久删除空档案";
+}
+
+function lifecycleMessage(): string {
+  const pending = pendingLifecycle.value;
+  if (!pending) return "";
+  if (pending.kind === "archive") {
+    return `${pending.profile.displayName} 将停止玩家分发并从默认列表隐藏；版本、通道与 OSS 对象全部保留。`;
+  }
+  if (pending.kind === "restore") {
+    return `${pending.profile.displayName} 将回到停用状态；恢复不会自动重新向玩家分发。`;
+  }
+  return `${pending.profile.displayName} 的空档案记录和三个空通道将被永久删除，此操作不可恢复。`;
+}
+
+function lifecycleConfirmLabel(): string {
+  const kind = pendingLifecycle.value?.kind;
+  return kind === "archive" ? "确认归档"
+    : kind === "restore" ? "确认恢复"
+      : "确认永久删除";
+}
+
 function confirmationTitle(): string {
   const pending = pendingConfirmation.value;
   if (!pending) return "确认发布操作";
@@ -435,19 +551,32 @@ function confirmationMessage(): string {
       :stale="Boolean(profiles.error.value)"
     >
       <template #actions>
-        <span class="count-label">{{ list.length }} 个档案</span>
+        <span class="count-label">{{ list.length }} / {{ allProfiles.length }} 个档案</span>
         <button class="button button-primary" type="button" @click="openCreate">
           <AppIcon name="plus" />新建档案
         </button>
       </template>
     </PageHeading>
 
+    <div class="profile-list-toolbar">
+      <div class="segmented-control" role="group" aria-label="客户端档案显示范围">
+        <button
+          v-for="item in ([['current','使用中'],['archived','已归档'],['all','全部']] as const)"
+          :key="item[0]"
+          type="button"
+          :class="{ active: filter === item[0] }"
+          :aria-pressed="filter === item[0]"
+          @click="filter = item[0]"
+        >{{ item[1] }}</button>
+      </div>
+    </div>
+
     <ResourceState
       :loading="profiles.loading.value && !profiles.data.value"
       :error="profiles.data.value ? '' : profiles.error.value"
       :empty="list.length === 0"
-      empty-title="还没有客户端档案"
-      empty-message="先创建档案，再导入离线签名清单。"
+      :empty-title="filter === 'archived' ? '没有已归档档案' : filter === 'current' ? '没有使用中的档案' : '还没有客户端档案'"
+      :empty-message="filter === 'archived' ? '归档后的档案会保留版本与通道，并显示在这里。' : '先创建档案，再导入离线签名清单。'"
       @retry="profiles.refresh"
     >
       <div class="table-frame" tabindex="0" aria-label="可滚动数据表">
@@ -464,7 +593,7 @@ function confirmationMessage(): string {
               </td>
               <td><div class="profile-channel-summary"><span v-for="channelName in channelOrder" :key="channelName" class="channel-pill" :class="{ assigned: channelFor(profile, channelName)?.manifestSha256 }">{{ channelText(channelName) }} {{ channelFor(profile, channelName)?.manifestSha256 ? channelName === "Production" ? `v${channelFor(profile, channelName)?.version}` : `${channelFor(profile, channelName)?.rolloutPercentage}%` : "未分配" }}</span></div></td>
               <td>{{ profile.releaseCount }}</td>
-              <td><span class="status-badge" :class="profile.isActive ? 'status-online' : 'status-archived'">{{ profile.isActive ? "启用" : "停用" }}</span></td>
+              <td><span class="status-badge" :class="profileStatus(profile).className">{{ profileStatus(profile).label }}</span></td>
               <td class="actions-column"><button class="icon-button" type="button" title="管理客户端档案" aria-label="管理客户端档案" @click="openProfile(profile.id)"><AppIcon name="pencil" /></button></td>
             </tr>
           </tbody>
@@ -494,15 +623,17 @@ function confirmationMessage(): string {
         <ResourceState :loading="detailLoading && !detail" :error="!detail ? detailError : ''" @retry="selectedProfile && openProfile(selectedProfile.id)">
           <template v-if="detail">
             <section class="profile-manager-section">
-              <div class="profile-manager-heading"><div><span>档案身份</span><strong>{{ detail.profile.id }}</strong></div><span>修订 r{{ detail.profile.revision }}</span></div>
-              <div class="profile-metadata-grid"><label>显示名称<input v-model="metadata.displayName" maxlength="80" required></label><label class="checkbox-row"><input v-model="metadata.isActive" type="checkbox"><span>允许客户端目录使用本档案</span></label></div>
-              <button class="button button-secondary profile-section-action" type="button" :disabled="metadataBusy || !metadataDirty" @click="saveMetadata"><AppIcon name="save" />{{ metadataBusy ? "保存中…" : "保存档案信息" }}</button>
+              <div class="profile-manager-heading"><div><span>档案身份</span><strong>{{ detail.profile.id }}</strong></div><span class="status-badge" :class="profileStatus(detail.profile).className">{{ profileStatus(detail.profile).label }} · r{{ detail.profile.revision }}</span></div>
+              <div v-if="detail.profile.isArchived" class="profile-readonly-notice"><AppIcon name="archive" /><span>档案已归档，发布配置保持只读。恢复后才能继续修改。</span></div>
+              <div class="profile-metadata-grid"><label>显示名称<input v-model="metadata.displayName" maxlength="80" :disabled="detail.profile.isArchived" required></label><label class="checkbox-row"><input v-model="metadata.isActive" type="checkbox" :disabled="detail.profile.isArchived"><span>向玩家目录分发本档案</span></label></div>
+              <button class="button button-secondary profile-section-action" type="button" :disabled="metadataBusy || !metadataDirty || detail.profile.isArchived" @click="saveMetadata"><AppIcon name="save" />{{ metadataBusy ? "保存中…" : "保存档案信息" }}</button>
             </section>
 
             <section class="profile-manager-section">
               <div class="profile-manager-heading"><div><span>签名清单</span><strong>导入不可变版本</strong></div></div>
               <p class="profile-manager-copy">后台会验证签名、档案 ID、文件摘要和清单大小；不会接受手工填写的版本元数据。</p>
-              <div class="profile-import-row"><input ref="manifestInput" type="file" accept="application/json,.json" @change="selectManifest"><button class="button button-secondary" type="button" :disabled="importBusy || !manifestFile" @click="importRelease"><AppIcon name="upload" />{{ importBusy ? "验证中…" : "验证并导入" }}</button></div>
+              <div v-if="!detail.profile.isArchived" class="profile-import-row"><input ref="manifestInput" type="file" accept="application/json,.json" @change="selectManifest"><button class="button button-secondary" type="button" :disabled="importBusy || !manifestFile" @click="importRelease"><AppIcon name="upload" />{{ importBusy ? "验证中…" : "验证并导入" }}</button></div>
+              <p v-else class="profile-manager-copy profile-manager-copy-last">恢复档案后才能导入新的签名版本。</p>
             </section>
 
             <section class="profile-manager-section">
@@ -511,10 +642,10 @@ function confirmationMessage(): string {
                 <article v-for="channel in orderedChannels" :key="channel.channel" class="profile-channel-card">
                     <div class="profile-channel-heading"><div><strong>{{ channelText(channel.channel) }}通道</strong><span>{{ channelDescription(channel.channel) }}</span></div><span class="status-badge" :class="channel.manifestSha256 ? 'status-online' : 'status-archived'">{{ channel.version ? `v${channel.version}` : "未分配" }}</span></div>
                     <div class="profile-channel-controls">
-                      <label>发布版本<select v-model="channelDrafts[channel.channel].manifestSha256"><option value="">不分配</option><option v-for="release in detail.releases.filter(item => !item.isPaused)" :key="release.manifestSha256" :value="release.manifestSha256">v{{ release.version }} · {{ shortHash(release.manifestSha256) }}</option></select></label>
-                      <label>覆盖比例<input v-model.number="channelDrafts[channel.channel].rolloutPercentage" type="number" min="0" max="100" step="1" :disabled="channel.channel === 'Production'"></label>
+                      <label>发布版本<select v-model="channelDrafts[channel.channel].manifestSha256" :disabled="detail.profile.isArchived"><option value="">不分配</option><option v-for="release in detail.releases.filter(item => !item.isPaused)" :key="release.manifestSha256" :value="release.manifestSha256">v{{ release.version }} · {{ shortHash(release.manifestSha256) }}</option></select></label>
+                      <label>覆盖比例<input v-model.number="channelDrafts[channel.channel].rolloutPercentage" type="number" min="0" max="100" step="1" :disabled="detail.profile.isArchived || channel.channel === 'Production'"></label>
                     </div>
-                    <div class="profile-channel-actions"><span>通道修订 r{{ channel.revision }}</span><div><button class="button button-secondary" type="button" :disabled="!channel.manifestSha256 || channelBusy !== null" @click="requestRollback(channel)"><AppIcon name="rotate-ccw" />回滚</button><button class="button button-secondary" type="button" :disabled="channelBusy !== null" @click="saveChannel(channel)"><AppIcon name="save" />{{ channelBusy === channel.channel ? "保存中…" : "保存通道" }}</button></div></div>
+                    <div class="profile-channel-actions"><span>通道修订 r{{ channel.revision }}</span><div><button class="button button-secondary" type="button" :disabled="detail.profile.isArchived || !channel.manifestSha256 || channelBusy !== null" @click="requestRollback(channel)"><AppIcon name="rotate-ccw" />回滚</button><button class="button button-secondary" type="button" :disabled="detail.profile.isArchived || channelBusy !== null" @click="saveChannel(channel)"><AppIcon name="save" />{{ channelBusy === channel.channel ? "保存中…" : "保存通道" }}</button></div></div>
                 </article>
               </div>
             </section>
@@ -527,10 +658,30 @@ function confirmationMessage(): string {
                   <dl class="profile-release-facts"><div><dt>运行环境</dt><dd>{{ release.minecraftVersion }} · {{ release.loader }} {{ release.loaderVersion }}</dd></div><div><dt>Java</dt><dd>{{ release.javaVersion }}</dd></div><div><dt>资源</dt><dd>{{ formatBytes(release.downloadBytes) }} · {{ release.fileCount }} 个文件</dd></div><div><dt>导入人</dt><dd>{{ release.createdByDisplayName || "系统迁移" }}</dd></div></dl>
                   <code class="profile-release-hash" :title="release.manifestSha256">{{ release.manifestSha256 }}</code>
                   <p v-if="release.pauseReason" class="profile-release-pause-reason">暂停原因：{{ release.pauseReason }}</p>
-                  <div class="profile-release-actions"><div v-if="!release.isPaused"><button v-for="channelName in channelOrder" :key="channelName" class="button button-secondary" type="button" @click="requestAssignment(release, channelName)">{{ channelName === "Production" ? "设为正式" : `发布到${channelText(channelName)}` }}</button></div><button class="button" :class="release.isPaused ? 'button-secondary' : 'button-danger'" type="button" @click="pendingRelease = { release, pausing: !release.isPaused }"><AppIcon :name="release.isPaused ? 'rotate-ccw' : 'archive'" />{{ release.isPaused ? "恢复版本" : "暂停版本" }}</button></div>
+                  <div v-if="!detail.profile.isArchived" class="profile-release-actions"><div v-if="!release.isPaused"><button v-for="channelName in channelOrder" :key="channelName" class="button button-secondary" type="button" @click="requestAssignment(release, channelName)">{{ channelName === "Production" ? "设为正式" : `发布到${channelText(channelName)}` }}</button></div><button class="button" :class="release.isPaused ? 'button-secondary' : 'button-danger'" type="button" @click="pendingRelease = { release, pausing: !release.isPaused }"><AppIcon :name="release.isPaused ? 'rotate-ccw' : 'archive'" />{{ release.isPaused ? "恢复版本" : "暂停版本" }}</button></div>
                 </article>
               </div>
-              <div v-else class="resource-state resource-empty"><AppIcon name="package" /><strong>尚未导入版本</strong><span>使用上方签名清单入口导入第一份版本。</span></div>
+              <div v-else class="resource-state resource-empty"><AppIcon name="package" /><strong>尚未导入版本</strong><span>{{ detail.profile.isArchived ? "恢复档案后才能导入第一份签名版本。" : "使用上方签名清单入口导入第一份版本。" }}</span></div>
+            </section>
+
+            <section class="profile-manager-section profile-lifecycle-section" aria-labelledby="profile-lifecycle-title">
+              <div class="profile-manager-heading"><div><span>档案生命周期</span><strong id="profile-lifecycle-title">归档、恢复与清理</strong></div><span>{{ detail.profile.archivedAt ? formatDateTime(detail.profile.archivedAt) : "当前未归档" }}</span></div>
+              <dl class="profile-lifecycle-facts">
+                <div><dt>当前状态</dt><dd>{{ profileStatus(detail.profile).label }}</dd></div>
+                <div><dt>服务器引用</dt><dd>{{ detail.profile.serverReferenceCount }} 个</dd></div>
+                <div><dt>不可变版本</dt><dd>{{ detail.profile.releaseCount }} 个</dd></div>
+              </dl>
+              <p v-if="detail.profile.archiveReason" class="profile-archive-reason">归档原因：{{ detail.profile.archiveReason }}</p>
+              <p class="profile-manager-copy profile-manager-copy-last">归档会停止玩家分发但保留版本、通道和 OSS 对象。恢复后保持停用，需人工重新启用。</p>
+              <div class="profile-lifecycle-actions">
+                <button v-if="!detail.profile.isArchived" class="button button-danger" type="button" :disabled="detail.profile.serverReferenceCount > 0" :title="archiveRestriction(detail.profile)" @click="pendingLifecycle = { kind: 'archive', profile: detail.profile }"><AppIcon name="archive" />归档档案</button>
+                <template v-else>
+                  <button class="button button-secondary" type="button" @click="pendingLifecycle = { kind: 'restore', profile: detail.profile }"><AppIcon name="rotate-ccw" />恢复档案</button>
+                  <button class="button button-danger" type="button" :disabled="!detail.profile.canDelete" :title="deleteRestriction(detail.profile)" @click="pendingLifecycle = { kind: 'delete', profile: detail.profile }"><AppIcon name="trash-2" />永久删除</button>
+                </template>
+              </div>
+              <p v-if="!detail.profile.isArchived && archiveRestriction(detail.profile)" class="profile-lifecycle-restriction">{{ archiveRestriction(detail.profile) }}</p>
+              <p v-if="detail.profile.isArchived && !detail.profile.canDelete" class="profile-lifecycle-restriction">{{ deleteRestriction(detail.profile) }}</p>
             </section>
           </template>
         </ResourceState>
@@ -559,6 +710,20 @@ function confirmationMessage(): string {
       :busy="releaseBusy"
       @close="pendingRelease = null"
       @confirm="setReleasePaused"
+    />
+    <ConfirmDialog
+      :open="Boolean(pendingLifecycle)"
+      :title="lifecycleTitle()"
+      :message="lifecycleMessage()"
+      :confirm-label="lifecycleConfirmLabel()"
+      :danger="pendingLifecycle?.kind !== 'restore'"
+      :require-reason="pendingLifecycle?.kind === 'archive' || pendingLifecycle?.kind === 'delete'"
+      :reason-label="pendingLifecycle?.kind === 'archive' ? '归档原因' : '删除原因'"
+      :confirmation-text="pendingLifecycle?.kind === 'delete' ? `DELETE ${pendingLifecycle.profile.id}` : ''"
+      confirmation-label="二次确认"
+      :busy="lifecycleBusy"
+      @close="pendingLifecycle = null"
+      @confirm="executeLifecycle"
     />
   </section>
 </template>

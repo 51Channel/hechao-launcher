@@ -952,6 +952,12 @@ td:first-child {
     width: 29%;
 }
 
+.profile-list-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
 .profile-channel-summary {
     display: flex;
     flex-wrap: wrap;
@@ -1380,6 +1386,27 @@ dialog::backdrop {
     line-height: 1.65;
 }
 
+.profile-manager-copy-last {
+    margin-bottom: 0;
+}
+
+.profile-readonly-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 5px;
+    background: var(--surface-muted);
+    color: var(--ink-secondary);
+    font-size: 11px;
+}
+
+.profile-readonly-notice .app-icon {
+    flex: 0 0 auto;
+}
+
 .profile-import-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1391,6 +1418,64 @@ dialog::backdrop {
     height: auto;
     min-height: 40px;
     padding: 7px;
+}
+
+.profile-lifecycle-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0 0 14px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.profile-lifecycle-facts > div {
+    min-width: 0;
+    padding: 12px;
+}
+
+.profile-lifecycle-facts > div + div {
+    border-left: 1px solid var(--line);
+}
+
+.profile-lifecycle-facts dt,
+.profile-lifecycle-facts dd {
+    margin: 0;
+}
+
+.profile-lifecycle-facts dt {
+    margin-bottom: 4px;
+    color: var(--ink-muted);
+    font-size: 9px;
+}
+
+.profile-lifecycle-facts dd {
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.profile-archive-reason,
+.profile-lifecycle-restriction {
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.profile-archive-reason {
+    margin: 0 0 12px;
+    color: var(--ink-secondary);
+}
+
+.profile-lifecycle-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.profile-lifecycle-restriction {
+    margin: 10px 0 0;
+    color: var(--danger);
 }
 
 .profile-channel-list,
@@ -2805,8 +2890,21 @@ dialog::backdrop {
 
     .profile-import-row,
     .profile-channel-controls,
-    .profile-release-facts {
+    .profile-release-facts,
+    .profile-lifecycle-facts {
         grid-template-columns: 1fr;
+    }
+
+    .profile-list-toolbar .segmented-control,
+    .profile-list-toolbar .segmented-control button,
+    .profile-lifecycle-actions,
+    .profile-lifecycle-actions .button {
+        width: 100%;
+    }
+
+    .profile-lifecycle-facts > div + div {
+        border-left: 0;
+        border-top: 1px solid var(--line);
     }
 
     .profile-channel-heading,

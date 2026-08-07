@@ -32,6 +32,42 @@ public static partial class AdminProfileReleaseRules
     }
 
     public static IReadOnlyDictionary<string, string[]> Validate(
+        AdminClientProfileArchiveRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        ValidateLifecycleReason(request.Reason, errors);
+        ValidateProfileRevision(request.ExpectedRevision, errors);
+        return errors;
+    }
+
+    public static IReadOnlyDictionary<string, string[]> Validate(
+        AdminClientProfileRestoreRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        ValidateProfileRevision(request.ExpectedRevision, errors);
+        return errors;
+    }
+
+    public static IReadOnlyDictionary<string, string[]> Validate(
+        string profileId,
+        AdminClientProfileDeleteRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+        ValidateLifecycleReason(request.Reason, errors);
+        ValidateProfileRevision(request.ExpectedRevision, errors);
+        if (!string.Equals(
+                request.Confirmation?.Trim(),
+                $"DELETE {profileId}",
+                StringComparison.Ordinal))
+        {
+            errors["confirmation"] =
+                [$"请输入“DELETE {profileId}”确认永久删除客户端档案。"];
+        }
+
+        return errors;
+    }
+
+    public static IReadOnlyDictionary<string, string[]> Validate(
         ClientProfileReleaseChannel channel,
         AdminClientProfileChannelUpdateRequest request)
     {
@@ -110,6 +146,27 @@ public static partial class AdminProfileReleaseRules
         if (normalized.Length is < 1 or > 80 || normalized.Any(char.IsControl))
         {
             errors["displayName"] = ["显示名称必须为 1 至 80 个可显示字符。"];
+        }
+    }
+
+    private static void ValidateLifecycleReason(
+        string? reason,
+        IDictionary<string, string[]> errors)
+    {
+        var normalized = reason?.Trim() ?? string.Empty;
+        if (normalized.Length is < 4 or > 280 || normalized.Any(char.IsControl))
+        {
+            errors["reason"] = ["操作原因必须为 4 至 280 个可显示字符。"];
+        }
+    }
+
+    private static void ValidateProfileRevision(
+        long expectedRevision,
+        IDictionary<string, string[]> errors)
+    {
+        if (expectedRevision <= 0)
+        {
+            errors["expectedRevision"] = ["档案修订号无效，请刷新后重试。"];
         }
     }
 

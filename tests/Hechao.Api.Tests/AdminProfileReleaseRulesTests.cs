@@ -76,4 +76,40 @@ public sealed class AdminProfileReleaseRulesTests
                     Reason: "",
                     ExpectedRevision: 1)));
     }
+
+    [Fact]
+    public void ValidateArchive_RequiresAuditableReasonAndRevision()
+    {
+        var errors = AdminProfileReleaseRules.Validate(
+            new AdminClientProfileArchiveRequest(
+                Reason: "x",
+                ExpectedRevision: 0));
+
+        Assert.Contains("reason", errors);
+        Assert.Contains("expectedRevision", errors);
+        Assert.Empty(AdminProfileReleaseRules.Validate(
+            new AdminClientProfileArchiveRequest(
+                Reason: "测试档案已经停止使用",
+                ExpectedRevision: 3)));
+    }
+
+    [Fact]
+    public void ValidateDelete_RequiresExactProfileConfirmation()
+    {
+        const string profileId = "unused-draft-1.21.11";
+        var invalid = AdminProfileReleaseRules.Validate(
+            profileId,
+            new AdminClientProfileDeleteRequest(
+                Reason: "清理误建的空档案",
+                Confirmation: profileId,
+                ExpectedRevision: 2));
+
+        Assert.Contains("confirmation", invalid);
+        Assert.Empty(AdminProfileReleaseRules.Validate(
+            profileId,
+            new AdminClientProfileDeleteRequest(
+                Reason: "清理误建的空档案",
+                Confirmation: $"DELETE {profileId}",
+                ExpectedRevision: 2)));
+    }
 }

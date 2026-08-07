@@ -82,6 +82,20 @@ public sealed class PackagePublisherCompletionService(
         var profile = await profiles.GetDetailAsync(
             manifest!.ProfileId,
             cancellationToken);
+        if (profile?.Profile.IsArchived == true)
+        {
+            var rejected = await packageImports.CompletePublisherFailureAsync(
+                importId,
+                request.AgentId,
+                request.AttemptCount,
+                "PROFILE_ARCHIVED",
+                "目标客户端档案已归档，请恢复档案或改用新的档案 ID 后重新导入。",
+                retryable: false,
+                now,
+                cancellationToken);
+            return Map(rejected);
+        }
+
         if (profile is null)
         {
             var created = await profiles.CreateProfileAsync(
@@ -122,6 +136,21 @@ public sealed class PackagePublisherCompletionService(
                     request.AttemptCount,
                     "PROFILE_VERSION_CONFLICT",
                     "该客户端档案版本号已对应另一份签名清单，正式通道未发生变化。",
+                    retryable: false,
+                    now,
+                    cancellationToken);
+                return Map(rejected);
+            }
+
+            if (imported.Status == AdminProfileMutationStatus.ProfileArchived)
+            {
+                manifestStore.DeleteStoredRelease(storedManifest);
+                var rejected = await packageImports.CompletePublisherFailureAsync(
+                    importId,
+                    request.AgentId,
+                    request.AttemptCount,
+                    "PROFILE_ARCHIVED",
+                    "目标客户端档案已归档，请恢复档案或改用新的档案 ID 后重新导入。",
                     retryable: false,
                     now,
                     cancellationToken);

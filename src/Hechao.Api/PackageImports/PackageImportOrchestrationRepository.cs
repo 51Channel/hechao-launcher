@@ -264,6 +264,29 @@ internal sealed class PackageImportOrchestrationRepository(
             return PackageImportOrchestrationOutcome.NoWork;
         }
 
+        var profileIsArchived = await ReadProfileArchivedForUpdateAsync(
+            connection,
+            transaction,
+            package.Plan.ProfileId,
+            cancellationToken);
+        if (profileIsArchived is null || profileIsArchived.Value)
+        {
+            await FailPackageAsync(
+                connection,
+                transaction,
+                package.ImportId,
+                profileIsArchived is true
+                    ? "PROFILE_ARCHIVED"
+                    : "FINALIZATION_PROFILE_MISSING",
+                profileIsArchived is true
+                    ? "目标客户端档案在整合包收口前已归档；服务端保持停止，Test 与正式通道未变化。"
+                    : "目标客户端档案在整合包收口前不存在；服务端保持停止，Test 与正式通道未变化。",
+                now,
+                cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return PackageImportOrchestrationOutcome.Progressed;
+        }
+
         if (string.IsNullOrWhiteSpace(package.ManifestSha256) ||
             !await IsUsableReleaseAsync(
                 connection,
@@ -580,6 +603,26 @@ internal sealed class PackageImportOrchestrationRepository(
                 AutomaticallyStoppingServerIds = Array.Empty<string>()
             }, JsonOptions),
             cancellationToken);
+    }
+
+    private static async Task<bool?> ReadProfileArchivedForUpdateAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string profileId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT archived_at IS NOT NULL
+            FROM launcher.client_profiles
+            WHERE id = $1
+            FOR UPDATE;
+            """,
+            connection,
+            transaction);
+        command.Parameters.AddWithValue(profileId);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is bool isArchived ? isArchived : null;
     }
 
     private static async Task<bool> IsUsableReleaseAsync(

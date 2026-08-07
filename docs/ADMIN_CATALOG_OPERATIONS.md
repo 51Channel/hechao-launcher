@@ -1,7 +1,7 @@
 # 管理员服务器目录 API
 
-> 源码候选：API `0.21.0`（隔离验收通过、未部署；基础目录自 `0.7.0` 起保持兼容）
-> 生产状态：API `0.24.1-20260731T105946Z` 已部署；真实管理员 MFA 已登记，目录写入和物理服状态同步已完成生产验收
+> 源码候选：API `0.29.0`（客户端档案生命周期，尚未部署）
+> 生产状态：API `0.28.7-20260807T072043Z`，数据库迁移 `026`
 > 安全边界：只管理目录数据，不包含 Minecraft、Velocity 或 Java 进程的启动、停止、重启和命令执行能力
 
 ## 1. 访问控制
@@ -28,6 +28,9 @@
 | `GET /v1/admin/catalog/client-profiles/{profileId}` | 查看档案、通道和全部不可变发布 |
 | `POST /v1/admin/catalog/client-profiles` | 创建空档案和 Test、Gray、Production 三个通道 |
 | `PUT /v1/admin/catalog/client-profiles/{profileId}` | 修改显示名，或在正式通道存在可用发布后启用档案 |
+| `POST /v1/admin/catalog/client-profiles/{profileId}/archive` | 按修订号和原因归档未被服务器引用的档案 |
+| `POST /v1/admin/catalog/client-profiles/{profileId}/restore` | 将已归档档案恢复为停用状态 |
+| `DELETE /v1/admin/catalog/client-profiles/{profileId}` | 永久删除已归档、零版本、零服务器引用的空草稿 |
 | `POST /v1/admin/catalog/client-profiles/{profileId}/releases` | 导入并验证离线签名的原始 JSON 清单 |
 | `PUT /v1/admin/catalog/client-profiles/{profileId}/channels/{channel}` | 为通道指定发布和测试/灰度比例 |
 | `POST /v1/admin/catalog/client-profiles/{profileId}/channels/{channel}/rollback` | 按发布时间回退到该通道的上一份可用发布 |
@@ -126,6 +129,26 @@ API `0.17.0` 把“客户端档案”和“某次签名发布”分开。档案 
 迁移 14 存在后，`deploy/linux/publish-profile.sh` 会在修改文件或数据库前退出。
 不得再用旧脚本直接改 `client_profiles`，否则会绕过签名验证、通道修订和审计。
 
+### 3.1 客户端档案生命周期
+
+迁移 `027` 将“向玩家分发”与“后台归档”拆成两个状态。`is_active=false` 仍可表示新建
+草稿或暂时停用；只有 `archived_at` 非空才表示已归档。后台默认隐藏已归档档案，并提供
+“使用中 / 已归档 / 全部”筛选。
+
+- 归档要求档案没有任何服务器目录引用，并提交当前档案修订号和 `4` 至 `280` 字原因；
+- 归档会强制 `is_active=false`，但保留三个通道、全部不可变发布、签名清单与 OSS 对象；
+- 已归档档案不能改名、启用、导入版本、修改或回滚通道、暂停或恢复版本；
+- 恢复会清除归档状态，但固定保持停用，不会自动重新进入玩家目录；
+- 永久删除还要求发布数量为 `0`，并精确输入 `DELETE <profileId>`；删除只影响空档案
+  记录和级联的三个空通道；
+- 任何已经产生不可变发布的档案都只能归档，不能为了清理后台列表删除发布、清单或 OSS
+  对象。服务器引用包含可见和已归档的全部服务器记录，必须先改绑后才能归档。
+
+以上写入均在取得档案行锁后重新统计版本和服务器引用，防止并发导入或改绑绕过门禁。
+整合包 Publisher 遇到已归档档案时使用不可重试的 `PROFILE_ARCHIVED` 结果结束任务，不会
+继续写入签名清单。若档案在客户端发布完成后、目录最终化前才被归档，最终化事务会先锁定
+档案并以同一错误码停止，不会重新创建服务器引用、修改 Test 通道或重新启用档案。
+
 ## 4. 并发与验证
 
 数据库迁移 5 为每个服务器增加从 `1` 开始的 `revision`。编辑、归档和恢复必须提交上次读取到的 `expectedRevision`：
@@ -145,7 +168,7 @@ API `0.17.0` 把“客户端档案”和“某次签名发布”分开。档案 
 - 档案 ID 为 2 至 64 位小写字母、数字、点、下划线或短横线。
 - 档案显示名为 1 至 80 个可显示字符。
 - Test 和 Gray 比例为 0 至 100；Production 固定为 100。
-- 档案、通道和发布暂停分别使用自己的修订号，过期写入返回 `409 Conflict`。
+- 档案、生命周期、通道和发布暂停分别使用自己的修订号，过期写入返回 `409 Conflict`。
 
 `velocity_target` 允许多个目录服务器共享，不应添加唯一约束。自 `2026-07-31` 起，
 不同活动目录记录统一共享 `activity` 目标，并由 `owl5-activity-slot` 保证同一时刻只有
@@ -179,6 +202,9 @@ catalog.client_profile.created
 catalog.client_profile.updated
 catalog.client_profile.enabled
 catalog.client_profile.disabled
+catalog.client_profile.archived
+catalog.client_profile.restored
+catalog.client_profile.deleted
 catalog.client_profile_release.imported
 catalog.client_profile_release.hydrated
 catalog.client_profile_release.paused
@@ -193,10 +219,10 @@ catalog.client_profile_channel.rolled_back
 
 本功能代码、数据库结构、公网管理入口与管理员 MFA 已部署。正式写入验收前必须：
 
-1. 生成并校验目标 API Linux 发布物、提交号与 SHA-256；当前生产为 `0.22.0-20260729T144953Z`。
+1. 生成并校验目标 API Linux 发布物、提交号与 SHA-256；当前生产为 `0.28.7-20260807T072043Z`。
 2. 创建部署前数据库备份，运行 `pg_restore --list` 验证可读。
 3. 确认至少一个真实 `Administrator` 身份可用于授权测试。
-4. 部署 API 后验证迁移 5、迁移 6、迁移 10、迁移 14、`healthz`、`readyz`、旧目录端点和 `GET /v1/public/activities` 的脱敏响应。
+4. 部署 API 后验证迁移 5、迁移 6、迁移 10、迁移 14、迁移 27、`healthz`、`readyz`、旧目录端点和 `GET /v1/public/activities` 的脱敏响应。
 5. 验证普通账号不能创建后台票据，管理员必须完成 MFA 后才能读取目录。
 6. 只在维护窗口创建一条隐藏测试服务器，核对审计后再归档。
 7. 导入两份真实签名清单，验证不可变存储、三通道、回滚、暂停和修订冲突。

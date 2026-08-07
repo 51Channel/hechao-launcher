@@ -18,7 +18,11 @@ public enum AdminProfileMutationStatus
     ReleaseNotFound,
     ReleasePaused,
     ProductionReleaseRequired,
-    NoRollbackTarget
+    NoRollbackTarget,
+    ProfileArchived,
+    ProfileNotArchived,
+    ProfileReferenced,
+    ProfileHasReleases
 }
 
 public sealed record AdminProfileMutationResult(
@@ -36,13 +40,21 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
         const string profileSql = """
             SELECT profile.id, profile.display_name, profile.version,
                    profile.download_bytes, profile.sha256, profile.published_at,
-                   profile.is_active, profile.updated_at, profile.revision,
-                   count(release.manifest_sha256)::integer
+                   profile.is_active, profile.archived_at, profile.archive_reason,
+                   profile.updated_at, profile.revision,
+                   (
+                       SELECT count(*)::integer
+                       FROM launcher.client_profile_releases release
+                       WHERE release.profile_id = profile.id
+                   ),
+                   (
+                       SELECT count(*)::integer
+                       FROM launcher.servers server
+                       WHERE server.client_profile_id = profile.id
+                   )
             FROM launcher.client_profiles profile
-            LEFT JOIN launcher.client_profile_releases release
-                ON release.profile_id = profile.id
-            GROUP BY profile.id
-            ORDER BY profile.is_active DESC, profile.display_name, profile.id;
+            ORDER BY profile.archived_at IS NOT NULL,
+                     profile.is_active DESC, profile.display_name, profile.id;
             """;
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -60,9 +72,14 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
                     reader.GetString(4),
                     new DateTimeOffset(reader.GetDateTime(5)),
                     reader.GetBoolean(6),
-                    new DateTimeOffset(reader.GetDateTime(7)),
-                    reader.GetInt64(8),
-                    reader.GetInt32(9)));
+                    reader.IsDBNull(7)
+                        ? null
+                        : new DateTimeOffset(reader.GetDateTime(7)),
+                    reader.GetString(8),
+                    new DateTimeOffset(reader.GetDateTime(9)),
+                    reader.GetInt64(10),
+                    reader.GetInt32(11),
+                    reader.GetInt32(12)));
             }
         }
 
@@ -210,6 +227,12 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
                 AdminProfileMutationStatus.RevisionConflict);
         }
 
+        if (before.IsArchived)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileArchived);
+        }
+
         if (request.IsActive &&
             !await HasActiveProductionReleaseAsync(
                 connection,
@@ -256,6 +279,219 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
         return new AdminProfileMutationResult(AdminProfileMutationStatus.Success);
     }
 
+    public async Task<AdminProfileMutationResult> ArchiveProfileAsync(
+        string profileId,
+        AdminClientProfileArchiveRequest request,
+        Guid actorUserId,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var before = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        if (before is null)
+        {
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (before.Revision != request.ExpectedRevision)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.RevisionConflict);
+        }
+
+        if (before.IsArchived)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.Success);
+        }
+
+        if (before.ServerReferenceCount > 0)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileReferenced);
+        }
+
+        const string sql = """
+            UPDATE launcher.client_profiles
+            SET is_active = false,
+                archived_at = now(),
+                archived_by = $1,
+                archive_reason = $2,
+                revision = revision + 1,
+                updated_at = now()
+            WHERE id = $3;
+            """;
+        await using (var command = new NpgsqlCommand(sql, connection, transaction))
+        {
+            command.Parameters.AddWithValue(actorUserId);
+            command.Parameters.AddWithValue(request.Reason.Trim());
+            command.Parameters.AddWithValue(profileId);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        var after = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        await WriteAuditAsync(
+            connection,
+            transaction,
+            actorUserId,
+            sourceIp,
+            "catalog.client_profile.archived",
+            "client_profile",
+            profileId,
+            before,
+            after,
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new AdminProfileMutationResult(AdminProfileMutationStatus.Success);
+    }
+
+    public async Task<AdminProfileMutationResult> RestoreProfileAsync(
+        string profileId,
+        AdminClientProfileRestoreRequest request,
+        Guid actorUserId,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var before = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        if (before is null)
+        {
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (before.Revision != request.ExpectedRevision)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.RevisionConflict);
+        }
+
+        if (!before.IsArchived)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.Success);
+        }
+
+        const string sql = """
+            UPDATE launcher.client_profiles
+            SET is_active = false,
+                archived_at = NULL,
+                archived_by = NULL,
+                archive_reason = '',
+                revision = revision + 1,
+                updated_at = now()
+            WHERE id = $1;
+            """;
+        await using (var command = new NpgsqlCommand(sql, connection, transaction))
+        {
+            command.Parameters.AddWithValue(profileId);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        var after = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        await WriteAuditAsync(
+            connection,
+            transaction,
+            actorUserId,
+            sourceIp,
+            "catalog.client_profile.restored",
+            "client_profile",
+            profileId,
+            before,
+            after,
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new AdminProfileMutationResult(AdminProfileMutationStatus.Success);
+    }
+
+    public async Task<AdminProfileMutationResult> DeleteProfileAsync(
+        string profileId,
+        AdminClientProfileDeleteRequest request,
+        Guid actorUserId,
+        IPAddress? sourceIp,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var before = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        if (before is null)
+        {
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (before.Revision != request.ExpectedRevision)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.RevisionConflict);
+        }
+
+        if (!before.IsArchived)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileNotArchived);
+        }
+
+        if (before.ServerReferenceCount > 0)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileReferenced);
+        }
+
+        if (before.ReleaseCount > 0)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileHasReleases);
+        }
+
+        await using (var command = new NpgsqlCommand(
+                         "DELETE FROM launcher.client_profiles WHERE id = $1;",
+                         connection,
+                         transaction))
+        {
+            command.Parameters.AddWithValue(profileId);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await WriteAuditAsync(
+            connection,
+            transaction,
+            actorUserId,
+            sourceIp,
+            "catalog.client_profile.deleted",
+            "client_profile",
+            profileId,
+            before,
+            new
+            {
+                Deleted = true,
+                Reason = request.Reason.Trim()
+            },
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new AdminProfileMutationResult(AdminProfileMutationStatus.Success);
+    }
+
     public async Task<AdminProfileMutationResult> ImportReleaseAsync(
         ValidatedProfileReleaseManifest manifest,
         Guid actorUserId,
@@ -264,13 +500,20 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        if (!await LockProfileExistsAsync(
-                connection,
-                transaction,
-                manifest.ProfileId,
-                cancellationToken))
+        var profile = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            manifest.ProfileId,
+            cancellationToken);
+        if (profile is null)
         {
             return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (profile.IsArchived)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileArchived);
         }
 
         const string existingSql = """
@@ -442,6 +685,22 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var profile = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        if (profile is null)
+        {
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (profile.IsArchived)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileArchived);
+        }
+
         var databaseChannel = AdminProfileReleaseRules.ToDatabaseValue(channel);
         var before = await ReadChannelForUpdateAsync(
             connection,
@@ -532,6 +791,22 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var profile = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        if (profile is null)
+        {
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (profile.IsArchived)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileArchived);
+        }
+
         var databaseChannel = AdminProfileReleaseRules.ToDatabaseValue(channel);
         var before = await ReadChannelForUpdateAsync(
             connection,
@@ -612,6 +887,22 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var profile = await ReadProfileMutationStateAsync(
+            connection,
+            transaction,
+            profileId,
+            cancellationToken);
+        if (profile is null)
+        {
+            return new AdminProfileMutationResult(AdminProfileMutationStatus.NotFound);
+        }
+
+        if (profile.IsArchived)
+        {
+            return new AdminProfileMutationResult(
+                AdminProfileMutationStatus.ProfileArchived);
+        }
+
         var before = await ReadReleaseForUpdateAsync(
             connection,
             transaction,
@@ -757,21 +1048,68 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
         string profileId,
         CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT display_name, is_active, revision
-            FROM launcher.client_profiles
-            WHERE id = $1
-            FOR UPDATE;
+        const string profileSql = """
+            SELECT profile.display_name, profile.is_active, profile.revision,
+                   profile.archived_at, profile.archive_reason
+            FROM launcher.client_profiles profile
+            WHERE profile.id = $1
+            FOR UPDATE OF profile;
             """;
-        await using var command = new NpgsqlCommand(sql, connection, transaction);
-        command.Parameters.AddWithValue(profileId);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken)
-            ? new ProfileMutationState(
-                reader.GetString(0),
-                reader.GetBoolean(1),
-                reader.GetInt64(2))
-            : null;
+        string displayName;
+        bool isActive;
+        long revision;
+        DateTimeOffset? archivedAt;
+        string archiveReason;
+        await using (var command = new NpgsqlCommand(profileSql, connection, transaction))
+        {
+            command.Parameters.AddWithValue(profileId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            displayName = reader.GetString(0);
+            isActive = reader.GetBoolean(1);
+            revision = reader.GetInt64(2);
+            archivedAt = reader.IsDBNull(3)
+                ? null
+                : new DateTimeOffset(reader.GetDateTime(3));
+            archiveReason = reader.GetString(4);
+        }
+
+        const string countSql = """
+            SELECT
+                (
+                    SELECT count(*)::integer
+                    FROM launcher.client_profile_releases release
+                    WHERE release.profile_id = $1
+                ),
+                (
+                    SELECT count(*)::integer
+                    FROM launcher.servers server
+                    WHERE server.client_profile_id = $1
+                );
+            """;
+        int releaseCount;
+        int serverReferenceCount;
+        await using (var command = new NpgsqlCommand(countSql, connection, transaction))
+        {
+            command.Parameters.AddWithValue(profileId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await reader.ReadAsync(cancellationToken);
+            releaseCount = reader.GetInt32(0);
+            serverReferenceCount = reader.GetInt32(1);
+        }
+
+        return new ProfileMutationState(
+            displayName,
+            isActive,
+            revision,
+            archivedAt,
+            archiveReason,
+            releaseCount,
+            serverReferenceCount);
     }
 
     private static async Task<bool> HasActiveProductionReleaseAsync(
@@ -791,20 +1129,6 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
             FOR SHARE OF channel, release;
             """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
-        command.Parameters.AddWithValue(profileId);
-        return await command.ExecuteScalarAsync(cancellationToken) is not null;
-    }
-
-    private static async Task<bool> LockProfileExistsAsync(
-        NpgsqlConnection connection,
-        NpgsqlTransaction transaction,
-        string profileId,
-        CancellationToken cancellationToken)
-    {
-        await using var command = new NpgsqlCommand(
-            "SELECT 1 FROM launcher.client_profiles WHERE id = $1 FOR UPDATE;",
-            connection,
-            transaction);
         command.Parameters.AddWithValue(profileId);
         return await command.ExecuteScalarAsync(cancellationToken) is not null;
     }
@@ -1096,9 +1420,12 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
         string sha256,
         DateTimeOffset publishedAt,
         bool isActive,
+        DateTimeOffset? archivedAt,
+        string archiveReason,
         DateTimeOffset updatedAt,
         long revision,
-        int releaseCount)
+        int releaseCount,
+        int serverReferenceCount)
     {
         public string Id { get; } = id;
         public List<AdminClientProfileChannelRecord> Channels { get; } = [];
@@ -1112,6 +1439,13 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
                 sha256,
                 publishedAt,
                 isActive,
+                archivedAt is not null,
+                archivedAt,
+                archiveReason,
+                serverReferenceCount,
+                archivedAt is not null &&
+                releaseCount == 0 &&
+                serverReferenceCount == 0,
                 updatedAt,
                 revision,
                 releaseCount,
@@ -1121,7 +1455,14 @@ public sealed class AdminProfileReleaseRepository(NpgsqlDataSource dataSource)
     private sealed record ProfileMutationState(
         string DisplayName,
         bool IsActive,
-        long Revision);
+        long Revision,
+        DateTimeOffset? ArchivedAt,
+        string ArchiveReason,
+        int ReleaseCount,
+        int ServerReferenceCount)
+    {
+        public bool IsArchived => ArchivedAt is not null;
+    }
 
     private sealed record ChannelMutationState(
         ClientProfileReleaseChannel Channel,

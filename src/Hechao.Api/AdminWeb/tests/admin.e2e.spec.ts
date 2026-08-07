@@ -158,6 +158,11 @@ const profileSummary = {
   sha256: hashOne,
   publishedAt: "2026-08-01T08:00:00Z",
   isActive: true,
+  isArchived: false,
+  archivedAt: null,
+  archiveReason: "",
+  serverReferenceCount: 2,
+  canDelete: false,
   updatedAt: "2026-08-01T08:00:00Z",
   revision: 4,
   releaseCount: 2,
@@ -701,6 +706,184 @@ test("every production channel change requires confirmation", async ({ page }) =
     expectedRevision: 3
   });
   await page.screenshot({ path: "../../../artifacts/admin-web-profiles-desktop.png", fullPage: true });
+});
+
+test("client profile lifecycle archives, restores, and permanently deletes only an empty draft", async ({ page }) => {
+  const profileId = "unused-draft-1.21.11";
+  let exists = true;
+  let current = {
+    ...profileSummary,
+    id: profileId,
+    displayName: "误建的空档案",
+    version: "unpublished",
+    downloadBytes: 0,
+    sha256: "",
+    isActive: false,
+    isArchived: false,
+    archivedAt: null as string | null,
+    archiveReason: "",
+    serverReferenceCount: 0,
+    canDelete: false,
+    revision: 1,
+    releaseCount: 0,
+    channels: profileSummary.channels.map(channel => ({
+      ...channel,
+      manifestSha256: null,
+      version: null,
+      revision: 1
+    }))
+  };
+  const archiveBodies: Record<string, unknown>[] = [];
+  let restoreBody: Record<string, unknown> | null = null;
+  let deleteBody: Record<string, unknown> | null = null;
+
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/catalog/client-profiles" && request.method() === "GET") {
+        await route.fulfill({ json: exists ? [current] : [] });
+        return true;
+      }
+      if (path === `/v1/admin/catalog/client-profiles/${profileId}` && request.method() === "GET") {
+        await route.fulfill({ json: { profile: current, releases: [] } });
+        return true;
+      }
+      if (path === `/v1/admin/catalog/client-profiles/${profileId}/archive` && request.method() === "POST") {
+        const body = request.postDataJSON() as Record<string, unknown>;
+        archiveBodies.push(body);
+        current = {
+          ...current,
+          isActive: false,
+          isArchived: true,
+          archivedAt: now,
+          archiveReason: String(body.reason),
+          canDelete: true,
+          revision: current.revision + 1
+        };
+        await route.fulfill({ json: { profile: current, releases: [] } });
+        return true;
+      }
+      if (path === `/v1/admin/catalog/client-profiles/${profileId}/restore` && request.method() === "POST") {
+        restoreBody = request.postDataJSON() as Record<string, unknown>;
+        current = {
+          ...current,
+          isArchived: false,
+          archivedAt: null,
+          archiveReason: "",
+          canDelete: false,
+          revision: current.revision + 1
+        };
+        await route.fulfill({ json: { profile: current, releases: [] } });
+        return true;
+      }
+      if (path === `/v1/admin/catalog/client-profiles/${profileId}` && request.method() === "DELETE") {
+        deleteBody = request.postDataJSON() as Record<string, unknown>;
+        exists = false;
+        await route.fulfill({ status: 204 });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/profiles");
+  await page.getByRole("button", { name: "管理客户端档案" }).click();
+  const drawer = page.locator(".profile-drawer");
+  await drawer.getByRole("button", { name: "归档档案" }).click();
+  await page.getByLabel("归档原因").fill("误建测试档案，先归档确认");
+  await page.getByRole("button", { name: "确认归档" }).click();
+  await expect.poll(() => archiveBodies.length).toBe(1);
+  expect(archiveBodies[0]).toMatchObject({
+    reason: "误建测试档案，先归档确认",
+    expectedRevision: 1
+  });
+  await drawer.locator("#profile-lifecycle-title").scrollIntoViewIfNeeded();
+  await expect(drawer.getByRole("button", { name: "永久删除" })).toBeEnabled();
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-profile-lifecycle-drawer-desktop.png"
+  });
+
+  await drawer.getByRole("button", { name: "完成" }).click();
+  await expect(page.getByText("没有使用中的档案")).toBeVisible();
+  await page.getByRole("button", { name: "已归档" }).click();
+  await expect(page.getByText("误建的空档案")).toBeVisible();
+  await page.getByRole("button", { name: "管理客户端档案" }).click();
+  await drawer.getByRole("button", { name: "恢复档案" }).click();
+  await page.getByRole("button", { name: "确认恢复" }).click();
+  await expect.poll(() => restoreBody).not.toBeNull();
+  expect(restoreBody).toMatchObject({ expectedRevision: 2 });
+
+  await drawer.getByRole("button", { name: "完成" }).click();
+  await expect(page.getByText("没有已归档档案")).toBeVisible();
+  await page.getByRole("button", { name: "使用中" }).click();
+  await page.getByRole("button", { name: "管理客户端档案" }).click();
+  await drawer.getByRole("button", { name: "归档档案" }).click();
+  await page.getByLabel("归档原因").fill("确认空档案可以安全清理");
+  await page.getByRole("button", { name: "确认归档" }).click();
+  await expect.poll(() => archiveBodies.length).toBe(2);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await drawer.getByRole("button", { name: "永久删除" }).scrollIntoViewIfNeeded();
+  const drawerWidth = await drawer.evaluate(element => ({
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth
+  }));
+  expect(drawerWidth.scrollWidth).toBe(drawerWidth.clientWidth);
+  await expect(drawer.getByRole("button", { name: "恢复档案" })).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "永久删除" })).toBeVisible();
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-profile-lifecycle-drawer-mobile.png"
+  });
+
+  await drawer.getByRole("button", { name: "永久删除" }).click();
+  await page.getByLabel("删除原因").fill("清理误建且从未发布的空档案");
+  await page.getByLabel("二次确认").fill(`DELETE ${profileId}`);
+  await page.getByRole("button", { name: "确认永久删除" }).click();
+  await expect.poll(() => deleteBody).not.toBeNull();
+  expect(deleteBody).toMatchObject({
+    reason: "清理误建且从未发布的空档案",
+    confirmation: `DELETE ${profileId}`,
+    expectedRevision: 4
+  });
+  await expect(page.getByText("没有使用中的档案")).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-profile-lifecycle-desktop.png",
+    fullPage: true
+  });
+});
+
+test("archived profiles with immutable releases explain why permanent deletion is blocked", async ({ page }) => {
+  const archived = {
+    ...profileSummary,
+    isActive: false,
+    isArchived: true,
+    archivedAt: now,
+    archiveReason: "历史测试版本停止使用",
+    serverReferenceCount: 0,
+    canDelete: false
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/catalog/client-profiles" && request.method() === "GET") {
+        await route.fulfill({ json: [archived] });
+        return true;
+      }
+      if (path === `/v1/admin/catalog/client-profiles/${archived.id}` && request.method() === "GET") {
+        await route.fulfill({ json: { profile: archived, releases } });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/profiles");
+  await expect(page.getByText("没有使用中的档案")).toBeVisible();
+  await page.getByRole("button", { name: "已归档" }).click();
+  await page.getByRole("button", { name: "管理客户端档案" }).click();
+  const drawer = page.locator(".profile-drawer");
+  await drawer.locator("#profile-lifecycle-title").scrollIntoViewIfNeeded();
+  await expect(drawer.getByRole("button", { name: "永久删除" })).toBeDisabled();
+  await expect(drawer.getByText(/保留 2 个不可变版本/)).toBeVisible();
 });
 
 test("package import uploads a chunk and requires the exact deployment confirmation", async ({ page }) => {

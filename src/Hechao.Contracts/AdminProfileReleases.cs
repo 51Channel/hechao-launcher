@@ -45,6 +45,18 @@ public sealed record AdminClientProfileUpdateRequest(
     bool IsActive,
     long ExpectedRevision);
 
+public sealed record AdminClientProfileArchiveRequest(
+    string Reason,
+    long ExpectedRevision);
+
+public sealed record AdminClientProfileRestoreRequest(
+    long ExpectedRevision);
+
+public sealed record AdminClientProfileDeleteRequest(
+    string Reason,
+    string Confirmation,
+    long ExpectedRevision);
+
 public sealed record AdminClientProfileChannelUpdateRequest(
     string? ManifestSha256,
     int RolloutPercentage,

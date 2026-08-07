@@ -110,6 +110,22 @@ public sealed class PackageImportDeploymentContractTests
     }
 
     [Fact]
+    public void Finalization_LocksAndRejectsArchivedClientProfile()
+    {
+        var source = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "PackageImports",
+            "PackageImportOrchestrationRepository.cs");
+
+        Assert.Contains("ReadProfileArchivedForUpdateAsync", source, StringComparison.Ordinal);
+        Assert.Contains("SELECT archived_at IS NOT NULL", source, StringComparison.Ordinal);
+        Assert.Contains("FOR UPDATE;", source, StringComparison.Ordinal);
+        Assert.Contains("\"PROFILE_ARCHIVED\"", source, StringComparison.Ordinal);
+        Assert.Contains("\"FINALIZATION_PROFILE_MISSING\"", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PackageArchiveDownload_IsRangeEnabledAndLeaseAuthorized()
     {
         var endpoint = ReadRepositoryFile(

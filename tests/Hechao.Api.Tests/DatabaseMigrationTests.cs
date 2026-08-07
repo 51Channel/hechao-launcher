@@ -174,4 +174,31 @@ public sealed class DatabaseMigrationTests
         Assert.Contains("BETWEEN 1024 AND 1048576", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("DEFAULT", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ClientProfileLifecycleMigration_PreservesReleasesAndRequiresInactiveArchive()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.027_client_profile_lifecycle.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("archived_at", sql, StringComparison.Ordinal);
+        Assert.Contains("archived_by", sql, StringComparison.Ordinal);
+        Assert.Contains("archive_reason", sql, StringComparison.Ordinal);
+        Assert.Contains("AND NOT is_active", sql, StringComparison.Ordinal);
+        Assert.Contains("BETWEEN 4 AND 280", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "DELETE FROM launcher.client_profile_releases",
+            sql,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            "DELETE FROM launcher.servers",
+            sql,
+            StringComparison.OrdinalIgnoreCase);
+    }
 }
