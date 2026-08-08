@@ -2195,7 +2195,7 @@ async Task<IResult> RestoreAdminClientProfileAsync(
 
 async Task<IResult> DeleteAdminClientProfileAsync(
     string profileId,
-    AdminClientProfileDeleteRequest request,
+    [FromBody] AdminClientProfileDeleteRequest request,
     AdminProfileReleaseRepository repository,
     HttpContext context,
     CancellationToken cancellationToken)

@@ -6,6 +6,20 @@ namespace Hechao.Api.Tests;
 public sealed class AdminProfileReleaseRulesTests
 {
     [Fact]
+    public void DeleteEndpoint_ExplicitlyBindsConfirmationRequestFromBody()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "Hechao.Api",
+            "Program.cs"));
+
+        Assert.Matches(
+            @"DeleteAdminClientProfileAsync\(\s*string profileId,\s*\[FromBody\]\s+AdminClientProfileDeleteRequest request,",
+            source);
+    }
+
+    [Fact]
     public void ValidateCreate_AcceptsMachineIdAndDisplayName()
     {
         var errors = AdminProfileReleaseRules.Validate(
@@ -111,5 +125,21 @@ public sealed class AdminProfileReleaseRulesTests
                 Reason: "清理误建的空档案",
                 Confirmation: $"DELETE {profileId}",
                 ExpectedRevision: 2)));
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "Hechao.Launcher.sln")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Repository not found.");
     }
 }
