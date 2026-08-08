@@ -1,9 +1,9 @@
 # 赫朝启动器完成矩阵
 
-> 更新时间：`2026-08-06`
+> 更新时间：`2026-08-08`
 >
-> 当前生产：启动器 `0.14.2`、API `0.28.5`、Publisher Agent `1.1.0`、
-> owl5 ServerControlAgent `0.4.1`、owl9 ServerControlAgent `0.4.0`、
+> 当前生产：启动器 `0.15.0`、API `0.29.0`、Publisher Agent `1.2.1`、
+> owl5 ServerControlAgent `0.4.2`、owl9 ServerControlAgent `0.4.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -36,29 +36,30 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
-| 启动器 | 已发布，更新通道已开放 | `0.14.2` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.1` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
-| API `0.28.5` | 已完成 | Vue 十页、迁移 25/25、整合包任务编排和白名单服务端文件删除均已部署；整合包页显示 VPS 总内存和推荐最小/最大内存，推荐区间外的合法值仍可提交。数据库与配置备份、原子切换、内外网健康和生产状态回归通过，见 [`API_RELEASE_0.28.5.md`](API_RELEASE_0.28.5.md) |
+| 启动器 | 已发布，更新通道已开放 | `0.15.0` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.14.2` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.15.0.md`](LAUNCHER_RELEASE_0.15.0.md) |
+| API `0.29.0` | 已完成 | Vue 后台、迁移 27/27、客户端档案归档/恢复/受限永久删除及既有整合包、内存和服控能力均已部署；数据库与配置备份、失败自动回滚、原子切换、内外网健康和生产状态回归通过，见 [`API_RELEASE_0.29.0.md`](API_RELEASE_0.29.0.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
-| Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.1 -> 0.14.2` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被关闭，将在下次启动时自动升级 |
-| 私有 OSS 发布 | 已完成 | `0.14.2` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
-| 自动测试 | 已完成 | 当前候选为完整解决方案 `693/693`、API `289/289`、Publisher `50/50`、ServerControlAgent `56/56`、Vue Vitest `8/8`、Playwright `17/17`；Velocity、Lobby、LuckPerms 和指标代理保持各自既有正式基线 |
-| 2 至 3 人真实灰度 | 外部验收 | 待按 `0.14.2` 单进程切服与 Lobby 隔离清单执行 |
+| Windows 安装、覆盖升级与卸载 | 已完成 | `0.14.2 -> 0.15.0` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；正式安装进程未被替代关闭 |
+| 私有 OSS 发布 | 已完成 | `0.15.0` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入文档或日志 |
+| 自动测试 | 已完成 | `0.15.0` 完整解决方案 `704/704`、Launcher `219/219`、Publisher `55/55`；API `0.29.0` 为 API `294/294`、完整解决方案 `700/700`、Vitest `8/8`、Playwright `20/20` |
+| 2 至 3 人真实灰度 | 外部验收 | 待按 `0.15.0` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
-### 1.1 启动器 0.14.2 收口
+### 1.1 启动器 0.15.0 收口
 
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
-| 正式版本与制品 | 已完成 | `0.14.2` 已发布私有 OSS；EXE 与安装包版本、大小、SHA-256、`NotSigned` 状态见 [`LAUNCHER_RELEASE_0.14.2.md`](LAUNCHER_RELEASE_0.14.2.md) |
-| 自动测试 | 已完成 | 完整解决方案 `564/564`，启动器 `202/202` |
+| 正式版本与制品 | 已完成 | `0.15.0` 已发布私有 OSS；EXE 与安装包版本、大小、SHA-256、`NotSigned` 状态见 [`LAUNCHER_RELEASE_0.15.0.md`](LAUNCHER_RELEASE_0.15.0.md) |
+| 自动测试 | 已完成 | 完整解决方案 `704/704`，启动器 `219/219`，Publisher `55/55` |
+| 官网同源活动月历 | 已完成 | 固定六周、周一开头、月份切换、今天、跨日活动、待排期和日期详情已上线；官网与启动器读取同一 API 排期，零活动时仍显示完整月历 |
 | 自更新 | 已完成 | 每个进程启动后恢复登录态即检查；发现新版自动下载、校验、启动 updater 并关闭旧进程，失败保留当前版本和重试入口。`0.13.6` 已完成最后一次引导升级，`0.14.0` 起后续版本无需玩家重新安装 |
 | 系统代理开关 | 已完成 | 默认直连，可选择继承 Windows 系统代理；设置持久化并在下次启动生效，覆盖所有启动器管理的 HTTP 客户端 |
-| 生产更新通道 | 已完成 | `LatestVersion=0.14.2`、`MinimumSupportedVersion=0.12.3`；真实会话与 API 签发下载链通过，公网健康与就绪端点均为 `200`，服务 `NRestarts=0` |
+| 生产更新通道 | 已完成 | `LatestVersion=0.15.0`、`MinimumSupportedVersion=0.12.3`；真实会话与 API 签发下载链通过，公网健康与就绪端点均为 `200`，服务 `NRestarts=0` |
 | `0.13.5` 中间构建 | 已归档 | 仅内部验收，不创建标签、不作为回滚目标、不覆盖其不可变 OSS 对象 |
 
 结构化验收见
-[`evidence/LAUNCHER_0.14.2_RELEASE_ACCEPTANCE_2026-08-01.json`](evidence/LAUNCHER_0.14.2_RELEASE_ACCEPTANCE_2026-08-01.json)。
+[`evidence/LAUNCHER_0.15.0_RELEASE_ACCEPTANCE_2026-08-08.json`](evidence/LAUNCHER_0.15.0_RELEASE_ACCEPTANCE_2026-08-08.json)。
 
 ### 1.2 服控内存管理收口
 
@@ -100,7 +101,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | LuckPerms 等级同步、受控修改与目录过滤 | 已实现待生产验收 | 大厅等级代理已随受控重启加载，真实 owner 快照可用；强制目录开关未启用，仍需使用专门测试账号做四级改回和拒绝路径 |
 | 签名清单、断点续传、修复与原子切换 | 已完成 | 基础、Vanilla、Forge、NeoForge、恐怖整蛊、DollNight 档案与自动测试 |
 | 启动时客户端检查开关 | 已完成 | `0.11.14` 可跳过首次本地扫描，重新开启立即检查；第一次进服前仍强制检查，自动测试覆盖 |
-| 启动器本体自更新 | 已完成，正式安装进程待下次启动 | 每个进程启动并恢复登录态后检查；私有 OSS 断点下载、长度与 SHA-256 复验、临时更新器静默覆盖、失败保留及重试入口均已发布。生产 `LatestVersion=0.14.2`；真实会话确认 `0.14.1` 可更新且 `0.14.2` 不重复提示，见 [`LAUNCHER_SELF_UPDATE_OPERATIONS.md`](LAUNCHER_SELF_UPDATE_OPERATIONS.md) |
+| 启动器本体自更新 | 已完成 | 每个进程启动并恢复登录态后检查；私有 OSS 断点下载、长度与 SHA-256 复验、临时更新器静默覆盖、失败保留及重试入口均已发布。生产 `LatestVersion=0.15.0`；真实会话确认 `0.14.2` 可更新且 `0.15.0` 不重复提示，见 [`LAUNCHER_SELF_UPDATE_OPERATIONS.md`](LAUNCHER_SELF_UPDATE_OPERATIONS.md) |
 | Minecraft 真实皮肤头像 | 已发布待真实账号目视验收 | `0.14.2` 已包含该功能；启动器根据已绑定 UUID 从 Mojang 官方会话与纹理域名读取 64x32/64x64 皮肤，显示头部与帽层，使用 24 小时本地缓存；不可信地址、超限响应、网络失败或损坏图片均回退本地头像，不影响账号与进服。仍需用真实绑定账号目视验收皮肤渲染 |
 | Minecraft 日志配置恢复 | 已完成 | `0.11.15` 在启动前按版本元数据下载、校验并原子写入缺失配置；5 个自动测试与 Activity `1.0.10` 真实档案启动准备冒烟通过 |
 | Minecraft 退出状态刷新 | 已完成 | `0.11.16` 在当前档案正常或异常退出后恢复状态和主操作，并防止旧进程延迟退出事件覆盖同档案的新进程；`0.12.2` 另保存独立进程号以可靠清理过期运行状态，`0.12.3` 自动测试、本机升级及 Activity 安装版退出码 `0` 回归均通过 |

@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-08T08:50:21Z",
+  "component": "launcher",
+  "version": "0.15.0",
+  "featureSourceCommit": "b1f049563774c8a941afbe283bc072c011f4fb8e",
+  "releaseSourceCommit": "cb24a4a4efa83d76155b1a16757b25879349ca19",
+  "publisherSourceCommit": "6aa15ff21a26ec563cb1c9292594a653362892a1",
+  "releaseTag": "launcher-v0.15.0",
+  "scope": {
+    "officialWebsiteSynchronizedActivityCalendar": true,
+    "fixedSixWeekMondayFirstGrid": true,
+    "monthNavigationAndToday": true,
+    "multiDayAndUnscheduledActivities": true,
+    "emptyCalendarRemainsVisible": true,
+    "activityClientActionsPreserved": true
+  },
+  "tests": {
+    "solutionPassed": 704,
+    "solutionFailed": 0,
+    "launcherPassed": 219,
+    "publisherPassed": 55,
+    "buildWarnings": 0
+  },
+  "artifacts": {
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.15.0-win-x64.exe",
+      "sizeBytes": 61960670,
+      "sha256": "35B2A08450E125ACC6EF096DEC4B3D768BF405CFAF2A7C20CF12FD1F52A38A96",
+      "signatureStatus": "NotSigned"
+    },
+    "launcher": {
+      "name": "Hechao.Launcher.exe",
+      "sizeBytes": 69013253,
+      "sha256": "7B1282C8FA4A5BE8B5B038AB621388CBF3C67206E04B69FD96B9CF1BD0F09793",
+      "productVersion": "0.15.0+cb24a4a4efa83d76155b1a16757b25879349ca19",
+      "signatureStatus": "NotSigned"
+    },
+    "publisher": {
+      "version": "1.3.0",
+      "rid": "linux-x64",
+      "sizeBytes": 74645019,
+      "sha256": "6DF3BAC532E1BD40E45B72424E895E6CE9EFCA79294A0CB5A3072120B8686B8F"
+    }
+  },
+  "visualAcceptance": {
+    "defaultViewport": "1440x900",
+    "narrowViewport": "1180x720",
+    "overlapDetected": false,
+    "horizontalOverflowDetected": false
+  },
+  "installerValidation": {
+    "upgradeFrom": "0.14.2",
+    "upgradeTo": "0.15.0",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "privateOss": {
+    "objectKey": "releases/launcher/0.15.0/Hechao-Launcher-Setup-0.15.0-win-x64.exe",
+    "firstPublishUploaded": true,
+    "secondPublishSkippedAfterVerification": true,
+    "signedReadStatusCodes": [200, 200],
+    "anonymousStatusCodes": [403, 403],
+    "lengthMatched": true,
+    "sha256Matched": true
+  },
+  "productionUpdateChannel": {
+    "enabled": true,
+    "latestVersion": "0.15.0",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61960670,
+    "installerSha256": "35b2a08450e125acc6ef096dec4b3d768bf405cfaf2a7c20cf12fd1f52a38a96",
+    "publishedAtUtc": "2026-08-08T08:44:04Z",
+    "apiVersion": "0.29.0",
+    "apiReleaseDirectory": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z",
+    "apiMainPidAfter": 3023712,
+    "apiRestarts": 0,
+    "environmentMode": "600",
+    "environmentOwner": "root:root",
+    "environmentSha256": "19b51cd13075574ad1199306f1cd502acf376271435d4978855491680c7f8c19",
+    "backupPath": "/etc/hechao-launcher-api/environment.launcher-updates.20260808T084404Z.bak",
+    "backupSha256": "6e00320bf6a61e129c4aa6409746e7b3dcfebbfe1cac7a0e8374cda2a3d3edeb",
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "publicActivitiesStatusCode": 200,
+    "databaseStatus": "ready",
+    "errorLogsAfterCutover": 0
+  },
+  "authenticatedUpdateAcceptance": {
+    "sessionRestoreSucceeded": true,
+    "returnedLatestVersion": "0.15.0",
+    "returnedMinimumVersion": "0.12.3",
+    "previousVersionPlanAvailable": true,
+    "currentVersionPlanAbsent": true,
+    "apiSignedDownloadStatusCode": 200,
+    "apiSignedDownloadBytes": 61960670,
+    "apiSignedDownloadSha256": "35b2a08450e125acc6ef096dec4b3d768bf405cfaf2a7c20cf12fd1f52a38a96"
+  },
+  "publicRegression": {
+    "website": 200,
+    "adminSite": 200,
+    "relayApi": 200,
+    "publicActivities": 200,
+    "publicActivityCount": 0
+  },
+  "unchanged": {
+    "publisherAgentVersion": "1.2.1",
+    "publisherAgentMainPid": 1459607,
+    "publisherAgentRestarts": 0,
+    "minecraftServersOperated": false,
+    "velocityOperated": false,
+    "serverControlAgentsOperated": false
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "refreshTokenIncluded": false,
+    "sessionTokenIncluded": false,
+    "accountIdentityIncluded": false
+  }
+}
