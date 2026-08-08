@@ -915,6 +915,11 @@ public sealed class LauncherXamlContractTests
         Assert.Equal(
             "{Binding ActivityCalendar.Days}",
             calendarDays.Attribute("ItemsSource")?.Value);
+        Assert.DoesNotContain(
+            calendarDays.AncestorsAndSelf(),
+            element => element.Attribute("Visibility")?.Value.Contains(
+                "HasActivityServers",
+                StringComparison.Ordinal) == true);
         Assert.Equal("7", dayGrid.Attribute("Columns")?.Value);
         Assert.Equal(
             "{Binding}",
