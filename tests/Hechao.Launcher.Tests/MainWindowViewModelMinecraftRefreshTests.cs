@@ -273,6 +273,37 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
+    public async Task Catalog_HomeAnnouncementsContainOnlyVisibleServersWithContent()
+    {
+        var snapshot = CreateCatalogSnapshot("announced", "公告测试服");
+        snapshot = snapshot with
+        {
+            Servers =
+            [
+                snapshot.Servers[0] with { Announcement = "周六开放新区域" },
+                snapshot.Servers[0] with
+                {
+                    Id = "quiet",
+                    Name = "无公告测试服",
+                    Announcement = "",
+                },
+            ],
+        };
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: new StaticCatalogClient(snapshot));
+
+        await WaitUntilAsync(() => viewModel.SelectedServer is not null);
+
+        var announcement = Assert.Single(viewModel.HomeAnnouncementServers);
+        Assert.Equal("announced", announcement.Id);
+        Assert.Equal("周六开放新区域", announcement.Announcement);
+        Assert.True(viewModel.HasHomeAnnouncements);
+        Assert.False(viewModel.HasNoHomeAnnouncements);
+    }
+
+    [Fact]
     public async Task Catalog_UsesExplicitActivitySectionInsteadOfServerId()
     {
         var viewModel = CreateViewModel(

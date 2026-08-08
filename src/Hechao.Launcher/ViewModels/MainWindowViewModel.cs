@@ -280,12 +280,15 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     public ObservableCollection<ServerSummary> Servers { get; } = [];
+    public ObservableCollection<ServerSummary> HomeAnnouncementServers { get; } = [];
     public ObservableCollection<ActivityServerItemViewModel> ActivityServers { get; } = [];
     public ObservableCollection<DownloadJobViewModel> DownloadHistory { get; } = [];
     public ActivityCalendarViewModel ActivityCalendar { get; }
     public IReadOnlyList<string> MemoryOptions { get; }
     public IReadOnlyList<string> StartupPageOptions { get; }
     public string LauncherVersionText { get; } = $"v{LauncherProductInfo.Version}";
+    public bool HasHomeAnnouncements => HomeAnnouncementServers.Count > 0;
+    public bool HasNoHomeAnnouncements => !HasHomeAnnouncements;
     public RelayCommand<ServerSummary> SelectServerCommand { get; }
     public AsyncRelayCommand PrimaryActionCommand { get; }
     public AsyncRelayCommand RepairCommand { get; }
@@ -1564,6 +1567,9 @@ public sealed class MainWindowViewModel : ObservableObject
             Servers.Clear();
             ActivityServers.Clear();
             ActivityCalendar.ReplaceActivities(ActivityServers);
+            HomeAnnouncementServers.Clear();
+            OnPropertyChanged(nameof(HasHomeAnnouncements));
+            OnPropertyChanged(nameof(HasNoHomeAnnouncements));
             OnPropertyChanged(nameof(ActivityServerCount));
             OnPropertyChanged(nameof(HasActivityServers));
             SelectedServer = null;
@@ -2019,7 +2025,22 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             Servers.Add(server);
         }
+        RebuildHomeAnnouncements();
         NotifyCatalogStateChanged();
+    }
+
+    private void RebuildHomeAnnouncements()
+    {
+        HomeAnnouncementServers.Clear();
+        foreach (var server in Servers
+                     .Where(server => !string.IsNullOrWhiteSpace(server.Announcement))
+                     .Take(4))
+        {
+            HomeAnnouncementServers.Add(server);
+        }
+
+        OnPropertyChanged(nameof(HasHomeAnnouncements));
+        OnPropertyChanged(nameof(HasNoHomeAnnouncements));
     }
 
     private void RestoreServerSelectionAfterActivityPreparation(
@@ -4369,6 +4390,9 @@ public sealed class MainWindowViewModel : ObservableObject
         Servers.Clear();
         ActivityServers.Clear();
         ActivityCalendar.ReplaceActivities(ActivityServers);
+        HomeAnnouncementServers.Clear();
+        OnPropertyChanged(nameof(HasHomeAnnouncements));
+        OnPropertyChanged(nameof(HasNoHomeAnnouncements));
         OnPropertyChanged(nameof(ActivityServerCount));
         OnPropertyChanged(nameof(HasActivityServers));
         SelectedServer = null;

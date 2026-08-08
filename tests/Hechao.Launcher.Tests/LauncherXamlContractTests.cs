@@ -888,6 +888,65 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void ServerHome_UsesReferenceStructureWithLiveContentAndQuickSettings()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var navigationColumn = document
+            .Descendants(presentation + "ColumnDefinition")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "NavigationColumn");
+        var announcementList = document
+            .Descendants(presentation + "ItemsControl")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding HomeAnnouncementServers}");
+        var upcomingList = document
+            .Descendants(presentation + "ItemsControl")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding ActivityCalendar.UpcomingActivities}");
+        var memorySelector = document
+            .Descendants(presentation + "ComboBox")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "HomeMemorySelector");
+        var chooseJavaButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("AutomationProperties.Name")?.Value ==
+                "更改当前档案 Java");
+
+        Assert.Equal("168", navigationColumn.Attribute("Width")?.Value);
+        Assert.Equal(
+            "{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}",
+            memorySelector.Attribute("SelectedItem")?.Value);
+        Assert.Equal(
+            "ChooseProfileJavaButton_OnClick",
+            chooseJavaButton.Attribute("Click")?.Value);
+        Assert.Equal(
+            "{Binding HasNoHomeAnnouncements, Converter={StaticResource BooleanToVisibilityConverter}}",
+            announcementList.Parent!
+                .Elements(presentation + "StackPanel")
+                .Single()
+                .Attribute("Visibility")?.Value);
+        Assert.Equal(
+            "{Binding ActivityCalendar.HasNoUpcomingActivities, Converter={StaticResource BooleanToVisibilityConverter}}",
+            upcomingList.Parent!
+                .Elements(presentation + "StackPanel")
+                .Single()
+                .Attribute("Visibility")?.Value);
+        Assert.Contains(
+            document.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value ==
+                "{Binding ClientDirectory}");
+    }
+
+    [Fact]
     public void ActivityPage_UsesSixWeekCalendarAndIconParkMonthNavigation()
     {
         var document = LoadLauncherXaml();

@@ -99,6 +99,36 @@ public sealed class ActivityCalendarViewModelTests
         Assert.Empty(FindDay(calendar, openingDate.AddDays(-1)).Activities);
     }
 
+    [Fact]
+    public void UpcomingActivities_ContainsOnlyOngoingAndFutureScheduledEntries()
+    {
+        var today = new DateTime(2026, 8, 4);
+        var calendar = new ActivityCalendarViewModel(() => today);
+
+        calendar.ReplaceActivities(
+        [
+            CreateActivity(
+                "past",
+                LocalDateTime(2026, 8, 1, 9),
+                LocalDateTime(2026, 8, 2, 21)),
+            CreateActivity(
+                "ongoing",
+                LocalDateTime(2026, 8, 3, 9),
+                LocalDateTime(2026, 8, 4, 21)),
+            CreateActivity(
+                "future",
+                LocalDateTime(2026, 8, 8, 19),
+                LocalDateTime(2026, 8, 8, 22)),
+            CreateActivity("unscheduled", null, null),
+        ]);
+
+        Assert.Equal(
+            ["ongoing", "future"],
+            calendar.UpcomingActivities.Select(item => item.Id));
+        Assert.True(calendar.HasUpcomingActivities);
+        Assert.False(calendar.HasNoUpcomingActivities);
+    }
+
     private static ActivityCalendarDayViewModel FindDay(
         ActivityCalendarViewModel calendar,
         DateTime date) =>

@@ -88,6 +88,8 @@ public sealed class ActivityCalendarViewModel : ObservableObject
 
     public ObservableCollection<ActivityServerItemViewModel> UnscheduledActivities { get; } = [];
 
+    public ObservableCollection<ActivityServerItemViewModel> UpcomingActivities { get; } = [];
+
     public RelayCommand PreviousMonthCommand { get; }
 
     public RelayCommand NextMonthCommand { get; }
@@ -115,6 +117,10 @@ public sealed class ActivityCalendarViewModel : ObservableObject
     public bool HasNoSelectedActivities => !HasSelectedActivities;
 
     public bool HasUnscheduledActivities => UnscheduledActivityCount > 0;
+
+    public bool HasUpcomingActivities => UpcomingActivities.Count > 0;
+
+    public bool HasNoUpcomingActivities => !HasUpcomingActivities;
 
     public string SelectedDateSummaryText => HasSelectedActivities
         ? $"{SelectedActivities.Count} 场活动"
@@ -158,6 +164,15 @@ public sealed class ActivityCalendarViewModel : ObservableObject
         foreach (var activity in _activities.Where(item => GetDateRange(item) is null))
         {
             UnscheduledActivities.Add(activity);
+        }
+
+        UpcomingActivities.Clear();
+        var today = _todayProvider().Date;
+        foreach (var activity in _activities
+                     .Where(item => GetDateRange(item) is { } range && range.End >= today)
+                     .Take(3))
+        {
+            UpcomingActivities.Add(activity);
         }
 
         RebuildCalendar();
@@ -276,6 +291,8 @@ public sealed class ActivityCalendarViewModel : ObservableObject
         OnPropertyChanged(nameof(HasSelectedActivities));
         OnPropertyChanged(nameof(HasNoSelectedActivities));
         OnPropertyChanged(nameof(HasUnscheduledActivities));
+        OnPropertyChanged(nameof(HasUpcomingActivities));
+        OnPropertyChanged(nameof(HasNoUpcomingActivities));
         OnPropertyChanged(nameof(SelectedDateSummaryText));
         OnPropertyChanged(nameof(MonthSummaryText));
     }
