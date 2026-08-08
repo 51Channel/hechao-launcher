@@ -193,3 +193,18 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
   服控代理均未操作。
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.1.md`](LAUNCHER_RELEASE_0.15.1.md)。
+
+## 0.15.2 生产快照
+
+- `2026-08-09` 生产 `LatestVersion=0.15.2`，最低支持版本保持 `0.12.3`。
+- 安装包为 `61,961,528` 字节，SHA-256
+  `482BA9F5BE5CB3817B9AE39FD6C90C313B31DA809FCBE480F856EF31645A476F`。
+- 私有对象首次上传成功，重复发布校验后跳过；两轮签名读取 `200`、匿名读取 `403`，
+  签名 URL 未进入 Git、文档或终端记录。
+- 真实 DPAPI 会话确认 `0.15.1` 生成更新计划、`0.15.2` 不重复更新；API 签发地址
+  完整下载的长度和 SHA-256 与安装包一致。
+- `0.15.1 -> 0.15.2` 隔离覆盖安装、全新安装、双轮卸载、设置与会话保留均通过。
+- API 保持 `0.29.0`，常驻 Publisher Agent 保持 `1.2.1`；Minecraft、Velocity 和
+  服控代理均未操作。
+
+完整记录见 [`LAUNCHER_RELEASE_0.15.2.md`](LAUNCHER_RELEASE_0.15.2.md)。

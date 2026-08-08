@@ -1,8 +1,49 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-08T10:42:07Z",
+  "generatedAtUtc": "2026-08-08T18:22:55Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
+    {
+      "component": "launcher",
+      "version": "0.15.2",
+      "releaseTag": "launcher-v0.15.2",
+      "releaseCommit": "708fb595d3c35e8bc5d94d189286fb3214cc4fed",
+      "taggedAt": "2026-08-09T02:21:50+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "708fb595d3c35e8bc5d94d189286fb3214cc4fed"
+      },
+      "deploymentState": "production-private-oss-self-update-enabled-authenticated-download-accepted",
+      "historicalNote": "0.15.1 remains the immediate update-channel rollback source. 0.15.2 keeps MinimumSupportedVersion at 0.12.3 and does not expand the mandatory-update boundary.",
+      "artifacts": [
+        {
+          "name": "Hechao.Launcher.exe",
+          "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
+          "size": 69016345,
+          "sha256": "621D0692C6464D769615C2326691D413F30C7182CE7C114D8CDC16D6F11CAB53",
+          "primary": false
+        },
+        {
+          "name": "Hechao-Launcher-Setup-0.15.2-win-x64.exe",
+          "location": "releases/launcher/0.15.2/Hechao-Launcher-Setup-0.15.2-win-x64.exe",
+          "size": 61961528,
+          "sha256": "482BA9F5BE5CB3817B9AE39FD6C90C313B31DA809FCBE480F856EF31645A476F",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-disable-or-environment-backup",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260808T181929Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.2.md",
+        "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
+        "docs/LAUNCHER_HOME_ACTION_MENU_2026-08-08.md",
+        "docs/LAUNCHER_HOME_QUICK_SETTINGS_2026-08-09.md",
+        "docs/evidence/LAUNCHER_0.15.2_RELEASE_ACCEPTANCE_2026-08-09.json"
+      ]
+    },
     {
       "component": "launcher",
       "version": "0.15.1",
