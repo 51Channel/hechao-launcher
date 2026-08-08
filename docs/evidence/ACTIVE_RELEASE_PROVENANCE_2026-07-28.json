@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-07T07:38:53Z",
+  "generatedAtUtc": "2026-08-08T04:54:16Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -45,48 +45,55 @@
     },
     {
       "component": "api",
-      "version": "0.28.7-20260807T072043Z",
-      "releaseTag": "api-v0.28.7",
-      "releaseCommit": "af3c88d201338277e1fb505ab0006106b2458417",
-      "taggedAt": "2026-08-07T15:37:55+08:00",
+      "version": "0.29.0-20260808T043921Z",
+      "releaseTag": "api-v0.29.0",
+      "releaseCommit": "43da4ae05db64e50475a19e49f3e475410394dbd",
+      "taggedAt": "2026-08-08T12:55:46+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "af3c88d201338277e1fb505ab0006106b2458417"
+        "value": "43da4ae05db64e50475a19e49f3e475410394dbd"
       },
-      "deploymentState": "production-admin-form-drawer-layout-health-ready",
-      "historicalNote": "Production contains migrations through 026 and DeleteServerFiles records. 0.28.6 is the direct rollback target; 0.27.3 cannot deserialize the operation type and must not be used.",
+      "deploymentState": "production-client-profile-lifecycle-health-ready",
+      "historicalNote": "Production contains migration 027. 0.28.7 is a direct program rollback only while no profile has been archived; after the first archive, forward-fix 0.29.x is mandatory.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.28.7-20260807T072043Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.28.7-20260807T072043Z",
-          "size": 45959086,
-          "sha256": "2E0AD65E0A191E864AEB6C36D186A3E3257AF9095A57744E433C8502918C1F26",
+          "name": "hechao-launcher-api-0.29.0-20260808T043921Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z",
+          "size": 45974811,
+          "sha256": "79D08B0D5802518E0450A6594D911D3D5A08DD4296F4F583D5FA8F455E92E41D",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.28.7-20260807T072043Z/Hechao.Api",
-          "size": 105053124,
-          "sha256": "09A30BA02CECF80E978B523D51E9596510373C829075E1F6C0923FF650790AE9",
+          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z/Hechao.Api",
+          "size": 105084356,
+          "sha256": "2A9DFCFE97592D7E4B2930D5E2E39754D5262500185319B32BC8C03047A3ACE0",
           "primary": false
         },
         {
           "name": "admin.css",
-          "location": "/opt/hechao-launcher-api/releases/0.28.7-20260807T072043Z/wwwroot/admin/assets/admin.css",
-          "size": 59516,
-          "sha256": "7589DAAC9CE125D210961D72DEDFB1817820B21CBCC7813B9F8DDAFA66162405",
+          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z/wwwroot/admin/assets/admin.css",
+          "size": 61020,
+          "sha256": "218D1C461CB32BCA3E2D15E3302D3732F5570FF347CC1CD6E202395296E116CD",
+          "primary": false
+        },
+        {
+          "name": "chunk-ProfilesView.js",
+          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z/wwwroot/admin/assets/chunk-ProfilesView.js",
+          "size": 25563,
+          "sha256": "114E47CB95D58D3C0C6B816C8CA1B7495E0B3778AD739007D174CA991F343DB2",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.28.6-20260806T150509Z"
+        "target": "/opt/hechao-launcher-api/releases/0.28.7-20260807T072043Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.28.7.md",
-        "docs/API_RELEASE_0.28.7_CANDIDATE.md",
-        "docs/evidence/API_0.28.7_PRODUCTION_DEPLOYMENT_2026-08-07.json"
+        "docs/API_RELEASE_0.29.0.md",
+        "docs/API_RELEASE_0.29.0_CANDIDATE.md",
+        "docs/evidence/API_0.29.0_PRODUCTION_DEPLOYMENT_2026-08-08.json"
       ]
     },
     {
