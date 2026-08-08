@@ -177,3 +177,19 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.0.md`](LAUNCHER_RELEASE_0.15.0.md)。
 - 匿名 OSS 请求返回 `403`，API RAM 只有读取两个批准前缀的权限。
+
+## 0.15.1 生产快照
+
+- `2026-08-08` 生产 `LatestVersion=0.15.1`，最低支持版本保持 `0.12.3`。
+- 安装包为 `61,960,307` 字节，SHA-256
+  `09CB52C4BEF63024345E4C99A0E355752D9082153F01274E298B807BAF93BEBF`。
+- 私有对象首次上传成功，重复发布校验后跳过；两轮签名读取 `200`、匿名读取 `403`，
+  签名 URL 未进入 Git、文档或终端记录。
+- 真实 DPAPI 会话确认 `0.15.0` 生成更新计划、`0.15.1` 不重复更新；API 签发地址
+  完整下载的长度和 SHA-256 与安装包一致。
+- 第一次切换因验收脚本使用错误的公开元数据字段名而自动回滚到 `0.15.0`；修正为
+  实际契约后重新切换成功，证明环境文件恢复和 API 自动重启路径有效。
+- API 保持 `0.29.0`，常驻 Publisher Agent 保持 `1.2.1`；Minecraft、Velocity 和
+  服控代理均未操作。
+
+完整记录见 [`LAUNCHER_RELEASE_0.15.1.md`](LAUNCHER_RELEASE_0.15.1.md)。

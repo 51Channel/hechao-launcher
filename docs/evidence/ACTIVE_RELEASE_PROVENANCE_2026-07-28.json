@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-08T04:54:16Z",
+  "generatedAtUtc": "2026-08-08T10:42:07Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.14.2",
-      "releaseTag": "launcher-v0.14.2",
-      "releaseCommit": "c66f4d357089a77f392a27a1a411f66e5e28f1e4",
-      "taggedAt": "2026-08-01T17:27:39+08:00",
+      "version": "0.15.1",
+      "releaseTag": "launcher-v0.15.1",
+      "releaseCommit": "d1a4cf2601f2e43f45fd69f870682b6c202acfcf",
+      "taggedAt": "2026-08-08T18:42:07+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "c66f4d357089a77f392a27a1a411f66e5e28f1e4"
+        "value": "d1a4cf2601f2e43f45fd69f870682b6c202acfcf"
       },
-      "deploymentState": "production-private-oss-self-update-enabled-authenticated-download-accepted-installed-restart-pending",
-      "historicalNote": "0.14.1 remains the immediate formal rollback source. 0.14.2 keeps MinimumSupportedVersion at 0.12.3 and does not expand the mandatory-update boundary.",
+      "deploymentState": "production-private-oss-self-update-enabled-authenticated-download-accepted",
+      "historicalNote": "0.15.0 remains the immediate update-channel rollback source. 0.15.1 keeps MinimumSupportedVersion at 0.12.3 and does not expand the mandatory-update boundary.",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 68934230,
-          "sha256": "9A34721D8A5A703DE43746E6840FC225E0B2057F9F7A3235ED0514D85EAFCBB7",
+          "size": 69018905,
+          "sha256": "3A3D642988A52F336D2FAB7218E9AFC1D7F1ED5635002593E689DBF62F23284C",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.14.2-win-x64.exe",
-          "location": "releases/launcher/0.14.2/Hechao-Launcher-Setup-0.14.2-win-x64.exe",
-          "size": 61929723,
-          "sha256": "D71A6BAED73FE1A9F503DDC7282A73B8F2E4C51145B6A8562133058DF401D6D8",
+          "name": "Hechao-Launcher-Setup-0.15.1-win-x64.exe",
+          "location": "releases/launcher/0.15.1/Hechao-Launcher-Setup-0.15.1-win-x64.exe",
+          "size": 61960307,
+          "sha256": "09CB52C4BEF63024345E4C99A0E355752D9082153F01274E298B807BAF93BEBF",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "update-channel-disable-or-environment-backup",
-        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260801T091627Z.bak"
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260808T102559Z.bak"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.14.2.md",
+        "docs/LAUNCHER_RELEASE_0.15.1.md",
         "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
-        "docs/LAUNCHER_FRONTEND_AUDIT_2026-08-01.md",
-        "docs/evidence/LAUNCHER_0.14.2_RELEASE_ACCEPTANCE_2026-08-01.json"
+        "docs/LAUNCHER_HOME_REDESIGN_2026-08-08.md",
+        "docs/evidence/LAUNCHER_0.15.1_RELEASE_ACCEPTANCE_2026-08-08.json"
       ]
     },
     {
