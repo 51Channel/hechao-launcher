@@ -1076,8 +1076,11 @@
                                                Margin="10,0,0,0"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
-                                <Button HorizontalAlignment="Right"
+                                <Button x:Name="ShowActivitiesButton"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
                                         Height="32"
+                                        MinHeight="32"
                                         Padding="10,4"
                                         Style="{StaticResource BaseButtonStyle}"
                                         Command="{Binding ShowActivitiesCommand}"

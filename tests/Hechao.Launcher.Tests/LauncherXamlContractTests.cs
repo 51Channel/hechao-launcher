@@ -913,6 +913,11 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute("AutomationProperties.Name")?.Value ==
                 "更改当前档案 Java");
+        var showActivitiesButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "ShowActivitiesButton");
 
         Assert.Equal("168", navigationColumn.Attribute("Width")?.Value);
         Assert.Equal(
@@ -924,6 +929,11 @@ public sealed class LauncherXamlContractTests
         Assert.Equal(
             "{StaticResource HomeQuickSettingsComboBoxStyle}",
             memorySelector.Attribute("Style")?.Value);
+        Assert.Equal("32", showActivitiesButton.Attribute("Height")?.Value);
+        Assert.Equal("32", showActivitiesButton.Attribute("MinHeight")?.Value);
+        Assert.Equal(
+            "Center",
+            showActivitiesButton.Attribute("VerticalAlignment")?.Value);
         Assert.Equal(
             "{Binding HasNoHomeAnnouncements, Converter={StaticResource BooleanToVisibilityConverter}}",
             announcementList.Parent!
@@ -940,6 +950,44 @@ public sealed class LauncherXamlContractTests
             document.Descendants(presentation + "TextBlock"),
             element => element.Attribute("Text")?.Value ==
                 "{Binding SelectedProfileGameDirectoryDisplayText}");
+    }
+
+    [Fact]
+    public void MemoryComboBox_UsesCrispPopupSurfaceAndVisibleItemFocus()
+    {
+        var document = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var comboBoxStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "MemoryComboBoxStyle");
+        var itemStyle = comboBoxStyle
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute("TargetType")?.Value == "ComboBoxItem");
+        var popupSurface = comboBoxStyle
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute("MinWidth")?.Value ==
+                "{TemplateBinding ActualWidth}");
+
+        Assert.Contains(
+            itemStyle.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "FocusVisualStyle" &&
+                setter.Attribute("Value")?.Value ==
+                "{StaticResource HechaoFocusVisualStyle}");
+        Assert.Equal(
+            "{StaticResource BorderStrongBrush}",
+            popupSurface.Attribute("BorderBrush")?.Value);
+        Assert.Equal("0,4,0,0", popupSurface.Attribute("Margin")?.Value);
+        Assert.Empty(
+            popupSurface.Descendants(presentation + "DropShadowEffect"));
     }
 
     [Fact]

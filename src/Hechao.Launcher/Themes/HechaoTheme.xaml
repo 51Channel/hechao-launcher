@@ -664,6 +664,7 @@
                     <Setter Property="Margin" Value="3,1" />
                     <Setter Property="Cursor" Value="Hand" />
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ComboBoxItem">
@@ -730,15 +731,13 @@
                                PopupAnimation="Fade"
                                IsOpen="{TemplateBinding IsDropDownOpen}">
                             <Border MinWidth="{TemplateBinding ActualWidth}"
-                                    Margin="0,5,0,10"
+                                    Margin="0,4,0,0"
                                     Padding="3"
                                     Background="{StaticResource SurfaceBrush}"
-                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="5">
-                                <Border.Effect>
-                                    <DropShadowEffect Color="#2B000000" BlurRadius="14" ShadowDepth="4" Direction="270" />
-                                </Border.Effect>
+                                    CornerRadius="5"
+                                    SnapsToDevicePixels="True">
                                 <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
                                     <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
                                 </ScrollViewer>
