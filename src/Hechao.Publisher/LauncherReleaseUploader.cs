@@ -12,7 +12,7 @@ internal sealed record LauncherReleaseUploadOptions(
     string Endpoint,
     string DownloadEndpoint,
     string CredentialPath,
-    string CredentialEntropyLabel,
+    string? CredentialEntropyLabel,
     TimeSpan DownloadLinkLifetime);
 
 internal sealed record LauncherReleaseUploadResult(

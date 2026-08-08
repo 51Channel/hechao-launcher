@@ -255,6 +255,7 @@ internal static class PublisherProgram
 
     private static async Task UploadLauncherReleaseAsync(CommandOptions options)
     {
+        var credentialInput = LauncherReleaseCredentialInput.Parse(options);
         var linkMinutesValue = options.Optional("link-minutes") ?? "60";
         if (!int.TryParse(linkMinutesValue, out var linkMinutes) ||
             linkMinutes is < 5 or > 1440)
@@ -278,8 +279,8 @@ internal static class PublisherProgram
                 options.Required("region"),
                 options.Required("endpoint"),
                 options.Required("download-endpoint"),
-                Path.GetFullPath(options.Required("credential-dpapi")),
-                options.Required("dpapi-entropy-label"),
+                credentialInput.Path,
+                credentialInput.EntropyLabel,
                 TimeSpan.FromMinutes(linkMinutes)));
         var result = await uploader.UploadAsync(cancellation.Token);
         Console.WriteLine(
@@ -475,7 +476,8 @@ internal static class PublisherProgram
         Console.WriteLine("          --sha256 <digest> --bucket <name> --region <region>");
         Console.WriteLine("          --endpoint <https-oss-origin>");
         Console.WriteLine("          --download-endpoint <https-custom-domain>");
-        Console.WriteLine("          --credential-dpapi <path> --dpapi-entropy-label <label>");
+        Console.WriteLine("          (--credential-dpapi <path> --dpapi-entropy-label <label>");
+        Console.WriteLine("           | --credential-systemd <path>)");
         Console.WriteLine("          [--link-minutes <5-1440>]");
         Console.WriteLine();
         Console.WriteLine("Export a signing key into an encrypted recovery envelope:");
@@ -634,6 +636,47 @@ internal sealed record SigningKeyInput(
                 CryptographicOperations.ZeroMemory(sourceBytes);
             }
         }
+    }
+}
+
+internal sealed record LauncherReleaseCredentialInput(
+    string Path,
+    string? EntropyLabel)
+{
+    internal static LauncherReleaseCredentialInput Parse(CommandOptions options)
+    {
+        var dpapiPath = options.Optional("credential-dpapi");
+        var systemdPath = options.Optional("credential-systemd");
+        if (string.IsNullOrWhiteSpace(dpapiPath) ==
+            string.IsNullOrWhiteSpace(systemdPath))
+        {
+            throw new PublisherUsageException(
+                "Specify exactly one of --credential-dpapi or --credential-systemd.");
+        }
+
+        var entropyLabel = options.Optional("dpapi-entropy-label");
+        if (systemdPath is not null)
+        {
+            if (entropyLabel is not null)
+            {
+                throw new PublisherUsageException(
+                    "--dpapi-entropy-label cannot be used with --credential-systemd.");
+            }
+
+            return new LauncherReleaseCredentialInput(
+                System.IO.Path.GetFullPath(systemdPath),
+                EntropyLabel: null);
+        }
+
+        if (string.IsNullOrWhiteSpace(entropyLabel))
+        {
+            throw new PublisherUsageException(
+                "Missing required option: --dpapi-entropy-label");
+        }
+
+        return new LauncherReleaseCredentialInput(
+            System.IO.Path.GetFullPath(dpapiPath!),
+            entropyLabel);
     }
 }
 

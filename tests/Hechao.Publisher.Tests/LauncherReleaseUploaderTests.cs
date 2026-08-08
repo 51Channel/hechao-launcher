@@ -5,6 +5,72 @@ namespace Hechao.Publisher.Tests;
 public sealed class LauncherReleaseUploaderTests
 {
     [Fact]
+    public void CredentialInput_ParsesSystemdCredentialWithoutEntropy()
+    {
+        var options = CommandOptions.Parse(
+        [
+            "--credential-systemd",
+            "credentials/oss-publisher-credential",
+        ]);
+
+        var input = LauncherReleaseCredentialInput.Parse(options);
+
+        Assert.Equal(
+            Path.GetFullPath("credentials/oss-publisher-credential"),
+            input.Path);
+        Assert.Null(input.EntropyLabel);
+    }
+
+    [Fact]
+    public void CredentialInput_ParsesDpapiCredentialWithEntropy()
+    {
+        var options = CommandOptions.Parse(
+        [
+            "--credential-dpapi",
+            "credentials/oss.dpapi",
+            "--dpapi-entropy-label",
+            "Hechao/Oss/v1",
+        ]);
+
+        var input = LauncherReleaseCredentialInput.Parse(options);
+
+        Assert.Equal(Path.GetFullPath("credentials/oss.dpapi"), input.Path);
+        Assert.Equal("Hechao/Oss/v1", input.EntropyLabel);
+    }
+
+    [Fact]
+    public void CredentialInput_RejectsMultipleCredentialModes()
+    {
+        var options = CommandOptions.Parse(
+        [
+            "--credential-dpapi",
+            "credentials/oss.dpapi",
+            "--credential-systemd",
+            "credentials/oss-publisher-credential",
+            "--dpapi-entropy-label",
+            "Hechao/Oss/v1",
+        ]);
+
+        Assert.Throws<PublisherUsageException>(
+            () => LauncherReleaseCredentialInput.Parse(options));
+    }
+
+    [Fact]
+    public void CredentialInput_RejectsDpapiEntropyWithSystemdCredential()
+    {
+        var options = CommandOptions.Parse(
+        [
+            "--credential-systemd",
+            "credentials/oss-publisher-credential",
+            "--dpapi-entropy-label",
+            "Hechao/Oss/v1",
+        ]);
+
+        Assert.Throws<PublisherUsageException>(
+            () => LauncherReleaseCredentialInput.Parse(options));
+    }
+
+    [Fact]
     public void BuildObjectKey_UsesCanonicalReleasePath()
     {
         var key = LauncherReleaseUploader.BuildObjectKey(
