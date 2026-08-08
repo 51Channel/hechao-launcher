@@ -27,6 +27,7 @@ public enum IconParkKind
     Left,
     Lock,
     Minus,
+    More,
     PlayOne,
     Refresh,
     Remind,

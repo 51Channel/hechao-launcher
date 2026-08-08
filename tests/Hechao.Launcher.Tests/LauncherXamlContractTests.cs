@@ -162,7 +162,7 @@ public sealed class LauncherXamlContractTests
             .Descendants(controls + "AnimatedProgressBar")
             .ToArray();
 
-        Assert.Equal(3, progressBars.Length);
+        Assert.Equal(2, progressBars.Length);
         Assert.All(
             progressBars,
             progressBar => Assert.Contains(
@@ -253,7 +253,7 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void ServerClientDirectoryRow_AutoSizesWithoutClipping()
+    public void ServerMaintenanceActions_AreConsolidatedInPrimaryActionMenu()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation =
@@ -261,60 +261,92 @@ public sealed class LauncherXamlContractTests
         XNamespace x =
             "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var row = document
-            .Descendants(presentation + "RowDefinition")
+        var actionButton = document
+            .Descendants(presentation + "Button")
             .Single(element =>
-                element.Attribute(x + "Name")?.Value == "ClientDirectoryRow");
+                element.Attribute(x + "Name")?.Value == "ServerActionsButton");
+        var menu = document
+            .Descendants(presentation + "ContextMenu")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "ServerActionsContextMenu");
+        var menuItems = menu.Elements(presentation + "MenuItem").ToArray();
 
-        Assert.Equal("Auto", row.Attribute("Height")?.Value);
+        Assert.Contains(actionButton, menu.Ancestors());
+        Assert.Equal("ServerActionsButton_OnClick", actionButton.Attribute("Click")?.Value);
+        Assert.Equal("打开客户端操作菜单", actionButton.Attribute("AutomationProperties.Name")?.Value);
+        Assert.Contains(
+            actionButton.Descendants(),
+            element =>
+                element.Name.LocalName == "IconParkIcon" &&
+                element.Attribute("Kind")?.Value == "More");
+        Assert.Equal(
+            [
+                "回滚客户端",
+                "校验并修复客户端",
+                "删除客户端",
+                "客户端设置",
+                "Java 自动",
+                "Java 自定义",
+            ],
+            menuItems.Select(item => item.Attribute("Header")?.Value));
+        Assert.Equal(
+            "{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}",
+            menu.Attribute("DataContext")?.Value);
     }
 
     [Fact]
-    public void ClientProfileActions_AreHostedInReadinessPanel()
+    public void ServerActionMenu_FitsTheMinimumWindowWidth()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var actionButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "ServerActionsButton");
+        var actionGrid = actionButton
+            .Ancestors(presentation + "Grid")
+            .First();
+        var columnWidths = actionGrid
+            .Element(presentation + "Grid.ColumnDefinitions")!
+            .Elements(presentation + "ColumnDefinition")
+            .Select(element => element.Attribute("Width")?.Value ?? string.Empty)
+            .ToArray();
+        var menuStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ServerActionMenuStyle");
+
+        Assert.Equal(["160", "8", "54"], columnWidths);
+        Assert.Contains(
+            menuStyle.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "Width" &&
+                setter.Attribute("Value")?.Value == "228");
+    }
+
+    [Fact]
+    public void ServerHome_RemovesLegacyReadinessAndRuntimePanels()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var readinessPanel = document.Descendants(presentation + "Grid")
-            .Single(element => element.Attribute(x + "Name")?.Value == "ClientReadinessPanel");
-        var actionsPanel = document.Descendants(presentation + "Grid")
-            .Single(element => element.Attribute(x + "Name")?.Value == "ClientProfileActionsPanel");
-
-        Assert.Contains(readinessPanel, actionsPanel.Ancestors());
-        Assert.Equal("5", actionsPanel.Attribute("Grid.Row")?.Value);
-        var buttons = actionsPanel.Elements(presentation + "Button").ToArray();
-        Assert.Equal(4, buttons.Length);
-        Assert.Equal(
-            ["回滚", "修复", "删除", "设置"],
-            buttons.Select(button =>
-                button.Descendants(presentation + "TextBlock")
-                    .Single()
-                    .Attribute("Text")?.Value));
-        Assert.All(
-            buttons,
-            button => Assert.False(string.IsNullOrWhiteSpace(
-                button.Attribute("ToolTip")?.Value)));
-    }
-
-    [Fact]
-    public void ServerDetails_UsesAutomaticVerticalScrollbar()
-    {
-        var document = LoadLauncherXaml();
-        XNamespace presentation =
-            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-        XNamespace x =
-            "http://schemas.microsoft.com/winfx/2006/xaml";
-
-        var scrollViewer = document
-            .Descendants(presentation + "ScrollViewer")
-            .Single(element =>
-                element.Attribute(x + "Name")?.Value ==
-                "ServerDetailsScrollViewer");
-
-        Assert.Equal(
-            "Auto",
-            scrollViewer.Attribute("VerticalScrollBarVisibility")?.Value);
+        Assert.DoesNotContain(
+            document.Descendants(),
+            element => element.Attribute(x + "Name")?.Value is
+                "ServerDetailsScrollViewer" or
+                "ClientReadinessPanel" or
+                "ClientProfileActionsPanel");
+        Assert.DoesNotContain(
+            document.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value is
+                "客户端准备" or "运行配置");
     }
 
     [Fact]
@@ -478,56 +510,45 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void ServerDetails_ProvidesConfirmedClientRemovalAction()
+    public void ServerActionMenu_ProvidesConfirmedClientRemovalAction()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-        var button = document
-            .Descendants(presentation + "Button")
+        var menuItem = document
+            .Descendants(presentation + "MenuItem")
             .Single(element =>
                 element.Attribute("Click")?.Value == "DeleteProfileButton_OnClick");
 
         Assert.Equal(
             "{Binding CanDeleteSelectedProfile}",
-            button.Attribute("IsEnabled")?.Value);
+            menuItem.Attribute("IsEnabled")?.Value);
         Assert.Equal(
             "{Binding DeleteProfileToolTip}",
-            button.Attribute("ToolTip")?.Value);
+            menuItem.Attribute("ToolTip")?.Value);
         Assert.Contains(
-            button.Descendants(),
+            menuItem.Descendants(),
             element => element.Attribute("Kind")?.Value == "Delete");
     }
 
     [Fact]
-    public void ServerDetails_LongPathValuesUseEllipsisAndTooltip()
+    public void ServerQuickSettings_LongPathUsesEllipsisAndTooltip()
     {
         var launcher = LoadLauncherXaml();
-        var theme = LoadThemeXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace x =
             "http://schemas.microsoft.com/winfx/2006/xaml";
-
-        var valueStyle = theme
-            .Descendants(presentation + "Style")
-            .Single(element =>
-                element.Attribute(x + "Key")?.Value == "DetailRowValueStyle");
-        var setters = valueStyle
-            .Elements(presentation + "Setter")
-            .ToDictionary(
-                element => element.Attribute("Property")!.Value,
-                element => element.Attribute("Value")?.Value);
         var gameDirectory = launcher
             .Descendants(presentation + "TextBlock")
             .Single(element =>
-                element.Attribute("Text")?.Value ==
-                "{Binding SelectedProfileGameDirectory}");
+                element.Attribute(x + "Name")?.Value ==
+                "HomeClientDirectoryText");
 
-        Assert.Equal("Stretch", setters["HorizontalAlignment"]);
-        Assert.Equal("Right", setters["TextAlignment"]);
-        Assert.Equal("CharacterEllipsis", setters["TextTrimming"]);
         Assert.Equal(
-            "{Binding SelectedProfileGameDirectory}",
+            "CharacterEllipsis",
+            gameDirectory.Attribute("TextTrimming")?.Value);
+        Assert.Equal(
+            "{Binding ClientDirectory}",
             gameDirectory.Attribute("ToolTip")?.Value);
     }
 
@@ -629,7 +650,7 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void StatusToastAndProgressIndicators_UseDynamicBindings()
+    public void StatusToast_UsesDynamicBindingAndLegacyHomeProgressIsAbsent()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation =
@@ -694,15 +715,7 @@ public sealed class LauncherXamlContractTests
                 element.Attribute("Style")?.Value ==
                 "{StaticResource ProgressStepIndicatorStyle}")
             .ToArray();
-        Assert.Equal(4, progressSteps.Length);
-        Assert.Equal(
-            [
-                "{Binding ProgressStepOneState}",
-                "{Binding ProgressStepTwoState}",
-                "{Binding ProgressStepThreeState}",
-                "{Binding ProgressStepFourState}",
-            ],
-            progressSteps.Select(element => element.Attribute("Tag")?.Value));
+        Assert.Empty(progressSteps);
 
         var progressGlyphs = document
             .Descendants(presentation + "TextBlock")
@@ -710,50 +723,7 @@ public sealed class LauncherXamlContractTests
                 element.Attribute("Style")?.Value ==
                 "{StaticResource ProgressStepGlyphStyle}")
             .ToArray();
-        Assert.Equal(4, progressGlyphs.Length);
-        Assert.Equal(
-            ["检查文件", "下载资源", "应用更新", "准备运行"],
-            progressGlyphs.Select(element =>
-                element.Attribute("AutomationProperties.Name")?.Value));
-        Assert.Equal(
-            [
-                "{Binding ProgressStepOneStatusText}",
-                "{Binding ProgressStepTwoStatusText}",
-                "{Binding ProgressStepThreeStatusText}",
-                "{Binding ProgressStepFourStatusText}",
-            ],
-            progressGlyphs.Select(element =>
-                element.Attribute("AutomationProperties.ItemStatus")?.Value));
-
-        var theme = LoadThemeXaml();
-        XNamespace x =
-            "http://schemas.microsoft.com/winfx/2006/xaml";
-        var glyphStyle = theme
-            .Descendants(presentation + "Style")
-            .Single(element =>
-                element.Attribute(x + "Key")?.Value ==
-                "ProgressStepGlyphStyle");
-        var glyphTriggerValues = glyphStyle
-            .Descendants(presentation + "Trigger")
-            .Select(element => element.Attribute("Value")?.Value)
-            .ToArray();
-        Assert.Contains(
-            "{x:Static viewModels:ProgressStepState.Current}",
-            glyphTriggerValues);
-        Assert.Contains(
-            "{x:Static viewModels:ProgressStepState.Complete}",
-            glyphTriggerValues);
-        Assert.Contains(
-            "{x:Static viewModels:ProgressStepState.Failed}",
-            glyphTriggerValues);
-        var glyphValues = glyphStyle
-            .Descendants(presentation + "Setter")
-            .Where(element => element.Attribute("Property")?.Value == "Text")
-            .Select(element => element.Attribute("Value")?.Value)
-            .ToArray();
-        Assert.Contains("•", glyphValues);
-        Assert.Contains("✓", glyphValues);
-        Assert.Contains("×", glyphValues);
+        Assert.Empty(progressGlyphs);
     }
 
     [Fact]

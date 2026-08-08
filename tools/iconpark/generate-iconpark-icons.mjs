@@ -32,6 +32,7 @@ const iconNames = [
   "Left",
   "Lock",
   "Minus",
+  "More",
   "PlayOne",
   "Refresh",
   "Remind",

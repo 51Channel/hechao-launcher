@@ -27,6 +27,86 @@
         PreviewKeyDown="MainWindow_OnPreviewKeyDown">
     <Window.Resources>
         <converters:ServerListMetaTextConverter x:Key="ServerListMetaTextConverter" />
+        <Style x:Key="ServerActionMenuStyle" TargetType="{x:Type ContextMenu}">
+            <Setter Property="Width" Value="228" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HasDropShadow" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ContextMenu}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <StackPanel IsItemsHost="True"
+                                        KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ServerActionMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Border x:Name="MenuItemBorder"
+                                Background="Transparent"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  ContentSource="Icon"
+                                                  Width="16"
+                                                  Height="16"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center" />
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="MenuItemBorder"
+                                        Property="Background"
+                                        Value="{StaticResource HechaoRedSoftBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="MenuItemBorder"
+                                        Property="Opacity"
+                                        Value="0.42" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ServerActionMenuSeparatorStyle" TargetType="{x:Type Separator}">
+            <Setter Property="Margin" Value="8,5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Separator}">
+                        <Border Height="1" Background="{StaticResource BorderBrush}" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <shell:WindowChrome.WindowChrome>
@@ -613,10 +693,9 @@
                     <ColumnDefinition Width="53*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="268" />
-                    <RowDefinition Height="184" />
-                    <RowDefinition Height="112" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="112" />
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0"
@@ -784,29 +863,107 @@
                             </WrapPanel>
                         </StackPanel>
 
-                        <Button Grid.Row="1"
-                                Width="184"
-                                Height="54"
-                                Margin="0,0,0,16"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Command="{Binding PrimaryActionCommand}"
-                                AutomationProperties.Name="{Binding PrimaryActionText}"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Bottom">
-                            <StackPanel Orientation="Horizontal">
-                                <controls:IconParkIcon Glyph="{Binding PrimaryActionGlyph}"
-                                                       Width="16"
-                                                       Height="16"
-                                                       Foreground="White"
-                                                       Margin="0,0,10,0"
-                                                       VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding PrimaryActionText}"
-                                           Foreground="White"
-                                           FontSize="15"
-                                           FontWeight="Bold"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
+                        <Grid Grid.Row="1"
+                              Margin="0,0,0,16"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Bottom">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="54" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0"
+                                    Height="54"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding PrimaryActionCommand}"
+                                    AutomationProperties.Name="{Binding PrimaryActionText}">
+                                <StackPanel Orientation="Horizontal">
+                                    <controls:IconParkIcon Glyph="{Binding PrimaryActionGlyph}"
+                                                           Width="16"
+                                                           Height="16"
+                                                           Foreground="White"
+                                                           Margin="0,0,10,0"
+                                                           VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding PrimaryActionText}"
+                                               Foreground="White"
+                                               FontSize="15"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ServerActionsButton"
+                                    Grid.Column="2"
+                                    Width="54"
+                                    Height="54"
+                                    Style="{StaticResource BaseButtonStyle}"
+                                    Click="ServerActionsButton_OnClick"
+                                    ToolTip="客户端操作"
+                                    AutomationProperties.Name="打开客户端操作菜单">
+                                <Button.ContextMenu>
+                                    <ContextMenu x:Name="ServerActionsContextMenu"
+                                                 Style="{StaticResource ServerActionMenuStyle}"
+                                                 DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                                 Placement="Bottom">
+                                        <MenuItem Header="回滚客户端"
+                                                  Style="{StaticResource ServerActionMenuItemStyle}"
+                                                  IsEnabled="{Binding CanRollbackSelectedProfile}"
+                                                  ToolTip="{Binding RollbackProfileToolTip}"
+                                                  Click="RollbackProfileButton_OnClick"
+                                                  AutomationProperties.Name="回滚客户端">
+                                            <MenuItem.Icon>
+                                                <controls:IconParkIcon Kind="History" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="校验并修复客户端"
+                                                  Style="{StaticResource ServerActionMenuItemStyle}"
+                                                  Command="{Binding RepairCommand}"
+                                                  AutomationProperties.Name="校验并修复客户端">
+                                            <MenuItem.Icon>
+                                                <controls:IconParkIcon Kind="Repair" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="删除客户端"
+                                                  Style="{StaticResource ServerActionMenuItemStyle}"
+                                                  IsEnabled="{Binding CanDeleteSelectedProfile}"
+                                                  ToolTip="{Binding DeleteProfileToolTip}"
+                                                  Click="DeleteProfileButton_OnClick"
+                                                  AutomationProperties.Name="删除客户端">
+                                            <MenuItem.Icon>
+                                                <controls:IconParkIcon Kind="Delete" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="客户端设置"
+                                                  Style="{StaticResource ServerActionMenuItemStyle}"
+                                                  Command="{Binding ShowSettingsPageCommand}"
+                                                  AutomationProperties.Name="打开客户端设置">
+                                            <MenuItem.Icon>
+                                                <controls:IconParkIcon Kind="SettingTwo" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator Style="{StaticResource ServerActionMenuSeparatorStyle}" />
+                                        <MenuItem Header="Java 自动"
+                                                  Style="{StaticResource ServerActionMenuItemStyle}"
+                                                  Command="{Binding UseManagedJavaCommand}"
+                                                  AutomationProperties.Name="使用客户端自带 Java">
+                                            <MenuItem.Icon>
+                                                <controls:IconParkIcon Kind="Code" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Java 自定义"
+                                                  Style="{StaticResource ServerActionMenuItemStyle}"
+                                                  Click="ChooseProfileJavaButton_OnClick"
+                                                  AutomationProperties.Name="选择自定义 Java">
+                                            <MenuItem.Icon>
+                                                <controls:IconParkIcon Kind="FolderOpen" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                                <controls:IconParkIcon Kind="More"
+                                                       Width="18"
+                                                       Height="18" />
+                            </Button>
+                        </Grid>
                     </Grid>
                 </Border>
 
@@ -1084,7 +1241,8 @@
                                         <TextBlock Text="游戏目录"
                                                    FontSize="10"
                                                    Foreground="{StaticResource InkMutedBrush}" />
-                                        <TextBlock Text="{Binding ClientDirectory}"
+                                        <TextBlock x:Name="HomeClientDirectoryText"
+                                                   Text="{Binding ClientDirectory}"
                                                    FontFamily="Consolas"
                                                    FontSize="11"
                                                    TextTrimming="CharacterEllipsis"
@@ -1116,548 +1274,6 @@
                     </Grid>
                 </Border>
 
-                <ScrollViewer x:Name="ServerDetailsScrollViewer"
-                              Grid.Row="3"
-                              Grid.ColumnSpan="2"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                <Grid MinHeight="332">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="56*" />
-                        <ColumnDefinition Width="44*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="42" />
-                    </Grid.RowDefinitions>
-
-                    <!-- Client readiness -->
-                    <Grid x:Name="ClientReadinessPanel"
-                          Grid.Column="0"
-                          Margin="28,20,26,24">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="42" />
-                            <RowDefinition Height="66" />
-                            <RowDefinition Height="72" />
-                            <RowDefinition x:Name="ClientDirectoryRow"
-                                           Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="50" />
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
-                                <Border Width="30"
-                                        Height="30"
-                                        Background="{StaticResource HechaoRedSoftBrush}"
-                                        CornerRadius="4">
-                                    <controls:IconParkIcon Kind="Box"
-                                                           Width="13"
-                                                           Height="13"
-                                                           Foreground="{StaticResource HechaoRedDarkBrush}"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
-                                </Border>
-                                <StackPanel Margin="10,-1,0,0">
-                                    <TextBlock Text="客户端准备"
-                                               FontSize="17"
-                                               FontWeight="Black" />
-                                    <TextBlock Text="{Binding ClientStatusText}"
-                                               FontSize="11"
-                                               Foreground="{StaticResource InkMutedBrush}"
-                                               Margin="0,3,0,0" />
-                                </StackPanel>
-                            </StackPanel>
-                            <TextBlock Text="{Binding LauncherVersionText, StringFormat=启动器 {0}}"
-                                       FontFamily="Segoe UI"
-                                       FontSize="11"
-                                       Foreground="{StaticResource InkFaintBrush}"
-                                       HorizontalAlignment="Right"
-                                       VerticalAlignment="Top"
-                                       Margin="0,5,0,0" />
-                        </Grid>
-
-                        <Grid Grid.Row="1"
-                              Margin="5,4,5,0"
-                              VerticalAlignment="Top">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="31" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Row="1"
-                                    Grid.ColumnSpan="4"
-                                    Height="1"
-                                    Margin="28,0"
-                                    Background="{StaticResource BorderBrush}"
-                                    VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="0"
-                                       Text="检查文件"
-                                       Style="{StaticResource ProcessLabelStyle}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="下载资源"
-                                       Style="{StaticResource ProcessLabelStyle}" />
-                            <TextBlock Grid.Column="2"
-                                       Text="应用更新"
-                                       Style="{StaticResource ProcessLabelStyle}" />
-                            <TextBlock Grid.Column="3"
-                                       Text="准备运行"
-                                       Style="{StaticResource ProcessLabelStyle}" />
-                            <Grid Grid.Row="1" Grid.Column="0">
-                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
-                                         Tag="{Binding ProgressStepOneState}" />
-                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
-                                           Tag="{Binding ProgressStepOneState}"
-                                           AutomationProperties.Name="检查文件"
-                                           AutomationProperties.ItemStatus="{Binding ProgressStepOneStatusText}" />
-                            </Grid>
-                            <Grid Grid.Row="1" Grid.Column="1">
-                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
-                                         Tag="{Binding ProgressStepTwoState}" />
-                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
-                                           Tag="{Binding ProgressStepTwoState}"
-                                           AutomationProperties.Name="下载资源"
-                                           AutomationProperties.ItemStatus="{Binding ProgressStepTwoStatusText}" />
-                            </Grid>
-                            <Grid Grid.Row="1" Grid.Column="2">
-                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
-                                         Tag="{Binding ProgressStepThreeState}" />
-                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
-                                           Tag="{Binding ProgressStepThreeState}"
-                                           AutomationProperties.Name="应用更新"
-                                           AutomationProperties.ItemStatus="{Binding ProgressStepThreeStatusText}" />
-                            </Grid>
-                            <Grid Grid.Row="1" Grid.Column="3">
-                                <Ellipse Style="{StaticResource ProgressStepIndicatorStyle}"
-                                         Tag="{Binding ProgressStepFourState}" />
-                                <TextBlock Style="{StaticResource ProgressStepGlyphStyle}"
-                                           Tag="{Binding ProgressStepFourState}"
-                                           AutomationProperties.Name="准备运行"
-                                           AutomationProperties.ItemStatus="{Binding ProgressStepFourStatusText}" />
-                            </Grid>
-                        </Grid>
-
-                        <Grid Grid.Row="2" Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="220" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="客户端包"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkMutedBrush}" />
-                                <TextBlock Text="{Binding SelectedProfileDisplayName}"
-                                           FontSize="14"
-                                           FontWeight="Bold"
-                                           Margin="0,5,0,0" />
-                                <TextBlock Text="{Binding SelectedProfileMetaText}"
-                                           FontFamily="Segoe UI"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkFaintBrush}"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                            <Grid Grid.Column="1" Margin="18,0,0,0" VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid>
-                                    <TextBlock Text="进度"
-                                               FontSize="11"
-                                               Foreground="{StaticResource InkMutedBrush}" />
-                                    <TextBlock Text="{Binding UpdateProgress, StringFormat={}{0:0}%}"
-                                               FontFamily="Segoe UI"
-                                               FontSize="12"
-                                               FontWeight="Bold"
-                                               HorizontalAlignment="Right" />
-                                </Grid>
-                            <controls:AnimatedProgressBar Grid.Row="1"
-                                                          Style="{StaticResource HechaoProgressBarStyle}"
-                                                          Minimum="0"
-                                                          Maximum="100"
-                                                          Value="{Binding UpdateProgress, Mode=OneWay}"
-                                                          Margin="0,9,0,0"
-                                                          AutomationProperties.Name="客户端准备进度" />
-                                <TextBlock Grid.Row="2"
-                                           Text="{Binding ClientStatusText}"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkFaintBrush}"
-                                           Margin="0,6,0,0" />
-                            </Grid>
-                        </Grid>
-
-                        <Grid Grid.Row="3" Margin="0,10,0,2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="18" />
-                                <RowDefinition Height="40" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="游戏数据目录"
-                                       FontSize="11"
-                                       Foreground="{StaticResource InkMutedBrush}" />
-                            <Border Grid.Row="1"
-                                    Background="{StaticResource SurfaceMutedBrush}"
-                                    BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4">
-                                <Grid Margin="12,0,4,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="34" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding ClientDirectory}"
-                                               FontFamily="Consolas"
-                                               FontSize="11"
-                                               Foreground="{StaticResource InkMutedBrush}"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding ClientDirectory}"
-                                               AutomationProperties.HelpText="{Binding ClientDirectory}"
-                                               VerticalAlignment="Center" />
-                                    <Button Grid.Column="1"
-                                            HorizontalAlignment="Right"
-                                            Style="{StaticResource QuietIconButtonStyle}"
-                                            Width="34"
-                                            Height="34"
-                                            Content="&#xE838;"
-                                            Command="{Binding OpenClientDirectoryCommand}"
-                                            ToolTip="打开游戏数据目录"
-                                            AutomationProperties.Name="打开游戏数据目录" />
-                                </Grid>
-                            </Border>
-                        </Grid>
-
-                        <Grid x:Name="ClientProfileActionsPanel"
-                              Grid.Row="5"
-                              Margin="0,8,0,0"
-                              VerticalAlignment="Bottom">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0"
-                                    Style="{StaticResource BaseButtonStyle}"
-                                    Height="42"
-                                    Margin="0,0,4,0"
-                                    IsEnabled="{Binding CanRollbackSelectedProfile}"
-                                    ToolTip="{Binding RollbackProfileToolTip}"
-                                    AutomationProperties.Name="回滚客户端"
-                                    Click="RollbackProfileButton_OnClick">
-                                <StackPanel Orientation="Horizontal">
-                                    <controls:IconParkIcon Kind="History"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Margin="0,0,6,0" />
-                                    <TextBlock Text="回滚"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                            </Button>
-                            <Button Grid.Column="1"
-                                    Style="{StaticResource BaseButtonStyle}"
-                                    Height="42"
-                                    Margin="4,0"
-                                    Command="{Binding RepairCommand}"
-                                    ToolTip="校验并修复当前客户端"
-                                    AutomationProperties.Name="校验并修复客户端">
-                                <StackPanel Orientation="Horizontal">
-                                    <controls:IconParkIcon Kind="Repair"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Margin="0,0,6,0" />
-                                    <TextBlock Text="修复"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                            </Button>
-                            <Button Grid.Column="2"
-                                    Style="{StaticResource BaseButtonStyle}"
-                                    Height="42"
-                                    Margin="4,0"
-                                    IsEnabled="{Binding CanDeleteSelectedProfile}"
-                                    ToolTip="{Binding DeleteProfileToolTip}"
-                                    AutomationProperties.Name="删除客户端"
-                                    Click="DeleteProfileButton_OnClick">
-                                <StackPanel Orientation="Horizontal">
-                                    <controls:IconParkIcon Kind="Delete"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Margin="0,0,6,0" />
-                                    <TextBlock Text="删除"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                            </Button>
-                             <Button Grid.Column="3"
-                                     Style="{StaticResource BaseButtonStyle}"
-                                     Height="42"
-                                    Margin="4,0,0,0"
-                                    Command="{Binding ShowSettingsPageCommand}"
-                                    ToolTip="打开客户端设置"
-                                    AutomationProperties.Name="打开客户端设置">
-                                <StackPanel Orientation="Horizontal">
-                                    <controls:IconParkIcon Kind="SettingTwo"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Margin="0,0,6,0" />
-                                    <TextBlock Text="设置"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-                    </Grid>
-
-                    <!-- Runtime configuration -->
-                    <Border Grid.Column="1"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1,0,0,0">
-                        <Grid Margin="28,12,28,12">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="42" />
-                                <RowDefinition Height="34" />
-                                <RowDefinition Height="34" />
-                                <RowDefinition Height="34" />
-                                <RowDefinition Height="88" />
-                                <RowDefinition Height="62" />
-                            </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Border Width="30"
-                                            Height="30"
-                                            Background="{StaticResource SteelSoftBrush}"
-                                            CornerRadius="4">
-                                        <controls:IconParkIcon Kind="SettingTwo"
-                                                               Width="13"
-                                                               Height="13"
-                                                               Foreground="{StaticResource SteelBrush}"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center" />
-                                    </Border>
-                                    <StackPanel Margin="10,-1,0,0">
-                                        <TextBlock Text="运行配置"
-                                                   FontSize="17"
-                                                   FontWeight="Black" />
-                                        <TextBlock Text="当前客户端档案"
-                                                   FontSize="11"
-                                                   Foreground="{StaticResource InkMutedBrush}"
-                                                   Margin="0,3,0,0" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Grid>
-
-                            <Grid Grid.Row="1" Style="{StaticResource DetailRowStyle}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <controls:IconParkIcon Kind="Box" Style="{StaticResource DetailRowIconStyle}" />
-                                <TextBlock Text="运行环境" Style="{StaticResource DetailRowLabelStyle}" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedServerLoaderText}"
-                                           Style="{StaticResource DetailRowValueStyle}" />
-                            </Grid>
-                            <Grid Grid.Row="2" Style="{StaticResource DetailRowStyle}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <controls:IconParkIcon Kind="Code" Style="{StaticResource DetailRowIconStyle}" />
-                                <TextBlock Text="Java 版本" Style="{StaticResource DetailRowLabelStyle}" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedProfileJavaVersionText}"
-                                           Style="{StaticResource DetailRowValueStyle}" />
-                            </Grid>
-                            <Grid Grid.Row="3" Style="{StaticResource DetailRowStyle}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <controls:IconParkIcon Kind="Folder" Style="{StaticResource DetailRowIconStyle}" />
-                                <TextBlock Text="游戏目录" Style="{StaticResource DetailRowLabelStyle}" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedProfileGameDirectory}"
-                                           FontFamily="Consolas"
-                                           ToolTip="{Binding SelectedProfileGameDirectory}"
-                                           Style="{StaticResource DetailRowValueStyle}" />
-                            </Grid>
-
-                            <Grid Grid.Row="4">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="16" />
-                                    <RowDefinition Height="42" />
-                                    <RowDefinition Height="30" />
-                                </Grid.RowDefinitions>
-                                <StackPanel Orientation="Horizontal">
-                                    <controls:IconParkIcon Kind="Code"
-                                                           Width="14"
-                                                           Height="14"
-                                                           Foreground="{StaticResource SteelBrush}"
-                                                           Margin="0,0,10,0" />
-                                    <TextBlock Text="Java 使用"
-                                               FontSize="11"
-                                               Foreground="{StaticResource InkMutedBrush}"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                                <Grid Grid.Row="1"
-                                      Height="38"
-                                      VerticalAlignment="Center">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0"
-                                        Height="38"
-                                        MinHeight="0"
-                                        Margin="0,0,4,0"
-                                        Command="{Binding UseManagedJavaCommand}"
-                                        AutomationProperties.Name="使用客户端自带 Java">
-                                        <Button.Style>
-                                            <Style TargetType="Button"
-                                                   BasedOn="{StaticResource BaseButtonStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsUsingManagedJava}"
-                                                                 Value="True">
-                                                        <Setter Property="Background"
-                                                                Value="{StaticResource HechaoRedSoftBrush}" />
-                                                        <Setter Property="BorderBrush"
-                                                                Value="{StaticResource HechaoRedBrush}" />
-                                                        <Setter Property="Foreground"
-                                                                Value="{StaticResource HechaoRedDarkBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <TextBlock Text="自动"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold" />
-                                    </Button>
-                                    <Button Grid.Column="1"
-                                        Height="38"
-                                        MinHeight="0"
-                                        Margin="4,0,0,0"
-                                        Click="ChooseProfileJavaButton_OnClick"
-                                        AutomationProperties.Name="使用自定义 Java">
-                                        <Button.Style>
-                                            <Style TargetType="Button"
-                                                   BasedOn="{StaticResource BaseButtonStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsUsingCustomJava}"
-                                                                 Value="True">
-                                                        <Setter Property="Background"
-                                                                Value="{StaticResource HechaoRedSoftBrush}" />
-                                                        <Setter Property="BorderBrush"
-                                                                Value="{StaticResource HechaoRedBrush}" />
-                                                        <Setter Property="Foreground"
-                                                                Value="{StaticResource HechaoRedDarkBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <TextBlock Text="自定义"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold" />
-                                    </Button>
-                                </Grid>
-
-                                <Border Grid.Row="2"
-                                        Height="28"
-                                        Background="{StaticResource SurfaceMutedBrush}"
-                                        BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="4"
-                                        ToolTip="{Binding SelectedProfileJavaModeText}">
-                                    <Grid Margin="10,0,2,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="32" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding SelectedProfileJavaPathText}"
-                                                   FontFamily="Consolas"
-                                                   FontSize="10"
-                                                   Foreground="{StaticResource InkMutedBrush}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   ToolTip="{Binding SelectedProfileJavaPathText}"
-                                                   AutomationProperties.HelpText="{Binding SelectedProfileJavaPathText}"
-                                                   VerticalAlignment="Center" />
-                                        <Button Grid.Column="1"
-                                                Width="26"
-                                                Height="26"
-                                                Style="{StaticResource QuietIconButtonStyle}"
-                                                Click="ChooseProfileJavaButton_OnClick"
-                                                ToolTip="选择自定义 Java"
-                                                AutomationProperties.Name="选择自定义 Java">
-                                            <controls:IconParkIcon Kind="FolderOpen"
-                                                                   Width="12"
-                                                                   Height="12" />
-                                        </Button>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-
-                            <Grid Grid.Row="5" Margin="0,4,0,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="16" />
-                                    <RowDefinition Height="42" />
-                                </Grid.RowDefinitions>
-                                <TextBlock Text="内存分配"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkMutedBrush}" />
-                                <ListBox Grid.Row="1"
-                                         Height="42"
-                                         Style="{StaticResource MemorySegmentListStyle}"
-                                         ItemContainerStyle="{StaticResource MemorySegmentItemStyle}"
-                                         ItemsSource="{Binding MemoryOptions}"
-                                         SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.Name="当前客户端游戏内存" />
-                            </Grid>
-
-                        </Grid>
-                    </Border>
-
-                    <Border Grid.Row="1"
-                            Grid.ColumnSpan="2"
-                            Background="{StaticResource StripBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="0,1,0,0">
-                        <Grid Margin="28,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="活动记录"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding ClientStatusText}"
-                                       FontSize="11"
-                                       Foreground="{StaticResource InkMutedBrush}"
-                                       VerticalAlignment="Center"
-                                       Margin="24,0,0,0" />
-                            <StackPanel Grid.Column="2"
-                                        Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <Ellipse Width="6"
-                                         Height="6"
-                                         Fill="{StaticResource OnlineBrush}"
-                                         Margin="0,0,7,0" />
-                                <TextBlock Text="设置自动保存"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkMutedBrush}" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-                </ScrollViewer>
             </Grid>
 
             <!-- Shared title bar for non-server pages -->

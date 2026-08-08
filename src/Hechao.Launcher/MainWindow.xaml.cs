@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -421,6 +422,19 @@ public partial class MainWindow : Window
         {
             await viewModel.UpdateSelectedProfileJavaPathAsync(dialog.FileName);
         }
+    }
+
+    private void ServerActionsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { ContextMenu: { } menu } button)
+        {
+            return;
+        }
+
+        menu.PlacementTarget = button;
+        menu.Placement = PlacementMode.Bottom;
+        menu.HorizontalOffset = button.ActualWidth - menu.Width;
+        menu.IsOpen = true;
     }
 
     private async void RollbackProfileButton_OnClick(
