@@ -686,6 +686,34 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
+    public async Task SelectedProfileGameDirectoryDisplayText_RequiresSelectedProfile()
+    {
+        var dataRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"hechao-profile-directory-{Guid.NewGuid():N}");
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            settings: new LauncherSettings(
+                SelectedServerId: "server-a",
+                ClientDirectory: dataRoot),
+            catalogClient: new StaticCatalogClient(CreateTwoProfileCatalog()));
+        await WaitUntilAsync(() => viewModel.SelectedServer?.Id == "server-a");
+
+        Assert.Equal(
+            new ClientStorageLayout(dataRoot).GetProfileGameDirectory("profile-a"),
+            viewModel.SelectedProfileGameDirectoryDisplayText);
+        Assert.True(viewModel.OpenSelectedProfileGameDirectoryCommand.CanExecute(null));
+
+        viewModel.SelectedServer = null;
+
+        Assert.Equal(
+            "选择服务器后显示",
+            viewModel.SelectedProfileGameDirectoryDisplayText);
+        Assert.False(viewModel.OpenSelectedProfileGameDirectoryCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task MaintenanceServer_CanInstallButCannotLaunch()
     {
         var installation = new StubInstallationService

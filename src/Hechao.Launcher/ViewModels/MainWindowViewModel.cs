@@ -204,6 +204,9 @@ public sealed class MainWindowViewModel : ObservableObject
             () => _ = LoadCatalogAsync(userInitiated: true),
             () => !_isCatalogLoading && !IsProgressActive);
         OpenClientDirectoryCommand = new RelayCommand(OpenClientDirectory);
+        OpenSelectedProfileGameDirectoryCommand = new RelayCommand(
+            OpenSelectedProfileGameDirectory,
+            () => !string.IsNullOrWhiteSpace(SelectedServer?.ClientProfileId));
         ToggleNotificationsCommand = new RelayCommand(ToggleNotifications);
         ToggleSettingsCommand = new RelayCommand(ToggleSettings);
         CloseOverlaysCommand = new RelayCommand(CloseOverlays);
@@ -294,6 +297,7 @@ public sealed class MainWindowViewModel : ObservableObject
     public AsyncRelayCommand RepairCommand { get; }
     public RelayCommand RefreshCommand { get; }
     public RelayCommand OpenClientDirectoryCommand { get; }
+    public RelayCommand OpenSelectedProfileGameDirectoryCommand { get; }
     public RelayCommand ToggleNotificationsCommand { get; }
     public RelayCommand ToggleSettingsCommand { get; }
     public RelayCommand CloseOverlaysCommand { get; }
@@ -666,10 +670,12 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedProfileDisplayName));
             OnPropertyChanged(nameof(SelectedProfileMetaText));
             OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+            OnPropertyChanged(nameof(SelectedProfileGameDirectoryDisplayText));
             NotifySelectedProfileJavaPropertiesChanged();
             OnPropertyChanged(nameof(IsSelectedServerOnline));
             OnPropertyChanged(nameof(CurrentPageTitle));
             PrimaryActionCommand.RaiseCanExecuteChanged();
+            OpenSelectedProfileGameDirectoryCommand.RaiseCanExecuteChanged();
             CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
             if (value is not null)
             {
@@ -871,6 +877,11 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    public string SelectedProfileGameDirectoryDisplayText =>
+        string.IsNullOrWhiteSpace(SelectedServer?.ClientProfileId)
+            ? "选择服务器后显示"
+            : SelectedProfileGameDirectory;
 
     public string SelectedProfileJavaVersionText =>
         $"Java {GetSelectedProfileJavaMajorVersion()}";
@@ -1498,6 +1509,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 OnPropertyChanged(nameof(SelectedProfileDisplayName));
                 OnPropertyChanged(nameof(SelectedProfileMetaText));
                 OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+                OnPropertyChanged(nameof(SelectedProfileGameDirectoryDisplayText));
                 NotifySelectedProfileJavaPropertiesChanged();
                 UpdateProgress = 0;
                 ClientStatusText = "正在检查客户端";
@@ -3661,6 +3673,22 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    private void OpenSelectedProfileGameDirectory()
+    {
+        try
+        {
+            var gameDirectory = SelectedProfileGameDirectory;
+            Directory.CreateDirectory(gameDirectory);
+            Process.Start(new ProcessStartInfo(gameDirectory) { UseShellExecute = true });
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            System.ComponentModel.Win32Exception)
+        {
+            ShowToast("暂时无法打开当前客户端游戏目录", ToastLevel.Error);
+        }
+    }
+
     public void UpdateClientDirectory(string path)
     {
         if (!CanChangeClientDirectory)
@@ -3693,6 +3721,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _selectedProfileStateChecked = false;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+        OnPropertyChanged(nameof(SelectedProfileGameDirectoryDisplayText));
         NotifySelectedProfileJavaPropertiesChanged();
         CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         UpdateProgress = 0;
@@ -3715,6 +3744,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _selectedProfileStateChecked = false;
         OnPropertyChanged(nameof(ClientDirectory));
         OnPropertyChanged(nameof(SelectedProfileGameDirectory));
+        OnPropertyChanged(nameof(SelectedProfileGameDirectoryDisplayText));
         NotifySelectedProfileJavaPropertiesChanged();
         CreateDiagnosticBundleCommand.RaiseCanExecuteChanged();
         UpdateProgress = 0;

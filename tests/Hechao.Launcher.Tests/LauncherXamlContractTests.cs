@@ -531,7 +531,7 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void ServerQuickSettings_LongPathUsesEllipsisAndTooltip()
+    public void ServerQuickSettings_UsesSelectedProfileDirectoryAndSingleOpenAction()
     {
         var launcher = LoadLauncherXaml();
         XNamespace presentation =
@@ -543,13 +543,36 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
                 "HomeClientDirectoryText");
+        var quickSettingsPanel = launcher
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "HomeQuickSettingsPanel");
+        var openDirectoryButton = quickSettingsPanel
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "OpenHomeProfileDirectoryButton");
 
         Assert.Equal(
             "CharacterEllipsis",
             gameDirectory.Attribute("TextTrimming")?.Value);
         Assert.Equal(
-            "{Binding ClientDirectory}",
+            "{Binding SelectedProfileGameDirectoryDisplayText}",
+            gameDirectory.Attribute("Text")?.Value);
+        Assert.Equal(
+            "{Binding SelectedProfileGameDirectoryDisplayText}",
             gameDirectory.Attribute("ToolTip")?.Value);
+        Assert.Equal(
+            "{Binding SelectedProfileGameDirectoryDisplayText}",
+            gameDirectory.Attribute("AutomationProperties.HelpText")?.Value);
+        Assert.Equal(
+            "{Binding OpenSelectedProfileGameDirectoryCommand}",
+            openDirectoryButton.Attribute("Command")?.Value);
+        Assert.DoesNotContain(
+            quickSettingsPanel.Descendants(presentation + "Button"),
+            element => element.Attribute("Click")?.Value ==
+                "ChooseClientDirectoryButton_OnClick");
     }
 
     [Fact]
@@ -899,6 +922,9 @@ public sealed class LauncherXamlContractTests
             "ChooseProfileJavaButton_OnClick",
             chooseJavaButton.Attribute("Click")?.Value);
         Assert.Equal(
+            "{StaticResource HomeQuickSettingsComboBoxStyle}",
+            memorySelector.Attribute("Style")?.Value);
+        Assert.Equal(
             "{Binding HasNoHomeAnnouncements, Converter={StaticResource BooleanToVisibilityConverter}}",
             announcementList.Parent!
                 .Elements(presentation + "StackPanel")
@@ -913,7 +939,7 @@ public sealed class LauncherXamlContractTests
         Assert.Contains(
             document.Descendants(presentation + "TextBlock"),
             element => element.Attribute("Text")?.Value ==
-                "{Binding ClientDirectory}");
+                "{Binding SelectedProfileGameDirectoryDisplayText}");
     }
 
     [Fact]
