@@ -145,7 +145,14 @@ public static partial class ServerControlRules
                     (char.IsControl(character) &&
                      character is not '\r' and not '\n' and not '\t')) ||
                 (target.Settings is not null &&
-                 !IsValidSettings(target.Settings))))
+                 !IsValidSettings(target.Settings)) ||
+                (target.DeployedPackage is not null &&
+                 (!target.PackageDeploymentEnabled ||
+                  !target.ServerFilesPresent ||
+                  target.DeployedPackage.ImportId == Guid.Empty ||
+                  !IsValidServerId(target.DeployedPackage.ProfileId) ||
+                  !DeploymentVersionRegex().IsMatch(
+                      target.DeployedPackage.Version)))))
         {
             errors["targets"] = ["代理目标包含无效字段。"];
         }
@@ -260,4 +267,9 @@ public static partial class ServerControlRules
     [GeneratedRegex("^[A-Z][A-Z0-9_]{0,79}$",
         RegexOptions.CultureInvariant)]
     private static partial Regex ResultCodeRegex();
+
+    [GeneratedRegex(
+        "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex DeploymentVersionRegex();
 }

@@ -181,6 +181,7 @@ public sealed class PackagePublisherCompletionService(
             request.UploadedObjects,
             request.ExistingObjects,
             request.UploadedBytes,
+            package.Plan!.DeployServer,
             now,
             cancellationToken);
         return Map(completed);

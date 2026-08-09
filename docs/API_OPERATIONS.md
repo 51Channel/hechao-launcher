@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 当前线上版本：`0.28.7-20260807T072043Z`
-> 当前迁移：`026`
-> 下一候选：`0.29.0` / 迁移 `027`（客户端档案归档、恢复与受限空草稿删除，尚未部署）
+> 最近记录的线上版本：`0.29.0-20260808T043921Z`
+> 最近记录的生产迁移：`027`
+> 下一候选：`0.30.0` / 迁移 `028`（活动企划、单活动排期与精确部署身份，尚未部署）
 > 当前阶段：跨版本回大厅方案已取消；基础设施大厅隔离已部署，待真实玩家灰度
 >
 > owl9 边界：API 中现有 server ID `pvp` 实际代表恐怖整蛊服
@@ -36,6 +36,8 @@
 - 管理员诊断端点：`GET /v1/admin/diagnostics` 与 `GET /v1/admin/diagnostics/{id}/download`，要求 MFA
 - 管理员玩家端点：`GET /v1/admin/users`、访问预览、单服规则、受控全局等级、账号停用/恢复、设备会话撤销及 Minecraft UUID 封禁
 - 管理员发布端点：`/v1/admin/catalog/client-profiles/*`，包括签名清单导入、三通道、稳定灰度、暂停和回滚
+- 管理员活动企划端点：`/v1/admin/activity-plans/*`，包括草稿、排期、发布、撤回、归档、恢复和固定活动槽部署
+- 官网活动企划内部端点：`/v1/internal/website/activity-plans/*`，只接受回环请求和独立令牌；令牌身份映射到固定 Launcher 管理员审计用户
 - 启动器运行遥测：`POST /v1/telemetry/events`，仅接受认证会话、固定枚举和最多 50 条的幂等批次
 - 管理员遥测汇总：`GET /v1/admin/telemetry/summary?hours=24|168|720`，只返回聚合值并要求 MFA
 - 日志：systemd journal
@@ -85,11 +87,19 @@ ForumSessionRevocation__DeliveryIntervalSeconds
 ForumSessionRevocation__RequestTimeoutSeconds
 ForumSessionRevocation__LeaseSeconds
 ForumSessionRevocation__BatchSize
+WebsiteActivityBridge__InternalTokenSha256
+WebsiteActivityBridge__ActorUserId
 OSS_ACCESS_KEY_ID
 OSS_ACCESS_KEY_SECRET
 ```
 
-环境文件保存 LuckPerms/Velocity 内部令牌的 SHA-256 和专用 RAM 凭据，权限必须保持 `600`。目录强制登录在 Microsoft 应用许可、真实账号测试和 Velocity `enforce` 验收完成前必须保持 `false`。
+环境文件保存 LuckPerms/Velocity/官网活动企划内部令牌的 SHA-256 和专用 RAM 凭据，权限必须保持 `600`。活动企划明文令牌只保存在网站受限 `.env`，API 仅保存 SHA-256；`ActorUserId` 必须对应仍有效且可追责的 Launcher 管理员。目录强制登录在 Microsoft 应用许可、真实账号测试和 Velocity `enforce` 验收完成前必须保持 `false`。
+
+活动企划双端配置使用
+[`configure-website-activity-bridge.sh`](../deploy/linux/configure-website-activity-bridge.sh)。
+脚本在服务器本机生成令牌，原子更新两个权限 `0600` 的环境文件，只输出状态，不输出
+令牌或摘要，也不会重启 API、网站或 Minecraft。完整发布顺序见
+[`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
 
 `0.4.0` 分发端点：
 

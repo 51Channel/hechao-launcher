@@ -1,9 +1,9 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码版本：启动器 `0.14.2`、API `0.27.0`
-> 生产状态：API `0.27.0` 已部署且 `AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收
+> 源码候选：API `0.30.0`；最近记录的生产 API 为 `0.29.0`
+> 生产状态：`AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收，活动企划页尚未部署
 > 管理入口：`https://admin.hechao.world/admin/`
-> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router 十页后台已部署生产；第十页“整合包导入”已完成固定试包
+> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十一页“活动企划”为本地候选
 > 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
@@ -50,8 +50,9 @@
 ### 3.1 Vue 前端工程
 
 管理后台源码位于 `src/Hechao.Api/AdminWeb`，使用 Vue 3、TypeScript、Vite 和
-Vue Router。源码候选的十个页面分别对应 `/admin/servers`、`users`、`profiles`、
-`package-imports`、`telemetry`、`runtime`、`control`、`alerts`、`diagnostics` 和 `audit`。
+Vue Router。源码候选的十一个页面分别对应 `/admin/servers`、`users`、`profiles`、
+`package-imports`、`activity-plans`、`telemetry`、`runtime`、`control`、`alerts`、
+`diagnostics` 和 `audit`。
 ASP.NET Core 使用 `/admin/{*path:nonfile}` 回退到 Vue 入口，因此刷新深层路由仍由
 同一应用接管。
 
@@ -71,17 +72,19 @@ npm run test:e2e
 npm run build
 ```
 
-Playwright 覆盖十个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
+Playwright 覆盖十一个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
 服控轮询期间的脏表单和控制台阅读位置、正式通道确认，以及修订冲突恢复。API 测试
 另验证静态资源 MIME、`/admin/control` 深层路由、Host 锁定和安全响应头。
 
 ### 3.2 整合包导入
 
 `/admin/package-imports` 只对完成 MFA 的 `Administrator` 开放。页面提供分块上传、暂停、
-续传、取消、识别结果审阅和任务时间线；确认区只列出具备整合包能力、代理在线且当前
-停止的 owl5 活动目标。客户端发布阶段显示 Publisher 上报的真实对象/字节进度，并在
+续传、取消、识别结果审阅和任务时间线。默认“仅发布并入库”不要求活动槽在线或停服，
+只发布客户端并保留服务端制品；兼容的“立即部署活动槽”才要求具备整合包能力、代理在线
+且当前停止的 owl5 活动目标。客户端发布阶段显示 Publisher 上报的真实对象/字节进度，并在
 取得两个有效样本后估算剩余时间；解压和构建等无法量化的阶段使用不确定进度，不显示
-伪造百分比。客户端只发布到 `Test`，服务端部署后保持停止。
+伪造百分比。客户端只发布到 `Test`；服务端无论立即部署还是稍后从企划页部署，完成后
+都保持停止。
 
 页面不会提供强制忽略阻断项、选择其他 VPS、自动关冲突服、自动开服或直接推进
 `Production` 的入口。API、Publisher、服控代理配置与回滚见
@@ -90,6 +93,18 @@ Playwright 覆盖十个路由的真实数据形态、移动端横向溢出、WCA
 桌面与 390px 移动端溢出检查；Impeccable 检测为零项。生产固定试包完成上传、识别、
 人工确认、任务时间线、Test-only 发布和停止活动槽部署；原活动目录随后
 恢复，页面没有自动开服或推进正式通道。
+
+### 3.3 活动企划
+
+`/admin/activity-plans` 使用 FullCalendar 管理同一套 Launcher 活动企划。点击日期或框选
+范围创建草稿，拖动改变整个区间，拖动两端改变开始和结束。草稿允许重叠；任意时刻
+最多一个已发布活动，区间按 `[开始, 结束)` 计算，因此相邻活动可以无缝接档。
+
+发布要求绑定整合包的精确清单已进入 `Production`。玩家发布后即可提前下载客户端，
+但只有当前时间进入排期、活动槽在线且代理上报的部署 import 与企划绑定完全一致时才
+允许进入。部署使用 `DEPLOY <planId>` 精确确认，成功后仍保持停服。页面每 5 秒刷新，
+并通过修订号防止与官网后台互相覆盖。完整操作与双端桥接见
+[`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
 
 ## 4. 配置
 
@@ -153,14 +168,15 @@ location / {
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
-5. 部署当前生产 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、迁移 20、迁移 21、`healthz` 和 `readyz`。
+5. 部署当前候选 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、迁移 20、迁移 21、迁移 28、`healthz` 和 `readyz`。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
-7. 验证 `/admin/servers`、`/admin/control` 和 `/admin/audit` 直接刷新均返回 Vue 入口，浏览器控制台没有资源 404。
+7. 验证 `/admin/servers`、`/admin/activity-plans`、`/admin/control` 和 `/admin/audit` 直接刷新均返回 Vue 入口，浏览器控制台没有资源 404。
 8. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存；显式信任当前电脑后再次从启动器打开后台，确认不再要求动态码。
 9. 用普通成员确认票据端点返回 403。
 10. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。
 11. 验证玩家账号停用/恢复、设备会话撤销、UUID 封禁/解除、最后管理员保护和审计。
-12. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
+12. 创建两条重叠草稿，确认第一条可发布、第二条返回冲突；再验证首尾相接的两条企划可发布。检查拖动、两端 resize、官网后台同步和审计后清理测试企划。
+13. 回归旧网站、中转 API、玩家目录、下载、心跳和 Velocity 授权。
 
 API `0.20.0` 已生产部署，管理后台开关已启用。2026-07-27 的真实登记由管理员
 在启动器生成的一次性浏览器会话中完成；生产数据库核对结果为 MFA 凭据 `1`、

@@ -337,14 +337,20 @@ public sealed class VelocityAuthorizationRepository(
                    server.client_profile_id,
                    server.allow_protocol_translation,
                    control_target.reported_online,
-                   control_target.last_seen_at
+                   control_target.last_seen_at,
+                   server.activity_plan_status,
+                   server.activity_package_import_id,
+                   control_target.deployed_package_import_id
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1::uuid
                AND access_override.server_id = server.id
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = server.id
+                ON control_target.server_id = CASE
+                    WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
+                    ELSE server.id
+                END
             WHERE {{predicate}}
               AND server.is_visible
               AND server.server_role = 'Player'
@@ -355,6 +361,9 @@ public sealed class VelocityAuthorizationRepository(
                               AND (control_target.server_id IS NULL
                                    OR (control_target.reported_online
                                        AND control_target.last_seen_at >= $3))
+                              AND (server.activity_plan_status IS NULL
+                                   OR control_target.deployed_package_import_id =
+                                      server.activity_package_import_id)
                              THEN 0
                          WHEN server.status = 'Maintenance' THEN 1
                          ELSE 2
@@ -404,6 +413,11 @@ public sealed class VelocityAuthorizationRepository(
             controlObservation,
             now,
             _controlFreshness).Status;
+        effectiveStatus = CatalogRepository.ResolveActivityDeploymentStatus(
+            effectiveStatus,
+            !reader.IsDBNull(13),
+            reader.IsDBNull(14) ? null : reader.GetGuid(14),
+            reader.IsDBNull(15) ? null : reader.GetGuid(15));
         return new VelocityServerAccess(
             reader.GetString(0),
             reader.GetString(1),

@@ -6,13 +6,12 @@ namespace Hechao.Api.PackageImports;
 internal sealed class PackageImportOrchestrationService(
     PackageImportOrchestrationRepository repository,
     IOptions<PackageImportOptions> packageOptions,
-    IOptions<ServerControlOptions> controlOptions,
     TimeProvider timeProvider,
     ILogger<PackageImportOrchestrationService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!packageOptions.Value.Enabled || !controlOptions.Value.Enabled)
+        if (!packageOptions.Value.Enabled)
         {
             return;
         }

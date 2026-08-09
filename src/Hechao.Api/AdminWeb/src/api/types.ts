@@ -320,6 +320,13 @@ export interface ControlTargetSummary {
   serverFilesPresent: boolean;
   deletionCleanupPending: boolean;
   packageDeploymentMemoryGuidance: ServerMemoryGuidance | null;
+  deployedPackage: ServerPackageDeploymentIdentity | null;
+}
+
+export interface ServerPackageDeploymentIdentity {
+  importId: string;
+  profileId: string;
+  version: string;
 }
 
 export interface ControlTarget extends ControlTargetSummary {
@@ -460,6 +467,7 @@ export interface PackageImportDeploymentPlan {
   serverDisplayName: string;
   minimumTier: AccessTier;
   maximumMemoryMiB: number;
+  deployServer: boolean;
 }
 
 export type PackagePublisherProgressPhase =
@@ -509,4 +517,63 @@ export interface PackageUploadAppendResponse {
   uploadedBytes: number;
   expectedUploadBytes: number;
   complete: boolean;
+}
+
+export type ActivityPlanStatus = "Draft" | "Published" | "Archived";
+
+export interface ActivityPackage {
+  importId: string;
+  profileId: string;
+  profileDisplayName: string;
+  version: string;
+  manifestSha256: string;
+  minecraftVersion: string;
+  loader: ModLoaderKind;
+  loaderVersion: string;
+  maximumPlayers: number;
+  maximumMemoryMiB: number;
+  preserveWorldData: boolean;
+  productionReady: boolean;
+  profileArchived: boolean;
+  completedAt: string;
+}
+
+export interface ActivityPlan {
+  id: string;
+  title: string;
+  announcement: string;
+  opensAt: string;
+  closesAt: string;
+  maximumPlayers: number;
+  minimumTier: AccessTier;
+  packageImportId: string;
+  profileId: string;
+  profileDisplayName: string;
+  version: string;
+  minecraftVersion: string;
+  loader: ModLoaderKind;
+  status: ActivityPlanStatus;
+  effectiveStatus: ServerStatus;
+  productionReady: boolean;
+  deploymentMatches: boolean;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActivitySlot {
+  configured: boolean;
+  agentConnected: boolean;
+  online: boolean;
+  serverFilesPresent: boolean;
+  deployedPackage: ServerPackageDeploymentIdentity | null;
+  activeOperation: ControlOperation | null;
+  memoryGuidance: ServerMemoryGuidance | null;
+}
+
+export interface ActivityPlanOverview {
+  generatedAt: string;
+  plans: ActivityPlan[];
+  packages: ActivityPackage[];
+  slot: ActivitySlot;
 }

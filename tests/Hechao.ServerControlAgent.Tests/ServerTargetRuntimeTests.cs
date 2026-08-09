@@ -456,6 +456,55 @@ public sealed class ServerTargetRuntimeTests
     }
 
     [Fact]
+    public async Task HeartbeatReportsExactDeployedPackageIdentity()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "hechao-agent-deployment-heartbeat-" + Guid.NewGuid().ToString("N"));
+        var serverDirectory = Path.Combine(root, "activity");
+        Directory.CreateDirectory(serverDirectory);
+        var importId = Guid.NewGuid();
+        await File.WriteAllTextAsync(
+            Path.Combine(serverDirectory, ".hechao-deployment.json"),
+            JsonSerializer.Serialize(new
+            {
+                schemaVersion = 1,
+                importId,
+                profileId = "summer-neoforge-1.21.11",
+                version = "1.2.3",
+                archiveSha256 = new string('a', 64),
+                deployedAt = DateTimeOffset.UtcNow
+            }));
+        var runner = new RecordingProcessRunner((_, _) =>
+            new ProcessRunResult(0, string.Empty, string.Empty));
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            "owl5-activity-slot",
+            runner,
+            serverDirectory: serverDirectory,
+            packageDeploymentEnabled: true,
+            runtimeMarkerDirectory: Path.Combine(root, "runtime"));
+
+        try
+        {
+            var heartbeat = await runtime.CaptureHeartbeatAsync(
+                CancellationToken.None);
+
+            Assert.Equal(
+                new ServerPackageDeploymentIdentity(
+                    importId,
+                    "summer-neoforge-1.21.11",
+                    "1.2.3"),
+                heartbeat.DeployedPackage);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SharedPortHeartbeat_RequiresMatchingManagedRunMarker()
     {
         var runtimeDirectory = Path.Combine(

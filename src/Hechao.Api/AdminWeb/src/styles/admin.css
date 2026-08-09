@@ -3682,6 +3682,691 @@ textarea::placeholder {
     }
 }
 
+/* Activity planning workspace */
+.activity-plan-summary .activity-slot-summary {
+    color: var(--brand);
+    font-size: 16px;
+}
+
+.activity-single-slot-rule {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #d8a19d;
+    background: var(--brand-soft);
+    color: var(--brand);
+}
+
+.activity-single-slot-rule > img {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+}
+
+.activity-single-slot-rule strong,
+.activity-single-slot-rule span {
+    display: block;
+}
+
+.activity-single-slot-rule strong {
+    font-size: 12px;
+}
+
+.activity-single-slot-rule span {
+    margin-top: 3px;
+    color: var(--ink-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.activity-plan-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.activity-calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px;
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.activity-calendar-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.activity-calendar-legend span::before {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: currentColor;
+    content: "";
+}
+
+.activity-calendar-legend .published {
+    color: var(--brand);
+}
+
+.activity-calendar-legend .draft {
+    color: var(--warning);
+}
+
+.activity-calendar-legend .archived {
+    color: var(--closed);
+}
+
+.activity-plan-layout {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 390px);
+    gap: 14px;
+    align-items: start;
+}
+
+.activity-calendar-panel,
+.activity-plan-inspector {
+    min-width: 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.activity-calendar-toolbar {
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) auto minmax(90px, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+}
+
+.activity-calendar-toolbar > div {
+    display: flex;
+    gap: 6px;
+}
+
+.activity-calendar-toolbar h2 {
+    margin: 0;
+    font-size: 17px;
+    text-align: center;
+}
+
+.activity-calendar-toolbar > .button {
+    justify-self: end;
+}
+
+.activity-calendar-body {
+    padding: 0 14px 14px;
+}
+
+.activity-calendar-panel .fc {
+    --fc-border-color: var(--line);
+    --fc-button-bg-color: var(--surface);
+    --fc-button-border-color: var(--line-strong);
+    --fc-button-hover-bg-color: var(--surface-muted);
+    --fc-button-hover-border-color: var(--line-strong);
+    --fc-button-active-bg-color: var(--ink);
+    --fc-button-active-border-color: var(--ink);
+    --fc-event-bg-color: var(--brand);
+    --fc-event-border-color: var(--brand);
+    --fc-event-text-color: #fff;
+    --fc-page-bg-color: var(--surface);
+    --fc-neutral-bg-color: #fafbfc;
+    --fc-today-bg-color: #fff6f5;
+    color: var(--ink);
+    font-size: 11px;
+}
+
+.activity-calendar-panel .fc table {
+    min-width: 0;
+}
+
+.activity-calendar-panel .fc-theme-standard td,
+.activity-calendar-panel .fc-theme-standard th {
+    border-color: var(--line);
+}
+
+.activity-calendar-panel .fc-scrollgrid {
+    border-top: 0;
+}
+
+.activity-calendar-panel .fc-col-header-cell {
+    background: #fafbfc;
+}
+
+.activity-calendar-panel .fc-col-header-cell-cushion {
+    padding: 9px 4px;
+    color: var(--ink-muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.activity-calendar-panel .fc-daygrid-day-frame {
+    min-height: 112px;
+}
+
+.activity-calendar-panel .fc-daygrid-day-number {
+    min-width: 28px;
+    padding: 7px 8px 5px;
+    color: var(--ink-secondary);
+    font-size: 10px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.activity-calendar-panel .fc-day-other .fc-daygrid-day-number {
+    color: #9aa0a8;
+}
+
+.activity-calendar-panel .fc-day-today .fc-daygrid-day-number {
+    color: var(--brand);
+    font-weight: 750;
+}
+
+.activity-calendar-panel .fc-highlight {
+    background: rgba(180, 35, 29, 0.12);
+}
+
+.activity-calendar-panel .fc-daygrid-event {
+    min-height: 22px;
+    margin: 1px 3px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+.activity-calendar-panel .fc-daygrid-event:hover,
+.activity-calendar-panel .fc-daygrid-day:hover {
+    cursor: pointer;
+}
+
+.activity-calendar-panel .activity-calendar-event-published {
+    --fc-event-text-color: #fff;
+    border-color: var(--brand);
+    background: var(--brand);
+    color: #fff;
+}
+
+.activity-calendar-panel .activity-calendar-event-draft {
+    --fc-event-text-color: #5c3700;
+    border-color: var(--warning-line);
+    background: var(--warning-soft);
+    color: #5c3700;
+}
+
+.activity-calendar-panel .activity-calendar-event-archived {
+    --fc-event-text-color: var(--closed);
+    border-color: var(--line-strong);
+    background: var(--closed-soft);
+    color: var(--closed);
+}
+
+.activity-calendar-panel .activity-calendar-event.deployment-matched {
+    box-shadow: inset 0 -2px 0 var(--success);
+}
+
+.activity-calendar-panel .fc-event-title {
+    overflow: hidden;
+    font-weight: 650;
+    text-overflow: ellipsis;
+}
+
+.activity-calendar-panel .fc-h-event .fc-event-resizer {
+    width: 7px;
+}
+
+.activity-calendar-panel .fc-h-event:hover .fc-event-resizer,
+.activity-calendar-panel .fc-h-event:focus .fc-event-resizer {
+    background: currentColor;
+    opacity: 0.7;
+}
+
+.activity-calendar-panel .fc-more-link {
+    color: var(--brand);
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.activity-plan-inspector {
+    overflow: hidden;
+}
+
+.activity-inspector-empty {
+    min-height: 560px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 8px;
+    padding: 28px;
+    color: var(--ink-muted);
+    text-align: center;
+}
+
+.activity-inspector-empty > img {
+    opacity: 0.62;
+}
+
+.activity-inspector-empty > strong {
+    color: var(--ink);
+    font-size: 14px;
+}
+
+.activity-inspector-empty > span {
+    max-width: 32ch;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.activity-slot-identity {
+    width: 100%;
+    display: grid;
+    gap: 4px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.activity-slot-identity span,
+.activity-slot-identity small {
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.activity-slot-identity strong {
+    color: var(--ink);
+    font-size: 13px;
+}
+
+.activity-slot-identity small {
+    overflow-wrap: anywhere;
+    font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+.activity-inspector-header {
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+}
+
+.activity-inspector-header > div {
+    min-width: 0;
+}
+
+.activity-inspector-header span,
+.activity-inspector-header h2 {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-inspector-header span {
+    color: var(--brand);
+    font-size: 9px;
+    font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+.activity-inspector-header h2 {
+    margin: 4px 0 0;
+    font-size: 16px;
+}
+
+.activity-plan-statebar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    background: #fafbfc;
+}
+
+.activity-plan-statebar > span:not(.status-badge) {
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--ink-muted);
+    font-size: 9px;
+    font-weight: 650;
+}
+
+.activity-plan-statebar > span.ready:not(.status-badge) {
+    border-color: var(--success-line);
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.activity-plan-form {
+    display: grid;
+    gap: 13px;
+    padding: 16px;
+}
+
+.activity-time-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.activity-package-facts {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+    margin-top: -5px;
+    padding: 9px 0 0;
+    border-top: 1px solid var(--line);
+}
+
+.activity-package-facts span {
+    color: var(--ink-secondary);
+    font-size: 10px;
+}
+
+.activity-package-facts strong {
+    overflow-wrap: anywhere;
+    color: var(--ink-muted);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.activity-conflict-alert,
+.activity-editor-error {
+    margin-top: 0;
+}
+
+.activity-editor-save {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 3px;
+}
+
+.activity-editor-save > span {
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.activity-plan-actions {
+    padding: 16px;
+    border-top: 1px solid var(--line);
+    background: #fafbfc;
+}
+
+.activity-action-heading h3 {
+    margin: 0;
+    font-size: 13px;
+}
+
+.activity-action-heading span {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.activity-action-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.activity-action-buttons .button {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 10px;
+}
+
+.activity-action-note {
+    margin: 10px 0 0;
+    color: var(--ink-muted);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.activity-action-note.warning {
+    color: var(--warning);
+}
+
+.activity-plan-index {
+    margin-top: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.activity-index-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.activity-index-heading h2,
+.activity-index-heading span {
+    display: inline;
+    margin: 0;
+}
+
+.activity-index-heading h2 {
+    font-size: 13px;
+}
+
+.activity-index-heading span {
+    margin-left: 8px;
+    color: var(--ink-muted);
+    font-size: 10px;
+}
+
+.activity-index-row {
+    width: 100%;
+    min-height: 52px;
+    display: grid;
+    grid-template-columns: 82px minmax(150px, 0.8fr) minmax(260px, 1.4fr) minmax(180px, 0.8fr);
+    gap: 12px;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-secondary);
+    text-align: left;
+}
+
+.activity-index-row:last-child {
+    border-bottom: 0;
+}
+
+.activity-index-row:hover,
+.activity-index-row.active {
+    background: var(--surface-muted);
+}
+
+.activity-index-row.active {
+    box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.activity-index-row strong,
+.activity-index-row > span:not(.status-badge),
+.activity-index-row small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-index-row strong {
+    color: var(--ink);
+    font-size: 11px;
+}
+
+.activity-index-row > span:not(.status-badge),
+.activity-index-row small {
+    font-size: 10px;
+}
+
+.activity-index-row small {
+    color: var(--ink-muted);
+}
+
+@media (max-width: 1180px) {
+    .activity-plan-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 350px);
+    }
+
+    .activity-calendar-panel .fc-daygrid-day-frame {
+        min-height: 96px;
+    }
+}
+
+@media (max-width: 960px) {
+    .activity-plan-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-inspector-empty {
+        min-height: 260px;
+    }
+
+    .activity-index-row {
+        grid-template-columns: 82px minmax(150px, 0.8fr) minmax(240px, 1.2fr);
+    }
+
+    .activity-index-row small {
+        display: none;
+    }
+}
+
+@media (max-width: 680px) {
+    .activity-plan-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .activity-plan-summary > div:nth-child(2) {
+        border-right: 0;
+    }
+
+    .activity-plan-summary > div:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--line);
+    }
+
+    .activity-plan-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .activity-plan-toolbar .segmented-control,
+    .activity-plan-toolbar .segmented-control button {
+        width: 100%;
+    }
+
+    .activity-calendar-legend {
+        justify-content: flex-start;
+    }
+
+    .activity-calendar-toolbar {
+        min-height: 56px;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        padding: 0 8px;
+    }
+
+    .activity-calendar-toolbar h2 {
+        font-size: 14px;
+    }
+
+    .activity-calendar-toolbar .button {
+        min-height: 34px;
+        padding: 0 9px;
+        font-size: 10px;
+    }
+
+    .activity-calendar-body {
+        padding: 0 4px 6px;
+    }
+
+    .activity-calendar-panel .fc {
+        font-size: 9px;
+    }
+
+    .activity-calendar-panel .fc-col-header-cell-cushion {
+        padding: 7px 1px;
+        font-size: 9px;
+    }
+
+    .activity-calendar-panel .fc-daygrid-day-frame {
+        min-height: 72px;
+    }
+
+    .activity-calendar-panel .fc-daygrid-day-number {
+        min-width: 22px;
+        padding: 5px 5px 3px;
+        font-size: 9px;
+    }
+
+    .activity-calendar-panel .fc-daygrid-event {
+        min-height: 18px;
+        margin-inline: 1px;
+        padding: 1px 2px;
+        font-size: 8px;
+    }
+
+    .activity-calendar-panel .fc-event-time {
+        display: none;
+    }
+
+    .activity-time-grid,
+    .activity-action-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-editor-save {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .activity-editor-save .button {
+        width: 100%;
+    }
+
+    .activity-index-row {
+        grid-template-columns: 76px minmax(0, 1fr);
+        gap: 7px 10px;
+    }
+
+    .activity-index-row > span:not(.status-badge) {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (forced-colors: active) {
+    .activity-calendar-panel .activity-calendar-event,
+    .activity-index-row.active,
+    .activity-single-slot-rule {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+    }
+}
+
 .summary-good {
     color: var(--success);
 }
@@ -4213,6 +4898,63 @@ textarea::placeholder {
     margin: 14px 0;
 }
 
+.package-deployment-mode {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.package-deployment-mode legend {
+    margin-bottom: 7px;
+    color: var(--ink-secondary);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.package-deployment-mode label {
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.package-deployment-mode label.active {
+    border-color: #d8a19d;
+    background: var(--brand-soft);
+}
+
+.package-deployment-mode input {
+    width: 16px;
+    height: 16px;
+    margin: 2px 0 0;
+    accent-color: var(--brand);
+}
+
+.package-deployment-mode strong,
+.package-deployment-mode small {
+    display: block;
+}
+
+.package-deployment-mode strong {
+    color: var(--ink);
+    font-size: 12px;
+}
+
+.package-deployment-mode small {
+    margin-top: 3px;
+    color: var(--ink-muted);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
 .package-review-readiness > span {
     min-height: 30px;
     display: inline-flex;
@@ -4386,6 +5128,7 @@ textarea::placeholder {
     .package-fact-grid,
     .package-review-form,
     .package-review-options,
+    .package-deployment-mode,
     .package-memory-guidance {
         grid-template-columns: 1fr;
     }

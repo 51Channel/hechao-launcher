@@ -369,6 +369,21 @@ owl5 `0.4.1` 使用 Windows `GlobalMemoryStatusEx` 上报 VPS 真实物理内存
 [`SERVER_CONTROL_AGENT_RELEASE_0.4.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.4.1.md) 和
 [`evidence/PACKAGE_MEMORY_GUIDANCE_PRODUCTION_DEPLOYMENT_2026-08-06.json`](evidence/PACKAGE_MEMORY_GUIDANCE_PRODUCTION_DEPLOYMENT_2026-08-06.json)。
 
+### 6.12 活动槽部署身份（owl5 代理 0.5.0 候选）
+
+`0.5.0` 从活动目录受控 `.hechao-deployment.json` 读取实际部署的 `importId`、
+`profileId` 和 `version`，并随目标心跳上报。标记缺失、格式无效、目录不存在或目标未启用
+整合包部署能力时，身份保持空，不根据目录名称或最近操作猜测。
+
+Launcher API `0.30.0` 把该身份保存到 `server_control_targets`。活动企划只有在当前时间
+进入 `[开始, 结束)`、活动槽在线、代理心跳新鲜且 `deployed_package_import_id` 与企划
+绑定 import 完全相同时才对目录和 Velocity 显示 `Online`。这可以防止上一场整合包仍
+留在活动槽时误开放下一场。部署身份只用于准入校验，不会自动启动、停止或切换服务端。
+
+代理升级只允许重启服控代理本身；必须核对所有 Minecraft PID、启动时间、端口和计划
+任务在升级前后不变。候选发布与完整验收顺序见
+[`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
+
 ## 7. 验收与回滚
 
 首轮只使用专用、无玩家测试目标验证：
@@ -386,6 +401,8 @@ owl5 `0.4.1` 使用 Windows `GlobalMemoryStatusEx` 上报 VPS 真实物理内存
 11. 删除只影响配置的运行目录，外置备份保持存在；
 12. 删除后启动按钮不可用，整合包重新部署后才能恢复；
 13. 清理失败状态、命令重放和目录已不存在状态保持幂等。
+14. 活动槽心跳只在有效受控部署标记存在时上报精确部署身份；篡改或不完整标记保持空。
+15. 当前企划绑定 import 与活动槽部署身份不一致时，目录和 Velocity 均故障关闭。
 
 不得用生产玩家服作为首次启停验收目标。
 

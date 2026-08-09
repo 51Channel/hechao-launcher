@@ -368,7 +368,9 @@ internal sealed class PackageImportOrchestrationRepository(
             package.ImportId,
             PackageImportStatus.Completed,
             "IMPORT_COMPLETED",
-            "客户端档案已启用并进入 Test 通道，服务端已部署并保持停止。",
+            package.Plan.DeployServer
+                ? "客户端档案已启用并进入 Test 通道，服务端已部署并保持停止。"
+                : "客户端档案已启用并进入 Test 通道，服务端制品已入库且未覆盖活动槽。",
             now,
             cancellationToken);
         await WriteAuditAsync(
@@ -386,7 +388,8 @@ internal sealed class PackageImportOrchestrationRepository(
                 package.Plan.TargetServerId,
                 package.ManifestSha256,
                 package.DeploymentOperationId,
-                package.Plan.SyncServerCatalog
+                package.Plan.SyncServerCatalog,
+                package.Plan.DeployServer
             }, JsonOptions),
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -448,7 +451,7 @@ internal sealed class PackageImportOrchestrationRepository(
             Deserialize<PackageImportDeploymentPlanRecord>(reader.GetString(2)),
             reader.IsDBNull(3) ? null : reader.GetString(3),
             reader.GetGuid(4),
-            reader.GetGuid(5));
+            reader.IsDBNull(5) ? null : reader.GetGuid(5));
     }
 
     private static async Task<DeploymentTarget?> ReadTargetForUpdateAsync(
@@ -1127,7 +1130,7 @@ internal sealed class PackageImportOrchestrationRepository(
         PackageImportDeploymentPlanRecord Plan,
         string? ManifestSha256,
         Guid CreatedBy,
-        Guid DeploymentOperationId);
+        Guid? DeploymentOperationId);
 
     private sealed record DeploymentTarget(
         string ServerId,

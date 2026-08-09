@@ -52,6 +52,11 @@ public sealed record ServerMemoryGuidance(
     int RecommendedMinimumMemoryMiB,
     int RecommendedMaximumMemoryMiB);
 
+public sealed record ServerPackageDeploymentIdentity(
+    Guid ImportId,
+    string ProfileId,
+    string Version);
+
 public sealed record AdminServerControlRequest(
     ServerControlAction Action,
     string Confirmation,
@@ -90,7 +95,8 @@ public sealed record AdminServerControlTargetSummaryRecord(
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
     bool DeletionCleanupPending = false,
-    ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null);
+    ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null,
+    ServerPackageDeploymentIdentity? DeployedPackage = null);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -111,7 +117,8 @@ public sealed record AdminServerControlTargetRecord(
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
     bool DeletionCleanupPending = false,
-    ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null);
+    ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null,
+    ServerPackageDeploymentIdentity? DeployedPackage = null);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
@@ -141,7 +148,8 @@ public sealed record ServerControlAgentTargetHeartbeat(
     bool PackageDeploymentEnabled = false,
     bool ServerDeletionEnabled = false,
     bool ServerFilesPresent = true,
-    bool DeletionCleanupPending = false);
+    bool DeletionCleanupPending = false,
+    ServerPackageDeploymentIdentity? DeployedPackage = null);
 
 public sealed record ServerControlAgentHeartbeatRequest(
     string AgentId,

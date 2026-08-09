@@ -233,6 +233,11 @@ internal sealed class ServerTargetRuntime
         using (await _serverDirectoryAccessGate.EnterAsync(cancellationToken))
         {
             var deletionState = _directoryDeletionManager.CaptureState();
+            var deployedPackage = Configuration.PackageDeploymentEnabled &&
+                                  deletionState.FilesPresent
+                ? ServerPackageDeployer.ReadDeploymentIdentity(
+                    Configuration.ServerDirectory)
+                : null;
             var logPath = Configuration.GetLogPath();
             DateTimeOffset? capturedAt = File.Exists(logPath)
                 ? File.GetLastWriteTimeUtc(logPath)
@@ -265,7 +270,8 @@ internal sealed class ServerTargetRuntime
                 Configuration.PackageDeploymentEnabled,
                 Configuration.ServerDeletionEnabled,
                 deletionState.FilesPresent,
-                deletionState.CleanupPending);
+                deletionState.CleanupPending,
+                deployedPackage);
         }
     }
 

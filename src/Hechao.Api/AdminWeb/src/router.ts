@@ -6,6 +6,7 @@ const routes: RouteRecordRaw[] = [
   { path: "/users", name: "users", component: () => import("./views/UsersView.vue"), meta: { title: "玩家与权限" } },
   { path: "/profiles", name: "profiles", component: () => import("./views/ProfilesView.vue"), meta: { title: "客户端档案" } },
   { path: "/package-imports", name: "package-imports", component: () => import("./views/PackageImportsView.vue"), meta: { title: "整合包导入" } },
+  { path: "/activity-plans", name: "activity-plans", component: () => import("./views/ActivityPlansView.vue"), meta: { title: "活动企划" } },
   { path: "/telemetry", name: "telemetry", component: () => import("./views/TelemetryView.vue"), meta: { title: "运行数据" } },
   { path: "/runtime", name: "runtime", component: () => import("./views/RuntimeView.vue"), meta: { title: "服务状态" } },
   { path: "/control", name: "control", component: () => import("./views/ControlView.vue"), meta: { title: "服控面板" } },

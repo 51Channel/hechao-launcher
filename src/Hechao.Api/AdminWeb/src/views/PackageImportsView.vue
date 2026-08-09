@@ -47,7 +47,7 @@ const phaseDefinitions = [
   { label: "上传", statuses: ["Uploading", "Uploaded"] },
   { label: "识别", statuses: ["Analyzing", "AwaitingReview"] },
   { label: "客户端发布", statuses: ["QueuedForPublishing", "PublishingClient"] },
-  { label: "服务端部署", statuses: ["QueuedForDeployment", "DeployingServer"] },
+  { label: "服务端制品", statuses: ["QueuedForDeployment", "DeployingServer"] },
   { label: "测试通道", statuses: ["Finalizing", "Completed"] }
 ] as const;
 const publisherPhaseLabels = {
@@ -70,6 +70,7 @@ interface ReviewDraft {
   minimumTier: AccessTier;
   maximumMemoryGiB: number;
   confirmation: string;
+  deployServer: boolean;
 }
 
 const imports = useResource(signal =>
@@ -128,7 +129,8 @@ const review = reactive<ReviewDraft>({
   serverDisplayName: "",
   minimumTier: "Participant",
   maximumMemoryGiB: 4,
-  confirmation: ""
+  confirmation: "",
+  deployServer: false
 });
 
 const list = computed(() => imports.data.value?.imports ?? []);
@@ -150,21 +152,22 @@ const activeCount = computed(() =>
 const reviewDirty = computed(() => serializeReview() !== reviewBaseline.value);
 const exactConfirmation = computed(() =>
   selectedImport.data.value
-    ? `发布并部署 ${selectedImport.data.value.importId}`
+    ? `${review.deployServer ? "发布并部署" : "发布并入库"} ${selectedImport.data.value.importId}`
     : ""
 );
 const reviewHasBlockingIssues = computed(() =>
   selectedImport.data.value?.analysis?.issues.some(issue => issue.severity === "Blocking") ?? true
 );
-const deploymentReady = computed(() => {
+const deploymentTargetReady = computed(() => {
   const target = activityTarget.value;
-  return publisherConnected.value && Boolean(
+  return Boolean(
     target?.agentConnected && !target.online && !target.activeOperation
   );
 });
 const reviewValid = computed(() => {
   const memoryMiB = review.maximumMemoryGiB * 1024;
-  return deploymentReady.value &&
+  return publisherConnected.value &&
+    (!review.deployServer || deploymentTargetReady.value) &&
     !reviewHasBlockingIssues.value &&
     /^[a-z0-9][a-z0-9._-]{1,63}$/.test(review.profileId) &&
     review.profileDisplayName.trim().length >= 2 &&
@@ -256,7 +259,8 @@ function serializeReview(): string {
     serverDisplayName: review.serverDisplayName,
     minimumTier: review.minimumTier,
     maximumMemoryGiB: review.maximumMemoryGiB,
-    confirmation: review.confirmation
+    confirmation: review.confirmation,
+    deployServer: review.deployServer
   });
 }
 
@@ -277,6 +281,7 @@ function initializeReview(record: PackageImportRecord, force = false): void {
   review.maximumMemoryGiB =
     (record.plan?.maximumMemoryMiB ?? targetMemory) / 1024;
   review.confirmation = "";
+  review.deployServer = record.plan?.deployServer ?? false;
   reviewBaseline.value = serializeReview();
   confirmError.value = "";
 }
@@ -534,7 +539,8 @@ async function confirmImport(): Promise<void> {
           serverDisplayName: review.serverDisplayName.trim(),
           minimumTier: review.minimumTier,
           maximumMemoryMiB: review.maximumMemoryGiB * 1024,
-          confirmation: review.confirmation.trim()
+          confirmation: review.confirmation.trim(),
+          deployServer: review.deployServer
         }
       }
     );
@@ -543,7 +549,9 @@ async function confirmImport(): Promise<void> {
     await imports.refresh();
     await nextTick();
     if (drawerBody.value) drawerBody.value.scrollTop = 0;
-    showToast("客户端发布与停服部署已进入队列");
+    showToast(review.deployServer
+      ? "客户端发布与停服部署已进入队列"
+      : "客户端发布与服务端制品入库已进入队列");
   } catch (reason) {
     confirmError.value = reason instanceof Error ? reason.message : "确认导入失败。";
     if (reason instanceof ApiError && reason.status === 409) await refreshSelected();
@@ -707,7 +715,7 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
       </div>
 
       <aside class="package-readiness" aria-label="导入链路状态">
-        <div class="package-tool-heading"><div><span>执行链路</span><h2>发布与部署前置</h2></div></div>
+        <div class="package-tool-heading"><div><span>执行链路</span><h2>发布与入库状态</h2></div></div>
         <ul class="readiness-list">
           <li :class="{ ready: publisherConnected }"><AppIcon :name="publisherConnected ? 'check' : 'circle-alert'" /><div><strong>客户端发布代理</strong><span>{{ publisherConnected ? `在线 · ${formatRelativeTime(imports.data.value?.publisherAgentLastSeenAt)}` : "等待 Publisher 心跳" }}</span></div></li>
           <li :class="{ ready: Boolean(activityTarget?.packageDeploymentEnabled) }"><AppIcon :name="activityTarget?.packageDeploymentEnabled ? 'check' : 'circle-alert'" /><div><strong>owl5 活动部署能力</strong><span>{{ activityTarget?.packageDeploymentEnabled ? "activity · 127.0.0.1:25568" : "未发现受控部署目标" }}</span></div></li>
@@ -800,18 +808,23 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
             </section>
 
             <section v-if="selectedImport.data.value.status === 'AwaitingReview' && selectedImport.data.value.analysis" class="package-detail-section package-review-section">
-              <div class="profile-manager-heading"><div><span>人工确认</span><strong>客户端发布与停服部署</strong></div><span v-if="reviewDirty" class="dirty-indicator">有未提交更改</span></div>
+              <div class="profile-manager-heading"><div><span>人工确认</span><strong>发布客户端并保存服务端制品</strong></div><span v-if="reviewDirty" class="dirty-indicator">有未提交更改</span></div>
+              <fieldset class="package-deployment-mode">
+                <legend>服务端处理方式</legend>
+                <label :class="{ active: !review.deployServer }"><input v-model="review.deployServer" type="radio" :value="false"><span><strong>仅发布并入库</strong><small>保留服务端制品，稍后由企划日历绑定与部署</small></span></label>
+                <label :class="{ active: review.deployServer }"><input v-model="review.deployServer" type="radio" :value="true"><span><strong>立即部署活动槽</strong><small>兼容旧流程，要求 owl5 活动服已停止</small></span></label>
+              </fieldset>
               <div class="package-review-readiness">
                 <span :class="{ ready: publisherConnected }"><AppIcon :name="publisherConnected ? 'check' : 'circle-alert'" />发布代理</span>
-                <span :class="{ ready: Boolean(activityTarget?.agentConnected) }"><AppIcon :name="activityTarget?.agentConnected ? 'check' : 'circle-alert'" />服控代理</span>
-                <span :class="{ ready: Boolean(activityTarget && !activityTarget.online) }"><AppIcon :name="activityTarget && !activityTarget.online ? 'check' : 'circle-alert'" />目标已停服</span>
+                <span v-if="review.deployServer" :class="{ ready: Boolean(activityTarget?.agentConnected) }"><AppIcon :name="activityTarget?.agentConnected ? 'check' : 'circle-alert'" />服控代理</span>
+                <span v-if="review.deployServer" :class="{ ready: Boolean(activityTarget && !activityTarget.online) }"><AppIcon :name="activityTarget && !activityTarget.online ? 'check' : 'circle-alert'" />目标已停服</span>
                 <span :class="{ ready: !reviewHasBlockingIssues }"><AppIcon :name="!reviewHasBlockingIssues ? 'check' : 'circle-alert'" />{{ reviewHasBlockingIssues ? "识别存在阻断" : "识别无阻断" }}</span>
               </div>
               <form class="package-review-form" @submit.prevent="confirmImport">
                 <label>客户端档案 ID<input v-model="review.profileId" pattern="[a-z0-9][a-z0-9._-]{1,63}" maxlength="64" required></label>
                 <label>客户端显示名称<input v-model="review.profileDisplayName" minlength="2" maxlength="80" required></label>
                 <label>版本号<input v-model="review.version" placeholder="1.0.0" required></label>
-                <label>部署目标<select v-model="review.targetServerId" required><option value="activity">activity · owl5:25568</option></select></label>
+                <label>活动槽<select v-model="review.targetServerId" required><option value="activity">activity · owl5:25568</option></select></label>
                 <label>服务器显示名称<input v-model="review.serverDisplayName" minlength="2" maxlength="80" required></label>
                 <label>最低称号<select v-model="review.minimumTier"><option value="Member">{{ tierText('Member') }}</option><option value="Participant">{{ tierText('Participant') }}</option><option value="Collaborator">{{ tierText('Collaborator') }}</option></select></label>
                 <label>最大内存（GiB）<input v-model.number="review.maximumMemoryGiB" type="number" min="1" step="0.25" required><span :class="`memory-guidance-${memoryGuidanceState}`">{{ memoryGuidanceMessage }}</span></label>
@@ -826,7 +839,7 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
                 </div>
                 <label class="package-confirmation-field">精确确认<input v-model="review.confirmation" autocomplete="off" maxlength="80" required><span>请输入：{{ exactConfirmation }}</span></label>
                 <div v-if="confirmError" class="inline-alert settings-error" role="alert"><AppIcon name="circle-alert" /><span>{{ confirmError }}</span></div>
-                <div class="package-review-submit"><span>不会停止其他服务器，不会启动活动服，不会修改 Production 通道。</span><button class="button button-primary" type="submit" :disabled="!reviewValid || confirmBusy"><AppIcon name="package" />{{ confirmBusy ? "正在排队" : "发布并部署" }}</button></div>
+                <div class="package-review-submit"><span>{{ review.deployServer ? "部署完成后活动服仍保持停止，不会修改 Production 通道。" : "服务端制品只入库，不会覆盖或启动当前活动服。" }}</span><button class="button button-primary" type="submit" :disabled="!reviewValid || confirmBusy"><AppIcon name="package" />{{ confirmBusy ? "正在排队" : review.deployServer ? "发布并部署" : "发布并入库" }}</button></div>
               </form>
             </section>
 
@@ -837,6 +850,7 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
                 <div><dt>最大内存</dt><dd>{{ formatBytes(selectedImport.data.value.plan.maximumMemoryMiB * 1024 * 1024) }}</dd></div>
                 <div><dt>世界目录</dt><dd>{{ selectedImport.data.value.plan.preserveWorldData ? "保留" : "使用整合包内容" }}</dd></div>
                 <div><dt>目录记录</dt><dd>{{ selectedImport.data.value.plan.syncServerCatalog ? "同步为隐藏且关闭" : "不变" }}</dd></div>
+                <div><dt>服务端处理</dt><dd>{{ selectedImport.data.value.plan.deployServer ? "已请求立即部署" : "制品已入库" }}</dd></div>
                 <div><dt>客户端清单</dt><dd>{{ shortHash(selectedImport.data.value.manifestSha256) }}</dd></div>
                 <div><dt>部署操作</dt><dd>{{ selectedImport.data.value.deploymentOperationId || "尚未创建" }}</dd></div>
               </dl>

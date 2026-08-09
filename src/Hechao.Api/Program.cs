@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Hechao.Api.ActivityPlans;
 using Hechao.Api.Admin;
 using Hechao.Api.Authentication;
 using Hechao.Api.Catalog;
@@ -85,6 +86,20 @@ builder.Services.AddOptions<ForumAccountBridgeOptions>()
         options => string.IsNullOrEmpty(options.InternalTokenSha256) ||
                    Regex.IsMatch(options.InternalTokenSha256, "^[0-9a-fA-F]{64}$"),
         "ForumAccountBridge:InternalTokenSha256 must be empty or a SHA-256 hex digest.")
+    .ValidateOnStart();
+builder.Services.AddOptions<WebsiteActivityBridgeOptions>()
+    .Bind(builder.Configuration.GetSection(
+        WebsiteActivityBridgeOptions.SectionName))
+    .Validate(
+        options => string.IsNullOrEmpty(options.InternalTokenSha256) ||
+                   Regex.IsMatch(
+                       options.InternalTokenSha256,
+                       "^[0-9a-fA-F]{64}$"),
+        "WebsiteActivityBridge:InternalTokenSha256 must be empty or a SHA-256 hex digest.")
+    .Validate(
+        options => string.IsNullOrEmpty(options.InternalTokenSha256) ||
+                   options.ActorUserId != Guid.Empty,
+        "WebsiteActivityBridge:ActorUserId is required when the bridge token is configured.")
     .ValidateOnStart();
 builder.Services.AddOptions<ForumSessionRevocationOptions>()
     .Bind(builder.Configuration.GetSection(ForumSessionRevocationOptions.SectionName))
@@ -335,6 +350,16 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+    options.AddPolicy("internal-website", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 120,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
     options.AddPolicy("downloads", context =>
         RateLimitPartition.GetTokenBucketLimiter(
             context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
@@ -499,6 +524,8 @@ builder.Services.AddSingleton<ServerControlRepository>();
 builder.Services.AddSingleton<PackageImportRepository>();
 builder.Services.AddSingleton<PackageImportStorage>();
 builder.Services.AddSingleton<PackageImportOrchestrationRepository>();
+builder.Services.AddSingleton<ActivityPlanRepository>();
+builder.Services.AddSingleton<WebsiteActivityBridgeTokenValidator>();
 builder.Services.AddSingleton<PackagePublisherTokenValidator>();
 builder.Services.AddSingleton<PackagePublisherCompletionService>();
 builder.Services.AddHostedService<PackageImportAnalysisService>();
@@ -668,6 +695,7 @@ app.MapPost(
     .RequireRateLimiting("internal-server-control");
 app.MapServerControlPackageArchives();
 app.MapPackagePublisher();
+app.MapWebsiteActivityPlans();
 app.MapPost(
         "/v1/internal/operational-alerts/events",
         ImportOperationalAlertEventAsync)
@@ -810,6 +838,7 @@ adminApi.MapPost(
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 app.MapDiagnosticUploads(adminApi);
 adminApi.MapAdminPackageImports();
+adminApi.MapAdminActivityPlans();
 
 app.MapAdminWebEndpoints();
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");

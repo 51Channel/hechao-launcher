@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page, type Request, type Route } from "@playwright/test";
+import { expect, test, type Locator, type Page, type Request, type Route } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,7 @@ const migratedRoutes = [
   ["users", "玩家与权限"],
   ["profiles", "客户端档案"],
   ["package-imports", "整合包导入"],
+  ["activity-plans", "活动企划"],
   ["telemetry", "运行数据"],
   ["runtime", "服务状态"],
   ["control", "服控面板"],
@@ -68,6 +69,11 @@ interface ControlTargetMock {
     recommendedMinimumMemoryMiB: number;
     recommendedMaximumMemoryMiB: number;
   } | null;
+  deployedPackage: {
+    importId: string;
+    profileId: string;
+    version: string;
+  } | null;
 }
 
 interface ControlOverviewMock {
@@ -111,6 +117,11 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
         hostTotalMemoryMiB: 32768,
         recommendedMinimumMemoryMiB: 4096,
         recommendedMaximumMemoryMiB: 16384
+      },
+      deployedPackage: {
+        importId: "66666666-6666-6666-6666-666666666666",
+        profileId: "summer-neoforge-1.21.11",
+        version: "1.0.0"
       }
     }, {
       serverId: "fanstreet",
@@ -128,7 +139,8 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
       serverDeletionEnabled: true,
       serverFilesPresent: true,
       deletionCleanupPending: false,
-      packageDeploymentMemoryGuidance: null
+      packageDeploymentMemoryGuidance: null,
+      deployedPackage: null
     }]
   };
 }
@@ -218,7 +230,8 @@ const completedPackageImport = {
     syncServerCatalog: true,
     serverDisplayName: "夏日活动",
     minimumTier: "Participant",
-    maximumMemoryMiB: 4096
+    maximumMemoryMiB: 4096,
+    deployServer: false
   },
   manifestSha256: hashTwo,
   deploymentOperationId: "77777777-7777-7777-7777-777777777777",
@@ -243,6 +256,85 @@ type PackageImportMock = Omit<
   manifestSha256: string | null;
   deploymentOperationId: string | null;
   completedAt: string | null;
+};
+const activityPlanOverview = {
+  generatedAt: now,
+  plans: [{
+    id: "activity-plan-20260812-a1b2c3d4",
+    title: "夏日建筑接力",
+    announcement: "提前下载整合包，开放后从启动器进入活动服。",
+    opensAt: "2026-08-12T11:00:00Z",
+    closesAt: "2026-08-12T14:00:00Z",
+    maximumPlayers: 30,
+    minimumTier: "Participant",
+    packageImportId,
+    profileId: "summer-neoforge-1.21.11",
+    profileDisplayName: "夏日活动",
+    version: "1.0.0",
+    minecraftVersion: "1.21.11",
+    loader: "NeoForge",
+    status: "Published",
+    effectiveStatus: "Closed",
+    productionReady: true,
+    deploymentMatches: true,
+    revision: 3,
+    createdAt: now,
+    updatedAt: now
+  }, {
+    id: "activity-plan-20260820-e5f6a7b8",
+    title: "周末生存挑战",
+    announcement: "企划仍在准备中。",
+    opensAt: "2026-08-20T11:00:00Z",
+    closesAt: "2026-08-20T14:00:00Z",
+    maximumPlayers: 24,
+    minimumTier: "Member",
+    packageImportId,
+    profileId: "summer-neoforge-1.21.11",
+    profileDisplayName: "夏日活动",
+    version: "1.0.0",
+    minecraftVersion: "1.21.11",
+    loader: "NeoForge",
+    status: "Draft",
+    effectiveStatus: "Closed",
+    productionReady: true,
+    deploymentMatches: true,
+    revision: 1,
+    createdAt: now,
+    updatedAt: now
+  }],
+  packages: [{
+    importId: packageImportId,
+    profileId: "summer-neoforge-1.21.11",
+    profileDisplayName: "夏日活动",
+    version: "1.0.0",
+    manifestSha256: hashTwo,
+    minecraftVersion: "1.21.11",
+    loader: "NeoForge",
+    loaderVersion: "21.11.42",
+    maximumPlayers: 30,
+    maximumMemoryMiB: 4096,
+    preserveWorldData: false,
+    productionReady: true,
+    profileArchived: false,
+    completedAt: now
+  }],
+  slot: {
+    configured: true,
+    agentConnected: true,
+    online: false,
+    serverFilesPresent: true,
+    deployedPackage: {
+      importId: packageImportId,
+      profileId: "summer-neoforge-1.21.11",
+      version: "1.0.0"
+    },
+    activeOperation: null,
+    memoryGuidance: {
+      hostTotalMemoryMiB: 32768,
+      recommendedMinimumMemoryMiB: 4096,
+      recommendedMaximumMemoryMiB: 16384
+    }
+  }
 };
 const serverRecords = [{
   id: "activity",
@@ -387,6 +479,8 @@ async function mockAdminApi(
       await route.fulfill({ json: session });
     } else if (path === "/v1/admin-auth/csrf") {
       await route.fulfill({ json: { requestToken: "e2e-csrf" } });
+    } else if (path === "/v1/admin/activity-plans" && request.method() === "GET") {
+      await route.fulfill({ json: activityPlanOverview });
     } else if (path === "/v1/admin/package-imports" && request.method() === "GET") {
       await route.fulfill({ json: {
         imports: [completedPackageImport],
@@ -525,6 +619,26 @@ async function mockAdminApi(
       await route.fulfill({ status: 404, json: { detail: `Unhandled test endpoint: ${request.method()} ${path}` } });
     }
   });
+}
+
+async function dragCalendarHandleByDays(
+  page: Page,
+  handle: Locator,
+  referenceDay: Locator,
+  days: number
+): Promise<void> {
+  const [handleBox, dayBox] = await Promise.all([
+    handle.boundingBox(),
+    referenceDay.boundingBox()
+  ]);
+  expect(handleBox).not.toBeNull();
+  expect(dayBox).not.toBeNull();
+  const startX = handleBox!.x + handleBox!.width / 2;
+  const startY = handleBox!.y + handleBox!.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + dayBox!.width * days, startY, { steps: 12 });
+  await page.mouse.up();
 }
 
 test("control polling preserves dirty settings and console reading position", async ({ page }) => {
@@ -886,7 +1000,7 @@ test("archived profiles with immutable releases explain why permanent deletion i
   await expect(drawer.getByText(/保留 2 个不可变版本/)).toBeVisible();
 });
 
-test("package import uploads a chunk and requires the exact deployment confirmation", async ({ page }) => {
+test("package import defaults to publishing artifacts without deploying the activity slot", async ({ page }) => {
   const uploadBytes = 1024 * 1024;
   let uploadOffset = 0;
   let detailReads = 0;
@@ -990,21 +1104,21 @@ test("package import uploads a chunk and requires the exact deployment confirmat
   const importDrawer = page.locator(".package-import-drawer");
   await expect(importDrawer).toBeVisible();
   await expect(importDrawer.getByRole("heading", { name: "等待确认" })).toBeVisible();
-  await expect(importDrawer.getByText("服控代理", { exact: true })).toHaveClass(/ready/);
-  await expect(importDrawer.getByText("目标已停服", { exact: true })).toHaveClass(/ready/);
+  await expect(importDrawer.getByLabel("仅发布并入库")).toBeChecked();
+  await expect(importDrawer.getByText("目标已停服", { exact: true })).toHaveCount(0);
   await expect(importDrawer.getByText("VPS 总内存")).toBeVisible();
   await expect(importDrawer.getByText("32 GiB")).toBeVisible();
   await importDrawer.getByLabel("最大内存（GiB）").fill("20");
   await expect(importDrawer.getByText("高于推荐区间，仍可提交")).toBeVisible();
   const confirmationInput = importDrawer.getByLabel("精确确认");
-  const confirmation = `发布并部署 ${packageImportId}`;
+  const confirmation = `发布并入库 ${packageImportId}`;
   await confirmationInput.fill(confirmation);
   const readsAfterTyping = detailReads;
   await expect.poll(() => detailReads, { timeout: 7_000 }).toBeGreaterThan(readsAfterTyping);
   await expect(confirmationInput).toHaveValue(confirmation);
   await expect(importDrawer.getByText("有未提交更改")).toBeVisible();
-  await expect(importDrawer.getByRole("button", { name: "发布并部署" })).toBeEnabled();
-  await importDrawer.getByRole("button", { name: "发布并部署" }).click();
+  await expect(importDrawer.getByRole("button", { name: "发布并入库" })).toBeEnabled();
+  await importDrawer.getByRole("button", { name: "发布并入库" }).click();
 
   await expect.poll(() => confirmedBody).not.toBeNull();
   expect(uploadOffset).toBe(uploadBytes);
@@ -1015,9 +1129,72 @@ test("package import uploads a chunk and requires the exact deployment confirmat
     preserveWorldData: false,
     syncServerCatalog: true,
     maximumMemoryMiB: 20480,
-    confirmation: `发布并部署 ${packageImportId}`
+    deployServer: false,
+    confirmation: `发布并入库 ${packageImportId}`
   });
   await page.screenshot({ path: "../../../artifacts/admin-web-package-import-desktop.png", fullPage: true });
+});
+
+test("package import deploys immediately only after the administrator selects compatibility mode", async ({ page }) => {
+  let confirmedBody: Record<string, unknown> | null = null;
+  const reviewRecord: PackageImportMock = {
+    ...completedPackageImport,
+    status: "AwaitingReview",
+    plan: null,
+    manifestSha256: null,
+    deploymentOperationId: null,
+    completedAt: null,
+    revision: 4
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview") {
+        const stopped = controlOverview(1);
+        stopped.targets[0] = { ...stopped.targets[0], online: false, processId: null };
+        await route.fulfill({ json: stopped });
+        return true;
+      }
+      if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+        await route.fulfill({ json: {
+          imports: [reviewRecord],
+          publisherAgentConnected: true,
+          publisherAgentLastSeenAt: now
+        } });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        await route.fulfill({ json: reviewRecord });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}/confirm` && request.method() === "POST") {
+        confirmedBody = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({ json: {
+          ...reviewRecord,
+          status: "QueuedForPublishing",
+          plan: { ...completedPackageImport.plan, deployServer: true },
+          revision: 5
+        } });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/package-imports");
+  await page.getByRole("button", { name: "查看整合包任务" }).click();
+  const drawer = page.locator(".package-import-drawer");
+  await drawer.getByLabel("立即部署活动槽").check();
+  await expect(drawer.getByText("服控代理", { exact: true })).toHaveClass(/ready/);
+  await expect(drawer.getByText("目标已停服", { exact: true })).toHaveClass(/ready/);
+  await drawer.getByLabel("精确确认").fill(`发布并部署 ${packageImportId}`);
+  await drawer.getByRole("button", { name: "发布并部署" }).click();
+
+  await expect.poll(() => confirmedBody).not.toBeNull();
+  expect(confirmedBody).toMatchObject({
+    expectedRevision: 4,
+    deployServer: true,
+    confirmation: `发布并部署 ${packageImportId}`
+  });
 });
 
 test("package publishing shows real progress and estimates remaining time", async ({ page }) => {
@@ -1088,6 +1265,227 @@ test("package publishing shows real progress and estimates remaining time", asyn
   const progressBox = await progressbar.boundingBox();
   expect(progressBox && progressBox.x >= 0 && progressBox.x + progressBox.width <= 390).toBe(true);
   await page.screenshot({ path: "../../../artifacts/admin-web-package-progress-mobile.png", fullPage: true });
+});
+
+test("activity calendar creates a draft from a selected date with a bound package", async ({ page }) => {
+  let createBody: Record<string, unknown> | null = null;
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/activity-plans" && request.method() === "POST") {
+        createBody = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({ status: 201, json: {
+          ...activityPlanOverview.plans[1],
+          ...createBody,
+          id: "activity-plan-20260818-c1d2e3f4",
+          status: "Draft",
+          effectiveStatus: "Closed",
+          productionReady: true,
+          deploymentMatches: true,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+          profileId: "summer-neoforge-1.21.11",
+          profileDisplayName: "夏日活动",
+          version: "1.0.0",
+          minecraftVersion: "1.21.11",
+          loader: "NeoForge"
+        } });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/activity-plans");
+  await expect(page.locator(".page-heading h1")).toHaveText("活动企划");
+  await expect(page.getByText("同一时间只开放一个活动")).toBeVisible();
+  await page.locator('.fc-daygrid-day[data-date="2026-08-18"]').click();
+  await expect(page.getByRole("heading", { name: "创建活动企划" })).toBeVisible();
+  await expect(page.getByLabel("开放时间")).toHaveValue("2026-08-18T19:00");
+  await expect(page.getByLabel("结束时间")).toHaveValue("2026-08-18T22:00");
+  await page.getByLabel("企划名称").fill("夏日红石接力");
+  await page.getByRole("button", { name: "创建草稿" }).click();
+
+  await expect.poll(() => createBody).not.toBeNull();
+  expect(createBody).toMatchObject({
+    title: "夏日红石接力",
+    packageImportId,
+    maximumPlayers: 30,
+    minimumTier: "Participant"
+  });
+  expect(new Date(String(createBody!.opensAt)).toISOString()).toBe("2026-08-18T11:00:00.000Z");
+  expect(new Date(String(createBody!.closesAt)).toISOString()).toBe("2026-08-18T14:00:00.000Z");
+  await page.screenshot({ path: "../../../artifacts/admin-web-activity-plans-desktop.png", fullPage: true });
+});
+
+test("activity calendar moves and resizes both boundaries while preserving wall-clock time", async ({ page }) => {
+  const updates: Record<string, unknown>[] = [];
+  let currentPlan = { ...activityPlanOverview.plans[0] };
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/activity-plans" && request.method() === "GET") {
+        await route.fulfill({
+          json: {
+            ...activityPlanOverview,
+            plans: [currentPlan, activityPlanOverview.plans[1]]
+          }
+        });
+        return true;
+      }
+      if (
+        path === `/v1/admin/activity-plans/${currentPlan.id}` &&
+        request.method() === "PUT"
+      ) {
+        const body = request.postDataJSON() as Record<string, unknown>;
+        updates.push(body);
+        currentPlan = {
+          ...currentPlan,
+          opensAt: String(body.opensAt),
+          closesAt: String(body.closesAt),
+          revision: currentPlan.revision + 1,
+          updatedAt: now
+        };
+        await route.fulfill({ json: currentPlan });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/activity-plans");
+  const event = page.locator(".fc-event").filter({ hasText: "夏日建筑接力" }).first();
+  await expect(event).toBeVisible();
+  await event.hover();
+  const startHandle = event.locator(".fc-event-resizer-start");
+  const endHandle = event.locator(".fc-event-resizer-end");
+  await expect(startHandle).toHaveCount(1);
+  await expect(endHandle).toHaveCount(1);
+  await expect(startHandle).toBeVisible();
+  await expect(endHandle).toBeVisible();
+
+  await dragCalendarHandleByDays(
+    page,
+    startHandle,
+    page.locator('.fc-daygrid-day[data-date="2026-08-12"]'),
+    -1
+  );
+  await expect.poll(() => updates.length).toBe(1);
+  expect(new Date(String(updates[0].opensAt)).toISOString()).toBe("2026-08-11T11:00:00.000Z");
+  expect(new Date(String(updates[0].closesAt)).toISOString()).toBe("2026-08-12T14:00:00.000Z");
+
+  await expect(event).toBeVisible();
+  await event.hover();
+  await dragCalendarHandleByDays(
+    page,
+    event.locator(".fc-event-resizer-end"),
+    page.locator('.fc-daygrid-day[data-date="2026-08-12"]'),
+    1
+  );
+  await expect.poll(() => updates.length).toBe(2);
+  expect(new Date(String(updates[1].opensAt)).toISOString()).toBe("2026-08-11T11:00:00.000Z");
+  expect(new Date(String(updates[1].closesAt)).toISOString()).toBe("2026-08-13T14:00:00.000Z");
+
+  await expect(event).toBeVisible();
+  await dragCalendarHandleByDays(
+    page,
+    event,
+    page.locator('.fc-daygrid-day[data-date="2026-08-12"]'),
+    1
+  );
+  await expect.poll(() => updates.length).toBe(3);
+  expect(new Date(String(updates[2].opensAt)).toISOString()).toBe("2026-08-12T11:00:00.000Z");
+  expect(new Date(String(updates[2].closesAt)).toISOString()).toBe("2026-08-14T14:00:00.000Z");
+});
+
+test("activity plans can publish back-to-back without overlapping", async ({ page }) => {
+  let publishCalls = 0;
+  const boundaryDraft = {
+    ...activityPlanOverview.plans[1],
+    opensAt: activityPlanOverview.plans[0].closesAt,
+    closesAt: "2026-08-12T17:00:00Z"
+  };
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/activity-plans" && request.method() === "GET") {
+        await route.fulfill({
+          json: {
+            ...activityPlanOverview,
+            plans: [activityPlanOverview.plans[0], boundaryDraft]
+          }
+        });
+        return true;
+      }
+      if (
+        path === `/v1/admin/activity-plans/${boundaryDraft.id}/publish` &&
+        request.method() === "POST"
+      ) {
+        publishCalls += 1;
+        await route.fulfill({
+          json: {
+            ...boundaryDraft,
+            status: "Published",
+            revision: boundaryDraft.revision + 1,
+            updatedAt: now
+          }
+        });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/activity-plans");
+  await page.locator(".fc-event").filter({ hasText: "周末生存挑战" }).click();
+  const [calendarGridBox, inspectorBox] = await Promise.all([
+    page.locator(".activity-calendar-panel .fc-scrollgrid").boundingBox(),
+    page.locator(".activity-plan-inspector").boundingBox()
+  ]);
+  expect(calendarGridBox).not.toBeNull();
+  expect(inspectorBox).not.toBeNull();
+  expect(calendarGridBox!.x + calendarGridBox!.width).toBeLessThanOrEqual(inspectorBox!.x + 1);
+  const publishButton = page
+    .locator(".activity-plan-inspector")
+    .getByRole("button", { name: "发布企划" });
+  await expect(publishButton).toBeEnabled();
+  await publishButton.click();
+  await page.getByRole("button", { name: "确认发布" }).click();
+  await expect.poll(() => publishCalls).toBe(1);
+});
+
+test("draft activity can overlap for planning but cannot be published", async ({ page }) => {
+  const conflictingOverview = {
+    ...activityPlanOverview,
+    plans: activityPlanOverview.plans.map((plan, index) => index === 1 ? {
+      ...plan,
+      opensAt: "2026-08-12T12:00:00Z",
+      closesAt: "2026-08-12T13:00:00Z"
+    } : plan)
+  };
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/activity-plans" && request.method() === "GET") {
+        await route.fulfill({ json: conflictingOverview });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/activity-plans");
+  await page.locator(".fc-event").filter({ hasText: "周末生存挑战" }).click();
+  const inspector = page.locator(".activity-plan-inspector");
+  await expect(inspector.getByText(/与已发布企划《夏日建筑接力》重叠/)).toBeVisible();
+  await expect(inspector.getByRole("button", { name: "发布企划" })).toBeDisabled();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() =>
+    document.documentElement.scrollWidth <= document.documentElement.clientWidth
+  )).toBe(true);
+  await page.screenshot({ path: "../../../artifacts/admin-web-activity-plans-mobile.png", fullPage: true });
 });
 
 test("server editor recovers from a revision conflict without losing the draft", async ({ page }) => {

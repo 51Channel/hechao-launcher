@@ -263,12 +263,17 @@ public sealed class CatalogRepository(
                    heartbeat.max_players, heartbeat.received_at, server.announcement,
                    server.opens_at, server.closes_at,
                    control_target.reported_online, control_target.last_seen_at,
-                   server.velocity_target
+                   server.velocity_target, server.activity_plan_status,
+                   server.activity_package_import_id,
+                   control_target.deployed_package_import_id
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = server.id
+                ON control_target.server_id = CASE
+                    WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
+                    ELSE server.id
+                END
             WHERE server.is_visible
               AND server.server_role = 'Player'
             ORDER BY server.sort_order, server.id;
@@ -282,12 +287,17 @@ public sealed class CatalogRepository(
                    heartbeat.max_players, heartbeat.received_at, server.announcement,
                    server.opens_at, server.closes_at,
                    control_target.reported_online, control_target.last_seen_at,
-                   server.velocity_target
+                   server.velocity_target, server.activity_plan_status,
+                   server.activity_package_import_id,
+                   control_target.deployed_package_import_id
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = server.id
+                ON control_target.server_id = CASE
+                    WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
+                    ELSE server.id
+                END
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1
                AND access_override.server_id = server.id
@@ -355,6 +365,11 @@ public sealed class CatalogRepository(
                 controlObservation,
                 now,
                 _controlFreshness);
+            var deploymentAwareStatus = ResolveActivityDeploymentStatus(
+                controlledStatus.Status,
+                !reader.IsDBNull(21),
+                reader.IsDBNull(22) ? null : reader.GetGuid(22),
+                reader.IsDBNull(23) ? null : reader.GetGuid(23));
             ServerHeartbeatObservation? heartbeat = null;
             if (!reader.IsDBNull(11))
             {
@@ -366,7 +381,7 @@ public sealed class CatalogRepository(
             }
 
             var runtimeStatus = ServerRuntimeStatusResolver.Resolve(
-                controlledStatus.Status,
+                deploymentAwareStatus,
                 reader.GetInt32(5),
                 reader.GetInt32(6),
                 heartbeat,
@@ -397,6 +412,17 @@ public sealed class CatalogRepository(
         velocityTarget == "activity"
             ? ServerCatalogSection.Activity
             : ServerCatalogSection.Permanent;
+
+    internal static ServerStatus ResolveActivityDeploymentStatus(
+        ServerStatus status,
+        bool isActivityPlan,
+        Guid? expectedPackageImportId,
+        Guid? deployedPackageImportId) =>
+        isActivityPlan &&
+        (expectedPackageImportId is null ||
+         deployedPackageImportId != expectedPackageImportId)
+            ? ServerStatus.Closed
+            : status;
 
     private sealed class ProfileCandidateBuilder(
         string profileId,

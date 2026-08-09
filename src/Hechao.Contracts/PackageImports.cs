@@ -76,7 +76,8 @@ public sealed record PackageImportDeploymentPlanRecord(
     bool SyncServerCatalog,
     string ServerDisplayName,
     AccessTier MinimumTier,
-    int MaximumMemoryMiB);
+    int MaximumMemoryMiB,
+    bool DeployServer = false);
 
 public enum PackagePublisherProgressPhase
 {
@@ -143,7 +144,8 @@ public sealed record AdminPackageImportConfirmRequest(
     string ServerDisplayName,
     AccessTier MinimumTier,
     int MaximumMemoryMiB,
-    string Confirmation);
+    string Confirmation,
+    bool DeployServer = false);
 
 public sealed record AdminPackageImportCancelRequest(
     long ExpectedRevision,

@@ -767,6 +767,15 @@ internal sealed partial class ServerPackageDeployer(
         return path;
     }
 
+    internal static ServerPackageDeploymentIdentity? ReadDeploymentIdentity(
+        string serverDirectory) =>
+        TryReadDeploymentMarker(serverDirectory, out var marker)
+            ? new ServerPackageDeploymentIdentity(
+                marker.ImportId,
+                marker.ProfileId,
+                marker.Version)
+            : null;
+
     private static bool TryReadDeploymentMarker(
         string serverDirectory,
         out DeploymentMarker marker)
@@ -793,6 +802,8 @@ internal sealed partial class ServerPackageDeployer(
             return marker is not null &&
                    marker.SchemaVersion == OwnerSchemaVersion &&
                    marker.ImportId != Guid.Empty &&
+                   ConfigurationPatterns.ServerId().IsMatch(marker.ProfileId) &&
+                   VersionPattern().IsMatch(marker.Version) &&
                    Sha256Pattern().IsMatch(marker.ArchiveSha256);
         }
         catch (Exception exception) when (

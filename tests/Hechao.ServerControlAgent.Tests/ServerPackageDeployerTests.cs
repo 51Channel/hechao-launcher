@@ -125,6 +125,12 @@ public sealed class ServerPackageDeployerTests : IDisposable
         Assert.Contains("server-port=25568", properties);
         Assert.Contains("online-mode=false", properties);
         Assert.True(File.Exists(Path.Combine(server, ".hechao-deployment.json")));
+        Assert.Equal(
+            new ServerPackageDeploymentIdentity(
+                deployment.ImportId,
+                deployment.ProfileId,
+                deployment.Version),
+            ServerPackageDeployer.ReadDeploymentIdentity(server));
         Assert.True(Directory.Exists(
             Path.Combine(root, ".ActivityNeoForge.hechao-rollback")));
 

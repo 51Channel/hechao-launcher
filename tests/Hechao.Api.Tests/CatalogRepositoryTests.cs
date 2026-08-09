@@ -15,4 +15,39 @@ public sealed class CatalogRepositoryTests
     {
         Assert.Equal(expected, CatalogRepository.ResolveCatalogSection(velocityTarget));
     }
+
+    [Fact]
+    public void ActivityPlanIsClosedUntilItsExactPackageIsDeployed()
+    {
+        var expected = Guid.NewGuid();
+
+        Assert.Equal(
+            ServerStatus.Closed,
+            CatalogRepository.ResolveActivityDeploymentStatus(
+                ServerStatus.Online,
+                isActivityPlan: true,
+                expected,
+                deployedPackageImportId: null));
+        Assert.Equal(
+            ServerStatus.Closed,
+            CatalogRepository.ResolveActivityDeploymentStatus(
+                ServerStatus.Online,
+                isActivityPlan: true,
+                expected,
+                Guid.NewGuid()));
+        Assert.Equal(
+            ServerStatus.Online,
+            CatalogRepository.ResolveActivityDeploymentStatus(
+                ServerStatus.Online,
+                isActivityPlan: true,
+                expected,
+                expected));
+        Assert.Equal(
+            ServerStatus.Online,
+            CatalogRepository.ResolveActivityDeploymentStatus(
+                ServerStatus.Online,
+                isActivityPlan: false,
+                expectedPackageImportId: null,
+                deployedPackageImportId: null));
+    }
 }

@@ -69,9 +69,10 @@ public sealed class ServerControlRepository(
                      console_captured_at, package_deployment_enabled,
                      server_deletion_enabled, server_files_present,
                      deletion_cleanup_pending, host_total_memory_mib,
-                     last_seen_at, updated_at)
+                     deployed_package_import_id, deployed_profile_id,
+                     deployed_version, last_seen_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-                        $13, $14, $15, $16, $17, $17)
+                        $13, $14, $15, $16, $17, $18, $19, $20, $20)
                 ON CONFLICT (server_id) DO UPDATE
                 SET agent_id = EXCLUDED.agent_id,
                     agent_version = EXCLUDED.agent_version,
@@ -91,6 +92,10 @@ public sealed class ServerControlRepository(
                     deletion_cleanup_pending =
                         EXCLUDED.deletion_cleanup_pending,
                     host_total_memory_mib = EXCLUDED.host_total_memory_mib,
+                    deployed_package_import_id =
+                        EXCLUDED.deployed_package_import_id,
+                    deployed_profile_id = EXCLUDED.deployed_profile_id,
+                    deployed_version = EXCLUDED.deployed_version,
                     last_seen_at = EXCLUDED.last_seen_at,
                     updated_at = EXCLUDED.updated_at
                 WHERE
@@ -135,6 +140,18 @@ public sealed class ServerControlRepository(
                 command.Parameters,
                 NpgsqlDbType.Integer,
                 request.HostTotalMemoryMiB);
+            AdminPostgresParameters.AddPositional(
+                command.Parameters,
+                NpgsqlDbType.Uuid,
+                target.DeployedPackage?.ImportId);
+            AdminPostgresParameters.AddPositional(
+                command.Parameters,
+                NpgsqlDbType.Text,
+                target.DeployedPackage?.ProfileId);
+            AdminPostgresParameters.AddPositional(
+                command.Parameters,
+                NpgsqlDbType.Text,
+                target.DeployedPackage?.Version);
             command.Parameters.AddWithValue(receivedAt);
             imported += await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -203,7 +220,10 @@ public sealed class ServerControlRepository(
                    target.server_deletion_enabled,
                    target.server_files_present,
                    target.deletion_cleanup_pending,
-                   target.host_total_memory_mib
+                   target.host_total_memory_mib,
+                   target.deployed_package_import_id,
+                   target.deployed_profile_id,
+                   target.deployed_version
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             ORDER BY COALESCE(server.sort_order, 2147483647),
@@ -260,7 +280,8 @@ public sealed class ServerControlRepository(
                     conflictGroup,
                     port,
                     packageDeploymentEnabled,
-                    reader.IsDBNull(13) ? null : reader.GetInt32(13))));
+                    reader.IsDBNull(13) ? null : reader.GetInt32(13)),
+                ReadDeploymentIdentity(reader, 14)));
         }
 
         return new AdminServerControlOverview(
@@ -301,7 +322,10 @@ public sealed class ServerControlRepository(
                    target.server_deletion_enabled,
                    target.server_files_present,
                    target.deletion_cleanup_pending,
-                   target.host_total_memory_mib
+                   target.host_total_memory_mib,
+                   target.deployed_package_import_id,
+                   target.deployed_profile_id,
+                   target.deployed_version
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             WHERE target.server_id = $1;
@@ -354,7 +378,8 @@ public sealed class ServerControlRepository(
                 targetConflictGroup,
                 targetPort,
                 packageDeploymentEnabled,
-                reader.IsDBNull(16) ? null : reader.GetInt32(16)));
+                reader.IsDBNull(16) ? null : reader.GetInt32(16)),
+            ReadDeploymentIdentity(reader, 17));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,
@@ -830,7 +855,11 @@ public sealed class ServerControlRepository(
                    target.port
             FROM launcher.server_control_commands AS command
             JOIN launcher.package_imports AS package
-              ON package.deployment_operation_id = command.operation_id
+              ON package.id::text =
+                 command.payload #>> '{packageDeployment,importId}'
+            LEFT JOIN launcher.activity_plan_deployments AS activity_deployment
+              ON activity_deployment.operation_id = command.operation_id
+             AND activity_deployment.package_import_id = package.id
             JOIN launcher.server_control_targets AS target
               ON target.server_id = command.server_id
             WHERE command.id = $1
@@ -839,7 +868,13 @@ public sealed class ServerControlRepository(
               AND command.status = 'Claimed'
               AND command.kind = 'DeployPackage'
               AND command.claim_expires_at >= $3
-              AND package.status = 'DeployingServer'
+              AND (
+                  (package.deployment_operation_id = command.operation_id
+                   AND package.status = 'DeployingServer')
+                  OR
+                  (activity_deployment.operation_id IS NOT NULL
+                   AND package.status = 'Completed')
+              )
               AND target.package_deployment_enabled;
             """;
         await using var connection =
@@ -1337,6 +1372,16 @@ public sealed class ServerControlRepository(
             reader.IsDBNull(10) ? null : reader.GetString(10),
             reader.IsDBNull(11) ? null : reader.GetString(11),
             reader.GetFieldValue<string[]>(12));
+
+    private static ServerPackageDeploymentIdentity? ReadDeploymentIdentity(
+        NpgsqlDataReader reader,
+        int offset) =>
+        reader.IsDBNull(offset)
+            ? null
+            : new ServerPackageDeploymentIdentity(
+                reader.GetGuid(offset),
+                reader.GetString(offset + 1),
+                reader.GetString(offset + 2));
 
     private static async Task WriteAuditAsync(
         NpgsqlConnection connection,

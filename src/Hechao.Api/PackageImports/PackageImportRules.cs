@@ -95,7 +95,9 @@ public static partial class PackageImportRules
             errors["maximumMemoryMiB"] = ["最大内存必须为 1024 至 65536 MiB 的 256 MiB 整数倍。"];
         }
 
-        var expectedConfirmation = $"发布并部署 {import.ImportId:D}";
+        var expectedConfirmation = request.DeployServer
+            ? $"发布并部署 {import.ImportId:D}"
+            : $"发布并入库 {import.ImportId:D}";
         if (!string.Equals(request.Confirmation?.Trim(), expectedConfirmation, StringComparison.Ordinal))
         {
             errors["confirmation"] = [$"请输入“{expectedConfirmation}”确认。"];

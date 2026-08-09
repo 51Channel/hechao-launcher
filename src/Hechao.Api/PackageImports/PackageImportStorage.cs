@@ -244,6 +244,14 @@ public sealed class PackageImportStorage
     public FileStream OpenServerArchive(Guid importId) =>
         OpenArtifact(importId, "server.zip");
 
+    public bool ServerArchiveExists(Guid importId)
+    {
+        EnsureEnabled();
+        var path = Path.Combine(GetArtifactsDirectory(importId), "server.zip");
+        return File.Exists(path) &&
+               (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0;
+    }
+
     public void Delete(Guid importId)
     {
         EnsureEnabled();

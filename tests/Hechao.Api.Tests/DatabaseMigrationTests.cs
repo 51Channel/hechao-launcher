@@ -201,4 +201,29 @@ public sealed class DatabaseMigrationTests
             sql,
             StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ActivityPlanMigration_EnforcesOnePublishedHalfOpenSchedule()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.028_activity_plans.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("activity_package_import_id", sql, StringComparison.Ordinal);
+        Assert.Contains("activity_plan_status", sql, StringComparison.Ordinal);
+        Assert.Contains("activity_plan_deployments", sql, StringComparison.Ordinal);
+        Assert.Contains("EXCLUDE USING gist", sql, StringComparison.Ordinal);
+        Assert.Contains("tstzrange(opens_at, closes_at, '[)')", sql, StringComparison.Ordinal);
+        Assert.Contains(
+            "WHERE (activity_plan_status = 'Published')",
+            sql,
+            StringComparison.Ordinal);
+        Assert.Contains("deployed_package_import_id", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("DELETE FROM launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

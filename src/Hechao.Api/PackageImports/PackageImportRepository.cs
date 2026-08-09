@@ -417,7 +417,8 @@ public sealed class PackageImportRepository
             request.SyncServerCatalog,
             request.ServerDisplayName.Trim(),
             request.MinimumTier,
-            request.MaximumMemoryMiB);
+            request.MaximumMemoryMiB,
+            request.DeployServer);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(
@@ -809,6 +810,7 @@ public sealed class PackageImportRepository
         int uploadedObjects,
         int existingObjects,
         long uploadedBytes,
+        bool deployServer,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -817,7 +819,7 @@ public sealed class PackageImportRepository
         await using var command = new NpgsqlCommand(
             """
             UPDATE launcher.package_imports
-            SET status = 'QueuedForDeployment',
+            SET status = CASE WHEN $9 THEN 'QueuedForDeployment' ELSE 'Finalizing' END,
                 manifest_sha256 = $5,
                 publisher_uploaded_objects = $6,
                 publisher_existing_objects = $7,
@@ -845,6 +847,7 @@ public sealed class PackageImportRepository
         command.Parameters.AddWithValue(uploadedObjects);
         command.Parameters.AddWithValue(existingObjects);
         command.Parameters.AddWithValue(uploadedBytes);
+        command.Parameters.AddWithValue(deployServer);
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
         {
             return new PackagePublisherMutationResult(
@@ -853,13 +856,18 @@ public sealed class PackageImportRepository
                     : PackagePublisherMutationStatus.NotFound);
         }
 
+        var nextStatus = deployServer
+            ? PackageImportStatus.QueuedForDeployment
+            : PackageImportStatus.Finalizing;
         await WriteEventAsync(
             connection,
             transaction,
             importId,
-            PackageImportStatus.QueuedForDeployment,
+            nextStatus,
             "CLIENT_PUBLISHED",
-            "客户端对象和签名清单已校验，等待服务端原子部署。",
+            deployServer
+                ? "客户端对象和签名清单已校验，等待服务端原子部署。"
+                : "客户端对象和签名清单已校验，正在收口 Test 通道；服务端制品保持入库。",
             now,
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);

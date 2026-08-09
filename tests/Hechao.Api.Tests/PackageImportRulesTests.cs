@@ -39,7 +39,8 @@ public sealed class PackageImportRulesTests
             "夏日活动",
             AccessTier.Participant,
             4096,
-            $"发布并部署 {importId:D}");
+            $"发布并部署 {importId:D}",
+            DeployServer: true);
 
         Assert.Empty(PackageImportRules.Validate(request, import));
         Assert.Contains(
@@ -58,6 +59,13 @@ public sealed class PackageImportRulesTests
             PackageImportRules.Validate(
                 request with { MaximumMemoryMiB = 65792 },
                 import).Keys);
+        Assert.Empty(PackageImportRules.Validate(
+            request with
+            {
+                DeployServer = false,
+                Confirmation = $"发布并入库 {importId:D}"
+            },
+            import));
     }
 
     [Fact]

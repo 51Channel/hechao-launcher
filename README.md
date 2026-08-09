@@ -269,6 +269,9 @@ npm run build
 
 ## 实施文档
 
+活动企划排期、双后台同步、整合包绑定与单活动槽准入见
+[`docs/ACTIVITY_PLAN_OPERATIONS.md`](docs/ACTIVITY_PLAN_OPERATIONS.md)。
+
 真实玩家分档采证、Velocity `enforce` 和目录强制登录的失败关闭切换见
 [`docs/GRAY_PILOT_AUTHORIZATION_CUTOVER.md`](docs/GRAY_PILOT_AUTHORIZATION_CUTOVER.md)。
 
