@@ -963,6 +963,24 @@ public sealed class LauncherXamlContractTests
             .Descendants(presentation + "ColumnDefinition")
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "DirectoryColumn");
+        var directoryPanel = document
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "ServerDirectoryPanel");
+        var titleBar = document
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "TitleBar");
+        var serverListTemplateRoot = document
+            .Descendants(presentation + "DataTemplate")
+            .Single(element =>
+                element.Attribute("DataType")?.Value ==
+                "{x:Type contracts:ServerSummary}" &&
+                element.Ancestors(presentation + "ListBox").Any(list =>
+                    list.Attribute("ItemsSource")?.Value ==
+                    "{Binding Servers}"))
+            .Element(presentation + "Grid")!;
         var announcementList = document
             .Descendants(presentation + "ItemsControl")
             .Single(element =>
@@ -991,6 +1009,13 @@ public sealed class LauncherXamlContractTests
 
         Assert.Equal("140", navigationColumn.Attribute("Width")?.Value);
         Assert.Equal("225", directoryColumn.Attribute("Width")?.Value);
+        Assert.Equal("1", directoryPanel.Attribute("Grid.Row")?.Value);
+        Assert.Equal("0,8,0,14", directoryPanel.Attribute("Margin")?.Value);
+        Assert.Equal("6", directoryPanel.Attribute("CornerRadius")?.Value);
+        Assert.Equal("1", titleBar.Attribute("Grid.Column")?.Value);
+        Assert.Equal("2", titleBar.Attribute("Grid.ColumnSpan")?.Value);
+        Assert.Empty(titleBar.Descendants(presentation + "TextBlock"));
+        Assert.Equal("70", serverListTemplateRoot.Attribute("Height")?.Value);
         Assert.Equal(
             "{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}",
             memorySelector.Attribute("SelectedItem")?.Value);
@@ -1021,6 +1046,29 @@ public sealed class LauncherXamlContractTests
             document.Descendants(presentation + "TextBlock"),
             element => element.Attribute("Text")?.Value ==
                 "{Binding SelectedProfileGameDirectoryDisplayText}");
+
+        var theme = LoadThemeXaml();
+        var navigationStyle = theme
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "RailNavigationToggleStyle");
+        var serverItemStyle = theme
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ServerListItemStyle");
+        Assert.Contains(
+            navigationStyle.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "Height" &&
+                setter.Attribute("Value")?.Value == "44");
+        Assert.Contains(
+            serverItemStyle.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "BorderBrush" &&
+                setter.Attribute("Value")?.Value ==
+                "{StaticResource BorderBrush}");
     }
 
     [Fact]

@@ -150,16 +150,17 @@
                     BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="86" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="88" />
                         <RowDefinition Height="64" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="60" />
+                        <RowDefinition Height="31" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0"
-                                Margin="18,0"
+                                Margin="18,0,0,0"
                                 Orientation="Horizontal"
-                                VerticalAlignment="Center">
+                                VerticalAlignment="Center"
+                                MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown">
                         <Border Width="40"
                                 Height="40"
                                 Background="{StaticResource HechaoRedBrush}"
@@ -183,18 +184,18 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="1" Margin="10,16,10,0">
+                    <StackPanel Grid.Row="1" Margin="10,12,10,0">
                     <ToggleButton Style="{StaticResource RailNavigationToggleStyle}"
                                   IsChecked="{Binding IsServersPage, Mode=TwoWay}"
                                   Command="{Binding ShowServersCommand}"
-                                  ToolTip="服务器大厅"
-                                  AutomationProperties.Name="服务器大厅">
+                                  ToolTip="首页"
+                                  AutomationProperties.Name="首页">
                             <StackPanel Orientation="Horizontal" Margin="18,0">
                                 <controls:IconParkIcon Kind="Server"
                                                        Width="20"
                                                        Height="20"
                                                        VerticalAlignment="Center" />
-                                <TextBlock Text="服务器"
+                                <TextBlock Text="首页"
                                            FontSize="12"
                                            FontWeight="SemiBold"
                                            Margin="13,0,0,0"
@@ -269,92 +270,107 @@
 
                     <Border x:Name="NavigationAccountPanel"
                             Grid.Row="2"
-                            Margin="10,0"
+                            Margin="10,0,10,4"
+                            Background="{StaticResource SurfaceBrush}"
                             BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="0,1,0,0">
-                        <Grid Margin="0,12,0,10">
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            AutomationProperties.HelpText="{Binding AccountStatusText}">
+                        <Grid Margin="5,3">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="34" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="21" />
-                                <RowDefinition Height="20" />
-                                <RowDefinition Height="22" />
+                                <RowDefinition Height="24" />
+                                <RowDefinition Height="24" />
                             </Grid.RowDefinitions>
 
                             <Border x:Name="SidebarAccountAvatar"
                                     Grid.Column="0"
-                                    Grid.RowSpan="3"
-                                    Width="42"
-                                    Height="42"
+                                    Grid.RowSpan="2"
+                                    Width="32"
+                                    Height="32"
                                     Background="#FFD1A071"
                                     BorderBrush="#FFB97B4A"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     VerticalAlignment="Center">
-                                <Grid Width="40"
-                                      Height="40"
-                                      ClipToBounds="True"
-                                      SnapsToDevicePixels="True"
-                                      RenderOptions.BitmapScalingMode="NearestNeighbor">
-                                    <Canvas Width="40" Height="40">
-                                        <Canvas.Style>
-                                            <Style TargetType="Canvas">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasAccountSkin}" Value="True">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Canvas.Style>
-                                        <Rectangle Canvas.Left="4" Canvas.Top="3" Width="32" Height="27" Fill="#FFB56E3E" />
-                                        <Rectangle Canvas.Left="4" Canvas.Top="3" Width="32" Height="9" Fill="#FF3B2419" />
-                                        <Rectangle Canvas.Left="4" Canvas.Top="10" Width="6" Height="10" Fill="#FF3B2419" />
-                                        <Rectangle Canvas.Left="30" Canvas.Top="10" Width="6" Height="10" Fill="#FF3B2419" />
-                                        <Rectangle Canvas.Left="10" Canvas.Top="16" Width="6" Height="5" Fill="#FFF8F2EA" />
-                                        <Rectangle Canvas.Left="24" Canvas.Top="16" Width="6" Height="5" Fill="#FFF8F2EA" />
-                                        <Rectangle Canvas.Left="12" Canvas.Top="17" Width="3" Height="3" Fill="#FF2C1A15" />
-                                        <Rectangle Canvas.Left="25" Canvas.Top="17" Width="3" Height="3" Fill="#FF2C1A15" />
-                                        <Rectangle Canvas.Left="8" Canvas.Top="30" Width="24" Height="10" Fill="#FF263C2D" />
-                                    </Canvas>
-                                    <Grid Visibility="{Binding HasAccountSkin, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <Border>
-                                            <Border.Background>
-                                                <ImageBrush ImageSource="{Binding AccountSkinSource}"
-                                                            Viewbox="8,8,8,8"
-                                                            ViewboxUnits="Absolute"
-                                                            Stretch="Fill"
-                                                            TileMode="None" />
-                                            </Border.Background>
-                                        </Border>
-                                        <Border>
-                                            <Border.Background>
-                                                <ImageBrush ImageSource="{Binding AccountSkinSource}"
-                                                            Viewbox="40,8,8,8"
-                                                            ViewboxUnits="Absolute"
-                                                            Stretch="Fill"
-                                                            TileMode="None" />
-                                            </Border.Background>
-                                        </Border>
+                                <Viewbox Width="30"
+                                         Height="30"
+                                         Stretch="Fill"
+                                         SnapsToDevicePixels="True">
+                                    <Grid Width="40"
+                                          Height="40"
+                                          ClipToBounds="True"
+                                          RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                        <Canvas Width="40" Height="40">
+                                            <Canvas.Style>
+                                                <Style TargetType="Canvas">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasAccountSkin}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Canvas.Style>
+                                            <Rectangle Canvas.Left="4" Canvas.Top="3" Width="32" Height="27" Fill="#FFB56E3E" />
+                                            <Rectangle Canvas.Left="4" Canvas.Top="3" Width="32" Height="9" Fill="#FF3B2419" />
+                                            <Rectangle Canvas.Left="4" Canvas.Top="10" Width="6" Height="10" Fill="#FF3B2419" />
+                                            <Rectangle Canvas.Left="30" Canvas.Top="10" Width="6" Height="10" Fill="#FF3B2419" />
+                                            <Rectangle Canvas.Left="10" Canvas.Top="16" Width="6" Height="5" Fill="#FFF8F2EA" />
+                                            <Rectangle Canvas.Left="24" Canvas.Top="16" Width="6" Height="5" Fill="#FFF8F2EA" />
+                                            <Rectangle Canvas.Left="12" Canvas.Top="17" Width="3" Height="3" Fill="#FF2C1A15" />
+                                            <Rectangle Canvas.Left="25" Canvas.Top="17" Width="3" Height="3" Fill="#FF2C1A15" />
+                                            <Rectangle Canvas.Left="8" Canvas.Top="30" Width="24" Height="10" Fill="#FF263C2D" />
+                                        </Canvas>
+                                        <Grid Visibility="{Binding HasAccountSkin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Border>
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding AccountSkinSource}"
+                                                                Viewbox="8,8,8,8"
+                                                                ViewboxUnits="Absolute"
+                                                                Stretch="Fill"
+                                                                TileMode="None" />
+                                                </Border.Background>
+                                            </Border>
+                                            <Border>
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding AccountSkinSource}"
+                                                                Viewbox="40,8,8,8"
+                                                                ViewboxUnits="Absolute"
+                                                                Stretch="Fill"
+                                                                TileMode="None" />
+                                                </Border.Background>
+                                            </Border>
+                                        </Grid>
                                     </Grid>
-                                </Grid>
+                                </Viewbox>
                             </Border>
 
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="1"
-                                       Text="{Binding AccountDisplayName}"
-                                       ToolTip="{Binding AccountDisplayName}"
-                                       FontFamily="Segoe UI"
-                                       FontSize="13"
-                                       FontWeight="Bold"
-                                       Margin="7,0,0,0"
-                                       TextTrimming="CharacterEllipsis" />
+                            <Viewbox Grid.Row="0"
+                                     Grid.Column="1"
+                                     Grid.ColumnSpan="2"
+                                     Height="20"
+                                     Margin="2,0,22,0"
+                                     Stretch="Uniform"
+                                     StretchDirection="DownOnly"
+                                     HorizontalAlignment="Stretch"
+                                     VerticalAlignment="Center"
+                                     ToolTip="{Binding AccountDisplayName}">
+                                <TextBlock Text="{Binding AccountDisplayName}"
+                                           FontFamily="Segoe UI"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           TextTrimming="None" />
+                            </Viewbox>
                             <StackPanel Grid.Row="1"
                                         Grid.Column="1"
                                         Orientation="Horizontal"
-                                        Margin="7,1,0,0">
+                                        Margin="2,0,0,0"
+                                        ToolTip="{Binding AccountStatusText}">
                                 <Ellipse Width="6" Height="6" Margin="0,0,5,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
                                         <Style TargetType="Ellipse">
@@ -367,86 +383,76 @@
                                         </Style>
                                     </Ellipse.Style>
                                 </Ellipse>
-                                <TextBlock Text="{Binding AccountStatusText}"
-                                           ToolTip="{Binding AccountStatusText}"
-                                           FontSize="10"
-                                           Foreground="{StaticResource InkMutedBrush}"
-                                           TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                            <Grid Grid.Row="2"
-                                  Grid.Column="1"
-                                  Margin="7,0,0,0">
                                 <TextBlock Text="{Binding AccountAccessText}"
                                            ToolTip="{Binding AccountAccessText}"
                                            FontSize="10"
-                                           Foreground="{StaticResource InkFaintBrush}"
-                                           Margin="0,2,25,0"
+                                           Foreground="{StaticResource InkMutedBrush}"
+                                           VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis" />
-                                <Button Style="{StaticResource QuietIconButtonStyle}"
-                                        Width="24"
-                                        Height="24"
-                                        Content="{Binding AccountActionGlyph}"
-                                        Command="{Binding AccountActionCommand}"
-                                        ToolTip="{Binding AccountActionTooltip}"
-                                        AutomationProperties.Name="{Binding AccountActionTooltip}"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center" />
-                            </Grid>
+                            </StackPanel>
+                            <Button Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Grid.Column="2"
+                                    Style="{StaticResource QuietIconButtonStyle}"
+                                    Width="24"
+                                    Height="24"
+                                    Content="{Binding AccountActionGlyph}"
+                                    Command="{Binding AccountActionCommand}"
+                                    ToolTip="{Binding AccountActionTooltip}"
+                                    AutomationProperties.Name="{Binding AccountActionTooltip}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" />
                         </Grid>
                     </Border>
 
                     <StackPanel Grid.Row="3" Margin="14,0" VerticalAlignment="Center">
                         <TextBlock Text="赫朝 Minecraft 社区"
-                                   FontSize="10"
+                                   FontSize="9"
                                    Foreground="{StaticResource InkMutedBrush}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="非 Minecraft 官方产品"
-                                   FontSize="9"
+                                   FontSize="8"
                                    Foreground="{StaticResource InkFaintBrush}"
-                                   Margin="0,4,0,0"
+                                   Margin="0,2,0,0"
                                    HorizontalAlignment="Center" />
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- Server directory -->
-            <Border Grid.Column="1"
-                    Grid.RowSpan="2"
-                    Background="{StaticResource DirectoryBrush}"
+            <Border x:Name="ServerDirectoryPanel"
+                    Grid.Column="1"
+                    Grid.Row="1"
+                    Margin="0,8,0,14"
+                    Background="{StaticResource SurfaceBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="0,0,1,0"
+                    BorderThickness="1"
+                    CornerRadius="6"
                     Visibility="{Binding IsServersPage, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="106" />
+                        <RowDefinition Height="42" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="20,0,16,0">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="服务器大厅"
-                                       FontSize="20"
-                                       FontWeight="Black" />
-                            <TextBlock Text="{Binding Servers.Count, StringFormat={}{0} 个可选世界}"
-                                       FontSize="12"
-                                       Foreground="{StaticResource InkMutedBrush}"
-                                       Margin="0,5,0,0" />
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Orientation="Horizontal">
-                            <Button Style="{StaticResource IconButtonStyle}"
-                                    Width="38"
-                                    Height="38"
-                                    Content="&#xE72C;"
-                                    Command="{Binding RefreshCommand}"
-                                    ToolTip="刷新服务器状态"
-                                    AutomationProperties.Name="刷新服务器状态" />
-                        </StackPanel>
-                        <Border Height="1"
-                                Background="{StaticResource BorderBrush}"
-                                VerticalAlignment="Bottom" />
+                    <Grid Grid.Row="0" Margin="14,0,10,0">
+                        <TextBlock Text="服务器"
+                                   FontSize="16"
+                                   FontWeight="Black"
+                                   Margin="0,4,0,0"
+                                   VerticalAlignment="Center" />
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                Width="32"
+                                Height="32"
+                                MinHeight="32"
+                                Margin="0,10,0,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Content="&#xE72C;"
+                                Command="{Binding RefreshCommand}"
+                                ToolTip="刷新服务器状态"
+                                AutomationProperties.Name="刷新服务器状态" />
                     </Grid>
 
                     <controls:LiveRegionBorder x:Name="ServerCatalogStatusLiveRegion"
@@ -484,7 +490,7 @@
                     </controls:LiveRegionBorder>
 
                     <ListBox Grid.Row="2"
-                             Margin="10,10,10,12"
+                             Margin="7,6,10,8"
                              BorderThickness="0"
                              Background="Transparent"
                              ItemsSource="{Binding Servers}"
@@ -504,12 +510,12 @@
                             </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type contracts:ServerSummary}">
-                                <Grid Height="84">
+                                <Grid Height="70">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="5" />
-                                        <ColumnDefinition Width="58" />
+                                        <ColumnDefinition Width="52" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="54" />
+                                        <ColumnDefinition Width="48" />
                                     </Grid.ColumnDefinitions>
 
                                     <Border Grid.Column="0"
@@ -529,8 +535,8 @@
                                     </Border>
 
                                     <Border Grid.Column="1"
-                                            Width="44"
-                                            Height="44"
+                                            Width="40"
+                                            Height="40"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             Background="{StaticResource SurfaceBrush}"
@@ -538,7 +544,7 @@
                                             BorderThickness="1"
                                             CornerRadius="5">
                                         <TextBlock Text="{Binding ShortName}"
-                                                   FontSize="17"
+                                                   FontSize="16"
                                                    FontWeight="Black"
                                                    Foreground="{StaticResource HechaoRedDarkBrush}"
                                                    HorizontalAlignment="Center"
@@ -547,11 +553,11 @@
 
                                     <StackPanel Grid.Column="2"
                                                 VerticalAlignment="Center"
-                                                Margin="2,0,4,0">
+                                                Margin="1,0,3,0">
                                         <TextBlock Text="{Binding Name}"
-                                                   FontSize="14"
+                                                   FontSize="13"
                                                    FontWeight="Bold" />
-                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                             <Ellipse Width="7"
                                                      Height="7"
                                                      Margin="0,0,6,0"
@@ -572,7 +578,7 @@
                                                     </Style>
                                                 </Ellipse.Style>
                                             </Ellipse>
-                                            <TextBlock FontSize="12" Foreground="{StaticResource InkMutedBrush}">
+                                            <TextBlock FontSize="11" Foreground="{StaticResource InkMutedBrush}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Text" Value="未开放" />
@@ -593,22 +599,22 @@
                                         <TextBlock Text="{Binding Converter={StaticResource ServerListMetaTextConverter}}"
                                                    ToolTip="{Binding Converter={StaticResource ServerListMetaTextConverter}}"
                                                    FontFamily="Segoe UI"
-                                                   FontSize="11"
+                                                   FontSize="10"
                                                    Foreground="{StaticResource InkFaintBrush}"
-                                                   Margin="0,4,0,0" />
+                                                   Margin="0,3,0,0" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="3"
                                                 VerticalAlignment="Center"
                                                 HorizontalAlignment="Right"
-                                                Margin="0,0,9,0">
+                                                Margin="0,0,7,0">
                                         <TextBlock Text="{Binding OnlinePlayers}"
                                                    FontFamily="Segoe UI"
-                                                   FontSize="14"
+                                                   FontSize="13"
                                                    FontWeight="Bold"
                                                    HorizontalAlignment="Right" />
                                         <TextBlock FontFamily="Segoe UI"
-                                                   FontSize="11"
+                                                   FontSize="10"
                                                    Foreground="{StaticResource InkMutedBrush}"
                                                    HorizontalAlignment="Right">
                                             <Run Text="/" />
@@ -625,7 +631,8 @@
 
             <!-- Main title bar -->
             <Grid x:Name="TitleBar"
-                  Grid.Column="2"
+                  Grid.Column="1"
+                  Grid.ColumnSpan="2"
                   Grid.Row="0"
                   Background="{StaticResource SurfaceBrush}"
                   MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown"
@@ -635,45 +642,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="28,0,0,0">
-                    <TextBlock Text="服务器"
-                               FontSize="14"
-                               Foreground="{StaticResource InkMutedBrush}"
-                               VerticalAlignment="Center" />
-                    <controls:IconParkIcon Kind="Right"
-                                           Width="10"
-                                           Height="10"
-                                           Foreground="{StaticResource InkFaintBrush}"
-                                           Margin="11,0"
-                                           VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding SelectedServer.Name}"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Grid Width="46" Height="64">
-                        <ToggleButton Style="{StaticResource QuietIconToggleButtonStyle}"
-                                      Width="38"
-                                      Height="38"
-                                      Content="&#xE7F4;"
-                                      IsChecked="{Binding IsNotificationsOpen, Mode=TwoWay}"
-                                      ToolTip="通知中心"
-                                      AutomationProperties.Name="通知中心"
-                                      VerticalAlignment="Center" />
-                        <Ellipse Width="6"
-                                 Height="6"
-                                 Fill="{StaticResource HechaoRedBrush}"
-                                 HorizontalAlignment="Right"
-                                 VerticalAlignment="Top"
-                                 Margin="0,17,7,0"
-                                 IsHitTestVisible="False" />
-                    </Grid>
                     <Button Style="{StaticResource QuietIconButtonStyle}"
                             Width="46"
                             Height="64"
