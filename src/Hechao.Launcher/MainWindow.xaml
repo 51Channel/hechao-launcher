@@ -726,9 +726,9 @@
 
                         <Grid x:Name="SelectedServerHeroDetails"
                               Grid.Column="2"
-                              VerticalAlignment="Center">
+                              VerticalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
@@ -841,15 +841,17 @@
                                   Grid.Row="1"
                                   Margin="0,14,0,0"
                                   HorizontalAlignment="Left"
-                                  VerticalAlignment="Top">
+                                  VerticalAlignment="Bottom">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="156" />
+                                    <ColumnDefinition Width="148" />
                                     <ColumnDefinition Width="8" />
                                     <ColumnDefinition Width="40" />
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0"
+                                <Button x:Name="SelectedServerPrimaryActionButton"
+                                        Grid.Column="0"
                                         Height="40"
                                         MinHeight="40"
+                                        Padding="18,8"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Command="{Binding PrimaryActionCommand}"
                                         AutomationProperties.Name="{Binding PrimaryActionText}">

@@ -308,6 +308,11 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
                 "ServerActionsButton");
+        var primaryActionButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerPrimaryActionButton");
         var actionGrid = actionButton
             .Ancestors(presentation + "Grid")
             .First();
@@ -322,7 +327,8 @@ public sealed class LauncherXamlContractTests
                 element.Attribute(x + "Key")?.Value ==
                 "ServerActionMenuStyle");
 
-        Assert.Equal(["156", "8", "40"], columnWidths);
+        Assert.Equal(["148", "8", "40"], columnWidths);
+        Assert.Equal("18,8", primaryActionButton.Attribute("Padding")?.Value);
         Assert.Contains(
             menuStyle.Elements(presentation + "Setter"),
             setter =>
@@ -992,6 +998,11 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
                 "SelectedServerHeroActions");
+        var primaryActionButton = heroActions
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerPrimaryActionButton");
         var quickSettingFields = document
             .Descendants(presentation + "Grid")
             .Single(element =>
@@ -1036,11 +1047,6 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute("AutomationProperties.Name")?.Value ==
                 "更改当前档案 Java");
-        var primaryActionButton = document
-            .Descendants(presentation + "Button")
-            .Single(element =>
-                element.Attribute("Command")?.Value ==
-                "{Binding PrimaryActionCommand}");
         var showActivitiesButton = document
             .Descendants(presentation + "Button")
             .Single(element =>
@@ -1073,20 +1079,27 @@ public sealed class LauncherXamlContractTests
             memorySelector.Attribute("Style")?.Value);
         Assert.Equal("40", primaryActionButton.Attribute("Height")?.Value);
         Assert.Equal("40", primaryActionButton.Attribute("MinHeight")?.Value);
+        Assert.Equal("18,8", primaryActionButton.Attribute("Padding")?.Value);
         Assert.Equal("32", showActivitiesButton.Attribute("Height")?.Value);
         Assert.Equal("32", showActivitiesButton.Attribute("MinHeight")?.Value);
         Assert.Equal(
             "Center",
             showActivitiesButton.Attribute("VerticalAlignment")?.Value);
         Assert.Equal(
-            new[] { "Auto", "Auto" },
+            new[] { "*", "Auto" },
             heroDetails
                 .Element(presentation + "Grid.RowDefinitions")!
                 .Elements(presentation + "RowDefinition")
                 .Select(element => element.Attribute("Height")?.Value));
-        Assert.Equal("Center", heroDetails.Attribute("VerticalAlignment")?.Value);
+        Assert.Equal("Stretch", heroDetails.Attribute("VerticalAlignment")?.Value);
         Assert.Equal("0,14,0,0", heroActions.Attribute("Margin")?.Value);
-        Assert.Equal("Top", heroActions.Attribute("VerticalAlignment")?.Value);
+        Assert.Equal("Bottom", heroActions.Attribute("VerticalAlignment")?.Value);
+        Assert.Equal(
+            new[] { "148", "8", "40" },
+            heroActions
+                .Element(presentation + "Grid.ColumnDefinitions")!
+                .Elements(presentation + "ColumnDefinition")
+                .Select(element => element.Attribute("Width")?.Value));
         Assert.Equal("78", quickSettingsGrid.Attribute("Height")?.Value);
         Assert.Equal("Center", quickSettingsGrid.Attribute("VerticalAlignment")?.Value);
         Assert.Equal(
