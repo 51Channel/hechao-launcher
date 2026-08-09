@@ -151,9 +151,10 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="64" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="60" />
-                        <RowDefinition Height="31" />
+                        <RowDefinition x:Name="NavigationLinksRow" Height="Auto" />
+                        <RowDefinition x:Name="NavigationAccountRow" Height="60" />
+                        <RowDefinition x:Name="NavigationLegalRow" Height="31" />
+                        <RowDefinition x:Name="NavigationFillerRow" Height="*" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0"
@@ -424,6 +425,8 @@
                     Grid.Column="1"
                     Grid.Row="1"
                     Margin="0,8,0,14"
+                    MaxHeight="540"
+                    VerticalAlignment="Top"
                     Background="{StaticResource SurfaceBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"
@@ -433,7 +436,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="42" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="14,0,10,0">
@@ -491,6 +494,7 @@
 
                     <ListBox Grid.Row="2"
                              Margin="7,6,10,8"
+                             MaxHeight="430"
                              BorderThickness="0"
                              Background="Transparent"
                              ItemsSource="{Binding Servers}"
@@ -684,7 +688,8 @@
             </Grid>
 
             <!-- Server workspace -->
-            <Grid Grid.Column="2"
+            <Grid x:Name="ServerWorkspace"
+                  Grid.Column="2"
                   Grid.Row="1"
                   Background="{StaticResource CanvasBrush}"
                   Visibility="{Binding IsServersPage, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -693,17 +698,17 @@
                     <ColumnDefinition Width="53*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="236*" MinHeight="236" />
-                    <RowDefinition Height="200*" MinHeight="200" />
-                    <RowDefinition Height="112" />
-                    <RowDefinition Height="28*" MinHeight="28" />
+                    <RowDefinition x:Name="SelectedServerRow" Height="236" />
+                    <RowDefinition x:Name="HomeHighlightsRow" Height="200" />
+                    <RowDefinition x:Name="HomeQuickSettingsRow" Height="112" />
+                    <RowDefinition x:Name="HomeWorkspaceFillerRow" Height="*" MinHeight="28" />
                 </Grid.RowDefinitions>
 
                 <Border x:Name="SelectedServerHeroPanel"
                         Grid.Row="0"
                         Grid.ColumnSpan="2"
                         Margin="14,8,14,14"
-                        Padding="20,22"
+                        Padding="20,20"
                         Background="{StaticResource SurfaceBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="1"
@@ -729,8 +734,8 @@
                         <Grid x:Name="SelectedServerHeroDetails"
                               Grid.Column="2">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="40" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <StackPanel VerticalAlignment="Top">
@@ -838,9 +843,11 @@
                                 </Border>
                             </StackPanel>
 
-                            <Grid Grid.Row="1"
+                            <Grid x:Name="SelectedServerHeroActions"
+                                  Grid.Row="1"
+                                  Margin="0,14,0,0"
                                   HorizontalAlignment="Left"
-                                  VerticalAlignment="Bottom">
+                                  VerticalAlignment="Top">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="156" />
                                     <ColumnDefinition Width="8" />
@@ -848,6 +855,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Button Grid.Column="0"
                                         Height="40"
+                                        MinHeight="40"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Command="{Binding PrimaryActionCommand}"
                                         AutomationProperties.Name="{Binding PrimaryActionText}">
@@ -1140,144 +1148,158 @@
                                        ToolTip="{Binding SelectedProfileDisplayName}" />
                         </Grid>
 
-                        <Grid Grid.Row="1" Margin="0,6,0,0">
+                        <Grid x:Name="HomeQuickSettingFields"
+                              Grid.Row="1"
+                              Margin="0,6,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="132" />
-                                <ColumnDefinition Width="1" />
-                                <ColumnDefinition Width="124" />
-                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="188" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="168" />
+                                <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <Grid Grid.Column="0" Margin="0,0,14,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="34" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="32" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="30"
-                                        Height="30"
-                                        Background="{StaticResource SteelSoftBrush}"
-                                        CornerRadius="6"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center">
-                                    <controls:IconParkIcon Kind="Code"
-                                                           Width="16"
-                                                           Height="16"
-                                                           Foreground="{StaticResource SteelBrush}"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Java"
-                                               FontSize="10"
-                                               Foreground="{StaticResource InkMutedBrush}" />
-                                    <TextBlock Text="{Binding SelectedProfileJavaVersionText}"
-                                               FontFamily="Segoe UI"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               Margin="0,1,0,0" />
-                                </StackPanel>
-                                <Button Grid.Column="2"
-                                        Width="32"
-                                        Height="32"
-                                        Style="{StaticResource QuietIconButtonStyle}"
-                                        ContentTemplate="{x:Null}"
-                                        Click="ChooseProfileJavaButton_OnClick"
-                                        ToolTip="更改当前档案 Java"
-                                        AutomationProperties.Name="更改当前档案 Java">
-                                    <controls:IconParkIcon Kind="Down" Width="11" Height="11" />
-                                </Button>
-                            </Grid>
+                            <Border x:Name="HomeJavaQuickSetting"
+                                    Grid.Column="0"
+                                    Padding="8,0"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="32" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="30"
+                                            Height="30"
+                                            Background="{StaticResource SteelSoftBrush}"
+                                            CornerRadius="5"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                        <controls:IconParkIcon Kind="Code"
+                                                               Width="16"
+                                                               Height="16"
+                                                               Foreground="{StaticResource SteelBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="Java"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource InkMutedBrush}" />
+                                        <TextBlock Text="{Binding SelectedProfileJavaVersionText}"
+                                                   FontFamily="Segoe UI"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2"
+                                            Width="32"
+                                            Height="32"
+                                            Style="{StaticResource QuietIconButtonStyle}"
+                                            ContentTemplate="{x:Null}"
+                                            Click="ChooseProfileJavaButton_OnClick"
+                                            ToolTip="更改当前档案 Java"
+                                            AutomationProperties.Name="更改当前档案 Java">
+                                        <controls:IconParkIcon Kind="Down" Width="11" Height="11" />
+                                    </Button>
+                                </Grid>
+                            </Border>
 
-                            <Border Grid.Column="1"
-                                    Width="1"
-                                    Height="36"
-                                    Background="{StaticResource BorderBrush}"
-                                    VerticalAlignment="Center" />
+                            <Border x:Name="HomeMemoryQuickSetting"
+                                    Grid.Column="2"
+                                    Padding="8,0"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="30"
+                                            Height="30"
+                                            Background="{StaticResource SteelSoftBrush}"
+                                            CornerRadius="5"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                        <controls:IconParkIcon Kind="Box"
+                                                               Width="16"
+                                                               Height="16"
+                                                               Foreground="{StaticResource SteelBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="运行内存"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource InkMutedBrush}" />
+                                        <ComboBox x:Name="HomeMemorySelector"
+                                                  Style="{StaticResource HomeQuickSettingsComboBoxStyle}"
+                                                  Margin="-1,-1,0,-4"
+                                                  ItemsSource="{Binding MemoryOptions}"
+                                                  SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="调整当前客户端游戏内存"
+                                                  AutomationProperties.Name="当前客户端游戏内存" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-                            <Grid Grid.Column="2" Margin="10,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="34" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="30"
-                                        Height="30"
-                                        Background="{StaticResource SteelSoftBrush}"
-                                        CornerRadius="6"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center">
-                                    <controls:IconParkIcon Kind="Box"
-                                                           Width="16"
-                                                           Height="16"
-                                                           Foreground="{StaticResource SteelBrush}"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="运行内存"
-                                               FontSize="10"
-                                               Foreground="{StaticResource InkMutedBrush}" />
-                                    <ComboBox x:Name="HomeMemorySelector"
-                                              Style="{StaticResource HomeQuickSettingsComboBoxStyle}"
-                                              Margin="-1,-1,0,-4"
-                                              ItemsSource="{Binding MemoryOptions}"
-                                              SelectedItem="{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              ToolTip="调整当前客户端游戏内存"
-                                              AutomationProperties.Name="当前客户端游戏内存" />
-                                </StackPanel>
-                            </Grid>
-
-                            <Border Grid.Column="3"
-                                    Width="1"
-                                    Height="36"
-                                    Background="{StaticResource BorderBrush}"
-                                    VerticalAlignment="Center" />
-
-                            <Grid Grid.Column="4" Margin="14,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="34" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="36" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="30"
-                                        Height="30"
-                                        Background="{StaticResource SteelSoftBrush}"
-                                        CornerRadius="6"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center">
-                                    <controls:IconParkIcon Kind="Folder"
-                                                           Width="16"
-                                                           Height="16"
-                                                           Foreground="{StaticResource SteelBrush}"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="当前 .minecraft"
-                                               FontSize="10"
-                                               Foreground="{StaticResource InkMutedBrush}" />
-                                    <TextBlock x:Name="HomeClientDirectoryText"
-                                               Text="{Binding SelectedProfileGameDirectoryDisplayText}"
-                                               FontFamily="Consolas"
-                                               FontSize="11"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding SelectedProfileGameDirectoryDisplayText}"
-                                               AutomationProperties.HelpText="{Binding SelectedProfileGameDirectoryDisplayText}"
-                                               Margin="0,2,8,0" />
-                                </StackPanel>
-                                <Button x:Name="OpenHomeProfileDirectoryButton"
-                                        Grid.Column="2"
-                                        Width="32"
-                                        Height="32"
-                                        Style="{StaticResource QuietIconButtonStyle}"
-                                        ContentTemplate="{x:Null}"
-                                        Command="{Binding OpenSelectedProfileGameDirectoryCommand}"
-                                        ToolTip="打开当前档案游戏目录"
-                                        AutomationProperties.Name="打开当前档案游戏目录">
-                                    <controls:IconParkIcon Kind="FolderOpen" Width="14" Height="14" />
-                                </Button>
-                            </Grid>
+                            <Border x:Name="HomeDirectoryQuickSetting"
+                                    Grid.Column="4"
+                                    Padding="8,0"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="30"
+                                            Height="30"
+                                            Background="{StaticResource SteelSoftBrush}"
+                                            CornerRadius="5"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                        <controls:IconParkIcon Kind="Folder"
+                                                               Width="16"
+                                                               Height="16"
+                                                               Foreground="{StaticResource SteelBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="当前 .minecraft"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource InkMutedBrush}" />
+                                        <TextBlock x:Name="HomeClientDirectoryText"
+                                                   Text="{Binding SelectedProfileGameDirectoryDisplayText}"
+                                                   FontFamily="Consolas"
+                                                   FontSize="11"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding SelectedProfileGameDirectoryDisplayText}"
+                                                   AutomationProperties.HelpText="{Binding SelectedProfileGameDirectoryDisplayText}"
+                                                   Margin="0,2,8,0" />
+                                    </StackPanel>
+                                    <Button x:Name="OpenHomeProfileDirectoryButton"
+                                            Grid.Column="2"
+                                            Width="32"
+                                            Height="32"
+                                            Style="{StaticResource QuietIconButtonStyle}"
+                                            ContentTemplate="{x:Null}"
+                                            Command="{Binding OpenSelectedProfileGameDirectoryCommand}"
+                                            ToolTip="打开当前档案游戏目录"
+                                            AutomationProperties.Name="打开当前档案游戏目录">
+                                        <controls:IconParkIcon Kind="FolderOpen" Width="14" Height="14" />
+                                    </Button>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Grid>
                 </Border>

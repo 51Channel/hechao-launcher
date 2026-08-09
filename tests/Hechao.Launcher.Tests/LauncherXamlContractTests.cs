@@ -555,7 +555,7 @@ public sealed class LauncherXamlContractTests
             ancestor => ReferenceEquals(ancestor, accountPanel));
         Assert.Equal("2", accountPanel.Attribute("Grid.Row")?.Value);
         Assert.Equal("2", heroPanel.Attribute("Grid.ColumnSpan")?.Value);
-        Assert.Equal("20,22", heroPanel.Attribute("Padding")?.Value);
+        Assert.Equal("20,20", heroPanel.Attribute("Padding")?.Value);
         Assert.Equal("0", heroImage.Attribute("Grid.Column")?.Value);
         Assert.Equal("6", heroImage.Attribute("CornerRadius")?.Value);
         Assert.Equal("True", heroImage.Attribute("ClipToBounds")?.Value);
@@ -968,10 +968,30 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
                 "ServerDirectoryPanel");
+        var serverList = document
+            .Descendants(presentation + "ListBox")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value ==
+                "{Binding Servers}");
         var titleBar = document
             .Descendants(presentation + "Grid")
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "TitleBar");
+        var heroDetails = document
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerHeroDetails");
+        var heroActions = document
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerHeroActions");
+        var quickSettingFields = document
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "HomeQuickSettingFields");
         var serverListTemplateRoot = document
             .Descendants(presentation + "DataTemplate")
             .Single(element =>
@@ -1001,6 +1021,11 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute("AutomationProperties.Name")?.Value ==
                 "更改当前档案 Java");
+        var primaryActionButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("Command")?.Value ==
+                "{Binding PrimaryActionCommand}");
         var showActivitiesButton = document
             .Descendants(presentation + "Button")
             .Single(element =>
@@ -1011,7 +1036,10 @@ public sealed class LauncherXamlContractTests
         Assert.Equal("225", directoryColumn.Attribute("Width")?.Value);
         Assert.Equal("1", directoryPanel.Attribute("Grid.Row")?.Value);
         Assert.Equal("0,8,0,14", directoryPanel.Attribute("Margin")?.Value);
+        Assert.Equal("540", directoryPanel.Attribute("MaxHeight")?.Value);
+        Assert.Equal("Top", directoryPanel.Attribute("VerticalAlignment")?.Value);
         Assert.Equal("6", directoryPanel.Attribute("CornerRadius")?.Value);
+        Assert.Equal("430", serverList.Attribute("MaxHeight")?.Value);
         Assert.Equal("1", titleBar.Attribute("Grid.Column")?.Value);
         Assert.Equal("2", titleBar.Attribute("Grid.ColumnSpan")?.Value);
         Assert.Empty(titleBar.Descendants(presentation + "TextBlock"));
@@ -1025,11 +1053,60 @@ public sealed class LauncherXamlContractTests
         Assert.Equal(
             "{StaticResource HomeQuickSettingsComboBoxStyle}",
             memorySelector.Attribute("Style")?.Value);
+        Assert.Equal("40", primaryActionButton.Attribute("Height")?.Value);
+        Assert.Equal("40", primaryActionButton.Attribute("MinHeight")?.Value);
         Assert.Equal("32", showActivitiesButton.Attribute("Height")?.Value);
         Assert.Equal("32", showActivitiesButton.Attribute("MinHeight")?.Value);
         Assert.Equal(
             "Center",
             showActivitiesButton.Attribute("VerticalAlignment")?.Value);
+        Assert.Equal(
+            new[] { "Auto", "Auto" },
+            heroDetails
+                .Element(presentation + "Grid.RowDefinitions")!
+                .Elements(presentation + "RowDefinition")
+                .Select(element => element.Attribute("Height")?.Value));
+        Assert.Equal("0,14,0,0", heroActions.Attribute("Margin")?.Value);
+        Assert.Equal("Top", heroActions.Attribute("VerticalAlignment")?.Value);
+        Assert.Equal(
+            new[] { "188", "10", "168", "10", "*" },
+            quickSettingFields
+                .Element(presentation + "Grid.ColumnDefinitions")!
+                .Elements(presentation + "ColumnDefinition")
+                .Select(element => element.Attribute("Width")?.Value));
+        foreach (var fieldName in new[]
+                 {
+                     "HomeJavaQuickSetting",
+                     "HomeMemoryQuickSetting",
+                     "HomeDirectoryQuickSetting"
+                 })
+        {
+            var field = document
+                .Descendants(presentation + "Border")
+                .Single(element =>
+                    element.Attribute(x + "Name")?.Value == fieldName);
+            Assert.Equal("1", field.Attribute("BorderThickness")?.Value);
+            Assert.Equal("5", field.Attribute("CornerRadius")?.Value);
+        }
+        foreach (var rowExpectation in new[]
+                 {
+                     (Name: "NavigationLinksRow", Height: "Auto", MinHeight: (string?)null),
+                     (Name: "NavigationAccountRow", Height: "60", MinHeight: (string?)null),
+                     (Name: "NavigationLegalRow", Height: "31", MinHeight: (string?)null),
+                     (Name: "NavigationFillerRow", Height: "*", MinHeight: (string?)null),
+                     (Name: "SelectedServerRow", Height: "236", MinHeight: (string?)null),
+                     (Name: "HomeHighlightsRow", Height: "200", MinHeight: (string?)null),
+                     (Name: "HomeQuickSettingsRow", Height: "112", MinHeight: (string?)null),
+                     (Name: "HomeWorkspaceFillerRow", Height: "*", MinHeight: "28")
+                 })
+        {
+            var row = document
+                .Descendants(presentation + "RowDefinition")
+                .Single(element =>
+                    element.Attribute(x + "Name")?.Value == rowExpectation.Name);
+            Assert.Equal(rowExpectation.Height, row.Attribute("Height")?.Value);
+            Assert.Equal(rowExpectation.MinHeight, row.Attribute("MinHeight")?.Value);
+        }
         Assert.Equal(
             "{Binding HasNoHomeAnnouncements, Converter={StaticResource BooleanToVisibilityConverter}}",
             announcementList.Parent!
