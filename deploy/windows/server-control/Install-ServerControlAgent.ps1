@@ -59,6 +59,27 @@ function Wait-AgentTaskStopped {
     throw "The existing agent task did not stop within $TimeoutSeconds seconds."
 }
 
+function Get-OptionalConfigurationValue {
+    param(
+        [Parameter(Mandatory)]
+        [psobject]$InputObject,
+
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        $DefaultValue
+    )
+
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property -or $null -eq $property.Value) {
+        return $DefaultValue
+    }
+
+    return $property.Value
+}
+
 $sourceExecutable = (Resolve-Path -LiteralPath $AgentExecutable).Path
 $sourceConfiguration = (Resolve-Path -LiteralPath $Configuration).Path
 $expected = $ExpectedSha256.ToUpperInvariant()
@@ -100,7 +121,10 @@ if (-not (
 }
 
 foreach ($target in @($configurationObject.targets)) {
-    $serverDeletionEnabled = [bool]$target.serverDeletionEnabled
+    $serverDeletionEnabled = [bool](Get-OptionalConfigurationValue `
+        -InputObject $target `
+        -Name 'serverDeletionEnabled' `
+        -DefaultValue $false)
     $serverDirectoryExists = Test-Path -LiteralPath $target.serverDirectory
     $serverDirectoryPresent = Test-Path `
         -LiteralPath $target.serverDirectory `
@@ -141,8 +165,14 @@ foreach ($target in @($configurationObject.targets)) {
             )
         }
     }
-    $packageDeploymentEnabled = [bool]$target.packageDeploymentEnabled
-    $startScriptRelativePath = [string]$target.startScriptRelativePath
+    $packageDeploymentEnabled = [bool](Get-OptionalConfigurationValue `
+        -InputObject $target `
+        -Name 'packageDeploymentEnabled' `
+        -DefaultValue $false)
+    $startScriptRelativePath = [string](Get-OptionalConfigurationValue `
+        -InputObject $target `
+        -Name 'startScriptRelativePath' `
+        -DefaultValue 'start.bat')
     if ([string]::IsNullOrWhiteSpace($startScriptRelativePath)) {
         $startScriptRelativePath = 'start.bat'
     }
