@@ -132,8 +132,8 @@
             BorderThickness="1">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="NavigationColumn" Width="168" />
-                <ColumnDefinition x:Name="DirectoryColumn" Width="310" />
+                <ColumnDefinition x:Name="NavigationColumn" Width="140" />
+                <ColumnDefinition x:Name="DirectoryColumn" Width="225" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -172,7 +172,7 @@
                         </Border>
                         <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="赫朝启动器"
-                                   FontSize="15"
+                                   FontSize="13"
                                    FontWeight="Black"
                                    VerticalAlignment="Center" />
                         <TextBlock Text="{Binding LauncherVersionText}"
@@ -722,109 +722,68 @@
                     <ColumnDefinition Width="53*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="236*" MinHeight="236" />
+                    <RowDefinition Height="200*" MinHeight="200" />
                     <RowDefinition Height="112" />
+                    <RowDefinition Height="28*" MinHeight="28" />
                 </Grid.RowDefinitions>
 
                 <Border x:Name="SelectedServerHeroPanel"
                         Grid.Row="0"
                         Grid.ColumnSpan="2"
-                        Margin="20,18,20,14"
+                        Margin="14,8,14,14"
+                        Padding="20,22"
                         Background="{StaticResource SurfaceBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="6"
-                        ClipToBounds="True">
+                        CornerRadius="6">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="47*" />
+                            <ColumnDefinition Width="20" />
                             <ColumnDefinition Width="53*" />
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0"
-                                CornerRadius="5,0,0,5"
+                        <Border x:Name="SelectedServerHeroImage"
+                                Grid.Column="0"
+                                CornerRadius="6"
+                                ClipToBounds="True"
                                 RenderOptions.BitmapScalingMode="HighQuality">
                             <Border.Background>
                                 <ImageBrush ImageSource="/Hechao.Launcher;component/Assets/hechao-fortress-banner.png"
                                             Stretch="UniformToFill" />
                             </Border.Background>
-                            <StackPanel Orientation="Horizontal"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Margin="22,16,0,0">
-                                <Border Padding="12,7"
-                                        Background="#F5FFFFFF"
-                                        BorderBrush="#30FFFFFF"
-                                        BorderThickness="1"
-                                        CornerRadius="4">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Ellipse Width="8" Height="8" Margin="0,0,7,0" VerticalAlignment="Center">
-                                            <Ellipse.Style>
-                                                <Style TargetType="Ellipse">
-                                                    <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding SelectedServer.Status}"
-                                                                     Value="{x:Static contracts:ServerStatus.Online}">
-                                                            <Setter Property="Fill" Value="{StaticResource OnlineBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding SelectedServer.Status}"
-                                                                     Value="{x:Static contracts:ServerStatus.Maintenance}">
-                                                            <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding SelectedServer.Status}"
-                                                                     Value="{x:Static contracts:ServerStatus.Closed}">
-                                                            <Setter Property="Fill" Value="{StaticResource ClosedBrush}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Ellipse.Style>
-                                        </Ellipse>
-                                        <TextBlock Text="{Binding SelectedServerStatusText}"
-                                                   FontSize="13"
-                                                   FontWeight="Bold" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Padding="12,7"
-                                        Margin="7,0,0,0"
-                                        Background="#F5FFFFFF"
-                                        BorderBrush="#30FFFFFF"
-                                        BorderThickness="1"
-                                        CornerRadius="4">
-                                    <TextBlock Text="{Binding SelectedServerCategoryText}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource HechaoRedDarkBrush}"
-                                               FontWeight="Bold" />
-                                </Border>
-                            </StackPanel>
                         </Border>
 
-                        <Grid Grid.Column="1" Margin="26,0,24,0">
+                        <Grid x:Name="SelectedServerHeroDetails"
+                              Grid.Column="2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
-                                <RowDefinition Height="72" />
+                                <RowDefinition Height="40" />
                             </Grid.RowDefinitions>
 
-                            <StackPanel VerticalAlignment="Center">
+                            <StackPanel VerticalAlignment="Top">
                                 <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding SelectedServer.Name}"
-                                           FontSize="27"
-                                           FontWeight="Black" />
-                                <Border Padding="9,4"
-                                        Margin="12,1,0,0"
-                                        Background="{StaticResource HechaoRedSoftBrush}"
-                                        CornerRadius="4"
-                                        VerticalAlignment="Top">
-                                    <TextBlock Text="{Binding SelectedServerStatusText}"
-                                               FontSize="11"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource HechaoRedDarkBrush}" />
-                                </Border>
+                                    <TextBlock Text="{Binding SelectedServer.Name}"
+                                               FontSize="27"
+                                               FontWeight="Black" />
+                                    <Border Padding="9,4"
+                                            Margin="12,1,0,0"
+                                            Background="{StaticResource HechaoRedSoftBrush}"
+                                            CornerRadius="4"
+                                            VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding SelectedServerStatusText}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource HechaoRedDarkBrush}" />
+                                    </Border>
                                 </StackPanel>
                                 <TextBlock Text="{Binding SelectedServerDescriptionText}"
                                            FontSize="13"
                                            Foreground="{StaticResource InkMutedBrush}"
-                                           Margin="0,6,0,0" />
+                                           Margin="0,6,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding SelectedServerDescriptionText}" />
                                 <WrapPanel Margin="0,12,0,0">
                                     <controls:IconParkIcon Kind="Box"
                                                            Width="12"
@@ -897,19 +856,27 @@
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
                                 </WrapPanel>
+                                <Border Padding="8,3"
+                                        Margin="0,10,0,0"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource SurfacePressedBrush}"
+                                        CornerRadius="4">
+                                    <TextBlock Text="{Binding SelectedServerCategoryText}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkMutedBrush}" />
+                                </Border>
                             </StackPanel>
 
                             <Grid Grid.Row="1"
-                                  Margin="0,0,0,16"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Bottom">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="156" />
                                     <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="54" />
+                                    <ColumnDefinition Width="40" />
                                 </Grid.ColumnDefinitions>
                                 <Button Grid.Column="0"
-                                        Height="54"
+                                        Height="40"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Command="{Binding PrimaryActionCommand}"
                                         AutomationProperties.Name="{Binding PrimaryActionText}">
@@ -929,8 +896,8 @@
                                 </Button>
                                 <Button x:Name="ServerActionsButton"
                                         Grid.Column="2"
-                                        Width="54"
-                                        Height="54"
+                                        Width="40"
+                                        Height="40"
                                         Style="{StaticResource BaseButtonStyle}"
                                         Click="ServerActionsButton_OnClick"
                                         ToolTip="客户端操作"
@@ -1006,11 +973,11 @@
 
                 <Grid Grid.Row="1"
                       Grid.ColumnSpan="2"
-                      Margin="20,0,20,14">
+                      Margin="14,0,14,14">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="47*" />
                         <ColumnDefinition Width="14" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="53*" />
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource SurfacePanelStyle}">
@@ -1167,7 +1134,7 @@
                 <Border x:Name="HomeQuickSettingsPanel"
                         Grid.Row="2"
                         Grid.ColumnSpan="2"
-                        Margin="20,0,20,14"
+                        Margin="14,0,14,14"
                         Style="{StaticResource SurfacePanelStyle}">
                     <Grid x:Name="HomeQuickSettingsGrid" Margin="22,13">
                         <Grid.RowDefinitions>

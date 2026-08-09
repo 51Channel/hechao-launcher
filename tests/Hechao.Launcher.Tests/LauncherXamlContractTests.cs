@@ -322,7 +322,7 @@ public sealed class LauncherXamlContractTests
                 element.Attribute(x + "Key")?.Value ==
                 "ServerActionMenuStyle");
 
-        Assert.Equal(["160", "8", "54"], columnWidths);
+        Assert.Equal(["156", "8", "40"], columnWidths);
         Assert.Contains(
             menuStyle.Elements(presentation + "Setter"),
             setter =>
@@ -538,6 +538,16 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
                 "SelectedServerHeroPanel");
+        var heroImage = heroPanel
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerHeroImage");
+        var heroDetails = heroPanel
+            .Descendants(presentation + "Grid")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerHeroDetails");
 
         Assert.Single(accountAvatars);
         Assert.Contains(
@@ -545,14 +555,24 @@ public sealed class LauncherXamlContractTests
             ancestor => ReferenceEquals(ancestor, accountPanel));
         Assert.Equal("2", accountPanel.Attribute("Grid.Row")?.Value);
         Assert.Equal("2", heroPanel.Attribute("Grid.ColumnSpan")?.Value);
+        Assert.Equal("20,22", heroPanel.Attribute("Padding")?.Value);
+        Assert.Equal("0", heroImage.Attribute("Grid.Column")?.Value);
+        Assert.Equal("6", heroImage.Attribute("CornerRadius")?.Value);
+        Assert.Equal("True", heroImage.Attribute("ClipToBounds")?.Value);
+        Assert.Empty(heroImage.Descendants(presentation + "TextBlock"));
+        Assert.Equal("2", heroDetails.Attribute("Grid.Column")?.Value);
         Assert.Contains(
-            heroPanel.Descendants(presentation + "ImageBrush"),
+            heroImage.Descendants(presentation + "ImageBrush"),
             brush => brush.Attribute("ImageSource")?.Value ==
                 "/Hechao.Launcher;component/Assets/hechao-fortress-banner.png");
         Assert.Contains(
-            heroPanel.Descendants(presentation + "Button"),
+            heroDetails.Descendants(presentation + "Button"),
             button => button.Attribute("Command")?.Value ==
                 "{Binding PrimaryActionCommand}");
+        Assert.Contains(
+            heroDetails.Descendants(presentation + "TextBlock"),
+            text => text.Attribute("Text")?.Value ==
+                "{Binding SelectedServerCategoryText}");
     }
 
     [Fact]
@@ -939,6 +959,10 @@ public sealed class LauncherXamlContractTests
             .Descendants(presentation + "ColumnDefinition")
             .Single(element =>
                 element.Attribute(x + "Name")?.Value == "NavigationColumn");
+        var directoryColumn = document
+            .Descendants(presentation + "ColumnDefinition")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "DirectoryColumn");
         var announcementList = document
             .Descendants(presentation + "ItemsControl")
             .Single(element =>
@@ -965,7 +989,8 @@ public sealed class LauncherXamlContractTests
                 element.Attribute(x + "Name")?.Value ==
                 "ShowActivitiesButton");
 
-        Assert.Equal("168", navigationColumn.Attribute("Width")?.Value);
+        Assert.Equal("140", navigationColumn.Attribute("Width")?.Value);
+        Assert.Equal("225", directoryColumn.Attribute("Width")?.Value);
         Assert.Equal(
             "{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}",
             memorySelector.Attribute("SelectedItem")?.Value);
