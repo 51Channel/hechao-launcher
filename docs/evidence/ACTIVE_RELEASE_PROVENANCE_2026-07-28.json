@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-09T04:30:49Z",
+  "generatedAtUtc": "2026-08-09T08:37:36Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "launcher",
-      "version": "0.15.3",
-      "releaseTag": "launcher-v0.15.3",
-      "releaseCommit": "012cdd3c739d98fce5bee2326f8ec9813931f94b",
-      "taggedAt": "2026-08-09T12:30:10+08:00",
+      "version": "0.15.4",
+      "releaseTag": "launcher-v0.15.4",
+      "releaseCommit": "163e7506b14060da1ed340145ac188da6f698e30",
+      "taggedAt": "2026-08-09T16:37:36+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "012cdd3c739d98fce5bee2326f8ec9813931f94b"
+        "value": "163e7506b14060da1ed340145ac188da6f698e30"
       },
       "deploymentState": "production-private-oss-self-update-enabled-authenticated-download-accepted",
-      "historicalNote": "0.15.2 remains the immediate update-channel rollback source. 0.15.3 keeps MinimumSupportedVersion at 0.12.3 and does not expand the mandatory-update boundary.",
+      "historicalNote": "0.15.3 remains the immediate update-channel rollback source. 0.15.4 keeps MinimumSupportedVersion at 0.12.3 and does not expand the mandatory-update boundary.",
       "artifacts": [
         {
           "name": "Hechao.Launcher.exe",
           "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
-          "size": 69016860,
-          "sha256": "8EE9A773A32F509A6FAD3CF63FF2D8D4046BA4FA94207F9190862888CDD1AE37",
+          "size": 69016318,
+          "sha256": "96C45B1F7BFDBB04CA360F45CDE0D84EC787FD3F4E271FA9F3397F0B314F4ECC",
           "primary": false
         },
         {
-          "name": "Hechao-Launcher-Setup-0.15.3-win-x64.exe",
-          "location": "releases/launcher/0.15.3/Hechao-Launcher-Setup-0.15.3-win-x64.exe",
-          "size": 61954842,
-          "sha256": "EC84277585366D8C1FF1B1AB60E89AA433BF142BDC26B924E772D88F52A271CE",
+          "name": "Hechao-Launcher-Setup-0.15.4-win-x64.exe",
+          "location": "releases/launcher/0.15.4/Hechao-Launcher-Setup-0.15.4-win-x64.exe",
+          "size": 61965169,
+          "sha256": "42D60ED9149D4ED03A9B0958482DEF9FE004C212CE95BA39912E366A665194B5",
           "primary": true
         }
       ],
       "rollback": {
-        "kind": "update-channel-disable-or-environment-backup",
-        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260809T042620Z.bak"
+        "kind": "update-channel-disable-or-release-tag",
+        "target": "launcher-v0.15.3"
       },
       "evidence": [
-        "docs/LAUNCHER_RELEASE_0.15.3.md",
+        "docs/LAUNCHER_RELEASE_0.15.4.md",
         "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
-        "docs/LAUNCHER_RELEASE_0.15.3_CANDIDATE.md",
-        "docs/evidence/LAUNCHER_0.15.3_RELEASE_ACCEPTANCE_2026-08-09.json"
+        "docs/LAUNCHER_RELEASE_0.15.4_CANDIDATE.md",
+        "docs/evidence/LAUNCHER_0.15.4_RELEASE_ACCEPTANCE_2026-08-09.json"
       ]
     },
     {

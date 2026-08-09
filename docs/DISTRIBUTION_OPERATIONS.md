@@ -1,8 +1,8 @@
 # 客户端分发与签名操作手册
 
-> 启动器正式版本：`0.15.3`
+> 启动器正式版本：`0.15.4`
 > 当前发布器：一次性 Launcher 发布 CLI 为 `1.3.0`，常驻 Package Publisher Agent 为 `1.2.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.29.0` 托管，启动器 `0.15.3` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录、活动月历、服务器主页和私有 OSS 自更新闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.29.0` 托管，启动器 `0.15.4` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录、活动月历、参考图主页布局和私有 OSS 自更新闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
 >
 > owl9 边界：上述恐怖整蛊档案只对应 `C:\mc\server`，不对应
 > `E:\MinecraftServer` 的真正 PVP 服。
@@ -451,6 +451,16 @@ SHA-256 为 `3C9139F8F7853C370C83A14537916D73258123A8E1CB26FDBA0B0EECD3219E44`�
 `61,874,260` 字节，SHA-256 为
 `18E786560AF14C246EFF84638BABBE8E1CC02CBFB1E1065AD9501468C20603C6`，
 耗时分别为 `1.22` 秒和 `1.06` 秒。短时链接没有进入终端、Git、文档或公告。
+
+`2026-08-09` 已将启动器 `0.15.4` 写入
+`releases/launcher/0.15.4/Hechao-Launcher-Setup-0.15.4-win-x64.exe`。
+首次上传后再次执行同版本发布，远端长度、版本、文件名与 SHA-256 匹配并跳过，
+没有覆盖或重复上传。匿名访问返回 `403`，两次签名回读均返回 `200`；完整下载为
+`61,965,169` 字节，SHA-256 为
+`42D60ED9149D4ED03A9B0958482DEF9FE004C212CE95BA39912E366A665194B5`。
+生产更新通道为 `LatestVersion=0.15.4`、`MinimumSupportedVersion=0.12.3`；真实
+DPAPI 会话确认 `0.15.3` 生成更新计划、`0.15.4` 不重复更新。签名 URL 未进入终端、
+Git 或文档；详细记录见 [`LAUNCHER_RELEASE_0.15.4.md`](LAUNCHER_RELEASE_0.15.4.md)。
 
 ## 6. 对象恢复副本
 
