@@ -1002,6 +1002,11 @@ public sealed class LauncherXamlContractTests
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
                 "HomeQuickSettingsGrid");
+        var quickSettingsPanel = document
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "HomeQuickSettingsPanel");
         var serverListTemplateRoot = document
             .Descendants(presentation + "DataTemplate")
             .Single(element =>
@@ -1045,12 +1050,14 @@ public sealed class LauncherXamlContractTests
         Assert.Equal("140", navigationColumn.Attribute("Width")?.Value);
         Assert.Equal("225", directoryColumn.Attribute("Width")?.Value);
         Assert.Equal("1", directoryPanel.Attribute("Grid.Row")?.Value);
-        Assert.Equal("0,8,0,14", directoryPanel.Attribute("Margin")?.Value);
+        Assert.Equal("14,8,0,14", directoryPanel.Attribute("Margin")?.Value);
         Assert.Null(directoryPanel.Attribute("MaxHeight"));
         Assert.Null(directoryPanel.Attribute("VerticalAlignment"));
         Assert.Equal("6", directoryPanel.Attribute("CornerRadius")?.Value);
         Assert.Null(serverList.Attribute("MaxHeight"));
         Assert.Equal("3", navigationAccountPanel.Attribute("Grid.Row")?.Value);
+        Assert.Equal("10,0,10,14", navigationAccountPanel.Attribute("Margin")?.Value);
+        Assert.Equal("14,0,14,14", quickSettingsPanel.Attribute("Margin")?.Value);
         Assert.Equal("1", titleBar.Attribute("Grid.Column")?.Value);
         Assert.Equal("2", titleBar.Attribute("Grid.ColumnSpan")?.Value);
         Assert.Empty(titleBar.Descendants(presentation + "TextBlock"));
@@ -1109,12 +1116,10 @@ public sealed class LauncherXamlContractTests
                  {
                      (Name: "NavigationFillerRow", Height: "*", MinHeight: (string?)null),
                      (Name: "NavigationLinksRow", Height: "Auto", MinHeight: (string?)null),
-                     (Name: "NavigationAccountRow", Height: "64", MinHeight: (string?)null),
-                     (Name: "NavigationLegalRow", Height: "40", MinHeight: (string?)null),
+                     (Name: "NavigationAccountRow", Height: "74", MinHeight: (string?)null),
                      (Name: "SelectedServerRow", Height: "39*", MinHeight: "236"),
                      (Name: "HomeHighlightsRow", Height: "36*", MinHeight: "200"),
-                     (Name: "HomeQuickSettingsRow", Height: "20*", MinHeight: "116"),
-                     (Name: "HomeWorkspaceFillerRow", Height: "5*", MinHeight: (string?)null)
+                     (Name: "HomeQuickSettingsRow", Height: "20*", MinHeight: "116")
                  })
         {
             var row = document
@@ -1132,10 +1137,18 @@ public sealed class LauncherXamlContractTests
             .Descendants(presentation + "RowDefinition")
             .Single(element => element.Attribute(x + "Name")?.Value == "HomeHighlightsRow")
             .Attribute("MaxHeight")?.Value);
-        Assert.Equal("160", document
+        Assert.Equal("166", document
             .Descendants(presentation + "RowDefinition")
             .Single(element => element.Attribute(x + "Name")?.Value == "HomeQuickSettingsRow")
             .Attribute("MaxHeight")?.Value);
+        Assert.DoesNotContain(
+            document.Descendants(presentation + "RowDefinition"),
+            element => element.Attribute(x + "Name")?.Value is
+                "NavigationLegalRow" or "HomeWorkspaceFillerRow");
+        Assert.DoesNotContain(
+            document.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value is
+                "赫朝 Minecraft 社区" or "非 Minecraft 官方产品");
         Assert.Equal(
             "{Binding HasNoHomeAnnouncements, Converter={StaticResource BooleanToVisibilityConverter}}",
             announcementList.Parent!
