@@ -510,6 +510,52 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void ServerHome_PlacesAccountInNavigationAndUsesUnifiedHeroPanel()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var navigationRail = document
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value == "NavigationRail");
+        var accountPanel = navigationRail
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "NavigationAccountPanel");
+        var accountAvatars = document
+            .Descendants()
+            .Where(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SidebarAccountAvatar")
+            .ToArray();
+
+        var heroPanel = document
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "SelectedServerHeroPanel");
+
+        Assert.Single(accountAvatars);
+        Assert.Contains(
+            accountAvatars[0].Ancestors(),
+            ancestor => ReferenceEquals(ancestor, accountPanel));
+        Assert.Equal("2", accountPanel.Attribute("Grid.Row")?.Value);
+        Assert.Equal("2", heroPanel.Attribute("Grid.ColumnSpan")?.Value);
+        Assert.Contains(
+            heroPanel.Descendants(presentation + "ImageBrush"),
+            brush => brush.Attribute("ImageSource")?.Value ==
+                "/Hechao.Launcher;component/Assets/hechao-fortress-banner.png");
+        Assert.Contains(
+            heroPanel.Descendants(presentation + "Button"),
+            button => button.Attribute("Command")?.Value ==
+                "{Binding PrimaryActionCommand}");
+    }
+
+    [Fact]
     public void ServerActionMenu_ProvidesConfirmedClientRemovalAction()
     {
         var document = LoadLauncherXaml();
