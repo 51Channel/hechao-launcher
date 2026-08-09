@@ -1,8 +1,48 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-08T18:22:55Z",
+  "generatedAtUtc": "2026-08-09T04:30:49Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
+    {
+      "component": "launcher",
+      "version": "0.15.3",
+      "releaseTag": "launcher-v0.15.3",
+      "releaseCommit": "012cdd3c739d98fce5bee2326f8ec9813931f94b",
+      "taggedAt": "2026-08-09T12:30:10+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "012cdd3c739d98fce5bee2326f8ec9813931f94b"
+      },
+      "deploymentState": "production-private-oss-self-update-enabled-authenticated-download-accepted",
+      "historicalNote": "0.15.2 remains the immediate update-channel rollback source. 0.15.3 keeps MinimumSupportedVersion at 0.12.3 and does not expand the mandatory-update boundary.",
+      "artifacts": [
+        {
+          "name": "Hechao.Launcher.exe",
+          "location": "artifacts/publish/win-x64/Hechao.Launcher.exe",
+          "size": 69016860,
+          "sha256": "8EE9A773A32F509A6FAD3CF63FF2D8D4046BA4FA94207F9190862888CDD1AE37",
+          "primary": false
+        },
+        {
+          "name": "Hechao-Launcher-Setup-0.15.3-win-x64.exe",
+          "location": "releases/launcher/0.15.3/Hechao-Launcher-Setup-0.15.3-win-x64.exe",
+          "size": 61954842,
+          "sha256": "EC84277585366D8C1FF1B1AB60E89AA433BF142BDC26B924E772D88F52A271CE",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-disable-or-environment-backup",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260809T042620Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.3.md",
+        "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
+        "docs/LAUNCHER_RELEASE_0.15.3_CANDIDATE.md",
+        "docs/evidence/LAUNCHER_0.15.3_RELEASE_ACCEPTANCE_2026-08-09.json"
+      ]
+    },
     {
       "component": "launcher",
       "version": "0.15.2",
