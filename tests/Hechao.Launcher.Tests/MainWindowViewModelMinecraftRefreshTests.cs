@@ -996,6 +996,30 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
+    public async Task ActivityPage_RefreshesCatalogWhileVisibleAndStopsAfterLeaving()
+    {
+        var catalog = new CountingCatalogClient(
+            CreatePermanentAndActivityCatalog());
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            new StubGameLauncherService(),
+            catalogClient: catalog,
+            activityCatalogRefreshInterval: TimeSpan.FromMilliseconds(20));
+
+        await WaitUntilAsync(() =>
+            catalog.RequestCount == 1 && !viewModel.IsCatalogLoading);
+        viewModel.IsActivitiesPage = true;
+        await WaitUntilAsync(() => catalog.RequestCount >= 3);
+
+        viewModel.IsServersPage = true;
+        await Task.Delay(30);
+        var requestsAfterLeaving = catalog.RequestCount;
+        await Task.Delay(80);
+
+        Assert.Equal(requestsAfterLeaving, catalog.RequestCount);
+    }
+
+    [Fact]
     public async Task Catalog_InitialLoadExposesLoadingThenActionableEmptyState()
     {
         var catalog = new ControllableCatalogClient();
@@ -1582,7 +1606,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         IServerCatalogClient? catalogClient = null,
         IDownloadHistoryStore? downloadHistoryStore = null,
         ILauncherTelemetryService? telemetryService = null,
-        TimeSpan? catalogFallbackRetryDelay = null)
+        TimeSpan? catalogFallbackRetryDelay = null,
+        TimeSpan? activityCatalogRefreshInterval = null)
     {
         return new MainWindowViewModel(
             catalogClient ?? new StubCatalogClient(),
@@ -1596,7 +1621,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             telemetryService: telemetryService,
             launcherUpdateService: launcherUpdateService,
             playerGameSettingsService: playerGameSettingsService,
-            catalogFallbackRetryDelay: catalogFallbackRetryDelay);
+            catalogFallbackRetryDelay: catalogFallbackRetryDelay,
+            activityCatalogRefreshInterval: activityCatalogRefreshInterval);
     }
 
     private static InstalledProfileState CreateInstalledState(string version) =>
@@ -1892,6 +1918,21 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         public Task<LauncherCatalogSnapshot> GetCatalogAsync(
             CancellationToken cancellationToken = default) =>
             Task.FromResult(snapshot);
+    }
+
+    private sealed class CountingCatalogClient(LauncherCatalogSnapshot snapshot)
+        : IServerCatalogClient
+    {
+        private int _requestCount;
+
+        public int RequestCount => Volatile.Read(ref _requestCount);
+
+        public Task<LauncherCatalogSnapshot> GetCatalogAsync(
+            CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _requestCount);
+            return Task.FromResult(snapshot);
+        }
     }
 
     private sealed class CacheThenLiveCatalogClient : IServerCatalogClient, ICatalogSourceState

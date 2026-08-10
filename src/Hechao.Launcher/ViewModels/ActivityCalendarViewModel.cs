@@ -261,8 +261,14 @@ public sealed class ActivityCalendarViewModel : ObservableObject
     private static (DateTime Start, DateTime End)? GetDateRange(
         ActivityServerItemViewModel activity)
     {
-        var opensOn = activity.Server.OpensAt?.ToLocalTime().Date;
-        var closesOn = activity.Server.ClosesAt?.ToLocalTime().Date;
+        var opensAt = activity.Server.OpensAt?.ToLocalTime();
+        var closesAt = activity.Server.ClosesAt?.ToLocalTime();
+        var opensOn = opensAt?.Date;
+        var closesOn = closesAt is not null &&
+                       opensAt is not null &&
+                       closesAt > opensAt
+            ? closesAt.Value.AddTicks(-1).Date
+            : closesAt?.Date;
         if (opensOn is null && closesOn is null)
         {
             return null;

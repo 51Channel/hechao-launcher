@@ -100,6 +100,24 @@ public sealed class ActivityCalendarViewModelTests
     }
 
     [Fact]
+    public void MidnightCloseKeepsTheCalendarRangeEndExclusive()
+    {
+        var openingDate = new DateTime(2026, 8, 8);
+        var calendar = new ActivityCalendarViewModel(() => openingDate);
+        calendar.ReplaceActivities(
+        [
+            CreateActivity(
+                "overnight",
+                LocalDateTime(2026, 8, 8, 20),
+                LocalDateTime(2026, 8, 10, 0)),
+        ]);
+
+        Assert.Single(FindDay(calendar, openingDate).Activities);
+        Assert.Single(FindDay(calendar, openingDate.AddDays(1)).Activities);
+        Assert.Empty(FindDay(calendar, openingDate.AddDays(2)).Activities);
+    }
+
+    [Fact]
     public void UpcomingActivities_ContainsOnlyOngoingAndFutureScheduledEntries()
     {
         var today = new DateTime(2026, 8, 4);

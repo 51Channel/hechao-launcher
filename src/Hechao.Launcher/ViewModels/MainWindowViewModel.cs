@@ -21,6 +21,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private static readonly TimeSpan CatalogBoundaryGracePeriod = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RegistrationCodeCooldown = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan DefaultCatalogFallbackRetryDelay = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan DefaultActivityCatalogRefreshInterval = TimeSpan.FromSeconds(30);
 
     private readonly IServerCatalogClient _catalogClient;
     private readonly ILauncherAuthenticationService _authenticationService;
@@ -35,6 +36,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IMinecraftSkinService _minecraftSkinService;
     private readonly IPlayerGameSettingsService _playerGameSettingsService;
     private readonly TimeSpan _catalogFallbackRetryDelay;
+    private readonly TimeSpan _activityCatalogRefreshInterval;
     private readonly SynchronizationContext? _uiContext;
     private readonly Dictionary<string, ClientProfileSummary> _clientProfiles = new(StringComparer.Ordinal);
     private readonly List<ServerSummary> _catalogPlayerServers = [];
@@ -81,6 +83,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private long _clientContextGeneration;
     private CancellationTokenSource? _catalogScheduleCancellation;
     private CancellationTokenSource? _catalogRetryCancellation;
+    private CancellationTokenSource? _activityCatalogRefreshCancellation;
     private CancellationTokenSource? _activityClientStateRefreshCancellation;
     private long _activityClientStateRefreshGeneration;
     private HechaoAccount? _currentAccount;
@@ -129,7 +132,8 @@ public sealed class MainWindowViewModel : ObservableObject
         ILauncherUpdateService? launcherUpdateService = null,
         IMinecraftSkinService? minecraftSkinService = null,
         IPlayerGameSettingsService? playerGameSettingsService = null,
-        TimeSpan? catalogFallbackRetryDelay = null)
+        TimeSpan? catalogFallbackRetryDelay = null,
+        TimeSpan? activityCatalogRefreshInterval = null)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -154,6 +158,14 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             throw new ArgumentOutOfRangeException(
                 nameof(catalogFallbackRetryDelay));
+        }
+        _activityCatalogRefreshInterval =
+            activityCatalogRefreshInterval ?? DefaultActivityCatalogRefreshInterval;
+        if (_activityCatalogRefreshInterval <= TimeSpan.Zero ||
+            _activityCatalogRefreshInterval > TimeSpan.FromMinutes(5))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(activityCatalogRefreshInterval));
         }
         _uiContext = SynchronizationContext.Current;
         _settings = settingsStore.Load();
@@ -343,6 +355,15 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(IsAccountPage));
             OnPropertyChanged(nameof(IsSettingsPage));
             OnPropertyChanged(nameof(CurrentPageTitle));
+
+            if (value == LauncherPage.Activities)
+            {
+                StartActivityCatalogRefresh(refreshImmediately: true);
+            }
+            else
+            {
+                CancelActivityCatalogRefresh();
+            }
         }
     }
 
@@ -1180,6 +1201,10 @@ public sealed class MainWindowViewModel : ObservableObject
 
         await TryImportPlayerGameSettingsAsync();
         await LoadCatalogAsync();
+        if (IsActivitiesPage)
+        {
+            StartActivityCatalogRefresh(refreshImmediately: false);
+        }
         await TryCheckLauncherUpdateAsync();
     }
 
@@ -1384,6 +1409,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         var generation = Interlocked.Increment(ref _catalogLoadGeneration);
         var accountId = _currentAccount?.UserId;
+        var hadLoadedCatalog = _hasLoadedCatalog;
         using var cancellation = new CancellationTokenSource();
         var previousCancellation = Interlocked.Exchange(
             ref _catalogLoadCancellation,
@@ -1528,7 +1554,10 @@ public sealed class MainWindowViewModel : ObservableObject
                         hasError: false,
                         isStale: true);
                     ScheduleCatalogFallbackRetry();
-                    ShowToast("目录服务暂时不可用，已显示上次成功数据");
+                    if (userInitiated || !hadLoadedCatalog)
+                    {
+                        ShowToast("目录服务暂时不可用，已显示上次成功数据");
+                    }
                     break;
                 case CatalogSource.BuiltIn:
                     SetCatalogStatus(
@@ -1536,7 +1565,10 @@ public sealed class MainWindowViewModel : ObservableObject
                         hasError: false,
                         isStale: true);
                     ScheduleCatalogFallbackRetry();
-                    ShowToast("目录服务暂时不可用，已显示内置应急目录");
+                    if (userInitiated || !hadLoadedCatalog)
+                    {
+                        ShowToast("目录服务暂时不可用，已显示内置应急目录");
+                    }
                     break;
                 case CatalogSource.Live when userInitiated:
                     SetCatalogStatus(
@@ -1570,7 +1602,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 hasError: true,
                 isStale: HasServerCatalogData || HasActivityServers);
             ScheduleCatalogFallbackRetry();
-            ShowToast("暂时无法加载服务器目录", ToastLevel.Error);
+            if (userInitiated || !hadLoadedCatalog)
+            {
+                ShowToast("暂时无法加载服务器目录", ToastLevel.Error);
+            }
         }
         catch (LauncherAuthenticationRequiredException)
         {
@@ -1589,7 +1624,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 "登录状态已失效，请重新登录赫朝账号。",
                 hasError: true,
                 isStale: false);
-            ShowToast("请先登录赫朝账号");
+            if (userInitiated || !hadLoadedCatalog)
+            {
+                ShowToast("请先登录赫朝账号");
+            }
         }
         catch (LauncherApiException exception)
         {
@@ -1598,7 +1636,10 @@ public sealed class MainWindowViewModel : ObservableObject
                 hasError: true,
                 isStale: HasServerCatalogData || HasActivityServers);
             ScheduleCatalogFallbackRetry();
-            ShowToast(exception.ApiDetail ?? "目录服务暂时不可用", ToastLevel.Error);
+            if (userInitiated || !hadLoadedCatalog)
+            {
+                ShowToast(exception.ApiDetail ?? "目录服务暂时不可用", ToastLevel.Error);
+            }
         }
         finally
         {
@@ -1688,6 +1729,76 @@ public sealed class MainWindowViewModel : ObservableObject
     private void CancelCatalogFallbackRetry()
     {
         Interlocked.Exchange(ref _catalogRetryCancellation, null)?.Cancel();
+    }
+
+    private void StartActivityCatalogRefresh(bool refreshImmediately)
+    {
+        CancelActivityCatalogRefresh();
+        var cancellation = new CancellationTokenSource();
+        _activityCatalogRefreshCancellation = cancellation;
+        _ = RefreshActivityCatalogWhileVisibleAsync(
+            cancellation,
+            refreshImmediately);
+    }
+
+    private void CancelActivityCatalogRefresh()
+    {
+        var cancellation = Interlocked.Exchange(
+            ref _activityCatalogRefreshCancellation,
+            null);
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+    }
+
+    private async Task RefreshActivityCatalogWhileVisibleAsync(
+        CancellationTokenSource cancellation,
+        bool refreshImmediately)
+    {
+        try
+        {
+            if (refreshImmediately)
+            {
+                await LoadCatalogAsync();
+            }
+
+            while (true)
+            {
+                await Task.Delay(
+                    _activityCatalogRefreshInterval,
+                    cancellation.Token);
+                if (!IsActivitiesPage ||
+                    !ReferenceEquals(
+                        Volatile.Read(ref _activityCatalogRefreshCancellation),
+                        cancellation))
+                {
+                    return;
+                }
+
+                await LoadCatalogAsync();
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "活动日历自动刷新失败：{0}: {1}",
+                exception.GetType().Name,
+                exception.Message);
+        }
+        finally
+        {
+            if (ReferenceEquals(
+                    Interlocked.CompareExchange(
+                        ref _activityCatalogRefreshCancellation,
+                        null,
+                        cancellation),
+                    cancellation))
+            {
+                cancellation.Dispose();
+            }
+        }
     }
 
     private async Task RetryCatalogAfterFallbackAsync(
