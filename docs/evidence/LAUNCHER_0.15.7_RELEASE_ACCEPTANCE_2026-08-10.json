@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-10T07:15:00Z",
+  "component": "launcher",
+  "version": "0.15.7",
+  "featureSourceCommits": [
+    "5ba4d02",
+    "e10b7e1",
+    "0c475f3"
+  ],
+  "releaseSourceCommit": "c0ddf9b2dfb65d64b8990242fa99addf5a008961",
+  "releaseTag": "launcher-v0.15.7",
+  "taggedAt": "2026-08-10T14:26:12+08:00",
+  "scope": {
+    "activityRefreshOnEntry": true,
+    "activityRefreshIntervalSeconds": 30,
+    "activityRefreshStopsOnLeave": true,
+    "halfOpenScheduleBoundary": true,
+    "midnightEndDateExcluded": true,
+    "duplicateSidebarAccountActionRemoved": true,
+    "fourCalendarSurfacesShareLauncherApi": true,
+    "websiteActivityClientDownloadAllowed": false,
+    "gameLaunchStateMachineChanged": false
+  },
+  "tests": {
+    "solutionPassed": 721,
+    "solutionFailed": 0,
+    "launcherPassed": 227,
+    "apiPassed": 302,
+    "publisherPassed": 55,
+    "adminWebVitestPassed": 11,
+    "buildWarnings": 0,
+    "buildErrors": 0
+  },
+  "artifacts": {
+    "installer": {
+      "name": "Hechao-Launcher-Setup-0.15.7-win-x64.exe",
+      "sizeBytes": 61965027,
+      "sha256": "FA3542F3B9B7DFF9DE5CBC3605DC41882A834F7BD0E1AAEC432A210CDE673DB1",
+      "signatureStatus": "NotSigned"
+    },
+    "launcher": {
+      "name": "Hechao.Launcher.exe",
+      "sizeBytes": 69026910,
+      "sha256": "B136FAE0B3697ABA75B63C4D9B832FEC0B4EA35E011B530DFDC6638D576F264D",
+      "fileVersion": "0.15.7.0",
+      "productVersion": "0.15.7+c0ddf9b2dfb65d64b8990242fa99addf5a008961",
+      "signatureStatus": "NotSigned"
+    },
+    "publisher": {
+      "version": "1.3.0",
+      "rid": "linux-x64",
+      "sizeBytes": 74645019,
+      "sha256": "6DF3BAC532E1BD40E45B72424E895E6CE9EFCA79294A0CB5A3072120B8686B8F"
+    }
+  },
+  "installerValidation": {
+    "validatedAtUtc": "2026-08-10T06:19:20.6951534Z",
+    "upgradeFrom": "0.15.6",
+    "upgradeTo": "0.15.7",
+    "upgradeInstall": true,
+    "cleanInstall": true,
+    "uninstallRounds": 2,
+    "settingsPreserved": true,
+    "sessionFilesPreserved": true,
+    "existingLauncherProcessesPreserved": true
+  },
+  "privateOss": {
+    "objectKey": "releases/launcher/0.15.7/Hechao-Launcher-Setup-0.15.7-win-x64.exe",
+    "firstPublishUploaded": true,
+    "secondPublishSkippedAfterVerification": true,
+    "signedReadStatusCodes": [200, 200],
+    "anonymousStatusCode": 403,
+    "lengthMatched": true,
+    "sha256Matched": true,
+    "temporaryRemoteFilesRemoved": true,
+    "transientUnitsRemaining": 0
+  },
+  "productionUpdateChannel": {
+    "enabled": true,
+    "latestVersion": "0.15.7",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61965027,
+    "installerSha256": "fa3542f3b9b7dff9de5cbc3605dc41882a834f7bd0e1aaec432a210cde673db1",
+    "publishedAtUtc": "2026-08-10T06:48:09Z",
+    "apiVersion": "0.30.0",
+    "apiReleaseDirectory": "/opt/hechao-launcher-api/releases/0.30.0-20260809T232800Z",
+    "apiMainPidBefore": 1035827,
+    "apiMainPidAfter": 1248643,
+    "apiRestarts": 0,
+    "environmentMode": "600",
+    "environmentOwner": "root:root",
+    "environmentSha256": "88b2058563e3957ef9275ab9f54f08e735bc4a676f146f0f1377e12f3546b483",
+    "backupPath": "/etc/hechao-launcher-api/environment.launcher-updates.20260810T064811Z.bak",
+    "backupSha256": "4a00765858d5a984c3d1c6693f233e653257015cf0bc3232c1e704d83d941b08",
+    "localHealthStatusCode": 200,
+    "localReadyStatusCode": 200,
+    "publicHealthStatusCode": 200,
+    "publicReadyStatusCode": 200,
+    "publicMetadataStatusCode": 200,
+    "publicDownloadStatusCode": 302,
+    "warningOrErrorLogsAfterCutover": 0
+  },
+  "calendarSynchronization": {
+    "internalPlanCount": 0,
+    "internalPackageCount": 2,
+    "singleActivitySlotPresent": true,
+    "publicActivityCount": 0,
+    "publicProjectionPrivateFieldsFound": 0,
+    "launcherAdminCalendarStatusCode": 200,
+    "websiteAdminProtectedStatusCode": 307,
+    "websiteAdminApiAnonymousStatusCode": 401,
+    "websiteCalendarStatusCode": 200,
+    "websiteLauncherDownloadVersion": "0.15.7",
+    "websiteActivityClientDownloadAllowed": false
+  },
+  "authenticatedUpdateAcceptance": {
+    "attempted": true,
+    "sessionRestoreSucceeded": false,
+    "stoppedBeforeMetadataRequest": true,
+    "failureReason": "No restorable Launcher session was available for the current Windows user.",
+    "signedUrlDisclosed": false,
+    "accountIdentityDisclosed": false,
+    "followUpRequiredAfterLauncherLogin": true
+  },
+  "unchanged": {
+    "publisherAgentVersion": "1.2.1",
+    "publisherAgentMainPid": 2064,
+    "publisherAgentRestarts": 0,
+    "postgresqlModified": false,
+    "activityPlansModified": false,
+    "minecraftServersOperated": false,
+    "velocityOperated": false,
+    "serverControlAgentsOperated": false
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "refreshTokenIncluded": false,
+    "sessionTokenIncluded": false,
+    "accountIdentityIncluded": false
+  }
+}

@@ -257,3 +257,17 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
   按正常自更新流程升级。
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.6.md`](LAUNCHER_RELEASE_0.15.6.md)。
+
+## 0.15.7 生产快照
+
+- `2026-08-10` 生产 `LatestVersion=0.15.7`，最低支持版本保持 `0.12.3`。
+- 安装包为 `61,965,027` 字节，SHA-256
+  `FA3542F3B9B7DFF9DE5CBC3605DC41882A834F7BD0E1AAEC432A210CDE673DB1`。
+- 私有对象首次上传成功，重复发布校验后跳过；两轮签名读取 `200`、匿名读取 `403`，
+  签名 URL 未进入 Git、文档或终端记录，远端暂存和瞬态凭据挂载均已清理。
+- `0.15.6 -> 0.15.7` 隔离覆盖安装、全新安装、双轮卸载、设置与会话保留均通过。
+- API 保持 `0.30.0`，公开元数据与官网 `302` 下载网关通过；当前管理机没有可恢复的
+  Launcher 登录会话，因此认证更新端点的真实会话复验保留为待完成项。
+- 常驻 Publisher Agent 保持 `1.2.1`；Minecraft、Velocity 和服控代理均未操作。
+
+完整记录见 [`LAUNCHER_RELEASE_0.15.7.md`](LAUNCHER_RELEASE_0.15.7.md)。
