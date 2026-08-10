@@ -369,7 +369,7 @@ owl5 `0.4.1` 使用 Windows `GlobalMemoryStatusEx` 上报 VPS 真实物理内存
 [`SERVER_CONTROL_AGENT_RELEASE_0.4.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.4.1.md) 和
 [`evidence/PACKAGE_MEMORY_GUIDANCE_PRODUCTION_DEPLOYMENT_2026-08-06.json`](evidence/PACKAGE_MEMORY_GUIDANCE_PRODUCTION_DEPLOYMENT_2026-08-06.json)。
 
-### 6.12 活动槽部署身份（owl5 代理 0.5.0 候选）
+### 6.12 活动槽部署身份（owl5 代理 0.5.0）
 
 `0.5.0` 从活动目录受控 `.hechao-deployment.json` 读取实际部署的 `importId`、
 `profileId` 和 `version`，并随目标心跳上报。标记缺失、格式无效、目录不存在或目标未启用
@@ -380,9 +380,10 @@ Launcher API `0.30.0` 把该身份保存到 `server_control_targets`。活动企
 绑定 import 完全相同时才对目录和 Velocity 显示 `Online`。这可以防止上一场整合包仍
 留在活动槽时误开放下一场。部署身份只用于准入校验，不会自动启动、停止或切换服务端。
 
-代理升级只允许重启服控代理本身；必须核对所有 Minecraft PID、启动时间、端口和计划
-任务在升级前后不变。候选发布与完整验收顺序见
-[`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
+代理已于 2026-08-10 只在 owl5 升级。五个 Java PID、启动时间和规范化路径与升级前
+完全一致；活动任务为 `Ready`、`25568` 无监听，活动目录和运行标记均不存在。完整发布、
+回滚和隐私证据见 [`SERVER_CONTROL_AGENT_RELEASE_0.5.0.md`](SERVER_CONTROL_AGENT_RELEASE_0.5.0.md)
+与 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
 
 ## 7. 验收与回滚
 

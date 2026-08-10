@@ -1,9 +1,9 @@
 # 活动企划日历与单活动槽运维手册
 
-> 候选版本：Launcher API `0.30.0`、ServerControlAgent `0.5.0`
+> 正式版本：Launcher API `0.30.0`、owl5 ServerControlAgent `0.5.0`
 >
-> 当前状态：源码与本地验证候选，尚未部署生产。任何生产操作前都要重新核对服务、
-> 数据库、代理、活动槽和当前玩家状态。
+> 当前状态：已于 2026-08-10 部署生产；迁移 `028` 为 `28/28`，官网桥接已启用，当前
+> 正式企划数为 `0`。任何活动发布或部署前仍要重新核对代理、活动槽和当前玩家状态。
 
 本功能把整合包、活动排期、玩家下载、活动槽部署和进服准入收敛到一条链路。Launcher
 后台和官网后台只是两个管理入口，企划数据只保存在 Launcher PostgreSQL，不在网站
@@ -81,6 +81,11 @@ sudo bash deploy/linux/configure-website-activity-bridge.sh <actor-user-id>
 4. 执行桥接配置脚本，再按受控顺序重启 Launcher API 与网站，使两端读取新配置。
 5. 在 Launcher 后台完成一次草稿创建、相邻排期发布与重叠发布拒绝测试，随后清理测试数据。
 6. 发布官网候选并验证 `/admin/activity-plans`、公开社区日历和 Launcher 活动页读取同一企划。
+
+上述顺序已用于 2026-08-10 首次生产发布。临时数据库中的重叠发布返回
+`409 schedule_conflict`，首尾相接发布成功；测试数据与候选服务已清理，生产未留下
+测试企划。正式证据见 [`API_RELEASE_0.30.0.md`](API_RELEASE_0.30.0.md) 和
+[`SERVER_CONTROL_AGENT_RELEASE_0.5.0.md`](SERVER_CONTROL_AGENT_RELEASE_0.5.0.md)。
 
 迁移 `028` 是加法迁移，但旧 API 不认识企划行及部署身份。生产产生企划后，不得把 API
 直接回滚到 `0.29.0` 并继续写服务器目录；应回滚到包含迁移 `028` 合同的兼容构建。

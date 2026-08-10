@@ -1,8 +1,8 @@
 # 启动器 API 运维与回滚
 
-> 最近记录的线上版本：`0.29.0-20260808T043921Z`
-> 最近记录的生产迁移：`027`
-> 下一候选：`0.30.0` / 迁移 `028`（活动企划、单活动排期与精确部署身份，尚未部署）
+> 最近记录的线上版本：`0.30.0-20260809T232800Z`
+> 最近记录的生产迁移：`028`
+> 当前新增能力：活动企划、单活动排期、官网内部桥接与精确部署身份
 > 当前阶段：跨版本回大厅方案已取消；基础设施大厅隔离已部署，待真实玩家灰度
 >
 > owl9 边界：API 中现有 server ID `pvp` 实际代表恐怖整蛊服
@@ -410,6 +410,8 @@ systemctl reload nginx
 | `0.28.4-20260806T002900Z` | `BECAAF0660EC5E56C2DD26A2A0D52AE5417B635F4369A2BF70C577CD3917DD8D` | 已删除固定活动槽在 `settings=null` 时使用受控 `4096 MiB` 部署上限，页面、确认接口和编排保持一致。`0.28.5` 的直接回滚目标 |
 | `0.28.5-20260806T125215Z` | `D24FDBC352E2485FF8C5992F21CA4074B26E4C77CD4DAFF68EF379D7647F4C22` | 迁移 025 保存 VPS 真实物理内存；整合包页显示总内存和推荐最小/最大值，推荐区间不禁用提交；移除 `4096 MiB` 回退上限。`0.28.6` 的直接回滚目标 |
 | `0.28.6-20260806T150509Z` | `974A67212B477F0E37CE435CAD6C3369D6C4C5F791BE8A1009924CA1186786C3` | 迁移 026 保存 Publisher 结构化进度；生产真实任务已覆盖下载、解压、对象发布与最终化，并显示对象数、字节数和 ETA。`0.28.7` 的直接回滚目标 |
-| `0.28.7-20260807T072043Z` | `09A30BA02CECF80E978B523D51E9596510373C829075E1F6C0923FF650790AE9` | 无迁移；修复服务器新增/编辑和单服权限等表单型抽屉被压缩到顶部的问题。Playwright `18/18`、完整备份、原子切换、公网回归通过；当前线上版本 |
+| `0.28.7-20260807T072043Z` | `09A30BA02CECF80E978B523D51E9596510373C829075E1F6C0923FF650790AE9` | 无迁移；修复服务器新增/编辑和单服权限等表单型抽屉被压缩到顶部的问题。Playwright `18/18`、完整备份、原子切换和公网回归通过 |
+| `0.29.0-20260808T043921Z` | `2A9DFCFE97592D7E4B2930D5E2E39754D5262500185319B32BC8C03047A3ACE0` | 迁移 027；客户端档案归档、恢复与受限永久删除，失败候选自动回滚后由修复版正式上线；`0.30.0` 的条件回滚目标 |
+| `0.30.0-20260809T232800Z` | `BFD43092A149035CC6E80D9F86241B59DF784C5CD2A8E5853D9BE38BF3E71F77` | 迁移 028；活动企划、双后台日历、全局不重叠排期、Production 整合包绑定和活动槽精确部署身份；当前线上版本 |
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.28.7`、启动器 `0.14.2`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.4.2`、owl9 ServerControlAgent `0.4.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 十页、固定整合包 Test-only 发布、停止活动槽部署、原活动目录恢复、官网活动投影、启动器下载桥接和白名单服务端文件删除均已验收；整合包精确确认输入在后台轮询期间保持，生产已有三个成功删除记录，其目标在清理完成后从日常服控列表隐藏，但固定活动槽仍可由整合包页重新部署。整合包页当前显示 owl5 VPS 总内存 `18431 MiB` 和 `4096-8960 MiB` 推荐区间，区间外合法值仍可提交；Publisher 进度已覆盖对象数、字节数和 ETA。后台表单型抽屉已随 `0.28.7` 修复顶部压缩问题。五服指标代理已经加载，Activity 单账号路由、特殊路径物理原生库加载和安装版真实进服已通过，恐怖整蛊服务端兼容修复已完成历史真实验收；四级真实账号、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.30.0`、启动器 `0.15.5`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 十一页、固定整合包 Test-only 发布、停止活动槽部署、双后台企划、单活动排期、官网活动投影、启动器下载桥接和白名单服务端文件删除均已验收；活动日历不会自动启停 Minecraft，准入还要求活动槽部署身份与企划绑定整合包完全一致。生产当前没有正式企划或进行中服控命令，真实玩法包、四级真实账号和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，活动企划见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

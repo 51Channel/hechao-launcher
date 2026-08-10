@@ -2,8 +2,8 @@
 
 > 更新时间：`2026-08-10`
 >
-> 当前生产：启动器 `0.15.5`、API `0.29.0`、Publisher Agent `1.2.1`、
-> owl5 ServerControlAgent `0.4.2`、owl9 ServerControlAgent `0.4.0`、
+> 当前生产：启动器 `0.15.5`、API `0.30.0`、Publisher Agent `1.2.1`、
+> owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -37,12 +37,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.15.5` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，真实登录会话确认 `0.15.4` 可取得更新计划并完整下载，见 [`LAUNCHER_RELEASE_0.15.5.md`](LAUNCHER_RELEASE_0.15.5.md) |
-| API `0.29.0` | 已完成 | Vue 后台、迁移 27/27、客户端档案归档/恢复/受限永久删除及既有整合包、内存和服控能力均已部署；数据库与配置备份、失败自动回滚、原子切换、内外网健康和生产状态回归通过，见 [`API_RELEASE_0.29.0.md`](API_RELEASE_0.29.0.md) |
+| API `0.30.0` | 已完成 | Vue 活动企划后台、官网内部桥接、迁移 28/28、全局不重叠排期、Production 整合包绑定与精确部署身份已部署；数据库/配置备份、临时库冲突测试、原子切换和公网回归通过，见 [`API_RELEASE_0.30.0.md`](API_RELEASE_0.30.0.md) |
+| 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条企划，首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.4 -> 0.15.5` 隔离覆盖升级、全新安装、双轮卸载、设置与会话保留均通过；既有正式启动器进程未被替代关闭 |
 | 私有 OSS 发布 | 已完成 | `0.15.5` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入 Git、文档或终端记录 |
-| 自动测试 | 已完成 | `0.15.5` 完整解决方案 `710/710`、Launcher `225/225`、Publisher `55/55`；API `0.29.0` 为 API `294/294`、完整解决方案 `700/700`、Vitest `8/8`、Playwright `20/20` |
+| 自动测试 | 已完成 | 当前分支完整解决方案 `719/719`，其中 Launcher `225/225`、API `302/302`、ServerControlAgent `58/58`、Publisher `55/55`；管理后台 Vitest `11/11`、Playwright `25/25` |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.15.5` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-10T00:25:51.7273139Z",
+  "component": "server-control-agent",
+  "version": "0.5.0",
+  "binarySourceCommit": "360c0fc83c77d465c6b521b6713ee71f644b7432",
+  "installerCompatibilityCommit": "c00230c416f252e0235a9c8b1f48b2b55335f520",
+  "releaseTag": "server-control-agent-v0.5.0",
+  "host": "owl5",
+  "artifact": {
+    "name": "hechao-server-control-agent-0.5.0-20260810T0730-win-x64.zip",
+    "sizeBytes": 33236632,
+    "sha256": "6A4959205DC5E9D9231480DF02A30F755C01C81EFDCF7D6B7589FC4651489809",
+    "entryCount": 1,
+    "entryName": "Hechao.ServerControlAgent.exe",
+    "executableSizeBytes": 74154591,
+    "executableSha256": "0A35DD12414E81FF87F885C4AE6D6E2BEEADAEC0BC7B3455C135668462B5D4DA",
+    "fileVersion": "0.5.0.0",
+    "productVersion": "0.5.0+360c0fc83c77d465c6b521b6713ee71f644b7432",
+    "containsPdb": false,
+    "containsConfiguration": false,
+    "containsCredentials": false
+  },
+  "tests": {
+    "serverControlAgentPassed": 58,
+    "serverControlAgentFailed": 0,
+    "dotnetSolutionPassed": 719,
+    "dotnetSolutionFailed": 0
+  },
+  "deployment": {
+    "previousVersion": "0.4.2+7ecfddffec8cdc3bd18eafdd588f4f1c7eedda39",
+    "previousExecutableSha256": "D29F6504B69CE01ABEE0F5323E1BEC9AEE044203AF9F7AC266B5CB24A19C19B6",
+    "rollbackDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260809T235446Z",
+    "agentTaskName": "Hechao Launcher Server Control Agent",
+    "agentTaskState": "Running",
+    "agentProcessCount": 1,
+    "deployedExecutableHashMatched": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "javaProcesses": [
+    {
+      "processId": 2576,
+      "createdAtUtc": "2026-07-31T04:34:03.3514000Z",
+      "executablePath": "E:/jdk/bin/java.exe"
+    },
+    {
+      "processId": 7748,
+      "createdAtUtc": "2026-07-29T15:12:24.2041050Z",
+      "executablePath": "E:/server-artifacts/java/temurin-jre-25.0.4+7/bin/java.exe"
+    },
+    {
+      "processId": 7924,
+      "createdAtUtc": "2026-08-07T13:29:49.8680460Z",
+      "executablePath": "E:/jdk/bin/java.exe"
+    },
+    {
+      "processId": 9428,
+      "createdAtUtc": "2026-07-27T20:27:12.5183250Z",
+      "executablePath": "E:/jdk/bin/java.exe"
+    },
+    {
+      "processId": 10412,
+      "createdAtUtc": "2026-07-28T18:25:21.6526730Z",
+      "executablePath": "E:/jdk/bin/java.exe"
+    }
+  ],
+  "postDeployment": {
+    "javaProcessIdentityUnchanged": true,
+    "activityTaskState": "Ready",
+    "port25568ListenerCount": 0,
+    "activityDirectoryExists": false,
+    "activityRuntimeMarkerExists": false,
+    "serverAction": "none",
+    "candidateTaskCount": 0,
+    "incomingDirectoryRemoved": true
+  },
+  "rollback": {
+    "armed": true,
+    "targetVersion": "0.4.2",
+    "requiresNoPendingDeployPackageCommand": true,
+    "requiresStoppedActivitySlot": true,
+    "stopsOnlyControlAgentTask": true,
+    "requiresJavaProcessIdentityCheck": true,
+    "controlsMinecraftServers": false
+  },
+  "privacy": {
+    "agentTokenIncluded": false,
+    "dpapiCiphertextIncluded": false,
+    "configurationIncluded": false,
+    "serverConsoleIncluded": false,
+    "hostManagedFileContentIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

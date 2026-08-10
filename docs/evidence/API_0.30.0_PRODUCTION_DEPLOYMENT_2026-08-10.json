@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-10T00:36:00Z",
+  "component": "api",
+  "version": "0.30.0",
+  "releaseId": "0.30.0-20260809T232800Z",
+  "sourceCommit": "360c0fc83c77d465c6b521b6713ee71f644b7432",
+  "releaseTag": "api-v0.30.0",
+  "change": {
+    "scope": "activity plan calendar, global non-overlap schedule, website bridge, and exact activity-slot deployment identity",
+    "databaseMigration": true,
+    "databaseMigrationVersion": 28,
+    "apiContractChanged": true,
+    "adminWebChanged": true,
+    "minecraftAutomaticControlAdded": false
+  },
+  "artifacts": {
+    "archive": {
+      "name": "hechao-launcher-api-0.30.0-20260809T232800Z.tar.gz",
+      "sizeBytes": 46243747,
+      "sha256": "E84CDA346F46A0DA3127140858FCE210C5DA73B75EC298655CD000FFF8A8EA70",
+      "entryCount": 160,
+      "fileCount": 156,
+      "remoteHashMatched": true,
+      "safePathsVerified": true,
+      "forbiddenFilesFound": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105230788,
+      "sha256": "BFD43092A149035CC6E80D9F86241B59DF784C5CD2A8E5853D9BE38BF3E71F77",
+      "deployedHashMatched": true
+    },
+    "migration": {
+      "name": "028_activity_plans.sql",
+      "sha256": "DF11C4EC70AEC0D1C962753AEF9C0EE1A8C8DA59E1B82D7A9C9BFF9596005F96"
+    }
+  },
+  "tests": {
+    "dotnetSolutionPassed": 719,
+    "dotnetSolutionFailed": 0,
+    "apiPassed": 302,
+    "apiFailed": 0,
+    "serverControlAgentPassed": 58,
+    "serverControlAgentFailed": 0,
+    "adminVitestPassed": 11,
+    "adminVitestFailed": 0,
+    "adminPlaywrightPassed": 25,
+    "adminPlaywrightFailed": 0,
+    "websiteProductionContractPassed": 16,
+    "websiteProductionContractFailed": 0,
+    "websiteNextBuildPages": 81,
+    "isolatedDatabaseMigrations": 28,
+    "overlappingPublishedPlanRejectedWith409": true,
+    "backToBackPublishedPlansAccepted": true,
+    "temporaryDatabaseRemoved": true
+  },
+  "backups": {
+    "database": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260809T233948Z.dump",
+      "sizeBytes": 4755868,
+      "sha256": "9380B924245A9485B50971950D1C6CEEC3C26CA418E69A8DB9A64697846BE5B5",
+      "restoreListLines": 227,
+      "checksumVerified": true
+    },
+    "apiConfiguration": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.30.0-20260809T233948Z.tar.gz",
+      "sizeBytes": 45860803,
+      "sha256": "903FF6C732551B4827F1A8A13732B9D11786D61D1FA83D3F98BB0BB535FECB40",
+      "entryCount": 7,
+      "checksumVerified": true
+    }
+  },
+  "deployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.0-20260809T232800Z",
+    "previousRelease": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z",
+    "serviceActive": true,
+    "serviceRestartCount": 0,
+    "healthVersion": "0.30.0",
+    "databaseStatus": "ready",
+    "databaseMigrations": 28,
+    "activityPlanCount": 0,
+    "activeServerControlCommands": 0,
+    "activePackageImports": 0,
+    "warningJournalEntriesSinceDeployment": 0,
+    "errorJournalEntriesSinceDeployment": 0,
+    "websiteBridgeMissingTokenStatus": 401,
+    "websiteBridgeWrongTokenStatus": 401,
+    "websiteBridgeValidServerTokenStatus": 200,
+    "temporaryApiPort18094Listeners": 0,
+    "temporaryWebsitePort3100Listeners": 0,
+    "temporaryUnitsRemoved": true,
+    "incomingDirectoryRemoved": true,
+    "minecraftControlCommandsIssued": 0
+  },
+  "publicAcceptance": {
+    "websiteReleaseVerifierPassed": 13,
+    "calendarPageStatus": 200,
+    "icsStatus": 200,
+    "icsContentTypeValid": true,
+    "launcherDownloadStatus": 302,
+    "launcherDownloadHttpsTarget": true,
+    "publicActivityProjectionStatus": 200,
+    "publicActivityCount": 0,
+    "forbiddenInternalFieldsFound": 0,
+    "websiteMigrations": 59,
+    "websiteUsers": 28,
+    "mappedWebsiteUsers": 28,
+    "websiteForeignKeyErrors": 0,
+    "nonEmptyWebsiteUploads": 34,
+    "existingUploadStatus": 200,
+    "storedAvatarStatus": 200
+  },
+  "rollbackBoundary": {
+    "conditionalProgramRollback": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z",
+    "allowedOnlyWhileActivityPlanCountAndDeploymentIdentityAreZero": true,
+    "forwardFixRequiredAfterActivityPlanOrDeploymentIdentityExists": true,
+    "databaseRollbackRequiresSeparateApproval": true
+  },
+  "privacy": {
+    "bridgeTokenIncluded": false,
+    "tokenDigestIncluded": false,
+    "databaseCredentialIncluded": false,
+    "signedUrlIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}
