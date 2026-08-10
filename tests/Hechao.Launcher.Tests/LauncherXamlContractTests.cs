@@ -560,6 +560,11 @@ public sealed class LauncherXamlContractTests
             accountAvatars[0].Ancestors(),
             ancestor => ReferenceEquals(ancestor, accountPanel));
         Assert.Equal("3", accountPanel.Attribute("Grid.Row")?.Value);
+        Assert.Empty(accountPanel.Descendants(presentation + "Button"));
+        Assert.DoesNotContain(
+            "AccountActionCommand",
+            accountPanel.ToString(),
+            StringComparison.Ordinal);
         Assert.Equal("2", heroPanel.Attribute("Grid.ColumnSpan")?.Value);
         Assert.Equal("20,20", heroPanel.Attribute("Padding")?.Value);
         Assert.Equal("0", heroImage.Attribute("Grid.Column")?.Value);
