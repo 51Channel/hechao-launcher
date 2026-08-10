@@ -177,7 +177,7 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   SHA-256 一致；`0.15.6 -> 0.15.7` 覆盖安装、全新安装、双轮卸载、设置和
   会话文件保留已验收。`0.15.6` 保留为上一正式版本，其不可变对象与标签不得覆盖。
 - 生产更新通道当前为 `LatestVersion=0.15.7`、
-  `MinimumSupportedVersion=0.12.3`；API `0.30.0` 为 `active`、`NRestarts=0`，
+  `MinimumSupportedVersion=0.12.3`；API `0.30.1` 为 `active`、`NRestarts=0`，
   内外网健康与就绪端点均为 `200`。当前管理机没有可恢复 Launcher 会话，认证更新端点
   的本次复验待登录后补跑。详细记录见
   [`LAUNCHER_RELEASE_0.15.7.md`](LAUNCHER_RELEASE_0.15.7.md)。

@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-10T23:06:16Z",
+  "component": "api",
+  "version": "0.30.1",
+  "releaseId": "0.30.1-20260810T225350Z",
+  "buildSourceCommit": "34d2cad65766d0a547bcd611a2a3f55951187897",
+  "releaseTag": "api-v0.30.1",
+  "change": {
+    "scope": "admin activity plan FullCalendar CSP compatibility",
+    "databaseMigration": false,
+    "apiContractChanged": false,
+    "adminWebChanged": true,
+    "minecraftControlChanged": false,
+    "unsafeInlineEnabled": false
+  },
+  "artifacts": {
+    "archive": {
+      "name": "hechao-launcher-api-0.30.1-20260810T225350Z.tar.gz",
+      "sizeBytes": 46244083,
+      "sha256": "9CBDDECEBA9A6C97E76CE348694B18576164921BF48C84369F315B460BA00DE5",
+      "entryCount": 161,
+      "fileCount": 156,
+      "remoteHashMatched": true,
+      "safePathsVerified": true,
+      "forbiddenFilesFound": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105230788,
+      "sha256": "239110B12F8ADE39B32E8669678217F5BB996384A23D457993662545AE98A9F7",
+      "deployedHashMatched": true
+    },
+    "adminIndex": {
+      "name": "wwwroot/admin/index.html",
+      "sizeBytes": 588,
+      "sha256": "B405B67805E3E18971B7EE125FE6314C46F53F347DB2EBA9433EF3E08DF59896",
+      "fullCalendarAnchorPresent": true,
+      "anchorSha256Base64": "ipzKv5H4ieKlTTlJ/yUoqe2zh7iU5Iy8a9PrIETK5us="
+    },
+    "activityPlanChunk": {
+      "name": "wwwroot/admin/assets/chunk-ActivityPlansView.js",
+      "sizeBytes": 251393,
+      "sha256": "738EF480166B5AEBC5D57CDFB95F98013C33BFBB0AFCEADEF075CFCD53AE0E0A",
+      "servedHashMatched": true
+    }
+  },
+  "tests": {
+    "typescriptPassed": true,
+    "viteProductionBuildPassed": true,
+    "vitestPassed": 11,
+    "vitestFailed": 0,
+    "playwrightPassed": 26,
+    "playwrightFailed": 0,
+    "productionCspRouteRegressionPassed": true,
+    "apiPassed": 303,
+    "apiFailed": 0,
+    "dotnetFullPassed": 722,
+    "dotnetFullFailed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.0-20260809T232800Z",
+    "databaseMigrationCount": 28,
+    "activityPlanCount": 0,
+    "publishedActivityPlanCount": 0,
+    "deploymentIdentityCount": 0,
+    "activeControlOperationCount": 0,
+    "activePackageImportCount": 0,
+    "apiMainPid": 1248643,
+    "apiRestartCount": 0,
+    "publisherMainPid": 2064,
+    "publisherRestartCount": 0,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260810T225646Z.dump",
+      "sizeBytes": 5066519,
+      "sha256": "E37AFFF68DB6F14A736CBE599FF47A194CC150746F614D2756BF12C691089319",
+      "checksumVerified": true,
+      "restoreListLines": 239
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.30.1-20260810T225755Z.tar.gz",
+      "sizeBytes": 46133684,
+      "sha256": "692B5B29ACFC4F86CDD966E727BDC74DC095FBBF731546568FAD36FC3545F300",
+      "entryCount": 8,
+      "checksumVerified": true
+    }
+  },
+  "deployment": {
+    "startedAtUtc": "2026-08-10T23:00:16Z",
+    "finishedAtUtc": "2026-08-10T23:00:25Z",
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.1-20260810T225350Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.30.0-20260809T232800Z",
+    "databaseMigrationsApplied": 0,
+    "onlyApiServiceRestarted": true,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "mainPid": 1756099,
+    "nRestarts": 0,
+    "healthVersion": "0.30.1",
+    "databaseStatus": "ready",
+    "loopbackPort8090Only": true,
+    "publicPort8090Blocked": true,
+    "adminDeepRouteStatus": 200,
+    "wrongAdminHostStatus": 404,
+    "cspHashAuthorized": true,
+    "cspUnsafeInlineAbsent": true,
+    "dataProtectionWritable": true,
+    "anonymousCatalogStatus": 200,
+    "invalidBearerStatus": 401,
+    "publicWebsiteStatus": 200,
+    "legacyApiStatus": 200,
+    "warningJournalEntriesSinceDeployment": 0,
+    "errorJournalEntriesSinceDeployment": 0,
+    "publisherMainPidUnchanged": true,
+    "publisherRestartCountUnchanged": true,
+    "authenticatedActivityPlanNavigationPassed": true,
+    "authenticatedActivityPlanCalendarVisible": true,
+    "postDeploymentBrowserErrorCount": 0,
+    "temporaryUploadRemoved": true,
+    "orphanBackupWorkDirectories": 0,
+    "rootDiskUsagePercent": 71,
+    "rootDiskAvailableBytes": 14568697856
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "signedUrlIncluded": false,
+    "sessionTokenIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false,
+    "databaseContentsIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

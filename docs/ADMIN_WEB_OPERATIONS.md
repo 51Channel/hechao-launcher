@@ -1,9 +1,9 @@
 # 管理员 Web 控制台与 MFA
 
-> 源码候选：API `0.30.0`；最近记录的生产 API 为 `0.29.0`
-> 生产状态：`AdminWeb__Enabled=true`；真实管理员已完成 MFA 和可信设备验收，活动企划页尚未部署
+> 当前生产：API `0.30.1`，`AdminWeb__Enabled=true`
+> 生产状态：真实管理员已完成 MFA 和可信设备验收，十一页 Vue 后台与活动企划月历均已部署
 > 管理入口：`https://admin.hechao.world/admin/`
-> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十一页“活动企划”为本地候选
+> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十一页“活动企划”已完成生产点击验收
 > 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
@@ -43,6 +43,8 @@
 - CSRF：所有管理写请求和 MFA 写请求必须携带 `X-CSRF-TOKEN`。
 - 主机锁定：页面、票据兑换、浏览器会话和 `/v1/admin/*` 只接受配置的 `admin.hechao.world` Host。
 - CSP：脚本、样式、连接和普通图片只允许同源；TOTP 二维码额外允许 `data:` 图片。
+  FullCalendar 使用内容固定的 `data-fullcalendar` 样式锚点及精确 SHA-256 CSP source，
+  不得改成 `'unsafe-inline'`；修改锚点文本后必须同步哈希并运行生产 CSP 路由回归。
 - 响应统一使用 `Cache-Control: no-store`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer` 和 `X-Content-Type-Options: nosniff`。
 - MFA 尝试按来源 IP 限制为 5 分钟 10 次，票据创建和兑换按来源 IP 限制为每分钟 10 次。
 - TOTP 密钥使用 ASP.NET Core Data Protection 加密后写入 PostgreSQL；Data Protection key ring 不得放进 Git 或发布目录。
@@ -73,8 +75,9 @@ npm run build
 ```
 
 Playwright 覆盖十一个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
-服控轮询期间的脏表单和控制台阅读位置、正式通道确认，以及修订冲突恢复。API 测试
-另验证静态资源 MIME、`/admin/control` 深层路由、Host 锁定和安全响应头。
+服控轮询期间的脏表单和控制台阅读位置、正式通道确认、修订冲突恢复，以及生产 CSP
+下从整合包页进入 FullCalendar。API 测试另验证静态资源 MIME、构建后样式锚点及哈希、
+`/admin/control` 深层路由、Host 锁定和安全响应头。
 
 ### 3.2 整合包导入
 

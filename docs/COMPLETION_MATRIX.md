@@ -1,8 +1,8 @@
 # 赫朝启动器完成矩阵
 
-> 更新时间：`2026-08-10`
+> 更新时间：`2026-08-11`
 >
-> 当前生产：启动器 `0.15.7`、API `0.30.0`、Publisher Agent `1.2.1`、
+> 当前生产：启动器 `0.15.7`、API `0.30.1`、Publisher Agent `1.2.1`、
 > owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
@@ -37,13 +37,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.15.7` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，公开元数据与官网下载网关通过；当前管理机缺少可恢复 Launcher 会话，认证更新端点的最终复验待登录后补跑，见 [`LAUNCHER_RELEASE_0.15.7.md`](LAUNCHER_RELEASE_0.15.7.md) |
-| API `0.30.0` | 已完成 | Vue 活动企划后台、官网内部桥接、迁移 28/28、全局不重叠排期、Production 整合包绑定与精确部署身份已部署；数据库/配置备份、临时库冲突测试、原子切换和公网回归通过，见 [`API_RELEASE_0.30.0.md`](API_RELEASE_0.30.0.md) |
+| API `0.30.1` | 已完成 | 继承 `0.30.0` 的活动企划、官网桥接、迁移 28/28、全局不重叠排期与精确部署身份；生产 CSP 下 FullCalendar 路由崩溃已用精确哈希授权修复，自动化与真实已登录后台点击通过，见 [`API_RELEASE_0.30.1.md`](API_RELEASE_0.30.1.md) |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条企划，首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.6 -> 0.15.7` 隔离覆盖升级、全新安装、双轮卸载、设置与会话文件保留均通过；验收开始时的既有正式启动器进程未被替代关闭 |
 | 私有 OSS 发布 | 已完成 | `0.15.7` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入 Git、文档或终端记录 |
-| 自动测试 | 已完成 | 当前分支完整解决方案 `721/721`，其中 Launcher `227/227`、API `302/302`、ServerControlAgent `58/58`、Publisher `55/55`；管理后台 Vitest `11/11`、Playwright `25/25` |
+| 自动测试 | 已完成 | 当前分支完整解决方案 `722/722`，其中 Launcher `227/227`、API `303/303`、ServerControlAgent `58/58`、Publisher `55/55`；管理后台 Vitest `11/11`、Playwright `26/26` |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.15.7` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
