@@ -587,6 +587,7 @@ var app = builder.Build();
 var adminWebOptions = app.Services
     .GetRequiredService<IOptions<AdminWebOptions>>()
     .Value;
+const string fullCalendarStyleHash = "'sha256-ipzKv5H4ieKlTTlJ/yUoqe2zh7iU5Iy8a9PrIETK5us='";
 
 app.UseForwardedHeaders();
 app.UseMiddleware<ApiRequestMetricsMiddleware>();
@@ -609,7 +610,8 @@ app.Use(async (context, next) =>
     if (context.Request.Path.StartsWithSegments("/admin"))
     {
         context.Response.Headers["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+            "default-src 'self'; script-src 'self'; style-src 'self' " + fullCalendarStyleHash + "; " +
+            "img-src 'self' data:; " +
             "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; " +
             "form-action 'self'; frame-ancestors 'none'";
     }

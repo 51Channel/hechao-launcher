@@ -1267,6 +1267,34 @@ test("package publishing shows real progress and estimates remaining time", asyn
   await page.screenshot({ path: "../../../artifacts/admin-web-package-progress-mobile.png", fullPage: true });
 });
 
+test("production CSP keeps the activity calendar route loadable", async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", error => pageErrors.push(error));
+  await page.route("**/admin/package-imports", async route => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      headers: {
+        ...response.headers(),
+        "content-security-policy":
+          "default-src 'self'; script-src 'self'; " +
+          "style-src 'self' 'sha256-ipzKv5H4ieKlTTlJ/yUoqe2zh7iU5Iy8a9PrIETK5us='; " +
+          "img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; " +
+          "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+      }
+    });
+  });
+  await mockAdminApi(page);
+
+  await page.goto("/admin/package-imports");
+  await page.getByRole("link", { name: "活动企划" }).click();
+
+  await expect(page).toHaveURL(/\/admin\/activity-plans$/);
+  await expect(page.locator(".page-heading h1")).toHaveText("活动企划");
+  await expect(page.locator(".activity-calendar-panel .fc")).toBeVisible();
+  expect(pageErrors.some(error => error.message.includes("cssRules"))).toBe(false);
+});
+
 test("activity calendar creates a draft from a selected date with a bound package", async ({ page }) => {
   let createBody: Record<string, unknown> | null = null;
   await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));

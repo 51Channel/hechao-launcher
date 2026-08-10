@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 using Hechao.Api.Admin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -81,6 +83,40 @@ public sealed class AdminWebStaticHostingTests
             "app.MapFallbackToFile(\"/admin/{*path:nonfile}\", \"admin/index.html\")",
             program,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ActivityCalendar_CspAuthorizesBuiltFullCalendarStyleAnchor()
+    {
+        const string anchor = "/* fullcalendar-csp-anchor */";
+        const string styleElement = "<style data-fullcalendar>/* fullcalendar-csp-anchor */</style>";
+        const string expectedHash = "ipzKv5H4ieKlTTlJ/yUoqe2zh7iU5Iy8a9PrIETK5us=";
+        var repositoryRoot = FindRepositoryRoot();
+        var sourceIndex = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "AdminWeb",
+            "index.html"));
+        var builtIndex = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "wwwroot",
+            "admin",
+            "index.html"));
+        var program = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "Program.cs"));
+        var actualHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(anchor)));
+
+        Assert.Equal(expectedHash, actualHash);
+        Assert.Contains(styleElement, sourceIndex, StringComparison.Ordinal);
+        Assert.Contains(styleElement, builtIndex, StringComparison.Ordinal);
+        Assert.Contains($"'sha256-{expectedHash}'", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("'unsafe-inline'", program, StringComparison.Ordinal);
     }
 
     [Fact]
