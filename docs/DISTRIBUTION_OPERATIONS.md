@@ -1,8 +1,8 @@
 # 客户端分发与签名操作手册
 
-> 启动器正式版本：`0.15.5`
+> 启动器正式版本：`0.15.6`
 > 当前发布器：一次性 Launcher 发布 CLI 为 `1.3.0`，常驻 Package Publisher Agent 为 `1.2.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.29.0` 托管，启动器 `0.15.5` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录、活动月历、参考图主页布局和私有 OSS 自更新闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.29.0` 托管，启动器 `0.15.6` 已完成退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录、活动月历、参考图主页布局、操作区锚定和私有 OSS 自更新闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
 >
 > owl9 边界：上述恐怖整蛊档案只对应 `C:\mc\server`，不对应
 > `E:\MinecraftServer` 的真正 PVP 服。
@@ -473,6 +473,19 @@ DPAPI 会话确认 `0.15.4` 生成更新计划、`0.15.5` 不重复更新。第�
 脚本错误要求公开端点返回内部最低版本字段而自动恢复，按真实脱敏契约修正后切换成功。
 签名 URL 未进入终端、Git 或文档；详细记录见
 [`LAUNCHER_RELEASE_0.15.5.md`](LAUNCHER_RELEASE_0.15.5.md)。
+
+`2026-08-10` 已将启动器 `0.15.6` 写入
+`releases/launcher/0.15.6/Hechao-Launcher-Setup-0.15.6-win-x64.exe`。
+首次上传后再次执行同版本发布，远端长度、版本、文件名与 SHA-256 匹配并跳过，
+没有覆盖或重复上传。匿名访问返回 `403`，两次签名回读均返回 `200`；完整下载为
+`61,962,345` 字节，SHA-256 为
+`00C5C21CE8ABEA2FB15DA49DFB2CD5BA267E582DE49DBF96D91EF938C41822B3`。
+生产更新通道为 `LatestVersion=0.15.6`、`MinimumSupportedVersion=0.12.3`；真实
+DPAPI 会话确认 `0.15.5` 生成更新计划、`0.15.6` 不重复更新。首次瞬态单元因
+`PrivateTmp` 隔离 `/var/tmp` 而在进程启动前失败，没有发出 OSS 请求；移至 Publisher
+受管 `/var/lib` 暂存区后成功，最终远端暂存、瞬态单元和瞬态凭据挂载均已清理。
+签名 URL 未进入终端、Git 或文档；详细记录见
+[`LAUNCHER_RELEASE_0.15.6.md`](LAUNCHER_RELEASE_0.15.6.md)。
 
 ## 6. 对象恢复副本
 
