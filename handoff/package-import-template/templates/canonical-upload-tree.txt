@@ -1,0 +1,20 @@
+hechao-pack.json
+client/
+  hechao-profile.json
+  assets/
+  libraries/
+  versions/<versionId>/<versionId>.json
+  versions/<versionId>/<versionId>.jar
+  mods/
+  config/
+server/
+  server.properties
+  eula.txt
+  user_jvm_args.txt
+  start.bat
+  <server runtime files>
+  mods/ or plugins/
+  config/
+shared/ (optional)
+  mods/
+  config/

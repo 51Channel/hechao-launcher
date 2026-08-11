@@ -1,0 +1,5 @@
+@echo off
+setlocal
+if not defined HECHAO_MANAGED_START pause
+java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
+endlocal

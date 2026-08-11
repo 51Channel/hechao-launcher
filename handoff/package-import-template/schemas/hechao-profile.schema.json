@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://launcher.hechao.world/schemas/hechao-profile-v1.json",
+  "title": "Hechao client launch metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "versionId", "javaMajorVersion"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "versionId": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "javaMajorVersion": { "type": "integer", "minimum": 8, "maximum": 99 }
+  }
+}

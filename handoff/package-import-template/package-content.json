@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "packageKind": "hechao-package-import-template-handoff",
+  "sourceDirectory": "handoff/package-import-template",
+  "toolMappings": [
+    "tools/Test-HechaoPackageImportSource.ps1",
+    "tools/New-HechaoPackageImportArchive.ps1",
+    "tools/New-HechaoPackageImportTemplateHandoff.ps1",
+    "tools/Test-HechaoPackageImportTemplate.ps1"
+  ],
+  "referenceMappings": [
+    "docs/PACKAGE_IMPORT_OPERATIONS.md",
+    "docs/ACTIVITY_PLAN_OPERATIONS.md",
+    "docs/ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md",
+    "docs/HECHAO_NEW_SERVER_BASELINE.md",
+    "docs/examples/ACTIVITY_CHANNEL_MINIMAL_CASE.md",
+    "docs/examples/server-baseline/component-plan.example.json",
+    "src/Hechao.Modpack/ModpackModels.cs",
+    "src/Hechao.Modpack/ModpackArchiveAnalyzer.cs",
+    "src/Hechao.Modpack/SafeArchivePath.cs",
+    "src/Hechao.Modpack/SafeZipExtractor.cs",
+    "src/Hechao.ServerControlAgent/ServerPackageDeployer.cs"
+  ]
+}

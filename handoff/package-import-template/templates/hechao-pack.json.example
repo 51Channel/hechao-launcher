@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "activity-example-neoforge-1.21.11",
+  "displayName": "示例活动",
+  "version": "1.0.0",
+  "minecraftVersion": "1.21.11",
+  "javaMajorVersion": 21,
+  "loader": "NeoForge",
+  "loaderVersion": "21.11.42",
+  "clientRoot": "client",
+  "serverRoot": "server",
+  "sharedRoot": "shared"
+}

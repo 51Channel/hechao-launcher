@@ -57,6 +57,106 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public async Task AnalyzeAndSplitAsync_StandardImportTemplateCreatesCompleteSides()
+    {
+        const string versionId = "1.20.1-Fabric_0.15.11";
+        var source = CreateArchive(
+            ("hechao-pack.json", """
+                {
+                  "schemaVersion": 1,
+                  "id": "activity-contract-fixture-fabric-1.20.1",
+                  "displayName": "Contract Fixture",
+                  "version": "1.0.0",
+                  "minecraftVersion": "1.20.1",
+                  "javaMajorVersion": 17,
+                  "loader": "Fabric",
+                  "loaderVersion": "0.15.11",
+                  "clientRoot": "client",
+                  "serverRoot": "server",
+                  "sharedRoot": "shared"
+                }
+                """),
+            ("client/hechao-profile.json", $$"""
+                {
+                  "schemaVersion": 1,
+                  "versionId": "{{versionId}}",
+                  "javaMajorVersion": 17
+                }
+                """),
+            ("client/assets/indexes/1.20.json", "{}"),
+            ("client/assets/objects/00/0000000000000000000000000000000000000000", "asset"),
+            ("client/libraries/example/library.jar", "library"),
+            ($"client/versions/{versionId}/{versionId}.json", $$"""
+                {
+                  "id": "{{versionId}}",
+                  "javaVersion": { "majorVersion": 17 }
+                }
+                """),
+            ($"client/versions/{versionId}/{versionId}.jar", "version"),
+            ("client/mods/client-only.jar", "client-mod"),
+            ("shared/mods/hechao-contract.jar", "common-mod"),
+            ("server/server.properties", """
+                server-ip=127.0.0.1
+                server-port=25568
+                online-mode=false
+                max-players=20
+                """),
+            ("server/eula.txt", "eula=true"),
+            ("server/user_jvm_args.txt", "-Xms1024M\n-Xmx2048M\n"),
+            ("server/start.bat", """
+                @echo off
+                if not defined HECHAO_MANAGED_START pause
+                java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
+                """),
+            ("server/fabric-server-launch.jar", "fabric-server"),
+            ("server/mods/server-only.jar", "server-mod"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "standard-template-out"));
+
+        Assert.Equal(ModpackLayoutKind.Canonical, result.Layout);
+        Assert.False(
+            result.HasBlockingIssues,
+            string.Join("; ", result.Issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+        Assert.Equal("activity-contract-fixture-fabric-1.20.1", result.Metadata.SuggestedProfileId);
+        Assert.Equal("1.0.0", result.Metadata.Version);
+        Assert.Equal("1.20.1", result.Metadata.MinecraftVersion);
+        Assert.Equal(17, result.Metadata.JavaMajorVersion);
+        Assert.Equal("Fabric", result.Metadata.Loader);
+        Assert.Equal("0.15.11", result.Metadata.LoaderVersion);
+        Assert.Equal(20, result.Metadata.MaximumPlayers);
+        Assert.Equal("server/start.bat", result.Metadata.ServerLaunchPath);
+        Assert.NotNull(result.Client);
+        Assert.NotNull(result.Server);
+        Assert.Equal(8, result.Client!.FileCount);
+        Assert.Equal(7, result.Server!.FileCount);
+        Assert.Equal(
+            [
+                "assets/indexes/1.20.json",
+                "assets/objects/00/0000000000000000000000000000000000000000",
+                "hechao-profile.json",
+                "libraries/example/library.jar",
+                "mods/client-only.jar",
+                "mods/hechao-contract.jar",
+                $"versions/{versionId}/{versionId}.jar",
+                $"versions/{versionId}/{versionId}.json"
+            ],
+            ReadPaths(result.Client.Path));
+        Assert.Equal(
+            [
+                "eula.txt",
+                "fabric-server-launch.jar",
+                "mods/hechao-contract.jar",
+                "mods/server-only.jar",
+                "server.properties",
+                "start.bat",
+                "user_jvm_args.txt"
+            ],
+            ReadPaths(result.Server.Path));
+    }
+
+    [Fact]
     public async Task AnalyzeAndSplitAsync_RejectsTraversalAndCaseCollision()
     {
         var source = CreateArchive(

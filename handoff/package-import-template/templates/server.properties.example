@@ -1,0 +1,10 @@
+# Replace gameplay values with reviewed values before packaging.
+server-ip=127.0.0.1
+server-port=25568
+online-mode=false
+max-players=20
+motd=Hechao Activity
+enable-rcon=false
+enable-query=false
+white-list=true
+enforce-whitelist=true
