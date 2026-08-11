@@ -718,6 +718,10 @@ app.MapPost("/v1/internal/forum/accounts/password/reset", ResetForumAccountPassw
     .RequireRateLimiting("internal-forum");
 app.MapPost("/v1/internal/forum/accounts/profile", UpdateForumAccountProfileAsync)
     .RequireRateLimiting("internal-forum");
+app.MapPost(
+        "/v1/internal/forum/accounts/membership-eligibility",
+        GetForumMembershipEligibilityAsync)
+    .RequireRateLimiting("internal-forum");
 app.MapGet("/v1/catalog", GetCatalogAsync)
     .RequireRateLimiting("catalog");
 app.MapGet("/v1/public/activities", GetPublicActivitiesAsync)
@@ -1201,6 +1205,33 @@ async Task<IResult> UpdateForumAccountProfileAsync(
     {
         return AccountConflictProblem(exception);
     }
+}
+
+async Task<IResult> GetForumMembershipEligibilityAsync(
+    ForumMembershipEligibilityRequest request,
+    ForumAccountBridgeTokenValidator tokenValidator,
+    AuthenticationRepository authenticationRepository,
+    HttpContext context,
+    CancellationToken cancellationToken)
+{
+    var authorizationProblem = ValidateForumBridgeRequest(context, tokenValidator);
+    if (authorizationProblem is not null)
+    {
+        return authorizationProblem;
+    }
+
+    if (request.UserId == Guid.Empty)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["userId"] = ["赫朝账号 ID 无效。"]
+        });
+    }
+
+    var eligibility = await authenticationRepository.GetForumMembershipEligibilityAsync(
+        request.UserId,
+        cancellationToken);
+    return eligibility is null ? Results.NotFound() : Results.Ok(eligibility);
 }
 
 async Task<IResult> LinkMinecraftIdentityAsync(

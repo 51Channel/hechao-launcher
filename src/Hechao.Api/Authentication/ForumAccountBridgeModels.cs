@@ -34,6 +34,22 @@ public sealed record ForumAccountProfileUpdateRequest(
     Guid UserId,
     string DisplayName);
 
+public sealed record ForumMembershipEligibilityRequest(Guid UserId);
+
+public sealed record ForumMembershipEligibilityResponse(
+    Guid UserId,
+    bool AccountActive,
+    Guid? MinecraftUuid,
+    string? MinecraftName,
+    DateTimeOffset? MinecraftVerifiedAt)
+{
+    public bool Eligible =>
+        AccountActive &&
+        MinecraftUuid is not null &&
+        !string.IsNullOrWhiteSpace(MinecraftName) &&
+        MinecraftVerifiedAt is not null;
+}
+
 public sealed record ForumLegacyAccountImportResponse(
     HechaoAccount Account,
     bool Created);

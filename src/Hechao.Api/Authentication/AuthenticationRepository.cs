@@ -234,6 +234,39 @@ public sealed class AuthenticationRepository(
         return account;
     }
 
+    public async Task<ForumMembershipEligibilityResponse?>
+        GetForumMembershipEligibilityAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT u.id,
+                   NOT u.is_disabled,
+                   i.minecraft_uuid,
+                   i.minecraft_name,
+                   i.verified_at
+            FROM launcher.users u
+            LEFT JOIN launcher.minecraft_identities i ON i.user_id = u.id
+            WHERE u.id = $1;
+            """;
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue(userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new ForumMembershipEligibilityResponse(
+            reader.GetGuid(0),
+            reader.GetBoolean(1),
+            reader.IsDBNull(2) ? null : reader.GetGuid(2),
+            reader.IsDBNull(3) ? null : reader.GetString(3),
+            reader.IsDBNull(4) ? null : reader.GetFieldValue<DateTimeOffset>(4));
+    }
+
     public async Task<ForumLegacyAccountImportResponse> ImportLegacyForumAccountAsync(
         string forumUserId,
         string username,

@@ -35,7 +35,13 @@ POST /v1/internal/forum/accounts/import
 POST /v1/internal/forum/accounts/password/change
 POST /v1/internal/forum/accounts/password/reset
 POST /v1/internal/forum/accounts/profile
+POST /v1/internal/forum/accounts/membership-eligibility
 ```
+
+`membership-eligibility` 只接受统一账号 UUID，返回账号是否启用、Minecraft UUID、
+玩家名、验证时间和派生的 `eligible`。只有账号启用且三项 Minecraft 身份字段完整时
+才为可申请；响应不包含密码、Microsoft Token、启动器会话、LuckPerms、白名单或
+其他用户资料。网站只把它用于成员问卷门禁，并在最终提交和管理员通过前强制实时查询。
 
 生产配置：
 
@@ -96,3 +102,13 @@ API 迁移 `8` 只新增显示名称唯一索引和外部身份表，不删除�
 
 完整哈希、候选安装包和验证记录见
 [`UNIFIED_ACCOUNT_RELEASE_0.11.0.md`](UNIFIED_ACCOUNT_RELEASE_0.11.0.md)。
+
+## 8. 成员问卷资格候选
+
+2026-08-11 的 API `0.30.2` 候选新增上述只读资格端点，并继续复用论坛桥接令牌、
+回环来源限制和 `internal-forum` 限流。API 测试 `305/305`、完整解决方案 `725/725`
+通过；本记录只代表本地候选，尚未部署。
+
+正式发布必须使用高于生产 `0.30.1` 的新 API 版本、独立 release 目录和新注释标签，
+不得覆盖现有 `api-v0.30.1`。部署顺序为 API 先于网站；API 回滚到不含该端点的版本会让
+新成员问卷返回受控 `503`，不会绕过正版门禁。
