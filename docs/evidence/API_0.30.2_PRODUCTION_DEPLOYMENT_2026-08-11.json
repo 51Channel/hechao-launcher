@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-11T14:26:22Z",
+  "component": "api",
+  "version": "0.30.2",
+  "releaseId": "0.30.2-20260811T124943Z",
+  "buildSourceCommit": "bb109e02a5f0b238f94c3b5465be6ce3b47712b3",
+  "releaseTag": "api-v0.30.2",
+  "change": {
+    "scope": "read-only forum membership eligibility bridge",
+    "databaseMigration": false,
+    "databaseMigrationBaseline": 28,
+    "apiContractChanged": true,
+    "adminWebChanged": false,
+    "launcherChanged": false,
+    "minecraftControlChanged": false
+  },
+  "artifacts": {
+    "archive": {
+      "name": "hechao-launcher-api-0.30.2-20260811T124943Z.tar.gz",
+      "sizeBytes": 46246030,
+      "sha256": "B040932F46A3D3A848D43F5A66F4A004D713FCD854954122EC04EDF21FFABD20",
+      "entryCount": 161,
+      "fileCount": 156,
+      "remoteHashMatched": true,
+      "safePathsVerified": true,
+      "forbiddenFilesFound": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105238980,
+      "sha256": "C861F40ACD39991B248072C4FB17D0F65F1FE9A6F4DA86BF0438EDAA283EA1D5",
+      "deployedHashMatched": true
+    }
+  },
+  "tests": {
+    "apiPassed": 305,
+    "apiFailed": 0,
+    "dotnetFullPassed": 725,
+    "dotnetFullFailed": 0,
+    "membershipEligibilityContractPassed": true
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.1-20260810T225350Z",
+    "databaseMigrationCount": 28,
+    "apiRestartCount": 0,
+    "publisherMainPid": 2064,
+    "publisherRestartCount": 0,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260811T125213Z.dump",
+      "sizeBytes": 5252813,
+      "sha256": "DD93A3FFC7B2F9905D38458D0B765725A2352D7246964841DA9A84EE4937DCF6",
+      "checksumVerified": true,
+      "restoreListLines": 239
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.30.2-20260811T125215Z.tar.gz",
+      "sizeBytes": 46381518,
+      "sha256": "399A58662B276ABCC81C3DE0705D519D2E8933B4C8A6F7C78FB4582CD9BF13CC",
+      "checksumVerified": true
+    }
+  },
+  "deployment": {
+    "activeAtUtc": "2026-08-11T12:57:09Z",
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.2-20260811T124943Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.30.1-20260810T225350Z",
+    "databaseMigrationsApplied": 0,
+    "onlyApiServiceRestarted": true,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "serviceSubState": "running",
+    "mainPid": 2189110,
+    "nRestarts": 0,
+    "healthVersion": "0.30.2",
+    "databaseStatus": "ready",
+    "loopbackPort8090Only": true,
+    "warningJournalEntriesSinceDeployment": 0,
+    "errorJournalEntriesSinceDeployment": 0,
+    "publisherMainPidUnchanged": true,
+    "publisherRestartCountUnchanged": true,
+    "mappedAccountProbeCount": 29,
+    "mappedAccountSuccessCount": 29,
+    "eligibleAccountCount": 13,
+    "unknownAccountStatus": 404,
+    "missingBridgeCredentialStatus": 401,
+    "websiteDeployedAfterApi": true,
+    "temporaryUploadRemoved": true
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "bridgeTokenIncluded": false,
+    "sessionTokenIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false,
+    "databaseContentsIncluded": false,
+    "accountIdentifiersIncluded": false,
+    "minecraftIdentifiersIncluded": false
+  }
+}
