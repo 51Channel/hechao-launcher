@@ -192,6 +192,8 @@ owl5 使用统一 Java 21 时，以管理员 PowerShell 7 设置机器值：
 更新后先使用只运行 `java -version` 的临时受管批处理验证，禁止把生产玩家服作为首次
 探针。回滚时恢复上一版 `Run-MinecraftServer.ps1`，并把 `HECHAO_JAVA_HOME` 恢复为
 变更前的值；已运行的 Java 进程不受该变量或 runner 文件替换影响。
+owl5 活动槽首次生产修复与并行 runner 回滚点见
+[`SERVER_CONTROL_RUNNER_MANAGED_JAVA_2026-08-14.md`](SERVER_CONTROL_RUNNER_MANAGED_JAVA_2026-08-14.md)。
 
 ### 6.1 接管已经运行的旧任务
 
