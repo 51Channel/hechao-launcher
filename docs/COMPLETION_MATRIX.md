@@ -2,7 +2,7 @@
 
 > 更新时间：`2026-08-14`
 >
-> 当前生产：启动器 `0.15.7`、API `0.30.5`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
+> 当前生产：启动器 `0.15.7`、API `0.30.6`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
 > owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
@@ -37,8 +37,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.15.7` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，公开元数据与官网下载网关通过；当前管理机缺少可恢复 Launcher 会话，认证更新端点的最终复验待登录后补跑，见 [`LAUNCHER_RELEASE_0.15.7.md`](LAUNCHER_RELEASE_0.15.7.md) |
-| API `0.30.5` | 已完成 | 继承 `0.30.4` 的日志与 Publisher 工作空间保护；目录和整合包部署结果可精确交接到单服控制页，无效目标告警回退且入口不自动启动 Minecraft。内外网健康、数据库就绪和生产静态文件通过，见 [`API_RELEASE_0.30.5.md`](API_RELEASE_0.30.5.md) |
-| 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条企划，首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
+| API `0.30.6` | 已完成 | 继承 `0.30.5` 的精确服控交接；后台活动企划会只读显示未纳入正式企划的旧目录排期、缺失时间边界和整合包绑定，不发布、部署或启停 Minecraft。内外网健康、数据库就绪和生产静态文件通过，见 [`API_RELEASE_0.30.6.md`](API_RELEASE_0.30.6.md) |
+| 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条正式企划，`赫朝商务追杀` 作为只读旧排期显示，补齐结束时间与整合包绑定后仍须走正式企划流程；首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.6 -> 0.15.7` 隔离覆盖升级、全新安装、双轮卸载、设置与会话文件保留均通过；验收开始时的既有正式启动器进程未被替代关闭 |
@@ -124,7 +124,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | 赫朝账号与论坛统一账号 | 已完成 | 注册、登录、资料和密码内部接口已部署 |
 | Microsoft/Minecraft 正版绑定 | 已实现待生产验收 | API 许可和 1 个真实管理员正版账号的正确赫朝客户端登录、基础档案进服已通过；生产有 Member `21` 个但绑定为 `0`，Participant 与 Collaborator 均为 `0`，Administrator `1` 个且已绑定，需三个缺失等级各准备合法正版身份后完成四级验收，见 [`evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json`](evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json) |
-| LuckPerms 等级同步、受控修改与目录过滤 | 已部署待完整角色验收 | Tier Agent `0.1.3` 与 API `0.30.3` 门禁已上线，当前 API `0.30.5` 继续继承；遗留 `0.1.0` 实例已隔离，两条正常业务 `vip` 变更跨四个五分钟间隔未回退，最终 `owner=3`、身份和用户等级差异均为 `0`。仍需专门测试账号完成四级改回、自身保护、最后管理员保护和拒绝路径 |
+| LuckPerms 等级同步、受控修改与目录过滤 | 已部署待完整角色验收 | Tier Agent `0.1.3` 与 API `0.30.3` 门禁已上线，当前 API `0.30.6` 继续继承；遗留 `0.1.0` 实例已隔离，两条正常业务 `vip` 变更跨四个五分钟间隔未回退，最终 `owner=3`、身份和用户等级差异均为 `0`。仍需专门测试账号完成四级改回、自身保护、最后管理员保护和拒绝路径 |
 | 签名清单、断点续传、修复与原子切换 | 已完成 | 基础、Vanilla、Forge、NeoForge、恐怖整蛊、DollNight 档案与自动测试 |
 | 启动时客户端检查开关 | 已完成 | `0.11.14` 可跳过首次本地扫描，重新开启立即检查；第一次进服前仍强制检查，自动测试覆盖 |
 | 启动器本体自更新 | 已部署待本次会话复验 | 每个进程启动并恢复登录态后检查；私有 OSS 断点下载、长度与 SHA-256 复验、临时更新器静默覆盖、失败保留及重试入口均已发布。生产 `LatestVersion=0.15.7`；`0.15.6` 的真实会话链已验收，本次因管理机无可恢复会话待登录后补跑，见 [`LAUNCHER_SELF_UPDATE_OPERATIONS.md`](LAUNCHER_SELF_UPDATE_OPERATIONS.md) |

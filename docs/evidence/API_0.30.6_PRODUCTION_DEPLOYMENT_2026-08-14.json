@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-14T14:00:27Z",
+  "component": "api",
+  "version": "0.30.6",
+  "releaseId": "0.30.6-20260814T133415Z",
+  "buildSourceCommit": "171cea3e4cd2404e56d0ac90b8ef6d64facb8322",
+  "releaseTag": "api-v0.30.6",
+  "change": {
+    "scope": "read-only visibility for unmanaged activity schedules in the admin activity calendar",
+    "databaseMigration": false,
+    "databaseMigrationBaseline": 28,
+    "apiContractChanged": true,
+    "adminWebChanged": true,
+    "launcherChanged": false,
+    "minecraftControlChanged": false
+  },
+  "artifacts": {
+    "archive": {
+      "name": "hechao-launcher-api-0.30.6-20260814T133415Z.tar.gz",
+      "sizeBytes": 46259308,
+      "sha256": "17B6995E8349A6024BDEA26AD84B86F578FC3EBB918ED7B3D4DA6F0F914D5025",
+      "entryCount": 161,
+      "fileCount": 156,
+      "remoteHashMatched": true,
+      "safePathsVerified": true,
+      "forbiddenFilesFound": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105253828,
+      "sha256": "6CF985C4EEC6299A393C344A26BE031D6CB641C4790B40E54EE9A2EE870D353E",
+      "deployedHashMatched": true
+    }
+  },
+  "tests": {
+    "typescriptPassed": true,
+    "vitestPassed": 13,
+    "playwrightPassed": 31,
+    "apiPassed": 317,
+    "dotnetFullPassed": 737,
+    "releaseProvenancePassed": 20,
+    "failed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.5-20260814T121420Z",
+    "databaseMigrationCount": 28,
+    "publisherMainPid": 2064,
+    "nginxMainPid": 1742715,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260814T135715Z.dump",
+      "sizeBytes": 6256835,
+      "sha256": "A2789EA70B9BBA4E23E6ABE8080506AA120C9A07CBD6AF7EEA9DFB56216F4B4B",
+      "checksumVerified": true,
+      "restoreListLines": 239
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.30.6-20260814T135715Z.tar.gz",
+      "sizeBytes": 46390319,
+      "sha256": "28BA56C614B4739C04FFE936843144A63DB623ABA73DF543E048C7FFE91D8192",
+      "checksumVerified": true
+    }
+  },
+  "deployment": {
+    "activeAtUtc": "2026-08-14T13:58:23Z",
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.6-20260814T133415Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.30.5-20260814T121420Z",
+    "databaseMigrationsApplied": 0,
+    "onlyApiServiceRestarted": true,
+    "minecraftControlCommandsIssued": 0
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "mainPid": 282428,
+    "nRestarts": 0,
+    "healthVersion": "0.30.6",
+    "databaseStatus": "ready",
+    "databaseMigrationCount": 28,
+    "loopbackPort8090Only": true,
+    "publicPort8090Closed": true,
+    "warningOrErrorJournalEntries": 0,
+    "publisherMainPidUnchanged": true,
+    "nginxMainPidUnchanged": true,
+    "formalActivityPlanCount": 0,
+    "unmanagedScheduleCount": 1,
+    "unmanagedSchedule": {
+      "serverId": "activity",
+      "displayName": "赫朝商务追杀",
+      "opensAtUtc": "2026-08-15T09:00:00Z",
+      "closesAtUtc": null,
+      "packageImportId": null,
+      "clientProfileId": "hechao-business-manhunt-paper-1.21.11",
+      "revision": 15
+    },
+    "adminStaticUnmanagedScheduleLabelVerified": true,
+    "adminStaticUnmanagedSchedulesFieldVerified": true,
+    "adminEndpointUnauthenticatedStatus": 401,
+    "packageImportStatusCounts": {
+      "Cancelled": 3,
+      "Completed": 3,
+      "Failed": 3,
+      "Uploading": 1
+    },
+    "serverControlStatusCounts": {
+      "Failed": 11,
+      "Succeeded": 17
+    },
+    "pendingOrRunningTasks": 0,
+    "publicApiHealthy": true,
+    "adminWebHealthy": true,
+    "legacyWebsiteHealthy": true,
+    "relayApiHealthy": true,
+    "temporaryUploadRemoved": true
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "tokenIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false,
+    "databaseContentsIncluded": false,
+    "accountIdentifiersIncluded": false
+  }
+}

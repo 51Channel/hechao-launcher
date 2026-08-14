@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-14T12:29:36Z",
+  "generatedAtUtc": "2026-08-14T14:01:17Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -126,42 +126,42 @@
     },
     {
       "component": "api",
-      "version": "0.30.5-20260814T121420Z",
-      "releaseTag": "api-v0.30.5",
-      "releaseCommit": "54d3c0a1db57eb37097206bae338902da4b17a01",
-      "taggedAt": "2026-08-14T20:29:36+08:00",
+      "version": "0.30.6-20260814T133415Z",
+      "releaseTag": "api-v0.30.6",
+      "releaseCommit": "171cea3e4cd2404e56d0ac90b8ef6d64facb8322",
+      "taggedAt": "2026-08-14T22:01:17+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "54d3c0a1db57eb37097206bae338902da4b17a01"
+        "value": "171cea3e4cd2404e56d0ac90b8ef6d64facb8322"
       },
-      "deploymentState": "production-admin-exact-server-control-handoff-health-ready",
-      "historicalNote": "Production contains migrations through 028 and inherits the 0.30.3 LuckPerms protocol fence plus the 0.30.4 Publisher workspace log guard. 0.30.4 is the direct program rollback. Catalog and package deployment links open exact control targets but never enqueue Minecraft start commands.",
+      "deploymentState": "production-admin-unmanaged-activity-schedules-visible-health-ready",
+      "historicalNote": "Production contains migrations through 028 and inherits the 0.30.5 exact server-control handoff. 0.30.5 is the direct program rollback. The admin activity calendar now shows legacy catalog schedules as read-only unmanaged entries and never publishes, deploys, or enqueues Minecraft control commands for them.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.30.5-20260814T121420Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.30.5-20260814T121420Z",
-          "size": 46251141,
-          "sha256": "CA39C1C6E7D7CC124581E72DF2E3FE523D70F3E1C5226065A17F1B1361C6B496",
+          "name": "hechao-launcher-api-0.30.6-20260814T133415Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.30.6-20260814T133415Z",
+          "size": 46259308,
+          "sha256": "17B6995E8349A6024BDEA26AD84B86F578FC3EBB918ED7B3D4DA6F0F914D5025",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.30.5-20260814T121420Z/Hechao.Api",
-          "size": 105245636,
-          "sha256": "7532B2EFC276455486415181FC7E361527D3622D9ADF667BF89FD450E21AE4B8",
+          "location": "/opt/hechao-launcher-api/releases/0.30.6-20260814T133415Z/Hechao.Api",
+          "size": 105253828,
+          "sha256": "6CF985C4EEC6299A393C344A26BE031D6CB641C4790B40E54EE9A2EE870D353E",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.30.4-20260814T093000Z"
+        "target": "/opt/hechao-launcher-api/releases/0.30.5-20260814T121420Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.30.5.md",
-        "docs/evidence/API_0.30.5_PRODUCTION_DEPLOYMENT_2026-08-14.json",
-        "docs/API_RELEASE_0.30.5_CANDIDATE.md",
-        "docs/API_RELEASE_0.30.4.md"
+        "docs/API_RELEASE_0.30.6.md",
+        "docs/evidence/API_0.30.6_PRODUCTION_DEPLOYMENT_2026-08-14.json",
+        "docs/API_RELEASE_0.30.6_CANDIDATE.md",
+        "docs/API_RELEASE_0.30.5.md"
       ]
     },
     {
