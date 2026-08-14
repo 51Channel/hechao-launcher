@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-08-14T18:04:38+08:00",
+  "host": "owl5",
+  "target": "activity",
+  "incident": {
+    "commandId": "6b5160aa-df34-4781-8d25-0863c10fbb1d",
+    "resultCode": "START_TIMEOUT",
+    "cause": "The deployed start.bat invoked java while the scheduled-task PATH had no Java directory."
+  },
+  "source": {
+    "branch": "codex/server-control-managed-java-home",
+    "commit": "5476f394e8468a9757fc27cf42b1e409a9c62c49",
+    "managedStartProbe": {
+      "passed": 6,
+      "failed": 0
+    },
+    "serverControlAgentTests": {
+      "passed": 58,
+      "failed": 0
+    }
+  },
+  "deployment": {
+    "runnerPath": "C:\\ProgramData\\Hechao\\ServerControl\\Run-MinecraftServer.5476f39.ps1",
+    "runnerSha256": "ADCEC91F97B6BD6A77C7698CB98D3521D721646AF454D24DB6DF4614FCDBBD89",
+    "managedJavaHome": "E:\\jdk",
+    "taskName": "Hechao-Server-ActivityNeoForge",
+    "backupDirectory": "E:\\manual-backups\\activity-managed-java-20260814T100255Z",
+    "firstInPlaceAttemptRolledBack": true
+  },
+  "verification": {
+    "javaProbeExitCode": 0,
+    "javaMajor": 21,
+    "activityTaskState": "Ready",
+    "activityTaskUsesVersionedRunner": true,
+    "port25568Listening": false,
+    "serverControlAgentProcessCount": 1,
+    "unchangedJavaProcessIds": [
+      7328
+    ],
+    "minecraftStarted": false
+  },
+  "remainingAcceptance": [
+    "Explicitly authorized real activity start",
+    "Paper and plugin startup review",
+    "Velocity forwarding and real-player join"
+  ]
+}
