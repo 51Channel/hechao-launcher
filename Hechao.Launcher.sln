@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hechao.Modpack.Tests", "tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hechao.Backup.Core", "src\Hechao.Backup.Core\Hechao.Backup.Core.csproj", "{E3612C25-8CB4-408D-92FB-C9B3BA716C66}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hechao.ModpackInspector", "src\Hechao.ModpackInspector\Hechao.ModpackInspector.csproj", "{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -269,6 +271,18 @@ Global
 		{E3612C25-8CB4-408D-92FB-C9B3BA716C66}.Release|x64.Build.0 = Release|Any CPU
 		{E3612C25-8CB4-408D-92FB-C9B3BA716C66}.Release|x86.ActiveCfg = Release|Any CPU
 		{E3612C25-8CB4-408D-92FB-C9B3BA716C66}.Release|x86.Build.0 = Release|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Debug|x64.Build.0 = Debug|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Debug|x86.Build.0 = Debug|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Release|x64.ActiveCfg = Release|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Release|x64.Build.0 = Release|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Release|x86.ActiveCfg = Release|Any CPU
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -292,5 +306,6 @@ Global
 		{BED13F9E-24FB-4777-91FD-D91A2107FA3C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{F6220154-A6EB-4C9B-B9A8-0946A2773175} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{E3612C25-8CB4-408D-92FB-C9B3BA716C66} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{AD1CA003-D381-4FD3-BE4D-3A9E2F43EB32} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
