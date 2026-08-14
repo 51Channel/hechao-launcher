@@ -187,24 +187,6 @@ foreach ($target in @($configurationObject.targets)) {
     )
     $startScriptText = $null
     if ($packageDeploymentEnabled) {
-        if (-not [string]::Equals(
-                [string]$configurationObject.agentId,
-                'owl5',
-                [System.StringComparison]::Ordinal
-            ) -or
-            -not [string]::Equals(
-                [string]$target.serverId,
-                'activity',
-                [System.StringComparison]::Ordinal
-            ) -or
-            -not [string]::Equals(
-                [string]$target.conflictGroup,
-                'owl5-activity-slot',
-                [System.StringComparison]::Ordinal
-            ) -or
-            [int]$target.port -ne 25568) {
-            throw 'Package deployment is restricted to the owl5 activity slot.'
-        }
         if (-not $startScriptPath.StartsWith(
                 $serverDirectory,
                 [System.StringComparison]::OrdinalIgnoreCase

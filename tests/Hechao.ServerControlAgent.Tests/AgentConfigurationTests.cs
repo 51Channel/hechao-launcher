@@ -98,13 +98,29 @@ public sealed class AgentConfigurationTests
             var deploymentTargets = configuration.Targets
                 .Where(target => target.PackageDeploymentEnabled)
                 .ToArray();
-            var activity = Assert.Single(deploymentTargets);
+            Assert.Equal(
+                ["activity", "survival2"],
+                deploymentTargets
+                    .Select(target => target.ServerId)
+                    .Order(StringComparer.Ordinal)
+                    .ToArray());
+            var activity = Assert.Single(
+                deploymentTargets,
+                target => target.ServerId == "activity");
             Assert.Equal("activity", activity.ServerId);
             Assert.Equal("start.bat", activity.StartScriptRelativePath);
             Assert.Equal(["forwarding.secret"], activity.HostManagedRelativePaths);
             Assert.Equal(
                 ["world", "world_nether", "world_the_end"],
                 activity.WorldDataRelativePaths);
+            var survival = Assert.Single(
+                deploymentTargets,
+                target => target.ServerId == "survival2");
+            Assert.Equal("start.bat", survival.StartScriptRelativePath);
+            Assert.Equal(["forwarding.secret"], survival.HostManagedRelativePaths);
+            Assert.Equal(
+                ["world", "world_nether", "world_the_end"],
+                survival.WorldDataRelativePaths);
         }
         else
         {
@@ -136,9 +152,9 @@ public sealed class AgentConfigurationTests
     }
 
     [Fact]
-    public void Validate_AcceptsPackageDeploymentOnlyOnOwl5ActivitySlot()
+    public void Validate_AcceptsMultipleExplicitPackageDeploymentTargets()
     {
-        var target = CreateTarget(
+        var activity = CreateTarget(
             "activity",
             @"E:\ActivityNeoForge",
             25568,
@@ -148,36 +164,22 @@ public sealed class AgentConfigurationTests
             HostManagedRelativePaths = ["forwarding.secret"],
             WorldDataRelativePaths = ["world", "world_nether", "world_the_end"]
         };
-        var configuration = CreateConfiguration(target) with { AgentId = "owl5" };
-
-        configuration.Validate();
-    }
-
-    [Fact]
-    public void Validate_RejectsPackageDeploymentOutsideOwl5ActivitySlot()
-    {
-        var approvedTarget = CreateTarget(
-            "activity",
-            @"E:\ActivityNeoForge",
-            25568,
-            "owl5-activity-slot") with
+        var survival = CreateTarget(
+            "survival2",
+            @"E:\Survival2",
+            25565,
+            "owl5-survival-slot") with
         {
             PackageDeploymentEnabled = true,
-            HostManagedRelativePaths = ["forwarding.secret"]
+            HostManagedRelativePaths = ["forwarding.secret"],
+            WorldDataRelativePaths = ["world", "world_nether", "world_the_end"]
         };
-        var invalidConfigurations = new[]
+        var configuration = CreateConfiguration(activity, survival) with
         {
-            CreateConfiguration(approvedTarget),
-            CreateConfiguration(approvedTarget with { ServerId = "fanstreet" })
-                with { AgentId = "owl5" },
-            CreateConfiguration(approvedTarget with { Port = 25569 })
-                with { AgentId = "owl5" },
-            CreateConfiguration(approvedTarget with { ConflictGroup = "other-slot" })
-                with { AgentId = "owl5" }
+            AgentId = "owl5"
         };
 
-        Assert.All(invalidConfigurations, configuration =>
-            Assert.Throws<InvalidDataException>(configuration.Validate));
+        configuration.Validate();
     }
 
     [Fact]

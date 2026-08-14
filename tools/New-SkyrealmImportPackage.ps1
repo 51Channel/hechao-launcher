@@ -12,6 +12,8 @@ param(
     [Parameter(Mandatory)]
     [string]$EconomyScreenJar,
 
+    [string]$PackageVersion = '1.0.3',
+
     [string]$ExpectedInputSha256 =
         'A0393BC880DE4E70181B244E8ED42774AEF582908E2F072D31552317931860E9'
 )
@@ -21,6 +23,9 @@ Set-StrictMode -Version Latest
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
     throw 'PowerShell 7 or later is required.'
+}
+if ($PackageVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$') {
+    throw 'PackageVersion must use major.minor.patch format.'
 }
 
 foreach ($path in @($InputArchive, $EconomyPluginJar, $EconomyScreenJar)) {
@@ -322,7 +327,7 @@ java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt 
         schemaVersion = 1
         id = 'skyrealm-industrial-neoforge-1.21.1'
         displayName = '天域远征工业季'
-        version = '1.0.2'
+        version = $PackageVersion
         minecraftVersion = '1.21.1'
         javaMajorVersion = 21
         loader = 'NeoForge'
@@ -357,7 +362,7 @@ java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt 
     $payloadTotalBytes = ($payload.Values | Measure-Object -Property Length -Sum).Sum
     $releaseManifest = [ordered]@{
         schema_version = 1
-        release_id = 'hechao-skyrealm-economy-screen-1.0.2'
+        release_id = "hechao-skyrealm-economy-screen-$PackageVersion"
         project = '天域远征工业季'
         created_utc = $fixedTimestamp.ToString('O')
         source_archive_sha256 = $actualInputHash.ToLowerInvariant()

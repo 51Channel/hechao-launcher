@@ -81,6 +81,10 @@ public sealed class PackageImportDeploymentContractTests
             "target.Target.ActiveOperation is not null",
             endpoints,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "PackageImportRules.IsPackageDeploymentTarget(target.Target)",
+            endpoints,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("内存硬上限", endpoints, StringComparison.Ordinal);
         Assert.DoesNotContain("hardLimit", source, StringComparison.Ordinal);
         Assert.Contains(
@@ -90,7 +94,7 @@ public sealed class PackageImportDeploymentContractTests
     }
 
     [Fact]
-    public void CatalogSynchronization_IsHiddenClosedActivityEntry()
+    public void CatalogSynchronization_IsHiddenClosedSelectedTargetEntry()
     {
         var source = ReadRepositoryFile(
             "src",
@@ -104,6 +108,10 @@ public sealed class PackageImportDeploymentContractTests
         Assert.Contains("icon_glyph = $4", source, StringComparison.Ordinal);
         Assert.Contains("announcement = ''", source, StringComparison.Ordinal);
         Assert.Contains(
+            "package.Plan.TargetServerId",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
             "PackageImportRules.ActivityVelocityTarget",
             source,
             StringComparison.Ordinal);
@@ -141,7 +149,8 @@ public sealed class PackageImportDeploymentContractTests
 
         Assert.Contains("enableRangeProcessing: true", endpoint, StringComparison.Ordinal);
         Assert.Contains("command.claim_expires_at >= $3", repository, StringComparison.Ordinal);
-        Assert.Contains("PackageImportRules.IsActivityTarget(", repository, StringComparison.Ordinal);
+        Assert.Contains("target.agent_id = command.agent_id", repository, StringComparison.Ordinal);
+        Assert.Contains("PackageImportRules.IsPackageDeploymentTarget(", repository, StringComparison.Ordinal);
         Assert.Contains("package.status = 'DeployingServer'", repository, StringComparison.Ordinal);
         Assert.Contains("id = ANY($3) THEN $4", repository, StringComparison.Ordinal);
         Assert.Contains("ELSE LEAST(claim_expires_at, $2)", repository, StringComparison.Ordinal);

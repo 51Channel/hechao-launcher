@@ -1151,6 +1151,24 @@ test("package import deploys immediately only after the administrator selects co
       if (path === "/v1/admin/server-control/overview") {
         const stopped = controlOverview(1);
         stopped.targets[0] = { ...stopped.targets[0], online: false, processId: null };
+        stopped.targets.push({
+          ...stopped.targets[0],
+          serverId: "survival2",
+          displayName: "天域长期生存服",
+          conflictGroup: "owl5-survival-slot",
+          port: 25565,
+          settings: {
+            ...quickSettings(20),
+            maximumMemoryMiB: 6144,
+            maximumAllowedMemoryMiB: 6144
+          },
+          packageDeploymentMemoryGuidance: {
+            hostTotalMemoryMiB: 32768,
+            recommendedMinimumMemoryMiB: 4096,
+            recommendedMaximumMemoryMiB: 16384
+          },
+          deployedPackage: null
+        });
         await route.fulfill({ json: stopped });
         return true;
       }
@@ -1183,17 +1201,22 @@ test("package import deploys immediately only after the administrator selects co
   await page.goto("/admin/package-imports");
   await page.getByRole("button", { name: "查看整合包任务" }).click();
   const drawer = page.locator(".package-import-drawer");
-  await drawer.getByLabel("立即部署活动槽").check();
+  await expect(drawer.getByLabel("部署目标")).toHaveValue("");
+  await drawer.getByLabel("部署目标").selectOption("survival2");
+  await drawer.getByLabel("立即部署受控目标").check();
   await expect(drawer.getByText("服控代理", { exact: true })).toHaveClass(/ready/);
   await expect(drawer.getByText("目标已停服", { exact: true })).toHaveClass(/ready/);
-  await drawer.getByLabel("精确确认").fill(`发布并部署 ${packageImportId}`);
+  await drawer.getByLabel("精确确认").fill(
+    `发布并部署 ${packageImportId} 到 survival2`
+  );
   await drawer.getByRole("button", { name: "发布并部署" }).click();
 
   await expect.poll(() => confirmedBody).not.toBeNull();
   expect(confirmedBody).toMatchObject({
     expectedRevision: 4,
+    targetServerId: "survival2",
     deployServer: true,
-    confirmation: `发布并部署 ${packageImportId}`
+    confirmation: `发布并部署 ${packageImportId} 到 survival2`
   });
 });
 

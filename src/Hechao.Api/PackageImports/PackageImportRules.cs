@@ -8,7 +8,6 @@ public static partial class PackageImportRules
 {
     public const string ActivityServerId = "activity";
     public const string ActivityAgentId = "owl5";
-    public const string ActivityVelocityTarget = "activity";
     public const string ActivityConflictGroup = "owl5-activity-slot";
     public const int ActivityPort = 25568;
 
@@ -96,7 +95,7 @@ public static partial class PackageImportRules
         }
 
         var expectedConfirmation = request.DeployServer
-            ? $"发布并部署 {import.ImportId:D}"
+            ? $"发布并部署 {import.ImportId:D} 到 {request.TargetServerId}"
             : $"发布并入库 {import.ImportId:D}";
         if (!string.Equals(request.Confirmation?.Trim(), expectedConfirmation, StringComparison.Ordinal))
         {
@@ -128,16 +127,36 @@ public static partial class PackageImportRules
             StringComparison.Ordinal) &&
         port == ActivityPort;
 
+    public static bool IsPackageDeploymentTarget(
+        AdminServerControlTargetRecord target) =>
+        IsPackageDeploymentTarget(
+            target.ServerId,
+            target.AgentId,
+            target.Port,
+            target.PackageDeploymentEnabled);
+
+    public static bool IsPackageDeploymentTarget(
+        string serverId,
+        string agentId,
+        int port,
+        bool packageDeploymentEnabled) =>
+        packageDeploymentEnabled &&
+        ServerIdPattern().IsMatch(serverId) &&
+        AgentIdPattern().IsMatch(agentId) &&
+        port is >= 1 and <= 65535;
+
     public static ServerMemoryGuidance? ResolvePackageDeploymentMemoryGuidance(
         string serverId,
         string agentId,
-        string? conflictGroup,
         int port,
         bool packageDeploymentEnabled,
         int? hostTotalMemoryMiB)
     {
-        if (!packageDeploymentEnabled ||
-            !IsActivityTarget(serverId, agentId, conflictGroup, port) ||
+        if (!IsPackageDeploymentTarget(
+                serverId,
+                agentId,
+                port,
+                packageDeploymentEnabled) ||
             hostTotalMemoryMiB is not (>= 1024 and <= 1_048_576))
         {
             return null;
@@ -162,7 +181,7 @@ public static partial class PackageImportRules
     private static int RoundDownToMemoryStep(int value) => value / 256 * 256;
 
     public static bool IsValidPublisherAgentId(string? agentId) =>
-        agentId is not null && PublisherAgentIdPattern().IsMatch(agentId);
+        agentId is not null && AgentIdPattern().IsMatch(agentId);
 
     public static IReadOnlyDictionary<string, string[]> ValidatePublisherHeartbeat(
         PackagePublisherHeartbeatRequest request,
@@ -307,7 +326,7 @@ public static partial class PackageImportRules
     private static partial Regex ServerIdPattern();
 
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$", RegexOptions.CultureInvariant)]
-    private static partial Regex PublisherAgentIdPattern();
+    private static partial Regex AgentIdPattern();
 
     [GeneratedRegex("^[A-Z][A-Z0-9_]{0,79}$", RegexOptions.CultureInvariant)]
     private static partial Regex ResultCodePattern();

@@ -5,12 +5,6 @@ namespace Hechao.ServerControlAgent;
 
 public sealed record ServerControlAgentConfiguration
 {
-    private const string PackageDeploymentAgentId = "owl5";
-    private const string PackageDeploymentServerId = "activity";
-    private const string PackageDeploymentConflictGroup =
-        "owl5-activity-slot";
-    private const int PackageDeploymentPort = 25568;
-
     public string ApiBaseUrl { get; init; } = string.Empty;
     public string AgentId { get; init; } = string.Empty;
     public string TokenPath { get; init; } = string.Empty;
@@ -106,29 +100,6 @@ public sealed record ServerControlAgentConfiguration
                 throw new InvalidDataException(
                     $"Deletion target '{target.ServerId}' overlaps protected agent data or another managed server.");
             }
-        }
-
-        var deploymentTargets = Targets
-            .Where(target => target.PackageDeploymentEnabled)
-            .ToArray();
-        if (deploymentTargets.Length > 1 ||
-            deploymentTargets.Any(target =>
-                !string.Equals(
-                    AgentId,
-                    PackageDeploymentAgentId,
-                    StringComparison.Ordinal) ||
-                !string.Equals(
-                    target.ServerId,
-                    PackageDeploymentServerId,
-                    StringComparison.Ordinal) ||
-                !string.Equals(
-                    target.ConflictGroup,
-                    PackageDeploymentConflictGroup,
-                    StringComparison.Ordinal) ||
-                target.Port != PackageDeploymentPort))
-        {
-            throw new InvalidDataException(
-                "Package deployment is restricted to the owl5 activity slot.");
         }
 
         foreach (var samePort in Targets.GroupBy(target => target.Port))

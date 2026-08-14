@@ -63,32 +63,32 @@ internal sealed class PackageImportOrchestrationRepository(
             transaction,
             package.Plan.TargetServerId,
             cancellationToken);
-        if (target is null || !PackageImportRules.IsActivityTarget(
-                target.ServerId,
-                target.AgentId,
-                target.ConflictGroup,
-                target.Port))
+        if (target is null)
         {
             await FailPackageAsync(
                 connection,
                 transaction,
                 package.ImportId,
                 "DEPLOYMENT_TARGET_INVALID",
-                "部署目标不再是受控的 owl5 活动槽，服务端未切换。",
+                "受控整合包部署目标不存在，服务端未切换。",
                 now,
                 cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return PackageImportOrchestrationOutcome.Progressed;
         }
 
-        if (!target.PackageDeploymentEnabled)
+        if (!PackageImportRules.IsPackageDeploymentTarget(
+                target.ServerId,
+                target.AgentId,
+                target.Port,
+                target.PackageDeploymentEnabled))
         {
             await FailPackageAsync(
                 connection,
                 transaction,
                 package.ImportId,
-                "DEPLOYMENT_CAPABILITY_DISABLED",
-                "目标服控代理未启用整合包部署能力，服务端未切换。",
+                "DEPLOYMENT_TARGET_INVALID",
+                "目标服控代理未显式启用整合包部署能力，或目标身份无效；服务端未切换。",
                 now,
                 cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -370,7 +370,7 @@ internal sealed class PackageImportOrchestrationRepository(
             "IMPORT_COMPLETED",
             package.Plan.DeployServer
                 ? "客户端档案已启用并进入 Test 通道，服务端已部署并保持停止。"
-                : "客户端档案已启用并进入 Test 通道，服务端制品已入库且未覆盖活动槽。",
+                : "客户端档案已启用并进入 Test 通道，服务端制品已入库且未覆盖受控目标。",
             now,
             cancellationToken);
         await WriteAuditAsync(
@@ -781,7 +781,7 @@ internal sealed class PackageImportOrchestrationRepository(
         {
             return (
                 "CATALOG_TARGET_PROTECTED",
-                "活动导入不能覆盖内部基础设施目录记录；服务端保持停止。");
+                "整合包导入不能覆盖内部基础设施目录记录；服务端保持停止。");
         }
 
         var shortName = TakeTextElements(package.Plan.ServerDisplayName, 12);
@@ -978,7 +978,7 @@ internal sealed class PackageImportOrchestrationRepository(
         command.Parameters.AddWithValue(loader.ToString());
         command.Parameters.AddWithValue(package.Plan.MinimumTier.ToString());
         command.Parameters.AddWithValue(package.Plan.ProfileId);
-        command.Parameters.AddWithValue(PackageImportRules.ActivityVelocityTarget);
+        command.Parameters.AddWithValue(package.Plan.TargetServerId);
         command.Parameters.AddWithValue(now);
     }
 

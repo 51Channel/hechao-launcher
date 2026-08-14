@@ -385,6 +385,24 @@ Launcher API `0.30.0` 把该身份保存到 `server_control_targets`。活动企
 回滚和隐私证据见 [`SERVER_CONTROL_AGENT_RELEASE_0.5.0.md`](SERVER_CONTROL_AGENT_RELEASE_0.5.0.md)
 与 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
 
+### 6.13 通用受控整合包目标（代理 0.6.0 候选）
+
+`0.6.0` 候选移除 Agent 对单一 `owl5/activity/25568` 的硬编码限制，允许同一 Agent 管理
+多个显式设置 `packageDeploymentEnabled=true` 的目标。目标仍需通过合法 server ID、
+Agent ID、端口、目录边界、受管启动脚本、主机固定路径和世界路径校验；Agent 同一时刻
+仍只领取一个 `DeployPackage`，部署前后仍要求目标停止，成功与失败均不会自动开服。
+
+API `0.31.0` 候选在确认、排队、Range 归档授权和目录同步四处复核同一显式能力。后台
+有多个目标时不默认选择，部署确认固定为 `发布并部署 <importId> 到 <targetServerId>`。
+目录同步使用所选 server ID 作为 Velocity 目标，因此 `activity` 仍写入 `activity`，
+`survival2` 写入 `survival2`。活动企划仓储和端点继续调用严格 `IsActivityTarget`，不会把
+长期生存服当作活动槽。
+
+owl5 候选配置只新增 `survival2`，目录为 `E:\Survival2`、端口 `25565`、冲突组
+`owl5-survival-slot`、最大允许内存 `6144 MiB`，保留 `forwarding.secret` 和三个世界
+目录。该配置、API 与 Agent 都尚未部署；上线前必须先核对现有 `start.bat` 的
+`HECHAO_MANAGED_START` 标记和计划任务绝对路径，失败则保持生产 `0.5.0` 配置不变。
+
 ## 7. 验收与回滚
 
 首轮只使用专用、无玩家测试目标验证：
@@ -396,7 +414,7 @@ Launcher API `0.30.0` 把该身份保存到 `server_control_targets`。活动企
 5. 冲突服停止失败时目标服绝不启动；
 6. 共享端口的不明占用被拒绝；
 7. 完成记录和管理员审计一致。
-8. 整合包只能部署到停止的 owl5 活动槽，且成功与失败均不自动开服；
+8. 整合包只能部署到 Agent 显式授权且停止的受控目标，且成功与失败均不自动开服；
 9. 固定文件、世界保留、启动脚本、重解析点和目录切换回滚分别通过。
 10. 运行中的目标、未开放删除能力的目标和错误 `DELETE <serverId>` 均被拒绝；
 11. 删除只影响配置的运行目录，外置备份保持存在；

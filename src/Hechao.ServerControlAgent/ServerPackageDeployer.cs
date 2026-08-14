@@ -256,14 +256,14 @@ internal sealed partial class ServerPackageDeployer(
                         return Failed(
                             "PACKAGE_FRESH_SWITCH_FAILED",
                             AgentLog.Sanitize(
-                                $"空活动槽切换失败，运行目录保持缺失：{exception.Message}",
+                                $"空服务端目标切换失败，运行目录保持缺失：{exception.Message}",
                                 1800));
                     }
 
                     TryDeleteFile(stagingOwnerPath);
                     return Succeeded(
                         "PACKAGE_DEPLOYED_FRESH_STOPPED",
-                        "服务端整合包已部署到空活动槽；服务端保持停止。 ");
+                        "服务端整合包已部署到空目标目录；服务端保持停止。 ");
                 }
 
                 await WriteJsonAtomicallyAsync(

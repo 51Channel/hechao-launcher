@@ -39,7 +39,7 @@ public sealed class PackageImportRulesTests
             "夏日活动",
             AccessTier.Participant,
             4096,
-            $"发布并部署 {importId:D}",
+            $"发布并部署 {importId:D} 到 {PackageImportRules.ActivityServerId}",
             DeployServer: true);
 
         Assert.Empty(PackageImportRules.Validate(request, import));
@@ -100,13 +100,36 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
+    public void IsPackageDeploymentTarget_AcceptsAnyExplicitValidTarget()
+    {
+        var activity = CreateControlTarget(
+            PackageImportRules.ActivityServerId,
+            PackageImportRules.ActivityAgentId,
+            PackageImportRules.ActivityPort,
+            PackageImportRules.ActivityConflictGroup);
+        var survival = CreateControlTarget(
+            "survival2",
+            "owl5",
+            25565,
+            "owl5-survival-slot");
+
+        Assert.True(PackageImportRules.IsPackageDeploymentTarget(activity));
+        Assert.True(PackageImportRules.IsPackageDeploymentTarget(survival));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            survival with { PackageDeploymentEnabled = false }));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            survival with { AgentId = "invalid agent" }));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            survival with { Port = 0 }));
+    }
+
+    [Fact]
     public void ResolvePackageDeploymentMemoryGuidance_UsesHostCapacity()
     {
         var guidance = PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
-            PackageImportRules.ActivityServerId,
+            "survival2",
             PackageImportRules.ActivityAgentId,
-            PackageImportRules.ActivityConflictGroup,
-            PackageImportRules.ActivityPort,
+            25565,
             packageDeploymentEnabled: true,
             hostTotalMemoryMiB: 32768);
 
@@ -114,29 +137,30 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
-    public void ResolvePackageDeploymentMemoryGuidance_RequiresActivityIdentityAndCapacity()
+    public void ResolvePackageDeploymentMemoryGuidance_RequiresExplicitValidTargetAndCapacity()
     {
         static ServerMemoryGuidance? Resolve(
             string serverId = PackageImportRules.ActivityServerId,
             string agentId = PackageImportRules.ActivityAgentId,
-            string? conflictGroup = PackageImportRules.ActivityConflictGroup,
             int port = PackageImportRules.ActivityPort,
             bool packageDeploymentEnabled = true,
             int? hostTotalMemoryMiB = 16384) =>
             PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                 serverId,
                 agentId,
-                conflictGroup,
                 port,
                 packageDeploymentEnabled,
                 hostTotalMemoryMiB);
 
         Assert.Equal(new ServerMemoryGuidance(16384, 4096, 8192), Resolve());
         Assert.Null(Resolve(packageDeploymentEnabled: false));
-        Assert.Null(Resolve(serverId: "fanstreet"));
-        Assert.Null(Resolve(agentId: "owl9"));
-        Assert.Null(Resolve(conflictGroup: "other"));
-        Assert.Null(Resolve(port: 25569));
+        Assert.NotNull(Resolve(
+            serverId: "survival2",
+            agentId: "owl9",
+            port: 25565));
+        Assert.Null(Resolve(serverId: "Invalid Target"));
+        Assert.Null(Resolve(agentId: "invalid agent"));
+        Assert.Null(Resolve(port: 0));
         Assert.Null(Resolve(hostTotalMemoryMiB: null));
     }
 
@@ -275,4 +299,26 @@ public sealed class PackageImportRulesTests
             null,
             3);
     }
+
+    private static AdminServerControlTargetRecord CreateControlTarget(
+        string serverId,
+        string agentId,
+        int port,
+        string? conflictGroup) =>
+        new(
+            serverId,
+            serverId,
+            agentId,
+            conflictGroup,
+            port,
+            true,
+            DateTimeOffset.UtcNow,
+            false,
+            null,
+            new ServerQuickSettings(20, 10, 10, "normal", true, 2048, 4096, 8192),
+            ["list"],
+            string.Empty,
+            null,
+            null,
+            PackageDeploymentEnabled: true);
 }

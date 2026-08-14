@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory)]
     [string]$Archive,
 
-    [string]$ExpectedPackageVersion = '1.0.2',
+    [string]$ExpectedPackageVersion = '1.0.3',
 
     [string]$ExpectedEconomyPluginVersion = '0.1.1',
 
@@ -54,6 +54,44 @@ function Get-EntryHash {
     finally {
         $hasher.Dispose()
         $stream.Dispose()
+    }
+}
+
+function Read-NestedZipContract {
+    param(
+        [IO.Compression.ZipArchiveEntry]$Entry,
+        [string[]]$RequiredPaths,
+        [string[]]$TextPaths
+    )
+    $memory = [IO.MemoryStream]::new()
+    $source = $Entry.Open()
+    try {
+        $source.CopyTo($memory)
+    }
+    finally {
+        $source.Dispose()
+    }
+    $memory.Position = 0
+    $nested = [IO.Compression.ZipArchive]::new(
+        $memory,
+        [IO.Compression.ZipArchiveMode]::Read,
+        $false,
+        $utf8)
+    try {
+        $result = @{}
+        foreach ($path in $RequiredPaths) {
+            $nestedEntry = $nested.GetEntry($path)
+            if ($null -eq $nestedEntry) {
+                throw "Nested archive entry is missing from $($Entry.FullName): $path"
+            }
+            if ($TextPaths -contains $path) {
+                $result[$path] = Read-ZipText $nestedEntry
+            }
+        }
+        return $result
+    }
+    finally {
+        $nested.Dispose()
     }
 }
 
@@ -160,6 +198,45 @@ try {
     $clientModHash = Get-EntryHash $entries[$clientEconomyScreenPath]
     if ($serverModHash -ne $clientModHash) {
         throw 'Client and server economy screen JARs are not identical.'
+    }
+
+    $pluginContract = Read-NestedZipContract `
+        -Entry $entries[$economyPluginPath] `
+        -RequiredPaths @(
+            'plugin.yml',
+            'world/hechao/economy/HechaoEconomyPlugin.class',
+            'world/hechao/economy/commands/EconomyCommandRouter.class'
+        ) `
+        -TextPaths @('plugin.yml')
+    $pluginYaml = $pluginContract['plugin.yml']
+    if ($pluginYaml -notmatch "(?m)^version: '$([regex]::Escape($ExpectedEconomyPluginVersion))'$" -or
+        $pluginYaml -notmatch '(?m)^main: world\.hechao\.economy\.HechaoEconomyPlugin$' -or
+        $pluginYaml -notmatch '(?m)^  hechao\.economy\.admin:$') {
+        throw 'Economy plugin identity or administrator permission contract is invalid.'
+    }
+    foreach ($command in @('money', 'pay', 'sell', 'shop', 'heco')) {
+        $commandPattern = '(?m)^  ' + [regex]::Escape($command) + ':$'
+        if ($pluginYaml -notmatch $commandPattern) {
+            throw "Economy plugin command is missing: $command"
+        }
+    }
+
+    $screenContract = Read-NestedZipContract `
+        -Entry $entries[$serverEconomyScreenPath] `
+        -RequiredPaths @(
+            'META-INF/neoforge.mods.toml',
+            'world/hechao/economyscreen/HechaoEconomyScreenMod.class',
+            'world/hechao/economyscreen/client/HechaoNavigationScreen.class',
+            'world/hechao/economyscreen/network/OpenMenuPayload.class',
+            'world/hechao/economyscreen/network/MenuActionPayload.class'
+        ) `
+        -TextPaths @('META-INF/neoforge.mods.toml')
+    $modsToml = $screenContract['META-INF/neoforge.mods.toml']
+    if (-not $modsToml.Contains('modId="hechao_economy_screen"') -or
+        -not $modsToml.Contains('versionRange="[21.1.228,22)"') -or
+        -not $modsToml.Contains('versionRange="[1.21.1,1.21.2)"') -or
+        (($modsToml -split 'side="BOTH"').Count - 1) -ne 2) {
+        throw 'Economy screen NeoForge or Minecraft compatibility contract is invalid.'
     }
 
     $start = Read-ZipText $entries['server/start.bat']

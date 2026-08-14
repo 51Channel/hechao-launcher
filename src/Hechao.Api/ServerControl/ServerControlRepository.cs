@@ -277,7 +277,6 @@ public sealed class ServerControlRepository(
                 PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                     serverId,
                     agentId,
-                    conflictGroup,
                     port,
                     packageDeploymentEnabled,
                     reader.IsDBNull(13) ? null : reader.GetInt32(13)),
@@ -375,7 +374,6 @@ public sealed class ServerControlRepository(
             PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                 targetServerId,
                 targetAgentId,
-                targetConflictGroup,
                 targetPort,
                 packageDeploymentEnabled,
                 reader.IsDBNull(16) ? null : reader.GetInt32(16)),
@@ -868,6 +866,7 @@ public sealed class ServerControlRepository(
               AND command.status = 'Claimed'
               AND command.kind = 'DeployPackage'
               AND command.claim_expires_at >= $3
+              AND target.agent_id = command.agent_id
               AND (
                   (package.deployment_operation_id = command.operation_id
                    AND package.status = 'DeployingServer')
@@ -901,11 +900,11 @@ public sealed class ServerControlRepository(
             JsonOptions);
         var deployment = payload?.PackageDeployment;
         var server = analysis?.Server;
-        return PackageImportRules.IsActivityTarget(
+        return PackageImportRules.IsPackageDeploymentTarget(
                    reader.GetString(5),
                    reader.GetString(6),
-                   reader.IsDBNull(7) ? null : reader.GetString(7),
-                   reader.GetInt32(8)) &&
+                   reader.GetInt32(8),
+                   packageDeploymentEnabled: true) &&
                deployment is not null &&
                server is not null &&
                plan is not null &&

@@ -1106,7 +1106,6 @@ public sealed class ActivityPlanRepository(
             MemoryGuidance: PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
                 PackageImportRules.ActivityServerId,
                 reader.GetString(0),
-                reader.IsDBNull(1) ? null : reader.GetString(1),
                 reader.GetInt32(2),
                 packageDeploymentEnabled,
                 reader.IsDBNull(7) ? null : reader.GetInt32(7)));

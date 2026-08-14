@@ -297,35 +297,33 @@ public static class PackageImportEndpoints
                 ["客户端发布代理当前不在线。"];
         }
 
-        if (request.DeployServer)
+        var target = await serverControlRepository.GetTargetDetailAsync(
+            request.TargetServerId,
+            now,
+            cancellationToken);
+        if (target is null ||
+            !PackageImportRules.IsPackageDeploymentTarget(target.Target))
         {
-            var target = await serverControlRepository.GetTargetDetailAsync(
-                request.TargetServerId,
-                now,
-                cancellationToken);
-            if (target is null || !PackageImportRules.IsActivityTarget(target.Target))
+            errors["targetServerId"] =
+                ["只能选择已显式启用整合包能力的受控服务端目标。"];
+        }
+        else if (request.DeployServer)
+        {
+            if (!target.Target.AgentConnected)
+            {
+                errors["targetServerId"] = ["目标 VPS 服控代理当前不在线。"];
+            }
+
+            if (target.Target.Online)
             {
                 errors["targetServerId"] =
-                    ["只能部署到已启用整合包能力的 owl5 活动目标。"];
+                    ["目标服务端仍在运行，请先从服控面板停止。"];
             }
-            else
+
+            if (target.Target.ActiveOperation is not null)
             {
-                if (!target.Target.AgentConnected)
-                {
-                    errors["targetServerId"] = ["目标 VPS 服控代理当前不在线。"];
-                }
-
-                if (target.Target.Online)
-                {
-                    errors["targetServerId"] =
-                        ["目标服务端仍在运行，请先从服控面板停止。"];
-                }
-
-                if (target.Target.ActiveOperation is not null)
-                {
-                    errors["targetServerId"] =
-                        ["目标服务端存在进行中的服控操作，请等待完成。"];
-                }
+                errors["targetServerId"] =
+                    ["目标服务端存在进行中的服控操作，请等待完成。"];
             }
         }
 
