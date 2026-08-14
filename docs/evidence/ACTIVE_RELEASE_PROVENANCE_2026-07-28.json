@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-09T23:30:20Z",
+  "generatedAtUtc": "2026-08-14T09:37:05Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -126,55 +126,42 @@
     },
     {
       "component": "api",
-      "version": "0.29.0-20260808T043921Z",
-      "releaseTag": "api-v0.29.0",
-      "releaseCommit": "43da4ae05db64e50475a19e49f3e475410394dbd",
-      "taggedAt": "2026-08-08T12:55:46+08:00",
+      "version": "0.30.4-20260814T093000Z",
+      "releaseTag": "api-v0.30.4",
+      "releaseCommit": "f0dd3b3c06e1bc0d2c173a5d0e1ba34b95698163",
+      "taggedAt": "2026-08-14T17:37:05+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "43da4ae05db64e50475a19e49f3e475410394dbd"
+        "value": "f0dd3b3c06e1bc0d2c173a5d0e1ba34b95698163"
       },
-      "deploymentState": "production-client-profile-lifecycle-health-ready",
-      "historicalNote": "Production contains migration 027. 0.28.7 is a direct program rollback only while no profile has been archived; after the first archive, forward-fix 0.29.x is mandatory.",
+      "deploymentState": "production-publisher-workspace-log-guard-health-ready",
+      "historicalNote": "Production contains migrations through 028 and inherits the 0.30.3 LuckPerms protocol fence. 0.30.3 is the direct program rollback; the journald policy has an independent retained backup.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.29.0-20260808T043921Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z",
-          "size": 45974811,
-          "sha256": "79D08B0D5802518E0450A6594D911D3D5A08DD4296F4F583D5FA8F455E92E41D",
+          "name": "hechao-launcher-api-0.30.4-20260814T093000Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.30.4-20260814T093000Z",
+          "size": 46247238,
+          "sha256": "B841A57E988F5F64318FBBD531F370E785680022B09D45D2B0F0ADCC2754CEC5",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z/Hechao.Api",
-          "size": 105084356,
-          "sha256": "2A9DFCFE97592D7E4B2930D5E2E39754D5262500185319B32BC8C03047A3ACE0",
-          "primary": false
-        },
-        {
-          "name": "admin.css",
-          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z/wwwroot/admin/assets/admin.css",
-          "size": 61020,
-          "sha256": "218D1C461CB32BCA3E2D15E3302D3732F5570FF347CC1CD6E202395296E116CD",
-          "primary": false
-        },
-        {
-          "name": "chunk-ProfilesView.js",
-          "location": "/opt/hechao-launcher-api/releases/0.29.0-20260808T043921Z/wwwroot/admin/assets/chunk-ProfilesView.js",
-          "size": 25563,
-          "sha256": "114E47CB95D58D3C0C6B816C8CA1B7495E0B3778AD739007D174CA991F343DB2",
+          "location": "/opt/hechao-launcher-api/releases/0.30.4-20260814T093000Z/Hechao.Api",
+          "size": 105245636,
+          "sha256": "F8E5E020AA0F81CEE7F8F86A5A9D066C38DAD2C044D10B20FBADA7C0F70D160A",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.28.7-20260807T072043Z"
+        "target": "/opt/hechao-launcher-api/releases/0.30.3-20260814T072942Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.29.0.md",
-        "docs/API_RELEASE_0.29.0_CANDIDATE.md",
-        "docs/evidence/API_0.29.0_PRODUCTION_DEPLOYMENT_2026-08-08.json"
+        "docs/API_RELEASE_0.30.4.md",
+        "docs/evidence/API_0.30.4_PRODUCTION_DEPLOYMENT_2026-08-14.json",
+        "docs/API_RELEASE_0.30.3.md",
+        "docs/evidence/API_0.30.3_PRODUCTION_DEPLOYMENT_2026-08-14.json"
       ]
     },
     {
@@ -405,33 +392,34 @@
     },
     {
       "component": "luckperms-tier-agent",
-      "version": "0.1.0",
-      "releaseTag": "luckperms-tier-agent-v0.1.0",
-      "releaseCommit": "16ff9d64faccf52cc14b2a58775406e252a5524b",
-      "taggedAt": "2026-07-28T00:11:06+08:00",
+      "version": "0.1.3",
+      "releaseTag": "luckperms-tier-agent-v0.1.3",
+      "releaseCommit": "e69cb9d93b71696d391999856fe7a2a86703161f",
+      "taggedAt": "2026-08-14T17:17:36+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "16ff9d64faccf52cc14b2a58775406e252a5524b"
+        "value": "e69cb9d93b71696d391999856fe7a2a86703161f"
       },
-      "deploymentState": "production-loaded-owner-readback",
+      "deploymentState": "production-protocol-2-real-mutation-stable",
       "artifacts": [
         {
-          "name": "HechaoLuckPermsTierAgent-0.1.0.jar",
-          "location": "E:\\LobbyServer\\plugins\\HechaoLuckPermsTierAgent-0.1.0.jar",
-          "size": 324817,
-          "sha256": "35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B",
+          "name": "HechaoLuckPermsTierAgent-0.1.3.jar",
+          "location": "E:\\LobbyServer\\plugins\\HechaoLuckPermsTierAgent-0.1.3.jar",
+          "size": 326882,
+          "sha256": "E0637E0AA0A549C5DBDD4FFB3E34238645E6AEA0FDB8BE3780C5822CDBC0700F",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "backup-directory",
-        "target": "E:\\manual-backups\\luckperms-tier-agent-20260726T223127Z"
+        "target": "E:\\manual-backups\\luckperms-tier-agent-20260814T080510Z"
       },
       "evidence": [
         "docs/LUCKPERMS_TIER_AGENT_OPERATIONS.md",
-        "docs/API_RELEASE_0.16.0.md",
-        "docs/ASSET_INVENTORY.md"
+        "docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.3.md",
+        "docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.3_CANDIDATE.md",
+        "docs/evidence/LUCKPERMS_TIER_AGENT_0.1.3_PRODUCTION_DEPLOYMENT_2026-08-14.json"
       ]
     },
     {

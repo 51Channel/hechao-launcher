@@ -1,10 +1,13 @@
 # LuckPerms Tier Agent 0.1.3 候选发布
 
+> 历史候选记录。正式生产发布见
+> [`LUCKPERMS_TIER_AGENT_RELEASE_0.1.3.md`](LUCKPERMS_TIER_AGENT_RELEASE_0.1.3.md)。
+
 - 候选版本：`HechaoLuckPermsTierAgent 0.1.3`
 - 配套 API：`0.30.3`
 - 等级命令协议：`2`
 - 数据库迁移：无
-- 状态：源码和自动测试通过，尚未正式部署
+- 候选阶段状态：源码和自动测试通过
 
 ## 复发根因
 

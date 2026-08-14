@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-14T09:06:58Z",
+  "component": "luckperms-tier-agent",
+  "version": "0.1.3",
+  "protocolVersion": 2,
+  "sourceCommit": "e69cb9d93b71696d391999856fe7a2a86703161f",
+  "releaseTag": "luckperms-tier-agent-v0.1.3",
+  "host": "owl5",
+  "artifact": {
+    "name": "HechaoLuckPermsTierAgent-0.1.3.jar",
+    "sizeBytes": 326882,
+    "sha256": "E0637E0AA0A549C5DBDD4FFB3E34238645E6AEA0FDB8BE3780C5822CDBC0700F",
+    "manifestVersion": "0.1.3",
+    "pluginVersion": "0.1.3",
+    "reproducibleBuildsMatched": true
+  },
+  "tests": {
+    "gradlePassed": 16,
+    "gradleFailed": 0,
+    "apiPassed": 311,
+    "apiFailed": 0,
+    "dotnetSolutionPassed": 731,
+    "dotnetSolutionFailed": 0,
+    "installerSuccessPathPassed": true,
+    "installerRollbackPathPassed": true
+  },
+  "rootCause": {
+    "legacyDirectory": "E:/Lobby-PvpReturn-Staging",
+    "legacyVersion": "0.1.0",
+    "duplicateAgentId": "owl5-lobby",
+    "couldCompeteForRealCommands": true
+  },
+  "containment": {
+    "legacyTask": "Hechao-Lobby-PvpReturn-Staging",
+    "legacyTaskDisabled": true,
+    "legacyPort": 25580,
+    "legacyListenerCount": 0,
+    "legacyEstablishedConnectionCount": 0,
+    "velocityChanged": false,
+    "playerIdentityChanged": false
+  },
+  "deployment": {
+    "rollbackDirectory": "E:/manual-backups/luckperms-tier-agent-20260814T080510Z",
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "successfulLobbyPid": 8028,
+    "successfulLobbyStartedAtUtc": "2026-08-14T08:06:11.6347046Z",
+    "otherJavaPidsUnchangedAtSuccessfulDeployment": [
+      2576,
+      7748,
+      9428
+    ],
+    "controlledFailedAttempts": 2,
+    "firstAttemptStoppedLobby": false,
+    "secondAttemptRolledBackToPreviousJar": true,
+    "onlyLobbyRestarted": true,
+    "velocityRestarted": false,
+    "otherMinecraftServersRestarted": 0
+  },
+  "protocolAcceptance": {
+    "legacyPayloadStatus": 400,
+    "legacyPayloadErrorFields": [
+      "agentVersion",
+      "protocolVersion"
+    ],
+    "protocol2PayloadStatus": 200,
+    "protocol2ReturnedCommandCount": 0,
+    "activeTierCommandCount": 0
+  },
+  "realBusinessChangeAcceptance": {
+    "commandsCreatedOrReplayedByDeployment": 0,
+    "authorizedExternalAppliedCommands": 2,
+    "targetPrimaryGroup": "vip",
+    "appliedMinuteUtc": "2026-08-14T08:42:00Z",
+    "firstObservedSnapshotAtUtc": "2026-08-14T08:43:07.664730Z",
+    "finalObservedSnapshotAtUtc": "2026-08-14T09:03:07.736432Z",
+    "fiveMinuteIntervalsCrossed": 4,
+    "finalSnapshotCount": 117,
+    "finalSnapshotGroups": {
+      "default": 100,
+      "vip": 14,
+      "admin": 0,
+      "owner": 3
+    },
+    "identitySnapshotMismatchCount": 0,
+    "userTierMismatchCount": 0,
+    "activeTierCommandCount": 0
+  },
+  "finalReadOnlyAudit": {
+    "syncTask": "Hechao Launcher LuckPerms Sync",
+    "syncTaskLastRunAtUtc": "2026-08-14T09:03:03Z",
+    "syncTaskLastResult": 0,
+    "lobbyPid": 8028,
+    "lobbyListenerAddress": "127.0.0.1",
+    "lobbyListenerPort": 25566,
+    "lobbyEstablishedConnectionCount": 0,
+    "javaPidsAtFinalAudit": [
+      7748,
+      8028,
+      9428
+    ],
+    "pid2576PresentAtSuccessfulDeployment": true,
+    "pid2576PresentAtFinalAudit": false,
+    "pid2576RestartAttemptedByThisTask": false,
+    "onlyExpectedPluginJarPresent": true,
+    "pluginArtifactStillMatches": true,
+    "pluginWarningOrErrorCount": 0,
+    "lobbyReachedDone": true,
+    "rollbackDirectoryStillExists": true
+  },
+  "remainingAcceptance": {
+    "normalRealMutationStabilityGatePassed": true,
+    "isolatedFourTierRoundTripStillRequired": true,
+    "selfProtectionAndLastAdministratorPathsStillRequired": true
+  },
+  "privacy": {
+    "playerNamesIncluded": false,
+    "minecraftUuidsIncluded": false,
+    "launcherUserIdsIncluded": false,
+    "administratorIdentifiersIncluded": false,
+    "tokensIncluded": false,
+    "databaseCredentialsIncluded": false,
+    "configurationContentsIncluded": false
+  }
+}

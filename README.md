@@ -7,23 +7,19 @@
 > `26/26` 通过；发布只重启 API，没有操作 Publisher、Nginx 或 Minecraft 服务。
 > 发布记录见 [`docs/API_RELEASE_0.30.4.md`](docs/API_RELEASE_0.30.4.md)。
 
-> `2026-08-14` 真实等级回退复核发现，历史验收遗漏了仍在运行的
-> `Lobby-PvpReturn-Staging`：该实例加载 `HechaoLuckPermsTierAgent 0.1.0`，并与正式大厅
-> 共用 `agent-id=owl5-lobby`，会竞争领取真实等级命令。遗留计划任务已在确认无路由、无
-> 玩家连接后禁用并停止，回滚记录保留。候选 `Tier Agent 0.1.3` / API `0.30.3` 增加
-> 软件版本和协议 `2` 门禁；旧代理即使持有原同步凭据也不能再领取或完成等级命令。
-> 正式部署与跨轮同步完成前，不再把 `0.1.2` 记为已闭环稳定。
+> `2026-08-14` LuckPerms 等级回退已完成生产修复：历史
+> `Lobby-PvpReturn-Staging` 的 `0.1.0` 实例曾与正式大厅共用 `agent-id=owl5-lobby` 并
+> 竞争真实命令，现已禁用和停止。正式大厅已加载 Tier Agent `0.1.3`，API 已升级到
+> `0.30.3`，以软件版本和协议 `2` 拒绝旧实例。两条正常业务 `vip` 变更跨四个五分钟
+> 间隔未回退，117 条快照、身份映射和用户等级差异均为 `0`；部署与验收脚本没有创建、
+> 重放或修改任何玩家身份。
+> 发布记录见 [`docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.3.md`](docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.3.md)
+> 与 [`docs/API_RELEASE_0.30.3.md`](docs/API_RELEASE_0.30.3.md)。
 
 > `2026-08-11` Launcher API `0.30.2` 已上线成员问卷正版资格端点。官网只能通过
 > 回环论坛桥接读取账号启用状态和已验证 Minecraft 身份；端点只读、故障关闭，不创建账号
 > 或授予游戏权限。API `305/305`、完整解决方案 `725/725` 和生产 29 个映射账号聚合探针
 > 通过。发布记录见 [`docs/API_RELEASE_0.30.2.md`](docs/API_RELEASE_0.30.2.md)。
-
-> `2026-08-14` 大厅 LuckPerms 等级代理 `0.1.2` 已正式加载：修复
-> `parents-by-weight` 下计算主组掩盖 stored primary group、以及保存后未广播跨服缓存
-> 的问题。安装具备自动回滚，只优雅重启内部大厅，其他四个 Java 进程未变化；部署后
-> 三轮五分钟只读同步成功。下一次真实等级变更仍需跨两轮同步确认不回退。发布记录见
-> [`docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.2.md`](docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.2.md)。
 
 > `2026-08-11` Launcher API `0.30.1` 已修复生产 CSP 下“活动企划”无法打开的问题。
 > FullCalendar 现在复用经过 SHA-256 精确授权的样式锚点，CSP 仍不允许
@@ -41,7 +37,7 @@
 
 > `2026-08-10` 启动器 `0.15.7` 已正式发布：活动页进入时立即刷新并每 30 秒同步，
 > 离开后停止轮询；跨午夜企划按 `[开始, 结束)` 精确映射，侧栏账户卡移除重复操作。
-> Launcher 后台、官网后台、Launcher 活动页和官网公开日历继续读取 API `0.30.2`
+> Launcher 后台、官网后台、Launcher 活动页和官网公开日历继续读取 API `0.30.4`
 > 的同一组 PostgreSQL 企划，活动客户端只允许在 Launcher 内下载。完整解决方案
 > `721/721`、Launcher `227/227`、私有 OSS 双轮回读和 `0.15.6 -> 0.15.7`
 > 安装生命周期通过。正式记录见
@@ -178,7 +174,7 @@
 > 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.7`、API `0.30.4`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；可回滚部署、固定整合包、双后台企划日历、单活动排期、官网与启动器同源活动月历、三栏服务器主页、公开下载桥接、成员问卷正版资格桥接与一次性服务端文件清理验收均已完成，剩余门槛只涉及真实四级账号、真实活动玩法包、QQ 测试群审批验收和 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作、整合包导入和最小权限服控的 Vue 管理控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.7`、API `0.30.4`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；可回滚部署、固定整合包、双后台企划日历、单活动排期、官网与启动器同源活动月历、三栏服务器主页、公开下载桥接、成员问卷正版资格桥接与一次性服务端文件清理验收均已完成，剩余门槛只涉及真实四级账号完整路径、真实活动玩法包、QQ 测试群审批验收和 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作、整合包导入和最小权限服控的 Vue 管理控制台。
 
 2026-07-29 已确认新架构：赫朝启动器成为唯一服务器选择和切换入口；大厅继续作为 LuckPerms 等前置能力的内部承载器，但不再向玩家展示、授权、路由或回退。Velocity 继续负责统一公网入口、forwarding 和服务端二次授权。完整约束、回滚和验收标准见 [`docs/LAUNCHER_ONLY_SERVER_SWITCHING.md`](docs/LAUNCHER_ONLY_SERVER_SWITCHING.md)。
 

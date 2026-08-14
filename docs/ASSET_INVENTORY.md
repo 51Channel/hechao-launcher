@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.24.0`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级、六份生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警与服控内存管理 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.30.4`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级与旧代理协议门禁、六份生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警与服控内存管理 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -177,10 +177,23 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   SHA-256 一致；`0.15.6 -> 0.15.7` 覆盖安装、全新安装、双轮卸载、设置和
   会话文件保留已验收。`0.15.6` 保留为上一正式版本，其不可变对象与标签不得覆盖。
 - 生产更新通道当前为 `LatestVersion=0.15.7`、
-  `MinimumSupportedVersion=0.12.3`；API `0.30.1` 为 `active`、`NRestarts=0`，
+  `MinimumSupportedVersion=0.12.3`；API `0.30.4` 为 `active`、`NRestarts=0`，
   内外网健康与就绪端点均为 `200`。当前管理机没有可恢复 Launcher 会话，认证更新端点
   的本次复验待登录后补跑。详细记录见
   [`LAUNCHER_RELEASE_0.15.7.md`](LAUNCHER_RELEASE_0.15.7.md)。
+- API `0.30.3-20260814T072942Z` 单文件 SHA-256 为
+  `E155542923AF167BC85351306B16B655EC7D8598583173017C7288BAA45BC2DC`，只监听
+  `127.0.0.1:8090`；数据库和 API 快照分别保留在
+  `/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.30.3-20260814T080918Z.dump`
+  与 `/var/backups/hechao-launcher/api-predeploy/pre-api-0.30.3-20260814T080918Z.tar.gz`。
+  旧协议载荷返回 `400`，协议 `2` 空领取返回 `200`，详细记录见
+  [`API_RELEASE_0.30.3.md`](API_RELEASE_0.30.3.md)。
+- API `0.30.4-20260814T093000Z` 单文件 SHA-256 为
+  `F8E5E020AA0F81CEE7F8F86A5A9D066C38DAD2C044D10B20FBADA7C0F70D160A`，继续只监听
+  `127.0.0.1:8090` 并继承 `0.30.3` 的协议门禁；该版抑制 ASP.NET Core 逐请求日志，
+  journald 限制为 `1 GiB` 并保留至少 `8 GiB` 文件系统空间。直接程序回滚目标为
+  `0.30.3-20260814T072942Z`，详细记录见
+  [`API_RELEASE_0.30.4.md`](API_RELEASE_0.30.4.md)。
 
 ### 1.8 服控内存管理制品
 
@@ -254,20 +267,21 @@ SHA-256 为
 
 LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于
 `C:\ProgramData\Hechao\LauncherBridge`，计划任务 `Hechao Launcher LuckPerms Sync`
-以 `SYSTEM` 身份每 5 分钟通过 PowerShell 7 只读同步。2026-08-14 09:18 CST 的当前
-快照共 117 人：`default=102`、`vip=12`、`admin=1`、`owner=2`；MariaDB stored
-primary group 与 API PostgreSQL 快照的匿名规范化 SHA-256 均为
-`BEDC340EBB8142885A5747ADDE1528E22D74617E1E44BD5CA424EBC77994402F`。同步任务
-不控制任何 Minecraft 进程，快照人数和分布属于易变事实，后续需实时复核。
+以 `SYSTEM` 身份每 5 分钟通过 PowerShell 7 只读同步。2026-08-14 17:03 CST 的实时
+快照共 117 人：`default=100`、`vip=14`、`admin=0`、`owner=3`；快照与已绑定身份差异、
+用户等级映射差异和活动等级命令均为 `0`，同步任务最近结果为 `0`。该分布在两条正常
+业务 `vip` 变更后跨过四个五分钟间隔未回退。同步任务不控制任何 Minecraft 进程，快照
+人数和分布属于易变事实，后续仍需实时复核。
 
 受控等级代理当前为
-`E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.2.jar`，SHA-256 为
-`917984C1DED705F38F3BF768518A1011C7EF974E9BEB322BCEB7BB4CE07A364E`；
+`E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.3.jar`，SHA-256 为
+`E0637E0AA0A549C5DBDD4FFB3E34238645E6AEA0FDB8BE3780C5822CDBC0700F`；
 配置位于同目录的 `HechaoLuckPermsTierAgent\config.properties`，ACL 已收紧，直接回滚
-目录为 `E:\manual-backups\luckperms-tier-agent-20260814T005515Z`。2026-08-14
-安装阶段 Java PID 集合未变，随后只优雅重启内部大厅；日志确认 `0.1.2` 加载，其他四个
-Java 进程未变化，至少三轮五分钟只读同步成功。下一次真实等级变更仍需跨两轮同步确认
-stored primary group 不再回退。运行状态核验于 2026-08-14，后续需实时复核。
+目录为 `E:\manual-backups\luckperms-tier-agent-20260814T080510Z`。日志确认 `0.1.3` 以
+协议 `2` 加载并到达 `Done`；遗留 `Hechao-Lobby-PvpReturn-Staging` 任务已禁用，`25580`
+无监听或连接。部署时其他 Java 进程未变化；最终只读复核发现部署时存在的 PID `2576`
+已在本任务之外退出，因此没有为恢复旧集合启动其他服务器。运行状态核验于
+2026-08-14 17:06 CST，后续需实时复核。
 
 状态采集器 `0.2.1` 位于两台游戏 VPS 的 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 均为 `7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED`。两台计划任务 `Hechao Launcher Server Heartbeats` 都以 `SYSTEM` 身份每分钟运行：`owl5` 的 `mc-vps-primary` 查询 `lobby`、`survival2`、`survival1` 和 `activity`，`owl9` 的 `owl9-pvp` 只查询本机恐怖整蛊历史目标 `pvp`。Activity 单独启用零玩家暂停识别；旧 Tick 数值不会发送，有玩家时仍严格报警。令牌使用 `LocalMachine` DPAPI 加密；采集器不包含 RCON 或进程启停能力。两机升级前后 Java PID 集合一致，回滚备份分别位于 `collector-0.2.1-20260729T211120Z` 和 `collector-0.2.1-20260729T211519Z`。
 
@@ -424,12 +438,12 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 
 ## 5. 当前 API 部署状态
 
-> 启动器更新通道已在 `2026-07-31` 切换到 `launcher-v0.13.6`；下方 API
+> 启动器更新通道当前为 `launcher-v0.15.7`；下方 API
 > 发布 ID 与其他组件标签保持各自独立版本。
 
-- 发布 ID：`0.22.0-20260729T144953Z`
-- API `0.22.0`、基础设施角色、客户端兼容保护、日志脱敏与平台监控器 `0.1.2` 已部署；启动器 `0.13.6` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
-- 启动器正式标签为 `launcher-v0.13.6`，制品源码提交为 `667a15a9eb48cfb2264c3d2f085abc7cbbe1c070`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
+- 发布 ID：`0.30.4-20260814T093000Z`
+- API `0.30.4`、基础设施角色、客户端兼容保护、日志脱敏、Publisher 工作空间保护、成员问卷正版资格桥接、活动企划与 LuckPerms 代理协议门禁已部署；启动器 `0.15.7` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
+- 启动器正式标签为 `launcher-v0.15.7`，制品源码提交为 `c0ddf9b2dfb65d64b8990242fa99addf5a008961`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
@@ -437,9 +451,9 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 - 公网入口：`https://launcher-api.hechao.world`
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
 - `GET /v1/catalog`：过渡阶段匿名请求返回玩家目录，无效 Bearer 返回 401；Lobby 为隐藏基础设施目标且公开命中为 `0`，正式强制开关待四级灰度和 Velocity `enforce` 稳定后启用
-- 数据库迁移：启动时迁移 `1` 至 `19` 校验全部通过，包括目录、认证、Velocity、心跳、管理员 Web、赫朝账号、诊断上传、服务器排期、单服规则、账号安全、论坛撤销 outbox、LuckPerms 等级命令、客户端发布通道、运行遥测、服务器运行样本、统一告警与基础设施角色
+- 数据库迁移：启动时迁移 `1` 至 `28` 校验全部通过；`0.30.4` 没有新增迁移
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
-- LuckPerms 快照：114 人、4 个等级映射；内部同步无凭据返回 401
+- LuckPerms 快照：117 人、4 个等级映射；快照/身份和用户等级差异均为 `0`，内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
 - 状态心跳：错误凭据返回 401；五个目标由 `owl5` 四目标与代表恐怖整蛊的历史 `owl9-pvp` 单目标分布式写入。两机采集器均为 `0.2.1`；Survival1 已按真实停服状态记录为 `Closed`，Activity 零玩家暂停不会发送旧 Tick 数值
 - 运行遥测：认证批次、幂等去重、30 天留存、三窗口聚合和后台页面已部署；基础、Activity 与恐怖整蛊已有真实安装样本，仍待真实回滚、完整 Launch/GameExit 与多人样本

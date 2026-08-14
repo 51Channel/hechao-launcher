@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 当前生产：API `0.30.1`，`AdminWeb__Enabled=true`
+> 当前生产：API `0.30.4`，`AdminWeb__Enabled=true`
 > 生产状态：真实管理员已完成 MFA 和可信设备验收，十一页 Vue 后台与活动企划月历均已部署
 > 管理入口：`https://admin.hechao.world/admin/`
 > 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十一页“活动企划”已完成生产点击验收
