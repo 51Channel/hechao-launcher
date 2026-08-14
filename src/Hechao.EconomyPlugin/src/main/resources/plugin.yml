@@ -1,0 +1,37 @@
+name: HechaoEconomy
+version: '0.1.1'
+main: world.hechao.economy.HechaoEconomyPlugin
+api-version: '1.21'
+load: POSTWORLD
+depend:
+  - Vault
+softdepend:
+  - Essentials
+  - PlaceholderAPI
+description: Authoritative fail-closed economy bridge for Hechao survival servers.
+authors:
+  - Hechao
+commands:
+  money:
+    description: 查看赫朝金币余额
+    usage: /money [玩家]
+    aliases: [balance, bal]
+  pay:
+    description: 向在线玩家转账
+    usage: /pay <玩家> <金额> [confirm]
+  sell:
+    description: 出售主手中的白名单物品
+    usage: /sell [confirm]
+  shop:
+    description: 查看服务器回收目录
+    usage: /shop
+  heco:
+    description: 赫朝经济管理
+    usage: /heco <health|menu|product|reload>
+permissions:
+  hechao.economy.use:
+    default: true
+  hechao.economy.balance.others:
+    default: op
+  hechao.economy.admin:
+    default: op
