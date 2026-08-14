@@ -100,7 +100,7 @@ try {
     $backupDirectory =
         Join-Path $resolvedBackupRoot "luckperms-tier-agent-$timestamp"
     $destinationJar =
-        Join-Path $pluginsDirectory 'HechaoLuckPermsTierAgent-0.1.2.jar'
+        Join-Path $pluginsDirectory 'HechaoLuckPermsTierAgent-0.1.3.jar'
     $stagingJar = "$destinationJar.uploading"
     $configurationPath =
         Join-Path $configurationDirectory 'config.properties'

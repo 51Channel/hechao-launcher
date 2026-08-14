@@ -5,11 +5,16 @@ namespace Hechao.Api.Admin;
 
 public static partial class AdminLuckPermsTierRules
 {
+    public const int CurrentTierAgentProtocolVersion = 2;
+
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{0,63}$", RegexOptions.CultureInvariant)]
     private static partial Regex PrimaryGroupPattern();
 
     [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$", RegexOptions.CultureInvariant)]
     private static partial Regex AgentIdPattern();
+
+    [GeneratedRegex("^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex AgentVersionPattern();
 
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{0,119}$", RegexOptions.CultureInvariant)]
     private static partial Regex FailureCodePattern();
@@ -49,6 +54,11 @@ public static partial class AdminLuckPermsTierRules
             errors["agentId"] = ["代理标识无效。"];
         }
 
+        ValidateAgentProtocol(
+            request.AgentVersion,
+            request.ProtocolVersion,
+            errors);
+
         if (request.Limit is < 1 or > 20)
         {
             errors["limit"] = ["领取数量必须在 1 到 20 之间。"];
@@ -66,6 +76,11 @@ public static partial class AdminLuckPermsTierRules
         {
             errors["agentId"] = ["代理标识无效。"];
         }
+
+        ValidateAgentProtocol(
+            request.AgentVersion,
+            request.ProtocolVersion,
+            errors);
 
         if (!Enum.IsDefined(request.Outcome))
         {
@@ -98,5 +113,24 @@ public static partial class AdminLuckPermsTierRules
         }
 
         return errors;
+    }
+
+    private static void ValidateAgentProtocol(
+        string? agentVersion,
+        int protocolVersion,
+        IDictionary<string, string[]> errors)
+    {
+        var normalizedVersion = agentVersion?.Trim() ?? string.Empty;
+        if (normalizedVersion.Length is < 5 or > 40 ||
+            !AgentVersionPattern().IsMatch(normalizedVersion))
+        {
+            errors["agentVersion"] = ["代理版本无效。"];
+        }
+
+        if (protocolVersion != CurrentTierAgentProtocolVersion)
+        {
+            errors["protocolVersion"] =
+                [$"等级代理协议必须为 {CurrentTierAgentProtocolVersion}。"];
+        }
     }
 }

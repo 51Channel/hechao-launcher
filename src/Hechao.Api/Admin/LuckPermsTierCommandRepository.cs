@@ -199,11 +199,17 @@ public sealed class LuckPermsTierCommandRepository(NpgsqlDataSource dataSource)
 
     public async Task<LuckPermsTierCommandClaimResponse> ClaimAsync(
         string agentId,
+        string agentVersion,
+        int protocolVersion,
         int limit,
         DateTimeOffset now,
         TimeSpan lease,
         CancellationToken cancellationToken)
     {
+        var claimIdentity = FormatAgentClaimIdentity(
+            agentId,
+            agentVersion,
+            protocolVersion);
         const string sql = """
             WITH due AS (
                 SELECT id
@@ -238,7 +244,7 @@ public sealed class LuckPermsTierCommandRepository(NpgsqlDataSource dataSource)
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue(now);
-        command.Parameters.AddWithValue(agentId);
+        command.Parameters.AddWithValue(claimIdentity);
         command.Parameters.AddWithValue(now.Add(lease));
         command.Parameters.AddWithValue(limit);
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -282,7 +288,10 @@ public sealed class LuckPermsTierCommandRepository(NpgsqlDataSource dataSource)
         if (command.Status != LuckPermsTierCommandStatus.Claimed ||
             !string.Equals(
                 command.ClaimedBy,
-                request.AgentId.Trim(),
+                FormatAgentClaimIdentity(
+                    request.AgentId,
+                    request.AgentVersion,
+                    request.ProtocolVersion),
                 StringComparison.Ordinal) ||
             command.AttemptCount != request.AttemptCount)
         {
@@ -362,7 +371,9 @@ public sealed class LuckPermsTierCommandRepository(NpgsqlDataSource dataSource)
                 FailureCode = request.Outcome == LuckPermsTierCommandOutcome.Failed
                     ? request.FailureCode
                     : null,
-                AgentId = request.AgentId.Trim()
+                AgentId = request.AgentId.Trim(),
+                AgentVersion = request.AgentVersion.Trim(),
+                request.ProtocolVersion
             },
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -592,6 +603,12 @@ public sealed class LuckPermsTierCommandRepository(NpgsqlDataSource dataSource)
             AccessTier.Administrator => "owner",
             _ => throw new ArgumentOutOfRangeException(nameof(tier))
         };
+
+    internal static string FormatAgentClaimIdentity(
+        string agentId,
+        string agentVersion,
+        int protocolVersion) =>
+        $"{agentId.Trim()}@{agentVersion.Trim()}/p{protocolVersion}";
 
     private static void AddNullableText(
         NpgsqlParameterCollection parameters,

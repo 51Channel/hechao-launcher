@@ -1,10 +1,11 @@
 # LuckPerms 全局等级代理运维
 
-> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.2`
+> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.2`；候选版本：`0.1.3`
 >
-> 目标 API：`0.30.2`（协议自 `0.16.0` 起保持兼容）
+> 当前 API：`0.30.2`；候选 API：`0.30.3`，等级命令协议 `2`
 >
-> 生产状态：`0.1.2` 已于 2026-08-14 通过内部大厅隔离重启加载；部署后至少三轮五分钟只读同步成功。下一次真实等级变更仍需跨两轮同步确认不回退
+> 生产状态：真实业务变更证明 `0.1.2` 部署验收遗漏了并行运行的旧 `0.1.0` 实例。
+> 遗留实例已隔离；`0.1.3` 和 API `0.30.3` 尚待正式部署与跨轮同步验收
 >
 > 边界：只修改四个固定全局组；部署只重启内部大厅，不操作 Velocity、生存服或活动服
 
@@ -33,6 +34,9 @@
 - 同一玩家同一时间只能有一条 `Pending` 或 `Claimed` 命令。
 - 每次领取生成 90 秒租约并递增 `attemptCount`。
 - 回执必须同时匹配代理 ID 和 `attemptCount`，旧进程或旧租约的迟到回执返回 `409`。
+- `0.30.3` 起，领取和回执还必须携带合法软件版本以及精确协议 `2`。领取身份按
+  `agent-id@agent-version/protocol` 保存；缺少版本字段的 `0.1.0`、`0.1.1`、`0.1.2`
+  请求在访问命令表前即被拒绝。
 - API 回执失败时租约到期后会重领；目标已经生效会按幂等成功处理。
 - `User#getPrimaryGroup()` 是按 LuckPerms 配置计算的结果，不是 SQL 中的 stored primary
   group。代理不使用该值判断 stored value 冲突；计算结果无论是预期组、目标组还是第三组，
@@ -101,6 +105,26 @@ LuckPerms API 不提供 stored primary group 读取接口，因此插件内不�
 `User#getPrimaryGroup()` 伪造持久化读回。真实验收必须由既有只读同步脚本直接查询
 MariaDB `players.primary_group`，并至少跨过两轮五分钟同步。
 
+### 4.3 `0.1.3` 旧实例协议门禁
+
+2026-08-14 的真实业务变更确认，`E:\Lobby-PvpReturn-Staging` 从 7 月 29 日起一直由
+计划任务运行。它加载 `0.1.0`，配置却与正式大厅使用相同 `agent-id=owl5-lobby`，因此会
+与 `0.1.2` 竞争领取命令。`0.1.0` 只修改计算继承节点，可能回执 `Applied` 而不修改
+MariaDB stored primary group；五分钟快照随后把后台身份恢复为旧值。
+
+该遗留任务不在 Velocity 或服控路由中，隔离前端口没有玩家连接。任务已禁用并停止，
+状态和任务 XML 备份保留在 `E:\manual-backups\luckperms-tier-agent-containment-*`。
+
+永久门禁由两部分组成：
+
+1. `0.1.3` 的领取和完成请求固定携带 `agentVersion=0.1.3` 与 `protocolVersion=2`；
+2. API `0.30.3` 在访问命令仓库前要求精确协议 `2`，并把版本化领取身份用于租约匹配和
+   完成审计。旧实例即使仍持有有效同步令牌，也只能收到输入验证失败。
+
+部署顺序必须是先安装并重启大厅加载 `0.1.3`，再切换 API `0.30.3`。新字段在旧 API
+中会被忽略，因此这个顺序没有命令中断窗口；反向顺序会让仍运行的 `0.1.2` 暂时无法
+领取命令。
+
 构建：
 
 ```powershell
@@ -112,7 +136,7 @@ MariaDB `players.primary_group`，并至少跨过两轮五分钟同步。
 
 ```powershell
 .\deploy\windows\luckperms-tier-agent\Install-LuckPermsTierAgent.ps1 `
-  -JarPath .\src\Hechao.LuckPermsTierAgent\build\libs\HechaoLuckPermsTierAgent-0.1.2.jar
+  -JarPath .\src\Hechao.LuckPermsTierAgent\build\libs\HechaoLuckPermsTierAgent-0.1.3.jar
 ```
 
 脚本会：
@@ -160,12 +184,14 @@ SHA-256 917984C1DED705F38F3BF768518A1011C7EF974E9BEB322BCEB7BB4CE07A364E
 
 实际加载后检查：
 
-1. 日志出现 `LuckPerms tier agent enabled as owl5-lobby`。
-2. 后台对测试玩家执行 `default -> vip`。
-3. 直接读取 MariaDB stored primary group，并确认后台等级和权限均更新。
-4. 等待至少两轮五分钟只读同步，确认 stored primary group 与后台身份没有恢复旧值。
-5. 再执行 `vip -> default` 恢复测试账号，并再次等待同步确认。
-6. 检查两条排队/完成审计，确认日志中没有令牌或请求正文。
+1. 日志出现 `LuckPerms tier agent enabled as owl5-lobby (version 0.1.3, protocol 2)`。
+2. 用旧 `0.1.2` 的精确 JSON 载荷探测领取端点，确认 API 返回 `400`，命令队列未变化；
+   再用协议 `2` 请求确认返回 `200`。
+3. 后台对授权测试玩家执行 `default -> vip`。
+4. 直接读取 MariaDB stored primary group，并确认后台等级和权限均更新。
+5. 等待至少两轮五分钟只读同步，确认 stored primary group 与后台身份没有恢复旧值。
+6. 再执行 `vip -> default` 恢复测试账号，并再次等待同步确认。
+7. 检查两条排队/完成审计，确认领取身份包含版本和协议，日志中没有令牌或请求正文。
 
 截至 2026-08-14 09:18 CST，`0.1.2` 加载后的 `01:08`、`01:13`、`01:18 UTC`
 三轮五分钟同步均返回成功，117 条 stored primary group 快照被正常接收，等级命令队列

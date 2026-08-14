@@ -42,6 +42,8 @@ public sealed record AdminLuckPermsTierChangeRecord(
 
 public sealed record LuckPermsTierCommandClaimRequest(
     string AgentId,
+    string AgentVersion,
+    int ProtocolVersion,
     int Limit);
 
 public sealed record LuckPermsTierCommandDelivery(
@@ -58,6 +60,8 @@ public sealed record LuckPermsTierCommandClaimResponse(
 
 public sealed record LuckPermsTierCommandCompletionRequest(
     string AgentId,
+    string AgentVersion,
+    int ProtocolVersion,
     int AttemptCount,
     LuckPermsTierCommandOutcome Outcome,
     string ObservedPrimaryGroup,

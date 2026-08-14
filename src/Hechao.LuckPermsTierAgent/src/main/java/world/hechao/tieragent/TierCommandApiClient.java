@@ -11,6 +11,8 @@ import java.util.List;
 
 final class TierCommandApiClient implements TierCommandGateway {
     private static final String TOKEN_HEADER = "X-Hechao-Sync-Token";
+    static final String AGENT_VERSION = "0.1.3";
+    static final int PROTOCOL_VERSION = 2;
 
     private final TierAgentConfiguration configuration;
     private final HttpClient httpClient;
@@ -35,9 +37,7 @@ final class TierCommandApiClient implements TierCommandGateway {
 
     @Override
     public List<TierCommand> claim() throws IOException, InterruptedException {
-        var body = gson.toJson(new ClaimRequest(
-                configuration.agentId(),
-                configuration.claimLimit()));
+        var body = gson.toJson(claimRequest());
         var request = request(configuration.claimUri())
                 .POST(HttpRequest.BodyPublishers.ofString(
                         body,
@@ -53,12 +53,7 @@ final class TierCommandApiClient implements TierCommandGateway {
     @Override
     public void complete(TierCommand command, TierMutationResult result)
             throws IOException, InterruptedException {
-        var body = gson.toJson(new CompletionRequest(
-                configuration.agentId(),
-                command.attemptCount(),
-                result.outcome(),
-                result.observedPrimaryGroup(),
-                result.failureCode()));
+        var body = gson.toJson(completionRequest(command, result));
         var request = request(configuration.completionUri(command.commandId()))
                 .POST(HttpRequest.BodyPublishers.ofString(
                         body,
@@ -87,14 +82,41 @@ final class TierCommandApiClient implements TierCommandGateway {
         return response;
     }
 
-    private record ClaimRequest(String agentId, int limit) {
+    ClaimRequest claimRequest() {
+        return new ClaimRequest(
+                configuration.agentId(),
+                AGENT_VERSION,
+                PROTOCOL_VERSION,
+                configuration.claimLimit());
+    }
+
+    CompletionRequest completionRequest(
+            TierCommand command,
+            TierMutationResult result) {
+        return new CompletionRequest(
+                configuration.agentId(),
+                AGENT_VERSION,
+                PROTOCOL_VERSION,
+                command.attemptCount(),
+                result.outcome(),
+                result.observedPrimaryGroup(),
+                result.failureCode());
+    }
+
+    record ClaimRequest(
+            String agentId,
+            String agentVersion,
+            int protocolVersion,
+            int limit) {
     }
 
     private record ClaimResponse(List<TierCommand> commands) {
     }
 
-    private record CompletionRequest(
+    record CompletionRequest(
             String agentId,
+            String agentVersion,
+            int protocolVersion,
             int attemptCount,
             String outcome,
             String observedPrimaryGroup,

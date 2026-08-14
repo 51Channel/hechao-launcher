@@ -1559,6 +1559,8 @@ async Task<IResult> ClaimLuckPermsTierCommandsAsync(
 
     return Results.Ok(await repository.ClaimAsync(
         request.AgentId.Trim(),
+        request.AgentVersion.Trim(),
+        request.ProtocolVersion,
         request.Limit,
         DateTimeOffset.UtcNow,
         TimeSpan.FromSeconds(90),

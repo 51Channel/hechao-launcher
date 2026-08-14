@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Hechao.Api.Admin;
 using Hechao.Contracts;
 
@@ -31,19 +32,54 @@ public sealed class AdminLuckPermsTierRulesTests
     }
 
     [Theory]
-    [InlineData("owl5-lobby", 10, true)]
-    [InlineData("x", 10, false)]
-    [InlineData("owl5-lobby", 0, false)]
-    [InlineData("owl5-lobby", 21, false)]
-    public void ValidateClaim_RestrictsAgentAndBatch(
+    [InlineData("owl5-lobby", "0.1.3", 2, 10, true)]
+    [InlineData("x", "0.1.3", 2, 10, false)]
+    [InlineData("owl5-lobby", "legacy", 2, 10, false)]
+    [InlineData("owl5-lobby", "0.1.2", 0, 10, false)]
+    [InlineData("owl5-lobby", "0.1.3", 1, 10, false)]
+    [InlineData("owl5-lobby", "0.1.3", 2, 0, false)]
+    [InlineData("owl5-lobby", "0.1.3", 2, 21, false)]
+    public void ValidateClaim_RestrictsAgentProtocolAndBatch(
         string agentId,
+        string agentVersion,
+        int protocolVersion,
         int limit,
         bool expectedValid)
     {
         var errors = AdminLuckPermsTierRules.Validate(
-            new LuckPermsTierCommandClaimRequest(agentId, limit));
+            new LuckPermsTierCommandClaimRequest(
+                agentId,
+                agentVersion,
+                protocolVersion,
+                limit));
 
         Assert.Equal(expectedValid, errors.Count == 0);
+    }
+
+    [Fact]
+    public void ValidateClaim_RejectsExactLegacyJsonPayload()
+    {
+        var request = JsonSerializer.Deserialize<LuckPermsTierCommandClaimRequest>(
+            """
+            {"agentId":"owl5-lobby","limit":10}
+            """,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(request);
+        var errors = AdminLuckPermsTierRules.Validate(request);
+        Assert.Contains("agentVersion", errors);
+        Assert.Contains("protocolVersion", errors);
+    }
+
+    [Fact]
+    public void AgentClaimIdentity_IncludesSoftwareAndProtocolVersion()
+    {
+        Assert.Equal(
+            "owl5-lobby@0.1.3/p2",
+            LuckPermsTierCommandRepository.FormatAgentClaimIdentity(
+                " owl5-lobby ",
+                " 0.1.3 ",
+                2));
     }
 
     [Fact]
@@ -52,6 +88,8 @@ public sealed class AdminLuckPermsTierRulesTests
         Assert.Empty(AdminLuckPermsTierRules.Validate(
             new LuckPermsTierCommandCompletionRequest(
                 "owl5-lobby",
+                "0.1.3",
+                2,
                 1,
                 LuckPermsTierCommandOutcome.Failed,
                 "default",
@@ -62,6 +100,8 @@ public sealed class AdminLuckPermsTierRulesTests
             AdminLuckPermsTierRules.Validate(
                 new LuckPermsTierCommandCompletionRequest(
                     "owl5-lobby",
+                    "0.1.3",
+                    2,
                     1,
                     LuckPermsTierCommandOutcome.Failed,
                     "default",
@@ -71,6 +111,8 @@ public sealed class AdminLuckPermsTierRulesTests
             AdminLuckPermsTierRules.Validate(
                 new LuckPermsTierCommandCompletionRequest(
                     "owl5-lobby",
+                    "0.1.3",
+                    2,
                     1,
                     LuckPermsTierCommandOutcome.Applied,
                     "vip",
@@ -81,9 +123,27 @@ public sealed class AdminLuckPermsTierRulesTests
             AdminLuckPermsTierRules.Validate(
                 new LuckPermsTierCommandCompletionRequest(
                     "owl5-lobby",
+                    "0.1.3",
+                    2,
                     0,
                     LuckPermsTierCommandOutcome.Applied,
                     "vip",
                     null)));
+    }
+
+    [Fact]
+    public void ValidateCompletion_RejectsLegacyProtocol()
+    {
+        var errors = AdminLuckPermsTierRules.Validate(
+            new LuckPermsTierCommandCompletionRequest(
+                "owl5-lobby",
+                "0.1.2",
+                0,
+                1,
+                LuckPermsTierCommandOutcome.Applied,
+                "vip",
+                null));
+
+        Assert.Contains("protocolVersion", errors);
     }
 }

@@ -46,7 +46,12 @@ public final class HechaoLuckPermsTierAgent extends JavaPlugin {
                     TimeUnit.SECONDS);
             getLogger().info(
                     "LuckPerms tier agent enabled as "
-                            + configuration.agentId());
+                            + configuration.agentId()
+                            + " (version "
+                            + TierCommandApiClient.AGENT_VERSION
+                            + ", protocol "
+                            + TierCommandApiClient.PROTOCOL_VERSION
+                            + ")");
         } catch (IOException | IllegalArgumentException exception) {
             getLogger().log(
                     Level.SEVERE,
