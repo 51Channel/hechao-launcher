@@ -252,13 +252,22 @@ SHA-256 为
 
 本次激活前代理没有已建立的玩家连接；重启只作用于 Velocity，大厅、生存服、活动服和其他 Java 进程均未被操作。
 
-LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于 `C:\ProgramData\Hechao\LauncherBridge`，计划任务 `Hechao Launcher LuckPerms Sync` 以 `SYSTEM` 身份每 5 分钟只读同步。当前快照共 114 人：`default=99`、`vip=12`、`admin=1`、`owner=2`。同步任务不控制任何 Minecraft 进程。
+LuckPerms 使用各 Paper 服共享的本机 MariaDB；启动器同步桥位于
+`C:\ProgramData\Hechao\LauncherBridge`，计划任务 `Hechao Launcher LuckPerms Sync`
+以 `SYSTEM` 身份每 5 分钟通过 PowerShell 7 只读同步。2026-08-14 09:18 CST 的当前
+快照共 117 人：`default=102`、`vip=12`、`admin=1`、`owner=2`；MariaDB stored
+primary group 与 API PostgreSQL 快照的匿名规范化 SHA-256 均为
+`BEDC340EBB8142885A5747ADDE1528E22D74617E1E44BD5CA424EBC77994402F`。同步任务
+不控制任何 Minecraft 进程，快照人数和分布属于易变事实，后续需实时复核。
 
-受控等级代理 `E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.0.jar` 的
-SHA-256 为 `35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B`；
-配置位于同目录的 `HechaoLuckPermsTierAgent\config.properties`，ACL 已收紧，备份位于
-`E:\manual-backups\luckperms-tier-agent-20260726T223127Z`。安装时没有重启大厅；
-2026-07-28 的受控重启后启动日志已确认代理加载，真实 owner 快照可用。
+受控等级代理当前为
+`E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.2.jar`，SHA-256 为
+`917984C1DED705F38F3BF768518A1011C7EF974E9BEB322BCEB7BB4CE07A364E`；
+配置位于同目录的 `HechaoLuckPermsTierAgent\config.properties`，ACL 已收紧，直接回滚
+目录为 `E:\manual-backups\luckperms-tier-agent-20260814T005515Z`。2026-08-14
+安装阶段 Java PID 集合未变，随后只优雅重启内部大厅；日志确认 `0.1.2` 加载，其他四个
+Java 进程未变化，至少三轮五分钟只读同步成功。下一次真实等级变更仍需跨两轮同步确认
+stored primary group 不再回退。运行状态核验于 2026-08-14，后续需实时复核。
 
 状态采集器 `0.2.1` 位于两台游戏 VPS 的 `C:\ProgramData\Hechao\StatusCollector`，单文件 EXE SHA-256 均为 `7645909E8FE9690D022D7B14E065ACACAB85FA39F4D2C03B8E52BFBF9F3899ED`。两台计划任务 `Hechao Launcher Server Heartbeats` 都以 `SYSTEM` 身份每分钟运行：`owl5` 的 `mc-vps-primary` 查询 `lobby`、`survival2`、`survival1` 和 `activity`，`owl9` 的 `owl9-pvp` 只查询本机恐怖整蛊历史目标 `pvp`。Activity 单独启用零玩家暂停识别；旧 Tick 数值不会发送，有玩家时仍严格报警。令牌使用 `LocalMachine` DPAPI 加密；采集器不包含 RCON 或进程启停能力。两机升级前后 Java PID 集合一致，回滚备份分别位于 `collector-0.2.1-20260729T211120Z` 和 `collector-0.2.1-20260729T211519Z`。
 

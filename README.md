@@ -5,6 +5,12 @@
 > 或授予游戏权限。API `305/305`、完整解决方案 `725/725` 和生产 29 个映射账号聚合探针
 > 通过。发布记录见 [`docs/API_RELEASE_0.30.2.md`](docs/API_RELEASE_0.30.2.md)。
 
+> `2026-08-14` 大厅 LuckPerms 等级代理 `0.1.2` 已正式加载：修复
+> `parents-by-weight` 下计算主组掩盖 stored primary group、以及保存后未广播跨服缓存
+> 的问题。安装具备自动回滚，只优雅重启内部大厅，其他四个 Java 进程未变化；部署后
+> 三轮五分钟只读同步成功。下一次真实等级变更仍需跨两轮同步确认不回退。发布记录见
+> [`docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.2.md`](docs/LUCKPERMS_TIER_AGENT_RELEASE_0.1.2.md)。
+
 > `2026-08-11` Launcher API `0.30.1` 已修复生产 CSP 下“活动企划”无法打开的问题。
 > FullCalendar 现在复用经过 SHA-256 精确授权的样式锚点，CSP 仍不允许
 > `'unsafe-inline'`。完整解决方案 `722/722`、Vitest `11/11`、Playwright `26/26`

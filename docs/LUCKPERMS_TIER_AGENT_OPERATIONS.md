@@ -1,14 +1,12 @@
 # LuckPerms 全局等级代理运维
 
-> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.1`
->
-> 待激活修复版本：`HechaoLuckPermsTierAgent 0.1.2`
+> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.2`
 >
 > 目标 API：`0.30.2`（协议自 `0.16.0` 起保持兼容）
 >
-> 生产状态：`0.1.1` 仍由大厅进程加载；`0.1.2` 已通过候选构建，生产替换与大厅重启状态以对应发布记录为准
+> 生产状态：`0.1.2` 已于 2026-08-14 通过内部大厅隔离重启加载；部署后至少三轮五分钟只读同步成功。下一次真实等级变更仍需跨两轮同步确认不回退
 >
-> 边界：只修改四个固定全局组，不执行控制台命令，不启动、停止或重启任何服务器
+> 边界：只修改四个固定全局组；部署只重启内部大厅，不操作 Velocity、生存服或活动服
 
 ## 1. 设计
 
@@ -125,9 +123,9 @@ MariaDB `players.primary_group`，并至少跨过两轮五分钟同步。
 4. 写入并收紧配置 ACL。
 5. 返回 `ServerRestartPerformed=false`。
 
-安装不会启动或重启大厅。磁盘上的 JAR 替换成功不代表修复已经生效；插件只有在获得明确
-授权并重启大厅后才会加载。重启前后必须记录全部 Java PID，且不得操作 Velocity 或其他
-游戏服务。
+安装不会启动或重启大厅。磁盘上的 JAR 替换成功不代表修复已经生效；插件必须经过内部
+大厅隔离重启和日志门禁后才算加载。重启前后必须记录全部 Java PID，且不得操作 Velocity
+或其他游戏服务。
 
 2026-08-14 部署前实时核验：
 
@@ -140,6 +138,20 @@ E:\LobbyServer\plugins\HechaoLuckPermsTierAgent\config.properties
 配置 ACL 继承已关闭，明文令牌不得进入终端输出或 Git。安装脚本会为本次替换创建新的
 `E:\manual-backups\luckperms-tier-agent-*` 回滚点；安装前后 Java PID 集合必须一致，且
 返回 `ServerRestartPerformed=false`。
+
+2026-08-14 正式部署结果：
+
+```text
+E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.2.jar
+SHA-256 917984C1DED705F38F3BF768518A1011C7EF974E9BEB322BCEB7BB4CE07A364E
+回滚目录 E:\manual-backups\luckperms-tier-agent-20260814T005515Z
+```
+
+安装阶段五个 Java PID 全部未变；随后通过既有控制台桥确认 `save-all flush`，只重启
+`Hechao-Server-Lobby`。大厅从旧 PID `7924` 切换到新 PID `9480`，其余四个 Java
+进程的 PID、启动时间和路径均未变化。日志确认 `0.1.2` 加载、启用并到达 `Done`；
+自动回滚未触发。PID 和实时运行状态属于 2026-08-14 09:05 CST 的部署证据，后续操作前
+必须重新核验。
 
 ## 5. 验收与回滚
 
@@ -154,6 +166,13 @@ E:\LobbyServer\plugins\HechaoLuckPermsTierAgent\config.properties
 4. 等待至少两轮五分钟只读同步，确认 stored primary group 与后台身份没有恢复旧值。
 5. 再执行 `vip -> default` 恢复测试账号，并再次等待同步确认。
 6. 检查两条排队/完成审计，确认日志中没有令牌或请求正文。
+
+截至 2026-08-14 09:18 CST，`0.1.2` 加载后的 `01:08`、`01:13`、`01:18 UTC`
+三轮五分钟同步均返回成功，117 条 stored primary group 快照被正常接收，等级命令队列
+保持为空。历史最近十条命令涉及三名真实玩家，不是隔离测试账号，因此部署任务没有为
+凑验收而擅自修改或降级任何玩家。下一次管理员按正常业务提交等级变更时，仍须按上述
+步骤核对 MariaDB stored value、API 身份与两轮同步后的稳定性；在该证据形成前，不把
+真实变更闭环标为完成。
 
 回滚时停服后把当前 JAR 移出 `plugins`，从最近
 `E:\manual-backups\luckperms-tier-agent-*` 恢复旧 JAR 与配置。迁移 13 是加法变更，

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-14T01:20:07Z",
+  "component": "luckperms-tier-agent",
+  "version": "0.1.2",
+  "sourceCommit": "4591e29800e82d114513a7cb61d0df890b67809d",
+  "releaseTag": "luckperms-tier-agent-v0.1.2",
+  "host": "owl5",
+  "artifact": {
+    "name": "HechaoLuckPermsTierAgent-0.1.2.jar",
+    "sizeBytes": 326515,
+    "sha256": "917984C1DED705F38F3BF768518A1011C7EF974E9BEB322BCEB7BB4CE07A364E",
+    "manifestVersion": "0.1.2",
+    "pluginVersion": "0.1.2"
+  },
+  "tests": {
+    "gradlePassed": 14,
+    "gradleFailed": 0,
+    "dotnetSolutionPassed": 725,
+    "dotnetSolutionFailed": 0,
+    "installerSuccessPathPassed": true,
+    "installerRollbackPathPassed": true
+  },
+  "preDeployment": {
+    "apiVersion": "0.30.2",
+    "databaseMigrationCount": 28,
+    "activeTierCommandCount": 0,
+    "lobbyEstablishedConnectionCount": 0,
+    "previousVersion": "0.1.1",
+    "previousArtifactSha256": "F3B8871D55914CD403987A4AAEF901F1AF6FC12B44395FCACDFE99BB8C0AA450",
+    "luckPermsStorage": "mysql",
+    "luckPermsMessaging": "sql",
+    "luckPermsAutoPushUpdates": true,
+    "luckPermsPrimaryGroupCalculation": "parents-by-weight"
+  },
+  "deployment": {
+    "rollbackDirectory": "E:/manual-backups/luckperms-tier-agent-20260814T005515Z",
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "automaticRollbackUsed": false,
+    "serverRestartPerformedByInstaller": false,
+    "onlyLobbyRestarted": true,
+    "saveAllFlushConfirmed": true,
+    "oldLobbyPid": 7924,
+    "newLobbyPid": 9480,
+    "otherJavaProcessIdentitiesUnchanged": true,
+    "velocityRestarted": false,
+    "otherMinecraftServersRestarted": 0
+  },
+  "postDeployment": {
+    "pluginLoaded": true,
+    "pluginEnabled": true,
+    "lobbyReachedDone": true,
+    "successfulSyncRoundsObserved": 3,
+    "syncRoundTimesUtc": [
+      "2026-08-14T01:08:06Z",
+      "2026-08-14T01:13:06Z",
+      "2026-08-14T01:18:06Z"
+    ],
+    "syncTaskUsesPowerShell7": true,
+    "activeTierCommandCount": 0,
+    "storedSnapshotCount": 117,
+    "storedSnapshotGroups": {
+      "default": 102,
+      "vip": 12,
+      "admin": 1,
+      "owner": 2
+    },
+    "mariaDbAndApiSnapshotDigestMatched": true,
+    "normalizedSnapshotSha256": "BEDC340EBB8142885A5747ADDE1528E22D74617E1E44BD5CA424EBC77994402F"
+  },
+  "remainingAcceptance": {
+    "realTierMutationPerformedDuringDeployment": false,
+    "reason": "Recent commands targeted real players rather than an isolated test account.",
+    "nextGate": "Verify the next authorized normal tier change against MariaDB stored primary group and two five-minute sync rounds.",
+    "roundTripTestAccountRequired": true
+  },
+  "finalReadOnlyAudit": {
+    "apiCapturedAtUtc": "2026-08-14T01:44:59.051Z",
+    "owl5CapturedAtUtc": "2026-08-14T01:46:00.3279263Z",
+    "apiPublicHealthStatus": 200,
+    "apiPublicReadinessStatus": 200,
+    "apiServiceMainPid": 2189110,
+    "apiServiceRestartCount": 0,
+    "apiWarningOrHigherCountSince2026-08-14Utc": 0,
+    "activeTierCommandCount": 0,
+    "tierCommandStatusCounts": {
+      "Applied": 10
+    },
+    "storedSnapshotCount": 117,
+    "storedSnapshotGroups": {
+      "default": 102,
+      "vip": 12,
+      "admin": 1,
+      "owner": 2
+    },
+    "latestSnapshotReceivedAtUtc": "2026-08-14T01:43:07.552510Z",
+    "identitySnapshotMismatchCount": 0,
+    "syncTaskLastRunAtUtc": "2026-08-14T01:43:43Z",
+    "syncTaskLastResult": 0,
+    "lobbyPid": 9480,
+    "lobbyEstablishedConnectionCount": 0,
+    "javaPids": [
+      2576,
+      7748,
+      9428,
+      9480,
+      10412
+    ],
+    "onlyExpectedPluginJarPresent": true,
+    "pluginArtifactStillMatches": true,
+    "rollbackDirectoryStillExists": true,
+    "deploymentStagingDirectoryRemoved": true
+  },
+  "privacy": {
+    "playerNamesIncluded": false,
+    "minecraftUuidsIncluded": false,
+    "launcherUserIdsIncluded": false,
+    "administratorIdentifiersIncluded": false,
+    "tokensIncluded": false,
+    "databaseCredentialsIncluded": false,
+    "configurationContentsIncluded": false
+  }
+}
