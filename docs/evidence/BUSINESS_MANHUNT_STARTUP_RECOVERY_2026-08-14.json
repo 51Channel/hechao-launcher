@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-08-14T18:39:00+08:00",
+  "host": "owl5",
+  "target": "activity",
+  "displayName": "赫朝商务追杀",
+  "incidents": [
+    {
+      "stage": "managed-java",
+      "resultCode": "START_TIMEOUT",
+      "cause": "The deployed start.bat invoked java while the scheduled-task PATH had no Java directory.",
+      "resolution": "Use the versioned managed runner with machine HECHAO_JAVA_HOME set to E:\\jdk."
+    },
+    {
+      "stage": "paperclip-cache",
+      "resultCode": "START_TIMEOUT",
+      "cause": "Paperclip remained in the Mojang server-core download while the owl5 network made no progress.",
+      "resolution": "Install the verified official Minecraft 1.21.11 server core into the Paperclip cache."
+    },
+    {
+      "stage": "paper-velocity",
+      "resultCode": "VELOCITY_SECRET_MISSING",
+      "cause": "The deployed paper-global.yml left proxies.velocity disabled and its secret empty.",
+      "resolution": "Enable Velocity modern forwarding and inject the matching existing host secret without exposing it."
+    }
+  ],
+  "artifacts": {
+    "managedRunner": {
+      "path": "C:\\ProgramData\\Hechao\\ServerControl\\Run-MinecraftServer.5476f39.ps1",
+      "sha256": "ADCEC91F97B6BD6A77C7698CB98D3521D721646AF454D24DB6DF4614FCDBBD89"
+    },
+    "mojangServerCore": {
+      "path": "E:\\ActivityNeoForge\\cache\\mojang_1.21.11.jar",
+      "bytes": 56327581,
+      "sha1": "64bb6d763bed0a9f1d632ec347938594144943ed",
+      "sha256": "F83B8E093865806F931C7E34AAE41B177D4C076335263DD124C75D6D65DD1726"
+    },
+    "paperGlobal": {
+      "path": "E:\\ActivityNeoForge\\config\\paper-global.yml",
+      "sha256AfterPaperNormalization": "6C99D9D6DB1D2852CE28C59FFBB9D50F372A3E88E3CB388A4C8C13A23C83521C",
+      "secretRecorded": false
+    }
+  },
+  "backups": [
+    "E:\\manual-backups\\activity-managed-java-20260814T100255Z",
+    "E:\\manual-backups\\activity-mojang-cache-20260814T102247Z",
+    "E:\\manual-backups\\activity-paper-velocity-20260814T103110Z"
+  ],
+  "verification": {
+    "activityTaskState": "Running",
+    "activityPid": 3652,
+    "activityJava": "E:\\jdk\\bin\\java.exe",
+    "activityPort": 25568,
+    "activityListenerCount": 1,
+    "paperDone": true,
+    "businessManhuntPluginReady": true,
+    "velocitySecretError": false,
+    "activityLogErrorCount": 3,
+    "activityUnexpectedErrorCount": 0,
+    "velocityTaskState": "Running",
+    "velocityPid": 3020,
+    "velocityPort": 25577,
+    "velocityListenerCount": 1,
+    "velocityDone": true,
+    "velocityLogErrorCount": 0,
+    "velocityActivityRoute": "127.0.0.1:25568",
+    "serverControlAgentTaskState": "Running",
+    "activityRuntimeMarkerPresent": true,
+    "stableWindowSeconds": 10
+  },
+  "knownWarnings": [
+    "Emotecraft logged one three-line proxy payload-size banner; no other activity ERROR lines were present."
+  ],
+  "remainingAcceptance": [
+    "Join through the Hechao launcher and production Velocity using a licensed player account and a fresh launch grant.",
+    "Validate the Velocity plugin-message payload setting before using large Emotecraft payloads."
+  ]
+}
