@@ -1,12 +1,12 @@
 # LuckPerms 全局等级代理运维
 
-> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.0`
+> 当前加载版本：`HechaoLuckPermsTierAgent 0.1.1`
 >
-> 待激活修复版本：`HechaoLuckPermsTierAgent 0.1.1`
+> 待激活修复版本：`HechaoLuckPermsTierAgent 0.1.2`
 >
-> 目标 API：`0.28.7`（协议自 `0.16.0` 起保持兼容）
+> 目标 API：`0.30.2`（协议自 `0.16.0` 起保持兼容）
 >
-> 生产状态：`0.1.0` 仍由大厅进程加载；`0.1.1` 已通过候选构建，生产替换与大厅重启状态以对应发布记录为准
+> 生产状态：`0.1.1` 仍由大厅进程加载；`0.1.2` 已通过候选构建，生产替换与大厅重启状态以对应发布记录为准
 >
 > 边界：只修改四个固定全局组，不执行控制台命令，不启动、停止或重启任何服务器
 
@@ -36,6 +36,11 @@
 - 每次领取生成 90 秒租约并递增 `attemptCount`。
 - 回执必须同时匹配代理 ID 和 `attemptCount`，旧进程或旧租约的迟到回执返回 `409`。
 - API 回执失败时租约到期后会重领；目标已经生效会按幂等成功处理。
+- `User#getPrimaryGroup()` 是按 LuckPerms 配置计算的结果，不是 SQL 中的 stored primary
+  group。代理不使用该值判断 stored value 冲突；计算结果无论是预期组、目标组还是第三组，
+  都必须执行受控收敛。并发保护由 API 入队事务、快照修订和单玩家待处理约束承担。
+- 代理始终通过 `loadUser` 读取存储状态，不复用单服旧缓存；保存成功后必须通过已配置的
+  LuckPerms messaging service 广播用户更新。消息服务不可用时故障关闭。
 - 代理只回传固定错误码，不把异常正文、令牌或数据库信息写入 API。
 - 当前管理员不能修改自身等级，最后一个可用管理员不能被降级。
 
@@ -77,6 +82,27 @@ claim-limit=10
 `primary_group_update_failed`，不再保存节点或误报成功。自动测试必须覆盖 stored value
 更新、节点替换、保存顺序和拒绝分支。
 
+### 4.2 `0.1.2` 计算主组与跨服缓存修复
+
+生产使用 `primary-group-calculation: parents-by-weight`。当目标继承节点已经存在时，
+`User#getPrimaryGroup()` 可能已经返回目标组，即使 `players.primary_group` 仍保存旧值。
+`0.1.1` 会在此处提前返回 `Applied`，没有再次调用 `User#setPrimaryGroup`；其他服务器也没有
+收到用户更新广播。下一轮只读快照因此仍从 MariaDB 读到旧 stored value 并恢复后台身份。
+
+`0.1.2` 按以下顺序执行：
+
+1. 从 LuckPerms 存储加载用户，不使用单服现有缓存作为写入基线。
+2. 确保目标全局继承节点存在，并移除其余三个受管全局组节点；任一节点操作失败时先恢复
+   本机内存状态，再故障关闭。带上下文节点和其他业务组保持不变。
+3. 调用 `User#setPrimaryGroup`；计算主组已经等于目标时也不提前成功。
+4. 等待 `saveUser` 完成，再调用 `MessagingService.pushUserUpdate` 通知其他实例重新加载。
+5. 保存或广播异常时回执失败，并立即从存储重新加载本机用户，避免大厅缓存停留在半修改
+   状态。
+
+LuckPerms API 不提供 stored primary group 读取接口，因此插件内不使用
+`User#getPrimaryGroup()` 伪造持久化读回。真实验收必须由既有只读同步脚本直接查询
+MariaDB `players.primary_group`，并至少跨过两轮五分钟同步。
+
 构建：
 
 ```powershell
@@ -88,7 +114,7 @@ claim-limit=10
 
 ```powershell
 .\deploy\windows\luckperms-tier-agent\Install-LuckPermsTierAgent.ps1 `
-  -JarPath .\src\Hechao.LuckPermsTierAgent\build\libs\HechaoLuckPermsTierAgent-0.1.1.jar
+  -JarPath .\src\Hechao.LuckPermsTierAgent\build\libs\HechaoLuckPermsTierAgent-0.1.2.jar
 ```
 
 脚本会：
@@ -103,17 +129,17 @@ claim-limit=10
 授权并重启大厅后才会加载。重启前后必须记录全部 Java PID，且不得操作 Velocity 或其他
 游戏服务。
 
-2026-07-27 已部署：
+2026-08-14 部署前实时核验：
 
 ```text
-E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.0.jar
-SHA-256 35A9BBB17620DC2FD7245E0EA8CCAA293DC98C264DA3463AB706846ED7E42A7B
+E:\LobbyServer\plugins\HechaoLuckPermsTierAgent-0.1.1.jar
+SHA-256 F3B8871D55914CD403987A4AAEF901F1AF6FC12B44395FCACDFE99BB8C0AA450
 E:\LobbyServer\plugins\HechaoLuckPermsTierAgent\config.properties
 ```
 
-配置 ACL 继承已关闭，明文令牌未进入终端输出或 Git。备份位于
-`E:\manual-backups\luckperms-tier-agent-20260726T223127Z`。安装前后 Java PID
-集合一致，返回 `ServerRestartPerformed=false`。
+配置 ACL 继承已关闭，明文令牌不得进入终端输出或 Git。安装脚本会为本次替换创建新的
+`E:\manual-backups\luckperms-tier-agent-*` 回滚点；安装前后 Java PID 集合必须一致，且
+返回 `ServerRestartPerformed=false`。
 
 ## 5. 验收与回滚
 
@@ -124,9 +150,10 @@ E:\LobbyServer\plugins\HechaoLuckPermsTierAgent\config.properties
 
 1. 日志出现 `LuckPerms tier agent enabled as owl5-lobby`。
 2. 后台对测试玩家执行 `default -> vip`。
-3. LuckPerms 主组、后台等级和权限均更新。
-4. 再执行 `vip -> default` 恢复测试账号。
-5. 检查两条排队/完成审计，确认日志中没有令牌或请求正文。
+3. 直接读取 MariaDB stored primary group，并确认后台等级和权限均更新。
+4. 等待至少两轮五分钟只读同步，确认 stored primary group 与后台身份没有恢复旧值。
+5. 再执行 `vip -> default` 恢复测试账号，并再次等待同步确认。
+6. 检查两条排队/完成审计，确认日志中没有令牌或请求正文。
 
 回滚时停服后把当前 JAR 移出 `plugins`，从最近
 `E:\manual-backups\luckperms-tier-agent-*` 恢复旧 JAR 与配置。迁移 13 是加法变更，

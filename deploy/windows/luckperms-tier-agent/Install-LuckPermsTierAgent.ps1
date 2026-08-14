@@ -100,51 +100,105 @@ try {
     $backupDirectory =
         Join-Path $resolvedBackupRoot "luckperms-tier-agent-$timestamp"
     $destinationJar =
-        Join-Path $pluginsDirectory 'HechaoLuckPermsTierAgent-0.1.1.jar'
+        Join-Path $pluginsDirectory 'HechaoLuckPermsTierAgent-0.1.2.jar'
     $stagingJar = "$destinationJar.uploading"
+    $configurationPath =
+        Join-Path $configurationDirectory 'config.properties'
 
     New-Item -ItemType Directory -Path $pluginsDirectory -Force | Out-Null
     New-Item -ItemType Directory -Path $backupDirectory -Force | Out-Null
+    Set-RestrictedAcl -LiteralPath $backupDirectory
+    if (Test-Path -LiteralPath $configurationDirectory -PathType Leaf) {
+        throw 'The plugin configuration path is not a directory.'
+    }
+
     $existingJars = Get-ChildItem -LiteralPath $pluginsDirectory -File |
         Where-Object { $_.Name -like 'HechaoLuckPermsTierAgent-*.jar' }
     foreach ($existingJar in $existingJars) {
-        Move-Item -LiteralPath $existingJar.FullName -Destination $backupDirectory
+        Copy-Item -LiteralPath $existingJar.FullName -Destination $backupDirectory
     }
-    if (Test-Path -LiteralPath $configurationDirectory -PathType Container) {
+    $configurationExisted =
+        Test-Path -LiteralPath $configurationDirectory -PathType Container
+    if ($configurationExisted) {
         Copy-Item -LiteralPath $configurationDirectory `
             -Destination $backupDirectory -Recurse
     }
 
-    Copy-Item -LiteralPath $resolvedJarPath -Destination $stagingJar
-    $sourceHash =
-        (Get-FileHash -LiteralPath $resolvedJarPath -Algorithm SHA256).Hash
-    $stagingHash =
-        (Get-FileHash -LiteralPath $stagingJar -Algorithm SHA256).Hash
-    if ($sourceHash -ne $stagingHash) {
-        throw 'The staged plugin JAR checksum does not match the source.'
+    $cutoverStarted = $false
+    try {
+        Copy-Item -LiteralPath $resolvedJarPath -Destination $stagingJar
+        $sourceHash =
+            (Get-FileHash -LiteralPath $resolvedJarPath -Algorithm SHA256).Hash
+        $stagingHash =
+            (Get-FileHash -LiteralPath $stagingJar -Algorithm SHA256).Hash
+        if ($sourceHash -ne $stagingHash) {
+            throw 'The staged plugin JAR checksum does not match the source.'
+        }
+
+        $cutoverStarted = $true
+        foreach ($existingJar in $existingJars) {
+            Remove-Item -LiteralPath $existingJar.FullName -Force
+        }
+        Move-Item -LiteralPath $stagingJar -Destination $destinationJar -Force
+
+        New-Item -ItemType Directory -Path $configurationDirectory -Force |
+            Out-Null
+        $configuration = @(
+            "api-base-url=$ApiBaseUrl"
+            "token=$token"
+            "agent-id=$AgentId"
+            "request-timeout-seconds=$RequestTimeoutSeconds"
+            "poll-interval-seconds=$PollIntervalSeconds"
+            "claim-limit=$ClaimLimit"
+        ) -join "`n"
+        [System.IO.File]::WriteAllText(
+            $configurationPath,
+            "$configuration`n",
+            (New-Object System.Text.UTF8Encoding($false)))
+
+        Set-RestrictedAcl -LiteralPath $configurationPath
+        Set-RestrictedAcl -LiteralPath $configurationDirectory
     }
-    Move-Item -LiteralPath $stagingJar -Destination $destinationJar -Force
+    catch {
+        $installFailure = $_
+        if ($cutoverStarted) {
+            try {
+                Get-ChildItem -LiteralPath $pluginsDirectory -File |
+                    Where-Object {
+                        $_.Name -like 'HechaoLuckPermsTierAgent-*.jar'
+                    } |
+                    Remove-Item -Force
+                Get-ChildItem -LiteralPath $backupDirectory -File |
+                    Where-Object {
+                        $_.Name -like 'HechaoLuckPermsTierAgent-*.jar'
+                    } |
+                    Copy-Item -Destination $pluginsDirectory -Force
 
-    New-Item -ItemType Directory -Path $configurationDirectory -Force |
-        Out-Null
-    $configurationPath =
-        Join-Path $configurationDirectory 'config.properties'
-    $configuration = @(
-        "api-base-url=$ApiBaseUrl"
-        "token=$token"
-        "agent-id=$AgentId"
-        "request-timeout-seconds=$RequestTimeoutSeconds"
-        "poll-interval-seconds=$PollIntervalSeconds"
-        "claim-limit=$ClaimLimit"
-    ) -join "`n"
-    [System.IO.File]::WriteAllText(
-        $configurationPath,
-        "$configuration`n",
-        (New-Object System.Text.UTF8Encoding($false)))
-
-    Set-RestrictedAcl -LiteralPath $configurationPath
-    Set-RestrictedAcl -LiteralPath $configurationDirectory
-    Set-RestrictedAcl -LiteralPath $backupDirectory
+                if (Test-Path -LiteralPath $configurationDirectory) {
+                    Remove-Item -LiteralPath $configurationDirectory `
+                        -Recurse -Force
+                }
+                $backupConfiguration =
+                    Join-Path $backupDirectory 'HechaoLuckPermsTierAgent'
+                if ($configurationExisted) {
+                    Copy-Item -LiteralPath $backupConfiguration `
+                        -Destination $pluginsDirectory -Recurse -Force
+                }
+            }
+            catch {
+                throw (
+                    'LuckPerms tier agent installation and rollback failed. ' +
+                    "Install error: $($installFailure.Exception.Message) " +
+                    "Rollback error: $($_.Exception.Message)"
+                )
+            }
+        }
+        throw $installFailure
+    }
+    finally {
+        Remove-Item -LiteralPath $stagingJar -Force `
+            -ErrorAction SilentlyContinue
+    }
 
     [pscustomobject]@{
         PluginJar = $destinationJar
