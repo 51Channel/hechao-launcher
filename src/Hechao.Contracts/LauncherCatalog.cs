@@ -45,7 +45,8 @@ public sealed record ServerSummary(
     string Announcement = "",
     DateTimeOffset? OpensAt = null,
     DateTimeOffset? ClosesAt = null,
-    ServerCatalogSection? CatalogSection = null);
+    ServerCatalogSection? CatalogSection = null,
+    bool CanJoin = true);
 
 public sealed record ClientProfileSummary(
     string Id,

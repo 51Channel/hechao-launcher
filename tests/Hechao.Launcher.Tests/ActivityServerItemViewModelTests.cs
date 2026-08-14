@@ -66,6 +66,24 @@ public sealed class ActivityServerItemViewModelTests
         Assert.False(item.IsClientInstalled);
     }
 
+    [Fact]
+    public void JoinRestrictedActivityStillOffersClientPreparation()
+    {
+        var item = new ActivityServerItemViewModel(
+            CreateServer(null, null, null) with
+            {
+                MinimumTier = AccessTier.Participant,
+                CanJoin = false,
+            });
+
+        item.ApplyClientState(LocalProfileState.Missing);
+
+        Assert.True(item.CanPrepareClient);
+        Assert.Equal("下载活动客户端", item.ClientActionText);
+        Assert.Contains("活动成员", item.AccessText, StringComparison.Ordinal);
+        Assert.Contains("可提前下载", item.AccessText, StringComparison.Ordinal);
+    }
+
     private static ServerSummary CreateServer(
         DateTimeOffset? opensAt,
         DateTimeOffset? closesAt,

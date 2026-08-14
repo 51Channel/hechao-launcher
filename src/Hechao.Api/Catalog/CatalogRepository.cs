@@ -11,6 +11,53 @@ public sealed class CatalogRepository(
     IOptions<ServerHeartbeatOptions> heartbeatOptions,
     IOptions<ServerControlOptions> controlOptions)
 {
+    internal const string AccessibleProfileSql = """
+        SELECT profile.id
+        FROM launcher.client_profiles profile
+        WHERE profile.id = $3
+          AND profile.is_active
+          AND NOT EXISTS (
+              SELECT 1
+              FROM launcher.minecraft_identities identity
+              JOIN launcher.minecraft_identity_bans identity_ban
+                  ON identity_ban.minecraft_uuid = identity.minecraft_uuid
+              WHERE identity.user_id = $1
+                AND identity_ban.revoked_at IS NULL
+                AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now())
+          )
+          AND EXISTS (
+              SELECT 1
+              FROM launcher.servers server
+              LEFT JOIN launcher.server_access_overrides access_override
+                  ON access_override.user_id = $1
+                 AND access_override.server_id = server.id
+                 AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
+              WHERE server.client_profile_id = profile.id
+                AND server.is_visible
+                AND server.server_role = 'Player'
+                AND (
+                    server.velocity_target = 'activity'
+                    OR access_override.decision = 'Allow'
+                    OR (
+                        access_override.decision IS DISTINCT FROM 'Deny'
+                        AND CASE $2
+                            WHEN 'Member' THEN 0
+                            WHEN 'Participant' THEN 1
+                            WHEN 'Collaborator' THEN 2
+                            WHEN 'Administrator' THEN 3
+                            ELSE -1
+                        END >= CASE server.minimum_tier
+                            WHEN 'Member' THEN 0
+                            WHEN 'Participant' THEN 1
+                            WHEN 'Collaborator' THEN 2
+                            WHEN 'Administrator' THEN 3
+                            ELSE 100
+                        END
+                    )
+                )
+          );
+        """;
+
     private readonly TimeSpan _heartbeatFreshness =
         TimeSpan.FromSeconds(heartbeatOptions.Value.FreshnessSeconds);
     private readonly TimeSpan _controlFreshness =
@@ -59,54 +106,8 @@ public sealed class CatalogRepository(
         string profileId,
         CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT profile.id
-            FROM launcher.client_profiles profile
-            WHERE profile.id = $3
-              AND profile.is_active
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM launcher.minecraft_identities identity
-                  JOIN launcher.minecraft_identity_bans identity_ban
-                      ON identity_ban.minecraft_uuid = identity.minecraft_uuid
-                  WHERE identity.user_id = $1
-                    AND identity_ban.revoked_at IS NULL
-                    AND (identity_ban.expires_at IS NULL OR identity_ban.expires_at > now())
-              )
-              AND EXISTS (
-                  SELECT 1
-                  FROM launcher.servers server
-                  LEFT JOIN launcher.server_access_overrides access_override
-                      ON access_override.user_id = $1
-                     AND access_override.server_id = server.id
-                     AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
-                  WHERE server.client_profile_id = profile.id
-                    AND server.is_visible
-                    AND server.server_role = 'Player'
-                    AND (
-                        access_override.decision = 'Allow'
-                        OR (
-                            access_override.decision IS DISTINCT FROM 'Deny'
-                            AND CASE $2
-                                WHEN 'Member' THEN 0
-                                WHEN 'Participant' THEN 1
-                                WHEN 'Collaborator' THEN 2
-                                WHEN 'Administrator' THEN 3
-                                ELSE -1
-                            END >= CASE server.minimum_tier
-                                WHEN 'Member' THEN 0
-                                WHEN 'Participant' THEN 1
-                                WHEN 'Collaborator' THEN 2
-                                WHEN 'Administrator' THEN 3
-                                ELSE 100
-                            END
-                        )
-                    )
-              );
-            """;
-
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(sql, connection);
+        await using var command = new NpgsqlCommand(AccessibleProfileSql, connection);
         command.Parameters.AddWithValue(userId);
         command.Parameters.AddWithValue(accessTier.ToString());
         command.Parameters.AddWithValue(profileId);
@@ -265,7 +266,8 @@ public sealed class CatalogRepository(
                    control_target.reported_online, control_target.last_seen_at,
                    server.velocity_target, server.activity_plan_status,
                    server.activity_package_import_id,
-                   control_target.deployed_package_import_id
+                   control_target.deployed_package_import_id,
+                   NULL::text AS access_override_decision
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
@@ -289,7 +291,8 @@ public sealed class CatalogRepository(
                    control_target.reported_online, control_target.last_seen_at,
                    server.velocity_target, server.activity_plan_status,
                    server.activity_package_import_id,
-                   control_target.deployed_package_import_id
+                   control_target.deployed_package_import_id,
+                   access_override.decision AS access_override_decision
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
@@ -304,25 +307,6 @@ public sealed class CatalogRepository(
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             WHERE server.is_visible
               AND server.server_role = 'Player'
-              AND (
-                  access_override.decision = 'Allow'
-                  OR (
-                      access_override.decision IS DISTINCT FROM 'Deny'
-                      AND CASE $2
-                          WHEN 'Member' THEN 0
-                          WHEN 'Participant' THEN 1
-                          WHEN 'Collaborator' THEN 2
-                          WHEN 'Administrator' THEN 3
-                          ELSE -1
-                      END >= CASE server.minimum_tier
-                          WHEN 'Member' THEN 0
-                          WHEN 'Participant' THEN 1
-                          WHEN 'Collaborator' THEN 2
-                          WHEN 'Administrator' THEN 3
-                          ELSE 100
-                      END
-                  )
-              )
             ORDER BY server.sort_order, server.id;
             """;
 
@@ -333,7 +317,6 @@ public sealed class CatalogRepository(
         if (userId is not null && accessTier is not null)
         {
             command.Parameters.AddWithValue(userId.Value);
-            command.Parameters.AddWithValue(accessTier.Value.ToString());
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -387,6 +370,21 @@ public sealed class CatalogRepository(
                 heartbeat,
                 now,
                 heartbeatFreshness);
+            var minimumTier = Enum.Parse<AccessTier>(
+                reader.GetString(9),
+                ignoreCase: true);
+            var catalogSection = ResolveCatalogSection(reader.GetString(20));
+            var overrideDecision = reader.IsDBNull(24)
+                ? (AdminServerAccessDecision?)null
+                : Enum.Parse<AdminServerAccessDecision>(
+                    reader.GetString(24),
+                    ignoreCase: true);
+            var canJoin = CanJoinServer(accessTier, minimumTier, overrideDecision);
+            if (!ShouldIncludeServer(userId is not null, catalogSection, canJoin))
+            {
+                continue;
+            }
+
             servers.Add(new ServerSummary(
                 reader.GetString(0),
                 reader.GetString(1),
@@ -397,12 +395,13 @@ public sealed class CatalogRepository(
                 runtimeStatus.MaxPlayers,
                 reader.GetString(7),
                 Enum.Parse<ModLoaderKind>(reader.GetString(8), ignoreCase: true),
-                Enum.Parse<AccessTier>(reader.GetString(9), ignoreCase: true),
+                minimumTier,
                 reader.GetString(10),
                 reader.GetString(15),
                 opensAt,
                 closesAt,
-                ResolveCatalogSection(reader.GetString(20))));
+                catalogSection,
+                canJoin));
         }
 
         return servers;
@@ -412,6 +411,26 @@ public sealed class CatalogRepository(
         velocityTarget == "activity"
             ? ServerCatalogSection.Activity
             : ServerCatalogSection.Permanent;
+
+    internal static bool CanJoinServer(
+        AccessTier? accessTier,
+        AccessTier minimumTier,
+        AdminServerAccessDecision? overrideDecision) =>
+        accessTier is not null &&
+        (overrideDecision switch
+        {
+            AdminServerAccessDecision.Deny => false,
+            AdminServerAccessDecision.Allow => true,
+            _ => accessTier.Value >= minimumTier,
+        });
+
+    internal static bool ShouldIncludeServer(
+        bool isAuthenticated,
+        ServerCatalogSection catalogSection,
+        bool canJoin) =>
+        !isAuthenticated ||
+        catalogSection == ServerCatalogSection.Activity ||
+        canJoin;
 
     internal static ServerStatus ResolveActivityDeploymentStatus(
         ServerStatus status,

@@ -50,4 +50,63 @@ public sealed class CatalogRepositoryTests
                 expectedPackageImportId: null,
                 deployedPackageImportId: null));
     }
+
+    [Theory]
+    [InlineData(AccessTier.Member, AccessTier.Participant, null, false)]
+    [InlineData(AccessTier.Participant, AccessTier.Participant, null, true)]
+    [InlineData(AccessTier.Member, AccessTier.Participant, AdminServerAccessDecision.Allow, true)]
+    [InlineData(AccessTier.Administrator, AccessTier.Member, AdminServerAccessDecision.Deny, false)]
+    public void CanJoinServerHonorsTierAndExplicitOverrides(
+        AccessTier accessTier,
+        AccessTier minimumTier,
+        AdminServerAccessDecision? overrideDecision,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            CatalogRepository.CanJoinServer(accessTier, minimumTier, overrideDecision));
+    }
+
+    [Fact]
+    public void AnonymousCatalogNeverGrantsJoinAccess()
+    {
+        Assert.False(CatalogRepository.CanJoinServer(
+            accessTier: null,
+            AccessTier.Member,
+            overrideDecision: AdminServerAccessDecision.Allow));
+    }
+
+    [Theory]
+    [InlineData(ServerCatalogSection.Activity, false, true)]
+    [InlineData(ServerCatalogSection.Permanent, false, false)]
+    [InlineData(ServerCatalogSection.Permanent, true, true)]
+    public void AuthenticatedCatalogKeepsActivitiesButFiltersPermanentServers(
+        ServerCatalogSection section,
+        bool canJoin,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            CatalogRepository.ShouldIncludeServer(
+                isAuthenticated: true,
+                section,
+                canJoin));
+    }
+
+    [Fact]
+    public void ActivityProfileDownloadRequiresVisiblePlayerActivityButNotJoinTier()
+    {
+        Assert.Contains(
+            "server.velocity_target = 'activity'",
+            CatalogRepository.AccessibleProfileSql,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "server.is_visible",
+            CatalogRepository.AccessibleProfileSql,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "server.server_role = 'Player'",
+            CatalogRepository.AccessibleProfileSql,
+            StringComparison.Ordinal);
+    }
 }

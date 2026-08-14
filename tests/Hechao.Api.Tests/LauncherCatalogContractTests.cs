@@ -46,6 +46,7 @@ public sealed class LauncherCatalogContractTests
 
         Assert.NotNull(snapshot);
         Assert.Null(Assert.Single(snapshot.Servers).CatalogSection);
+        Assert.True(Assert.Single(snapshot.Servers).CanJoin);
     }
 
     [Fact]
@@ -69,6 +70,7 @@ public sealed class LauncherCatalogContractTests
         var roundTrip = JsonSerializer.Deserialize<ServerSummary>(json, SerializerOptions);
 
         Assert.Contains("\"catalogSection\":\"Activity\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"canJoin\":true", json, StringComparison.Ordinal);
         Assert.NotNull(roundTrip);
         Assert.Equal(ServerCatalogSection.Activity, roundTrip.CatalogSection);
     }

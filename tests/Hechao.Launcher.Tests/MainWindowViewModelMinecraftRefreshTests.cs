@@ -411,6 +411,42 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
+    public async Task RestrictedActivity_CanDownloadButCannotLaunch()
+    {
+        var installation = new StubInstallationService();
+        installation.LocalStates["activity-profile"] = LocalProfileState.Missing;
+        var gameLauncher = new StubGameLauncherService();
+        var catalog = CreatePermanentAndActivityCatalog(canJoinActivity: false);
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService(),
+            gameLauncher,
+            installation,
+            new LauncherSettings(
+                OpenDownloadsWhenInstalling: false,
+                StartupPage: "活动"),
+            catalogClient: new StaticCatalogClient(catalog));
+        await WaitUntilAsync(() =>
+            viewModel.ActivityServers.Count == 1 &&
+            viewModel.ActivityServers[0].IsClientStateChecked);
+        var activity = Assert.Single(viewModel.ActivityServers);
+
+        await viewModel.PrepareActivityClientCommand.ExecuteAsync(activity);
+        await WaitUntilAsync(() =>
+            viewModel.SelectedServer?.Id == "activity-test" &&
+            viewModel.ClientStatusText == "客户端已就绪");
+
+        Assert.Equal(1, installation.InstallRequestCount);
+        Assert.Equal("称号权限不足", viewModel.PrimaryActionText);
+        Assert.False(viewModel.PrimaryActionCommand.CanExecute(null));
+        Assert.Contains("最低活动成员", viewModel.SelectedServerAccessText, StringComparison.Ordinal);
+
+        await InvokePrimaryActionAsync(viewModel);
+
+        Assert.Equal(0, gameLauncher.LaunchRequestCount);
+        Assert.Contains("你仍可提前准备客户端", viewModel.ToastMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task DeleteActivityClient_RemovesServerHomeEntryButKeepsCalendarEntry()
     {
         var installation = new StubInstallationService();
@@ -1683,7 +1719,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         };
     }
 
-    private static LauncherCatalogSnapshot CreatePermanentAndActivityCatalog() =>
+    private static LauncherCatalogSnapshot CreatePermanentAndActivityCatalog(
+        bool canJoinActivity = true) =>
         new(
             DateTimeOffset.UtcNow,
             [
@@ -1712,7 +1749,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
                     ModLoaderKind.NeoForge,
                     AccessTier.Participant,
                     "activity-profile",
-                    CatalogSection: ServerCatalogSection.Activity),
+                    CatalogSection: ServerCatalogSection.Activity,
+                    CanJoin: canJoinActivity),
             ],
             [
                 new ClientProfileSummary(

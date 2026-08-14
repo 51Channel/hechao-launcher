@@ -750,7 +750,12 @@ public sealed class MainWindowViewModel : ObservableObject
         : $"Minecraft {SelectedServer.MinecraftVersion} · {SelectedServer.Loader}";
     public string SelectedServerAccessText => SelectedServer is null
         ? string.Empty
-        : $"{GetAccessTierText(SelectedServer.MinimumTier)}可进入";
+        : SelectedServer.CanJoin
+            ? $"{GetAccessTierText(SelectedServer.MinimumTier)}可进入"
+            : $"未获进入权限 · 最低{GetAccessTierText(SelectedServer.MinimumTier)}";
+    public string PrimaryActionToolTip => SelectedServer is { CanJoin: false } server
+        ? GetJoinAccessDeniedMessage(server)
+        : PrimaryActionText;
     public bool HasSelectedServerSchedule =>
         SelectedServer is not null && IsActivityServer(SelectedServer);
     public string SelectedServerScheduleText => SelectedServer is null
@@ -2333,6 +2338,12 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
 
+        if (!selectedServer.CanJoin)
+        {
+            ShowToast(GetJoinAccessDeniedMessage(selectedServer), ToastLevel.Error);
+            return;
+        }
+
         if (selectedServer.Status != ServerStatus.Online)
         {
             ShowToast(selectedServer.Status == ServerStatus.Maintenance
@@ -3885,7 +3896,8 @@ public sealed class MainWindowViewModel : ObservableObject
         return !IsAuthenticated ||
                !_selectedProfileStateChecked ||
                _selectedProfileState != LocalProfileState.Ready ||
-               SelectedServer.Status == ServerStatus.Online;
+               (SelectedServer.CanJoin &&
+                SelectedServer.Status == ServerStatus.Online);
     }
 
     public async Task<bool> LoginAccountAsync(
@@ -4554,14 +4566,20 @@ public sealed class MainWindowViewModel : ObservableObject
                     ? "更新客户端"
                     : _selectedProfileState != LocalProfileState.Ready
                         ? "安装客户端"
+                        : SelectedServer?.CanJoin == false
+                            ? "称号权限不足"
                         : SelectedServer?.Status != ServerStatus.Online
                             ? GetUnavailableServerActionText()
                             : !IsMinecraftLinked
                                 ? "绑定正版身份"
                                 : GetLaunchActionText();
         OnPropertyChanged(nameof(PrimaryActionGlyph));
+        OnPropertyChanged(nameof(PrimaryActionToolTip));
         PrimaryActionCommand.RaiseCanExecuteChanged();
     }
+
+    private static string GetJoinAccessDeniedMessage(ServerSummary server) =>
+        $"当前账号暂未获得“{server.Name}”的进入权限（最低称号：{GetAccessTierText(server.MinimumTier)}），你仍可提前准备客户端。";
 
     private string GetUnavailableServerActionText() =>
         SelectedServer?.Status == ServerStatus.Maintenance

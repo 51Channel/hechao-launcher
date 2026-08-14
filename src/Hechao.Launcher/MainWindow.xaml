@@ -840,6 +840,8 @@
                                         Padding="18,8"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Command="{Binding PrimaryActionCommand}"
+                                        ToolTip="{Binding PrimaryActionToolTip}"
+                                        ToolTipService.ShowOnDisabled="True"
                                         AutomationProperties.Name="{Binding PrimaryActionText}">
                                     <StackPanel Orientation="Horizontal">
                                         <controls:IconParkIcon Glyph="{Binding PrimaryActionGlyph}"
@@ -1786,6 +1788,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -1848,12 +1851,19 @@
                                     </TextBlock>
                                 </Grid>
                                 <TextBlock Grid.Row="4"
+                                           Text="{Binding AccessText}"
+                                           Margin="14,9,0,0"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource InkMutedBrush}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="5"
                                            Text="{Binding ClientStateText}"
                                            Margin="14,10,0,0"
                                            FontSize="11"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource InkMutedBrush}" />
-                                <Button Grid.Row="5"
+                                <Button Grid.Row="6"
                                          Height="38"
                                          Margin="14,13,0,0"
                                          Style="{StaticResource BaseButtonStyle}"

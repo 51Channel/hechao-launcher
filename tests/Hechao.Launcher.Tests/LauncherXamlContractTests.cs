@@ -902,6 +902,7 @@ public sealed class LauncherXamlContractTests
         Assert.Contains("{Binding Server.Loader}", attributeValues);
         Assert.Contains("{Binding Server.OnlinePlayers}", attributeValues);
         Assert.Contains("{Binding Server.MaxPlayers}", attributeValues);
+        Assert.Contains("{Binding AccessText}", attributeValues);
         Assert.Contains("{Binding ClientStateText}", attributeValues);
         Assert.Contains("{Binding ClientActionText}", attributeValues);
         Assert.Contains("{Binding ClientActionIcon}", attributeValues);
@@ -913,7 +914,7 @@ public sealed class LauncherXamlContractTests
                 element.Attribute("Command")?.Value.Contains(
                     "PrepareActivityClientCommand",
                     StringComparison.Ordinal) == true);
-        Assert.Equal("5", prepareButton.Attribute("Grid.Row")?.Value);
+        Assert.Equal("6", prepareButton.Attribute("Grid.Row")?.Value);
         Assert.Contains(
             prepareButton.Descendants(),
             element => element.Name.LocalName == "IconParkIcon");

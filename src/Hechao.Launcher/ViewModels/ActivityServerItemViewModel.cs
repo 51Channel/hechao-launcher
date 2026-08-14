@@ -36,6 +36,10 @@ public sealed class ActivityServerItemViewModel : ObservableObject
 
     public ModLoaderKind Loader => Server.Loader;
 
+    public string AccessText => Server.CanJoin
+        ? "当前账号可进入"
+        : $"需{FormatAccessTier(Server.MinimumTier)}或单服授权 · 可提前下载";
+
     public string AnnouncementText => string.IsNullOrWhiteSpace(Server.Announcement)
         ? "暂无活动公告"
         : Server.Announcement;
@@ -139,4 +143,13 @@ public sealed class ActivityServerItemViewModel : ObservableObject
         OnPropertyChanged(nameof(ClientActionHint));
         OnPropertyChanged(nameof(ClientActionIcon));
     }
+
+    private static string FormatAccessTier(AccessTier accessTier) => accessTier switch
+    {
+        AccessTier.Member => "成员",
+        AccessTier.Participant => "活动成员",
+        AccessTier.Collaborator => "协作者",
+        AccessTier.Administrator => "管理员",
+        _ => "对应称号",
+    };
 }
