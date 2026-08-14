@@ -226,4 +226,27 @@ public sealed class DatabaseMigrationTests
         Assert.Contains("deployed_package_import_id", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("DELETE FROM launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void EconomyMigration_UsesBalancedLedgerAndFailClosedCatalog()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.029_economy_ledger.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("economy_accounts", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_operations", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_ledger_entries", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_sale_quotes", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_product_audit", sql, StringComparison.Ordinal);
+        Assert.Contains("DEFERRABLE INITIALLY DEFERRED", sql, StringComparison.Ordinal);
+        Assert.Contains("sum(amount)", sql, StringComparison.Ordinal);
+        Assert.Contains("^minecraft:", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("essentials", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

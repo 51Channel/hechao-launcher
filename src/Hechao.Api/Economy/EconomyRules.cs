@@ -1,0 +1,85 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace Hechao.Api.Economy;
+
+public static partial class EconomyRules
+{
+    public static bool IsValidIdempotencyKey(string? value) =>
+        value is not null && IdempotencyKeyRegex().IsMatch(value);
+
+    public static bool IsValidMinecraftItemId(string? value) =>
+        value is not null && MinecraftItemIdRegex().IsMatch(value);
+
+    public static bool IsValidActorName(string? value) =>
+        value is not null && value.Trim().Length is >= 1 and <= 64 &&
+        !value.Any(char.IsControl);
+
+    public static bool IsValidTransfer(
+        EconomyTransferRequest? request,
+        decimal maximumAmount) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.SenderUuid != Guid.Empty &&
+        request.RecipientUuid != Guid.Empty &&
+        request.SenderUuid != request.RecipientUuid &&
+        IsCurrencyAmount(request.Amount) &&
+        request.Amount <= maximumAmount &&
+        (request.Note is null ||
+         (request.Note.Trim().Length <= 120 && !request.Note.Any(char.IsControl)));
+
+    public static bool IsValidQuote(EconomySaleQuoteRequest? request) =>
+        request is not null &&
+        request.PlayerUuid != Guid.Empty &&
+        IsValidMinecraftItemId(request.ItemId) &&
+        request.Quantity is >= 1 and <= 2304;
+
+    public static bool IsValidCommit(EconomySaleCommitRequest? request) =>
+        request is not null &&
+        request.PlayerUuid != Guid.Empty &&
+        request.QuoteId != Guid.Empty &&
+        IsValidIdempotencyKey(request.IdempotencyKey);
+
+    public static bool IsValidProductMutation(EconomyProductUpsertRequest? request) =>
+        request is not null &&
+        request.ActorUuid != Guid.Empty &&
+        IsValidActorName(request.ActorName) &&
+        IsCurrencyAmount(request.UnitPrice) &&
+        request.UnitPrice > 0 &&
+        request.PersonalDailyLimit is >= 1 and <= 1_000_000 &&
+        request.ServerDailyLimit >= request.PersonalDailyLimit &&
+        request.ServerDailyLimit <= 100_000_000;
+
+    public static bool IsValidProductDisable(EconomyProductDisableRequest? request) =>
+        request is not null &&
+        request.ActorUuid != Guid.Empty &&
+        IsValidActorName(request.ActorName);
+
+    public static string Fingerprint(params object?[] values)
+    {
+        var canonical = string.Join('\n', values.Select(value => value switch
+        {
+            decimal amount => amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
+            Guid guid => guid.ToString("D"),
+            null => string.Empty,
+            _ => value.ToString()?.Trim() ?? string.Empty
+        }));
+        return Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(canonical)))
+            .ToLowerInvariant();
+    }
+
+    private static bool IsCurrencyAmount(decimal amount) =>
+        amount > 0 && decimal.Round(amount, 2) == amount;
+
+    [GeneratedRegex(
+        "^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex IdempotencyKeyRegex();
+
+    [GeneratedRegex(
+        "^minecraft:[a-z0-9_./-]{1,96}$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex MinecraftItemIdRegex();
+}

@@ -14,6 +14,7 @@ using Hechao.Api.Catalog;
 using Hechao.Api.Database;
 using Hechao.Api.Diagnostics;
 using Hechao.Api.Distribution;
+using Hechao.Api.Economy;
 using Hechao.Api.LuckPerms;
 using Hechao.Api.Monitoring;
 using Hechao.Api.PackageImports;
@@ -152,6 +153,12 @@ builder.Services.AddOptions<ServerHeartbeatOptions>()
         options => options.RuntimeHistoryCleanupHours is >= 1 and <= 24,
         "ServerHeartbeats:RuntimeHistoryCleanupHours must be between 1 and 24.")
     .ValidateOnStart();
+builder.Services.AddOptions<EconomyServiceOptions>()
+    .Bind(builder.Configuration.GetSection(EconomyServiceOptions.SectionName))
+    .Validate(
+        options => options.IsValid(),
+        "EconomyService configuration is invalid.")
+    .ValidateOnStart();
 builder.Services.AddOptions<ServerControlOptions>()
     .Bind(builder.Configuration.GetSection(ServerControlOptions.SectionName))
     .Validate(
@@ -287,6 +294,16 @@ builder.Services.AddRateLimiter(options =>
             {
                 AutoReplenishment = true,
                 PermitLimit = 30,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    options.AddPolicy("internal-economy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "local",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 600,
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
@@ -518,6 +535,8 @@ builder.Services.AddSingleton<VelocityAuthorizationTokenValidator>();
 builder.Services.AddSingleton<VelocityAuthorizationRepository>();
 builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
 builder.Services.AddSingleton<ServerHeartbeatRepository>();
+builder.Services.AddSingleton<EconomyServiceTokenValidator>();
+builder.Services.AddSingleton<EconomyRepository>();
 builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
 builder.Services.AddSingleton<ServerControlTokenValidator>();
 builder.Services.AddSingleton<ServerControlRepository>();
@@ -683,6 +702,7 @@ app.MapPost(
     .RequireRateLimiting("internal-sync");
 app.MapPost("/v1/internal/server-heartbeats", ImportServerHeartbeatsAsync)
     .RequireRateLimiting("internal-heartbeats");
+app.MapEconomyEndpoints();
 app.MapPost(
         "/v1/internal/server-control/heartbeat",
         ImportServerControlHeartbeatAsync)
