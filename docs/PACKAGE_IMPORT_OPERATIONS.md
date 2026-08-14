@@ -95,6 +95,12 @@ if not defined HECHAO_MANAGED_START pause
    可选隐藏目录同步，任务进入 `Completed`，目标仍保持停止。只入库任务可以稍后由
    活动企划页对绑定整合包执行同样的结构化部署。
 
+后台在立即部署任务完成后会比对服控目标的代理在线状态、运行目录、活动操作和
+`deployedPackage.importId`。只有部署身份与当前任务一致，才显示“服务端文件已部署”；
+停止状态下提供到 `/admin/control?server=<targetServerId>` 的“启动服务端”入口。该入口
+只完成页面交接，不会自动提交启动命令。Paper 等核心在首次运行时仍可能下载上游文件，
+真实可启动性必须以服控操作结果与控制台日志验收，不能由静态导入分析代替。
+
 完成客户端与服务端测试后，管理员还需要从客户端档案后台把精确清单推进到
 `Production`，活动企划才允许发布给玩家。企划操作见
 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。

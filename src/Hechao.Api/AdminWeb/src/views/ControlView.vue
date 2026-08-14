@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onScopeDispose, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { api } from "@/api/client";
 import type {
   ControlAction,
@@ -38,10 +39,18 @@ interface PendingAction {
   settings: QuickSettings | null;
 }
 
+const route = useRoute();
+const router = useRouter();
 const overview = useResource(signal =>
   api<ControlOverview>("/v1/admin/server-control/overview", { signal })
 );
-const selectedServerId = ref("");
+
+function routeServerId(): string {
+  const value = route.query.server;
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
+
+const selectedServerId = ref(routeServerId());
 const targetDetail = useResource(signal =>
   api<ControlTargetDetail>(
     `/v1/admin/server-control/targets/${encodeURIComponent(selectedServerId.value)}`,
@@ -167,7 +176,16 @@ function syncSettings(force = false): void {
   settingsError.value = "";
 }
 
+async function syncControlRoute(serverId: string): Promise<void> {
+  if (routeServerId() === serverId) return;
+  const query = { ...route.query };
+  if (serverId) query.server = serverId;
+  else delete query.server;
+  await router.replace({ name: "control", query });
+}
+
 async function selectTarget(serverId: string): Promise<void> {
+  await syncControlRoute(serverId);
   if (serverId === selectedServerId.value && selectedTarget.value) return;
   selectedServerId.value = serverId;
   queuedSettingsOperationId.value = "";
@@ -212,11 +230,27 @@ async function refreshControl(): Promise<void> {
   const availableTargets = (
     overviewResult?.targets ?? overview.data.value?.targets ?? []
   ).filter(targetVisible);
-  const nextServerId = availableTargets.some(
+  const requestedServerId = routeServerId();
+  const requestedTarget = availableTargets.find(
+    target => target.serverId === requestedServerId
+  );
+  const currentTarget = availableTargets.find(
     target => target.serverId === selectedServerId.value
-  )
-    ? selectedServerId.value
-    : availableTargets[0]?.serverId ?? "";
+  );
+  const nextTarget = requestedTarget ?? currentTarget ?? availableTargets[0] ?? null;
+  const nextServerId = nextTarget?.serverId ?? "";
+
+  if (requestedServerId && !requestedTarget) {
+    await syncControlRoute(nextServerId);
+    showToast(
+      nextTarget
+        ? `未找到服控目标 ${requestedServerId}，已切换到 ${nextTarget.displayName}。`
+        : `未找到服控目标 ${requestedServerId}，当前没有可管理的服务器。`,
+      true
+    );
+  } else if (requestedServerId !== nextServerId) {
+    await syncControlRoute(nextServerId);
+  }
 
   if (nextServerId !== selectedServerId.value) {
     selectedServerId.value = nextServerId;

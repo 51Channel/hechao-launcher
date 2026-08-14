@@ -662,6 +662,39 @@ test("control polling preserves dirty settings and console reading position", as
   await page.screenshot({ path: "../../../artifacts/admin-web-control-desktop.png", fullPage: true });
 });
 
+test("control deep link selects the requested non-default target", async ({ page }) => {
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path !== "/v1/admin/server-control/targets/fanstreet" || request.method() !== "GET") return false;
+      const result = controlDetail(1);
+      result.target = {
+        ...result.target,
+        ...controlOverview(1).targets[1],
+        allowedCommandPrefixes: ["list", "save-all", "whitelist"],
+        consoleTail: "[04:00:00 INFO] fanstreet ready"
+      };
+      await route.fulfill({ json: result });
+      return true;
+    }
+  });
+
+  await page.goto("/admin/control?server=fanstreet");
+
+  await expect(page.locator(".control-detail-heading h3")).toHaveText("范街活动服");
+  await expect(page).toHaveURL(/\/admin\/control\?server=fanstreet$/);
+  await expect(page.locator(".control-target-item.active")).toContainText("范街活动服");
+});
+
+test("invalid control deep link falls back with an explicit warning", async ({ page }) => {
+  await mockAdminApi(page);
+
+  await page.goto("/admin/control?server=missing-target");
+
+  await expect(page.getByRole("alert")).toContainText("未找到服控目标 missing-target，已切换到 活动服。");
+  await expect(page).toHaveURL(/\/admin\/control\?server=activity$/);
+  await expect(page.locator(".control-detail-heading h3")).toHaveText("活动服");
+});
+
 test("server file deletion requires stopped state and exact destructive confirmation", async ({ page }) => {
   let deleteBody: Record<string, unknown> | null = null;
   await mockAdminApi(page, {
@@ -1197,6 +1230,53 @@ test("package import deploys immediately only after the administrator selects co
   });
 });
 
+test("completed package deployment hands off to the exact server control target", async ({ page }) => {
+  const deployedRecord: PackageImportMock = {
+    ...completedPackageImport,
+    plan: { ...completedPackageImport.plan, deployServer: true }
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview") {
+        const stopped = controlOverview(1);
+        stopped.targets[0] = { ...stopped.targets[0], online: false, processId: null };
+        await route.fulfill({ json: stopped });
+        return true;
+      }
+      if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+        await route.fulfill({ json: {
+          imports: [deployedRecord],
+          publisherAgentConnected: true,
+          publisherAgentLastSeenAt: now
+        } });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        await route.fulfill({ json: deployedRecord });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/package-imports");
+  await page.getByRole("button", { name: "查看整合包任务" }).click();
+  const drawer = page.locator(".package-import-drawer");
+  await expect(drawer.getByRole("heading", { name: "服务端文件已部署，等待首次启动验收" })).toBeVisible();
+  await expect(drawer.getByText("部署完成只代表文件切换成功。", { exact: false })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const drawerWidth = await drawer.evaluate(element => ({
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth
+  }));
+  expect(drawerWidth.scrollWidth).toBe(drawerWidth.clientWidth);
+  await expect(drawer.getByRole("button", { name: "启动服务端" })).toBeVisible();
+  await drawer.getByRole("button", { name: "启动服务端" }).click();
+
+  await expect(page).toHaveURL(/\/admin\/control\?server=activity$/);
+  await expect(page.locator(".control-detail-heading h3")).toHaveText("活动服");
+});
+
 test("package publishing shows real progress and estimates remaining time", async ({ page }) => {
   let detailReads = 0;
   const publishingRecord = {
@@ -1552,6 +1632,16 @@ test("server editor recovers from a revision conflict without losing the draft",
   expect(updates).toHaveLength(2);
   expect(updates[0].expectedRevision).toBe(1);
   expect(updates[1].expectedRevision).toBe(2);
+});
+
+test("server directory opens the matching control target instead of changing visibility", async ({ page }) => {
+  await mockAdminApi(page);
+  await page.goto("/admin/servers");
+
+  await page.getByRole("link", { name: "管理 活动服 的运行状态" }).click();
+
+  await expect(page).toHaveURL(/\/admin\/control\?server=activity$/);
+  await expect(page.locator(".control-detail-heading h3")).toHaveText("活动服");
 });
 
 test("server editor form fills the drawer without overlapping its chrome", async ({ page }) => {

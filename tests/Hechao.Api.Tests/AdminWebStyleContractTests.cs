@@ -83,6 +83,32 @@ public sealed class AdminWebStyleContractTests
         Assert.Contains("服务已停止", view, StringComparison.Ordinal);
         Assert.Contains("usePolling(servers.refresh, 5_000)", view, StringComparison.Ordinal);
         Assert.Contains("/v1/admin/catalog/servers", view, StringComparison.Ordinal);
+        Assert.Contains("玩家入口策略", view, StringComparison.Ordinal);
+        Assert.Contains("不会启动或停止 Java", view, StringComparison.Ordinal);
+        Assert.Contains("query: { server: item.id }", view, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ServerControl_UsesStableDeepLinksForExactTargets()
+    {
+        var view = ReadAdminWebSource("src", "views", "ControlView.vue");
+
+        Assert.Contains("useRoute", view, StringComparison.Ordinal);
+        Assert.Contains("route.query.server", view, StringComparison.Ordinal);
+        Assert.Contains("syncControlRoute", view, StringComparison.Ordinal);
+        Assert.Contains("未找到服控目标", view, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PackageImport_HandsCompletedDeploymentsToServerControl()
+    {
+        var view = ReadAdminWebSource("src", "views", "PackageImportsView.vue");
+        var css = ReadAdminWebSource("src", "styles", "admin.css");
+
+        Assert.Contains("target.deployedPackage?.importId !== record.importId", view, StringComparison.Ordinal);
+        Assert.Contains("服务端文件已部署，等待首次启动验收", view, StringComparison.Ordinal);
+        Assert.Contains("query: { server: targetId }", view, StringComparison.Ordinal);
+        Assert.Contains(".package-control-handoff", css, StringComparison.Ordinal);
     }
 
     [Fact]

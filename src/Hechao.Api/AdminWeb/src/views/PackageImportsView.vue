@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onScopeDispose, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 import { ApiError, api } from "@/api/client";
 import type {
   AccessTier,
@@ -73,6 +74,16 @@ interface ReviewDraft {
   deployServer: boolean;
 }
 
+interface DeploymentHandoff {
+  tone: "ready" | "running" | "warning";
+  title: string;
+  detail: string;
+  icon: string;
+  targetId: string | null;
+  actionLabel: string | null;
+}
+
+const router = useRouter();
 const imports = useResource(signal =>
   api<PackageImportListResponse>("/v1/admin/package-imports", { signal })
 );
@@ -140,6 +151,64 @@ const publisherConnected = computed(() =>
 const activityTarget = computed(() =>
   controls.data.value?.targets.find(isPackageDeploymentTarget) ?? null
 );
+const selectedDeploymentTarget = computed(() => {
+  const targetServerId = selectedImport.data.value?.plan?.targetServerId;
+  if (!targetServerId) return null;
+  return controls.data.value?.targets.find(target => target.serverId === targetServerId) ?? null;
+});
+const deploymentHandoff = computed<DeploymentHandoff | null>(() => {
+  const record = selectedImport.data.value;
+  if (record?.status !== "Completed" || !record.plan?.deployServer) return null;
+  const targetId = record.plan.targetServerId;
+  const target = selectedDeploymentTarget.value;
+  if (!target) {
+    return {
+      tone: "warning", icon: "circle-alert", targetId: null, actionLabel: null,
+      title: "未找到对应服控目标",
+      detail: `整合包任务已完成，但 ${targetId} 尚未出现在服控代理清单中。`
+    };
+  }
+  if (!target.agentConnected) {
+    return {
+      tone: "warning", icon: "circle-alert", targetId, actionLabel: "查看服控目标",
+      title: "服控代理当前离线",
+      detail: "服务端文件状态无法实时确认；代理恢复前不能安全启动。"
+    };
+  }
+  if (target.activeOperation) {
+    return {
+      tone: "running", icon: "refresh-cw", targetId, actionLabel: "查看执行进度",
+      title: "服控操作正在执行",
+      detail: `${target.displayName} 正在处理 ${target.activeOperation.action}，请在服控面板查看结果。`
+    };
+  }
+  if (!target.serverFilesPresent) {
+    return {
+      tone: "warning", icon: "circle-alert", targetId: null, actionLabel: null,
+      title: "服务端文件未就绪",
+      detail: "导入记录已完成，但服控代理没有读到受控运行目录，请先检查部署结果。"
+    };
+  }
+  if (target.deployedPackage?.importId !== record.importId) {
+    return {
+      tone: "warning", icon: "circle-alert", targetId, actionLabel: "查看服控目标",
+      title: "活动槽已不是这份整合包",
+      detail: "当前受控目录的部署身份与本导入任务不一致，请不要从旧任务页直接判断可启动。"
+    };
+  }
+  if (target.online) {
+    return {
+      tone: "ready", icon: "check", targetId, actionLabel: "管理服务端",
+      title: "服务端已运行",
+      detail: "服控代理已确认进程与端口在线；玩家入口仍由服务器目录策略决定。"
+    };
+  }
+  return {
+    tone: "ready", icon: "check", targetId, actionLabel: "启动服务端",
+    title: "服务端文件已部署，等待首次启动验收",
+    detail: "部署完成只代表文件切换成功。请在服控面板启动，并以操作历史和控制台结果为准。"
+  };
+});
 const packageDeploymentMemoryGuidance = computed(() =>
   activityTarget.value?.packageDeploymentMemoryGuidance ?? null
 );
@@ -337,6 +406,13 @@ function closeImport(): void {
   publisherProgressSample = null;
   publisherEtaSeconds.value = null;
   confirmError.value = "";
+}
+
+async function openDeploymentTarget(): Promise<void> {
+  const targetId = deploymentHandoff.value?.targetId;
+  if (!targetId) return;
+  closeImport();
+  await router.push({ name: "control", query: { server: targetId } });
 }
 
 function chooseFile(): void {
@@ -789,6 +865,12 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
             </section>
 
             <div v-if="selectedImport.data.value.errorMessage" class="inline-alert compact-alert" role="alert"><AppIcon name="circle-alert" /><span><strong>{{ selectedImport.data.value.errorCode }}</strong>{{ selectedImport.data.value.errorMessage }}</span></div>
+
+            <section v-if="deploymentHandoff" class="package-control-handoff" :class="`handoff-${deploymentHandoff.tone}`" aria-labelledby="package-control-handoff-title">
+              <div class="package-control-handoff-icon"><AppIcon :name="deploymentHandoff.icon" :size="20" /></div>
+              <div class="package-control-handoff-copy"><span>服控交接</span><h3 id="package-control-handoff-title">{{ deploymentHandoff.title }}</h3><p>{{ deploymentHandoff.detail }}</p></div>
+              <button v-if="deploymentHandoff.actionLabel" class="button button-secondary" type="button" @click="openDeploymentTarget"><AppIcon name="server" />{{ deploymentHandoff.actionLabel }}</button>
+            </section>
 
             <section v-if="selectedImport.data.value.analysis" class="package-detail-section">
               <div class="profile-manager-heading"><div><span>自动识别</span><strong>{{ selectedImport.data.value.analysis.metadata.displayName }}</strong></div><span>{{ selectedImport.data.value.analysis.layout }}</span></div>

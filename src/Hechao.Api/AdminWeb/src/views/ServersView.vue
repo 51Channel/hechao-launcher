@@ -237,7 +237,7 @@ onScopeDispose(unregister);
 
 <template>
   <section class="view-section">
-    <PageHeading title="服务器目录" description="目录策略与物理服状态分别展示；停服后会自动关闭玩家入口。" :updated-at="servers.lastUpdatedAt.value" :stale="Boolean(servers.error.value)">
+    <PageHeading title="服务器目录" description="玩家入口策略与物理服状态分别展示；开放、维护或关闭不会启动或停止 Java。" :updated-at="servers.lastUpdatedAt.value" :stale="Boolean(servers.error.value)">
       <template #actions><button class="button button-primary" type="button" @click="openCreate"><AppIcon name="plus" />新增服务器</button></template>
     </PageHeading>
     <div class="summary-strip" aria-label="服务器目录汇总">
@@ -258,7 +258,7 @@ onScopeDispose(unregister);
           <td><span class="status-badge" :class="statusClass(item)">{{ effectiveStatus(item) }}</span><small v-if="item.hasControlTarget">{{ formatRelativeTime(item.controlLastSeenAt) }}</small></td>
           <td><div class="meta-stack"><strong>{{ item.minecraftVersion }} · {{ item.loader }}</strong><span>{{ item.velocityTarget }}</span></div></td>
           <td>{{ item.clientProfileId || "—" }}</td><td>{{ tierText(item.minimumTier) }}</td><td>{{ item.sortOrder }}</td>
-          <td class="actions-column"><div class="row-actions"><button class="icon-button" type="button" title="编辑服务器" aria-label="编辑服务器" @click="openEdit(item)"><AppIcon name="pencil" /></button><button class="icon-button" type="button" :title="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能恢复' : item.isVisible ? '归档服务器' : '恢复服务器'" :aria-label="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能恢复' : item.isVisible ? '归档服务器' : '恢复服务器'" :disabled="item.role === 'Infrastructure' && !item.isVisible" @click="requestVisibility(item)"><AppIcon :name="item.isVisible ? 'archive' : 'rotate-ccw'" /></button></div></td>
+          <td class="actions-column"><div class="row-actions"><RouterLink v-if="item.hasControlTarget" class="icon-button" :to="{ name: 'control', query: { server: item.id } }" :title="`在服控面板管理 ${item.displayName}`" :aria-label="`管理 ${item.displayName} 的运行状态`"><AppIcon name="server" /></RouterLink><button class="icon-button" type="button" title="编辑服务器" aria-label="编辑服务器" @click="openEdit(item)"><AppIcon name="pencil" /></button><button class="icon-button" type="button" :title="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能恢复' : item.isVisible ? '归档服务器' : '恢复服务器'" :aria-label="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能恢复' : item.isVisible ? '归档服务器' : '恢复服务器'" :disabled="item.role === 'Infrastructure' && !item.isVisible" @click="requestVisibility(item)"><AppIcon :name="item.isVisible ? 'archive' : 'rotate-ccw'" /></button></div></td>
         </tr></tbody></table></div>
     </ResourceState>
 
@@ -276,7 +276,7 @@ onScopeDispose(unregister);
             <label>显示名称<input v-model="form.displayName" maxlength="80" required></label>
             <label>短名称<input v-model="form.shortName" maxlength="12" required></label>
             <label>图标字符<input v-model="form.iconGlyph" maxlength="12" required></label>
-            <label>目录策略<select v-model="form.status"><option value="Online">开放</option><option value="Maintenance">维护</option><option value="Closed">关闭</option></select></label>
+            <label>玩家入口策略<select v-model="form.status"><option value="Online">开放</option><option value="Maintenance">维护</option><option value="Closed">关闭</option></select><span>只影响玩家是否可进入；服务端启停请使用服控面板。</span></label>
             <label>最大人数<input v-model.number="form.maxPlayers" type="number" min="1" max="10000" required></label>
             <label>Minecraft 版本<input v-model="form.minecraftVersion" maxlength="32" required></label>
             <label>加载器<select v-model="form.loader"><option v-for="item in ['Vanilla','Paper','NeoForge','Fabric','Forge']" :key="item">{{ item }}</option></select></label>

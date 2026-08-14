@@ -4769,6 +4769,68 @@ textarea::placeholder {
     font-weight: 650;
 }
 
+.package-control-handoff {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin: -6px 0 22px;
+    padding: 14px 16px;
+    border: 1px solid var(--success-line);
+    border-left: 3px solid var(--success);
+    background: var(--success-soft);
+}
+
+.package-control-handoff.handoff-running,
+.package-control-handoff.handoff-warning {
+    border-color: var(--warning-line);
+    border-left-color: var(--warning);
+    background: var(--warning-soft);
+}
+
+.package-control-handoff-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--success-line);
+    border-radius: 50%;
+    background: var(--surface);
+}
+
+.handoff-running .package-control-handoff-icon,
+.handoff-warning .package-control-handoff-icon {
+    border-color: var(--warning-line);
+}
+
+.package-control-handoff-copy {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.package-control-handoff-copy > span {
+    color: var(--ink-muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.package-control-handoff-copy > h3 {
+    margin: 0;
+    font-size: 13px;
+}
+
+.package-control-handoff-copy > p {
+    margin: 0;
+    color: var(--ink-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.package-control-handoff > .button {
+    white-space: nowrap;
+}
+
 @keyframes package-progress-indeterminate {
     from { transform: translateX(-110%); }
     to { transform: translateX(330%); }
@@ -5148,6 +5210,15 @@ textarea::placeholder {
 
     .package-review-submit .button {
         width: 100%;
+    }
+
+    .package-control-handoff {
+        grid-template-columns: 40px minmax(0, 1fr);
+    }
+
+    .package-control-handoff > .button {
+        width: 100%;
+        grid-column: 1 / -1;
     }
 
     .package-import-table th:first-child,
