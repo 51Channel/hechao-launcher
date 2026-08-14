@@ -103,6 +103,15 @@ Publisher 下载客户端归档时最多执行三次可续传重试；API 重启
 对象同样计入已处理进度，失败或取消任务保留最后一次进度用于排查。Publisher 因磁盘
 门禁等待工作空间时只显示当前可用量和所需量，不把磁盘空闲量伪装成发布百分比或 ETA。
 
+后台显示“等待 Publisher 工作空间”不是任务卡死，也不得通过降低安全余量或展开倍率
+绕过保护。API 主机必须部署
+[`90-hechao-storage.conf`](../deploy/linux/journald/90-hechao-storage.conf)，将持久 journal
+限制为 `1 GiB`，并至少保留 `8 GiB` 文件系统空间；API 同时把
+`Microsoft.AspNetCore` 框架逐请求日志限制为 `Warning`，避免内部心跳与任务轮询重复写入
+journald 和 syslog。排障时检查 `journalctl --disk-usage`、
+`du -x -h --max-depth=1 /var/log` 和 Publisher 服务日志，优先回收日志与软件包缓存，
+不得删除当前导入目录、数据库备份或不可变 OSS 对象。
+
 ## 4. API 配置
 
 首次启用时使用 Publisher 令牌脚本生成 DPAPI `CurrentUser` 密文。脚本必须在运行
