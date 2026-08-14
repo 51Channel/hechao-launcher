@@ -1,6 +1,6 @@
 # 管理员 Web 控制台与 MFA
 
-> 当前生产：API `0.30.4`，`AdminWeb__Enabled=true`
+> 当前生产：API `0.30.5`，`AdminWeb__Enabled=true`
 > 生产状态：真实管理员已完成 MFA 和可信设备验收，十一页 Vue 后台与活动企划月历均已部署
 > 管理入口：`https://admin.hechao.world/admin/`
 > 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十一页“活动企划”已完成生产点击验收
@@ -263,6 +263,11 @@ Vue 页面每 3 秒读取轻量的 `GET /v1/admin/server-control/overview`，该
 可管理目标并明确告警。服务器目录中的 `Online`、`Maintenance`、`Closed` 是玩家入口
 策略，不是进程开关；实际启动、停止和首次冷启动结果只以服控面板的操作历史为准。
 
+上述精确交接已随 API `0.30.5-20260814T121420Z` 进入生产。TypeScript、Vitest
+`11/11`、Playwright `30/30`、API `315/315` 和完整解决方案 `735/735` 通过；生产静态
+文件、深层路由、本机与公网健康检查均已核对。本次发布没有自动启动、停止或重启任何
+Minecraft 服务端。
+
 生产部署必须先保持 `ServerControl__Enabled=false`。两台游戏 VPS 的真实目录、
 端口、计划任务、冲突组和控制台桥完成只读盘点后，只能使用专门的无玩家测试目标
 完成首次启停验收。启动冲突组中的目标时，所有在线冲突服必须先成功停止；任一停止
@@ -272,7 +277,7 @@ Vue 页面每 3 秒读取轻量的 `GET /v1/admin/server-control/overview`，该
 ## 8. 回滚
 
 应用故障时可把 API `current` 链接切回直接回滚目标
-`0.26.0-20260802T010000Z`。迁移 5 至 21 均为加法或兼容变更，旧 API 不读取新增表与
+`0.30.4-20260814T093000Z`。迁移 5 至 28 均为加法或兼容变更，旧 API 不读取新增表与
 字段，回滚时不要删除 MFA、会话、访问规则、UUID 封禁、请求指标、告警或审计记录。
 
 若只需关闭可信设备功能，先把现有 `launcher.admin_trusted_devices` 行标记为撤销并回滚上一 API；不要删除 MFA 凭据。若需关闭整个管理后台，先将 `AdminWeb__Enabled=false`，再按 API 标准发布流程重启 `hechao-launcher-api.service`。这些操作不要求也不允许重启大厅、生存服、活动服、Velocity 或其他 Minecraft 服务。

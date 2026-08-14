@@ -2,7 +2,7 @@
 
 > 更新时间：`2026-08-14`
 >
-> 当前生产：启动器 `0.15.7`、API `0.30.4`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
+> 当前生产：启动器 `0.15.7`、API `0.30.5`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
 > owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
@@ -37,13 +37,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.15.7` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，公开元数据与官网下载网关通过；当前管理机缺少可恢复 Launcher 会话，认证更新端点的最终复验待登录后补跑，见 [`LAUNCHER_RELEASE_0.15.7.md`](LAUNCHER_RELEASE_0.15.7.md) |
-| API `0.30.4` | 已完成 | 继承 `0.30.3` 的 LuckPerms 代理版本和协议 `2` 门禁；新增请求日志与 journald 空间保护，Publisher 工作空间恢复，内外网健康与数据库就绪通过，见 [`API_RELEASE_0.30.4.md`](API_RELEASE_0.30.4.md) 与 [`API_RELEASE_0.30.3.md`](API_RELEASE_0.30.3.md) |
+| API `0.30.5` | 已完成 | 继承 `0.30.4` 的日志与 Publisher 工作空间保护；目录和整合包部署结果可精确交接到单服控制页，无效目标告警回退且入口不自动启动 Minecraft。内外网健康、数据库就绪和生产静态文件通过，见 [`API_RELEASE_0.30.5.md`](API_RELEASE_0.30.5.md) |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条企划，首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.6 -> 0.15.7` 隔离覆盖升级、全新安装、双轮卸载、设置与会话文件保留均通过；验收开始时的既有正式启动器进程未被替代关闭 |
 | 私有 OSS 发布 | 已完成 | `0.15.7` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入 Git、文档或终端记录 |
-| 自动测试 | 已完成 | 当前分支完整解决方案 `733/733`，其中 API `313/313`、LuckPerms Tier Agent Gradle `16/16`；Launcher `227/227`、ServerControlAgent `58/58`、Publisher `55/55` 与管理后台 Vitest `11/11`、Playwright `26/26` 基线继续通过 |
+| 自动测试 | 已完成 | 当前分支完整解决方案 `735/735`，其中 API `315/315`、LuckPerms Tier Agent Gradle `16/16`；Launcher `227/227`、ServerControlAgent `58/58`、Publisher `55/55` 与管理后台 Vitest `11/11`、Playwright `30/30` 基线继续通过 |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.15.7` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -124,7 +124,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | 赫朝账号与论坛统一账号 | 已完成 | 注册、登录、资料和密码内部接口已部署 |
 | Microsoft/Minecraft 正版绑定 | 已实现待生产验收 | API 许可和 1 个真实管理员正版账号的正确赫朝客户端登录、基础档案进服已通过；生产有 Member `21` 个但绑定为 `0`，Participant 与 Collaborator 均为 `0`，Administrator `1` 个且已绑定，需三个缺失等级各准备合法正版身份后完成四级验收，见 [`evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json`](evidence/EXTERNAL_GRAY_READINESS_2026-07-30.json) |
-| LuckPerms 等级同步、受控修改与目录过滤 | 已部署待完整角色验收 | Tier Agent `0.1.3` 与 API `0.30.3` 门禁已上线，当前 API `0.30.4` 继续继承；遗留 `0.1.0` 实例已隔离，两条正常业务 `vip` 变更跨四个五分钟间隔未回退，最终 `owner=3`、身份和用户等级差异均为 `0`。仍需专门测试账号完成四级改回、自身保护、最后管理员保护和拒绝路径 |
+| LuckPerms 等级同步、受控修改与目录过滤 | 已部署待完整角色验收 | Tier Agent `0.1.3` 与 API `0.30.3` 门禁已上线，当前 API `0.30.5` 继续继承；遗留 `0.1.0` 实例已隔离，两条正常业务 `vip` 变更跨四个五分钟间隔未回退，最终 `owner=3`、身份和用户等级差异均为 `0`。仍需专门测试账号完成四级改回、自身保护、最后管理员保护和拒绝路径 |
 | 签名清单、断点续传、修复与原子切换 | 已完成 | 基础、Vanilla、Forge、NeoForge、恐怖整蛊、DollNight 档案与自动测试 |
 | 启动时客户端检查开关 | 已完成 | `0.11.14` 可跳过首次本地扫描，重新开启立即检查；第一次进服前仍强制检查，自动测试覆盖 |
 | 启动器本体自更新 | 已部署待本次会话复验 | 每个进程启动并恢复登录态后检查；私有 OSS 断点下载、长度与 SHA-256 复验、临时更新器静默覆盖、失败保留及重试入口均已发布。生产 `LatestVersion=0.15.7`；`0.15.6` 的真实会话链已验收，本次因管理机无可恢复会话待登录后补跑，见 [`LAUNCHER_SELF_UPDATE_OPERATIONS.md`](LAUNCHER_SELF_UPDATE_OPERATIONS.md) |
@@ -155,14 +155,14 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | --- | --- | --- |
 | Vue 3 + TypeScript + Vite 后台迁移 | 已完成 | API `0.26.2` 已部署九个 Vue Router 模块并接入 ASP.NET Core 自动构建；前端类型检查、`8/8` Vitest、`12/12` Playwright、九页 WCAG A/AA、390px 溢出及 480px 短窗口检查、API `245/245` 和完整解决方案 `578/578` 均通过。生产真实票据 fragment 已在 Router 前清除，长正文和侧栏滚动边界已补齐 |
 | 管理员独立会话、CSRF、TOTP 与恢复码 | 已完成 | 截至 2026-08-02，生产凭据 `2`、恢复码哈希 `16`、未完成登记 `0`；真实启动器票据、MFA、会话审计和可信设备免重复动态码均已验收，浏览器会话仍按 30 分钟过期 |
-| 服务器新增、编辑、归档、恢复 | 已完成 | API、Web、修订号冲突和事务审计均已部署；新增时会列出心跳正常、正在运行且尚未入目录的服控目标并辅助填表，不自动保存或启停服务器 |
+| 服务器新增、编辑、归档、恢复 | 已完成 | API、Web、修订号冲突和事务审计均已部署；新增时会列出心跳正常、正在运行且尚未入目录的服控目标并辅助填表。目录策略不等于进程开关，带服控目标的记录可直达精确控制页，但不会自动启停服务器 |
 | 显示名、短名、图标、排序、状态、人数、版本、加载器、最低等级 | 已完成 | `AdminServerCreateRequest` / `AdminServerUpdateRequest` 与 Web 表单 |
 | 客户端档案与 Velocity 目标绑定 | 已完成 | 只允许绑定现有启用档案 |
 | 维护公告与开放时间 | 已完成 | API `0.15.0`、迁移 10、玩家目录、Velocity 授权和 Web 表单均已在线；手动维护/关闭优先于排期 |
 | 单服白名单、拒绝规则与有效期 | 已完成 | 允许/拒绝、原因、UTC 有效期、修订冲突与事务审计均已上线 |
 | 玩家实际目录/进服结果预览 | 已完成 | 管理员可按玩家预览每个服务器的最终允许结果及拒绝原因 |
 | 客户端档案创建、上传、签名与发布通道 | 已实现待生产验收 | API `0.17.0` 已生产部署，隔离生产副本真实验签与三通道闭环通过；真实管理员 MFA 已登记，仍待在生产管理页面完成创建、上传和发布操作验收 |
-| ZIP/MRPACK 客户端与服务端自动导入 | 已完成（停止槽固定试包） | 第十个 Vue 路由支持 8 MiB 分块续传、取消、识别结果和精确确认；独立 Publisher 只写 Test，服控只向停止的 owl5 `activity` 部署并保持停服。API、Publisher 和 owl5 代理已正式部署，固定试包完成真实 OSS、活动槽切换和原目录恢复；真实玩法包与真人进服仍按活动单独验收 |
+| ZIP/MRPACK 客户端与服务端自动导入 | 已完成（停止槽固定试包） | 第十个 Vue 路由支持 8 MiB 分块续传、取消、识别结果和精确确认；独立 Publisher 只写 Test，服控只向停止的 owl5 `activity` 部署并保持停服。部署完成后会核对代理、目录、活动操作和导入身份，再提供精确服控入口；该入口不自动启动服务端。固定试包完成真实 OSS、活动槽切换和原目录恢复；真实玩法包与真人进服仍按活动单独验收 |
 | 下载量、失败率与版本分布 | 已实现待生产验收 | 当前 API `0.28.5` 保留迁移 15、30 天留存、幂等批次和后台“运行数据”，并对客户端下载失败率建立统一告警；真实基础、Activity 与恐怖整蛊安装样本已完成，仍需真实回滚、完整 Launch/GameExit 和多人样本 |
 | 暂停问题版本和主动回滚 | 已实现待生产验收 | API `0.17.0` 已完成暂停自动回滚、恢复不自动推广、修订冲突和审计；真实管理员 MFA 已登记，仍待在生产管理页面完成暂停与回滚操作验收 |
 | 玩家搜索、等级和单服授权管理 | 已上线待完整角色验收 | 玩家搜索、单服规则和受控四级全局等级入口均已上线；大厅代理 `0.1.3` 与 API `0.30.3+` 已阻断旧实例竞争。两条管理员正常业务 `vip` 变更均为 `Applied`，跨四个五分钟间隔保持稳定；本次部署未创建、重放或修改玩家身份。四级改回、自身保护、最后管理员保护和拒绝路径继续等待授权测试账号 |
