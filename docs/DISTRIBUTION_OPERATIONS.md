@@ -13,8 +13,10 @@
 - 启动器只内置公钥信任包。清单必须由受信私钥签名，且清单摘要可再写入目录数据库。
 - 对象文件使用 SHA-256 内容寻址；下载完成后启动器独立重算哈希。
 - 清单对象 URL 必须使用 HTTPS，仅回环地址的本地测试允许 HTTP。
-- `GET /v1/profiles/{id}/manifest` 始终要求有效玩家会话，并再次按目录权限确认档案可见。
-- 清单中的对象 URL 指向启动器 API。API 只为已登录、具备该档案 LuckPerms 权限且对象 SHA-256 存在于已发布清单的玩家签发 5 分钟 OSS V4 URL。
+- `GET /v1/profiles/{id}/manifest` 始终要求有效玩家会话，并再次确认档案绑定到可见玩家
+  目录。活动档案允许所有已登录账号提前下载；永久服档案继续要求该账号具备进入权限。
+- 清单中的对象 URL 指向启动器 API。API 只为满足上述档案可见性、且对象 SHA-256
+  存在于当前已发布清单的玩家签发 5 分钟 OSS V4 URL；下载资格不等于进服资格。
 - Bearer 令牌只允许发送到启动器 API 的同源地址；302 跳转到 OSS 时会被移除，`Range` 断点请求会保留。
 - OSS Bucket `hechaoworld` 保持私有，并启用 Bucket 级“阻止公共访问”；启动器和清单均不保存 RAM 密钥。
 - `Assets/distribution-trust.json` 当前只信任 `release-2026-07-primary`；私钥不在仓库、启动器、API、OSS 或游戏 VPS 中。
