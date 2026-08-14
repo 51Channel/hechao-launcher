@@ -15,6 +15,8 @@ $temporaryRoot = Join-Path `
 $serverDirectory = Join-Path $temporaryRoot 'server with spaces'
 $runtimeDirectory = Join-Path $temporaryRoot 'runtime'
 $logDirectory = Join-Path $temporaryRoot 'logs'
+$managedJavaHome = Join-Path $temporaryRoot 'managed java'
+$managedJavaBin = Join-Path $managedJavaHome 'bin'
 $startScript = Join-Path $serverDirectory 'start-probe.bat'
 $serverId = 'managed-start-probe'
 
@@ -22,6 +24,10 @@ try {
     [void][System.IO.Directory]::CreateDirectory($serverDirectory)
     [void][System.IO.Directory]::CreateDirectory($runtimeDirectory)
     [void][System.IO.Directory]::CreateDirectory($logDirectory)
+    [void][System.IO.Directory]::CreateDirectory($managedJavaBin)
+    Copy-Item `
+        -LiteralPath (Join-Path $env:SystemRoot 'System32\cmd.exe') `
+        -Destination (Join-Path $managedJavaBin 'java.exe')
     [System.IO.File]::WriteAllText(
         $startScript,
         (@(
@@ -29,6 +35,8 @@ try {
             'if not defined HECHAO_MANAGED_START pause'
             'echo managed-stdout'
             'echo managed-stderr 1>&2'
+            'java.exe /d /s /c "echo managed-java-home"'
+            'echo JAVA_HOME=%JAVA_HOME%'
             'exit /b 7'
         ) -join "`r`n"),
         [System.Text.ASCIIEncoding]::new()
@@ -49,6 +57,8 @@ try {
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = (Get-Command pwsh).Source
     $startInfo.UseShellExecute = $false
+    $startInfo.Environment['HECHAO_JAVA_HOME'] = $managedJavaHome
+    $startInfo.Environment['PATH'] = Join-Path $env:SystemRoot 'System32'
     foreach ($argument in @(
         '-NoLogo',
         '-NoProfile',
@@ -73,6 +83,12 @@ try {
         $consoleLog -notmatch 'managed-stderr') {
         throw 'Managed stdout and stderr were not both written to the console log.'
     }
+    if ($consoleLog -notmatch 'managed-java-home') {
+        throw 'Managed Java was not resolved through HECHAO_JAVA_HOME.'
+    }
+    if ($consoleLog -notmatch [regex]::Escape("JAVA_HOME=$managedJavaHome")) {
+        throw 'JAVA_HOME was not propagated to the managed start script.'
+    }
 
     if (-not (Test-Path -LiteralPath $previousLogPath -PathType Leaf) -or
         (Get-Item -LiteralPath $previousLogPath).Length -ne 64MB) {
@@ -85,7 +101,7 @@ try {
     }
 
     [pscustomobject]@{
-        passed = 4
+        passed = 6
         status = 'passed'
     } | ConvertTo-Json
 }

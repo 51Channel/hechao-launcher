@@ -174,6 +174,25 @@ pwsh.exe -NoLogo -NoProfile -File `
   -ServerDirectory E:\Survival2
 ```
 
+`Run-MinecraftServer.ps1` 支持主机级 `HECHAO_JAVA_HOME`。计划任务环境没有全局
+`java` 时，runner 先读取当前进程值，再读取机器值，校验 `bin\java.exe` 后只在该次
+受管启动中设置 `JAVA_HOME` 并把 `bin` 放到 `PATH` 首位。变量未配置时保持旧行为；
+变量已配置但路径无效时在执行服务端批处理前失败关闭。
+
+owl5 使用统一 Java 21 时，以管理员 PowerShell 7 设置机器值：
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+    'HECHAO_JAVA_HOME',
+    'E:\jdk',
+    [EnvironmentVariableTarget]::Machine
+)
+```
+
+更新后先使用只运行 `java -version` 的临时受管批处理验证，禁止把生产玩家服作为首次
+探针。回滚时恢复上一版 `Run-MinecraftServer.ps1`，并把 `HECHAO_JAVA_HOME` 恢复为
+变更前的值；已运行的 Java 进程不受该变量或 runner 文件替换影响。
+
 ### 6.1 接管已经运行的旧任务
 
 部分服务端在服控代理上线前已经由旧版 `Run-MinecraftServer.ps1` 启动。为了避免仅
