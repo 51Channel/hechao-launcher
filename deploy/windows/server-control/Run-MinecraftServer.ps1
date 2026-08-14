@@ -76,6 +76,46 @@ if ($scriptText -notmatch '(?im)^[ \t]*if not defined HECHAO_MANAGED_START pause
     throw 'StartScript is not configured for a managed start.'
 }
 
+$managedJavaHome = [System.Environment]::GetEnvironmentVariable(
+    'HECHAO_JAVA_HOME',
+    [System.EnvironmentVariableTarget]::Process
+)
+if ([string]::IsNullOrWhiteSpace($managedJavaHome)) {
+    $managedJavaHome = [System.Environment]::GetEnvironmentVariable(
+        'HECHAO_JAVA_HOME',
+        [System.EnvironmentVariableTarget]::Machine
+    )
+}
+if (-not [string]::IsNullOrWhiteSpace($managedJavaHome)) {
+    $resolvedJavaHome = [System.IO.Path]::GetFullPath(
+        [System.Environment]::ExpandEnvironmentVariables(
+            $managedJavaHome.Trim().Trim('"')
+        )
+    ).TrimEnd([System.IO.Path]::DirectorySeparatorChar)
+    $javaBinDirectory = Join-Path $resolvedJavaHome 'bin'
+    $javaExecutable = Join-Path $javaBinDirectory 'java.exe'
+    if (-not (Test-Path -LiteralPath $javaExecutable -PathType Leaf)) {
+        throw "HECHAO_JAVA_HOME does not contain bin\\java.exe: $resolvedJavaHome"
+    }
+
+    $env:JAVA_HOME = $resolvedJavaHome
+    $pathEntries = @([string]$env:Path -split ';')
+    if (-not ($pathEntries | Where-Object {
+                [string]::Equals(
+                    $_.TrimEnd([System.IO.Path]::DirectorySeparatorChar),
+                    $javaBinDirectory,
+                    [System.StringComparison]::OrdinalIgnoreCase
+                )
+            })) {
+        $env:Path = if ([string]::IsNullOrWhiteSpace($env:Path)) {
+            $javaBinDirectory
+        }
+        else {
+            "$javaBinDirectory;$env:Path"
+        }
+    }
+}
+
 $resolvedMarkerDirectory = [System.IO.Path]::GetFullPath(
     $RuntimeMarkerDirectory
 )

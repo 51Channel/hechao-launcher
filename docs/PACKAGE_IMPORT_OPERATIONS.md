@@ -67,6 +67,12 @@ if not defined HECHAO_MANAGED_START pause
 该标记使计划任务和手工双击使用同一个明确入口。缺少脚本、扩展名不为 `.bat`、标记
 不匹配或计划任务引用了另一个启动脚本时，安装和部署均失败关闭。
 
+整合包的 `start.bat` 可以调用 `java`，不得依赖制作者电脑上的绝对 Java 路径。owl5
+受管 runner 通过机器级 `HECHAO_JAVA_HOME` 提供统一 Java 21，并只为本次服务端进程
+设置 `JAVA_HOME/PATH`；配置路径不存在 `bin\java.exe` 时必须在执行批处理前失败。
+每次更换 Minecraft 或加载器大版本仍要先验证该受管 Java 版本兼容，不能把 PATH 注入
+当作跨版本兼容保证。
+
 ## 3. 发布与部署流程
 
 1. 管理员在“整合包导入”页选择 ZIP/MRPACK。前端创建上传任务并以 8 MiB 分块上传；
