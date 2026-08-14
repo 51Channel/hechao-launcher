@@ -4,6 +4,9 @@ param(
     [ValidateNotNullOrEmpty()]
     [string] $SourceDirectory,
 
+    [ValidateRange(1, 65535)]
+    [int] $ExpectedServerPort = 25568,
+
     [switch] $PassThru
 )
 
@@ -50,6 +53,20 @@ function Get-NormalizedRelativePath {
     )
 
     return [System.IO.Path]::GetRelativePath($Root, $Path).Replace("\", "/")
+}
+
+function Get-RecordTotalBytes {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [object[]] $Records
+    )
+
+    [long] $total = 0
+    foreach ($record in $Records) {
+        $total += [long] $record.size
+    }
+    return $total
 }
 
 function Read-StrictJsonHashtable {
@@ -437,7 +454,8 @@ if (Test-Path -LiteralPath $propertiesPath -PathType Leaf) {
     }
     $expectedProperties = [ordered]@{
         "server-ip" = "127.0.0.1"
-        "server-port" = "25568"
+        "server-port" = $ExpectedServerPort.ToString(
+            [System.Globalization.CultureInfo]::InvariantCulture)
         "online-mode" = "false"
     }
     foreach ($pair in $expectedProperties.GetEnumerator()) {
@@ -648,11 +666,11 @@ $report = [pscustomobject] [ordered]@{
         fileCount = $records.Count
         expandedBytes = $expandedBytes
         clientFileCount = $clientRecords.Count
-        clientBytes = [long] (($clientRecords | Measure-Object size -Sum).Sum ?? 0)
+        clientBytes = Get-RecordTotalBytes $clientRecords
         serverFileCount = $serverRecords.Count
-        serverBytes = [long] (($serverRecords | Measure-Object size -Sum).Sum ?? 0)
+        serverBytes = Get-RecordTotalBytes $serverRecords
         sharedFileCount = $sharedRecords.Count
-        sharedBytes = [long] (($sharedRecords | Measure-Object size -Sum).Sum ?? 0)
+        sharedBytes = Get-RecordTotalBytes $sharedRecords
         metadataFileCount = $metadataRecords.Count
     }
     commonJars = @($commonJars)

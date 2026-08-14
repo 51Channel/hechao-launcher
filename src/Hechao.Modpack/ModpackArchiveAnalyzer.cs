@@ -262,7 +262,17 @@ public static partial class ModpackArchiveAnalyzer
         {
             if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             {
-                return SafeArchivePath.Normalize(path[prefix.Length..]);
+                var targetPath = path[prefix.Length..];
+                const string minecraftRoot = ".minecraft/";
+                if (requestedSide == ModpackFileSide.Client &&
+                    targetPath.StartsWith(
+                        minecraftRoot,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    targetPath = targetPath[minecraftRoot.Length..];
+                }
+
+                return SafeArchivePath.Normalize(targetPath);
             }
         }
 

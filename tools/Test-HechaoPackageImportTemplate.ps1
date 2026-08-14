@@ -213,6 +213,17 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
     Assert-True ($validation.totals.serverFileCount -gt 0) "Validator did not classify server files."
     Assert-True ($validation.totals.sharedFileCount -eq 1) "Validator did not classify the shared fixture."
 
+    $sharedFixturePath = Join-Path $fixture "shared\mods\hechao-contract.jar"
+    Remove-Item -LiteralPath $sharedFixturePath -Force
+    $validationWithoutSharedFiles = & $validator -SourceDirectory $fixture -PassThru
+    Assert-True `
+        ($validationWithoutSharedFiles.totals.sharedFileCount -eq 0) `
+        "Validator did not accept an empty shared file set."
+    Assert-True `
+        ($validationWithoutSharedFiles.totals.sharedBytes -eq 0) `
+        "Validator did not report zero bytes for an empty shared file set."
+    Write-FixtureBytes $sharedFixturePath "fixture-common-mod"
+
     $businessArchive = Join-Path $temporaryRoot "Hechao-contract-fixture-1.0.0.zip"
     $buildResult = & $builder -SourceDirectory $fixture -OutputArchive $businessArchive
     Assert-True (Test-Path -LiteralPath $businessArchive -PathType Leaf) "Business archive was not generated."

@@ -41,11 +41,11 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | API `0.31.1` / Agent `0.6.0` 候选 | 已实现待生产验收 | 新增权威 Economy Service，并把整合包部署从单一活动槽扩展到 Agent 显式授权的合法目标；`survival2` 候选配置已加入，活动企划仍严格固定 `activity`。商品目录支持服主配置普通模组物品，带数据物品继续拒绝。未部署 API、迁移或 Agent，见 [`API_RELEASE_0.31.1_CANDIDATE.md`](API_RELEASE_0.31.1_CANDIDATE.md) 与 [`SERVER_CONTROL_AGENT_RELEASE_0.6.0_CANDIDATE.md`](SERVER_CONTROL_AGENT_RELEASE_0.6.0_CANDIDATE.md) |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条企划，首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
-| 天域长期生存服一键包 `1.0.5` | 已实现待生产验收 | 标准包 `Canonical`、零阻断，包含 HechaoEconomy `0.1.2`、响应式 NeoForge 双端屏幕 `0.1.2`、服主快捷商品设置和普通模组物品支持；后台多目标时强制选择，部署确认包含 `survival2`。包级逐文件/JAR 资源校验通过，未上传 OSS、未部署或开服，见 [`SKYREALM_ECONOMY_INTEGRATION_1.0.5.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.5.md) |
+| 天域长期生存服一键包 `1.0.9` | 已实现待生产验收 | 标准包 `Canonical`、零阻断、零问题，客户端根路径、启动档案、Java `21` 元数据和 `survival2:25565` 均满足完整导入链；包含 HechaoEconomy `0.1.2`、响应式 NeoForge 双端屏幕 `0.1.2`、服主快捷商品设置和普通模组物品支持。专用、通用和后台同源 Inspector 三重验证通过；未上传 OSS、未部署或开服，见 [`SKYREALM_ECONOMY_INTEGRATION_1.0.9.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.9.md) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.6 -> 0.15.7` 隔离覆盖升级、全新安装、双轮卸载、设置与会话文件保留均通过；验收开始时的既有正式启动器进程未被替代关闭 |
 | 私有 OSS 发布 | 已完成 | `0.15.7` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入 Git、文档或终端记录 |
-| 自动测试 | 已完成 | 当前候选分支完整解决方案 `730/730`，其中 Launcher `227/227`、API `311/311`、ServerControlAgent `57/57`、Publisher `55/55`；管理后台 Vitest `11/11`、Playwright `26/26`，Release 构建 `0` 警告、`0` 错误 |
+| 自动测试 | 已完成 | 当前候选分支完整解决方案 `731/731`，其中 Launcher `227/227`、API `312/312`、ServerControlAgent `57/57`、Publisher `55/55`；管理后台 Vitest `11/11`、Playwright `26/26` 保留既有前端基线，API Release 构建 `0` 警告、`0` 错误 |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.15.7` 单进程切服与 Lobby 隔离清单执行 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 

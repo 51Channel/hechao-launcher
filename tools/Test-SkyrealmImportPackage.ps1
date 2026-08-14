@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory)]
     [string]$Archive,
 
-    [string]$ExpectedPackageVersion = '1.0.5',
+    [string]$ExpectedPackageVersion = '1.0.9',
 
     [string]$ExpectedEconomyPluginVersion = '0.1.2',
 
@@ -18,12 +18,18 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 $archivePath = (Resolve-Path -LiteralPath $Archive).Path
+$archiveChecksumPath = $archivePath + '.sha256'
+$payloadChecksumPath = $archivePath + '.payload.sha256'
 $economyPluginPath =
     "server/plugins/HechaoEconomy-$ExpectedEconomyPluginVersion.jar"
 $economyScreenFileName =
     "HechaoEconomyScreen-NeoForge-1.21.1-$ExpectedEconomyScreenVersion.jar"
 $serverEconomyScreenPath = "server/mods/$economyScreenFileName"
-$clientEconomyScreenPath = "client/.minecraft/mods/$economyScreenFileName"
+$clientEconomyScreenPath = "client/mods/$economyScreenFileName"
+$clientVersionId = '天域远征工业季 1.21.1'
+$clientProfilePath = 'client/hechao-profile.json'
+$clientVersionJsonPath = "client/versions/$clientVersionId/$clientVersionId.json"
+$clientVersionJarPath = "client/versions/$clientVersionId/$clientVersionId.jar"
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $utf8 = [Text.UTF8Encoding]::new($false)
@@ -131,15 +137,41 @@ try {
         }
     }
 
-    $manifestEntry = $entries['manifest/payload.sha256']
-    $releaseEntry = $entries['manifest/release-manifest.json']
-    if ($null -eq $manifestEntry -or $null -eq $releaseEntry) {
-        throw 'Required manifests are missing.'
+    $nestedMinecraftPaths = @($entries.Keys | Where-Object {
+            $_.StartsWith(
+                'client/.minecraft/',
+                [StringComparison]::OrdinalIgnoreCase)
+        })
+    if ($nestedMinecraftPaths.Count -gt 0) {
+        throw 'Client payload must be rooted directly below client/, not client/.minecraft/.'
     }
-    $manifestText = Read-ZipText $manifestEntry
+
+    $allowedRoots = [Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::OrdinalIgnoreCase)
+    @('hechao-pack.json', 'client', 'server', 'shared') |
+        ForEach-Object { [void]$allowedRoots.Add($_) }
+    foreach ($path in $entries.Keys) {
+        $rootName = ($path -split '/', 2)[0]
+        if (-not $allowedRoots.Contains($rootName)) {
+            throw "Unexpected root entry: $rootName"
+        }
+    }
+
+    if (-not (Test-Path -LiteralPath $archiveChecksumPath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $payloadChecksumPath -PathType Leaf)) {
+        throw 'Archive or payload checksum sidecar is missing.'
+    }
+    $actualArchiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash
+    $archiveChecksum = [IO.File]::ReadAllText($archiveChecksumPath).Trim()
+    if ($archiveChecksum -notmatch '^([0-9a-fA-F]{64})  (.+)$' -or
+        $Matches[1] -ine $actualArchiveHash -or
+        $Matches[2] -cne [IO.Path]::GetFileName($archivePath)) {
+        throw 'Archive checksum sidecar does not match the ZIP.'
+    }
+
     $expected = [Collections.Generic.SortedDictionary[string, string]]::new(
         [StringComparer]::Ordinal)
-    foreach ($line in $manifestText -split "`r?`n") {
+    foreach ($line in [IO.File]::ReadAllLines($payloadChecksumPath)) {
         if ([string]::IsNullOrWhiteSpace($line)) {
             continue
         }
@@ -149,9 +181,7 @@ try {
         $expected.Add($Matches[2], $Matches[1])
     }
 
-    $actualPayloadPaths = $entries.Keys |
-        Where-Object { -not $_.StartsWith('manifest/', [StringComparison]::OrdinalIgnoreCase) } |
-        Sort-Object -CaseSensitive
+    $actualPayloadPaths = $entries.Keys | Sort-Object -CaseSensitive
     if ($actualPayloadPaths.Count -ne $expected.Count) {
         throw "Payload count mismatch. Manifest=$($expected.Count), ZIP=$($actualPayloadPaths.Count)."
     }
@@ -169,27 +199,13 @@ try {
         $totalBytes += $entry.Length
     }
 
-    $manifestHash = ([Convert]::ToHexString(
-            [Security.Cryptography.SHA256]::HashData(
-                $utf8.GetBytes($manifestText)))).ToLowerInvariant()
-    $release = (Read-ZipText $releaseEntry) | ConvertFrom-Json
-    if ($release.payload.file_count -ne $expected.Count -or
-        $release.payload.bytes -ne $totalBytes -or
-        $release.payload.checksum_sha256 -ne $manifestHash) {
-        throw 'Release manifest payload summary does not match the archive.'
-    }
-    if ($release.release_id -ne "hechao-skyrealm-economy-screen-$ExpectedPackageVersion" -or
-        $release.versions.hechao_economy -ne $ExpectedEconomyPluginVersion -or
-        $release.versions.hechao_economy_screen -ne $ExpectedEconomyScreenVersion) {
-        throw 'Release manifest component versions do not match the expected versions.'
-    }
-
     foreach ($forbidden in @(
         '启动本机服务端.cmd',
         'client/Plain Craft Launcher 2.2.exe',
         'server/plugins/LuckPerms/luckperms-h2-v2.mv.db',
         'server/plugins/SkyrealmCore/settings.db',
         'server/plugins/HechaoEconomy/economy-token.txt',
+        'server/usercache.json',
         'server/run.bat',
         'server/run.sh'
     )) {
@@ -204,6 +220,9 @@ try {
         $economyPluginPath,
         $serverEconomyScreenPath,
         $clientEconomyScreenPath,
+        $clientProfilePath,
+        $clientVersionJsonPath,
+        $clientVersionJarPath,
         'server/plugins/HechaoEconomy/config.yml',
         'server/plugins/HechaoEconomy/服主快捷设置.txt'
     )) {
@@ -216,6 +235,19 @@ try {
     $clientModHash = Get-EntryHash $entries[$clientEconomyScreenPath]
     if ($serverModHash -ne $clientModHash) {
         throw 'Client and server economy screen JARs are not identical.'
+    }
+
+    $clientProfile = (Read-ZipText $entries[$clientProfilePath]) |
+        ConvertFrom-Json
+    $clientVersion = (Read-ZipText $entries[$clientVersionJsonPath]) |
+        ConvertFrom-Json
+    if ($clientProfile.schemaVersion -ne 1 -or
+        $clientProfile.versionId -cne $clientVersionId -or
+        $clientProfile.javaMajorVersion -ne 21 -or
+        $clientVersion.id -cne $clientVersionId -or
+        $clientVersion.javaVersion.majorVersion -ne 21 -or
+        $entries[$clientVersionJarPath].Length -le 0) {
+        throw 'Client launch metadata does not match the version JSON and JAR.'
     }
 
     $pluginContract = Read-NestedZipContract `
@@ -280,6 +312,7 @@ try {
     $essentials = Read-ZipText $entries['server/plugins/Essentials/config.yml']
     $worth = Read-ZipText $entries['server/plugins/Essentials/worth.yml']
     $tab = Read-ZipText $entries['server/plugins/TAB/config.yml']
+    $serverProperties = Read-ZipText $entries['server/server.properties']
     $ownerGuide = Read-ZipText `
         $entries['server/plugins/HechaoEconomy/服主快捷设置.txt']
     if (-not $start.Contains('if not defined HECHAO_MANAGED_START pause') -or
@@ -302,6 +335,15 @@ try {
         -not $tab.Contains('%hechao_balance%')) {
         throw 'Economy ownership or TAB placeholder configuration is incomplete.'
     }
+    foreach ($property in @(
+        'server-ip=127.0.0.1',
+        'server-port=25565',
+        'online-mode=false'
+    )) {
+        if ($serverProperties -notmatch "(?m)^$([regex]::Escape($property))$") {
+            throw "Managed server property is missing: $property"
+        }
+    }
     foreach ($guideContract in @(
         'hechao.economy.admin',
         '/heco product set <单价> [个人日限] [全服日限]',
@@ -312,14 +354,9 @@ try {
             throw "Owner quick-management guide is incomplete: $guideContract"
         }
     }
-    if (-not $release.security.owner_quick_product_management -or
-        -not $release.security.plain_modded_items_supported) {
-        throw 'Release manifest does not declare owner product management support.'
-    }
-
     [PSCustomObject]@{
         Archive = $archivePath
-        Sha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash
+        Sha256 = $actualArchiveHash
         PayloadFiles = $expected.Count
         PayloadBytes = $totalBytes
         ClientServerScreenJarSha256 = $clientModHash.ToUpperInvariant()

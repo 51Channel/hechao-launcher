@@ -10,7 +10,7 @@
 `manifest/payload.sha256` 自身哈希也与发布清单一致。
 
 实现结果、制品哈希、导入验证和仍未验收的生产门槛见
-[`SKYREALM_ECONOMY_INTEGRATION_1.0.5.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.5.md)。
+[`SKYREALM_ECONOMY_INTEGRATION_1.0.9.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.9.md)。
 
 ## 1. 已验证运行基线
 

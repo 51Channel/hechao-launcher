@@ -1,10 +1,10 @@
 # 天域远征工业季经济集成 1.0.4
 
-> 本版保留为历史验收记录。响应式屏幕候选已由 `1.0.5` 取代，见
-> [`SKYREALM_ECONOMY_INTEGRATION_1.0.5.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.5.md)。
+> 本版保留为历史验收记录。`1.0.5` 至 `1.0.8` 后续均确认不满足完整导入链；当前候选为
+> [`SKYREALM_ECONOMY_INTEGRATION_1.0.9.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.9.md)。
 
-> 状态：可由赫朝启动器后台标准导入的一键候选已完成；未上传后台、未部署 API/Agent、
-> 未执行迁移、未注入令牌，未启动或重启任何 Minecraft 服务端。
+> 状态：历史缺陷候选，不得上传或部署；未上传后台、未部署 API/Agent、未执行迁移、
+> 未注入令牌，也未启动或重启任何 Minecraft 服务端。
 > 日期：2026-08-14
 
 ## 本版变更

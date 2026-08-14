@@ -29,7 +29,7 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
                 serverRoot = "server",
                 sharedRoot = "shared"
             })),
-            ("Pack/client/versions/1.20.1/1.20.1.json", "{}"),
+            ("Pack/client/.minecraft/versions/1.20.1/1.20.1.json", "{}"),
             ("Pack/shared/mods/common.jar", "shared-mod"),
             ("Pack/server/server.properties", "max-players=24\nserver-port=25568\n"),
             ("Pack/server/start.bat", "java -jar fabric-server-launch.jar nogui\n"));

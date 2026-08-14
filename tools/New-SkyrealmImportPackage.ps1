@@ -12,7 +12,7 @@ param(
     [Parameter(Mandatory)]
     [string]$EconomyScreenJar,
 
-    [string]$PackageVersion = '1.0.5',
+    [string]$PackageVersion = '1.0.9',
 
     [string]$ExpectedInputSha256 =
         'A0393BC880DE4E70181B244E8ED42774AEF582908E2F072D31552317931860E9'
@@ -42,6 +42,15 @@ $economyScreenVersion = '0.1.2'
 $economyPluginFileName = "HechaoEconomy-$economyPluginVersion.jar"
 $economyScreenFileName =
     "HechaoEconomyScreen-NeoForge-1.21.1-$economyScreenVersion.jar"
+$clientVersionId = '天域远征工业季 1.21.1'
+$clientVersionJsonSourcePath =
+    "client/.minecraft/versions/$clientVersionId/$clientVersionId.json"
+$clientVersionJsonOutputPath =
+    "client/versions/$clientVersionId/$clientVersionId.json"
+$clientVersionJarSourcePath =
+    "client/.minecraft/versions/$clientVersionId/$clientVersionId.jar"
+$clientVersionJarOutputPath =
+    "client/versions/$clientVersionId/$clientVersionId.jar"
 $outputPath = [IO.Path]::GetFullPath($OutputArchive)
 $outputDirectory = [IO.Path]::GetDirectoryName($outputPath)
 if ([string]::IsNullOrWhiteSpace($outputDirectory)) {
@@ -76,6 +85,9 @@ $excluded = [Collections.Generic.HashSet[string]]::new(
     'server/run.sh',
     '启动本机服务端.cmd',
     'client/Plain Craft Launcher 2.2.exe',
+    'client/.minecraft/hechao-profile.json',
+    'client/hechao-profile.json',
+    $clientVersionJsonSourcePath,
     'server/plugins/LuckPerms/luckperms-h2-v2.mv.db',
     'server/plugins/SkyrealmCore/settings.db',
     'server/plugins/Essentials/usermap.bin',
@@ -83,7 +95,10 @@ $excluded = [Collections.Generic.HashSet[string]]::new(
     'server/plugins/Essentials/worth.yml',
     'server/plugins/Essentials/config.yml',
     'server/plugins/TAB/config.yml',
-    '组件清单.txt'
+    'server/server.properties',
+    'server/usercache.json',
+    '组件清单.txt',
+    'README-交接.md'
 ) | ForEach-Object { [void]$excluded.Add($_) }
 
 function Get-BytesHash {
@@ -158,6 +173,19 @@ function Read-ZipText {
     }
 }
 
+function Get-OutputPayloadPath {
+    param([string]$SourcePath)
+
+    $clientMinecraftRoot = 'client/.minecraft/'
+    if ($SourcePath.StartsWith(
+            $clientMinecraftRoot,
+            [StringComparison]::OrdinalIgnoreCase)) {
+        return 'client/' + $SourcePath.Substring($clientMinecraftRoot.Length)
+    }
+
+    return $SourcePath
+}
+
 function Get-EssentialsConfiguration {
     param([string]$Original)
     $disabled = @'
@@ -205,6 +233,42 @@ function Get-TabConfiguration {
     return $updated
 }
 
+function Get-ServerPropertiesConfiguration {
+    param([string]$Original)
+
+    $required = [ordered]@{
+        'server-ip' = '127.0.0.1'
+        'server-port' = '25565'
+        'online-mode' = 'false'
+    }
+    $written = [Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::OrdinalIgnoreCase)
+    $output = [Collections.Generic.List[string]]::new()
+    foreach ($line in $Original -split "`r?`n") {
+        $trimmed = $line.Trim()
+        $separator = $line.IndexOf('=')
+        if ($trimmed.Length -eq 0 -or $trimmed.StartsWith('#') -or $separator -lt 1) {
+            $output.Add($line)
+            continue
+        }
+        $key = $line.Substring(0, $separator).Trim()
+        if ($required.Contains($key)) {
+            if (-not $written.Add($key)) {
+                throw "Duplicate managed server property: $key"
+            }
+            $output.Add("$key=$($required[$key])")
+            continue
+        }
+        $output.Add($line)
+    }
+    foreach ($item in $required.GetEnumerator()) {
+        if ($written.Add($item.Key)) {
+            $output.Add("$($item.Key)=$($item.Value)")
+        }
+    }
+    return ($output -join "`n").TrimEnd() + "`n"
+}
+
 $input = $null
 $outputStream = $null
 $output = $null
@@ -239,11 +303,17 @@ try {
         [IO.Compression.ZipArchiveMode]::Create,
         $true,
         $utf8)
+    $copiedOutputPaths = [Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::OrdinalIgnoreCase)
 
     foreach ($sourceEntry in $input.Entries) {
-        $path = $sourceEntry.FullName.Replace('\', '/')
-        if ($sourceEntry.Name.Length -eq 0 -or $excluded.Contains($path)) {
+        $sourcePath = $sourceEntry.FullName.Replace('\', '/')
+        if ($sourceEntry.Name.Length -eq 0 -or $excluded.Contains($sourcePath)) {
             continue
+        }
+        $path = Get-OutputPayloadPath $sourcePath
+        if (-not $copiedOutputPaths.Add($path)) {
+            throw "Multiple source entries map to the same output path: $path"
         }
         $entry = $output.CreateEntry($path, [IO.Compression.CompressionLevel]::NoCompression)
         $entry.LastWriteTime = $sourceEntry.LastWriteTime
@@ -257,20 +327,45 @@ try {
             $target.Dispose()
         }
         if (-not $path.StartsWith('manifest/', [StringComparison]::OrdinalIgnoreCase)) {
-            if (-not $sourceHashes.ContainsKey($path)) {
-                throw "Source payload hash is missing for $path"
+            if (-not $sourceHashes.ContainsKey($sourcePath)) {
+                throw "Source payload hash is missing for $sourcePath"
             }
             $payload[$path] = [PSCustomObject]@{
-                Hash = $sourceHashes[$path]
+                Hash = $sourceHashes[$sourcePath]
                 Length = [long]$sourceEntry.Length
             }
         }
     }
 
+    $clientVersionEntry = $input.GetEntry($clientVersionJsonSourcePath)
+    if ($null -eq $clientVersionEntry -or
+        $null -eq $input.GetEntry($clientVersionJarSourcePath) -or
+        -not $copiedOutputPaths.Contains($clientVersionJarOutputPath)) {
+        throw 'The launchable client version JSON or JAR is missing.'
+    }
+    $clientVersion = (Read-ZipText $clientVersionEntry) |
+        ConvertFrom-Json -AsHashtable
+    if ($clientVersion['id'] -cne $clientVersionId) {
+        throw 'The launchable client version JSON ID does not match its directory.'
+    }
+    $clientVersion['javaVersion'] = [ordered]@{
+        component = 'java-runtime-delta'
+        majorVersion = 21
+    }
+    Add-BytesEntry $output $clientVersionJsonOutputPath $utf8.GetBytes(
+        ($clientVersion | ConvertTo-Json -Depth 100))
+    Add-BytesEntry $output 'client/hechao-profile.json' $utf8.GetBytes(
+        ([ordered]@{
+                schemaVersion = 1
+                versionId = $clientVersionId
+                javaMajorVersion = 21
+            } | ConvertTo-Json -Depth 5))
+
     $essentialsEntry = $input.GetEntry('server/plugins/Essentials/config.yml')
     $tabEntry = $input.GetEntry('server/plugins/TAB/config.yml')
-    $componentsEntry = $input.GetEntry('组件清单.txt')
-    if ($null -eq $essentialsEntry -or $null -eq $tabEntry -or $null -eq $componentsEntry) {
+    $serverPropertiesEntry = $input.GetEntry('server/server.properties')
+    if ($null -eq $essentialsEntry -or $null -eq $tabEntry -or
+        $null -eq $serverPropertiesEntry) {
         throw 'A required source configuration is missing.'
     }
     Add-BytesEntry $output 'server/plugins/Essentials/config.yml' (
@@ -279,16 +374,9 @@ try {
         $utf8.GetBytes("# Disabled. HechaoEconomy owns the complete product catalog.`n"))
     Add-BytesEntry $output 'server/plugins/TAB/config.yml' (
         $utf8.GetBytes((Get-TabConfiguration (Read-ZipText $tabEntry))))
-
-    $components = (Read-ZipText $componentsEntry).TrimEnd() + @'
-
-
-赫朝平台新增组件：
-- server/plugins/HechaoEconomy-0.1.2.jar
-- server/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.2.jar
-- client/.minecraft/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.2.jar
-'@
-    Add-BytesEntry $output '组件清单.txt' $utf8.GetBytes($components)
+    Add-BytesEntry $output 'server/server.properties' (
+        $utf8.GetBytes((Get-ServerPropertiesConfiguration (
+                    Read-ZipText $serverPropertiesEntry))))
 
     Add-FileEntry $output `
         "server/plugins/$economyPluginFileName" `
@@ -297,7 +385,7 @@ try {
         "server/mods/$economyScreenFileName" `
         $screenJarPath
     Add-FileEntry $output `
-        "client/.minecraft/mods/$economyScreenFileName" `
+        "client/mods/$economyScreenFileName" `
         $screenJarPath
 
     $pluginConfig = @'
@@ -358,70 +446,7 @@ java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt 
     Add-BytesEntry $output 'hechao-pack.json' $utf8.GetBytes(
         ($descriptor | ConvertTo-Json -Depth 5))
 
-    $readme = @'
-# 天域远征工业季 - 赫朝一键导入包
-
-- Minecraft 1.21.1 / Arclight NeoForge / NeoForge 21.1.228 / Java 21。
-- 新增 HechaoEconomy 0.1.2 和双端 HechaoEconomyScreen 0.1.2。
-- Essentials 经济命令和 worth.yml 已停用；Vault 必须由 HechaoEconomy 接管。
-- TAB 余额使用 `%hechao_balance%`，没有远端余额时显示 `--`。
-- 服主可手持原版或无自定义数据的模组物品，从自定义屏幕进入快捷回收设置；命名物、
-  附魔物、容器和带数据组件物品仍默认拒绝出售。
-- 快捷命令为 `/heco product`；可点常用价格，也可执行
-  `/heco product set <单价> [个人日限] [全服日限]`，暂停使用
-  `/heco product remove`。
-- 经济 API 令牌不在包内，部署时必须从外部秘密配置注入。
-- 客户端菜单只回传短期会话和 action ID，不接受客户端命令文本。
-- 本包可被赫朝后台识别、拆分和发布；长期生存目标仍需单独配置受控部署目标。
-- 未启动本包服务端；Velocity、LuckPerms、语音 UDP、混合核心玩法和真人压力测试仍需验收。
-'@
-    Add-BytesEntry $output 'README-赫朝导入.md' $utf8.GetBytes($readme)
-
-    $payloadLines = foreach ($item in $payload.GetEnumerator()) {
-        "$($item.Value.Hash) $($item.Key)"
-    }
-    $payloadBytes = $utf8.GetBytes(($payloadLines -join "`n") + "`n")
-    $payloadHash = Get-BytesHash $payloadBytes
     $payloadTotalBytes = ($payload.Values | Measure-Object -Property Length -Sum).Sum
-    $releaseManifest = [ordered]@{
-        schema_version = 1
-        release_id = "hechao-skyrealm-economy-screen-$PackageVersion"
-        project = '天域远征工业季'
-        created_utc = $fixedTimestamp.ToString('O')
-        source_archive_sha256 = $actualInputHash.ToLowerInvariant()
-        versions = [ordered]@{
-            minecraft = '1.21.1'
-            arclight = 'NeoForge 1.0.2-SNAPSHOT-8086b06'
-            neoforge = '21.1.228'
-            java = 21
-            hechao_economy = $economyPluginVersion
-            hechao_economy_screen = $economyScreenVersion
-        }
-        security = [ordered]@{
-            economy_token_included = $false
-            vault_fail_closed = $true
-            safe_item_allowlist_only = $true
-            plain_modded_items_supported = $true
-            owner_quick_product_management = $true
-            arbitrary_client_commands = $false
-        }
-        payload = [ordered]@{
-            file_count = $payload.Count
-            bytes = $payloadTotalBytes
-            checksum_path = 'manifest/payload.sha256'
-            checksum_sha256 = $payloadHash
-        }
-        runtime_boundary = [ordered]@{
-            minecraft_started = $false
-            exact_packaged_release_launch = 'not-tested'
-            multiplayer = 'not-tested'
-            production_velocity = 'not-configured'
-            economy_api = 'source-and-contract-tested-not-deployed'
-        }
-    }
-    Add-BytesEntry $output 'manifest/payload.sha256' $payloadBytes $false
-    Add-BytesEntry $output 'manifest/release-manifest.json' $utf8.GetBytes(
-        ($releaseManifest | ConvertTo-Json -Depth 8)) $false
 }
 catch {
     if ($null -ne $output) {
@@ -460,6 +485,14 @@ $checksumPath = $outputPath + '.sha256'
     $checksumPath,
     "$($outputHash.ToLowerInvariant())  $([IO.Path]::GetFileName($outputPath))`n",
     $utf8)
+$payloadChecksumPath = $outputPath + '.payload.sha256'
+$payloadLines = foreach ($item in $payload.GetEnumerator()) {
+    "$($item.Value.Hash) $($item.Key)"
+}
+[IO.File]::WriteAllText(
+    $payloadChecksumPath,
+    ($payloadLines -join "`n") + "`n",
+    $utf8)
 
 [PSCustomObject]@{
     OutputArchive = $outputPath
@@ -468,4 +501,5 @@ $checksumPath = $outputPath + '.sha256'
     PayloadFiles = $payload.Count
     PayloadBytes = $payloadTotalBytes
     ChecksumFile = $checksumPath
+    PayloadChecksumFile = $payloadChecksumPath
 }

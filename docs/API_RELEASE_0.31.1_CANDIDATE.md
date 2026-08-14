@@ -18,9 +18,9 @@
 ## 验证与发布边界
 
 聚焦 Economy API 规则 `5/5`、HechaoEconomy `0.1.2` 的 `10/10`、
-HechaoEconomyScreen `0.1.2` 的 `3/3` 和一键包 `1.0.5` 双校验已通过。完整 API
+HechaoEconomyScreen `0.1.2` 的 `3/3` 和一键包 `1.0.9` 三重校验已通过。完整 API
 `312/312`、完整解决方案 `731/731` 通过，API Release 构建零警告零错误。完整结果以
-[`SKYREALM_ECONOMY_INTEGRATION_1.0.5.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.5.md)
+[`SKYREALM_ECONOMY_INTEGRATION_1.0.9.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.9.md)
 为准。
 
 候选未部署、未应用迁移、未修改生产环境变量、未上传整合包，也未控制 Minecraft、
