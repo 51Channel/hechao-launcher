@@ -117,7 +117,9 @@ public sealed class AgentConfigurationTests
                 deploymentTargets,
                 target => target.ServerId == "survival2");
             Assert.Equal("start.bat", survival.StartScriptRelativePath);
-            Assert.Equal(["forwarding.secret"], survival.HostManagedRelativePaths);
+            Assert.Equal(
+                ["forwarding.secret", @"plugins\HechaoEconomy\economy-token.txt"],
+                survival.HostManagedRelativePaths);
             Assert.Equal(
                 ["world", "world_nether", "world_the_end"],
                 survival.WorldDataRelativePaths);

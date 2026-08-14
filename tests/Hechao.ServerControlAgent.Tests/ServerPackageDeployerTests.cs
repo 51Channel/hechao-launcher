@@ -69,6 +69,13 @@ public sealed class ServerPackageDeployerTests : IDisposable
         await File.WriteAllTextAsync(
             Path.Combine(server, "forwarding.secret"),
             "host-secret");
+        var economyToken = Path.Combine(
+            server,
+            "plugins",
+            "HechaoEconomy",
+            "economy-token.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(economyToken)!);
+        await File.WriteAllTextAsync(economyToken, "economy-token");
         await File.WriteAllTextAsync(
             Path.Combine(server, "old-server.jar"),
             "old");
@@ -92,7 +99,9 @@ public sealed class ServerPackageDeployerTests : IDisposable
             InitialMemoryMiB: 2048,
             MaximumMemoryMiB: 4096);
         var deployer = new ServerPackageDeployer(
-            CreateConfiguration(server),
+            CreateConfiguration(
+                server,
+                ["forwarding.secret", @"plugins\HechaoEconomy\economy-token.txt"]),
             backup);
 
         var result = await deployer.DeployAsync(
@@ -115,6 +124,9 @@ public sealed class ServerPackageDeployerTests : IDisposable
             "host-secret",
             await File.ReadAllTextAsync(
                 Path.Combine(server, "forwarding.secret")));
+        Assert.Equal(
+            "economy-token",
+            await File.ReadAllTextAsync(economyToken));
         Assert.Contains(
             "-Xms2048M -Xmx4096M",
             await File.ReadAllTextAsync(
@@ -338,7 +350,9 @@ public sealed class ServerPackageDeployerTests : IDisposable
                 Path.Combine(server, "forwarding.secret")));
     }
 
-    private ServerControlTargetConfiguration CreateConfiguration(string server) =>
+    private ServerControlTargetConfiguration CreateConfiguration(
+        string server,
+        IReadOnlyList<string>? hostManagedRelativePaths = null) =>
         new()
         {
             ServerId = "activity",
@@ -351,7 +365,8 @@ public sealed class ServerPackageDeployerTests : IDisposable
             StartScriptRelativePath = "start.bat",
             MaximumAllowedMemoryMiB = 8192,
             PackageDeploymentEnabled = true,
-            HostManagedRelativePaths = ["forwarding.secret"],
+            HostManagedRelativePaths =
+                hostManagedRelativePaths ?? ["forwarding.secret"],
             WorldDataRelativePaths = ["world", "world_nether", "world_the_end"],
             AllowedCommandPrefixes = ["list"]
         };

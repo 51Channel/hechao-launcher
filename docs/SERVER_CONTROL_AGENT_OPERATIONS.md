@@ -399,8 +399,10 @@ API `0.31.1` 候选在确认、排队、Range 归档授权和目录同步四处�
 长期生存服当作活动槽。
 
 owl5 候选配置只新增 `survival2`，目录为 `E:\Survival2`、端口 `25565`、冲突组
-`owl5-survival-slot`、最大允许内存 `6144 MiB`，保留 `forwarding.secret` 和三个世界
-目录。该配置、API 与 Agent 都尚未部署；上线前必须先核对现有 `start.bat` 的
+`owl5-survival-slot`、最大允许内存 `6144 MiB`，保留 `forwarding.secret`、
+`plugins\HechaoEconomy\economy-token.txt` 和三个世界目录。经济令牌必须在部署前外置到
+现有受控目录，包内不得携带；旧目录和删除前快照两条部署路径都会恢复它，缺失时在目录
+切换前拒绝部署。该配置、API 与 Agent 都尚未部署；上线前必须先核对现有 `start.bat` 的
 `HECHAO_MANAGED_START` 标记和计划任务绝对路径，失败则保持生产 `0.5.0` 配置不变。
 
 ## 7. 验收与回滚

@@ -241,7 +241,10 @@ EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，�
   "conflictGroup": "owl5-survival-slot",
   "startScriptRelativePath": "start.bat",
   "packageDeploymentEnabled": true,
-  "hostManagedRelativePaths": ["forwarding.secret"],
+  "hostManagedRelativePaths": [
+    "forwarding.secret",
+    "plugins\\HechaoEconomy\\economy-token.txt"
+  ],
   "worldDataRelativePaths": ["world", "world_nether", "world_the_end"]
 }
 ```
@@ -250,6 +253,9 @@ EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，�
 不能提供或替换这些文件。`worldDataRelativePaths` 只有管理员勾选“保留世界”时才迁移。
 两组路径彼此不能重复、嵌套或重叠，也不能覆盖 `server.properties`、JVM 参数文件、
 启动脚本或部署所有权标记。代理会在读取配置时失败关闭，而不是等到目录切换后处理。
+`survival2` 上线候选必须在部署前把经济服务令牌外置到
+`E:\Survival2\plugins\HechaoEconomy\economy-token.txt`；代理会与 `forwarding.secret` 一起
+从旧目录或删除前快照恢复，任一受管文件缺失都会在原子目录切换前拒绝部署。
 
 更新代理前，`Install-ServerControlAgent.ps1` 会确认每个已存在目标目录里的受管启动
 脚本带标记，并确认对应 `Hechao-Server-<target>` 计划任务明确引用同一绝对路径。该检查只验证

@@ -17,6 +17,8 @@
 - 客户端只发送短期会话和固定 action ID，权限、物品检查、价格和写入均由服务端裁决。
 - API `0.31.1` 支持完整小写命名空间和物品路径，旧商品端点保留兼容；Agent `0.6.0`
   支持显式授权的 `survival2` 受控部署目标，活动企划仍固定 `activity`。
+- `survival2` 把 `plugins\HechaoEconomy\economy-token.txt` 与 `forwarding.secret` 一并列为
+  主机受管文件；包内不能覆盖，现有目录与删除前快照都会保留，缺失时在目录切换前拒绝部署。
 - 包内含 `server/plugins/HechaoEconomy/服主快捷设置.txt`，无需服主手改数据库或重新打包。
 
 ## 候选制品
@@ -64,11 +66,13 @@ HechaoEconomyScreen `3/3` 通过；API Release 构建零警告零错误。
 1. 确认货币正式名称和精度；第一笔真实账本数据前完成。
 2. 在隔离 PostgreSQL 应用迁移 `029`，完成账本守恒、并发、幂等和恢复演练。
 3. 备份 API、数据库、owl5 Agent 配置、`E:\Survival2` 与世界。
-4. 先发布 API `0.31.1`，再仅重启 Agent 到 `0.6.0`；不自动启动 Minecraft。
+4. 将经济令牌外置到现有
+   `E:\Survival2\plugins\HechaoEconomy\economy-token.txt`，确认 Velocity forwarding 也已
+   就位；再发布 API `0.31.1`，仅重启 Agent 到 `0.6.0`，不自动启动 Minecraft。
 5. 后台上传本包，明确选择 `survival2` 并输入包含目标 ID 的确认文本；客户端先进入
    `Test` 通道，服务端部署后保持停止。
-6. 外置注入经济令牌和 Velocity forwarding，使用普通模组材料及拒绝型带数据物品完成
-   管理、报价、确认、审计和失败补偿验收。
+6. 核对部署后的经济令牌和 Velocity forwarding 与部署前逐字节一致；使用普通模组材料及
+   拒绝型带数据物品完成管理、报价、确认、审计和失败补偿验收。
 7. 最后按 `2/3/5/20` 人完成 TPS、MSPT、GC、内存与交易并发灰度。
 
 任何门禁失败都停止前滚并按既有 API release、Agent 安装器和受控目录备份回滚；不删除

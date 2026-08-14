@@ -43,7 +43,10 @@
       "startScriptRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 6144,
       "packageDeploymentEnabled": true,
-      "hostManagedRelativePaths": ["forwarding.secret"],
+      "hostManagedRelativePaths": [
+        "forwarding.secret",
+        "plugins\\HechaoEconomy\\economy-token.txt"
+      ],
       "worldDataRelativePaths": ["world", "world_nether", "world_the_end"],
       "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
     },

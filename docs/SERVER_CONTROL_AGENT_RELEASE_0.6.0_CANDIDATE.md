@@ -11,12 +11,14 @@
 - 保留目标目录边界、受管启动脚本、主机固定路径、世界路径、停服检查、单 Agent 单部署
   互斥、归档摘要、同卷原子切换和失败回滚。
 - owl5 候选配置新增 `survival2`：`E:\Survival2`、`25565`、
-  `owl5-survival-slot`、`6144 MiB`，保留 `forwarding.secret` 和三个世界目录。
+  `owl5-survival-slot`、`6144 MiB`，保留 `forwarding.secret`、
+  `plugins\HechaoEconomy\economy-token.txt` 和三个世界目录；经济令牌必须在部署前外置，
+  缺失时在原子切换前故障关闭。
 - `activity` 既有能力保持不变；删除能力没有扩大，`survival2` 仍不可从后台永久删除。
 
 ## 验证与上线门禁
 
-Agent 配置聚焦测试 `13/13`、完整 Agent `57/57`、完整解决方案 `730/730` 已通过，
+Agent 配置聚焦测试 `13/13`、完整 Agent `57/57`、完整解决方案 `731/731` 已通过，
 Release 构建为 `0` 警告、`0` 错误；生产配置同时识别 `activity` 与 `survival2`。上线前
 必须在 owl5 只读检查 `survival2/start.bat` 的 `HECHAO_MANAGED_START` 标记、计划任务
 参数、目标停服状态、目录备份和零进行中 `DeployPackage`。安装器任一检查失败必须自动
