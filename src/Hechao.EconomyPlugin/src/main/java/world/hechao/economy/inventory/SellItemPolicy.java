@@ -47,9 +47,6 @@ public final class SellItemPolicy {
         if (air || amount < 1) {
             return new Validation(false, null, "主手没有可出售物品。");
         }
-        if (!"minecraft".equals(namespace)) {
-            return new Validation(false, null, "模组物品暂不支持出售。");
-        }
         if (hasItemMeta) {
             return new Validation(false, null, "带名称、附魔、容器或其他数据的物品不能出售。");
         }
@@ -57,7 +54,10 @@ public final class SellItemPolicy {
         if (DENIED_MATERIALS.stream().anyMatch(material::endsWith)) {
             return new Validation(false, null, "容器和带内容数据的物品不能出售。");
         }
-        return new Validation(true, namespace + ":" + materialKey, null);
+        return new Validation(
+                true,
+                namespace.toLowerCase(Locale.ROOT) + ":" + material,
+                null);
     }
 
     public record Validation(boolean allowed, String itemId, String reason) {

@@ -33,9 +33,12 @@ final class SellItemPolicyTest {
     }
 
     @Test
-    void rejectsModdedAndMetadataItems() {
-        assertFalse(SellItemPolicy.evaluate(
-                "create", "brass_ingot", false, false, 1).allowed());
+    void acceptsPlainModdedItemButRejectsMetadataItems() {
+        var modded = SellItemPolicy.evaluate(
+                "create", "brass_ingot", false, false, 16);
+
+        assertTrue(modded.allowed());
+        assertEquals("create:brass_ingot", modded.itemId());
         assertFalse(SellItemPolicy.evaluate(
                 "minecraft", "diamond_sword", true, false, 1).allowed());
     }

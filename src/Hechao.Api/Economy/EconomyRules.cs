@@ -79,7 +79,7 @@ public static partial class EconomyRules
     private static partial Regex IdempotencyKeyRegex();
 
     [GeneratedRegex(
-        "^minecraft:[a-z0-9_./-]{1,96}$",
+        "^[a-z0-9_.-]{1,64}:[a-z0-9_./-]{1,96}$",
         RegexOptions.CultureInvariant)]
     private static partial Regex MinecraftItemIdRegex();
 }

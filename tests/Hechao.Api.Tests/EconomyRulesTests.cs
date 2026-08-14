@@ -6,12 +6,31 @@ namespace Hechao.Api.Tests;
 public sealed class EconomyRulesTests
 {
     [Fact]
-    public void ProductIds_OnlyAllowVanillaNamespace()
+    public void ProductIds_AllowSafeVanillaAndModdedNamespaces()
     {
         Assert.True(EconomyRules.IsValidMinecraftItemId("minecraft:iron_ingot"));
-        Assert.False(EconomyRules.IsValidMinecraftItemId("create:brass_ingot"));
+        Assert.True(EconomyRules.IsValidMinecraftItemId("create:brass_ingot"));
+        Assert.True(EconomyRules.IsValidMinecraftItemId("example_mod:parts/brass_sheet"));
         Assert.False(EconomyRules.IsValidMinecraftItemId("minecraft:Iron_Ingot"));
+        Assert.False(EconomyRules.IsValidMinecraftItemId("Example:iron_ingot"));
         Assert.False(EconomyRules.IsValidMinecraftItemId("../iron_ingot"));
+    }
+
+    [Fact]
+    public void ProductEndpoints_KeepLegacyRoutesAndProvideSlashSafeQueryRoutes()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Hechao.Api",
+            "Economy",
+            "EconomyEndpoints.cs"));
+
+        Assert.Contains("MapPut(\"/products\"", source, StringComparison.Ordinal);
+        Assert.Contains("MapPost(\"/products/disable\"", source, StringComparison.Ordinal);
+        Assert.Contains("MapPut(\"/products/{itemId}\"", source, StringComparison.Ordinal);
+        Assert.Contains("MapPost(\"/products/{itemId}/disable\"", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -78,5 +97,21 @@ public sealed class EconomyRulesTests
         Assert.Equal(
             EconomyAuthenticationStatus.NotConfigured,
             disabled.Validate($"Bearer {token}", "skyrealm"));
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "Hechao.Launcher.sln")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Repository root was not found.");
     }
 }

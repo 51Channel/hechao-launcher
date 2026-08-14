@@ -10,7 +10,7 @@
 `manifest/payload.sha256` 自身哈希也与发布清单一致。
 
 实现结果、制品哈希、导入验证和仍未验收的生产门槛见
-[`SKYREALM_ECONOMY_INTEGRATION_1.0.3.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.3.md)。
+[`SKYREALM_ECONOMY_INTEGRATION_1.0.5.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.5.md)。
 
 ## 1. 已验证运行基线
 
@@ -124,21 +124,21 @@ Bukkit 事件和模组物品能力可能绕过彼此的保护或产生不完整�
 插件不可把远端不可用降级为本地余额。经济 API 不可用时允许只读缓存展示，但新交易
 统一暂停。
 
-### 3.3 HechaoEconomy NeoForge Bridge
+### 3.3 HechaoEconomy NeoForge Screen
 
-该组件不属于首版阻塞项。只有在开放模组物品拍卖、模组物品回收或全屏客户端界面时
-再开发，并同时安装到对应客户端和服务端。
+`0.1.2` 已作为双端组件进入一键包，提供服务端权威的全屏导航和服主回收设置入口。
+普通无自定义数据的模组物品使用 Bukkit 层可验证的注册 ID 进入商品目录；需要保存完整
+NBT、数据组件或模组能力的拍卖/托管仍属于后续 Bridge 范围。
 
 职责：
 
-- 使用 NeoForge 原生注册表读取模组物品 ID；
-- 保存并恢复完整 `ItemStack`、NBT、数据组件和模组能力；
-- 拒绝未知模组、版本不一致和已删除注册项；
-- 为赫朝整合包提供可选的全屏经济界面；
-- 通过受限内部接口与 Bukkit 插件或 Economy Service 协作。
+- 使用短期服务端会话和固定 action ID，不接受客户端任意命令；
+- 提供余额、目录、出售、服主商品设置、个人设置和队伍入口；
+- 实际权限、物品安全检查和交易写入仍由 Bukkit 插件与 Economy Service 裁决；
+- 后续完整 Bridge 才负责保存和恢复 NBT、数据组件与模组能力。
 
-在 Bridge 上线前，拍卖和 `/sell` 只接受经过白名单验证的原版物品。Create、Sable、
-容器、载具、附魔物品和未知模组物品默认拒绝。
+当前 `/sell` 接受服主明确加入目录的原版物品和普通模组物品；容器、载具、命名、附魔、
+带组件或其他元数据物品默认拒绝。
 
 ## 4. 命令与能力所有权
 
@@ -148,6 +148,7 @@ Bukkit 事件和模组物品能力可能绕过彼此的保护或产生不完整�
 | `/pay` | HechaoEconomy | EssentialsX | 保持 Essentials `/pay` 禁用，不读取 Essentials 余额 |
 | `/sell` | HechaoEconomy | EssentialsX `worth.yml` | 保持 Essentials `/sell` 禁用，赫朝使用 API 商品目录 |
 | `/shop` | HechaoEconomy | 无 | 首版箱子 GUI |
+| `/heco product` | HechaoEconomy | 无 | 服主手持物品，通过可点击价格或自定义额度维护目录 |
 | `/heco admin` | HechaoEconomy | Essentials `/eco` | 不复用 `/eco`，管理员操作必须带审计原因 |
 | `/settings`、TPA、队伍 | SkyrealmCore | 无 | 保持现状，不写入经济数据库 |
 | 余额占位符 | HechaoEconomy | Essentials/Vault 占位符 | TAB 只使用 `%hechao_balance%` |
@@ -223,7 +224,7 @@ Economy Service 的数据库模型和管理接口继续放在现有 Launcher API
 ### 阶段 B：转账、回收和商店
 
 - `/pay`、额度、确认和风控；
-- 原版物品白名单 `/sell`；
+- 原版和普通模组物品白名单 `/sell`；
 - 箱子式 `/shop`；
 - 补偿邮箱；
 - TAB 余额和每日铸币/回收监控。
@@ -235,11 +236,11 @@ Economy Service 的数据库模型和管理接口继续放在现有 Launcher API
 - 冻结余额、离线交付和价格历史；
 - 只允许精确兼容组跨服领取物品。
 
-### 阶段 D：模组物品与客户端界面
+### 阶段 D：复杂模组物品与托管
 
-- NeoForge Bridge；
+- 完整 NeoForge Bridge；
 - 模组物品序列化和兼容版本锁；
-- 客户端全屏经济菜单；
+- 客户端全屏经济菜单已在 `0.1.2` 完成，后续扩展拍卖与托管；
 - 经过产量审计后逐项开放模组物品回收。
 
 ## 8. 测试与生产门槛
@@ -252,7 +253,7 @@ Economy Service 的数据库模型和管理接口继续放在现有 Launcher API
 - 报价过期、物品变化、背包已满和断线补偿；
 - Vault 提供者所有权和 Essentials 冲突；
 - API 超时、无效响应、服务重启和数据库回滚；
-- 未知模组物品、容器、命名物和附魔物默认拒绝。
+- 普通模组材料可由服主启用，未知复杂物品、容器、命名物和附魔物默认拒绝。
 
 生产前必须在精确交付包上完成：
 

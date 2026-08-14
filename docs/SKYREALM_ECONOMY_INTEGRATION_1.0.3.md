@@ -1,5 +1,8 @@
 # 天域远征工业季经济集成 1.0.3
 
+> 本版保留为历史验收记录。当前候选已由 `1.0.4` 取代，见
+> [`SKYREALM_ECONOMY_INTEGRATION_1.0.4.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.4.md)。
+
 > 状态：本地候选已完成；未上传后台、未部署 API/Agent、未执行迁移、未注入令牌，
 > 未启动或重启任何 Minecraft 服务端。
 > 日期：2026-08-14

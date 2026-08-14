@@ -309,7 +309,7 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
         if (args.length >= 2 && "product".equalsIgnoreCase(args[0])) {
             return product(player, java.util.Arrays.copyOfRange(args, 1, args.length));
         }
-        error(sender, "用法: /heco <health|menu|reload|product set|product remove>");
+        error(sender, "用法: /heco <health|menu|reload|product>");
         return true;
     }
 
@@ -317,6 +317,10 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
         var validation = SellItemPolicy.validate(player.getInventory().getItemInMainHand());
         if (!validation.allowed()) {
             error(player, validation.reason());
+            return true;
+        }
+        if (args.length == 0) {
+            ProductAdminPrompt.send(player, validation.itemId());
             return true;
         }
         if (args.length >= 2 && "set".equalsIgnoreCase(args[0])) {
@@ -361,7 +365,7 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
                     exception -> gatewayError(player, exception));
             return true;
         }
-        error(player, "用法: /heco product set <单价> [个人日限] [全服日限]，或 /heco product remove");
+        ProductAdminPrompt.send(player, validation.itemId());
         return true;
     }
 

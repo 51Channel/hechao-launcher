@@ -14,6 +14,8 @@ public static class EconomyEndpoints
         economy.MapPost("/sales/quotes", CreateQuoteAsync);
         economy.MapPost("/sales/commit", CommitSaleAsync);
         economy.MapGet("/products", ListProductsAsync);
+        economy.MapPut("/products", UpsertProductAsync);
+        economy.MapPost("/products/disable", DisableProductAsync);
         economy.MapPut("/products/{itemId}", UpsertProductAsync);
         economy.MapPost("/products/{itemId}/disable", DisableProductAsync);
         return endpoints;
@@ -91,7 +93,7 @@ public static class EconomyEndpoints
 
         if (!EconomyRules.IsValidQuote(request))
         {
-            return Validation("request", "报价参数无效，只允许白名单中的原版物品。");
+            return Validation("request", "报价参数无效，只允许回收目录中的安全物品。");
         }
 
         var result = await repository.CreateSaleQuoteAsync(
@@ -188,7 +190,7 @@ public static class EconomyEndpoints
         if (!EconomyRules.IsValidMinecraftItemId(itemId) ||
             !EconomyRules.IsValidProductMutation(request))
         {
-            return Validation("request", "商品配置无效，只允许原版物品与正数价格/额度。");
+            return Validation("request", "商品配置无效，请检查物品 ID、价格和额度。");
         }
 
         return Results.Ok(await repository.UpsertProductAsync(

@@ -1,5 +1,8 @@
 # API 0.31.0 候选
 
+> 本版保留为历史候选。当前候选已由 `0.31.1` 取代，见
+> [`API_RELEASE_0.31.1_CANDIDATE.md`](API_RELEASE_0.31.1_CANDIDATE.md)。
+
 - 状态：`NOT_DEPLOYED`
 - 日期：2026-08-14
 - 数据库迁移：`029_economy_ledger.sql`

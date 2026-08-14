@@ -3,11 +3,11 @@ param(
     [Parameter(Mandatory)]
     [string]$Archive,
 
-    [string]$ExpectedPackageVersion = '1.0.3',
+    [string]$ExpectedPackageVersion = '1.0.5',
 
-    [string]$ExpectedEconomyPluginVersion = '0.1.1',
+    [string]$ExpectedEconomyPluginVersion = '0.1.2',
 
-    [string]$ExpectedEconomyScreenVersion = '0.1.0'
+    [string]$ExpectedEconomyScreenVersion = '0.1.2'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -36,6 +36,20 @@ function Read-ZipText {
     }
     finally {
         $reader.Dispose()
+    }
+}
+
+function Read-ZipBytes {
+    param([IO.Compression.ZipArchiveEntry]$Entry)
+    $memory = [IO.MemoryStream]::new()
+    $stream = $Entry.Open()
+    try {
+        $stream.CopyTo($memory)
+        return $memory.ToArray()
+    }
+    finally {
+        $stream.Dispose()
+        $memory.Dispose()
     }
 }
 
@@ -86,6 +100,9 @@ function Read-NestedZipContract {
             }
             if ($TextPaths -contains $path) {
                 $result[$path] = Read-ZipText $nestedEntry
+            }
+            else {
+                $result[$path] = Read-ZipBytes $nestedEntry
             }
         }
         return $result
@@ -187,7 +204,8 @@ try {
         $economyPluginPath,
         $serverEconomyScreenPath,
         $clientEconomyScreenPath,
-        'server/plugins/HechaoEconomy/config.yml'
+        'server/plugins/HechaoEconomy/config.yml',
+        'server/plugins/HechaoEconomy/服主快捷设置.txt'
     )) {
         if (-not $entries.ContainsKey($required)) {
             throw "Required integration file is missing: $required"
@@ -205,7 +223,8 @@ try {
         -RequiredPaths @(
             'plugin.yml',
             'world/hechao/economy/HechaoEconomyPlugin.class',
-            'world/hechao/economy/commands/EconomyCommandRouter.class'
+            'world/hechao/economy/commands/EconomyCommandRouter.class',
+            'world/hechao/economy/commands/ProductAdminPrompt.class'
         ) `
         -TextPaths @('plugin.yml')
     $pluginYaml = $pluginContract['plugin.yml']
@@ -220,12 +239,23 @@ try {
             throw "Economy plugin command is missing: $command"
         }
     }
+    $promptClass = [Text.Encoding]::Latin1.GetString(
+        $pluginContract['world/hechao/economy/commands/ProductAdminPrompt.class'])
+    foreach ($contractText in @(
+        '/heco product set ',
+        '/heco product remove'
+    )) {
+        if (-not $promptClass.Contains($contractText, [StringComparison]::Ordinal)) {
+            throw "Economy owner quick-management class is missing: $contractText"
+        }
+    }
 
     $screenContract = Read-NestedZipContract `
         -Entry $entries[$serverEconomyScreenPath] `
         -RequiredPaths @(
             'META-INF/neoforge.mods.toml',
             'world/hechao/economyscreen/HechaoEconomyScreenMod.class',
+            'world/hechao/economyscreen/MenuActions.class',
             'world/hechao/economyscreen/client/HechaoNavigationScreen.class',
             'world/hechao/economyscreen/network/OpenMenuPayload.class',
             'world/hechao/economyscreen/network/MenuActionPayload.class'
@@ -238,12 +268,20 @@ try {
         (($modsToml -split 'side="BOTH"').Count - 1) -ne 2) {
         throw 'Economy screen NeoForge or Minecraft compatibility contract is invalid.'
     }
+    $menuActionsClass = [Text.Encoding]::Latin1.GetString(
+        $screenContract['world/hechao/economyscreen/MenuActions.class'])
+    if (-not $menuActionsClass.Contains('admin_product', [StringComparison]::Ordinal) -or
+        -not $menuActionsClass.Contains('heco product', [StringComparison]::Ordinal)) {
+        throw 'Economy screen owner product action is missing.'
+    }
 
     $start = Read-ZipText $entries['server/start.bat']
     $descriptor = (Read-ZipText $entries['hechao-pack.json']) | ConvertFrom-Json
     $essentials = Read-ZipText $entries['server/plugins/Essentials/config.yml']
     $worth = Read-ZipText $entries['server/plugins/Essentials/worth.yml']
     $tab = Read-ZipText $entries['server/plugins/TAB/config.yml']
+    $ownerGuide = Read-ZipText `
+        $entries['server/plugins/HechaoEconomy/服主快捷设置.txt']
     if (-not $start.Contains('if not defined HECHAO_MANAGED_START pause') -or
         -not $start.Contains('21.1.228/win_args.txt nogui')) {
         throw 'Managed start script contract is invalid.'
@@ -263,6 +301,20 @@ try {
     if (-not $worth.Contains('HechaoEconomy owns') -or
         -not $tab.Contains('%hechao_balance%')) {
         throw 'Economy ownership or TAB placeholder configuration is incomplete.'
+    }
+    foreach ($guideContract in @(
+        'hechao.economy.admin',
+        '/heco product set <单价> [个人日限] [全服日限]',
+        '/heco product remove',
+        '无自定义数据的模组物品'
+    )) {
+        if (-not $ownerGuide.Contains($guideContract, [StringComparison]::Ordinal)) {
+            throw "Owner quick-management guide is incomplete: $guideContract"
+        }
+    }
+    if (-not $release.security.owner_quick_product_management -or
+        -not $release.security.plain_modded_items_supported) {
+        throw 'Release manifest does not declare owner product management support.'
     }
 
     [PSCustomObject]@{

@@ -3,8 +3,6 @@ package world.hechao.economyscreen;
 import com.mojang.logging.LogUtils;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -30,7 +28,7 @@ public final class HechaoEconomyScreenMod {
     private static final MenuSessionRegistry SESSIONS = new MenuSessionRegistry(
             Duration.ofMinutes(2),
             Duration.ofMillis(350));
-    private static final Map<String, Action> ACTIONS = actions();
+    private static final Map<String, MenuActions.Definition> ACTIONS = MenuActions.all();
 
     public HechaoEconomyScreenMod(IEventBus modEventBus) {
         modEventBus.addListener(this::registerPayloads);
@@ -64,8 +62,8 @@ public final class HechaoEconomyScreenMod {
         var buttons = ACTIONS.entrySet().stream()
                 .map(entry -> new OpenMenuPayload.MenuButton(
                         entry.getKey(),
-                        entry.getValue().label,
-                        entry.getValue().description))
+                        entry.getValue().label(),
+                        entry.getValue().description()))
                 .toList();
         PacketDistributor.sendToPlayer(
                 player,
@@ -109,20 +107,8 @@ public final class HechaoEconomyScreenMod {
             }
             player.getServer().getCommands().performPrefixedCommand(
                     player.createCommandSourceStack(),
-                    action.command);
+                    action.command());
         });
     }
 
-    private static Map<String, Action> actions() {
-        var actions = new LinkedHashMap<String, Action>();
-        actions.put("balance", new Action("我的余额", "查看当前金币余额", "money"));
-        actions.put("shop", new Action("回收目录", "查看当前可出售物品", "shop"));
-        actions.put("sell", new Action("出售主手", "为主手物品创建报价", "sell"));
-        actions.put("settings", new Action("个人设置", "打开生存服个人设置", "settings"));
-        actions.put("team", new Action("我的队伍", "打开队伍功能", "team"));
-        return java.util.Collections.unmodifiableMap(actions);
-    }
-
-    private record Action(String label, String description, String command) {
-    }
 }

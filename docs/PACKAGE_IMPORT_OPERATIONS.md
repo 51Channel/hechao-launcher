@@ -9,7 +9,7 @@
 > 当前生产链保留目标级目录访问门闩、Windows 瞬时目录占用重试、部署身份、受控服务端
 > 目录删除和 VPS 物理内存上报。
 >
-> 源码候选 API `0.31.0` / ServerControlAgent `0.6.0` 将部署范围扩展为代理配置中显式
+> 源码候选 API `0.31.1` / ServerControlAgent `0.6.0` 将部署范围扩展为代理配置中显式
 > 设置 `packageDeploymentEnabled=true` 的合法目标。候选尚未部署生产；活动企划仍只使用
 > 固定 `activity` 槽，不受本次通用导入能力影响。
 

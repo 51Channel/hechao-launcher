@@ -12,7 +12,7 @@ param(
     [Parameter(Mandatory)]
     [string]$EconomyScreenJar,
 
-    [string]$PackageVersion = '1.0.3',
+    [string]$PackageVersion = '1.0.5',
 
     [string]$ExpectedInputSha256 =
         'A0393BC880DE4E70181B244E8ED42774AEF582908E2F072D31552317931860E9'
@@ -37,6 +37,11 @@ foreach ($path in @($InputArchive, $EconomyPluginJar, $EconomyScreenJar)) {
 $inputPath = (Resolve-Path -LiteralPath $InputArchive).Path
 $economyJarPath = (Resolve-Path -LiteralPath $EconomyPluginJar).Path
 $screenJarPath = (Resolve-Path -LiteralPath $EconomyScreenJar).Path
+$economyPluginVersion = '0.1.2'
+$economyScreenVersion = '0.1.2'
+$economyPluginFileName = "HechaoEconomy-$economyPluginVersion.jar"
+$economyScreenFileName =
+    "HechaoEconomyScreen-NeoForge-1.21.1-$economyScreenVersion.jar"
 $outputPath = [IO.Path]::GetFullPath($OutputArchive)
 $outputDirectory = [IO.Path]::GetDirectoryName($outputPath)
 if ([string]::IsNullOrWhiteSpace($outputDirectory)) {
@@ -279,20 +284,20 @@ try {
 
 
 赫朝平台新增组件：
-- server/plugins/HechaoEconomy-0.1.1.jar
-- server/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.0.jar
-- client/.minecraft/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.0.jar
+- server/plugins/HechaoEconomy-0.1.2.jar
+- server/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.2.jar
+- client/.minecraft/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.2.jar
 '@
     Add-BytesEntry $output '组件清单.txt' $utf8.GetBytes($components)
 
     Add-FileEntry $output `
-        'server/plugins/HechaoEconomy-0.1.1.jar' `
+        "server/plugins/$economyPluginFileName" `
         $economyJarPath
     Add-FileEntry $output `
-        'server/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.0.jar' `
+        "server/mods/$economyScreenFileName" `
         $screenJarPath
     Add-FileEntry $output `
-        'client/.minecraft/mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.0.jar' `
+        "client/.minecraft/mods/$economyScreenFileName" `
         $screenJarPath
 
     $pluginConfig = @'
@@ -312,6 +317,20 @@ default-server-daily-limit: 23040
 生产部署时通过 HECHAO_ECONOMY_TOKEN 环境变量提供；也可由部署器在停服状态下创建
 plugins/HechaoEconomy/economy-token.txt，并将文件 ACL 限制为服务账号只读。
 令牌缺失、API 不可用或 Vault 未由 HechaoEconomy 接管时，所有写交易会故障关闭。
+'@)
+    Add-BytesEntry $output 'server/plugins/HechaoEconomy/服主快捷设置.txt' $utf8.GetBytes(@'
+服主快捷设置回收物品
+
+1. 使用 LuckPerms 授予服主权限：hechao.economy.admin。
+2. 在游戏内把要配置的物品拿到主手。
+3. 打开“天域远征”自定义屏幕，点击“服主回收设置”；也可输入 /heco product。
+4. 点击常用价格即可启用回收；需要自定义时补全：
+   /heco product set <单价> [个人日限] [全服日限]
+5. 暂停该物品回收：/heco product remove
+6. 使用 /shop 检查玩家实际看到的启用目录。
+
+支持原版物品和无自定义数据的模组物品。命名、附魔、容器、带组件或其他数据的
+物品会被拒绝，防止不同内容共用同一物品 ID 后被错误回收。
 '@)
 
     $startScript = @'
@@ -343,10 +362,14 @@ java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt 
 # 天域远征工业季 - 赫朝一键导入包
 
 - Minecraft 1.21.1 / Arclight NeoForge / NeoForge 21.1.228 / Java 21。
-- 新增 HechaoEconomy 0.1.1 和双端 HechaoEconomyScreen 0.1.0。
+- 新增 HechaoEconomy 0.1.2 和双端 HechaoEconomyScreen 0.1.2。
 - Essentials 经济命令和 worth.yml 已停用；Vault 必须由 HechaoEconomy 接管。
 - TAB 余额使用 `%hechao_balance%`，没有远端余额时显示 `--`。
-- 模组物品、命名物、附魔物、容器和带数据组件物品默认拒绝出售。
+- 服主可手持原版或无自定义数据的模组物品，从自定义屏幕进入快捷回收设置；命名物、
+  附魔物、容器和带数据组件物品仍默认拒绝出售。
+- 快捷命令为 `/heco product`；可点常用价格，也可执行
+  `/heco product set <单价> [个人日限] [全服日限]`，暂停使用
+  `/heco product remove`。
 - 经济 API 令牌不在包内，部署时必须从外部秘密配置注入。
 - 客户端菜单只回传短期会话和 action ID，不接受客户端命令文本。
 - 本包可被赫朝后台识别、拆分和发布；长期生存目标仍需单独配置受控部署目标。
@@ -371,13 +394,15 @@ java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt 
             arclight = 'NeoForge 1.0.2-SNAPSHOT-8086b06'
             neoforge = '21.1.228'
             java = 21
-            hechao_economy = '0.1.1'
-            hechao_economy_screen = '0.1.0'
+            hechao_economy = $economyPluginVersion
+            hechao_economy_screen = $economyScreenVersion
         }
         security = [ordered]@{
             economy_token_included = $false
             vault_fail_closed = $true
-            vanilla_sell_allowlist_only = $true
+            safe_item_allowlist_only = $true
+            plain_modded_items_supported = $true
+            owner_quick_product_management = $true
             arbitrary_client_commands = $false
         }
         payload = [ordered]@{

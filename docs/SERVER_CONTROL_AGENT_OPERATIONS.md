@@ -392,7 +392,7 @@ Launcher API `0.30.0` 把该身份保存到 `server_control_targets`。活动企
 Agent ID、端口、目录边界、受管启动脚本、主机固定路径和世界路径校验；Agent 同一时刻
 仍只领取一个 `DeployPackage`，部署前后仍要求目标停止，成功与失败均不会自动开服。
 
-API `0.31.0` 候选在确认、排队、Range 归档授权和目录同步四处复核同一显式能力。后台
+API `0.31.1` 候选在确认、排队、Range 归档授权和目录同步四处复核同一显式能力。后台
 有多个目标时不默认选择，部署确认固定为 `发布并部署 <importId> 到 <targetServerId>`。
 目录同步使用所选 server ID 作为 Velocity 目标，因此 `activity` 仍写入 `activity`，
 `survival2` 写入 `survival2`。活动企划仓储和端点继续调用严格 `IsActivityTarget`，不会把

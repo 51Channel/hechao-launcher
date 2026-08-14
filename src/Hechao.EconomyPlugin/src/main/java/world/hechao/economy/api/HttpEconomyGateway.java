@@ -129,7 +129,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 actorUuid,
                 actorName);
         var request = jsonRequest(
-                        "/v1/internal/economy/products/" + pathSegment(itemId),
+                        "/v1/internal/economy/products?itemId=" + queryValue(itemId),
                         body)
                 .PUT(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
                 .build();
@@ -141,9 +141,8 @@ public final class HttpEconomyGateway implements EconomyGateway {
             throws EconomyGatewayException {
         var body = new ProductDisableRequest(actorUuid, actorName);
         var request = jsonRequest(
-                        "/v1/internal/economy/products/"
-                                + pathSegment(itemId)
-                                + "/disable",
+                        "/v1/internal/economy/products/disable?itemId="
+                                + queryValue(itemId),
                         body)
                 .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
                 .build();
@@ -161,7 +160,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 .header("Authorization", "Bearer " + configuration.token())
                 .header("X-Hechao-Server-Id", configuration.serverId())
                 .header("Accept", "application/json")
-                .header("User-Agent", "HechaoEconomy/0.1.1");
+                .header("User-Agent", "HechaoEconomy/0.1.2");
     }
 
     private HttpRequest.Builder jsonRequest(String path, Object ignoredBody) {
@@ -258,7 +257,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
         }
     }
 
-    private static String pathSegment(String value) {
+    static String queryValue(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
