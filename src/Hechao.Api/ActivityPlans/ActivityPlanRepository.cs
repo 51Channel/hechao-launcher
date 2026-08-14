@@ -62,7 +62,15 @@ public sealed class ActivityPlanRepository(
         var plans = await ReadPlansAsync(connection, now, cancellationToken);
         var packages = await ReadPackagesAsync(connection, cancellationToken);
         var slot = await ReadSlotAsync(connection, now, cancellationToken);
-        return new AdminActivityPlanListResponse(now, plans, packages, slot);
+        var unmanagedSchedules = await ReadUnmanagedSchedulesAsync(
+            connection,
+            cancellationToken);
+        return new AdminActivityPlanListResponse(
+            now,
+            plans,
+            packages,
+            slot,
+            unmanagedSchedules);
     }
 
     public async Task<ActivityPlanMutationResult> CreateAsync(
@@ -765,6 +773,56 @@ public sealed class ActivityPlanRepository(
                 reader.GetInt64(12),
                 new DateTimeOffset(reader.GetDateTime(13)),
                 new DateTimeOffset(reader.GetDateTime(14))));
+        }
+
+        return result;
+    }
+
+    private static async Task<IReadOnlyList<AdminUnmanagedActivityScheduleRecord>>
+        ReadUnmanagedSchedulesAsync(
+            NpgsqlConnection connection,
+            CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT id, display_name, announcement, opens_at, closes_at,
+                   activity_package_import_id, client_profile_id, is_visible,
+                   status, revision, updated_at
+            FROM launcher.servers
+            WHERE activity_plan_status IS NULL
+              AND lower(velocity_target) = 'activity'
+              AND (opens_at IS NOT NULL OR closes_at IS NOT NULL)
+            ORDER BY opens_at NULLS LAST, closes_at NULLS LAST, id;
+            """;
+        var result = new List<AdminUnmanagedActivityScheduleRecord>();
+        await using var command = new NpgsqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            DateTimeOffset? opensAt = reader.IsDBNull(3)
+                ? null
+                : new DateTimeOffset(reader.GetDateTime(3));
+            DateTimeOffset? closesAt = reader.IsDBNull(4)
+                ? null
+                : new DateTimeOffset(reader.GetDateTime(4));
+            Guid? packageImportId = reader.IsDBNull(5)
+                ? null
+                : reader.GetGuid(5);
+            result.Add(new AdminUnmanagedActivityScheduleRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                opensAt,
+                closesAt,
+                packageImportId,
+                reader.GetString(6),
+                reader.GetBoolean(7),
+                Enum.Parse<ServerStatus>(reader.GetString(8), ignoreCase: true),
+                reader.GetInt64(9),
+                new DateTimeOffset(reader.GetDateTime(10)),
+                UnmanagedActivityScheduleRules.GetIssues(
+                    opensAt,
+                    closesAt,
+                    packageImportId)));
         }
 
         return result;

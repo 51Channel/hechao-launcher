@@ -59,6 +59,25 @@ export function toActivityPlanCalendarRange(opensAtValue: string, closesAtValue:
   };
 }
 
+export function toUnmanagedScheduleCalendarRange(
+  opensAtValue: string | null,
+  closesAtValue: string | null
+) {
+  if (opensAtValue && closesAtValue) {
+    const range = toActivityPlanCalendarRange(opensAtValue, closesAtValue);
+    if (range) return range;
+  }
+
+  const anchor = new Date(opensAtValue ?? closesAtValue ?? "");
+  if (!Number.isFinite(anchor.getTime())) return null;
+  const nextDay = new Date(anchor);
+  nextDay.setDate(nextDay.getDate() + 1);
+  return {
+    start: localDateKey(anchor),
+    end: localDateKey(nextDay)
+  };
+}
+
 export function activityPlanStartTimeLabel(value: string): string {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "";

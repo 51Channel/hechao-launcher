@@ -3766,6 +3766,106 @@ textarea::placeholder {
     color: var(--closed);
 }
 
+.activity-calendar-legend .unmanaged {
+    color: #285f9f;
+}
+
+.unmanaged-schedule-panel {
+    min-width: 0;
+    margin-bottom: 14px;
+    border: 1px solid #a9c4e3;
+    background: #f3f7fc;
+}
+
+.unmanaged-schedule-panel > header {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 12px 14px;
+    border-bottom: 1px solid #c9d9eb;
+    color: #285f9f;
+}
+
+.unmanaged-schedule-panel > header > img {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+}
+
+.unmanaged-schedule-panel > header strong,
+.unmanaged-schedule-panel > header span {
+    display: block;
+}
+
+.unmanaged-schedule-panel > header strong {
+    font-size: 12px;
+}
+
+.unmanaged-schedule-panel > header span {
+    margin-top: 3px;
+    color: var(--ink-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.unmanaged-schedule-panel > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    display: grid;
+    grid-template-columns: 88px minmax(140px, 0.8fr) minmax(260px, 1.4fr) auto 18px;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid #d8e3f0;
+    background: var(--surface);
+    color: var(--ink-secondary);
+    text-align: left;
+}
+
+.unmanaged-schedule-panel > button:last-child {
+    border-bottom: 0;
+}
+
+.unmanaged-schedule-panel > button:hover,
+.unmanaged-schedule-panel > button.active {
+    background: #eaf2fb;
+}
+
+.unmanaged-schedule-panel > button strong,
+.unmanaged-schedule-panel > button > span:not(.status-badge),
+.unmanaged-schedule-panel > button small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.unmanaged-schedule-panel > button strong {
+    color: var(--ink);
+    font-size: 11px;
+}
+
+.unmanaged-schedule-panel > button > span:not(.status-badge),
+.unmanaged-schedule-panel > button small {
+    font-size: 10px;
+}
+
+.unmanaged-schedule-panel > button small {
+    color: #285f9f;
+}
+
+.unmanaged-schedule-panel > button > img {
+    width: 16px;
+    height: 16px;
+}
+
+.status-unmanaged {
+    background: #e8f0fb;
+    color: #285f9f;
+}
+
 .activity-plan-layout {
     min-width: 0;
     display: grid;
@@ -3913,6 +4013,13 @@ textarea::placeholder {
     color: var(--closed);
 }
 
+.activity-calendar-panel .activity-calendar-event-unmanaged {
+    --fc-event-text-color: #204d82;
+    border: 1px dashed #7da3cf;
+    background: #e8f0fb;
+    color: #204d82;
+}
+
 .activity-calendar-panel .activity-calendar-event.deployment-matched {
     box-shadow: inset 0 -2px 0 var(--success);
 }
@@ -3941,6 +4048,96 @@ textarea::placeholder {
 
 .activity-plan-inspector {
     overflow: hidden;
+}
+
+.unmanaged-schedule-inspector {
+    min-width: 0;
+}
+
+.unmanaged-schedule-body {
+    display: grid;
+    gap: 16px;
+    padding: 16px;
+}
+
+.unmanaged-schedule-body .inline-alert {
+    margin: 0;
+}
+
+.unmanaged-schedule-body dl {
+    min-width: 0;
+    display: grid;
+    gap: 0;
+    margin: 0;
+    border-block: 1px solid var(--line);
+}
+
+.unmanaged-schedule-body dl > div {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.unmanaged-schedule-body dl > div:last-child {
+    border-bottom: 0;
+}
+
+.unmanaged-schedule-body dt,
+.unmanaged-schedule-body dd {
+    min-width: 0;
+    margin: 0;
+    font-size: 10px;
+}
+
+.unmanaged-schedule-body dt {
+    color: var(--ink-muted);
+}
+
+.unmanaged-schedule-body dd {
+    overflow-wrap: anywhere;
+    color: var(--ink);
+}
+
+.unmanaged-schedule-body h3 {
+    margin: 0;
+    font-size: 12px;
+}
+
+.unmanaged-schedule-body ul {
+    display: grid;
+    gap: 7px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.unmanaged-schedule-body li {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 7px;
+    align-items: center;
+    color: var(--warning);
+    font-size: 10px;
+}
+
+.unmanaged-schedule-body li img {
+    width: 15px;
+    height: 15px;
+}
+
+.unmanaged-schedule-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.unmanaged-schedule-actions .button {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 9px;
 }
 
 .activity-inspector-empty {
@@ -4255,6 +4452,10 @@ textarea::placeholder {
     .activity-index-row small {
         display: none;
     }
+
+    .unmanaged-schedule-panel > button {
+        grid-template-columns: 88px minmax(140px, 0.8fr) minmax(220px, 1.2fr) auto 18px;
+    }
 }
 
 @media (max-width: 680px) {
@@ -4356,12 +4557,36 @@ textarea::placeholder {
     .activity-index-row > span:not(.status-badge) {
         grid-column: 1 / -1;
     }
+
+    .unmanaged-schedule-panel > button {
+        grid-template-columns: 82px minmax(0, 1fr) 16px;
+        gap: 7px 9px;
+    }
+
+    .unmanaged-schedule-panel > button > span:not(.status-badge) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .unmanaged-schedule-panel > button small {
+        display: none;
+    }
+
+    .unmanaged-schedule-panel > button > img {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .unmanaged-schedule-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (forced-colors: active) {
     .activity-calendar-panel .activity-calendar-event,
     .activity-index-row.active,
-    .activity-single-slot-rule {
+    .activity-single-slot-rule,
+    .unmanaged-schedule-panel {
         outline: 2px solid Highlight;
         outline-offset: -2px;
     }

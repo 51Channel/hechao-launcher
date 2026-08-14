@@ -520,6 +520,11 @@ export interface PackageUploadAppendResponse {
 }
 
 export type ActivityPlanStatus = "Draft" | "Published" | "Archived";
+export type UnmanagedActivityScheduleIssue =
+  | "MissingPlanStatus"
+  | "MissingOpensAt"
+  | "MissingClosesAt"
+  | "MissingPackageBinding";
 
 export interface ActivityPackage {
   importId: string;
@@ -571,9 +576,25 @@ export interface ActivitySlot {
   memoryGuidance: ServerMemoryGuidance | null;
 }
 
+export interface UnmanagedActivitySchedule {
+  id: string;
+  title: string;
+  announcement: string;
+  opensAt: string | null;
+  closesAt: string | null;
+  packageImportId: string | null;
+  clientProfileId: string;
+  isVisible: boolean;
+  configuredStatus: ServerStatus;
+  revision: number;
+  updatedAt: string;
+  issues: UnmanagedActivityScheduleIssue[];
+}
+
 export interface ActivityPlanOverview {
   generatedAt: string;
   plans: ActivityPlan[];
   packages: ActivityPackage[];
   slot: ActivitySlot;
+  unmanagedSchedules: UnmanagedActivitySchedule[];
 }

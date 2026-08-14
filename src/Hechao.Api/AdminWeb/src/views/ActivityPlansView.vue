@@ -21,7 +21,9 @@ import type {
   ActivityPlan,
   ActivityPlanOverview,
   ActivityPlanStatus,
-  ControlQueueResult
+  ControlQueueResult,
+  UnmanagedActivitySchedule,
+  UnmanagedActivityScheduleIssue
 } from "@/api/types";
 import AppIcon from "@/components/AppIcon.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -35,7 +37,8 @@ import {
   activityPlanStartTimeLabel,
   moveActivityPlanDates,
   resizeActivityPlanDates,
-  toActivityPlanCalendarRange
+  toActivityPlanCalendarRange,
+  toUnmanagedScheduleCalendarRange
 } from "@/activityPlanCalendarDates";
 import {
   formatDateTime,
@@ -44,7 +47,7 @@ import {
   toLocalDateTimeInput
 } from "@/utils";
 
-type EditorMode = "idle" | "create" | "edit";
+type EditorMode = "idle" | "create" | "edit" | "unmanaged";
 type PlanFilter = "active" | "all" | "archived";
 type PlanAction = "publish" | "withdraw" | "archive" | "restore" | "deploy";
 
@@ -65,6 +68,7 @@ const calendar = ref<InstanceType<typeof FullCalendar> | null>(null);
 const calendarTitle = ref("");
 const editorMode = ref<EditorMode>("idle");
 const selectedPlanId = ref("");
+const selectedUnmanagedScheduleId = ref("");
 const planFilter = ref<PlanFilter>("active");
 const editorBaseline = ref("");
 const editorBusy = ref(false);
@@ -85,12 +89,16 @@ const draft = reactive<PlanDraft>({
 
 const plans = computed(() => overview.data.value?.plans ?? []);
 const packages = computed(() => overview.data.value?.packages ?? []);
+const unmanagedSchedules = computed(() => overview.data.value?.unmanagedSchedules ?? []);
 const slot = computed(() => overview.data.value?.slot ?? null);
 const selectedPlan = computed(() =>
   plans.value.find(plan => plan.id === selectedPlanId.value) ?? null
 );
 const selectedPackage = computed(() =>
   packages.value.find(item => item.importId === draft.packageImportId) ?? null
+);
+const selectedUnmanagedSchedule = computed(() =>
+  unmanagedSchedules.value.find(item => item.id === selectedUnmanagedScheduleId.value) ?? null
 );
 const publishedCount = computed(() =>
   plans.value.filter(plan => plan.status === "Published").length
@@ -110,7 +118,8 @@ const visiblePlans = computed(() => plans.value.filter(plan => {
   return true;
 }));
 const editorDirty = computed(() =>
-  editorMode.value !== "idle" && serializeDraft() !== editorBaseline.value
+  (editorMode.value === "create" || editorMode.value === "edit") &&
+  serializeDraft() !== editorBaseline.value
 );
 const draftStart = computed(() => fromLocalDateTimeInput(draft.opensAt));
 const draftEnd = computed(() => fromLocalDateTimeInput(draft.closesAt));
@@ -163,32 +172,52 @@ const canDeploy = computed(() =>
   !editorBusy.value
 );
 
-const calendarEvents = computed<EventInput[]>(() => visiblePlans.value.flatMap(plan => {
-  const range = toActivityPlanCalendarRange(plan.opensAt, plan.closesAt);
-  if (!range) return [];
-  const editable = plan.status !== "Archived" &&
-    scheduleBusyPlanId.value !== plan.id &&
-    !(selectedPlanId.value === plan.id && editorDirty.value);
-  const title = plan.status === "Published"
-    ? plan.title
-    : `${planStatusText(plan.status)} · ${plan.title}`;
-  return [{
-    id: plan.id,
-    title: `${activityPlanStartTimeLabel(plan.opensAt)} ${title}`,
-    start: range.start,
-    end: range.end,
-    allDay: true,
-    editable,
-    durationEditable: editable,
-    startEditable: editable,
-    classNames: [
-      "activity-calendar-event",
-      `activity-calendar-event-${plan.status.toLowerCase()}`,
-      plan.deploymentMatches ? "deployment-matched" : ""
-    ].filter(Boolean),
-    extendedProps: { status: plan.status }
-  }];
-}));
+const calendarEvents = computed<EventInput[]>(() => {
+  const planEvents = visiblePlans.value.flatMap(plan => {
+    const range = toActivityPlanCalendarRange(plan.opensAt, plan.closesAt);
+    if (!range) return [];
+    const editable = plan.status !== "Archived" &&
+      scheduleBusyPlanId.value !== plan.id &&
+      !(selectedPlanId.value === plan.id && editorDirty.value);
+    const title = plan.status === "Published"
+      ? plan.title
+      : `${planStatusText(plan.status)} · ${plan.title}`;
+    return [{
+      id: plan.id,
+      title: `${activityPlanStartTimeLabel(plan.opensAt)} ${title}`,
+      start: range.start,
+      end: range.end,
+      allDay: true,
+      editable,
+      durationEditable: editable,
+      startEditable: editable,
+      classNames: [
+        "activity-calendar-event",
+        `activity-calendar-event-${plan.status.toLowerCase()}`,
+        plan.deploymentMatches ? "deployment-matched" : ""
+      ].filter(Boolean),
+      extendedProps: { kind: "plan", status: plan.status }
+    } satisfies EventInput];
+  });
+  const unmanagedEvents = unmanagedSchedules.value.flatMap(schedule => {
+    const range = toUnmanagedScheduleCalendarRange(schedule.opensAt, schedule.closesAt);
+    const boundary = schedule.opensAt ?? schedule.closesAt;
+    if (!range || !boundary) return [];
+    return [{
+      id: `unmanaged:${schedule.id}`,
+      title: `${activityPlanStartTimeLabel(boundary)} 目录排期 · ${schedule.title}`,
+      start: range.start,
+      end: range.end,
+      allDay: true,
+      editable: false,
+      durationEditable: false,
+      startEditable: false,
+      classNames: ["activity-calendar-event", "activity-calendar-event-unmanaged"],
+      extendedProps: { kind: "unmanaged", scheduleId: schedule.id }
+    } satisfies EventInput];
+  });
+  return [...planEvents, ...unmanagedEvents];
+});
 
 const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
@@ -219,6 +248,15 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   eventResize: handleEventResize,
   datesSet: info => { calendarTitle.value = info.view.title; },
   eventDidMount: info => {
+    if (info.event.extendedProps.kind === "unmanaged") {
+      const schedule = unmanagedSchedules.value.find(
+        candidate => candidate.id === info.event.extendedProps.scheduleId
+      );
+      if (schedule) {
+        info.el.title = `${schedule.title}，目录排期，${scheduleRangeText(schedule)}`;
+      }
+      return;
+    }
     const plan = plans.value.find(candidate => candidate.id === info.event.id);
     if (plan) {
       info.el.title = `${plan.title}，${formatDateTime(plan.opensAt)} 至 ${formatDateTime(plan.closesAt)}`;
@@ -310,6 +348,7 @@ function resetDraft(values: PlanDraft): void {
 function syncPlanToEditor(plan: ActivityPlan): void {
   editorMode.value = "edit";
   selectedPlanId.value = plan.id;
+  selectedUnmanagedScheduleId.value = "";
   resetDraft({
     title: plan.title,
     announcement: plan.announcement,
@@ -339,6 +378,7 @@ function beginCreate(opensAt: Date, closesAt: Date): void {
   const packageItem = preferredPackage();
   editorMode.value = "create";
   selectedPlanId.value = "";
+  selectedUnmanagedScheduleId.value = "";
   resetDraft({
     title: packageItem?.profileDisplayName || "新活动企划",
     announcement: "",
@@ -380,6 +420,13 @@ function startCreateFromSelection(info: DateSelectArg): void {
 }
 
 function selectCalendarEvent(info: EventClickArg): void {
+  if (info.event.extendedProps.kind === "unmanaged") {
+    const schedule = unmanagedSchedules.value.find(
+      candidate => candidate.id === info.event.extendedProps.scheduleId
+    );
+    if (schedule) selectUnmanagedSchedule(schedule);
+    return;
+  }
   const plan = plans.value.find(candidate => candidate.id === info.event.id);
   if (!plan) return;
   if (editorDirty.value && selectedPlanId.value !== plan.id &&
@@ -397,15 +444,42 @@ function selectPlan(plan: ActivityPlan): void {
   syncPlanToEditor(plan);
 }
 
+function selectUnmanagedSchedule(schedule: UnmanagedActivitySchedule): void {
+  if (editorDirty.value &&
+      !window.confirm("当前编辑内容尚未保存，确定放弃并查看目录排期吗？")) {
+    return;
+  }
+  editorMode.value = "unmanaged";
+  selectedPlanId.value = "";
+  selectedUnmanagedScheduleId.value = schedule.id;
+  editorError.value = "";
+}
+
 function closeEditor(): void {
   if (editorDirty.value && !window.confirm("当前编辑内容尚未保存，确定放弃吗？")) return;
   editorMode.value = "idle";
   selectedPlanId.value = "";
+  selectedUnmanagedScheduleId.value = "";
   editorError.value = "";
 }
 
 function planStatusText(status: ActivityPlanStatus): string {
   return { Draft: "草稿", Published: "已发布", Archived: "已归档" }[status];
+}
+
+function unmanagedIssueText(issue: UnmanagedActivityScheduleIssue): string {
+  return {
+    MissingPlanStatus: "尚未创建正式企划",
+    MissingOpensAt: "未设置开放时间",
+    MissingClosesAt: "未设置结束时间",
+    MissingPackageBinding: "未绑定整合包导入记录"
+  }[issue];
+}
+
+function scheduleRangeText(schedule: UnmanagedActivitySchedule): string {
+  const opensAt = schedule.opensAt ? formatDateTime(schedule.opensAt) : "未设置开放时间";
+  const closesAt = schedule.closesAt ? formatDateTime(schedule.closesAt) : "未设置结束时间";
+  return `${opensAt} 至 ${closesAt}`;
 }
 
 function slotStateText(): string {
@@ -622,6 +696,15 @@ async function submitAction(payload: { reason: string; confirmation: string }): 
 async function refreshPlans(): Promise<void> {
   const result = await overview.refresh();
   if (!result) return;
+  if (editorMode.value === "unmanaged") {
+    if (!result.unmanagedSchedules.some(
+      schedule => schedule.id === selectedUnmanagedScheduleId.value
+    )) {
+      editorMode.value = "idle";
+      selectedUnmanagedScheduleId.value = "";
+    }
+    return;
+  }
   if (selectedPlanId.value && !result.plans.some(plan => plan.id === selectedPlanId.value)) {
     editorMode.value = "idle";
     selectedPlanId.value = "";
@@ -680,6 +763,33 @@ watch(selectedPlan, plan => {
         </div>
       </div>
 
+      <section
+        v-if="unmanagedSchedules.length"
+        class="unmanaged-schedule-panel"
+        aria-labelledby="unmanaged-schedule-title"
+      >
+        <header>
+          <AppIcon name="circle-alert" />
+          <div>
+            <strong id="unmanaged-schedule-title">发现 {{ unmanagedSchedules.length }} 条目录排期未纳入企划</strong>
+            <span>这些记录会出现在玩家活动日历，但不具备正式企划的整合包、发布和部署保障。</span>
+          </div>
+        </header>
+        <button
+          v-for="schedule in unmanagedSchedules"
+          :key="schedule.id"
+          type="button"
+          :class="{ active: schedule.id === selectedUnmanagedScheduleId }"
+          @click="selectUnmanagedSchedule(schedule)"
+        >
+          <span class="status-badge status-unmanaged">目录排期</span>
+          <strong>{{ schedule.title }}</strong>
+          <span>{{ scheduleRangeText(schedule) }}</span>
+          <small>{{ schedule.issues.length }} 项需要处理</small>
+          <AppIcon name="chevron-right" />
+        </button>
+      </section>
+
       <div class="activity-plan-toolbar">
         <div class="segmented-control" aria-label="企划筛选">
           <button type="button" :class="{ active: planFilter === 'active' }" @click="planFilter = 'active'">当前企划</button>
@@ -690,6 +800,7 @@ watch(selectedPlan, plan => {
           <span class="published">已发布</span>
           <span class="draft">草稿</span>
           <span class="archived">已归档</span>
+          <span class="unmanaged">目录排期</span>
         </div>
       </div>
 
@@ -718,6 +829,51 @@ watch(selectedPlan, plan => {
                 {{ slot.deployedPackage.profileId }} · {{ slot.deployedPackage.version }}
               </small>
               <small v-else>尚未部署企划整合包</small>
+            </div>
+          </div>
+
+          <div v-else-if="editorMode === 'unmanaged' && selectedUnmanagedSchedule" class="unmanaged-schedule-inspector">
+            <header class="activity-inspector-header">
+              <div>
+                <span>{{ selectedUnmanagedSchedule.id }} · r{{ selectedUnmanagedSchedule.revision }}</span>
+                <h2>{{ selectedUnmanagedSchedule.title }}</h2>
+              </div>
+              <button class="icon-button" type="button" title="关闭检查器" aria-label="关闭检查器" @click="closeEditor">
+                <AppIcon name="x" />
+              </button>
+            </header>
+            <div class="activity-plan-statebar">
+              <span class="status-badge status-unmanaged">目录排期</span>
+              <span>{{ selectedUnmanagedSchedule.isVisible ? "玩家可见" : "目录已隐藏" }}</span>
+              <span>{{ selectedUnmanagedSchedule.configuredStatus === "Online" ? "策略开放" : "策略未开放" }}</span>
+            </div>
+            <div class="unmanaged-schedule-body">
+              <div class="inline-alert" role="status">
+                <AppIcon name="circle-alert" />
+                <span>这是一条旧服务器目录排期，不是可发布、可部署的活动企划。后台只读显示，不会自动修改或启停服务端。</span>
+              </div>
+              <dl>
+                <div><dt>开放时间</dt><dd>{{ selectedUnmanagedSchedule.opensAt ? formatDateTime(selectedUnmanagedSchedule.opensAt) : "未设置" }}</dd></div>
+                <div><dt>结束时间</dt><dd>{{ selectedUnmanagedSchedule.closesAt ? formatDateTime(selectedUnmanagedSchedule.closesAt) : "未设置" }}</dd></div>
+                <div><dt>客户端档案</dt><dd>{{ selectedUnmanagedSchedule.clientProfileId }}</dd></div>
+                <div><dt>整合包绑定</dt><dd>{{ selectedUnmanagedSchedule.packageImportId || "未绑定" }}</dd></div>
+              </dl>
+              <section aria-labelledby="unmanaged-issues-title">
+                <h3 id="unmanaged-issues-title">转为正式企划前需要处理</h3>
+                <ul>
+                  <li v-for="issue in selectedUnmanagedSchedule.issues" :key="issue">
+                    <AppIcon name="circle-alert" />{{ unmanagedIssueText(issue) }}
+                  </li>
+                </ul>
+              </section>
+              <div class="unmanaged-schedule-actions">
+                <RouterLink class="button button-secondary" :to="{ name: 'servers' }">
+                  <AppIcon name="server" />前往服务器目录
+                </RouterLink>
+                <RouterLink class="button button-secondary" :to="{ name: 'package-imports' }">
+                  <AppIcon name="package" />查看整合包导入
+                </RouterLink>
+              </div>
             </div>
           </div>
 

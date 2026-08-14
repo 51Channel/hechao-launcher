@@ -7,6 +7,14 @@ public enum ActivityPlanStatus
     Archived
 }
 
+public enum UnmanagedActivityScheduleIssue
+{
+    MissingPlanStatus,
+    MissingOpensAt,
+    MissingClosesAt,
+    MissingPackageBinding
+}
+
 public sealed record AdminActivityPackageRecord(
     Guid ImportId,
     string ProfileId,
@@ -54,11 +62,26 @@ public sealed record AdminActivitySlotRecord(
     AdminServerControlOperationRecord? ActiveOperation,
     ServerMemoryGuidance? MemoryGuidance);
 
+public sealed record AdminUnmanagedActivityScheduleRecord(
+    string Id,
+    string Title,
+    string Announcement,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt,
+    Guid? PackageImportId,
+    string ClientProfileId,
+    bool IsVisible,
+    ServerStatus ConfiguredStatus,
+    long Revision,
+    DateTimeOffset UpdatedAt,
+    IReadOnlyList<UnmanagedActivityScheduleIssue> Issues);
+
 public sealed record AdminActivityPlanListResponse(
     DateTimeOffset GeneratedAt,
     IReadOnlyList<AdminActivityPlanRecord> Plans,
     IReadOnlyList<AdminActivityPackageRecord> Packages,
-    AdminActivitySlotRecord Slot);
+    AdminActivitySlotRecord Slot,
+    IReadOnlyList<AdminUnmanagedActivityScheduleRecord> UnmanagedSchedules);
 
 public sealed record AdminActivityPlanCreateRequest(
     string Title,

@@ -334,7 +334,21 @@ const activityPlanOverview = {
       recommendedMinimumMemoryMiB: 4096,
       recommendedMaximumMemoryMiB: 16384
     }
-  }
+  },
+  unmanagedSchedules: [{
+    id: "activity",
+    title: "赫朝商务追杀",
+    announcement: "活动开放后从启动器进入。",
+    opensAt: "2026-08-15T09:00:00Z",
+    closesAt: null,
+    packageImportId: null,
+    clientProfileId: "hechao-business-manhunt-paper-1.21.11",
+    isVisible: true,
+    configuredStatus: "Online",
+    revision: 15,
+    updatedAt: now,
+    issues: ["MissingPlanStatus", "MissingClosesAt", "MissingPackageBinding"]
+  }]
 };
 const serverRecords = [{
   id: "activity",
@@ -1632,6 +1646,37 @@ test("server editor recovers from a revision conflict without losing the draft",
   expect(updates).toHaveLength(2);
   expect(updates[0].expectedRevision).toBe(1);
   expect(updates[1].expectedRevision).toBe(2);
+});
+
+test("activity calendar exposes unmanaged directory schedules without control actions", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page);
+
+  await page.goto("/admin/activity-plans");
+  const unmanagedPanel = page.locator(".unmanaged-schedule-panel");
+  await expect(unmanagedPanel.getByText("发现 1 条目录排期未纳入企划")).toBeVisible();
+  await expect(page.locator(".fc-event").filter({ hasText: "目录排期 · 赫朝商务追杀" })).toBeVisible();
+
+  await unmanagedPanel.getByRole("button", { name: /赫朝商务追杀/ }).click();
+  const inspector = page.locator(".activity-plan-inspector");
+  await expect(inspector.getByRole("heading", { name: "赫朝商务追杀" })).toBeVisible();
+  await expect(inspector.getByText("未设置结束时间")).toBeVisible();
+  await expect(inspector.getByText("未绑定整合包导入记录")).toBeVisible();
+  await expect(inspector.getByRole("button", { name: "发布企划" })).toHaveCount(0);
+  await expect(inspector.getByRole("button", { name: "部署到活动槽" })).toHaveCount(0);
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-unmanaged-activity-schedule-desktop.png",
+    fullPage: true
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() =>
+    document.documentElement.scrollWidth <= document.documentElement.clientWidth
+  )).toBe(true);
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-unmanaged-activity-schedule-mobile.png",
+    fullPage: true
+  });
 });
 
 test("server directory opens the matching control target instead of changing visibility", async ({ page }) => {

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   moveActivityPlanDates,
   resizeActivityPlanDates,
-  toActivityPlanCalendarRange
+  toActivityPlanCalendarRange,
+  toUnmanagedScheduleCalendarRange
 } from "@/activityPlanCalendarDates";
 
 const oneDay = { years: 0, months: 0, days: 1, milliseconds: 0 };
@@ -18,6 +19,14 @@ function localDate(
   millisecond = 0
 ): Date {
   return new Date(year, month - 1, day, hour, minute, second, millisecond);
+}
+
+function localDateKey(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
 }
 
 describe("activity plan calendar dates", () => {
@@ -85,5 +94,18 @@ describe("activity plan calendar dates", () => {
     expect(endResized!.closesAt.getDate()).toBe(13);
     expect(endResized!.opensAt.getMinutes()).toBe(15);
     expect(endResized!.closesAt.getMinutes()).toBe(45);
+  });
+});
+
+describe("unmanaged activity schedule calendar dates", () => {
+  it("keeps a schedule with no closing time visible on its opening day", () => {
+    expect(toUnmanagedScheduleCalendarRange("2026-08-15T09:00:00Z", null)).toEqual({
+      start: localDateKey(new Date("2026-08-15T09:00:00Z")),
+      end: localDateKey(new Date("2026-08-16T09:00:00Z"))
+    });
+  });
+
+  it("does not create an event without either boundary", () => {
+    expect(toUnmanagedScheduleCalendarRange(null, null)).toBeNull();
   });
 });
