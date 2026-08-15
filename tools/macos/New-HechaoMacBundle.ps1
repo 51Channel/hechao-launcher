@@ -234,6 +234,76 @@ function New-UnixModeZip {
     }
 }
 
+function Set-ZipUnixHostPlatform {
+    param([string]$Path)
+    $stream = [IO.File]::Open(
+        $Path,
+        [IO.FileMode]::Open,
+        [IO.FileAccess]::ReadWrite,
+        [IO.FileShare]::None)
+    try {
+        $tailLength = [int][Math]::Min(65557, $stream.Length)
+        $tail = [byte[]]::new($tailLength)
+        $stream.Position = $stream.Length - $tailLength
+        if ($stream.Read($tail, 0, $tail.Length) -ne $tail.Length) {
+            throw "Unable to read ZIP directory: $Path"
+        }
+
+        $endOfCentralDirectory = -1
+        for ($index = $tail.Length - 22; $index -ge 0; $index--) {
+            if ($tail[$index] -eq 0x50 -and
+                $tail[$index + 1] -eq 0x4B -and
+                $tail[$index + 2] -eq 0x05 -and
+                $tail[$index + 3] -eq 0x06) {
+                $endOfCentralDirectory = $index
+                break
+            }
+        }
+        if ($endOfCentralDirectory -lt 0) {
+            throw "ZIP end-of-central-directory record is missing: $Path"
+        }
+
+        $entryCount = [BitConverter]::ToUInt16(
+            $tail,
+            $endOfCentralDirectory + 10)
+        $centralDirectoryOffset = [BitConverter]::ToUInt32(
+            $tail,
+            $endOfCentralDirectory + 16)
+        if ($entryCount -eq [uint16]::MaxValue -or
+            $centralDirectoryOffset -eq [uint32]::MaxValue) {
+            throw 'ZIP64 archives are not supported by the macOS bundle packager.'
+        }
+
+        $stream.Position = $centralDirectoryOffset
+        for ($entryIndex = 0; $entryIndex -lt $entryCount; $entryIndex++) {
+            $headerPosition = $stream.Position
+            $header = [byte[]]::new(46)
+            if ($stream.Read($header, 0, $header.Length) -ne $header.Length -or
+                [BitConverter]::ToUInt32($header, 0) -ne 0x02014B50) {
+                throw "Invalid ZIP central-directory entry: $Path"
+            }
+
+            $fileNameLength = [BitConverter]::ToUInt16($header, 28)
+            $extraFieldLength = [BitConverter]::ToUInt16($header, 30)
+            $commentLength = [BitConverter]::ToUInt16($header, 32)
+
+            # ZipArchive writes Unix mode bits but labels entries as Windows.
+            # macOS only restores those bits when the host platform is Unix (3).
+            $stream.Position = $headerPosition + 5
+            $stream.WriteByte(3)
+            $stream.Position =
+                $headerPosition +
+                $header.Length +
+                $fileNameLength +
+                $extraFieldLength +
+                $commentLength
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 Assert-ScopedPath -Path $stagingRoot -AllowedRoot $repoRoot
 if (-not $SkipPublish) {
     Remove-ScopedDirectory -Path $stagingRoot -AllowedRoot $repoRoot
@@ -301,6 +371,7 @@ if (Test-Path -LiteralPath $archivePath) {
     Remove-Item -LiteralPath $archivePath -Force
 }
 New-UnixModeZip -SourceDirectory $appRoot -DestinationPath $archivePath
+Set-ZipUnixHostPlatform -Path $archivePath
 $hash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
 $checksumPath = "$archivePath.sha256"
 [IO.File]::WriteAllText(

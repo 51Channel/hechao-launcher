@@ -15,7 +15,7 @@
 pwsh tools/macos/New-HechaoMacBundle.ps1
 ```
 
-脚本执行 `dotnet publish -r osx-arm64 --self-contained true`，扫描全部 Mach-O；上游依赖如果提供 FAT Mach-O，会只抽取其中的 ARM64 slice，缺少 ARM64 slice 时直接失败。随后脚本组装标准 `.app` 目录，并生成保留 Unix 可执行权限的 ZIP 和 SHA-256 文件。在 macOS 上运行时，脚本还会执行 ad-hoc 签名；在其他系统交叉构建时，产物文件名明确标记为 `unsigned`。
+脚本执行 `dotnet publish -r osx-arm64 --self-contained true`，扫描全部 Mach-O；上游依赖如果提供 FAT Mach-O，会只抽取其中的 ARM64 slice，缺少 ARM64 slice 时直接失败。随后脚本组装标准 `.app` 目录，并生成保留 Unix 可执行权限的 ZIP 和 SHA-256 文件。ZIP 中央目录会显式标记 Unix host platform，确保 macOS 解压器恢复主程序的 `0755` 模式。在 macOS 上运行时，脚本还会执行 ad-hoc 签名；在其他系统交叉构建时，产物文件名明确标记为 `unsigned`。
 
 ## 本机测试签名
 
