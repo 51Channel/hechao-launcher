@@ -315,7 +315,8 @@ function controlActionText(action: ControlAction): string {
     ConsoleCommand: "控制台命令",
     ApplySettings: "快捷设置",
     DeployPackage: "部署整合包",
-    DeleteServerFiles: "删除服务端文件"
+    DeleteServerFiles: "删除服务端文件",
+    CreateDeploymentSlot: "创建部署槽"
   }[action];
 }
 
@@ -337,7 +338,8 @@ function actionMessage(pending: PendingAction): string {
     ConsoleCommand: `向 ${pending.displayName} 发送：${pending.consoleCommand}`,
     ApplySettings: `更新 ${pending.displayName} 的 server.properties 与 JVM 启动内存；运行中的服务不会自动重启。`,
     DeployPackage: `替换 ${pending.displayName} 的受控服务端目录；完成后保持停服。`,
-    DeleteServerFiles: `永久删除 ${pending.displayName} 的整个受控运行目录，包括世界、模组、插件、配置和日志；VPS 外置备份不会被删除。`
+    DeleteServerFiles: `永久删除 ${pending.displayName} 的整个受控运行目录，包括世界、模组、插件、配置和日志；VPS 外置备份不会被删除。`,
+    CreateDeploymentSlot: `在受控根目录中创建 ${pending.displayName}；完成后保持停服。`
   }[pending.action];
 }
 
@@ -349,7 +351,8 @@ function actionTitle(action: ControlAction): string {
     ConsoleCommand: "发送 Minecraft 命令",
     ApplySettings: "保存快捷设置",
     DeployPackage: "部署整合包",
-    DeleteServerFiles: "永久删除服务端文件"
+    DeleteServerFiles: "永久删除服务端文件",
+    CreateDeploymentSlot: "创建部署槽"
   }[action];
 }
 

@@ -154,6 +154,37 @@ public sealed class ServerControlRepository(
                 target.DeployedPackage?.Version);
             command.Parameters.AddWithValue(receivedAt);
             imported += await command.ExecuteNonQueryAsync(cancellationToken);
+
+            await using var markSlotReady = new NpgsqlCommand(
+                """
+                UPDATE launcher.deployment_slots
+                SET status = 'Ready',
+                    provisioned_at = $2,
+                    failure_code = NULL,
+                    failure_message = NULL,
+                    updated_at = $2
+                WHERE server_id = $1
+                  AND status = 'Provisioning'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM launcher.server_control_targets AS target
+                      WHERE target.server_id = launcher.deployment_slots.server_id
+                        AND target.agent_id = $3
+                        AND target.package_deployment_enabled
+                        AND target.conflict_group = $4
+                        AND target.port = $5
+                  );
+                """,
+                connection,
+                transaction);
+            markSlotReady.Parameters.AddWithValue(target.ServerId);
+            markSlotReady.Parameters.AddWithValue(receivedAt);
+            markSlotReady.Parameters.AddWithValue(request.AgentId);
+            markSlotReady.Parameters.AddWithValue(
+                PackageImportRules.ActivityConflictGroup);
+            markSlotReady.Parameters.AddWithValue(
+                PackageImportRules.ActivityPort);
+            await markSlotReady.ExecuteNonQueryAsync(cancellationToken);
         }
 
         var activeDeploymentCommandIds =
@@ -208,7 +239,8 @@ public sealed class ServerControlRepository(
         var targets = new List<AdminServerControlTargetSummaryRecord>();
         const string sql = """
             SELECT target.server_id,
-                   COALESCE(server.display_name, target.server_id),
+                   COALESCE(server.display_name, slot.display_name,
+                            target.server_id),
                    target.agent_id,
                    target.conflict_group,
                    target.port,
@@ -223,11 +255,17 @@ public sealed class ServerControlRepository(
                    target.host_total_memory_mib,
                    target.deployed_package_import_id,
                    target.deployed_profile_id,
-                   target.deployed_version
+                   target.deployed_version,
+                   slot.server_id IS NOT NULL,
+                   slot.status,
+                   slot.failure_message
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
+            LEFT JOIN launcher.deployment_slots AS slot
+              ON slot.server_id = target.server_id
             ORDER BY COALESCE(server.sort_order, 2147483647),
-                     COALESCE(server.display_name, target.server_id),
+                     COALESCE(server.display_name, slot.display_name,
+                              target.server_id),
                      target.server_id;
             """;
         await using var command = new NpgsqlCommand(sql, connection);
@@ -281,7 +319,14 @@ public sealed class ServerControlRepository(
                     port,
                     packageDeploymentEnabled,
                     reader.IsDBNull(13) ? null : reader.GetInt32(13)),
-                ReadDeploymentIdentity(reader, 14)));
+                ReadDeploymentIdentity(reader, 14),
+                reader.GetBoolean(17),
+                reader.IsDBNull(18)
+                    ? null
+                    : Enum.Parse<DeploymentSlotProvisioningStatus>(
+                        reader.GetString(18),
+                        ignoreCase: true),
+                reader.IsDBNull(19) ? null : reader.GetString(19)));
         }
 
         return new AdminServerControlOverview(
@@ -307,7 +352,8 @@ public sealed class ServerControlRepository(
                 ServerControlOperationStatus.Running);
         const string sql = """
             SELECT target.server_id,
-                   COALESCE(server.display_name, target.server_id),
+                   COALESCE(server.display_name, slot.display_name,
+                            target.server_id),
                    target.agent_id,
                    target.conflict_group,
                    target.port,
@@ -325,9 +371,14 @@ public sealed class ServerControlRepository(
                    target.host_total_memory_mib,
                    target.deployed_package_import_id,
                    target.deployed_profile_id,
-                   target.deployed_version
+                   target.deployed_version,
+                   slot.server_id IS NOT NULL,
+                   slot.status,
+                   slot.failure_message
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
+            LEFT JOIN launcher.deployment_slots AS slot
+              ON slot.server_id = target.server_id
             WHERE target.server_id = $1;
             """;
         await using var command = new NpgsqlCommand(sql, connection);
@@ -379,7 +430,14 @@ public sealed class ServerControlRepository(
                 targetPort,
                 packageDeploymentEnabled,
                 reader.IsDBNull(16) ? null : reader.GetInt32(16)),
-            ReadDeploymentIdentity(reader, 17));
+            ReadDeploymentIdentity(reader, 17),
+            reader.GetBoolean(20),
+            reader.IsDBNull(21)
+                ? null
+                : Enum.Parse<DeploymentSlotProvisioningStatus>(
+                    reader.GetString(21),
+                    ignoreCase: true),
+            reader.IsDBNull(22) ? null : reader.GetString(22));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,
@@ -658,7 +716,8 @@ public sealed class ServerControlRepository(
                     reader.GetInt32(4),
                     payload.ConsoleCommand,
                     payload.Settings,
-                    payload.PackageDeployment));
+                    payload.PackageDeployment,
+                    payload.SlotProvisioning));
             }
         }
 
@@ -696,9 +755,11 @@ public sealed class ServerControlRepository(
         await using var transaction =
             await connection.BeginTransactionAsync(cancellationToken);
         Guid operationId;
+        string commandKind;
         await using (var read = new NpgsqlCommand(
                          """
-                         SELECT operation_id, status, claimed_by, attempt_count
+                         SELECT operation_id, status, claimed_by, attempt_count,
+                                kind
                          FROM launcher.server_control_commands
                          WHERE id = $1
                          FOR UPDATE;
@@ -716,6 +777,7 @@ public sealed class ServerControlRepository(
             }
 
             operationId = reader.GetGuid(0);
+            commandKind = reader.GetString(4);
             if (!string.Equals(reader.GetString(1), "Claimed", StringComparison.Ordinal) ||
                 reader.IsDBNull(2) ||
                 !string.Equals(
@@ -818,6 +880,32 @@ public sealed class ServerControlRepository(
                 cancellationToken);
         }
 
+        if (string.Equals(
+                commandKind,
+                ServerControlCommandKind.CreateDeploymentSlot.ToString(),
+                StringComparison.Ordinal) &&
+            !succeeded)
+        {
+            await using var failSlot = new NpgsqlCommand(
+                """
+                UPDATE launcher.deployment_slots
+                SET status = 'Failed',
+                    provisioned_at = NULL,
+                    failure_code = $2,
+                    failure_message = $3,
+                    updated_at = $4
+                WHERE operation_id = $1
+                  AND status = 'Provisioning';
+                """,
+                connection,
+                transaction);
+            failSlot.Parameters.AddWithValue(operationId);
+            failSlot.Parameters.AddWithValue(request.ResultCode);
+            failSlot.Parameters.AddWithValue(request.ResultMessage.Trim());
+            failSlot.Parameters.AddWithValue(now);
+            await failSlot.ExecuteNonQueryAsync(cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return new ServerControlCompletionResult(
             ServerControlCompletionStatus.Success,
@@ -901,8 +989,7 @@ public sealed class ServerControlRepository(
             JsonOptions);
         var deployment = payload?.PackageDeployment;
         var server = analysis?.Server;
-        return PackageImportRules.IsActivityTarget(
-                   reader.GetString(5),
+        return PackageImportRules.IsPackageDeploymentTarget(
                    reader.GetString(6),
                    reader.IsDBNull(7) ? null : reader.GetString(7),
                    reader.GetInt32(8)) &&
@@ -1246,7 +1333,8 @@ public sealed class ServerControlRepository(
         const string sql = """
             SELECT operation.id,
                    operation.target_server_id,
-                   COALESCE(server.display_name, operation.target_server_id),
+                   COALESCE(server.display_name, slot.display_name,
+                            operation.target_server_id),
                    operation.action,
                    operation.status,
                    operation.reason,
@@ -1260,6 +1348,8 @@ public sealed class ServerControlRepository(
             FROM launcher.server_control_operations AS operation
             LEFT JOIN launcher.servers AS server
               ON server.id = operation.target_server_id
+            LEFT JOIN launcher.deployment_slots AS slot
+              ON slot.server_id = operation.target_server_id
             WHERE operation.status IN ('Pending', 'Running')
             ORDER BY operation.requested_at DESC;
             """;
@@ -1284,7 +1374,8 @@ public sealed class ServerControlRepository(
         const string sql = """
             SELECT operation.id,
                    operation.target_server_id,
-                   COALESCE(server.display_name, operation.target_server_id),
+                   COALESCE(server.display_name, slot.display_name,
+                            operation.target_server_id),
                    operation.action,
                    operation.status,
                    operation.reason,
@@ -1298,6 +1389,8 @@ public sealed class ServerControlRepository(
             FROM launcher.server_control_operations AS operation
             LEFT JOIN launcher.servers AS server
               ON server.id = operation.target_server_id
+            LEFT JOIN launcher.deployment_slots AS slot
+              ON slot.server_id = operation.target_server_id
             WHERE operation.target_server_id = $1
             ORDER BY operation.requested_at DESC
             LIMIT $2;
@@ -1325,7 +1418,8 @@ public sealed class ServerControlRepository(
         const string sql = """
             SELECT operation.id,
                    operation.target_server_id,
-                   COALESCE(server.display_name, operation.target_server_id),
+                   COALESCE(server.display_name, slot.display_name,
+                            operation.target_server_id),
                    operation.action,
                    operation.status,
                    operation.reason,
@@ -1339,6 +1433,8 @@ public sealed class ServerControlRepository(
             FROM launcher.server_control_operations AS operation
             LEFT JOIN launcher.servers AS server
               ON server.id = operation.target_server_id
+            LEFT JOIN launcher.deployment_slots AS slot
+              ON slot.server_id = operation.target_server_id
             WHERE operation.id = $1;
             """;
         await using var command =
@@ -1444,6 +1540,7 @@ public sealed class ServerControlRepository(
     private sealed record CommandPayload(
         string? ConsoleCommand = null,
         ServerQuickSettings? Settings = null,
-        ServerPackageDeploymentRequest? PackageDeployment = null);
+        ServerPackageDeploymentRequest? PackageDeployment = null,
+        ServerDeploymentSlotProvisioningRequest? SlotProvisioning = null);
 
 }

@@ -267,7 +267,8 @@ export interface RuntimeSummary {
   issues: Array<{ issue: string; samples: number; targets: number }>;
 }
 
-export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings" | "DeployPackage" | "DeleteServerFiles";
+export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings" | "DeployPackage" | "DeleteServerFiles" | "CreateDeploymentSlot";
+export type DeploymentSlotStatus = "Provisioning" | "Ready" | "Failed";
 export type ControlOperationStatus = "Pending" | "Running" | "Succeeded" | "Failed" | "Cancelled";
 
 export interface QuickSettings {
@@ -321,6 +322,9 @@ export interface ControlTargetSummary {
   deletionCleanupPending: boolean;
   packageDeploymentMemoryGuidance: ServerMemoryGuidance | null;
   deployedPackage: ServerPackageDeploymentIdentity | null;
+  dynamicDeploymentSlot: boolean;
+  deploymentSlotStatus: DeploymentSlotStatus | null;
+  deploymentSlotError: string | null;
 }
 
 export interface ServerPackageDeploymentIdentity {
@@ -574,6 +578,12 @@ export interface ActivitySlot {
   deployedPackage: ServerPackageDeploymentIdentity | null;
   activeOperation: ControlOperation | null;
   memoryGuidance: ServerMemoryGuidance | null;
+}
+
+export interface DeploymentSlotQueueResult {
+  operation: ControlOperation;
+  serverId: string;
+  status: DeploymentSlotStatus;
 }
 
 export interface UnmanagedActivitySchedule {

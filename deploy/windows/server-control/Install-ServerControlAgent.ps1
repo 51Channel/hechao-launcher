@@ -120,6 +120,35 @@ if (-not (
     )
 }
 
+$slotProvisioning = Get-OptionalConfigurationValue `
+    -InputObject $configurationObject `
+    -Name 'deploymentSlotProvisioning' `
+    -DefaultValue $null
+if ($null -ne $slotProvisioning -and [bool]$slotProvisioning.enabled) {
+    $slotRoot = [string]$slotProvisioning.rootDirectory
+    $slotTaskInstaller = [string]$slotProvisioning.taskInstallerScript
+    $slotMaximum = [int]$slotProvisioning.maximumSlots
+    if (-not [string]::Equals(
+            [string]$configurationObject.agentId,
+            'owl5',
+            [System.StringComparison]::Ordinal
+        ) -or
+        -not [string]::Equals(
+            [string]$slotProvisioning.templateServerId,
+            'activity',
+            [System.StringComparison]::Ordinal
+        ) -or
+        -not [System.IO.Path]::IsPathFullyQualified($slotRoot) -or
+        -not [System.IO.Path]::IsPathFullyQualified($slotTaskInstaller) -or
+        $slotMaximum -lt 1 -or
+        $slotMaximum -gt 16) {
+        throw 'Dynamic deployment slot provisioning configuration is invalid.'
+    }
+    if (-not (Test-Path -LiteralPath $slotTaskInstaller -PathType Leaf)) {
+        throw "Dynamic slot task installer is missing: $slotTaskInstaller"
+    }
+}
+
 foreach ($target in @($configurationObject.targets)) {
     $serverDeletionEnabled = [bool](Get-OptionalConfigurationValue `
         -InputObject $target `
@@ -193,17 +222,12 @@ foreach ($target in @($configurationObject.targets)) {
                 [System.StringComparison]::Ordinal
             ) -or
             -not [string]::Equals(
-                [string]$target.serverId,
-                'activity',
-                [System.StringComparison]::Ordinal
-            ) -or
-            -not [string]::Equals(
                 [string]$target.conflictGroup,
                 'owl5-activity-slot',
                 [System.StringComparison]::Ordinal
             ) -or
             [int]$target.port -ne 25568) {
-            throw 'Package deployment is restricted to the owl5 activity slot.'
+            throw 'Package deployment is restricted to approved owl5 activity slots.'
         }
         if (-not $startScriptPath.StartsWith(
                 $serverDirectory,

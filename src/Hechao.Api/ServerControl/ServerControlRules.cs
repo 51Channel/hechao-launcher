@@ -79,9 +79,11 @@ public static partial class ServerControlRules
             errors["settings"] = ["当前操作不能携带服务器设置。"];
         }
 
-        if (request.Action == ServerControlAction.DeployPackage)
+        if (request.Action is ServerControlAction.DeployPackage or
+            ServerControlAction.CreateDeploymentSlot)
         {
-            errors["action"] = ["整合包部署只能由已确认的导入任务创建。"];
+            errors["action"] =
+                ["该动作只能由对应的专用管理流程创建。"];
         }
 
         return errors;
@@ -103,7 +105,7 @@ public static partial class ServerControlRules
         }
 
         if (request.CapturedAt == default ||
-            request.Targets.Count is < 1 or > 32 ||
+            request.Targets.Count is < 1 or > 48 ||
             request.Targets.Select(target => target.ServerId)
                 .Distinct(StringComparer.Ordinal)
                 .Count() != request.Targets.Count)

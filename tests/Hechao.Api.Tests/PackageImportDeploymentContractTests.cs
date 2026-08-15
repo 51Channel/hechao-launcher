@@ -141,10 +141,76 @@ public sealed class PackageImportDeploymentContractTests
 
         Assert.Contains("enableRangeProcessing: true", endpoint, StringComparison.Ordinal);
         Assert.Contains("command.claim_expires_at >= $3", repository, StringComparison.Ordinal);
-        Assert.Contains("PackageImportRules.IsActivityTarget(", repository, StringComparison.Ordinal);
+        Assert.Contains("PackageImportRules.IsPackageDeploymentTarget(", repository, StringComparison.Ordinal);
         Assert.Contains("package.status = 'DeployingServer'", repository, StringComparison.Ordinal);
         Assert.Contains("id = ANY($3) THEN $4", repository, StringComparison.Ordinal);
         Assert.Contains("ELSE LEAST(claim_expires_at, $2)", repository, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DynamicSlotReadiness_RequiresTheApprovedAgentAndActivityEndpoint()
+    {
+        var repository = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "ServerControl",
+            "ServerControlRepository.cs");
+
+        Assert.Contains("target.agent_id = $3", repository, StringComparison.Ordinal);
+        Assert.Contains("target.package_deployment_enabled", repository, StringComparison.Ordinal);
+        Assert.Contains("target.conflict_group = $4", repository, StringComparison.Ordinal);
+        Assert.Contains("target.port = $5", repository, StringComparison.Ordinal);
+        Assert.Contains(
+            "PackageImportRules.ActivityConflictGroup",
+            repository,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "PackageImportRules.ActivityPort",
+            repository,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DynamicSlotCreation_ProtectsCatalogIdsAndIgnoresFailedResourceClaims()
+    {
+        var repository = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "ServerControl",
+            "DeploymentSlotRepository.cs");
+        var endpoint = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "ServerControl",
+            "DeploymentSlotEndpoints.cs");
+
+        Assert.Contains("FROM launcher.servers", repository, StringComparison.Ordinal);
+        Assert.Contains(
+            "slot.status IN ('Provisioning', 'Ready')",
+            repository,
+            StringComparison.Ordinal);
+        Assert.Contains("PostgresErrorCodes.UniqueViolation", endpoint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AgentInstaller_ValidatesDynamicSlotDependenciesBeforeReplacingTheAgent()
+    {
+        var script = ReadRepositoryFile(
+            "deploy",
+            "windows",
+            "server-control",
+            "Install-ServerControlAgent.ps1");
+        var validation = script.IndexOf(
+            "$slotProvisioning = Get-OptionalConfigurationValue",
+            StringComparison.Ordinal);
+        var replacement = script.IndexOf(
+            "$stagedExecutable = Join-Path",
+            StringComparison.Ordinal);
+
+        Assert.InRange(validation, 0, replacement - 1);
+        Assert.Contains("taskInstallerScript", script, StringComparison.Ordinal);
+        Assert.Contains("Test-Path -LiteralPath $slotTaskInstaller -PathType Leaf", script, StringComparison.Ordinal);
+        Assert.Contains("templateServerId", script, StringComparison.Ordinal);
     }
 
     [Fact]

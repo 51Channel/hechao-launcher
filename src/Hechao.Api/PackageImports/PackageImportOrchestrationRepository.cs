@@ -63,8 +63,7 @@ internal sealed class PackageImportOrchestrationRepository(
             transaction,
             package.Plan.TargetServerId,
             cancellationToken);
-        if (target is null || !PackageImportRules.IsActivityTarget(
-                target.ServerId,
+        if (target is null || !PackageImportRules.IsPackageDeploymentTarget(
                 target.AgentId,
                 target.ConflictGroup,
                 target.Port))
@@ -74,7 +73,7 @@ internal sealed class PackageImportOrchestrationRepository(
                 transaction,
                 package.ImportId,
                 "DEPLOYMENT_TARGET_INVALID",
-                "部署目标不再是受控的 owl5 活动槽，服务端未切换。",
+                "部署目标不再是已批准的 owl5 活动部署槽，服务端未切换。",
                 now,
                 cancellationToken);
             await transaction.CommitAsync(cancellationToken);

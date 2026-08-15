@@ -1,4 +1,5 @@
 using Hechao.ServerControlAgent;
+using System.Reflection;
 using System.Text.Json;
 
 if (args.Length != 2 ||
@@ -36,8 +37,12 @@ try
             UriKind.Absolute),
         Timeout = Timeout.InfiniteTimeSpan
     };
+    var agentVersion = Assembly.GetExecutingAssembly()
+        .GetName()
+        .Version?
+        .ToString(3) ?? "0.0.0";
     httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-        "Hechao.ServerControlAgent/0.4.1");
+        $"Hechao.ServerControlAgent/{agentVersion}");
     var processRunner = new ProcessRunner();
     var hostMemory = HostMemoryCapacity.Capture();
     var backupRoot = Path.Combine(
@@ -47,13 +52,18 @@ try
         configuration.StateDirectory,
         "runtime");
     Directory.CreateDirectory(runtimeMarkerDirectory);
-    var sharedPorts = configuration.Targets
+    var dynamicSlotStore = new DynamicDeploymentSlotStore(configuration);
+    var allConfigurations = configuration.Targets
+        .Concat(dynamicSlotStore.Snapshot())
+        .ToArray();
+    configuration.ValidateDynamicTargets(dynamicSlotStore.Snapshot());
+    var sharedPorts = allConfigurations
         .GroupBy(target => target.Port)
         .Where(group => group.Count() > 1)
         .Select(group => group.Key)
         .ToHashSet();
-    var targets = configuration.Targets
-        .Select(target => new ServerTargetRuntime(
+    ServerTargetRuntime CreateRuntime(ServerControlTargetConfiguration target) =>
+        new(
             target,
             configuration.ConsoleSubmitScript,
             backupRoot,
@@ -61,12 +71,24 @@ try
             sharedPorts.Contains(target.Port),
             processRunner,
             managedMaximumMemoryMiB:
-                hostMemory.ResolveManagedMaximumMemoryMiB(target)))
-        .ToArray();
+                hostMemory.ResolveManagedMaximumMemoryMiB(target));
+    var targetRegistry = new ServerTargetRegistry(
+        allConfigurations
+            .Select(CreateRuntime)
+            .ToArray());
+    var slotProvisioner = new DynamicDeploymentSlotProvisioner(
+        configuration,
+        dynamicSlotStore,
+        targetRegistry,
+        CreateRuntime,
+        processRunner,
+        backupRoot,
+        runtimeMarkerDirectory);
     var worker = new ServerControlWorker(
         configuration,
         new AgentApiClient(httpClient, configuration.AgentId, token),
-        targets,
+        targetRegistry,
+        slotProvisioner,
         new CommandReceiptStore(configuration.StateDirectory),
         log,
         hostMemory.TotalMemoryMiB);

@@ -6,6 +6,13 @@
   "consoleSubmitScript": "C:\\ProgramData\\Hechao\\ServerControl\\Submit-MinecraftConsoleCommand.ps1",
   "pollSeconds": 2,
   "heartbeatSeconds": 5,
+  "deploymentSlotProvisioning": {
+    "enabled": true,
+    "rootDirectory": "E:\\HechaoActivitySlots",
+    "templateServerId": "activity",
+    "taskInstallerScript": "C:\\ProgramData\\Hechao\\ServerControl\\Install-MinecraftServerLaunchTask.ps1",
+    "maximumSlots": 12
+  },
   "targets": [
     {
       "serverId": "lobby",

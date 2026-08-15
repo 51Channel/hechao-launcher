@@ -5273,6 +5273,92 @@ textarea::placeholder {
     gap: 14px;
 }
 
+.deployment-slot-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    align-items: end;
+    gap: 8px;
+}
+
+.deployment-slot-field > label {
+    min-width: 0;
+}
+
+.deployment-slot-field .icon-button {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+}
+
+.deployment-slot-drawer {
+    width: min(560px, 100vw);
+}
+
+.deployment-slot-drawer[open] {
+    animation-name: deployment-slot-drawer-in;
+}
+
+@keyframes deployment-slot-drawer-in {
+    from { transform: translateX(28px); }
+    to { transform: translateX(0); }
+}
+
+.deployment-slot-form {
+    display: grid;
+    align-content: start;
+    gap: 16px;
+}
+
+.deployment-slot-form > label {
+    display: grid;
+    gap: 7px;
+}
+
+.deployment-slot-form > label > span {
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.slot-id-input {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    min-height: 34px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+}
+
+.slot-id-input:focus-within {
+    border-color: var(--brand);
+}
+
+.slot-id-input > span {
+    padding-left: 10px;
+    color: var(--ink-muted);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 12px;
+}
+
+.slot-id-input > input {
+    min-width: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.slot-id-input > input:focus {
+    outline: 0;
+    box-shadow: none;
+}
+
+.deployment-slot-submit {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 4px;
+}
+
 .package-review-form label > span {
     color: var(--ink-muted);
     font-size: 11px;

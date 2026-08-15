@@ -303,10 +303,11 @@ public static class PackageImportEndpoints
                 request.TargetServerId,
                 now,
                 cancellationToken);
-            if (target is null || !PackageImportRules.IsActivityTarget(target.Target))
+            if (target is null ||
+                !PackageImportRules.IsPackageDeploymentTarget(target.Target))
             {
                 errors["targetServerId"] =
-                    ["只能部署到已启用整合包能力的 owl5 活动目标。"];
+                    ["只能部署到已就绪且启用整合包能力的 owl5 活动槽。"];
             }
             else
             {

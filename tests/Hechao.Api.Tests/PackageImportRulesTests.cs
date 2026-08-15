@@ -100,6 +100,37 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
+    public void IsPackageDeploymentTarget_AcceptsApprovedSiblingSlot()
+    {
+        var target = new AdminServerControlTargetRecord(
+            "activity-ready-check",
+            "就绪检查槽",
+            PackageImportRules.ActivityAgentId,
+            PackageImportRules.ActivityConflictGroup,
+            PackageImportRules.ActivityPort,
+            true,
+            DateTimeOffset.UtcNow,
+            false,
+            null,
+            new ServerQuickSettings(20, 10, 10, "normal", true),
+            ["list"],
+            string.Empty,
+            null,
+            null,
+            PackageDeploymentEnabled: true,
+            DynamicDeploymentSlot: true,
+            DeploymentSlotStatus: DeploymentSlotProvisioningStatus.Ready);
+
+        Assert.True(PackageImportRules.IsPackageDeploymentTarget(target));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            target with { DeploymentSlotStatus = DeploymentSlotProvisioningStatus.Provisioning }));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            target with { PackageDeploymentEnabled = false }));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            target with { AgentId = "owl9" }));
+    }
+
+    [Fact]
     public void ResolvePackageDeploymentMemoryGuidance_UsesHostCapacity()
     {
         var guidance = PackageImportRules.ResolvePackageDeploymentMemoryGuidance(
@@ -114,7 +145,7 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
-    public void ResolvePackageDeploymentMemoryGuidance_RequiresActivityIdentityAndCapacity()
+    public void ResolvePackageDeploymentMemoryGuidance_RequiresApprovedSlotAndCapacity()
     {
         static ServerMemoryGuidance? Resolve(
             string serverId = PackageImportRules.ActivityServerId,
@@ -133,7 +164,7 @@ public sealed class PackageImportRulesTests
 
         Assert.Equal(new ServerMemoryGuidance(16384, 4096, 8192), Resolve());
         Assert.Null(Resolve(packageDeploymentEnabled: false));
-        Assert.Null(Resolve(serverId: "fanstreet"));
+        Assert.NotNull(Resolve(serverId: "fanstreet"));
         Assert.Null(Resolve(agentId: "owl9"));
         Assert.Null(Resolve(conflictGroup: "other"));
         Assert.Null(Resolve(port: 25569));

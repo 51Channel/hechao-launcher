@@ -226,4 +226,24 @@ public sealed class DatabaseMigrationTests
         Assert.Contains("deployed_package_import_id", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("DELETE FROM launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void DynamicDeploymentSlotMigration_UsesStructuredProvisioningCommands()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.029_dynamic_deployment_slots.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("deployment_slots", sql, StringComparison.Ordinal);
+        Assert.Contains("'CreateDeploymentSlot'", sql, StringComparison.Ordinal);
+        Assert.Contains("'Provisioning', 'Ready', 'Failed'", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("server_directory", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cmd.exe", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

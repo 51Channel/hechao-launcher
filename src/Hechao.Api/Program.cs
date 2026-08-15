@@ -523,6 +523,7 @@ builder.Services.AddSingleton<ServerHeartbeatRepository>();
 builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
 builder.Services.AddSingleton<ServerControlTokenValidator>();
 builder.Services.AddSingleton<ServerControlRepository>();
+builder.Services.AddSingleton<DeploymentSlotRepository>();
 builder.Services.AddSingleton<PackageImportRepository>();
 builder.Services.AddSingleton<PackageImportStorage>();
 builder.Services.AddSingleton<PackageImportOrchestrationRepository>();
@@ -847,6 +848,7 @@ adminApi.MapPost(
 app.MapDiagnosticUploads(adminApi);
 adminApi.MapAdminPackageImports();
 adminApi.MapAdminActivityPlans();
+adminApi.MapAdminDeploymentSlots();
 
 app.MapAdminWebEndpoints();
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");

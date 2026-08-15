@@ -121,6 +121,28 @@ public static partial class PackageImportRules
         string? conflictGroup,
         int port) =>
         string.Equals(serverId, ActivityServerId, StringComparison.Ordinal) &&
+        IsOwl5ActivitySlot(agentId, conflictGroup, port);
+
+    public static bool IsPackageDeploymentTarget(
+        AdminServerControlTargetRecord target) =>
+        target.PackageDeploymentEnabled &&
+        target.DeploymentSlotStatus is not DeploymentSlotProvisioningStatus.Provisioning
+            and not DeploymentSlotProvisioningStatus.Failed &&
+        IsPackageDeploymentTarget(
+            target.AgentId,
+            target.ConflictGroup,
+            target.Port);
+
+    public static bool IsPackageDeploymentTarget(
+        string agentId,
+        string? conflictGroup,
+        int port) =>
+        IsOwl5ActivitySlot(agentId, conflictGroup, port);
+
+    private static bool IsOwl5ActivitySlot(
+        string agentId,
+        string? conflictGroup,
+        int port) =>
         string.Equals(agentId, ActivityAgentId, StringComparison.Ordinal) &&
         string.Equals(
             conflictGroup,
@@ -137,7 +159,7 @@ public static partial class PackageImportRules
         int? hostTotalMemoryMiB)
     {
         if (!packageDeploymentEnabled ||
-            !IsActivityTarget(serverId, agentId, conflictGroup, port) ||
+            !IsPackageDeploymentTarget(agentId, conflictGroup, port) ||
             hostTotalMemoryMiB is not (>= 1024 and <= 1_048_576))
         {
             return null;

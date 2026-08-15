@@ -8,7 +8,8 @@ public enum ServerControlAction
     ConsoleCommand,
     ApplySettings,
     DeployPackage,
-    DeleteServerFiles
+    DeleteServerFiles,
+    CreateDeploymentSlot
 }
 
 public enum ServerControlOperationStatus
@@ -27,7 +28,8 @@ public enum ServerControlCommandKind
     ConsoleCommand,
     ApplySettings,
     DeployPackage,
-    DeleteServerFiles
+    DeleteServerFiles,
+    CreateDeploymentSlot
 }
 
 public enum ServerControlCommandOutcome
@@ -35,6 +37,13 @@ public enum ServerControlCommandOutcome
     Succeeded,
     Failed,
     Conflict
+}
+
+public enum DeploymentSlotProvisioningStatus
+{
+    Provisioning,
+    Ready,
+    Failed
 }
 
 public sealed record ServerQuickSettings(
@@ -96,7 +105,10 @@ public sealed record AdminServerControlTargetSummaryRecord(
     bool ServerFilesPresent = true,
     bool DeletionCleanupPending = false,
     ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null,
-    ServerPackageDeploymentIdentity? DeployedPackage = null);
+    ServerPackageDeploymentIdentity? DeployedPackage = null,
+    bool DynamicDeploymentSlot = false,
+    DeploymentSlotProvisioningStatus? DeploymentSlotStatus = null,
+    string? DeploymentSlotError = null);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -118,7 +130,10 @@ public sealed record AdminServerControlTargetRecord(
     bool ServerFilesPresent = true,
     bool DeletionCleanupPending = false,
     ServerMemoryGuidance? PackageDeploymentMemoryGuidance = null,
-    ServerPackageDeploymentIdentity? DeployedPackage = null);
+    ServerPackageDeploymentIdentity? DeployedPackage = null,
+    bool DynamicDeploymentSlot = false,
+    DeploymentSlotProvisioningStatus? DeploymentSlotStatus = null,
+    string? DeploymentSlotError = null);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
@@ -134,6 +149,18 @@ public sealed record AdminServerControlTargetDetail(
 public sealed record AdminServerControlQueueResult(
     AdminServerControlOperationRecord Operation,
     IReadOnlyList<string> AutomaticallyStoppingServerIds);
+
+public sealed record AdminCreateDeploymentSlotRequest(
+    string ServerId,
+    string DisplayName,
+    string TemplateServerId,
+    string Confirmation,
+    string Reason);
+
+public sealed record AdminDeploymentSlotQueueResult(
+    AdminServerControlOperationRecord Operation,
+    string ServerId,
+    DeploymentSlotProvisioningStatus Status);
 
 public sealed record ServerControlAgentTargetHeartbeat(
     string ServerId,
@@ -175,7 +202,8 @@ public sealed record ServerControlCommandDelivery(
     int AttemptCount,
     string? ConsoleCommand,
     ServerQuickSettings? Settings,
-    ServerPackageDeploymentRequest? PackageDeployment = null);
+    ServerPackageDeploymentRequest? PackageDeployment = null,
+    ServerDeploymentSlotProvisioningRequest? SlotProvisioning = null);
 
 public sealed record ServerPackageDeploymentRequest(
     Guid ImportId,
@@ -188,6 +216,11 @@ public sealed record ServerPackageDeploymentRequest(
     bool PreserveWorldData,
     int InitialMemoryMiB,
     int MaximumMemoryMiB);
+
+public sealed record ServerDeploymentSlotProvisioningRequest(
+    string ServerId,
+    string DisplayName,
+    string TemplateServerId);
 
 public sealed record ServerControlCommandClaimResponse(
     IReadOnlyList<ServerControlCommandDelivery> Commands,

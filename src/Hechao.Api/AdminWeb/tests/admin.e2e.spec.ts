@@ -74,6 +74,9 @@ interface ControlTargetMock {
     profileId: string;
     version: string;
   } | null;
+  dynamicDeploymentSlot: boolean;
+  deploymentSlotStatus: "Provisioning" | "Ready" | "Failed" | null;
+  deploymentSlotError: string | null;
 }
 
 interface ControlOverviewMock {
@@ -122,7 +125,10 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
         importId: "66666666-6666-6666-6666-666666666666",
         profileId: "summer-neoforge-1.21.11",
         version: "1.0.0"
-      }
+      },
+      dynamicDeploymentSlot: false,
+      deploymentSlotStatus: null,
+      deploymentSlotError: null
     }, {
       serverId: "fanstreet",
       displayName: "范街活动服",
@@ -140,7 +146,10 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
       serverFilesPresent: true,
       deletionCleanupPending: false,
       packageDeploymentMemoryGuidance: null,
-      deployedPackage: null
+      deployedPackage: null,
+      dynamicDeploymentSlot: false,
+      deploymentSlotStatus: null,
+      deploymentSlotError: null
     }]
   };
 }
@@ -1230,7 +1239,7 @@ test("package import deploys immediately only after the administrator selects co
   await page.goto("/admin/package-imports");
   await page.getByRole("button", { name: "查看整合包任务" }).click();
   const drawer = page.locator(".package-import-drawer");
-  await drawer.getByLabel("立即部署活动槽").check();
+  await drawer.getByLabel("立即部署所选槽").check();
   await expect(drawer.getByText("服控代理", { exact: true })).toHaveClass(/ready/);
   await expect(drawer.getByText("目标已停服", { exact: true })).toHaveClass(/ready/);
   await drawer.getByLabel("精确确认").fill(`发布并部署 ${packageImportId}`);
@@ -1241,6 +1250,161 @@ test("package import deploys immediately only after the administrator selects co
     expectedRevision: 4,
     deployServer: true,
     confirmation: `发布并部署 ${packageImportId}`
+  });
+});
+
+test("package import can create a deployment slot and select it after agent readiness", async ({ page }) => {
+  const slotServerId = "activity-winter";
+  let slotQueued = false;
+  let slotReadsAfterQueue = 0;
+  let confirmedBody: Record<string, unknown> | null = null;
+  const reviewRecord: PackageImportMock = {
+    ...completedPackageImport,
+    status: "AwaitingReview",
+    plan: null,
+    manifestSha256: null,
+    deploymentOperationId: null,
+    completedAt: null,
+    revision: 4
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/server-control/overview" && request.method() === "GET") {
+        const overview = controlOverview(1);
+        overview.targets[0] = {
+          ...overview.targets[0],
+          online: false,
+          processId: null
+        };
+        if (slotQueued) {
+          slotReadsAfterQueue += 1;
+          const ready = slotReadsAfterQueue >= 2;
+          overview.targets.push({
+            ...overview.targets[0],
+            serverId: slotServerId,
+            displayName: "冬季活动槽",
+            settings: ready ? quickSettings(20) : null,
+            packageDeploymentEnabled: ready,
+            serverFilesPresent: ready,
+            deployedPackage: null,
+            dynamicDeploymentSlot: true,
+            deploymentSlotStatus: ready ? "Ready" : "Provisioning",
+            deploymentSlotError: null
+          });
+        }
+        await route.fulfill({ json: overview });
+        return true;
+      }
+      if (path === "/v1/admin/server-control/deployment-slots" && request.method() === "POST") {
+        expect(request.postDataJSON()).toEqual({
+          serverId: slotServerId,
+          displayName: "冬季活动槽",
+          templateServerId: "activity",
+          confirmation: `CREATE ${slotServerId}`,
+          reason: "新增冬季活动独立部署槽"
+        });
+        slotQueued = true;
+        await route.fulfill({
+          status: 202,
+          json: {
+            operation: {
+              operationId: "88888888-8888-8888-8888-888888888888",
+              serverId: slotServerId,
+              serverDisplayName: "冬季活动槽",
+              action: "CreateDeploymentSlot",
+              status: "Pending",
+              reason: "新增冬季活动独立部署槽",
+              requestedBy: session.player.userId,
+              requestedAt: now,
+              startedAt: null,
+              completedAt: null,
+              resultCode: null,
+              resultMessage: null,
+              automaticallyStoppingServerIds: []
+            },
+            serverId: slotServerId,
+            status: "Provisioning"
+          }
+        });
+        return true;
+      }
+      if (path === "/v1/admin/package-imports" && request.method() === "GET") {
+        await route.fulfill({ json: {
+          imports: [reviewRecord],
+          publisherAgentConnected: true,
+          publisherAgentLastSeenAt: now
+        } });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}` && request.method() === "GET") {
+        await route.fulfill({ json: reviewRecord });
+        return true;
+      }
+      if (path === `/v1/admin/package-imports/${packageImportId}/confirm` && request.method() === "POST") {
+        confirmedBody = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({ json: {
+          ...reviewRecord,
+          status: "QueuedForPublishing",
+          plan: {
+            ...completedPackageImport.plan,
+            targetServerId: slotServerId,
+            deployServer: true
+          },
+          revision: 5
+        } });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/package-imports");
+  await page.getByRole("button", { name: "查看整合包任务" }).click();
+  const importDrawer = page.locator(".package-import-drawer");
+  await importDrawer.getByRole("button", { name: "新建部署槽" }).click();
+  const slotDrawer = page.locator(".deployment-slot-drawer");
+  await expect(slotDrawer).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await slotDrawer.evaluate(async element => {
+    await Promise.all(
+      element.getAnimations({ subtree: true }).map(animation => animation.finished)
+    );
+  });
+  const slotDimensions = await slotDrawer.evaluate(element => ({
+    width: element.getBoundingClientRect().width,
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth
+  }));
+  expect(slotDimensions.width).toBeLessThanOrEqual(390);
+  expect(slotDimensions.scrollWidth).toBe(slotDimensions.clientWidth);
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-deployment-slot-mobile.png"
+  });
+  await slotDrawer.getByLabel("槽 ID").fill("winter");
+  await slotDrawer.getByLabel("槽名称").fill("冬季活动槽");
+  await slotDrawer.getByLabel("创建原因").fill("新增冬季活动独立部署槽");
+  await slotDrawer.getByLabel("精确确认").fill(`CREATE ${slotServerId}`);
+  await slotDrawer.getByRole("button", { name: "创建部署槽" }).click();
+  await expect(slotDrawer).not.toBeVisible();
+
+  const slotSelect = importDrawer.locator(".deployment-slot-field select");
+  await expect(slotSelect).toHaveValue(slotServerId, { timeout: 8_000 });
+  await expect(slotSelect.locator(`option[value="${slotServerId}"]`))
+    .toBeEnabled();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await slotSelect.scrollIntoViewIfNeeded();
+  await expect(slotSelect).toBeInViewport();
+  await page.screenshot({
+    path: "../../../artifacts/admin-web-deployment-slot-ready-desktop.png"
+  });
+  await importDrawer.getByLabel("立即部署所选槽").check();
+  await importDrawer.getByLabel("精确确认").fill(`发布并部署 ${packageImportId}`);
+  await importDrawer.getByRole("button", { name: "发布并部署" }).click();
+
+  await expect.poll(() => confirmedBody).not.toBeNull();
+  expect(confirmedBody).toMatchObject({
+    targetServerId: slotServerId,
+    deployServer: true
   });
 });
 

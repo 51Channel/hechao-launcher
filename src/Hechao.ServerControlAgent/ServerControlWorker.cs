@@ -6,7 +6,8 @@ namespace Hechao.ServerControlAgent;
 internal sealed class ServerControlWorker(
     ServerControlAgentConfiguration configuration,
     AgentApiClient apiClient,
-    IReadOnlyList<ServerTargetRuntime> targets,
+    ServerTargetRegistry targets,
+    DynamicDeploymentSlotProvisioner slotProvisioner,
     CommandReceiptStore receipts,
     AgentLog log,
     int? hostTotalMemoryMiB)
@@ -48,8 +49,9 @@ internal sealed class ServerControlWorker(
 
     private async Task SendHeartbeatAsync(CancellationToken cancellationToken)
     {
-        var captured = new List<ServerControlAgentTargetHeartbeat>(targets.Count);
-        foreach (var target in targets)
+        var snapshot = targets.Snapshot();
+        var captured = new List<ServerControlAgentTargetHeartbeat>(snapshot.Count);
+        foreach (var target in snapshot)
         {
             captured.Add(await target.CaptureHeartbeatAsync(cancellationToken));
         }
@@ -90,20 +92,37 @@ internal sealed class ServerControlWorker(
             }
             else
             {
-                var target = targets.SingleOrDefault(item =>
-                    string.Equals(
-                        item.Configuration.ServerId,
-                        command.ServerId,
-                        StringComparison.Ordinal));
-                result = target is null
-                    ? new AgentCommandResult(
+                var target = targets.Find(command.ServerId);
+                if (command.Kind ==
+                    ServerControlCommandKind.CreateDeploymentSlot)
+                {
+                    result = command.SlotProvisioning is null ||
+                             !string.Equals(
+                                 command.ServerId,
+                                 command.SlotProvisioning.ServerId,
+                                 StringComparison.Ordinal)
+                        ? new AgentCommandResult(
+                            ServerControlCommandOutcome.Failed,
+                            "SLOT_METADATA_MISSING",
+                            "动态部署槽命令缺少有效的结构化参数。")
+                        : await slotProvisioner.ProvisionAsync(
+                            command.SlotProvisioning,
+                            cancellationToken);
+                }
+                else if (target is null)
+                {
+                    result = new AgentCommandResult(
                         ServerControlCommandOutcome.Failed,
                         "TARGET_NOT_CONFIGURED",
-                        "该服务器不在本机代理白名单中。")
-                    : await ExecuteCommandAsync(
+                        "该服务器不在本机代理白名单中。");
+                }
+                else
+                {
+                    result = await ExecuteCommandAsync(
                         target,
                         command,
                         cancellationToken);
+                }
                 receipts.Save(command.CommandId, result);
             }
 
@@ -142,7 +161,7 @@ internal sealed class ServerControlWorker(
         {
             return await target.ExecuteAsync(
                 command,
-                targets,
+                targets.Snapshot(),
                 cancellationToken);
         }
 
@@ -164,7 +183,7 @@ internal sealed class ServerControlWorker(
                 cancellationToken);
             return await target.ExecuteAsync(
                 command,
-                targets,
+                targets.Snapshot(),
                 cancellationToken,
                 archivePath);
         }

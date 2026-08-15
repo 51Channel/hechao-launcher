@@ -367,6 +367,15 @@ internal sealed class ServerTargetRuntime
                 "服务端运行目录不存在，无法启动；请先重新部署服务端文件。");
         }
 
+        if (Configuration.RequireDeployedPackage &&
+            ServerPackageDeployer.ReadDeploymentIdentity(
+                Configuration.ServerDirectory) is null)
+        {
+            return Failed(
+                "DEPLOYMENT_REQUIRED",
+                "该动态槽尚未部署已验证整合包，已拒绝启动。");
+        }
+
         var start = await _processRunner.RunAsync(
             "schtasks.exe",
             ["/Run", "/TN", Configuration.StartTaskName],

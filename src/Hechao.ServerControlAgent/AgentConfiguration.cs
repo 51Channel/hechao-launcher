@@ -5,11 +5,10 @@ namespace Hechao.ServerControlAgent;
 
 public sealed record ServerControlAgentConfiguration
 {
-    private const string PackageDeploymentAgentId = "owl5";
-    private const string PackageDeploymentServerId = "activity";
-    private const string PackageDeploymentConflictGroup =
+    internal const string PackageDeploymentAgentId = "owl5";
+    internal const string PackageDeploymentConflictGroup =
         "owl5-activity-slot";
-    private const int PackageDeploymentPort = 25568;
+    internal const int PackageDeploymentPort = 25568;
 
     public string ApiBaseUrl { get; init; } = string.Empty;
     public string AgentId { get; init; } = string.Empty;
@@ -20,6 +19,11 @@ public sealed record ServerControlAgentConfiguration
         @"C:\ProgramData\Hechao\ServerControl\Submit-MinecraftConsoleCommand.ps1";
     public int PollSeconds { get; init; } = 2;
     public int HeartbeatSeconds { get; init; } = 5;
+    public DeploymentSlotProvisioningConfiguration DeploymentSlotProvisioning
+    {
+        get;
+        init;
+    } = new();
     public IReadOnlyList<ServerControlTargetConfiguration> Targets { get; init; } =
         [];
 
@@ -46,6 +50,8 @@ public sealed record ServerControlAgentConfiguration
             StateDirectory = Path.GetFullPath(configuration.StateDirectory),
             ConsoleSubmitScript =
                 Path.GetFullPath(configuration.ConsoleSubmitScript),
+            DeploymentSlotProvisioning =
+                configuration.DeploymentSlotProvisioning.Normalize(),
             Targets = [.. configuration.Targets.Select(target => target.Normalize())]
         };
         normalized.Validate();
@@ -111,15 +117,10 @@ public sealed record ServerControlAgentConfiguration
         var deploymentTargets = Targets
             .Where(target => target.PackageDeploymentEnabled)
             .ToArray();
-        if (deploymentTargets.Length > 1 ||
-            deploymentTargets.Any(target =>
+        if (deploymentTargets.Any(target =>
                 !string.Equals(
                     AgentId,
                     PackageDeploymentAgentId,
-                    StringComparison.Ordinal) ||
-                !string.Equals(
-                    target.ServerId,
-                    PackageDeploymentServerId,
                     StringComparison.Ordinal) ||
                 !string.Equals(
                     target.ConflictGroup,
@@ -128,8 +129,11 @@ public sealed record ServerControlAgentConfiguration
                 target.Port != PackageDeploymentPort))
         {
             throw new InvalidDataException(
-                "Package deployment is restricted to the owl5 activity slot.");
+                "Package deployment is restricted to approved owl5 activity slots.");
         }
+
+
+        DeploymentSlotProvisioning.Validate(this);
 
         foreach (var samePort in Targets.GroupBy(target => target.Port))
         {
@@ -146,6 +150,70 @@ public sealed record ServerControlAgentConfiguration
             {
                 throw new InvalidDataException(
                     $"Targets sharing port {samePort.Key} must share one conflict group.");
+            }
+        }
+    }
+
+    internal void ValidateDynamicTargets(
+        IReadOnlyList<ServerControlTargetConfiguration> dynamicTargets)
+    {
+        if (!DeploymentSlotProvisioning.Enabled && dynamicTargets.Count > 0)
+        {
+            throw new InvalidDataException(
+                "Dynamic deployment slots exist while provisioning is disabled.");
+        }
+
+        if (dynamicTargets.Count > DeploymentSlotProvisioning.MaximumSlots)
+        {
+            throw new InvalidDataException(
+                "The dynamic deployment slot count exceeds the configured limit.");
+        }
+
+        var root = DeploymentSlotProvisioning.GetNormalizedRoot();
+        foreach (var target in dynamicTargets)
+        {
+            target.Validate();
+            var parent = Directory.GetParent(target.ServerDirectory)?.FullName;
+            if (!target.PackageDeploymentEnabled ||
+                !target.ServerDeletionEnabled ||
+                !target.RequireDeployedPackage ||
+                parent is null ||
+                !string.Equals(parent, root, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(
+                    target.ConflictGroup,
+                    PackageDeploymentConflictGroup,
+                    StringComparison.Ordinal) ||
+                target.Port != PackageDeploymentPort)
+            {
+                throw new InvalidDataException(
+                    $"Dynamic deployment slot '{target.ServerId}' is invalid.");
+            }
+        }
+
+        var allTargets = Targets.Concat(dynamicTargets).ToArray();
+        if (allTargets.Length > 48 ||
+            allTargets.Select(target => target.ServerId)
+                .Distinct(StringComparer.Ordinal)
+                .Count() != allTargets.Length)
+        {
+            throw new InvalidDataException(
+                "The combined server control target list is invalid.");
+        }
+
+        for (var left = 0; left < allTargets.Length; left++)
+        {
+            for (var right = left + 1; right < allTargets.Length; right++)
+            {
+                if (ContainsPath(
+                        allTargets[left].ServerDirectory,
+                        allTargets[right].ServerDirectory) ||
+                    ContainsPath(
+                        allTargets[right].ServerDirectory,
+                        allTargets[left].ServerDirectory))
+                {
+                    throw new InvalidDataException(
+                        "Managed server directories cannot overlap.");
+                }
             }
         }
     }
@@ -181,6 +249,7 @@ public sealed record ServerControlTargetConfiguration
     public int MaximumAllowedMemoryMiB { get; init; } = 65536;
     public bool PackageDeploymentEnabled { get; init; }
     public bool ServerDeletionEnabled { get; init; }
+    public bool RequireDeployedPackage { get; init; }
     public IReadOnlyList<string> HostManagedRelativePaths { get; init; } = [];
     public IReadOnlyList<string> WorldDataRelativePaths { get; init; } = [];
     public IReadOnlyList<string> AllowedCommandPrefixes { get; init; } =
@@ -249,7 +318,8 @@ public sealed record ServerControlTargetConfiguration
             deploymentPathsConflict ||
             (!PackageDeploymentEnabled &&
              (hostManagedPaths.Count > 0 ||
-              worldDataPaths.Count > 0)) ||
+              worldDataPaths.Count > 0 ||
+              RequireDeployedPackage)) ||
             (ServerDeletionEnabled && !IsSafeDeletionRoot()) ||
             AllowedCommandPrefixes.Count is < 1 or > 64 ||
             AllowedCommandPrefixes.Any(prefix =>
@@ -371,6 +441,64 @@ public sealed record ServerControlTargetConfiguration
                 Path.AltDirectorySeparatorChar,
                 Path.DirectorySeparatorChar)
             .TrimEnd(Path.DirectorySeparatorChar);
+}
+
+public sealed record DeploymentSlotProvisioningConfiguration
+{
+    public bool Enabled { get; init; }
+    public string RootDirectory { get; init; } = string.Empty;
+    public string TemplateServerId { get; init; } = "activity";
+    public string TaskInstallerScript { get; init; } = string.Empty;
+    public int MaximumSlots { get; init; } = 12;
+
+    internal DeploymentSlotProvisioningConfiguration Normalize() =>
+        this with
+        {
+            RootDirectory = string.IsNullOrWhiteSpace(RootDirectory)
+                ? string.Empty
+                : Path.GetFullPath(RootDirectory),
+            TaskInstallerScript = string.IsNullOrWhiteSpace(TaskInstallerScript)
+                ? string.Empty
+                : Path.GetFullPath(TaskInstallerScript)
+        };
+
+    internal void Validate(ServerControlAgentConfiguration configuration)
+    {
+        if (!Enabled)
+        {
+            return;
+        }
+
+        var template = configuration.Targets.SingleOrDefault(target =>
+            string.Equals(
+                target.ServerId,
+                TemplateServerId,
+                StringComparison.Ordinal));
+        if (!string.Equals(
+                configuration.AgentId,
+                ServerControlAgentConfiguration.PackageDeploymentAgentId,
+                StringComparison.Ordinal) ||
+            !Path.IsPathFullyQualified(RootDirectory) ||
+            !Path.IsPathFullyQualified(TaskInstallerScript) ||
+            MaximumSlots is < 1 or > 16 ||
+            template is null ||
+            !template.PackageDeploymentEnabled ||
+            !string.Equals(
+                template.ConflictGroup,
+                ServerControlAgentConfiguration.PackageDeploymentConflictGroup,
+                StringComparison.Ordinal) ||
+            template.Port != ServerControlAgentConfiguration.PackageDeploymentPort)
+        {
+            throw new InvalidDataException(
+                "Dynamic deployment slot provisioning is invalid.");
+        }
+    }
+
+    internal string GetNormalizedRoot() =>
+        Path.GetFullPath(RootDirectory)
+            .TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
 }
 
 internal static partial class ConfigurationPatterns

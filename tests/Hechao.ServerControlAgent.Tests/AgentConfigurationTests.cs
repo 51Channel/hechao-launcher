@@ -136,7 +136,7 @@ public sealed class AgentConfigurationTests
     }
 
     [Fact]
-    public void Validate_AcceptsPackageDeploymentOnlyOnOwl5ActivitySlot()
+    public void Validate_AcceptsPackageDeploymentOnOwl5ActivitySlots()
     {
         var target = CreateTarget(
             "activity",
@@ -151,6 +151,14 @@ public sealed class AgentConfigurationTests
         var configuration = CreateConfiguration(target) with { AgentId = "owl5" };
 
         configuration.Validate();
+
+        var sibling = target with
+        {
+            ServerId = "activity-ready-check",
+            ServerDirectory = @"E:\ActivityReadyCheck",
+            StartTaskName = "Hechao-Server-ActivityReadyCheck"
+        };
+        (configuration with { Targets = [target, sibling] }).Validate();
     }
 
     [Fact]
@@ -168,8 +176,6 @@ public sealed class AgentConfigurationTests
         var invalidConfigurations = new[]
         {
             CreateConfiguration(approvedTarget),
-            CreateConfiguration(approvedTarget with { ServerId = "fanstreet" })
-                with { AgentId = "owl5" },
             CreateConfiguration(approvedTarget with { Port = 25569 })
                 with { AgentId = "owl5" },
             CreateConfiguration(approvedTarget with { ConflictGroup = "other-slot" })

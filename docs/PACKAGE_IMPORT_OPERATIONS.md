@@ -1,28 +1,33 @@
-# 整合包自动导入与活动槽部署手册
+# 整合包自动导入与多活动槽部署手册
 
-> 当前生产：API `0.28.5`、Publisher Agent `1.1.0`、owl5
-> ServerControlAgent `0.4.1`、owl9 ServerControlAgent `0.4.0`。
+> 当前候选：API `0.31.0`、Publisher Agent `1.2.1`、owl5
+> ServerControlAgent `0.6.0`、owl9 ServerControlAgent `0.4.0`。
 >
 > 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；
 > Publisher 已迁移到 API 同机阿里云 systemd，Windows 计划任务保持停止回滚状态。
 > Gray/Production 未变化。测试服务端随后归档，原活动服从受控回滚目录恢复并保持停止。
-> `0.4.1` 保留目标级目录访问门闩、Windows 瞬时目录占用重试和受控服务端目录删除，
-> 并上报 VPS 物理内存。当前候选完整解决方案 `693/693`、API `289/289`、Publisher
-> `50/50`、ServerControlAgent `56/56`、Vitest `8/8` 和 Playwright `17/17` 已通过。
+> `0.31.0 / 0.6.0` 新增多部署槽选择和动态槽创建；生产发布与最终测试数以对应发布记录
+> 为准。本能力不会自动启动 Minecraft，也不会改变 Gray/Production。
 
 本功能允许管理员在后台上传一个 ZIP 或 MRPACK 整合包，先自动识别并拆分客户端与
-服务端，再经人工确认完成客户端私有 OSS 发布，并选择“仅发布并入库”或兼容的“立即
-部署活动槽”。新企划默认只入库服务端制品，随后在活动企划日历中绑定和部署。自动识别
+服务端，再经人工确认完成客户端私有 OSS 发布，并选择“仅发布并入库”或“立即部署所选
+槽”。新企划默认只入库服务端制品，随后在活动企划日历中绑定和部署。自动识别
 只减少整理文件的工作，不替代组件计划、许可证核对、玩法测试或管理员审批。
 
 ## 1. 固定架构边界
 
 - 玩家仍通过赫朝启动器选择服务器，并统一连接 Velocity 公网入口；导入功能不会开放
   后端公网端口，也不会删除或绕过 Velocity Authorizer。
-- 服务端只允许部署到 `activity / owl5 / 127.0.0.1:25568 / owl5-activity-slot`。
-  `survival2`、`lobby`、`pvp`、`fanstreet`、`yugong` 和其他目标均被 API 与代理双重拒绝。
+- 服务端只允许部署到固定 `activity`，或从该安全模板创建且状态为 `Ready` 的
+  `activity-*` 动态槽。所有槽都固定为 `owl5 / 127.0.0.1:25568 /
+  owl5-activity-slot`；`survival2`、`lobby`、`pvp`、`fanstreet`、`yugong` 和其他目标
+  均被 API 与代理双重拒绝。
+- 动态槽拥有独立 `E:\HechaoActivitySlots\<serverId>` 目录和
+  `Hechao-Server-<serverId>` 计划任务，但共享同一物理端口和冲突组，所以同一时刻仍
+  只能运行一个活动后端。新槽默认停止、隐藏且不进入玩家目录；部署标记有效前返回
+  `DEPLOYMENT_REQUIRED`，不能启动占用空槽。
 - “仅发布并入库”不要求 owl5 代理在线，也不会读取、停止或覆盖当前活动槽；只有选择
-  “立即部署活动槽”或稍后从企划页部署时，目标才必须停止且不能有其他活动操作。流程
+  “立即部署所选槽”或稍后从企划页部署时，目标才必须停止且不能有其他活动操作。流程
   不会为了导入自动停止冲突服，也不会在部署成功后自动启动 Minecraft。
 - 已删除并完成清理的 `activity` 目录不会出现在普通服控列表，但整合包页会显式读取
   保留的活动槽配置；代理在线、目标停止且部署能力有效时可以直接重新部署新服务端。
@@ -79,19 +84,21 @@ if not defined HECHAO_MANAGED_START pause
    刷新或暂停后可重新选择同名同大小文件续传。
 2. API 完整校验上传并异步分析。存在阻断项时只能取消并修复源包，不能强制跳过。
 3. 管理员填写档案 ID、显示名、语义版本、最低称号、最大内存、世界保留策略和目录
-   同步策略，选择“仅发布并入库”或“立即部署活动槽”，并输入任务专属确认文本。页面
+   同步策略，选择“仅发布并入库”或“立即部署所选槽”，并输入任务专属确认文本。页面
    同时显示 VPS 总内存和推荐区间；超出推荐区间会提示但仍可提交。
+   所需槽不存在时，可输入 `activity-*` ID、名称、原因和精确确认文本创建。API 先写入
+   `Provisioning`，代理完成目录、固定文件快照和计划任务后才变为 `Ready` 并自动选中。
 4. 独立 Publisher Agent 领取带租约的任务，下载客户端归档，使用现有生产
    P-256 私钥生成签名清单，并以内容 SHA-256 上传缺失 OSS 对象。已存在对象必须同时
    匹配长度和摘要元数据，否则拒绝覆盖。
 5. API 验证签名清单、公钥信任、档案元数据和对象闭合关系，创建不可变发布记录，并
    只设置 `Test` 通道。
 6. 选择“仅发布并入库”时，API 直接进入收口：设置 `Test` 通道、保留服务端制品并把
-   任务标记为 `Completed`，不会创建服控命令。选择“立即部署活动槽”时，API 才为同一
+   任务标记为 `Completed`，不会创建服控命令。选择“立即部署所选槽”时，API 才为同一
    导入创建结构化 `DeployPackage` 命令。
 7. 立即部署时，只有持有有效命令租约的 owl5 代理可以使用 Range 下载服务端归档；代理
    再次校验摘要、大小、清单、目标、端口、停止状态和目录所有权，并在同卷暂存目录解压。
-8. 代理原子切换活动目录并保留一个回滚目录。API 读回成功结果后完成 `Test` 发布和
+8. 代理原子切换所选槽目录并保留一个回滚目录。API 读回成功结果后完成 `Test` 发布和
    可选隐藏目录同步，任务进入 `Completed`，目标仍保持停止。只入库任务可以稍后由
    活动企划页对绑定整合包执行同样的结构化部署。
 
@@ -243,7 +250,7 @@ EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，�
 
 ## 6. owl5 代理配置
 
-只有 `activity` 目标可设置：
+固定 `activity` 模板必须设置：
 
 ```json
 {
@@ -253,6 +260,26 @@ EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，�
   "worldDataRelativePaths": ["world", "world_nether", "world_the_end"]
 }
 ```
+
+动态槽能力由同一 owl5 配置的固定根和安装脚本控制：
+
+```json
+{
+  "deploymentSlotProvisioning": {
+    "enabled": true,
+    "rootDirectory": "E:\\HechaoActivitySlots",
+    "templateServerId": "activity",
+    "taskInstallerScript": "C:\\ProgramData\\Hechao\\ServerControl\\Install-MinecraftServerLaunchTask.ps1",
+    "maximumSlots": 12
+  }
+}
+```
+
+API 对单代理保留 `16` 个 `Provisioning / Ready` 动态槽的硬上限，owl5 生产配置进一步
+限制为 `12` 个；`Failed` 槽不占用该额度。管理员不能指定任意 VPS 路径、端口、任务名
+或启动命令。代理只从固定模板派生这些值，并把成功状态原子保存到
+`dynamic-deployment-slots.json`。若目录、任务、快照或状态安装任一步失败或代理取消，
+本轮创建的受控资源会回滚；既有目录或既有计划任务一律拒绝覆盖。
 
 `hostManagedRelativePaths` 必须已存在于旧受控目录，并在复制前通过重解析点检查；上传包
 不能提供或替换这些文件。`worldDataRelativePaths` 只有管理员勾选“保留世界”时才迁移。
@@ -302,6 +329,8 @@ Publisher 异常时停止其计划任务并使用安装器备份恢复。服务�
 - 客户端签名、OSS 已存在对象校验、API 中断恢复和 Test-only 通道均通过；
 - 服务端固定目标、回环监听、`online-mode=false`、启动脚本、固定文件、世界保留、
   重解析点、原子切换和失败回滚均通过；
+- 动态槽创建覆盖成功、幂等重放、配置重载、已有目录/任务拒绝、安装失败与取消回滚；
+  `Provisioning / Ready / Failed`、数量限制和部署前启动门禁均有自动测试；
 - 桌面和 390px 移动后台无横向溢出、遮挡或不可达操作，浏览器控制台无错误；
 - 完整解决方案、前端单元与 Playwright 全部通过，Git 差异无秘密和构建产物；
 - 生产固定试包、真实 OSS、真实 owl5 停服部署和原活动目录人工恢复均已有独立证据；
