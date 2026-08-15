@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T08:01:37.3038952Z",
+  "scope": {
+    "host": "owl5.vipi9.top",
+    "serverId": "activity",
+    "serverDirectory": "E:\\ActivityNeoForge",
+    "profileId": "hechao-business-manhunt-paper-1.21.11",
+    "profileVersion": "1.0.0",
+    "velocityTarget": "activity",
+    "minecraftTcpEndpoint": "127.0.0.1:25568"
+  },
+  "versions": {
+    "minecraft": "1.21.11",
+    "serverCore": "Paper 132",
+    "clientLoader": "Fabric",
+    "clientVoiceChat": "2.6.21",
+    "serverVoiceChat": "2.6.21"
+  },
+  "symptomEvidence": {
+    "clientReceivedVoiceSecret": true,
+    "clientAttemptedEndpoint": "43.226.63.164:24454",
+    "clientAuthenticationCompleted": false,
+    "serverSentVoiceSecret": true
+  },
+  "rootCause": {
+    "serverIp": "127.0.0.1",
+    "originalBindAddress": "",
+    "bindInheritedServerIp": true,
+    "external24454MappedToInternal24454": false,
+    "clientServerVersionMismatch": false
+  },
+  "natDiscovery": {
+    "directlyProbedMappings": [
+      {
+        "externalUdpPort": 15156,
+        "internalUdpPort": 25577,
+        "received": true
+      },
+      {
+        "externalUdpPort": 15157,
+        "internalUdpPort": 25578,
+        "received": true
+      }
+    ],
+    "configuredButNotExternallyProbed": [
+      {
+        "externalUdpPort": 15158,
+        "internalUdpPort": 25579,
+        "owner": "lobby",
+        "reason": "Avoid injecting diagnostic packets into the running lobby voice service."
+      }
+    ],
+    "externalRangeCheckedForInternal24454": "15150-15200 plus 24454",
+    "externalPortMappedToInternal24454Found": false,
+    "internalRangeChecked": "25577-25590 excluding occupied 25579",
+    "additionalMappingFound": false
+  },
+  "change": {
+    "configPath": "E:\\ActivityNeoForge\\plugins\\voicechat\\voicechat-server.properties",
+    "beforeSha256": "96A62B15EC1E998F60131FB716EEB72860D9702A02D0D4E74B4D068CB22EBBD3",
+    "afterSha256": "FCEAF7BAA6E9302ABCDF7D2D53AD204E9BBC90D2E5C6CE4400C8B80BE7AD4CF4",
+    "port": 25578,
+    "bindAddress": "*",
+    "voiceHost": "owl5.vipi9.top:15157",
+    "nonTargetConfigContentUnchanged": true,
+    "firewallRule": {
+      "displayName": "MC-Activity-Voice-UDP",
+      "enabled": true,
+      "direction": "Inbound",
+      "action": "Allow",
+      "protocol": "UDP",
+      "localPort": 25578,
+      "profile": "Any",
+      "edgeTraversalPolicy": "Allow"
+    },
+    "windowsFirewallProfilesEnabled": false
+  },
+  "integrity": {
+    "serverVoiceChatJar": "voicechat-bukkit-2.6.21.jar",
+    "serverVoiceChatJarSha256": "C08145770C19EC5550881B13C897E2A357E43EC419F7DA4039F73DCF279B94D8",
+    "serverVoiceChatJarUnchanged": true,
+    "serverPropertiesUnchanged": true,
+    "worldChanged": false,
+    "velocityChanged": false
+  },
+  "networkAcceptance": {
+    "destination": "owl5.vipi9.top:15157/UDP",
+    "internalListener": "0.0.0.0:25578/UDP",
+    "independentPublicSourceUsed": true,
+    "payloadReceived": true,
+    "temporaryDiagnosticFirewallRuleCountAfterTest": 0
+  },
+  "finalState": {
+    "scheduledTask": "Hechao-Server-ActivityNeoForge",
+    "scheduledTaskState": "Ready",
+    "activityJavaProcessCount": 0,
+    "tcp25568ListenerCount": 0,
+    "udp25578ListenerCount": 0,
+    "minecraftStarted": false
+  },
+  "rollback": {
+    "directory": "C:\\ProgramData\\Hechao\\backups\\activity-voicechat-route-20260815T074940Z",
+    "manifestPresent": true,
+    "restoreOnlyWhileStopped": true
+  },
+  "residualRisk": {
+    "sharedWithSurvival2AndDollNight": true,
+    "parallelUseAllowed": false,
+    "originalServerPackageUpdated": false,
+    "redeployMayOverwriteHotfix": true,
+    "realPlayerVoiceAcceptancePending": true
+  },
+  "secretsIncluded": false
+}
