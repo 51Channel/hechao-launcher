@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T07:35:46Z",
+  "component": "server-control-agent",
+  "version": "0.7.2",
+  "sourceCommit": "0de40dbd30e41bf42b29ff112f947a95f7821901",
+  "releaseTag": "server-control-agent-v0.7.2",
+  "artifact": {
+    "archiveName": "hechao-server-control-agent-0.7.2-20260815T073034Z-win-x64.zip",
+    "archiveSizeBytes": 33253487,
+    "archiveSha256": "85517C013888E28593AB1BFA97E6D14ADFB0C36E0ABF3D728E6BEF570520C149",
+    "entryCount": 1,
+    "executableSizeBytes": 74191455,
+    "executableSha256": "908F9B115D8717B7919930570BDAAF4360567C1809972A0236D028B07B43607C",
+    "productVersion": "0.7.2+0de40dbd30e41bf42b29ff112f947a95f7821901"
+  },
+  "tests": {
+    "serverControlAgentPassed": 76,
+    "apiPassed": 350,
+    "dotnetFullPassed": 790,
+    "playwrightPassed": 33,
+    "failed": 0
+  },
+  "compatibilityRecovery": {
+    "owl5FirstAttempt": {
+      "candidateVersion": "0.7.1",
+      "failure": "Windows file replacement API rejected an empty backup path",
+      "rollbackSucceeded": true,
+      "minecraftChanged": false
+    },
+    "owl9FirstAttempt": {
+      "candidateVersion": "0.7.1",
+      "failure": "disabled deployment slots attempted to normalize an empty root directory",
+      "rollbackVersion": "0.4.0",
+      "rollbackSucceeded": true,
+      "minecraftChanged": false
+    },
+    "candidateTagCreated": false,
+    "fixedVersion": "0.7.2"
+  },
+  "hosts": [
+    {
+      "agentId": "owl5",
+      "baselineVersion": "0.7.0",
+      "finalVersion": "0.7.2",
+      "finalProcessId": 5512,
+      "taskState": "Running",
+      "fixedTargetCount": 7,
+      "dynamicTargetCount": 1,
+      "wildcardTargetCount": 8,
+      "backup": {
+        "path": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.7.2-20260815T073034Z",
+        "fileCount": 4,
+        "sizeBytes": 74200151,
+        "manifestSha256": "A6657086309D8232666722F6E5C15D549F16AB2717DC6B191B19EB0F6F57D510"
+      },
+      "javaProcesses": [
+        {
+          "processId": 4644,
+          "port": 25577,
+          "role": "Velocity"
+        },
+        {
+          "processId": 7328,
+          "port": 25566,
+          "role": "internal lobby"
+        }
+      ],
+      "independentPortListeners": 0,
+      "agentErrors": 0,
+      "temporaryFiles": 0
+    },
+    {
+      "agentId": "owl9",
+      "baselineVersion": "0.4.0",
+      "finalVersion": "0.7.2",
+      "finalProcessId": 3444,
+      "taskState": "Running",
+      "fixedTargetCount": 2,
+      "dynamicTargetCount": 0,
+      "wildcardTargetCount": 2,
+      "backup": {
+        "path": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.7.2-20260815T073034Z",
+        "fileCount": 3,
+        "sizeBytes": 74114406,
+        "manifestSha256": "276A5DD24EF44D1785E75EDC1DDF780DB55898D5C2707D9A391653A1A5F66B54"
+      },
+      "javaProcesses": [],
+      "independentPortListeners": 0,
+      "agentErrors": 0,
+      "temporaryFiles": 0
+    }
+  ],
+  "apiVerification": {
+    "apiVersion": "0.32.1",
+    "targetCount": 10,
+    "agentVersionMatchCount": 10,
+    "wildcardPrefixMatchCount": 10,
+    "freshHeartbeatCount": 10,
+    "inProgressOperationCount": 0
+  },
+  "operations": {
+    "onlyControlAgentTasksRestarted": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "agentTokensIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

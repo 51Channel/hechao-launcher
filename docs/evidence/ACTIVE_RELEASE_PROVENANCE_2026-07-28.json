@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-15T06:25:27Z",
+  "generatedAtUtc": "2026-08-15T07:35:46Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -126,89 +126,89 @@
     },
     {
       "component": "api",
-      "version": "0.32.0-20260815T055857Z",
-      "releaseTag": "api-v0.32.0",
-      "releaseCommit": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19",
-      "taggedAt": "2026-08-15T14:26:52+08:00",
+      "version": "0.32.1-20260815T071021Z",
+      "releaseTag": "api-v0.32.1",
+      "releaseCommit": "71c6441e269cbf7d2e63d2129d45035b197dc1c5",
+      "taggedAt": "2026-08-15T15:37:12+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19"
+        "value": "71c6441e269cbf7d2e63d2129d45035b197dc1c5"
       },
-      "deploymentState": "production-independent-survival-activity-pvp-minigame-slots-health-ready",
-      "historicalNote": "Production contains migrations through 030. 0.31.0 is the direct program rollback. Independent slots use ports 25600-25611, their own Velocity target and no conflict group; the fixed activity/25568 replacement entrance remains unchanged.",
+      "deploymentState": "production-all-minecraft-plugin-console-commands-health-ready",
+      "historicalNote": "Production contains migrations through 030. 0.32.0 is the direct program rollback after both agents restore explicit command prefixes. Wildcard console access never includes stop, restart, shutdown or end.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.32.0-20260815T055857Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.32.0-20260815T055857Z",
-          "size": 46284421,
-          "sha256": "2FB737D67F97887BA1E747CC93CB2E654B02791D3B673F041C55CEB087A43B43",
+          "name": "hechao-launcher-api-0.32.1-20260815T071021Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z",
+          "size": 46284782,
+          "sha256": "BBAF89AB0776DC140078F9A3186CEA9D97F269BE6020E1847AA0A19F5BDE4971",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.32.0-20260815T055857Z/Hechao.Api",
-          "size": 105321924,
-          "sha256": "687CBCC777330ABCEC6293F5A5CAE3CED178ED019DE4512AAEEF12C29908E4D3",
+          "location": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z/Hechao.Api",
+          "size": 105322436,
+          "sha256": "A0C848BD912B201411EDC938C8CC9A7ED85DFFC9C88F5975196592AF732D76D2",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.31.0-20260815T024200Z"
+        "target": "/opt/hechao-launcher-api/releases/0.32.0-20260815T055857Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.32.0.md",
-        "docs/evidence/API_0.32.0_PRODUCTION_DEPLOYMENT_2026-08-15.json",
-        "docs/API_RELEASE_0.32.0_CANDIDATE.md",
-        "docs/API_RELEASE_0.31.0.md"
+        "docs/API_RELEASE_0.32.1.md",
+        "docs/evidence/API_0.32.1_PRODUCTION_DEPLOYMENT_2026-08-15.json",
+        "docs/API_RELEASE_0.32.1_CANDIDATE.md",
+        "docs/API_RELEASE_0.32.0.md"
       ]
     },
     {
       "component": "server-control-agent",
-      "version": "owl5 0.7.0 / owl9 0.4.0",
-      "releaseTag": "server-control-agent-v0.7.0",
-      "releaseCommit": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19",
-      "taggedAt": "2026-08-15T14:26:52+08:00",
+      "version": "0.7.2",
+      "releaseTag": "server-control-agent-v0.7.2",
+      "releaseCommit": "0de40dbd30e41bf42b29ff112f947a95f7821901",
+      "taggedAt": "2026-08-15T15:37:12+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19"
+        "value": "0de40dbd30e41bf42b29ff112f947a95f7821901"
       },
-      "deploymentState": "production-owl5-independent-slot-families-owl9-retained-0.4.0",
-      "historicalNote": "Owl5 0.7.0 provisions activity, survival, PVP and minigame slots on independent ports 25600-25611 with no conflict group. Owl9 remains on 0.4.0. The existing industrial season was migrated to a stopped Survival slot on 25600; no Minecraft server was started.",
+      "deploymentState": "production-owl5-owl9-all-minecraft-plugin-console-commands",
+      "historicalNote": "Both hosts report 0.7.2 and wildcard command access. Version 0.7.1 was never tagged: owl9 exposed a disabled-slot initialization failure, rolled back to 0.4.0, and then upgraded with the 0.7.2 fix. No Minecraft process was changed.",
       "artifacts": [
         {
-          "name": "hechao-server-control-agent-0.7.0-20260815T055857Z-win-x64.zip",
-          "location": "artifacts/releases/hechao-server-control-agent-0.7.0-20260815T055857Z-win-x64.zip",
-          "size": 33253888,
-          "sha256": "F017761314DDCC14E5166CDD268D0824CB2B4BBB0164BD0AED0C3995FF14E53C",
+          "name": "hechao-server-control-agent-0.7.2-20260815T073034Z-win-x64.zip",
+          "location": "artifacts/releases/hechao-server-control-agent-0.7.2-20260815T073034Z-win-x64.zip",
+          "size": 33253487,
+          "sha256": "85517C013888E28593AB1BFA97E6D14ADFB0C36E0ABF3D728E6BEF570520C149",
           "primary": true
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
           "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
           "size": 74191455,
-          "sha256": "725A61CFE0344B8E51130553F3576C4312C7F700E1F643137B8710CA191F5F81",
+          "sha256": "908F9B115D8717B7919930570BDAAF4360567C1809972A0236D028B07B43607C",
           "primary": false
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
           "location": "owl9:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
-          "size": 74109535,
-          "sha256": "088BDC8DA9AE3EF0FBE2F103FC2EB026A1A7A7A6BFDB657E8C3819A2BE7442F8",
+          "size": 74191455,
+          "sha256": "908F9B115D8717B7919930570BDAAF4360567C1809972A0236D028B07B43607C",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "per-host-rollback-executable",
-        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-slot-families-pre-0.7.0-20260815T055857Z; owl9:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260805T202707Z"
+        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.7.1-20260815T071021Z-retry1; owl9:C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.7.2-20260815T073034Z"
       },
       "evidence": [
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.7.0.md",
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.7.2.md",
         "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.7.0_CANDIDATE.md",
-        "docs/evidence/SERVER_CONTROL_AGENT_0.7.0_PRODUCTION_DEPLOYMENT_2026-08-15.json"
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.7.2_CANDIDATE.md",
+        "docs/evidence/SERVER_CONTROL_AGENT_0.7.2_PRODUCTION_DEPLOYMENT_2026-08-15.json"
       ]
     },
     {

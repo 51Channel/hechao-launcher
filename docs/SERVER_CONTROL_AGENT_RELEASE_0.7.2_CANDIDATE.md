@@ -29,7 +29,8 @@
 - Vitest：`13/13`；
 - Playwright：`33/33`，覆盖 `op 51Channel` 放行与生命周期命令提示；
 - PowerShell 7 合规：`47/47`；
-- 正式制品、哈希、备份、生产 PID 和回滚目录待发布阶段登记。
+- 正式制品、哈希、备份、生产 PID 和回滚目录已登记于
+  [`SERVER_CONTROL_AGENT_RELEASE_0.7.2.md`](SERVER_CONTROL_AGENT_RELEASE_0.7.2.md)。
 
 ## 兼容修复来源
 
