@@ -272,6 +272,16 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 
 Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`、`pvp -> owl9.vipi9.top:19243`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
 
+2026-08-15 商务追杀插件 `E:\ActivityNeoForge\plugins\HechaoBusinessManhunt.jar`
+已更新，大小 `397,682` 字节，SHA-256 为
+`17B8DF20E63F54512D3DBC7F17D5DE5BFACC765ED6B4F24C5B9974B20A6B3B53`。
+插件声明版本仍为 `0.1.0`，依赖 `HechaoAdminGame`；最终只加载、启用各一次，
+`bh status`、Paper ready、`25568/TCP` 与 `25578/UDP` 均通过。旧 JAR 和插件数据
+备份位于
+`C:\ProgramData\Hechao\backups\business-manhunt-plugin-pre-20260815T090700Z`。
+完整过程、首次重复插件自动回滚和真人玩法待验收边界见
+[`ACTIVITY_BUSINESS_MANHUNT_PLUGIN_UPDATE_2026-08-15.md`](ACTIVITY_BUSINESS_MANHUNT_PLUGIN_UPDATE_2026-08-15.md)。
+
 保留替换服目录：`E:\ActivityHybrid`、`E:\ActivityLocal`、`E:\ActivityServer`、`E:\MonsterActivity`。这些目录不能与占用相同入口端口的当前活动后端同时启动。
 
 Velocity 授权插件 `HechaoVelocityAuthorizer-0.4.0.jar` 已放入 `E:\Velocity\plugins`，

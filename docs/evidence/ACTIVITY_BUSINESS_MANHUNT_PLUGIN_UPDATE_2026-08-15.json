@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T09:17:16.3022958Z",
+  "scope": {
+    "host": "owl5.vipi9.top",
+    "serverId": "activity",
+    "serverDirectory": "E:\\ActivityNeoForge",
+    "scheduledTask": "Hechao-Server-ActivityNeoForge",
+    "pluginPath": "E:\\ActivityNeoForge\\plugins\\HechaoBusinessManhunt.jar"
+  },
+  "artifact": {
+    "fileName": "HechaoBusinessManhunt.jar",
+    "sizeBytes": 397682,
+    "sha256": "17B8DF20E63F54512D3DBC7F17D5DE5BFACC765ED6B4F24C5B9974B20A6B3B53",
+    "pluginName": "HechaoBusinessManhunt",
+    "declaredVersion": "0.1.0",
+    "mainClass": "cn.hechao.businessmanhunt.HechaoBusinessManhuntPlugin",
+    "apiVersion": "1.21.11",
+    "requiredDependency": "HechaoAdminGame",
+    "archiveValidatedBeforeUpload": true,
+    "archiveValidatedAfterUpload": true,
+    "includedInGit": false
+  },
+  "preDeployment": {
+    "taskState": "Running",
+    "processId": 1164,
+    "onlinePlayers": 0,
+    "maximumPlayers": 100,
+    "oldPluginSizeBytes": 400577,
+    "oldPluginSha256": "110714760ABBD37F8F33CFCBC770F27FA13FD996B3A0201742B53B0DB54DD819",
+    "worldSaveConfirmed": true,
+    "gracefulStopConfirmed": true
+  },
+  "backup": {
+    "directory": "C:\\ProgramData\\Hechao\\backups\\business-manhunt-plugin-pre-20260815T090700Z",
+    "oldJarPresent": true,
+    "oldJarSha256Verified": true,
+    "pluginDataPresent": true,
+    "pluginDataBackedUp": true,
+    "firstAttemptCachesPreserved": true,
+    "restoreOnlyWhileStopped": true
+  },
+  "firstAttempt": {
+    "newJarReplacedAtomically": true,
+    "failure": "A same-volume rollback copy retained a .jar extension inside the plugins directory and Paper scanned it as a second plugin with the same name.",
+    "logSignal": "Ambiguous plugin name 'HechaoBusinessManhunt'",
+    "candidateStoppedAutomatically": true,
+    "oldJarRestored": true,
+    "oldPluginDataRestored": true,
+    "oldServerRestarted": true,
+    "rollbackProcessId": 7992,
+    "rollbackSucceeded": true
+  },
+  "retry": {
+    "onlinePlayers": 0,
+    "worldSaveConfirmed": true,
+    "gracefulStopConfirmed": true,
+    "rollbackCopyMovedOutsidePluginScanDirectory": true,
+    "rollbackCopyExtension": ".bak",
+    "paperRemappedCacheFilesMovedToBackup": 2,
+    "rootPluginIdentityCountBeforeStartup": 1,
+    "newJarReplacedAtomically": true
+  },
+  "finalState": {
+    "taskState": "Running",
+    "processId": 1596,
+    "pluginSha256": "17B8DF20E63F54512D3DBC7F17D5DE5BFACC765ED6B4F24C5B9974B20A6B3B53",
+    "pluginLoadCount": 1,
+    "pluginEnableCount": 1,
+    "pluginReady": true,
+    "dependencyReady": true,
+    "paperReady": true,
+    "bhStatusAccepted": true,
+    "pluginErrorLineCount": 0,
+    "rootPluginIdentityCount": 1,
+    "tcp25568": {
+      "listenerCount": 1,
+      "localAddress": "127.0.0.1",
+      "processId": 1596
+    },
+    "udp25578": {
+      "listenerCount": 1,
+      "localAddress": "::",
+      "processId": 1596
+    },
+    "serverControl": {
+      "agentId": "owl5",
+      "agentVersion": "0.7.2",
+      "wildcardConsolePermission": true,
+      "reportedOnline": true,
+      "reportedProcessId": 1596,
+      "heartbeatAgeSeconds": 2
+    },
+    "stagingDirectoryRemoved": true,
+    "sameVolumeRollbackRemoved": true,
+    "maintenanceDirectoryRemoved": true
+  },
+  "unrelatedRuntime": {
+    "velocityProcessId": 4644,
+    "velocityPort": 25577,
+    "internalLobbyProcessId": 7328,
+    "internalLobbyPort": 25566,
+    "independentSurvivalPort": 25600,
+    "independentSurvivalTouched": false
+  },
+  "maintenanceOperations": {
+    "minecraftServersStarted": 3,
+    "minecraftServersStopped": 3,
+    "forcedJavaTerminations": 0,
+    "worldSavesConfirmed": 2,
+    "consoleCommands": [
+      "list",
+      "save-all flush",
+      "stop",
+      "stop",
+      "list",
+      "save-all flush",
+      "stop",
+      "bh status"
+    ],
+    "transport": "owl5 SSH CLI and the managed Minecraft console bridge",
+    "performedOutsideAdminWeb": true
+  },
+  "remainingAcceptance": [
+    "Run a complete multiplayer bh start, role assignment, tracking, death or finish, cleanup, and restart flow before formal recording.",
+    "Reconfirm the activity client and server plugin compatibility if the client profile is republished."
+  ],
+  "privacy": {
+    "credentialsIncluded": false,
+    "tokensIncluded": false,
+    "cookiesIncluded": false,
+    "serverConsoleIncluded": false
+  }
+}
