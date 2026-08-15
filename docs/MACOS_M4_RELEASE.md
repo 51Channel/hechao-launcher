@@ -21,6 +21,18 @@ pwsh tools/macos/New-HechaoMacBundle.ps1
 
 在 M4 Mac 上重新运行打包脚本即可生成 ad-hoc 签名包。ad-hoc 签名只用于开发验收，不等同于 Apple Developer ID 签名或公证，也不能消除从网络下载时的 Gatekeeper 提示。
 
+Windows 交叉构建的 `unsigned` ZIP 经微信等渠道下载后会带有 quarantine。仅在核对 SHA-256 后，可对这一个内测应用移除隔离属性并执行本机 ad-hoc 签名：
+
+```bash
+APP="/Applications/赫朝启动器.app"
+sudo xattr -cr "$APP"
+sudo chmod +x "$APP/Contents/MacOS/Hechao.Launcher.Mac"
+sudo codesign --force --deep --sign - "$APP"
+open "$APP"
+```
+
+该操作只处理指定应用，不关闭 Gatekeeper 或系统完整性保护。面向玩家的公开包不得要求执行这些命令，必须改用 Developer ID 签名和 Apple 公证。
+
 ## 正式签名与公证
 
 先在 M4 Mac 的 Keychain 中配置 `notarytool` profile，然后设置：
