@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T03:03:00Z",
+  "component": "api",
+  "version": "0.31.0",
+  "releaseId": "0.31.0-20260815T024200Z",
+  "buildSourceCommit": "8d765dbd39e6fe138d140f53b99c22bc8323df8b",
+  "releaseTag": "api-v0.31.0",
+  "change": {
+    "scope": "selectable and dynamically provisioned activity deployment slots",
+    "databaseMigration": true,
+    "databaseMigrationBaseline": 28,
+    "databaseMigrationFinal": 29,
+    "apiContractChanged": true,
+    "adminWebChanged": true,
+    "launcherChanged": false,
+    "minecraftControlChanged": false
+  },
+  "artifacts": {
+    "archive": {
+      "name": "hechao-launcher-api-0.31.0-20260815T024200Z.tar.gz",
+      "sizeBytes": 46275788,
+      "sha256": "A639B12A570738000ECF64701E800AF4765B54E5679A665D4D846CD9DCB5E0A6",
+      "entryCount": 161,
+      "remoteHashMatched": true,
+      "safePathsVerified": true,
+      "forbiddenFilesFound": 0
+    },
+    "binary": {
+      "name": "Hechao.Api",
+      "sizeBytes": 105306052,
+      "sha256": "1B735E050511AC94289ABF267700E656FE4F62F6428DFAACBE765C9AEB6601C6",
+      "deployedHashMatched": true
+    }
+  },
+  "tests": {
+    "apiPassed": 337,
+    "serverControlAgentPassed": 64,
+    "dotnetFullPassed": 765,
+    "vitestPassed": 13,
+    "playwrightPassed": 32,
+    "powerShellScriptsParsed": 47,
+    "releaseProvenancePassed": 20,
+    "gitDiffCheckPassed": true,
+    "failed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.30.7-20260814T144949Z",
+    "databaseMigrationCount": 28,
+    "apiMainPid": 633784,
+    "publisherMainPid": 2064,
+    "nginxMainPid": 1742715,
+    "activePackageTasks": 0,
+    "activeServerControlTasks": 0,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260815T025105Z.dump",
+      "sizeBytes": 6380357,
+      "sha256": "56CA413211A9DA53E0C7CC656CEF51FE18578A8AA0C8F696C0EF42DE97476FB0",
+      "checksumVerified": true,
+      "restoreListLines": 239
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.31.0-20260815T025105Z.tar.gz",
+      "sizeBytes": 46391220,
+      "sha256": "8BA2A98F8E7C693067ADF950D5052814011CF831F9761D85565759CB7EF8B46B",
+      "checksumVerified": true
+    }
+  },
+  "deployment": {
+    "activeAtUtc": "2026-08-15T02:57:51Z",
+    "atomicInstallSucceeded": true,
+    "automaticRollbackArmed": true,
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.31.0-20260815T024200Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.30.7-20260814T144949Z",
+    "databaseMigrationsApplied": 1,
+    "onlyApiServiceRestarted": true,
+    "minecraftControlCommandsIssued": 0,
+    "preAcceptanceRollbackDrills": 2,
+    "rollbackDrillCauses": [
+      "health harness expected 200 before following the normal hechao.world redirect",
+      "Windows carriage return corrupted the final remote trap cleanup command"
+    ],
+    "productFaultTriggeredRollback": false
+  },
+  "postDeployment": {
+    "serviceActive": true,
+    "mainPid": 694836,
+    "nRestarts": 0,
+    "healthVersion": "0.31.0",
+    "databaseStatus": "ready",
+    "databaseMigrationCount": 29,
+    "latestMigration": "29:dynamic_deployment_slots",
+    "deploymentSlotCount": 0,
+    "loopbackPort8090Only": true,
+    "publicPort8090Closed": true,
+    "warningOrErrorJournalEntries": 0,
+    "publisherMainPidUnchanged": true,
+    "nginxMainPidUnchanged": true,
+    "pendingPackagePublishingOrDeploymentTasks": 0,
+    "pendingOrRunningServerControlTasks": 0,
+    "dynamicSlotEndpointUnauthenticatedStatus": 401,
+    "adminStaticEndpointVerified": true,
+    "adminStaticCreateLabelVerified": true,
+    "publicApiHealthy": true,
+    "adminWebHealthy": true,
+    "legacyWebsiteHealthy": true,
+    "relayApiHealthy": true,
+    "temporaryUploadRemoved": true
+  },
+  "owl5CrossCheck": {
+    "agentVersion": "0.6.0",
+    "targetCount": 7,
+    "heartbeatFresh": true,
+    "activityProcessId": 3652,
+    "lobbyProcessId": 7328,
+    "otherRegisteredTargetsStopped": true,
+    "minecraftProcessIdentityChanged": false
+  },
+  "privacy": {
+    "accessKeyIncluded": false,
+    "tokenIncluded": false,
+    "cookieIncluded": false,
+    "environmentContentsIncluded": false,
+    "databaseContentsIncluded": false,
+    "accountIdentifiersIncluded": false
+  }
+}

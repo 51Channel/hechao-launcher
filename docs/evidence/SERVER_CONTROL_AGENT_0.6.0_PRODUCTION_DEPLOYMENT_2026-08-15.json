@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T03:03:00Z",
+  "component": "server-control-agent",
+  "version": "0.6.0",
+  "sourceCommit": "8d765dbd39e6fe138d140f53b99c22bc8323df8b",
+  "releaseTag": "server-control-agent-v0.6.0",
+  "host": "owl5",
+  "artifact": {
+    "name": "hechao-server-control-agent-0.6.0-20260815T024200Z-win-x64.zip",
+    "sizeBytes": 33254099,
+    "sha256": "25A31F9439FCB7518F8B068ADB18857143B127FF0437E278E17AFE10048207E8",
+    "entryCount": 1,
+    "entryName": "Hechao.ServerControlAgent.exe",
+    "executableSizeBytes": 74187359,
+    "executableSha256": "85BA3C4034001166354E905DA1FFF50FE7456860A6D9870157A458DF8C0F62E2",
+    "productVersion": "0.6.0+8d765dbd39e6fe138d140f53b99c22bc8323df8b",
+    "containsPdb": false,
+    "containsConfiguration": false,
+    "containsCredentials": false
+  },
+  "tests": {
+    "serverControlAgentPassed": 64,
+    "serverControlAgentFailed": 0,
+    "dotnetSolutionPassed": 765,
+    "dotnetSolutionFailed": 0,
+    "powerShellScriptsParsed": 47
+  },
+  "deployment": {
+    "previousVersion": "0.5.0",
+    "agentTaskName": "Hechao Launcher Server Control Agent",
+    "agentTaskState": "Running",
+    "agentProcessId": 3548,
+    "deployedExecutableHashMatched": true,
+    "canonicalRunnerSha256": "9A9BADC0CD5883F3944A76BF48A26CC6D738DC933FBB908D4CA3C93584E67D0A",
+    "explicitRollbackDirectory": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.6.0-20260815T024500Z",
+    "installerRollbackDirectory": "C:\\ProgramData\\Hechao\\Backups\\server-control-agent-20260815T024448Z",
+    "stagingDirectory": "C:\\ProgramData\\Hechao\\Deploy\\server-control-agent-0.6.0-20260815T024200Z",
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftControlCommandsIssued": 0
+  },
+  "provisioningConfiguration": {
+    "rootDirectory": "E:\\HechaoActivitySlots",
+    "templateServerId": "activity",
+    "maximumSlots": 12,
+    "sharedPort": 25568,
+    "sharedConflictGroup": "owl5-activity-slot",
+    "dynamicRootExists": false,
+    "dynamicStateFileExists": false
+  },
+  "postDeployment": {
+    "apiHeartbeatAgentVersion": "0.6.0",
+    "apiHeartbeatTargetCount": 7,
+    "apiHeartbeatFresh": true,
+    "javaProcessIds": [7328, 3652, 3020],
+    "javaProcessIdentityUnchanged": true,
+    "activityProcessId": 3652,
+    "activityPort": 25568,
+    "activityWasAlreadyRunning": true,
+    "serverAction": "none",
+    "owl9VersionUnchanged": "0.4.0"
+  },
+  "rollback": {
+    "armed": true,
+    "targetVersion": "0.5.0",
+    "requiresNoPendingServerControlCommand": true,
+    "requiresNoProvisioningSlot": true,
+    "stopsOnlyControlAgentTask": true,
+    "requiresJavaProcessIdentityCheck": true,
+    "controlsMinecraftServers": false
+  },
+  "privacy": {
+    "agentTokenIncluded": false,
+    "dpapiCiphertextIncluded": false,
+    "configurationIncluded": false,
+    "serverConsoleIncluded": false,
+    "hostManagedFileContentIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

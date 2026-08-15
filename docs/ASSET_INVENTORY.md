@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.30.6`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级与旧代理协议门禁、六份生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警、精确服控交接与旧活动排期只读显示 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.31.0`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级与旧代理协议门禁、六份生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警、精确服控交接、旧活动排期只读显示与动态活动部署槽 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -177,7 +177,7 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   SHA-256 一致；`0.15.7 -> 0.15.8` 覆盖安装、全新安装、双轮卸载、设置和
   会话文件保留已验收。`0.15.7` 保留为上一正式版本，其不可变对象与标签不得覆盖。
 - 生产更新通道当前为 `LatestVersion=0.15.8`、
-  `MinimumSupportedVersion=0.12.3`；API `0.30.7` 为 `active`、`NRestarts=0`，
+  `MinimumSupportedVersion=0.12.3`；API `0.31.0` 为 `active`、`NRestarts=0`，
   内外网健康与就绪端点均为 `200`。认证会话确认 `0.15.7` 生成更新计划、`0.15.8`
   不重复更新，完整下载长度和 SHA-256 一致。详细记录见
   [`LAUNCHER_RELEASE_0.15.8.md`](LAUNCHER_RELEASE_0.15.8.md)。
@@ -212,6 +212,12 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   活动客户端下载与 `canJoin` 已分离，永久服维持原过滤，Velocity 保留最终门禁；
   直接程序回滚目标为 `0.30.6-20260814T133415Z`，详细记录见
   [`API_RELEASE_0.30.7.md`](API_RELEASE_0.30.7.md)。
+- API `0.31.0-20260815T024200Z` 单文件 SHA-256 为
+  `1B735E050511AC94289ABF267700E656FE4F62F6428DFAACBE765C9AEB6601C6`，归档
+  SHA-256 为 `A639B12A570738000ECF64701E800AF4765B54E5679A665D4D846CD9DCB5E0A6`。
+  迁移 `029` 上线受控动态活动槽；直接程序回滚目标为
+  `0.30.7-20260814T144949Z`，详细记录见
+  [`API_RELEASE_0.31.0.md`](API_RELEASE_0.31.0.md)。
 
 ### 1.8 服控内存管理制品
 
@@ -234,6 +240,12 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 - owl5 运行代理 `0.2.3`，owl9 保持 `0.2.1`；owl5 的空服关停阻塞已修复，升级前后
   其余 5 个 Java PID 和启动时间不变。回滚备份、根因和验证见
   [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
+- 当前 owl5 运行代理 `0.6.0`，owl9 保持 `0.4.0`。`0.6.0` ZIP 为
+  `33,254,099` 字节，SHA-256
+  `25A31F9439FCB7518F8B068ADB18857143B127FF0437E278E17AFE10048207E8`；
+  EXE 为 `74,187,359` 字节，SHA-256
+  `85BA3C4034001166354E905DA1FFF50FE7456860A6D9870157A458DF8C0F62E2`。动态槽尚未创建，
+  详细记录见 [`SERVER_CONTROL_AGENT_RELEASE_0.6.0.md`](SERVER_CONTROL_AGENT_RELEASE_0.6.0.md)。
 
 ## 2. 主 Minecraft VPS：owl5
 
@@ -456,12 +468,12 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 
 ## 5. 当前 API 部署状态
 
-> 启动器更新通道当前为 `launcher-v0.15.7`；下方 API
+> 启动器更新通道当前为 `launcher-v0.15.8`；下方 API
 > 发布 ID 与其他组件标签保持各自独立版本。
 
-- 发布 ID：`0.30.7-20260814T144949Z`
-- API `0.30.7`、基础设施角色、客户端兼容保护、日志脱敏、Publisher 工作空间保护、成员问卷正版资格桥接、活动企划、LuckPerms 代理协议门禁、活动预下载与进服权限分离、后台精确服控交接与旧活动排期只读显示已部署；启动器 `0.15.7` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
-- 启动器正式标签为 `launcher-v0.15.7`，制品源码提交为 `c0ddf9b2dfb65d64b8990242fa99addf5a008961`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
+- 发布 ID：`0.31.0-20260815T024200Z`
+- API `0.31.0`、基础设施角色、客户端兼容保护、日志脱敏、Publisher 工作空间保护、成员问卷正版资格桥接、活动企划、LuckPerms 代理协议门禁、活动预下载与进服权限分离、后台精确服控交接、旧活动排期只读显示与动态活动部署槽已部署；启动器 `0.15.8` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
+- 启动器正式标签为 `launcher-v0.15.8`，制品源码提交为 `30c438bb4e6e7ea6ba8f5c2b8afc9dff2d8cf85f`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
@@ -469,7 +481,7 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 - 公网入口：`https://launcher-api.hechao.world`
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
 - `GET /v1/catalog`：过渡阶段匿名请求返回玩家目录，无效 Bearer 返回 401；Lobby 为隐藏基础设施目标且公开命中为 `0`，正式强制开关待四级灰度和 Velocity `enforce` 稳定后启用
-- 数据库迁移：启动时迁移 `1` 至 `28` 校验全部通过；`0.30.7` 没有新增迁移
+- 数据库迁移：启动时迁移 `1` 至 `29` 校验全部通过；`0.31.0` 新增动态部署槽迁移
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：117 人、4 个等级映射；快照/身份和用户等级差异均为 `0`，内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`
