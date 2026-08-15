@@ -214,6 +214,16 @@ public sealed class AgentConfigurationTests
     }
 
     [Fact]
+    public void ValidateDynamicTargets_AllowsEmptyTargetsWhenProvisioningIsDisabled()
+    {
+        var configuration = CreateConfiguration(
+            CreateTarget("pvp", @"C:\mc\server", 25565, "owl9-25565-slot"));
+
+        configuration.Validate();
+        configuration.ValidateDynamicTargets([]);
+    }
+
+    [Fact]
     public void Validate_RejectsPackageDeploymentOutsideOwl5ActivitySlot()
     {
         var approvedTarget = CreateTarget(

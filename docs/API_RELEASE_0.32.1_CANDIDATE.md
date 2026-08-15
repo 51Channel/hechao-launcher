@@ -13,15 +13,15 @@
 ## 版本与顺序
 
 - API 候选：`0.32.1`；
-- ServerControlAgent 候选：`0.7.1`；
+- ServerControlAgent 候选：`0.7.2`；
 - 先部署 API 并验证旧代理心跳，再升级 owl5 和 owl9 代理与无秘密配置；
 - 代理升级只重启服控代理计划任务，不启动、停止或重启 Minecraft 服务端。
 
 ## 当前验证
 
 - API：`350/350`；
-- ServerControlAgent：`75/75`；
-- 完整解决方案：`789/789`；
+- ServerControlAgent：`76/76`；
+- 完整解决方案：`790/790`；
 - Vue 类型检查、Vitest：`13/13`；
 - Playwright：`33/33`；
 - PowerShell 7 合规：`47/47`；

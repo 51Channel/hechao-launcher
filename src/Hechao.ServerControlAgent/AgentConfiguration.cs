@@ -157,10 +157,15 @@ public sealed record ServerControlAgentConfiguration
     internal void ValidateDynamicTargets(
         IReadOnlyList<ServerControlTargetConfiguration> dynamicTargets)
     {
-        if (!DeploymentSlotProvisioning.Enabled && dynamicTargets.Count > 0)
+        if (!DeploymentSlotProvisioning.Enabled)
         {
-            throw new InvalidDataException(
-                "Dynamic deployment slots exist while provisioning is disabled.");
+            if (dynamicTargets.Count > 0)
+            {
+                throw new InvalidDataException(
+                    "Dynamic deployment slots exist while provisioning is disabled.");
+            }
+
+            return;
         }
 
         if (dynamicTargets.Count > DeploymentSlotProvisioning.MaximumSlots)
