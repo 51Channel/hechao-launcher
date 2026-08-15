@@ -97,7 +97,8 @@ public sealed class CatalogRepository(
             userId,
             accessTier,
             cancellationToken);
-        return new LauncherCatalogSnapshot(DateTimeOffset.UtcNow, servers, profiles);
+        var availableServers = FilterServersWithAvailableProfiles(servers, profiles);
+        return new LauncherCatalogSnapshot(DateTimeOffset.UtcNow, availableServers, profiles);
     }
 
     public async Task<ClientProfileSummary?> GetAccessibleProfileAsync(
@@ -441,6 +442,18 @@ public sealed class CatalogRepository(
         !isAuthenticated ||
         catalogSection == ServerCatalogSection.Activity ||
         canJoin;
+
+    internal static IReadOnlyList<ServerSummary> FilterServersWithAvailableProfiles(
+        IReadOnlyList<ServerSummary> servers,
+        IReadOnlyList<ClientProfileSummary> profiles)
+    {
+        var availableProfileIds = profiles
+            .Select(profile => profile.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        return servers
+            .Where(server => availableProfileIds.Contains(server.ClientProfileId))
+            .ToArray();
+    }
 
     internal static ServerStatus ResolveActivityDeploymentStatus(
         ServerStatus status,

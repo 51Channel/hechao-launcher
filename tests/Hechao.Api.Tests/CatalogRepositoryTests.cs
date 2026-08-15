@@ -109,4 +109,42 @@ public sealed class CatalogRepositoryTests
             CatalogRepository.AccessibleProfileSql,
             StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void CatalogOmitsOnlyServersWithoutAnAvailableClientRelease()
+    {
+        var servers = new[]
+        {
+            CreateServer("unpublished", "unpublished-profile"),
+            CreateServer("ready", "ready-profile")
+        };
+        var profiles = new[]
+        {
+            new ClientProfileSummary(
+                "ready-profile",
+                "Ready profile",
+                "1.0.0",
+                1,
+                new string('a', 64),
+                DateTimeOffset.UtcNow)
+        };
+
+        var filtered = CatalogRepository.FilterServersWithAvailableProfiles(servers, profiles);
+
+        Assert.Equal("ready", Assert.Single(filtered).Id);
+    }
+
+    private static ServerSummary CreateServer(string id, string profileId) =>
+        new(
+            id,
+            id,
+            id,
+            id[..1],
+            ServerStatus.Online,
+            0,
+            20,
+            "1.21.11",
+            ModLoaderKind.Paper,
+            AccessTier.Member,
+            profileId);
 }
