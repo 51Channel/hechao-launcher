@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T10:57:08Z",
+  "component": "api",
+  "version": "0.32.2",
+  "releaseId": "0.32.2-20260815T105349Z",
+  "buildSourceCommit": "78e1d7ffc0a623e617faa3dbeea0e3a6b370c8c7",
+  "releaseTag": "api-v0.32.2",
+  "artifact": {
+    "archiveName": "hechao-launcher-api-0.32.2-20260815T105349Z.tar.gz",
+    "archiveSizeBytes": 46285697,
+    "archiveSha256": "3C6F3D569B00F6210AE287FA74DE3289C2F7456BF49C794A10ED3EC4C92FAC62",
+    "entryCount": 161,
+    "fileCount": 156,
+    "binarySizeBytes": 105322948,
+    "binarySha256": "82EBCA525A776340EC53DEF6E648F78BB175A507A9999F0809E7704D786DE44B",
+    "forbiddenFilesFound": 0
+  },
+  "tests": {
+    "apiPassed": 351,
+    "dotnetFullPassed": 791,
+    "failed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z",
+    "apiProcessId": 848807,
+    "migrationCount": 30,
+    "backup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.32.2-20260815T105349Z.tar.gz",
+      "sizeBytes": 46429990,
+      "sha256": "B44EDB2BCB2255A2E49BB31DEE2C0A16FA9DF898728DB14FF6899486E7ECBDBB",
+      "contains": [
+        "previous release",
+        "API environment",
+        "systemd unit",
+        "Nginx configuration"
+      ]
+    }
+  },
+  "deployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.32.2-20260815T105349Z",
+    "apiProcessId": 963896,
+    "nRestarts": 0,
+    "healthVersion": "0.32.2",
+    "readyStatus": "ready",
+    "databaseStatus": "ready",
+    "migrationCount": 30,
+    "publisherProcessId": 2064,
+    "nginxProcessId": 1742715,
+    "warningOrErrorCount": 0
+  },
+  "catalogVerification": {
+    "preFixServerCount": 2,
+    "preFixProfileCount": 1,
+    "postFixServerCount": 1,
+    "postFixProfileCount": 1,
+    "allReturnedServersHaveProfiles": true,
+    "businessManhuntServerId": "activity",
+    "businessManhuntStatus": "Online",
+    "unpublishedIndustrialServerFiltered": true
+  },
+  "publicVerification": {
+    "launcherApiHealthStatus": 200,
+    "launcherApiReadyStatus": 200,
+    "adminHealthStatus": 200,
+    "websiteStatus": 200,
+    "relayApiStatus": 200
+  },
+  "rollback": {
+    "directProgramTarget": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z",
+    "databaseDowngradeRequired": false
+  },
+  "operations": {
+    "databaseRowsChanged": 0,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "environmentContentsIncluded": false,
+    "tokensIncluded": false,
+    "credentialsIncluded": false,
+    "serverConsoleIncluded": false
+  }
+}

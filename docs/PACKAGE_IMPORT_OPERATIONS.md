@@ -1,6 +1,6 @@
 # 整合包自动导入与独立部署槽手册
 
-> 当前生产：API `0.32.1`、Publisher Agent `1.2.1`、owl5/owl9
+> 当前生产：API `0.32.2`、Publisher Agent `1.2.1`、owl5/owl9
 > ServerControlAgent `0.7.2`、Velocity Authorizer `0.5.0`。
 >
 > 当前状态：固定试包已完成上传、识别、客户端私有 OSS `Test` 发布和停止活动槽部署；

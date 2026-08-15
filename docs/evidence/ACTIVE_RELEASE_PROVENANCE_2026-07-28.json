@@ -126,42 +126,43 @@
     },
     {
       "component": "api",
-      "version": "0.32.1-20260815T071021Z",
-      "releaseTag": "api-v0.32.1",
-      "releaseCommit": "71c6441e269cbf7d2e63d2129d45035b197dc1c5",
-      "taggedAt": "2026-08-15T15:37:12+08:00",
+      "version": "0.32.2-20260815T105349Z",
+      "releaseTag": "api-v0.32.2",
+      "releaseCommit": "78e1d7ffc0a623e617faa3dbeea0e3a6b370c8c7",
+      "taggedAt": "2026-08-15T19:02:00+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "71c6441e269cbf7d2e63d2129d45035b197dc1c5"
+        "value": "78e1d7ffc0a623e617faa3dbeea0e3a6b370c8c7"
       },
-      "deploymentState": "production-all-minecraft-plugin-console-commands-health-ready",
-      "historicalNote": "Production contains migrations through 030. 0.32.0 is the direct program rollback after both agents restore explicit command prefixes. Wildcard console access never includes stop, restart, shutdown or end.",
+      "deploymentState": "production-catalog-profile-integrity-health-ready",
+      "historicalNote": "Production contains migrations through 030. 0.32.1 is the direct program rollback. Servers without a release resolved for the current player remain in administration but are omitted from that player catalog.",
       "artifacts": [
         {
-          "name": "hechao-launcher-api-0.32.1-20260815T071021Z.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z",
-          "size": 46284782,
-          "sha256": "BBAF89AB0776DC140078F9A3186CEA9D97F269BE6020E1847AA0A19F5BDE4971",
+          "name": "hechao-launcher-api-0.32.2-20260815T105349Z.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.32.2-20260815T105349Z",
+          "size": 46285697,
+          "sha256": "3C6F3D569B00F6210AE287FA74DE3289C2F7456BF49C794A10ED3EC4C92FAC62",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z/Hechao.Api",
-          "size": 105322436,
-          "sha256": "A0C848BD912B201411EDC938C8CC9A7ED85DFFC9C88F5975196592AF732D76D2",
+          "location": "/opt/hechao-launcher-api/releases/0.32.2-20260815T105349Z/Hechao.Api",
+          "size": 105322948,
+          "sha256": "82EBCA525A776340EC53DEF6E648F78BB175A507A9999F0809E7704D786DE44B",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.32.0-20260815T055857Z"
+        "target": "/opt/hechao-launcher-api/releases/0.32.1-20260815T071021Z"
       },
       "evidence": [
+        "docs/API_RELEASE_0.32.2.md",
+        "docs/evidence/API_0.32.2_PRODUCTION_DEPLOYMENT_2026-08-15.json",
+        "docs/API_RELEASE_0.32.2_CANDIDATE.md",
         "docs/API_RELEASE_0.32.1.md",
-        "docs/evidence/API_0.32.1_PRODUCTION_DEPLOYMENT_2026-08-15.json",
-        "docs/API_RELEASE_0.32.1_CANDIDATE.md",
-        "docs/API_RELEASE_0.32.0.md"
+        "docs/evidence/API_0.32.1_PRODUCTION_DEPLOYMENT_2026-08-15.json"
       ]
     },
     {
