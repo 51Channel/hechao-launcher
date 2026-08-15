@@ -423,4 +423,9 @@ systemctl reload nginx
 | `0.30.7-20260814T144949Z` | `6523572993E4848B2BD1CA0E743FBE10E4A07FE0F617BDCD3B514C39225F2190` | 无迁移；活动客户端下载与 `canJoin` 分离，永久服过滤和 Velocity 最终门禁不变；`0.31.0` 的直接程序回滚目标 |
 | `0.31.0-20260815T024200Z` | `1B735E050511AC94289ABF267700E656FE4F62F6428DFAACBE765C9AEB6601C6` | 迁移 029；整合包可选择固定或动态活动槽，后台可创建受控 `activity-*` 槽；当前线上版本 |
 
+API `0.32.0` 是尚未上线的独立部署槽候选：迁移 030 增加槽类型、独立端口和独立
+Velocity 目标，需与 owl5 ServerControlAgent `0.7.0`、Velocity Authorizer `0.5.0`
+成套部署。候选不写入上方不可变生产制品表，详见
+[`API_RELEASE_0.32.0_CANDIDATE.md`](API_RELEASE_0.32.0_CANDIDATE.md)。
+
 数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.31.0`、启动器 `0.15.8`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.6.0`、owl9 ServerControlAgent `0.4.0`、Authorizer `0.4.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 后台、固定整合包 Test-only 发布、固定与动态活动部署槽、双后台企划、单活动排期、官网活动投影、启动器下载桥接和白名单服务端文件删除均已验收；活动日历和槽创建不会自动启停 Minecraft，准入还要求活动槽部署身份与企划绑定整合包完全一致。真实 `vip` 业务变更已跨四个五分钟间隔确认不回退；完整四级角色路径、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，活动企划见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

@@ -31,7 +31,7 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
                 Path.Combine(targetDirectory, "start.bat")),
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains(
-            "server-port=25568",
+            "server-port=25600",
             await File.ReadAllTextAsync(
                 Path.Combine(targetDirectory, "server.properties")),
             StringComparison.Ordinal);
@@ -41,6 +41,8 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
         Assert.True(dynamicTarget.RequireDeployedPackage);
         Assert.True(dynamicTarget.PackageDeploymentEnabled);
         Assert.True(dynamicTarget.ServerDeletionEnabled);
+        Assert.Equal(25600, dynamicTarget.Port);
+        Assert.Null(dynamicTarget.ConflictGroup);
 
         var callCount = fixture.Runner.Calls.Count;
         var replay = await fixture.Provisioner.ProvisionAsync(
@@ -53,6 +55,71 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
         Assert.DoesNotContain(
             fixture.Runner.Calls,
             call => call.Arguments.Contains("/Run", StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("activity-summer", DeploymentSlotKind.Activity)]
+    [InlineData("survival-industry", DeploymentSlotKind.Survival)]
+    [InlineData("pvp-ranked", DeploymentSlotKind.Pvp)]
+    [InlineData("minigame-party", DeploymentSlotKind.Minigame)]
+    public async Task ProvisionAsync_AcceptsEverySlotFamily(
+        string serverId,
+        DeploymentSlotKind slotKind)
+    {
+        var fixture = CreateFixture(SuccessfulProcessRunner());
+        var request = CreateRequest(serverId, slotKind: slotKind);
+
+        var result = await fixture.Provisioner.ProvisionAsync(
+            request,
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Succeeded, result.Outcome);
+        var target = Assert.Single(fixture.Store.Snapshot());
+        Assert.Equal(request.Port, target.Port);
+        Assert.Null(target.ConflictGroup);
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_RejectsKindPrefixMismatchWithoutCreatingFiles()
+    {
+        var fixture = CreateFixture(SuccessfulProcessRunner());
+        var request = CreateRequest(
+            "activity-ranked",
+            slotKind: DeploymentSlotKind.Pvp);
+
+        var result = await fixture.Provisioner.ProvisionAsync(
+            request,
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Failed, result.Outcome);
+        Assert.Equal("INVALID_SLOT_PROVISIONING", result.ResultCode);
+        Assert.False(Directory.Exists(Path.Combine(fixture.SlotRoot, request.ServerId)));
+        Assert.Empty(fixture.Store.Snapshot());
+        Assert.Empty(fixture.Runner.Calls);
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_RejectsAllocatedPortConflictWithoutCreatingFiles()
+    {
+        var fixture = CreateFixture(SuccessfulProcessRunner());
+        var first = CreateRequest("activity-first");
+        var firstResult = await fixture.Provisioner.ProvisionAsync(
+            first,
+            CancellationToken.None);
+        Assert.Equal(ServerControlCommandOutcome.Succeeded, firstResult.Outcome);
+
+        var second = CreateRequest(
+            "survival-second",
+            port: first.Port,
+            slotKind: DeploymentSlotKind.Survival);
+        var result = await fixture.Provisioner.ProvisionAsync(
+            second,
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Failed, result.Outcome);
+        Assert.Equal("SLOT_PORT_CONFLICT", result.ResultCode);
+        Assert.False(Directory.Exists(Path.Combine(fixture.SlotRoot, second.ServerId)));
+        Assert.Single(fixture.Store.Snapshot());
     }
 
     [Fact]
@@ -290,8 +357,10 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
         });
 
     private static ServerDeploymentSlotProvisioningRequest CreateRequest(
-        string serverId) =>
-        new(serverId, "测试活动槽", "activity");
+        string serverId,
+        int port = 25600,
+        DeploymentSlotKind slotKind = DeploymentSlotKind.Activity) =>
+        new(serverId, "测试部署槽", "activity", port, slotKind);
 
     public void Dispose()
     {

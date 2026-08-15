@@ -77,6 +77,7 @@ interface ControlTargetMock {
   dynamicDeploymentSlot: boolean;
   deploymentSlotStatus: "Provisioning" | "Ready" | "Failed" | null;
   deploymentSlotError: string | null;
+  deploymentSlotKind: "Activity" | "Survival" | "Pvp" | "Minigame" | null;
 }
 
 interface ControlOverviewMock {
@@ -128,7 +129,8 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
       },
       dynamicDeploymentSlot: false,
       deploymentSlotStatus: null,
-      deploymentSlotError: null
+      deploymentSlotError: null,
+      deploymentSlotKind: null
     }, {
       serverId: "fanstreet",
       displayName: "范街活动服",
@@ -149,7 +151,8 @@ function controlOverview(requestNumber: number): ControlOverviewMock {
       deployedPackage: null,
       dynamicDeploymentSlot: false,
       deploymentSlotStatus: null,
-      deploymentSlotError: null
+      deploymentSlotError: null,
+      deploymentSlotKind: null
     }]
   };
 }
@@ -668,6 +671,7 @@ test("control polling preserves dirty settings and console reading position", as
   await mockAdminApi(page);
   await page.goto("/admin/control");
   await expect(page.locator(".page-heading h1")).toHaveText("服控面板");
+  await expect(page.locator(".control-detail-metrics")).toContainText("槽类型活动（固定槽）");
   await expect(page.getByLabel("最大玩家数")).toHaveValue("30");
 
   await page.getByLabel("最大玩家数").fill("42");
@@ -1253,8 +1257,8 @@ test("package import deploys immediately only after the administrator selects co
   });
 });
 
-test("package import can create a deployment slot and select it after agent readiness", async ({ page }) => {
-  const slotServerId = "activity-winter";
+test("package import can create an independent survival slot and select it after agent readiness", async ({ page }) => {
+  const slotServerId = "survival-winter";
   let slotQueued = false;
   let slotReadsAfterQueue = 0;
   let confirmedBody: Record<string, unknown> | null = null;
@@ -1282,14 +1286,17 @@ test("package import can create a deployment slot and select it after agent read
           overview.targets.push({
             ...overview.targets[0],
             serverId: slotServerId,
-            displayName: "冬季活动槽",
+            displayName: "冬季生存槽",
+            conflictGroup: null,
+            port: 25600,
             settings: ready ? quickSettings(20) : null,
             packageDeploymentEnabled: ready,
             serverFilesPresent: ready,
             deployedPackage: null,
             dynamicDeploymentSlot: true,
             deploymentSlotStatus: ready ? "Ready" : "Provisioning",
-            deploymentSlotError: null
+            deploymentSlotError: null,
+            deploymentSlotKind: "Survival"
           });
         }
         await route.fulfill({ json: overview });
@@ -1298,10 +1305,11 @@ test("package import can create a deployment slot and select it after agent read
       if (path === "/v1/admin/server-control/deployment-slots" && request.method() === "POST") {
         expect(request.postDataJSON()).toEqual({
           serverId: slotServerId,
-          displayName: "冬季活动槽",
+          displayName: "冬季生存槽",
           templateServerId: "activity",
+          slotKind: "Survival",
           confirmation: `CREATE ${slotServerId}`,
-          reason: "新增冬季活动独立部署槽"
+          reason: "新增冬季生存独立部署槽"
         });
         slotQueued = true;
         await route.fulfill({
@@ -1310,10 +1318,10 @@ test("package import can create a deployment slot and select it after agent read
             operation: {
               operationId: "88888888-8888-8888-8888-888888888888",
               serverId: slotServerId,
-              serverDisplayName: "冬季活动槽",
+              serverDisplayName: "冬季生存槽",
               action: "CreateDeploymentSlot",
               status: "Pending",
-              reason: "新增冬季活动独立部署槽",
+              reason: "新增冬季生存独立部署槽",
               requestedBy: session.player.userId,
               requestedAt: now,
               startedAt: null,
@@ -1380,9 +1388,10 @@ test("package import can create a deployment slot and select it after agent read
   await page.screenshot({
     path: "../../../artifacts/admin-web-deployment-slot-mobile.png"
   });
+  await slotDrawer.getByRole("radio", { name: "生存" }).click();
   await slotDrawer.getByLabel("槽 ID").fill("winter");
-  await slotDrawer.getByLabel("槽名称").fill("冬季活动槽");
-  await slotDrawer.getByLabel("创建原因").fill("新增冬季活动独立部署槽");
+  await slotDrawer.getByLabel("槽名称").fill("冬季生存槽");
+  await slotDrawer.getByLabel("创建原因").fill("新增冬季生存独立部署槽");
   await slotDrawer.getByLabel("精确确认").fill(`CREATE ${slotServerId}`);
   await slotDrawer.getByRole("button", { name: "创建部署槽" }).click();
   await expect(slotDrawer).not.toBeVisible();

@@ -171,8 +171,8 @@ public sealed class ServerControlRepository(
                       WHERE target.server_id = launcher.deployment_slots.server_id
                         AND target.agent_id = $3
                         AND target.package_deployment_enabled
-                        AND target.conflict_group = $4
-                        AND target.port = $5
+                        AND target.conflict_group IS NULL
+                        AND target.port = launcher.deployment_slots.backend_port
                   );
                 """,
                 connection,
@@ -180,10 +180,6 @@ public sealed class ServerControlRepository(
             markSlotReady.Parameters.AddWithValue(target.ServerId);
             markSlotReady.Parameters.AddWithValue(receivedAt);
             markSlotReady.Parameters.AddWithValue(request.AgentId);
-            markSlotReady.Parameters.AddWithValue(
-                PackageImportRules.ActivityConflictGroup);
-            markSlotReady.Parameters.AddWithValue(
-                PackageImportRules.ActivityPort);
             await markSlotReady.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -258,7 +254,8 @@ public sealed class ServerControlRepository(
                    target.deployed_version,
                    slot.server_id IS NOT NULL,
                    slot.status,
-                   slot.failure_message
+                   slot.failure_message,
+                   slot.slot_kind
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             LEFT JOIN launcher.deployment_slots AS slot
@@ -326,7 +323,10 @@ public sealed class ServerControlRepository(
                     : Enum.Parse<DeploymentSlotProvisioningStatus>(
                         reader.GetString(18),
                         ignoreCase: true),
-                reader.IsDBNull(19) ? null : reader.GetString(19)));
+                reader.IsDBNull(19) ? null : reader.GetString(19),
+                reader.IsDBNull(20)
+                    ? null
+                    : Enum.Parse<DeploymentSlotKind>(reader.GetString(20), ignoreCase: true)));
         }
 
         return new AdminServerControlOverview(
@@ -374,7 +374,8 @@ public sealed class ServerControlRepository(
                    target.deployed_version,
                    slot.server_id IS NOT NULL,
                    slot.status,
-                   slot.failure_message
+                   slot.failure_message,
+                   slot.slot_kind
             FROM launcher.server_control_targets AS target
             LEFT JOIN launcher.servers AS server ON server.id = target.server_id
             LEFT JOIN launcher.deployment_slots AS slot
@@ -437,7 +438,10 @@ public sealed class ServerControlRepository(
                 : Enum.Parse<DeploymentSlotProvisioningStatus>(
                     reader.GetString(21),
                     ignoreCase: true),
-            reader.IsDBNull(22) ? null : reader.GetString(22));
+            reader.IsDBNull(22) ? null : reader.GetString(22),
+            reader.IsDBNull(23)
+                ? null
+                : Enum.Parse<DeploymentSlotKind>(reader.GetString(23), ignoreCase: true));
         return new AdminServerControlTargetDetail(
             now,
             _options.AgentFreshnessSeconds,

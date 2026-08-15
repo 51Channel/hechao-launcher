@@ -181,10 +181,11 @@ API `0.17.0` 把“客户端档案”和“某次签名发布”分开。档案 
 - Test 和 Gray 比例为 0 至 100；Production 固定为 100。
 - 档案、生命周期、通道和发布暂停分别使用自己的修订号，过期写入返回 `409 Conflict`。
 
-`velocity_target` 允许多个目录服务器共享，不应添加唯一约束。自 `2026-07-31` 起，
-不同活动目录记录统一共享 `activity` 目标，并由 `owl5-activity-slot` 保证同一时刻只有
-一个物理活动后端可进入。历史活动复用 `survival2` 的记录只用于迁移盘点，不得作为
-新建或改版活动的模板；完整规则见
+`velocity_target` 允许固定替换活动的多个目录记录共享，不应添加全表唯一约束。固定
+活动替换记录使用 `activity`，并由 `owl5-activity-slot` 保证同一时刻只有一个物理后端
+占用 `25568`。独立生存、活动、PVP、小游戏槽的 `velocity_target` 等于槽 ID，各自使用
+批准端口且没有冲突组，可以同时运行。历史活动复用 `survival2` 的记录只用于迁移盘点，
+不得作为新建或改版模板；完整规则见
 [`ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md`](ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md)。
 
 ## 5. 审计

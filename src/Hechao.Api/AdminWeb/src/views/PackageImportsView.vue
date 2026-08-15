@@ -6,6 +6,7 @@ import type {
   AccessTier,
   ControlOverview,
   ControlTargetSummary,
+  DeploymentSlotKind,
   DeploymentSlotQueueResult,
   PackageImportAnalysis,
   PackageImportListResponse,
@@ -85,6 +86,7 @@ interface DeploymentHandoff {
 }
 
 interface DeploymentSlotDraft {
+  slotKind: DeploymentSlotKind;
   serverIdSuffix: string;
   displayName: string;
   templateServerId: string;
@@ -157,12 +159,24 @@ const review = reactive<ReviewDraft>({
   deployServer: false
 });
 const slotDraft = reactive<DeploymentSlotDraft>({
+  slotKind: "Activity",
   serverIdSuffix: "",
   displayName: "",
   templateServerId: "activity",
   confirmation: "",
-  reason: "新增独立活动部署槽"
+  reason: "新增独立部署槽"
 });
+
+const slotKindOptions: Array<{
+  value: DeploymentSlotKind;
+  label: string;
+  prefix: string;
+}> = [
+  { value: "Survival", label: "生存", prefix: "survival-" },
+  { value: "Activity", label: "活动", prefix: "activity-" },
+  { value: "Pvp", label: "PVP", prefix: "pvp-" },
+  { value: "Minigame", label: "小游戏", prefix: "minigame-" }
+];
 
 const list = computed(() => imports.data.value?.imports ?? []);
 const publisherConnected = computed(() =>
@@ -170,10 +184,13 @@ const publisherConnected = computed(() =>
 );
 const deploymentSlots = computed(() =>
   (controls.data.value?.targets ?? [])
-    .filter(isActivitySlotTarget)
+    .filter(isDeploymentSlotTarget)
     .sort((left, right) => {
       if (left.serverId === "activity") return -1;
       if (right.serverId === "activity") return 1;
+      const kindDifference = slotKindIndex(left.deploymentSlotKind) -
+        slotKindIndex(right.deploymentSlotKind);
+      if (kindDifference !== 0) return kindDifference;
       return left.displayName.localeCompare(right.displayName, "zh-CN");
     })
 );
@@ -235,7 +252,7 @@ const deploymentHandoff = computed<DeploymentHandoff | null>(() => {
   if (target.deployedPackage?.importId !== record.importId) {
     return {
       tone: "warning", icon: "circle-alert", targetId, actionLabel: "查看服控目标",
-      title: "活动槽已不是这份整合包",
+      title: "部署槽已不是这份整合包",
       detail: "当前受控目录的部署身份与本导入任务不一致，请不要从旧任务页直接判断可启动。"
     };
   }
@@ -267,12 +284,17 @@ const exactConfirmation = computed(() =>
     ? `${review.deployServer ? "发布并部署" : "发布并入库"} ${selectedImport.data.value.importId}`
     : ""
 );
+const slotPrefix = computed(() =>
+  slotKindOptions.find(option => option.value === slotDraft.slotKind)?.prefix ??
+  "activity-"
+);
 const slotServerId = computed(() => {
   const suffix = slotDraft.serverIdSuffix.trim().toLowerCase();
-  return suffix ? `activity-${suffix}` : "activity-";
+  return suffix ? `${slotPrefix.value}${suffix}` : slotPrefix.value;
 });
 const slotConfirmation = computed(() => `CREATE ${slotServerId.value}`);
 const slotDraftValid = computed(() =>
+  slotKindOptions.some(option => option.value === slotDraft.slotKind) &&
   /^[a-z0-9][a-z0-9-]{1,39}$/.test(slotDraft.serverIdSuffix.trim()) &&
   slotDraft.displayName.trim().length >= 2 &&
   slotDraft.displayName.trim().length <= 80 &&
@@ -371,15 +393,16 @@ const publisherEtaText = computed(() => {
   return `预计剩余 ${formatEta(publisherEtaSeconds.value)}`;
 });
 
-function isActivitySlotTarget(target: ControlTargetSummary): boolean {
-  return target.agentId === "owl5" &&
+function isDeploymentSlotTarget(target: ControlTargetSummary): boolean {
+  if (target.agentId !== "owl5") return false;
+  if (target.dynamicDeploymentSlot) return true;
+  return target.serverId === "activity" &&
     target.conflictGroup === "owl5-activity-slot" &&
-    target.port === 25568 &&
-    (target.packageDeploymentEnabled || target.dynamicDeploymentSlot);
+    target.port === 25568 && target.packageDeploymentEnabled;
 }
 
 function isPackageDeploymentTarget(target: ControlTargetSummary): boolean {
-  return isActivitySlotTarget(target) &&
+  return isDeploymentSlotTarget(target) &&
     target.packageDeploymentEnabled === true &&
     target.deploymentSlotStatus !== "Provisioning" &&
     target.deploymentSlotStatus !== "Failed";
@@ -506,7 +529,18 @@ function slotOptionLabel(target: ControlTargetSummary): string {
     : target.deploymentSlotStatus === "Failed"
       ? " · 创建失败"
       : "";
-  return `${target.displayName} · ${target.serverId}${suffix}`;
+  const kind = slotKindLabel(target.deploymentSlotKind);
+  return `${target.displayName} · ${kind} · ${target.serverId} · ${target.port}${suffix}`;
+}
+
+function slotKindLabel(kind: DeploymentSlotKind | null): string {
+  if (!kind) return "固定活动槽";
+  return slotKindOptions.find(option => option.value === kind)?.label ?? kind;
+}
+
+function slotKindIndex(kind: DeploymentSlotKind | null): number {
+  if (!kind) return -1;
+  return slotKindOptions.findIndex(option => option.value === kind);
 }
 
 async function openDeploymentTarget(): Promise<void> {
@@ -517,11 +551,12 @@ async function openDeploymentTarget(): Promise<void> {
 }
 
 function openSlotDrawer(): void {
+  slotDraft.slotKind = "Activity";
   slotDraft.serverIdSuffix = "";
   slotDraft.displayName = "";
   slotDraft.templateServerId = "activity";
   slotDraft.confirmation = "";
-  slotDraft.reason = "新增独立活动部署槽";
+  slotDraft.reason = "新增独立部署槽";
   slotError.value = "";
   if (!slotDrawer.value?.open) slotDrawer.value?.showModal();
 }
@@ -545,6 +580,7 @@ async function createDeploymentSlot(): Promise<void> {
           serverId: slotServerId.value,
           displayName: slotDraft.displayName.trim(),
           templateServerId: slotDraft.templateServerId,
+          slotKind: slotDraft.slotKind,
           confirmation: slotDraft.confirmation.trim(),
           reason: slotDraft.reason.trim()
         }
@@ -942,7 +978,7 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
         <div class="package-tool-heading"><div><span>执行链路</span><h2>发布与入库状态</h2></div></div>
         <ul class="readiness-list">
           <li :class="{ ready: publisherConnected }"><AppIcon :name="publisherConnected ? 'check' : 'circle-alert'" /><div><strong>客户端发布代理</strong><span>{{ publisherConnected ? `在线 · ${formatRelativeTime(imports.data.value?.publisherAgentLastSeenAt)}` : "等待 Publisher 心跳" }}</span></div></li>
-          <li :class="{ ready: deploymentTargets.length > 0 }"><AppIcon :name="deploymentTargets.length > 0 ? 'check' : 'circle-alert'" /><div><strong>owl5 活动部署能力</strong><span>{{ deploymentTargets.length > 0 ? `${deploymentTargets.length} 个槽已就绪 · 127.0.0.1:25568` : "未发现受控部署目标" }}</span></div></li>
+          <li :class="{ ready: deploymentTargets.length > 0 }"><AppIcon :name="deploymentTargets.length > 0 ? 'check' : 'circle-alert'" /><div><strong>owl5 独立部署能力</strong><span>{{ deploymentTargets.length > 0 ? `${deploymentTargets.length} 个槽已就绪` : "未发现受控部署目标" }}</span></div></li>
           <li :class="{ ready: Boolean(activityTarget?.agentConnected) }"><AppIcon :name="activityTarget?.agentConnected ? 'check' : 'circle-alert'" /><div><strong>服控代理</strong><span>{{ activityTarget?.agentConnected ? "心跳正常" : "代理离线" }}</span></div></li>
           <li :class="{ ready: deployableTargetCount > 0 }"><AppIcon :name="deployableTargetCount > 0 ? 'check' : 'circle-alert'" /><div><strong>可部署槽状态</strong><span>{{ deployableTargetCount > 0 ? `${deployableTargetCount} 个槽已停止且空闲` : "暂无已停止且空闲的部署槽" }}</span></div></li>
         </ul>
@@ -1061,18 +1097,18 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
                 <label>服务器显示名称<input v-model="review.serverDisplayName" minlength="2" maxlength="80" required></label>
                 <label>最低称号<select v-model="review.minimumTier"><option value="Member">{{ tierText('Member') }}</option><option value="Participant">{{ tierText('Participant') }}</option><option value="Collaborator">{{ tierText('Collaborator') }}</option></select></label>
                 <label>最大内存（GiB）<input v-model.number="review.maximumMemoryGiB" type="number" min="1" step="0.25" required><span :class="`memory-guidance-${memoryGuidanceState}`">{{ memoryGuidanceMessage }}</span></label>
-                <dl class="package-memory-guidance" aria-label="活动服内存建议">
+                <dl class="package-memory-guidance" aria-label="服务端内存建议">
                   <div><dt>VPS 总内存</dt><dd>{{ packageDeploymentMemoryGuidance ? formatBytes(packageDeploymentMemoryGuidance.hostTotalMemoryMiB * 1024 * 1024) : "等待上报" }}</dd></div>
                   <div><dt>推荐最小内存</dt><dd>{{ packageDeploymentMemoryGuidance ? formatBytes(packageDeploymentMemoryGuidance.recommendedMinimumMemoryMiB * 1024 * 1024) : "--" }}</dd></div>
                   <div><dt>推荐最大内存</dt><dd>{{ packageDeploymentMemoryGuidance ? formatBytes(packageDeploymentMemoryGuidance.recommendedMaximumMemoryMiB * 1024 * 1024) : "--" }}</dd></div>
                 </dl>
                 <div class="package-review-options">
-                  <label class="checkbox-row"><input v-model="review.preserveWorldData" type="checkbox"><span>保留当前活动服世界目录</span></label>
+                  <label class="checkbox-row"><input v-model="review.preserveWorldData" type="checkbox"><span>保留当前服务端世界目录</span></label>
                   <label class="checkbox-row"><input v-model="review.syncServerCatalog" type="checkbox"><span>同步隐藏且关闭的服务器目录记录</span></label>
                 </div>
                 <label class="package-confirmation-field">精确确认<input v-model="review.confirmation" autocomplete="off" maxlength="80" required><span>请输入：{{ exactConfirmation }}</span></label>
                 <div v-if="confirmError" class="inline-alert settings-error" role="alert"><AppIcon name="circle-alert" /><span>{{ confirmError }}</span></div>
-                <div class="package-review-submit"><span>{{ review.deployServer ? "部署完成后活动服仍保持停止，不会修改 Production 通道。" : "服务端制品只入库，不会覆盖或启动当前活动服。" }}</span><button class="button button-primary" type="submit" :disabled="!reviewValid || confirmBusy"><AppIcon name="package" />{{ confirmBusy ? "正在排队" : review.deployServer ? "发布并部署" : "发布并入库" }}</button></div>
+                <div class="package-review-submit"><span>{{ review.deployServer ? "部署完成后所选服务端仍保持停止，不会修改 Production 通道。" : "服务端制品只入库，不会覆盖或启动任何服务端。" }}</span><button class="button button-primary" type="submit" :disabled="!reviewValid || confirmBusy"><AppIcon name="package" />{{ confirmBusy ? "正在排队" : review.deployServer ? "发布并部署" : "发布并入库" }}</button></div>
               </form>
             </section>
 
@@ -1101,14 +1137,20 @@ function analysisSummary(analysis: PackageImportAnalysis): string {
 
     <dialog ref="slotDrawer" class="drawer vue-drawer deployment-slot-drawer" @cancel.prevent="closeSlotDrawer">
       <div class="drawer-header">
-        <div><span>部署槽管理</span><h2>新建活动部署槽</h2></div>
+        <div><span>部署槽管理</span><h2>新建独立部署槽</h2></div>
         <button class="icon-button" type="button" aria-label="关闭" :disabled="slotBusy" @click="closeSlotDrawer"><AppIcon name="x" /></button>
       </div>
       <form class="drawer-body deployment-slot-form" @submit.prevent="createDeploymentSlot">
         <div class="inline-alert compact-alert" role="status"><AppIcon name="circle-alert" /><span>新槽默认停止且不会出现在玩家目录；代理确认目录与计划任务后才能部署。</span></div>
-        <label>槽 ID<div class="slot-id-input"><span>activity-</span><input v-model="slotDraft.serverIdSuffix" pattern="[a-z0-9][a-z0-9-]{1,39}" maxlength="40" autocomplete="off" required></div></label>
+        <div class="deployment-slot-kind-field">
+          <span id="deployment-slot-kind-label" class="deployment-slot-kind-label">槽类型</span>
+          <div class="segmented-control deployment-slot-kind" role="radiogroup" aria-labelledby="deployment-slot-kind-label">
+            <button v-for="option in slotKindOptions" :key="option.value" type="button" role="radio" :aria-checked="slotDraft.slotKind === option.value" :class="{ active: slotDraft.slotKind === option.value }" @click="slotDraft.slotKind = option.value">{{ option.label }}</button>
+          </div>
+        </div>
+        <label>槽 ID<div class="slot-id-input"><span>{{ slotPrefix }}</span><input v-model="slotDraft.serverIdSuffix" pattern="[a-z0-9][a-z0-9-]{1,39}" maxlength="40" autocomplete="off" required></div></label>
         <label>槽名称<input v-model="slotDraft.displayName" minlength="2" maxlength="80" required></label>
-        <label>安全模板<select v-model="slotDraft.templateServerId" required><option value="activity">activity · owl5:25568</option></select></label>
+        <label>安全模板<select v-model="slotDraft.templateServerId" required><option value="activity">activity · owl5 基础模板</option></select></label>
         <label>创建原因<textarea v-model="slotDraft.reason" minlength="4" maxlength="500" rows="3" required></textarea></label>
         <label>精确确认<input v-model="slotDraft.confirmation" autocomplete="off" maxlength="80" required><span>请输入：{{ slotConfirmation }}</span></label>
         <div v-if="slotError" class="inline-alert settings-error" role="alert"><AppIcon name="circle-alert" /><span>{{ slotError }}</span></div>

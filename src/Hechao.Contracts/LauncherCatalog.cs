@@ -272,7 +272,9 @@ public sealed record VelocityAuthorizationResponse(
     string VelocityTarget,
     AccessTier? AccessTier,
     string? LuckPermsPrimaryGroup,
-    DateTimeOffset EvaluatedAt);
+    DateTimeOffset EvaluatedAt,
+    string? BackendHost = null,
+    int? BackendPort = null);
 
 public enum CatalogSource
 {

@@ -307,7 +307,7 @@ public static class PackageImportEndpoints
                 !PackageImportRules.IsPackageDeploymentTarget(target.Target))
             {
                 errors["targetServerId"] =
-                    ["只能部署到已就绪且启用整合包能力的 owl5 活动槽。"];
+                    ["只能部署到已就绪且启用整合包能力的 owl5 部署槽。"];
             }
             else
             {

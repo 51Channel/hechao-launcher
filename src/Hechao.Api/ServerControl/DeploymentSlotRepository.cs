@@ -17,7 +17,9 @@ public enum DeploymentSlotCreateStatus
     AlreadyExists,
     TemplateNotFound,
     TemplateUnavailable,
-    LimitReached
+    AgentUpgradeRequired,
+    LimitReached,
+    PortPoolExhausted
 }
 
 public sealed record DeploymentSlotCreateResult(
@@ -80,6 +82,12 @@ public sealed class DeploymentSlotRepository(
             return new(DeploymentSlotCreateStatus.TemplateUnavailable);
         }
 
+        if (!Version.TryParse(template.AgentVersion, out var agentVersion) ||
+            agentVersion < new Version(0, 7, 0))
+        {
+            return new(DeploymentSlotCreateStatus.AgentUpgradeRequired);
+        }
+
         if (await CountDynamicSlotsAsync(
                 connection,
                 transaction,
@@ -90,6 +98,16 @@ public sealed class DeploymentSlotRepository(
             return new(DeploymentSlotCreateStatus.LimitReached);
         }
 
+        var port = await AllocatePortAsync(
+            connection,
+            transaction,
+            template.AgentId,
+            cancellationToken);
+        if (port is null)
+        {
+            return new(DeploymentSlotCreateStatus.PortPoolExhausted);
+        }
+
         var operationId = Guid.NewGuid();
         var commandId = Guid.NewGuid();
         var displayName = request.DisplayName.Trim();
@@ -97,13 +115,16 @@ public sealed class DeploymentSlotRepository(
         var provisioning = new ServerDeploymentSlotProvisioningRequest(
             serverId,
             displayName,
-            template.ServerId);
+            template.ServerId,
+            port.Value,
+            request.SlotKind);
 
         await InsertPlaceholderTargetAsync(
             connection,
             transaction,
             serverId,
             template,
+            provisioning,
             now,
             cancellationToken);
         await InsertOperationAsync(
@@ -246,11 +267,69 @@ public sealed class DeploymentSlotRepository(
         return (int)(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
     }
 
+    private static async Task<int?> AllocatePortAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string agentId,
+        CancellationToken cancellationToken)
+    {
+        var used = new HashSet<int>();
+        await using (var reservedCommand = new NpgsqlCommand(
+                         """
+                         SELECT backend_port
+                         FROM launcher.deployment_slots
+                         WHERE status IN ('Provisioning', 'Ready')
+                           AND backend_port BETWEEN $1 AND $2
+                         FOR SHARE;
+                         """,
+                         connection,
+                         transaction))
+        {
+            reservedCommand.Parameters.AddWithValue(
+                DeploymentSlotRules.FirstDynamicPort);
+            reservedCommand.Parameters.AddWithValue(
+                DeploymentSlotRules.LastDynamicPort);
+            await using var reservedReader =
+                await reservedCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reservedReader.ReadAsync(cancellationToken))
+            {
+                used.Add(reservedReader.GetInt32(0));
+            }
+        }
+
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT port
+            FROM launcher.server_control_targets
+            WHERE agent_id = $1
+              AND port BETWEEN $2 AND $3
+            FOR SHARE;
+            """,
+            connection,
+            transaction);
+        command.Parameters.AddWithValue(agentId);
+        command.Parameters.AddWithValue(DeploymentSlotRules.FirstDynamicPort);
+        command.Parameters.AddWithValue(DeploymentSlotRules.LastDynamicPort);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            used.Add(reader.GetInt32(0));
+        }
+
+        return Enumerable.Range(
+                DeploymentSlotRules.FirstDynamicPort,
+                DeploymentSlotRules.LastDynamicPort -
+                    DeploymentSlotRules.FirstDynamicPort + 1)
+            .Cast<int?>()
+            .FirstOrDefault(candidate => !used.Contains(candidate!.Value));
+    }
+
     private static async Task InsertPlaceholderTargetAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string serverId,
         SlotTemplate template,
+        ServerDeploymentSlotProvisioningRequest provisioning,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -272,8 +351,8 @@ public sealed class DeploymentSlotRepository(
         AdminPostgresParameters.AddPositional(
             command.Parameters,
             NpgsqlDbType.Text,
-            template.ConflictGroup);
-        command.Parameters.AddWithValue(template.Port);
+            null);
+        command.Parameters.AddWithValue(provisioning.Port);
         AdminPostgresParameters.AddPositional(
             command.Parameters,
             NpgsqlDbType.Jsonb,
@@ -361,8 +440,10 @@ public sealed class DeploymentSlotRepository(
             """
             INSERT INTO launcher.deployment_slots
                 (server_id, display_name, template_server_id, status,
-                 operation_id, created_by, created_at, updated_at)
-            VALUES ($1, $2, $3, 'Provisioning', $4, $5, $6, $6);
+                 operation_id, created_by, created_at, updated_at,
+                 slot_kind, backend_port, velocity_target)
+            VALUES ($1, $2, $3, 'Provisioning', $4, $5, $6, $6,
+                    $7, $8, $1);
             """,
             connection,
             transaction);
@@ -372,6 +453,8 @@ public sealed class DeploymentSlotRepository(
         command.Parameters.AddWithValue(operationId);
         command.Parameters.AddWithValue(actorUserId);
         command.Parameters.AddWithValue(now);
+        command.Parameters.AddWithValue(provisioning.SlotKind.ToString());
+        command.Parameters.AddWithValue(provisioning.Port);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -409,6 +492,9 @@ public sealed class DeploymentSlotRepository(
                 provisioning.ServerId,
                 provisioning.DisplayName,
                 provisioning.TemplateServerId,
+                provisioning.SlotKind,
+                BackendPort = provisioning.Port,
+                VelocityTarget = provisioning.ServerId,
                 reason
             }, JsonOptions));
         await command.ExecuteNonQueryAsync(cancellationToken);

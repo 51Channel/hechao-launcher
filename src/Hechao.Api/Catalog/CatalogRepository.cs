@@ -271,8 +271,13 @@ public sealed class CatalogRepository(
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
+            LEFT JOIN launcher.deployment_slots deployment_slot
+                ON deployment_slot.server_id = server.id
+               AND deployment_slot.velocity_target = server.velocity_target
+               AND deployment_slot.status = 'Ready'
             LEFT JOIN launcher.server_control_targets control_target
                 ON control_target.server_id = CASE
+                    WHEN deployment_slot.server_id IS NOT NULL THEN server.id
                     WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
                     ELSE server.id
                 END
@@ -296,8 +301,13 @@ public sealed class CatalogRepository(
             FROM launcher.servers server
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
                 ON heartbeat.velocity_target = server.velocity_target
+            LEFT JOIN launcher.deployment_slots deployment_slot
+                ON deployment_slot.server_id = server.id
+               AND deployment_slot.velocity_target = server.velocity_target
+               AND deployment_slot.status = 'Ready'
             LEFT JOIN launcher.server_control_targets control_target
                 ON control_target.server_id = CASE
+                    WHEN deployment_slot.server_id IS NOT NULL THEN server.id
                     WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
                     ELSE server.id
                 END

@@ -79,9 +79,17 @@ public static class DeploymentSlotEndpoints
             {
                 message = "模板槽未启用部署能力，或其 VPS 代理当前离线。"
             }),
+            DeploymentSlotCreateStatus.AgentUpgradeRequired => Results.Conflict(new
+            {
+                message = "目标 VPS 服控代理版本过旧，尚不能创建独立端口槽。"
+            }),
             DeploymentSlotCreateStatus.LimitReached => Results.Conflict(new
             {
                 message = "该 VPS 的动态部署槽已达到安全上限。"
+            }),
+            DeploymentSlotCreateStatus.PortPoolExhausted => Results.Conflict(new
+            {
+                message = "该 VPS 的独立槽端口池已用尽。"
             }),
             _ => Results.Problem(
                 title: "部署槽创建排队失败",

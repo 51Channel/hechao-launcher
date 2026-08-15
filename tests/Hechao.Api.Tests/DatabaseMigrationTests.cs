@@ -246,4 +246,24 @@ public sealed class DatabaseMigrationTests
         Assert.DoesNotContain("powershell", sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("cmd.exe", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void IndependentDeploymentSlotMigration_AddsRoutingMetadata()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.030_independent_deployment_slots.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("slot_kind", sql, StringComparison.Ordinal);
+        Assert.Contains("backend_port", sql, StringComparison.Ordinal);
+        Assert.Contains("velocity_target", sql, StringComparison.Ordinal);
+        Assert.Contains("deployment_slots_independent_port_idx", sql, StringComparison.Ordinal);
+        Assert.Contains("backend_port BETWEEN 25600 AND 25611", sql, StringComparison.Ordinal);
+        Assert.Contains("velocity_target <> 'activity'", sql, StringComparison.Ordinal);
+    }
 }

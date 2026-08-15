@@ -11,6 +11,8 @@ public static partial class PackageImportRules
     public const string ActivityVelocityTarget = "activity";
     public const string ActivityConflictGroup = "owl5-activity-slot";
     public const int ActivityPort = 25568;
+    public const int FirstIndependentSlotPort = 25600;
+    public const int LastIndependentSlotPort = 25611;
 
     public static IReadOnlyDictionary<string, string[]> Validate(
         AdminPackageUploadCreateRequest request,
@@ -128,16 +130,22 @@ public static partial class PackageImportRules
         target.PackageDeploymentEnabled &&
         target.DeploymentSlotStatus is not DeploymentSlotProvisioningStatus.Provisioning
             and not DeploymentSlotProvisioningStatus.Failed &&
-        IsPackageDeploymentTarget(
-            target.AgentId,
-            target.ConflictGroup,
-            target.Port);
+        (IsOwl5ActivitySlot(
+             target.AgentId,
+             target.ConflictGroup,
+             target.Port) ||
+         (target.DynamicDeploymentSlot &&
+          IsOwl5IndependentSlot(
+              target.AgentId,
+              target.ConflictGroup,
+              target.Port)));
 
     public static bool IsPackageDeploymentTarget(
         string agentId,
         string? conflictGroup,
         int port) =>
-        IsOwl5ActivitySlot(agentId, conflictGroup, port);
+        IsOwl5ActivitySlot(agentId, conflictGroup, port) ||
+        IsOwl5IndependentSlot(agentId, conflictGroup, port);
 
     private static bool IsOwl5ActivitySlot(
         string agentId,
@@ -149,6 +157,14 @@ public static partial class PackageImportRules
             ActivityConflictGroup,
             StringComparison.Ordinal) &&
         port == ActivityPort;
+
+    private static bool IsOwl5IndependentSlot(
+        string agentId,
+        string? conflictGroup,
+        int port) =>
+        string.Equals(agentId, ActivityAgentId, StringComparison.Ordinal) &&
+        conflictGroup is null &&
+        port is >= FirstIndependentSlotPort and <= LastIndependentSlotPort;
 
     public static ServerMemoryGuidance? ResolvePackageDeploymentMemoryGuidance(
         string serverId,

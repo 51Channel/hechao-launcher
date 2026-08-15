@@ -174,16 +174,22 @@ public sealed record ServerControlAgentConfiguration
         {
             target.Validate();
             var parent = Directory.GetParent(target.ServerDirectory)?.FullName;
+            var independentRouting =
+                target.ConflictGroup is null &&
+                target.Port >= DeploymentSlotProvisioning.FirstPort &&
+                target.Port <= DeploymentSlotProvisioning.LastPort;
+            var legacyActivityRouting =
+                string.Equals(
+                    target.ConflictGroup,
+                    PackageDeploymentConflictGroup,
+                    StringComparison.Ordinal) &&
+                target.Port == PackageDeploymentPort;
             if (!target.PackageDeploymentEnabled ||
                 !target.ServerDeletionEnabled ||
                 !target.RequireDeployedPackage ||
                 parent is null ||
                 !string.Equals(parent, root, StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(
-                    target.ConflictGroup,
-                    PackageDeploymentConflictGroup,
-                    StringComparison.Ordinal) ||
-                target.Port != PackageDeploymentPort)
+                (!independentRouting && !legacyActivityRouting))
             {
                 throw new InvalidDataException(
                     $"Dynamic deployment slot '{target.ServerId}' is invalid.");
@@ -194,7 +200,11 @@ public sealed record ServerControlAgentConfiguration
         if (allTargets.Length > 48 ||
             allTargets.Select(target => target.ServerId)
                 .Distinct(StringComparer.Ordinal)
-                .Count() != allTargets.Length)
+                .Count() != allTargets.Length ||
+            dynamicTargets.Where(target => target.ConflictGroup is null)
+                .Select(target => target.Port)
+                .Distinct()
+                .Count() != dynamicTargets.Count(target => target.ConflictGroup is null))
         {
             throw new InvalidDataException(
                 "The combined server control target list is invalid.");
@@ -450,6 +460,8 @@ public sealed record DeploymentSlotProvisioningConfiguration
     public string TemplateServerId { get; init; } = "activity";
     public string TaskInstallerScript { get; init; } = string.Empty;
     public int MaximumSlots { get; init; } = 12;
+    public int FirstPort { get; init; } = 25600;
+    public int LastPort { get; init; } = 25611;
 
     internal DeploymentSlotProvisioningConfiguration Normalize() =>
         this with
@@ -481,6 +493,12 @@ public sealed record DeploymentSlotProvisioningConfiguration
             !Path.IsPathFullyQualified(RootDirectory) ||
             !Path.IsPathFullyQualified(TaskInstallerScript) ||
             MaximumSlots is < 1 or > 16 ||
+            FirstPort is < 1024 or > 65535 ||
+            LastPort < FirstPort ||
+            LastPort > 65535 ||
+            LastPort - FirstPort + 1 < MaximumSlots ||
+            configuration.Targets.Any(target =>
+                target.Port >= FirstPort && target.Port <= LastPort) ||
             template is null ||
             !template.PackageDeploymentEnabled ||
             !string.Equals(

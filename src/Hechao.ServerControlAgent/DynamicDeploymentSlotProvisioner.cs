@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Net.NetworkInformation;
 using Hechao.Contracts;
 
 namespace Hechao.ServerControlAgent;
@@ -62,7 +63,18 @@ internal sealed partial class DynamicDeploymentSlotProvisioner(
                     "本机未找到已批准的部署槽模板。 ");
             }
 
-            var target = CreateTarget(request.ServerId, template.Configuration);
+            if (registry.Snapshot().Any(runtime =>
+                    runtime.Configuration.Port == request.Port) ||
+                IPGlobalProperties.GetIPGlobalProperties()
+                    .GetActiveTcpListeners()
+                    .Any(endpoint => endpoint.Port == request.Port))
+            {
+                return Failed(
+                    "SLOT_PORT_CONFLICT",
+                    "分配给该槽的端口已被占用，未创建任何文件。 ");
+            }
+
+            var target = CreateTarget(request, template.Configuration);
             try
             {
                 configuration.ValidateDynamicTargets(
@@ -224,15 +236,17 @@ internal sealed partial class DynamicDeploymentSlotProvisioner(
     }
 
     private ServerControlTargetConfiguration CreateTarget(
-        string serverId,
+        ServerDeploymentSlotProvisioningRequest request,
         ServerControlTargetConfiguration template)
     {
         var root = configuration.DeploymentSlotProvisioning.GetNormalizedRoot();
         return (template with
         {
-            ServerId = serverId,
-            ServerDirectory = Path.Combine(root, serverId),
-            StartTaskName = "Hechao-Server-" + serverId,
+            ServerId = request.ServerId,
+            ServerDirectory = Path.Combine(root, request.ServerId),
+            StartTaskName = "Hechao-Server-" + request.ServerId,
+            Port = request.Port,
+            ConflictGroup = null,
             PackageDeploymentEnabled = true,
             ServerDeletionEnabled = true,
             RequireDeployedPackage = true
@@ -384,10 +398,14 @@ internal sealed partial class DynamicDeploymentSlotProvisioner(
         }
     }
 
-    private static bool IsValid(ServerDeploymentSlotProvisioningRequest request) =>
+    private bool IsValid(ServerDeploymentSlotProvisioningRequest request) =>
         DynamicSlotId().IsMatch(request.ServerId ?? string.Empty) &&
+        HasExpectedPrefix(request.ServerId ?? string.Empty, request.SlotKind) &&
         ConfigurationPatterns.ServerId().IsMatch(
             request.TemplateServerId ?? string.Empty) &&
+        request.Port >= configuration.DeploymentSlotProvisioning.FirstPort &&
+        request.Port <= configuration.DeploymentSlotProvisioning.LastPort &&
+        Enum.IsDefined(request.SlotKind) &&
         !string.IsNullOrWhiteSpace(request.DisplayName) &&
         request.DisplayName.Trim().Length is >= 2 and <= 80 &&
         !request.DisplayName.Any(char.IsControl);
@@ -398,7 +416,19 @@ internal sealed partial class DynamicDeploymentSlotProvisioner(
     private static AgentCommandResult Failed(string code, string message) =>
         new(ServerControlCommandOutcome.Failed, code, message);
 
-    [GeneratedRegex("^activity-[a-z0-9][a-z0-9-]{1,39}$",
+    private static bool HasExpectedPrefix(
+        string serverId,
+        DeploymentSlotKind slotKind) =>
+        serverId.StartsWith(slotKind switch
+        {
+            DeploymentSlotKind.Activity => "activity-",
+            DeploymentSlotKind.Survival => "survival-",
+            DeploymentSlotKind.Pvp => "pvp-",
+            DeploymentSlotKind.Minigame => "minigame-",
+            _ => "\0"
+        }, StringComparison.Ordinal);
+
+    [GeneratedRegex("^(?:activity|survival|pvp|minigame)-[a-z0-9][a-z0-9-]{1,39}$",
         RegexOptions.CultureInvariant)]
     private static partial Regex DynamicSlotId();
 }

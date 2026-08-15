@@ -1,13 +1,11 @@
 # 赫朝启动器
 
-> `2026-08-15` 多部署槽候选已完成：Launcher API `0.31.0` 与 owl5
-> ServerControlAgent `0.6.0` 允许管理员在整合包导入页选择现有活动槽，或从固定
-> `activity` 安全模板创建 `activity-*` 动态槽。每个槽拥有独立目录和计划任务，但仍
-> 共用 `127.0.0.1:25568 / owl5-activity-slot`，同一时刻只能运行一个；新槽默认停止、
-> 隐藏，未部署整合包前不能启动，创建失败自动回滚。活动企划继续默认使用固定
-> `activity`，本次没有改变玩家路由或自动启动任何 Minecraft 服务端。候选记录见
-> [`docs/API_RELEASE_0.31.0_CANDIDATE.md`](docs/API_RELEASE_0.31.0_CANDIDATE.md) 与
-> [`docs/SERVER_CONTROL_AGENT_RELEASE_0.6.0_CANDIDATE.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.6.0_CANDIDATE.md)。
+> `2026-08-15` 独立部署槽候选已完成：Launcher API `0.32.0`、owl5
+> ServerControlAgent `0.7.0` 与 Velocity Authorizer `0.5.0` 支持从固定 `activity`
+> 安全模板创建生存、活动、PVP、小游戏槽。动态槽使用 `25600-25611` 中的独立端口、
+> 独立 Velocity 目标且不属于活动冲突组，因此可与其他槽同时运行；只有固定
+> `activity / 25568 / owl5-activity-slot` 的替换服仍互斥。新槽默认停止、隐藏，未部署
+> 整合包前不能启动，创建失败自动回滚，系统不会主动启动 Minecraft。
 
 > `2026-08-14` Launcher API `0.30.7` 已将活动客户端下载与进服权限分离。已登录玩家
 > 可以看到可见活动并提前下载签名客户端；`canJoin` 独立反映最低称号和单服
@@ -247,10 +245,10 @@
 - `0.27.0` 已正式部署第十个“整合包导入”模块：8 MiB 分块续传、ZIP/MRPACK
   安全识别、人工复核、独立 Publisher Agent、客户端 `Test` 发布和 owl5 活动槽停服
   原子部署均通过固定试包；系统不会自动开服或推进 Gray/Production。
-- `0.31.0` 将整合包的固定活动槽选择扩展为受控多槽：后台可选择全部已就绪部署槽，
-  也可新建 `activity-*` 动态槽。代理为新槽创建独立目录、主机固定文件快照和无触发器
-  计划任务；API 与代理共同校验模板、端口、冲突组、数量上限和 ID 占用。所有槽仍共享
-  单一活动入口，新槽在部署完成前拒绝启动，失败会清理本轮创建的目录、任务和状态。
+- `0.32.0` 将受控多槽改为真正独立的部署槽：后台可按生存、活动、PVP、小游戏创建
+  `survival-*`、`activity-*`、`pvp-*`、`minigame-*`。API 为每个槽分配独立端口和
+  Velocity 目标，代理创建独立目录、主机固定文件快照与无触发器计划任务；动态槽没有
+  冲突组，可以同时运行。固定活动替换服继续共享 `activity / 25568 / owl5-activity-slot`。
 - 服控面板和最小权限 Windows 代理已接入生产：支持优雅启停、冲突服先停后启、
   `server.properties` 与 JVM 内存快捷设置，以及受限 Minecraft 控制台。当前登记
   9 个受管目标；代理在线数和运行中实例数来自实时心跳，执行动作前必须重新核验。

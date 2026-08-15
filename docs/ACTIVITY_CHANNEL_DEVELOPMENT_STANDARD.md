@@ -45,12 +45,13 @@ Codex 读取顺序：
    [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)。
 6. 最后读取最新资产、完成矩阵和与目标活动有关的发布证据；历史证据只能说明当时状态。
 
-## 2. 先分清三种“通道”
+## 2. 先分清四种“通道”
 
 | 名称 | 当前含义 | 强制规则 |
 | --- | --- | --- |
-| 玩家活动入口 | 目录记录的 `velocityTarget=activity` | 所有活动统一使用，不新增活动公网入口 |
-| 物理活动槽 | owl5 `127.0.0.1:25568`，固定 `activity` 或受控 `activity-*` 动态目录，冲突组 `owl5-activity-slot` | 槽可有多个独立目录和任务，但同一时刻只允许一个后端占用 |
+| 玩家公网入口 | Velocity 公网地址 | 所有服务器统一使用，不开放后端公网端口 |
+| 固定活动替换槽 | `velocityTarget=activity`，owl5 `127.0.0.1:25568`，冲突组 `owl5-activity-slot` | 共享该入口的替换服同一时刻只允许一个后端占用 |
+| 独立部署槽 | `velocityTarget=<serverId>`，owl5 `127.0.0.1:25600-25611`，无冲突组 | 每槽独立端口，可与生存、PVP、小游戏和其他独立槽同时运行 |
 | 客户端发布通道 | `Test -> Gray -> Production` | 签名发布逐级推广，不得直接覆盖正式清单 |
 
 沟通、提交和发布记录必须写全名称，不能只写“切到活动通道”。
@@ -64,9 +65,9 @@ flowchart LR
     P --> O["私有 OSS 内容对象"]
     L --> G["一次性进服授权"]
     G --> V["Velocity 公网入口"]
-    V --> A["目标 activity"]
-    A --> S["owl5 127.0.0.1:25568"]
-    S --> B["当前唯一活动后端"]
+    V --> A["固定 activity 或独立槽 ID"]
+    A --> S["owl5 回环批准端口"]
+    S --> B["目标活动后端"]
     W["管理员后台"] --> C
     W --> R["服控命令队列"]
     R --> X["owl5 服控代理"]
@@ -83,11 +84,12 @@ flowchart LR
 
 ## 3. 不可破坏的架构边界
 
-1. **统一路由**：每个玩家活动目录记录的 `velocityTarget` 必须为 `activity`。
-2. **单槽运行**：所有绑定 `25568` 或活动独占资源的控制目标必须属于
-   `owl5-activity-slot`；冲突服停止失败时，新目标绝不启动。
-   整合包直接部署可选择已就绪动态槽；活动企划仍默认绑定固定 `activity`，动态槽不会
-   自动发布到玩家目录，也不代表新增公网入口或并行活动容量。
+1. **统一公网入口**：玩家只连接 Velocity 公网地址。固定替换服使用
+   `velocityTarget=activity`；独立槽使用与 `serverId` 相同的 Velocity 目标，由授权 API
+   返回批准的回环地址和端口动态注册，后端端口不向公网开放。
+2. **按资源隔离**：所有绑定 `25568` 或共享活动独占资源的控制目标必须属于
+   `owl5-activity-slot`；冲突服停止失败时，新目标绝不启动。独立槽使用 `25600-25611`
+   中唯一端口和空冲突组，可以并行运行。槽类型不产生互斥，只有显式共享资源才互斥。
 3. **档案隔离**：不同 Minecraft 版本、加载器或独立模组集合使用不同
    `clientProfileId` 和可写 `.minecraft`。只有同一活动的兼容小改才复用档案并升版。
 4. **身份稳定**：活动 ID、目录 `serverId`、服控 `controlTargetId` 和客户端
@@ -122,9 +124,9 @@ flowchart LR
 | `serverId` | `activity-campus-hide-seek` | 后台目录和审计稳定 ID |
 | `controlTargetId` | `activity-campus-hide-seek` | 默认与 `serverId` 一致 |
 | `profileId` | `activity-campus-hide-seek-neoforge-1.21.11` | 活动、加载器和 MC 版本可辨识 |
-| `velocityTarget` | `activity` | 固定值，不因活动改变 |
-| `conflictGroup` | `owl5-activity-slot` | 固定活动槽冲突组 |
-| `backendPort` | `25568` | 当前 owl5 活动槽端口 |
+| `velocityTarget` | `activity-campus-hide-seek` | 固定替换槽填 `activity`；独立槽与 `serverId` 相同 |
+| `conflictGroup` | 空 | 固定替换槽才填 `owl5-activity-slot` |
+| `backendPort` | `25600` | 独立槽由 API 从 `25600-25611` 分配；固定替换槽为 `25568` |
 
 一个活动只有显示名变化时不创建新 ID。以下情况创建新 `profileId`：
 
@@ -546,8 +548,9 @@ Codex 最终报告必须包含：
 - 玩法规则、协议和权限有测试，专用服务端可无图形启动；
 - 客户端与服务端版本匹配，错误版本失败关闭；
 - 活动档案签名、验签、全对象校验、干净安装、修复和回滚通过；
-- 目录记录绑定正确档案，`velocityTarget` 为 `activity`；
-- 物理后端属于 `owl5-activity-slot`，同槽无第二个运行实例；
+- 目录记录绑定正确档案，`velocityTarget` 与固定替换槽或独立槽模式一致；
+- 固定替换后端属于 `owl5-activity-slot` 且同槽无第二个运行实例；独立槽使用唯一端口、
+  槽自身 Velocity 目标和空冲突组；
 - 新服务端组件计划符合 `HECHAO_NEW_SERVER_BASELINE.md`，平台单例、大厅专用、主机级
   和后端组件没有混装，forwarding 与指标均精确兼容；
 - 大厅、Survival2、PVP 和其他玩家服未被改成活动回退；

@@ -8,6 +8,7 @@ import type {
   ControlOverview,
   ControlQueueResult,
   ControlTargetDetail,
+  DeploymentSlotKind,
   QuickSettings
 } from "@/api/types";
 import AppIcon from "@/components/AppIcon.vue";
@@ -149,6 +150,16 @@ function formatMemoryMiB(value: number | null | undefined): string {
   return value >= 1024
     ? `${Number.isInteger(value / 1024) ? value / 1024 : (value / 1024).toFixed(2)} GiB`
     : `${value} MiB`;
+}
+
+function deploymentSlotKindText(kind: DeploymentSlotKind | null): string {
+  if (!kind) return "活动（固定槽）";
+  return {
+    Activity: "活动",
+    Survival: "生存",
+    Pvp: "PVP",
+    Minigame: "小游戏"
+  }[kind];
 }
 
 function settingsMatch(left: QuickSettings | null, right: QuickSettings | null): boolean {
@@ -558,6 +569,7 @@ function operationResult(operation: ControlOperation): string {
           <dl class="control-detail-metrics" aria-label="服务器运行与资源信息">
             <div><dt>运行状态</dt><dd>{{ selectedTarget.online ? "运行中" : "已停止" }}</dd></div>
             <div><dt>控制代理</dt><dd>{{ selectedTarget.agentId }} · {{ selectedTarget.agentConnected ? "在线" : "离线" }}</dd></div>
+            <div v-if="selectedTarget.dynamicDeploymentSlot || selectedTarget.serverId === 'activity'"><dt>槽类型</dt><dd>{{ deploymentSlotKindText(selectedTarget.deploymentSlotKind) }}</dd></div>
             <div><dt>端口 / PID</dt><dd>{{ selectedTarget.port }} / {{ selectedTarget.processId || "未上报" }}</dd></div>
             <div><dt>启动内存</dt><dd>{{ hasMemorySettings ? `Xms ${formatMemoryMiB(selectedTarget.settings?.initialMemoryMiB)} · Xmx ${formatMemoryMiB(selectedTarget.settings?.maximumMemoryMiB)}` : "未上报" }}</dd></div>
             <div><dt>单服上限</dt><dd>{{ formatMemoryMiB(selectedTarget.settings?.maximumAllowedMemoryMiB) }}</dd></div>

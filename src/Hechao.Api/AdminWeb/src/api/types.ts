@@ -269,6 +269,7 @@ export interface RuntimeSummary {
 
 export type ControlAction = "Start" | "Stop" | "Restart" | "ConsoleCommand" | "ApplySettings" | "DeployPackage" | "DeleteServerFiles" | "CreateDeploymentSlot";
 export type DeploymentSlotStatus = "Provisioning" | "Ready" | "Failed";
+export type DeploymentSlotKind = "Activity" | "Survival" | "Pvp" | "Minigame";
 export type ControlOperationStatus = "Pending" | "Running" | "Succeeded" | "Failed" | "Cancelled";
 
 export interface QuickSettings {
@@ -325,6 +326,7 @@ export interface ControlTargetSummary {
   dynamicDeploymentSlot: boolean;
   deploymentSlotStatus: DeploymentSlotStatus | null;
   deploymentSlotError: string | null;
+  deploymentSlotKind: DeploymentSlotKind | null;
 }
 
 export interface ServerPackageDeploymentIdentity {

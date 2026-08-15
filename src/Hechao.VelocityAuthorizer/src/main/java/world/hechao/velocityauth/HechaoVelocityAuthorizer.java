@@ -11,7 +11,9 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerInfo;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +29,7 @@ import org.slf4j.Logger;
 @Plugin(
         id = "hechao-velocity-authorizer",
         name = "Hechao Velocity Authorizer",
-        version = "0.4.0",
+        version = "0.5.0",
         description = "Server-side Microsoft UUID and LuckPerms authorization for Hechao",
         authors = {"Hechao"})
 public final class HechaoVelocityAuthorizer {
@@ -195,7 +197,9 @@ public final class HechaoVelocityAuthorizer {
         }
 
         if (decision.allowed()) {
-            if (!decision.hasSessionServerId() || !decision.hasVelocityTarget()) {
+            if (!decision.hasSessionServerId()
+                    || !decision.hasVelocityTarget()
+                    || !decision.hasValidDynamicBackend()) {
                 if (initialConnection || mode == AuthorizationMode.ENFORCE) {
                     deny(event, initialConnection, SERVICE_UNAVAILABLE_MESSAGE);
                     logger.error(
@@ -294,7 +298,9 @@ public final class HechaoVelocityAuthorizer {
             return decision.serverId().toLowerCase(Locale.ROOT);
         }
 
-        Optional<RegisteredServer> destination = proxyServer.getServer(grantedTarget);
+        Optional<RegisteredServer> destination = resolveDestination(
+                grantedTarget,
+                decision);
         if (destination.isPresent()) {
             event.setResult(ServerPreConnectEvent.ServerResult.allowed(destination.get()));
             logger.info(
@@ -311,6 +317,78 @@ public final class HechaoVelocityAuthorizer {
                 event.getPlayer().getUsername(),
                 grantedTarget);
         return null;
+    }
+
+    private Optional<RegisteredServer> resolveDestination(
+            String grantedTarget,
+            AuthorizationDecision decision) {
+        if (!decision.hasValidDynamicBackend()) {
+            logger.error(
+                    "Denied dynamic backend {} because its address is not an approved loopback endpoint.",
+                    grantedTarget);
+            return Optional.empty();
+        }
+        Optional<RegisteredServer> existing = proxyServer.getServer(grantedTarget);
+        if (existing.isPresent()) {
+            if (!decision.hasDynamicBackend()
+                    || matchesDynamicBackend(existing.get(), decision)) {
+                return existing;
+            }
+            logger.error(
+                    "Denied dynamic backend {} because the registered address differs from {}:{}.",
+                    grantedTarget,
+                    decision.backendHost(),
+                    decision.backendPort());
+            return Optional.empty();
+        }
+        if (!decision.hasDynamicBackend()) {
+            return existing;
+        }
+
+        ServerInfo serverInfo = new ServerInfo(
+                grantedTarget,
+                new InetSocketAddress(decision.backendHost(), decision.backendPort()));
+        try {
+            RegisteredServer registered = proxyServer.registerServer(serverInfo);
+            logger.info(
+                    "Registered dynamic backend {} at {}:{}.",
+                    grantedTarget,
+                    decision.backendHost(),
+                    decision.backendPort());
+            return Optional.of(registered);
+        } catch (IllegalArgumentException exception) {
+            Optional<RegisteredServer> raced = proxyServer.getServer(grantedTarget);
+            if (raced.isPresent()) {
+                if (matchesDynamicBackend(raced.get(), decision)) {
+                    return raced;
+                }
+                logger.error(
+                        "Denied dynamic backend {} because the concurrently registered address differs from {}:{}.",
+                        grantedTarget,
+                        decision.backendHost(),
+                        decision.backendPort());
+                return Optional.empty();
+            }
+            logger.error(
+                    "Unable to register dynamic backend {} at {}:{}.",
+                    grantedTarget,
+                    decision.backendHost(),
+                    decision.backendPort(),
+                    exception);
+            return Optional.empty();
+        }
+    }
+
+    private static boolean matchesDynamicBackend(
+            RegisteredServer server,
+            AuthorizationDecision decision) {
+        InetSocketAddress address = server.getServerInfo().getAddress();
+        InetSocketAddress approved = new InetSocketAddress(
+                decision.backendHost(),
+                decision.backendPort());
+        return address.equals(approved)
+                && address.getAddress() != null
+                && address.getAddress().isLoopbackAddress();
     }
 
     private static void deny(

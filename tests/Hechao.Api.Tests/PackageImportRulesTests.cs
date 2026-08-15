@@ -100,14 +100,14 @@ public sealed class PackageImportRulesTests
     }
 
     [Fact]
-    public void IsPackageDeploymentTarget_AcceptsApprovedSiblingSlot()
+    public void IsPackageDeploymentTarget_AcceptsIndependentSlot()
     {
         var target = new AdminServerControlTargetRecord(
-            "activity-ready-check",
+            "survival-ready-check",
             "就绪检查槽",
             PackageImportRules.ActivityAgentId,
-            PackageImportRules.ActivityConflictGroup,
-            PackageImportRules.ActivityPort,
+            null,
+            PackageImportRules.FirstIndependentSlotPort,
             true,
             DateTimeOffset.UtcNow,
             false,
@@ -119,7 +119,8 @@ public sealed class PackageImportRulesTests
             null,
             PackageDeploymentEnabled: true,
             DynamicDeploymentSlot: true,
-            DeploymentSlotStatus: DeploymentSlotProvisioningStatus.Ready);
+            DeploymentSlotStatus: DeploymentSlotProvisioningStatus.Ready,
+            DeploymentSlotKind: DeploymentSlotKind.Survival);
 
         Assert.True(PackageImportRules.IsPackageDeploymentTarget(target));
         Assert.False(PackageImportRules.IsPackageDeploymentTarget(
@@ -128,6 +129,10 @@ public sealed class PackageImportRulesTests
             target with { PackageDeploymentEnabled = false }));
         Assert.False(PackageImportRules.IsPackageDeploymentTarget(
             target with { AgentId = "owl9" }));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            target with { ConflictGroup = PackageImportRules.ActivityConflictGroup }));
+        Assert.False(PackageImportRules.IsPackageDeploymentTarget(
+            target with { Port = PackageImportRules.LastIndependentSlotPort + 1 }));
     }
 
     [Fact]
@@ -167,7 +172,8 @@ public sealed class PackageImportRulesTests
         Assert.NotNull(Resolve(serverId: "fanstreet"));
         Assert.Null(Resolve(agentId: "owl9"));
         Assert.Null(Resolve(conflictGroup: "other"));
-        Assert.Null(Resolve(port: 25569));
+        Assert.NotNull(Resolve(conflictGroup: null, port: 25600));
+        Assert.Null(Resolve(conflictGroup: null, port: 25581));
         Assert.Null(Resolve(hostTotalMemoryMiB: null));
     }
 

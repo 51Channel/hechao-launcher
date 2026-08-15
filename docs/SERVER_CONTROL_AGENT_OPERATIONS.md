@@ -26,10 +26,11 @@
   `Ctrl+C`，触发 JVM 关机钩子并继续等待正常释放；
 - 修改 `server.properties` 中五个白名单字段并保留备份；
 - 读取并修改每服显式声明的 JVM `-Xms/-Xmx` 启动内存，按单服上限校验；
-- 对固定 `activity` 或已就绪 `activity-*` 动态槽执行带租约、摘要和文件清单的
+- 对固定 `activity` 或已就绪的生存、活动、PVP、小游戏动态槽执行带租约、摘要和文件清单的
   `DeployPackage`，原子切换服务端目录并保持停止；
-- 从固定 `activity` 安全模板创建 `activity-*` 动态槽，创建独立目录、固定文件快照和
-  无触发器计划任务；不接受管理员指定任意路径、端口或启动命令；
+- 从固定 `activity` 安全模板创建 `survival-*`、`activity-*`、`pvp-*`、`minigame-*`
+  动态槽，创建独立目录、批准端口、固定文件快照和无触发器计划任务；不接受管理员指定
+  任意路径、端口或启动命令；
 - 发送配置中明确允许的单行 Minecraft 命令。
 
 代理不提供 PowerShell、CMD、SSH、任意文件浏览或任意进程终止接口。`Ctrl+C`
@@ -408,25 +409,27 @@ Launcher API `0.30.0` 把该身份保存到 `server_control_targets`。活动企
 回滚和隐私证据见 [`SERVER_CONTROL_AGENT_RELEASE_0.5.0.md`](SERVER_CONTROL_AGENT_RELEASE_0.5.0.md)
 与 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
 
-### 6.13 动态活动部署槽（owl5 代理 0.6.0）
+### 6.13 独立部署槽（owl5 代理 0.7.0）
 
-`0.6.0` 新增结构化 `CreateDeploymentSlot`。管理员只提交 `activity-*` ID、显示名、
-固定模板 ID 和原因；API 使用串行化事务检查目录与服控 ID 未占用、模板代理新鲜且具有
-部署能力，并写入 `Provisioning` 槽和带租约命令。生产配置最多允许 `12` 个动态槽，API
-硬上限为 `16` 个 `Provisioning / Ready` 槽，失败记录不占用额度。
+`0.7.0` 扩展结构化 `CreateDeploymentSlot`。管理员选择 `Activity`、`Survival`、`Pvp`、
+`Minigame` 并提交对应 `activity-*`、`survival-*`、`pvp-*`、`minigame-*` ID、显示名、
+固定模板 ID 和原因。API 使用串行化事务检查目录与服控 ID 未占用、模板代理新鲜且具有
+部署能力，从 `25600-25611` 分配未占用端口，再写入 `Provisioning` 槽和带租约命令。
+API 与生产配置上限均为 `12` 个 `Provisioning / Ready` 槽；失败记录不占用额度。
 
-owl5 代理只从固定 `activity` 模板派生主机、`127.0.0.1:25568`、
-`owl5-activity-slot`、内存文件、固定文件和世界路径。目录固定为
+owl5 代理只从固定 `activity` 安全模板派生主机配置、内存文件、固定文件和世界路径；
+每个动态槽使用 API 批准的独立端口、槽自身的 Velocity 目标和空冲突组。目录固定为
 `E:\HechaoActivitySlots\<serverId>`，任务固定为 `Hechao-Server-<serverId>`。代理先检查
-根目录不是重解析点，拒绝覆盖已有目录或任务，再创建 owner 标记、复制主机固定文件、
-生成停服占位配置、安装无触发器计划任务并原子持久化。安装失败或取消会清理本轮目录、
-任务、快照和状态；成功后 API 只在心跳同时确认正确代理、端口、冲突组和部署能力时把槽
-标为 `Ready`。
+端口未被配置或真实监听占用、根目录不是重解析点，并拒绝覆盖已有目录或任务，再创建
+owner 标记、复制主机固定文件、写入目标端口、安装无触发器计划任务并原子持久化。
+安装失败或取消会清理本轮目录、任务、快照和状态；成功后 API 只在心跳同时确认正确
+代理、独立端口、空冲突组和部署能力时把槽标为 `Ready`。
 
 动态槽在有效 `.hechao-deployment.json` 出现前启停接口返回 `DEPLOYMENT_REQUIRED`。
-它默认停止、隐藏且不进入玩家目录；部署成功也不会自动启动。所有动态槽仍共享一个
-端口和冲突组，冲突编排保证同一时刻最多运行一个活动后端。代理安装器在替换旧 EXE 前
-校验动态槽配置与任务安装脚本，升级本身只重启代理，不操作 Minecraft。
+它默认停止、隐藏且不进入玩家目录；部署成功也不会自动启动。不同动态槽没有共享冲突组，
+可以同时运行。固定 `activity / 25568 / owl5-activity-slot` 仍只约束共享旧活动入口的
+替换服。代理安装器在替换旧 EXE 前校验动态槽配置与任务安装脚本，升级本身只重启代理，
+不操作 Minecraft。
 
 该能力已于 2026-08-15 在 owl5 正式上线；API `0.31.0` 心跳确认代理 `0.6.0`、七个
 既有目标和原活动 PID 保持正常，尚未创建真实动态槽。发布与回滚证据见

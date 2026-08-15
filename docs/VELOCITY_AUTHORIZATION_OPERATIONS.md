@@ -1,8 +1,9 @@
 # Velocity 进服授权运维
 
-> 当前生产：API `0.22.0`、启动器 `0.12.3`、Velocity Authorizer `0.4.0`
+> 当前生产：API `0.31.0`、启动器 `0.15.8`、Velocity Authorizer `0.4.0`
 > （`monitor`）、Lobby Guard `0.1.0`
 > 当前状态：生产部署和自动验收完成，等待真实账号灰度后切换 `enforce`
+> 独立槽候选：API `0.32.0`、Velocity Authorizer `0.5.0`
 >
 > owl9 边界：Velocity 目标 `pvp` 当前只路由到恐怖整蛊服
 > `C:\mc\server`；真正 PVP 服 `E:\MinecraftServer` 尚无独立目标，不得通过该
@@ -28,6 +29,12 @@
 Authorizer `0.4.0` 必须在玩家完成后端登录前把目标改写到授权后端。无授权、API
 不可用、配置损坏、未知目标、基础设施目标或目标改写失败时，所有运行模式都必须硬拒绝，
 不得让玩家落入大厅或其他默认目标。
+
+从 `0.5.0` 起，授权响应可为状态为 `Ready` 的动态槽附带 `backendHost` 与
+`backendPort`。插件只接受 `127.0.0.1` 或 `::1` 和有效端口，并以授权目标名动态注册
+后端；外部地址、字段不完整、目标名非法或已注册地址不一致都会故障关闭。固定服务器仍
+使用 `velocity.toml` 中的静态目标。这样新增 `survival-*`、`activity-*`、`pvp-*`、
+`minigame-*` 不需要修改或重启 Velocity，首次成功授权时即可路由到独立槽。
 
 插件把首次授权返回的服务器 ID 保存为 `sessionServerId`。它代表启动当前
 Minecraft 进程时所选客户端档案。当前架构不提供游戏内转服；`/hub`、`/lobby`、

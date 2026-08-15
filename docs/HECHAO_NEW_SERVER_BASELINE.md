@@ -110,11 +110,12 @@ Authorizer JAR 或其内部令牌配置放入 Paper、Fabric、Forge、NeoForge 
 - 稳定 `serverId/controlTargetId`；
 - 独立服务端目录和 PowerShell 7 启动任务；
 - 真实端口、日志、`server.properties` 和内存参数文件；
-- 活动服统一 `conflictGroup=owl5-activity-slot`；
+- 只有共享固定 `activity / 25568` 入口的替换服使用
+  `conflictGroup=owl5-activity-slot`；独立生存、活动、PVP、小游戏槽使用独立端口和空冲突组；
 - 最小控制台命令前缀和内存硬上限。
 
-一个端口、目录或任务只能归属一个目标。共享活动槽的目标必须使用相同冲突组，旧后端
-停止失败时新后端不得启动。参见
+一个独立端口、目录或任务只能归属一个目标。共享固定活动入口的目标必须使用相同冲突组，
+旧后端停止失败时新后端不得启动；没有共享物理资源的槽不得仅因用途不同而互斥。参见
 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)。
 
 ### 5.2 状态、指标、备份和告警

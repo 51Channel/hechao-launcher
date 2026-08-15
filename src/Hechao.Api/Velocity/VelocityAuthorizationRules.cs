@@ -132,7 +132,9 @@ internal sealed record VelocityServerAccess(
     string MinecraftVersion,
     string Loader,
     string ClientProfileId,
-    bool AllowsProtocolTranslation);
+    bool AllowsProtocolTranslation,
+    string? BackendHost = null,
+    int? BackendPort = null);
 
 internal enum ServerAccessOverride
 {

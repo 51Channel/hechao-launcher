@@ -44,6 +44,14 @@ final class FlatJsonObject {
         throw new IllegalArgumentException("Invalid string JSON property: " + name);
     }
 
+    Integer nullableInteger(String name) {
+        Object value = values.get(name);
+        if (value == null || value instanceof Integer) {
+            return (Integer) value;
+        }
+        throw new IllegalArgumentException("Invalid integer JSON property: " + name);
+    }
+
     private static final class Parser {
         private final String json;
         private int offset;
@@ -92,7 +100,27 @@ final class FlatJsonObject {
             if (consumeLiteral("null")) {
                 return null;
             }
+            if (peek() == '-' || Character.isDigit(peek())) {
+                return parseInteger();
+            }
             throw new IllegalArgumentException("Unsupported JSON value at offset " + offset);
+        }
+
+        private int parseInteger() {
+            int start = offset;
+            tryConsume('-');
+            int digitsStart = offset;
+            while (!isAtEnd() && Character.isDigit(json.charAt(offset))) {
+                offset++;
+            }
+            if (offset == digitsStart) {
+                throw new IllegalArgumentException("Invalid JSON integer at offset " + start);
+            }
+            try {
+                return Integer.parseInt(json.substring(start, offset));
+            } catch (NumberFormatException exception) {
+                throw new IllegalArgumentException("JSON integer is out of range", exception);
+            }
         }
 
         private String parseString() {

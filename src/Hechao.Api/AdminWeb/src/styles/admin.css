@@ -5296,6 +5296,7 @@ textarea::placeholder {
 
 .deployment-slot-drawer[open] {
     animation-name: deployment-slot-drawer-in;
+    grid-template-rows: 76px minmax(0, 1fr);
 }
 
 @keyframes deployment-slot-drawer-in {
@@ -5303,8 +5304,10 @@ textarea::placeholder {
     to { transform: translateX(0); }
 }
 
-.deployment-slot-form {
+.drawer .deployment-slot-form {
+    height: auto;
     display: grid;
+    grid-template-rows: none;
     align-content: start;
     gap: 16px;
 }
@@ -5319,6 +5322,33 @@ textarea::placeholder {
     font-size: 11px;
     font-weight: 500;
     overflow-wrap: anywhere;
+}
+
+.deployment-slot-kind-field {
+    display: grid;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.deployment-slot-kind-label {
+    display: block;
+    margin-bottom: 7px;
+}
+
+.deployment-slot-kind {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    height: auto;
+    min-height: 38px;
+}
+
+.deployment-slot-kind button {
+    min-width: 0;
+    min-height: 38px;
+    padding-inline: 8px;
 }
 
 .slot-id-input {
@@ -5521,6 +5551,10 @@ textarea::placeholder {
 
     .package-review-submit .button {
         width: 100%;
+    }
+
+    .deployment-slot-kind {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .package-control-handoff {

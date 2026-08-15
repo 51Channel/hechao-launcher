@@ -227,7 +227,13 @@ public sealed class VelocityAuthorizationRepository(
             effectiveTarget,
             player?.AccessTier,
             player?.LuckPermsPrimaryGroup,
-            now);
+            now,
+            reason == VelocityAuthorizationReason.Allowed
+                ? server?.BackendHost
+                : null,
+            reason == VelocityAuthorizationReason.Allowed
+                ? server?.BackendPort
+                : null);
     }
 
     private static VelocityLaunchGrantCreationResult DeniedGrant(VelocityAuthorizationReason reason)
@@ -340,14 +346,20 @@ public sealed class VelocityAuthorizationRepository(
                    control_target.last_seen_at,
                    server.activity_plan_status,
                    server.activity_package_import_id,
-                   control_target.deployed_package_import_id
+                   control_target.deployed_package_import_id,
+                   deployment_slot.backend_port
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1::uuid
                AND access_override.server_id = server.id
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
+            LEFT JOIN launcher.deployment_slots deployment_slot
+                ON deployment_slot.server_id = server.id
+               AND deployment_slot.velocity_target = server.velocity_target
+               AND deployment_slot.status = 'Ready'
             LEFT JOIN launcher.server_control_targets control_target
                 ON control_target.server_id = CASE
+                    WHEN deployment_slot.server_id IS NOT NULL THEN server.id
                     WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
                     ELSE server.id
                 END
@@ -429,7 +441,9 @@ public sealed class VelocityAuthorizationRepository(
             reader.GetString(7),
             reader.GetString(8),
             reader.GetString(9),
-            reader.GetBoolean(10));
+            reader.GetBoolean(10),
+            reader.IsDBNull(16) ? null : "127.0.0.1",
+            reader.IsDBNull(16) ? null : reader.GetInt32(16));
     }
 
     private static async Task<PendingLaunchGrant?> ReadPendingLaunchGrantAsync(

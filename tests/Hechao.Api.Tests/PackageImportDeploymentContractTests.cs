@@ -90,7 +90,7 @@ public sealed class PackageImportDeploymentContractTests
     }
 
     [Fact]
-    public void CatalogSynchronization_IsHiddenClosedActivityEntry()
+    public void CatalogSynchronization_IsHiddenClosedDeploymentEntry()
     {
         var source = ReadRepositoryFile(
             "src",
@@ -104,9 +104,10 @@ public sealed class PackageImportDeploymentContractTests
         Assert.Contains("icon_glyph = $4", source, StringComparison.Ordinal);
         Assert.Contains("announcement = ''", source, StringComparison.Ordinal);
         Assert.Contains(
-            "PackageImportRules.ActivityVelocityTarget",
+            "ReadDeploymentVelocityTargetAsync",
             source,
             StringComparison.Ordinal);
+        Assert.Contains("FROM launcher.deployment_slots", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -148,7 +149,7 @@ public sealed class PackageImportDeploymentContractTests
     }
 
     [Fact]
-    public void DynamicSlotReadiness_RequiresTheApprovedAgentAndActivityEndpoint()
+    public void DynamicSlotReadiness_RequiresApprovedAgentAndIndependentEndpoint()
     {
         var repository = ReadRepositoryFile(
             "src",
@@ -158,14 +159,9 @@ public sealed class PackageImportDeploymentContractTests
 
         Assert.Contains("target.agent_id = $3", repository, StringComparison.Ordinal);
         Assert.Contains("target.package_deployment_enabled", repository, StringComparison.Ordinal);
-        Assert.Contains("target.conflict_group = $4", repository, StringComparison.Ordinal);
-        Assert.Contains("target.port = $5", repository, StringComparison.Ordinal);
+        Assert.Contains("target.conflict_group IS NULL", repository, StringComparison.Ordinal);
         Assert.Contains(
-            "PackageImportRules.ActivityConflictGroup",
-            repository,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "PackageImportRules.ActivityPort",
+            "target.port = launcher.deployment_slots.backend_port",
             repository,
             StringComparison.Ordinal);
     }

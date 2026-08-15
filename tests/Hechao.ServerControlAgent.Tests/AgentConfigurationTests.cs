@@ -162,6 +162,58 @@ public sealed class AgentConfigurationTests
     }
 
     [Fact]
+    public void ValidateDynamicTargets_AllowsLegacyReplacementTargetsToShareTheirPort()
+    {
+        var template = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            "owl5-activity-slot") with
+        {
+            PackageDeploymentEnabled = true,
+            HostManagedRelativePaths = ["forwarding.secret"]
+        };
+        var sibling = template with
+        {
+            ServerId = "fanstreet",
+            ServerDirectory = @"E:\FanStreet",
+            StartTaskName = "Hechao-Server-FanStreet"
+        };
+        var configuration = CreateConfiguration(template, sibling) with
+        {
+            AgentId = "owl5",
+            DeploymentSlotProvisioning = new DeploymentSlotProvisioningConfiguration
+            {
+                Enabled = true,
+                RootDirectory = @"E:\HechaoActivitySlots",
+                TemplateServerId = "activity",
+                TaskInstallerScript = @"C:\ProgramData\Hechao\ServerControl\Install-ManagedServerTask.ps1"
+            }
+        };
+        var independent = template with
+        {
+            ServerId = "survival-industry",
+            ServerDirectory = @"E:\HechaoActivitySlots\survival-industry",
+            StartTaskName = "Hechao-Server-survival-industry",
+            Port = 25600,
+            ConflictGroup = null,
+            ServerDeletionEnabled = true,
+            RequireDeployedPackage = true
+        };
+        var legacyActivity = independent with
+        {
+            ServerId = "activity-summer",
+            ServerDirectory = @"E:\HechaoActivitySlots\activity-summer",
+            StartTaskName = "Hechao-Server-activity-summer",
+            Port = 25568,
+            ConflictGroup = "owl5-activity-slot"
+        };
+
+        configuration.Validate();
+        configuration.ValidateDynamicTargets([legacyActivity, independent]);
+    }
+
+    [Fact]
     public void Validate_RejectsPackageDeploymentOutsideOwl5ActivitySlot()
     {
         var approvedTarget = CreateTarget(
@@ -176,7 +228,7 @@ public sealed class AgentConfigurationTests
         var invalidConfigurations = new[]
         {
             CreateConfiguration(approvedTarget),
-            CreateConfiguration(approvedTarget with { Port = 25569 })
+            CreateConfiguration(approvedTarget with { Port = 25600 })
                 with { AgentId = "owl5" },
             CreateConfiguration(approvedTarget with { ConflictGroup = "other-slot" })
                 with { AgentId = "owl5" }
@@ -237,7 +289,7 @@ public sealed class AgentConfigurationTests
         var child = CreateTarget(
             "activity-child",
             @"E:\Activities\Current",
-            25569,
+            25600,
             null);
         var configuration = CreateConfiguration(parent, child);
 
@@ -255,7 +307,7 @@ public sealed class AgentConfigurationTests
         var child = CreateTarget(
             "activity-child",
             @"E:\Activities\Current",
-            25569,
+            25600,
             null) with
         {
             ServerDeletionEnabled = true

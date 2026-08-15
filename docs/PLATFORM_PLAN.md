@@ -169,10 +169,11 @@ Activity 在含 U+200C 的既有数据根目录下已由 `0.12.3` 改用物理 `
           +---- 当前唯一 NeoForge / Forge / Fabric / Paper 活动后端
 ```
 
-自 `2026-07-31` 起，所有新活动和活动改版统一使用 Velocity 目标 `activity`。不同活动
-可以保留独立目录 ID、客户端档案、加载器和物理服务端，但共享 owl5 `25568` 活动槽，
-同一时刻只允许一个后端和一个可进入目录记录。历史活动复用 `survival2` 的映射不再作为
-模板，迁移必须单独备份和验收。详细开发、切换和回滚规则见
+固定活动替换服继续使用 Velocity 目标 `activity`，共享 owl5 `25568` 与
+`owl5-activity-slot`，同一时刻只允许一个后端占用。需要与生存、PVP、小游戏或其他活动
+同时运行的服务端必须创建独立槽，使用槽 ID 作为 Velocity 目标、独立批准端口和空冲突组。
+历史活动复用 `survival2` 的映射不再作为模板，迁移必须单独备份和验收。详细开发、切换
+和回滚规则见
 [`ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md`](ACTIVITY_CHANNEL_DEVELOPMENT_STANDARD.md)。
 
 ### 4.1 游戏 VPS

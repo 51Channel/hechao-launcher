@@ -46,6 +46,14 @@ public enum DeploymentSlotProvisioningStatus
     Failed
 }
 
+public enum DeploymentSlotKind
+{
+    Activity,
+    Survival,
+    Pvp,
+    Minigame
+}
+
 public sealed record ServerQuickSettings(
     int MaxPlayers,
     int ViewDistance,
@@ -108,7 +116,8 @@ public sealed record AdminServerControlTargetSummaryRecord(
     ServerPackageDeploymentIdentity? DeployedPackage = null,
     bool DynamicDeploymentSlot = false,
     DeploymentSlotProvisioningStatus? DeploymentSlotStatus = null,
-    string? DeploymentSlotError = null);
+    string? DeploymentSlotError = null,
+    DeploymentSlotKind? DeploymentSlotKind = null);
 
 public sealed record AdminServerControlTargetRecord(
     string ServerId,
@@ -133,7 +142,8 @@ public sealed record AdminServerControlTargetRecord(
     ServerPackageDeploymentIdentity? DeployedPackage = null,
     bool DynamicDeploymentSlot = false,
     DeploymentSlotProvisioningStatus? DeploymentSlotStatus = null,
-    string? DeploymentSlotError = null);
+    string? DeploymentSlotError = null,
+    DeploymentSlotKind? DeploymentSlotKind = null);
 
 public sealed record AdminServerControlOverview(
     DateTimeOffset GeneratedAt,
@@ -155,7 +165,8 @@ public sealed record AdminCreateDeploymentSlotRequest(
     string DisplayName,
     string TemplateServerId,
     string Confirmation,
-    string Reason);
+    string Reason,
+    DeploymentSlotKind SlotKind = DeploymentSlotKind.Activity);
 
 public sealed record AdminDeploymentSlotQueueResult(
     AdminServerControlOperationRecord Operation,
@@ -220,7 +231,9 @@ public sealed record ServerPackageDeploymentRequest(
 public sealed record ServerDeploymentSlotProvisioningRequest(
     string ServerId,
     string DisplayName,
-    string TemplateServerId);
+    string TemplateServerId,
+    int Port,
+    DeploymentSlotKind SlotKind);
 
 public sealed record ServerControlCommandClaimResponse(
     IReadOnlyList<ServerControlCommandDelivery> Commands,

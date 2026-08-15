@@ -2,8 +2,8 @@
 
 > 更新时间：`2026-08-15`
 >
-> 当前生产：启动器 `0.15.8`、API `0.30.7`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
-> owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、
+> 当前生产：启动器 `0.15.8`、API `0.31.0`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
+> owl5 ServerControlAgent `0.6.0`、owl9 ServerControlAgent `0.4.0`、
 > Velocity Authorizer `0.4.0`（`monitor`）、Lobby Guard `0.1.0`
 >
 本文档是“功能是否完成”的权威入口。其他计划和发布记录提供设计、操作与历史证据；
@@ -37,7 +37,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.15.8` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，公开元数据、官网下载网关和认证会话更新计划均通过，见 [`LAUNCHER_RELEASE_0.15.8.md`](LAUNCHER_RELEASE_0.15.8.md) |
-| API `0.30.7` | 已完成 | 已登录玩家可见并可提前下载可见活动客户端，`canJoin` 独立执行最低称号与单服 `Allow` / `Deny`；永久服继续隐藏无权记录，Velocity 保留最终门禁。生产真实认证探针、内外网健康和数据库就绪通过，见 [`API_RELEASE_0.30.7.md`](API_RELEASE_0.30.7.md) |
+| API `0.31.0` | 已完成 | 在 `0.30.7` 权限拆分基础上上线受控动态部署槽和迁移 029；当前槽仍沿用共享活动入口模型，见 [`API_RELEASE_0.31.0.md`](API_RELEASE_0.31.0.md) |
+| 独立生存/活动/PVP/小游戏槽 | 已实现待生产验收 | API `0.32.0`、owl5 代理 `0.7.0`、Velocity Authorizer `0.5.0` 候选已实现用途分类、独立端口、空冲突组和动态回环路由；待部署后将现有工业季迁移到独立生存槽并验证可与活动服同时存在 |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条正式企划，`赫朝商务追杀` 作为只读旧排期显示，补齐结束时间与整合包绑定后仍须走正式企划流程；首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
 | Velocity `0.4.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | 两个 JAR、回滚备份、首次故障关闭、大厅回环监听/空白名单和后端独立拒绝已落地；仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |

@@ -19,6 +19,40 @@ public sealed class DeploymentSlotRulesTests
     }
 
     [Theory]
+    [InlineData(DeploymentSlotKind.Activity, "activity-summer")]
+    [InlineData(DeploymentSlotKind.Survival, "survival-industry")]
+    [InlineData(DeploymentSlotKind.Pvp, "pvp-ranked")]
+    [InlineData(DeploymentSlotKind.Minigame, "minigame-party")]
+    public void Validate_AcceptsEveryIndependentSlotKind(
+        DeploymentSlotKind kind,
+        string serverId)
+    {
+        var request = new AdminCreateDeploymentSlotRequest(
+            serverId,
+            "独立测试槽",
+            "activity",
+            $"CREATE {serverId}",
+            "创建独立测试部署槽",
+            kind);
+
+        Assert.Empty(DeploymentSlotRules.Validate(request));
+    }
+
+    [Fact]
+    public void Validate_RejectsKindAndPrefixMismatch()
+    {
+        var request = new AdminCreateDeploymentSlotRequest(
+            "activity-ranked",
+            "排位测试槽",
+            "activity",
+            "CREATE activity-ranked",
+            "创建排位测试部署槽",
+            DeploymentSlotKind.Pvp);
+
+        Assert.Contains("serverId", DeploymentSlotRules.Validate(request).Keys);
+    }
+
+    [Theory]
     [InlineData("activity")]
     [InlineData("survival2")]
     [InlineData("activity-Bad")]

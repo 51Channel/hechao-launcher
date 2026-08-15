@@ -73,7 +73,7 @@ internal sealed class PackageImportOrchestrationRepository(
                 transaction,
                 package.ImportId,
                 "DEPLOYMENT_TARGET_INVALID",
-                "部署目标不再是已批准的 owl5 活动部署槽，服务端未切换。",
+                "部署目标不再是已批准的 owl5 部署槽，服务端未切换。",
                 now,
                 cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -757,6 +757,11 @@ internal sealed class PackageImportOrchestrationRepository(
             package.Analysis.Metadata.MaximumPlayers ?? 30,
             1,
             10_000);
+        var velocityTarget = await ReadDeploymentVelocityTargetAsync(
+            connection,
+            transaction,
+            package.Plan.TargetServerId,
+            cancellationToken);
         const string readSql = """
             SELECT to_jsonb(server)::text, server.server_role
             FROM launcher.servers AS server
@@ -812,6 +817,7 @@ internal sealed class PackageImportOrchestrationRepository(
                 iconGlyph,
                 maximumPlayers,
                 loader,
+                velocityTarget,
                 now);
             await insert.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -851,6 +857,7 @@ internal sealed class PackageImportOrchestrationRepository(
                 iconGlyph,
                 maximumPlayers,
                 loader,
+                velocityTarget,
                 now);
             await update.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -878,6 +885,28 @@ internal sealed class PackageImportOrchestrationRepository(
             after,
             cancellationToken);
         return null;
+    }
+
+    private static async Task<string> ReadDeploymentVelocityTargetAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string serverId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT COALESCE(
+                (SELECT velocity_target
+                 FROM launcher.deployment_slots
+                 WHERE server_id = $1),
+                $1);
+            """,
+            connection,
+            transaction);
+        command.Parameters.AddWithValue(serverId);
+        return (string)(await command.ExecuteScalarAsync(cancellationToken)
+            ?? throw new InvalidOperationException(
+                "The deployment slot velocity target is missing."));
     }
 
     private static async Task EnableProfileForTestingAsync(
@@ -966,6 +995,7 @@ internal sealed class PackageImportOrchestrationRepository(
         string iconGlyph,
         int maximumPlayers,
         ModLoaderKind loader,
+        string velocityTarget,
         DateTimeOffset now)
     {
         command.Parameters.AddWithValue(package.Plan.TargetServerId);
@@ -977,7 +1007,7 @@ internal sealed class PackageImportOrchestrationRepository(
         command.Parameters.AddWithValue(loader.ToString());
         command.Parameters.AddWithValue(package.Plan.MinimumTier.ToString());
         command.Parameters.AddWithValue(package.Plan.ProfileId);
-        command.Parameters.AddWithValue(PackageImportRules.ActivityVelocityTarget);
+        command.Parameters.AddWithValue(velocityTarget);
         command.Parameters.AddWithValue(now);
     }
 

@@ -43,6 +43,38 @@ final class AuthorizationDecisionTest {
     }
 
     @Test
+    void parsesApprovedDynamicBackend() {
+        AuthorizationDecision decision = AuthorizationDecision.fromJson("""
+                {
+                  "allowed": true,
+                  "reason": "Allowed",
+                  "message": "ok",
+                  "serverId": "survival-industry",
+                  "velocityTarget": "survival-industry",
+                  "backendHost": "127.0.0.1",
+                  "backendPort": 25600
+                }
+                """);
+
+        assertTrue(decision.hasDynamicBackend());
+        assertTrue(decision.hasValidDynamicBackend());
+        assertEquals(25600, decision.backendPort());
+    }
+
+    @Test
+    void rejectsExternalOrPartialDynamicBackend() {
+        AuthorizationDecision external = new AuthorizationDecision(
+                true, "Allowed", "ok", "pvp-ranked", "pvp-ranked",
+                "203.0.113.10", 25600);
+        AuthorizationDecision partial = new AuthorizationDecision(
+                true, "Allowed", "ok", "pvp-ranked", "pvp-ranked",
+                "127.0.0.1", null);
+
+        assertFalse(external.hasValidDynamicBackend());
+        assertFalse(partial.hasValidDynamicBackend());
+    }
+
+    @Test
     void rejectsNestedValues() {
         assertThrows(
                 IllegalArgumentException.class,
