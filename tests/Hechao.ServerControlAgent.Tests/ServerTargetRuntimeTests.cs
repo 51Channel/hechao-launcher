@@ -154,6 +154,43 @@ public sealed class ServerTargetRuntimeTests
                 call.Arguments.Contains("say hello"));
     }
 
+    [Theory]
+    [InlineData("op 51Channel")]
+    [InlineData("luckperms user 51Channel info")]
+    [InlineData("minecraft:gamemode creative 51Channel")]
+    public async Task ConsoleCommand_WildcardAllowsMinecraftAndPluginCommands(
+        string consoleCommand)
+    {
+        var runner = new RecordingProcessRunner((_, arguments) =>
+            arguments.Contains("-Command")
+                ? new ProcessRunResult(0, "1234", string.Empty)
+                : new ProcessRunResult(0, "ok", string.Empty));
+        var runtime = CreateRuntime(
+            "activity",
+            25568,
+            null,
+            runner,
+            ["*"]);
+        var command = new ServerControlCommandDelivery(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "activity",
+            ServerControlCommandKind.ConsoleCommand,
+            1,
+            consoleCommand,
+            null);
+
+        var result = await runtime.ExecuteAsync(
+            command,
+            [runtime],
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Succeeded, result.Outcome);
+        Assert.Contains(
+            runner.Calls,
+            call => call.Arguments.Contains(consoleCommand));
+    }
+
     [Fact]
     public async Task ConsoleCommand_AlwaysRejectsStopEvenIfConfigured()
     {
@@ -164,7 +201,7 @@ public sealed class ServerTargetRuntimeTests
             25568,
             null,
             runner,
-            ["list", "stop"]);
+            ["*"]);
         var command = new ServerControlCommandDelivery(
             Guid.NewGuid(),
             Guid.NewGuid(),

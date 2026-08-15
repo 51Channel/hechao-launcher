@@ -18,7 +18,7 @@
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 6144,
       "serverDeletionEnabled": true,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "pvp-purpur",
@@ -30,7 +30,7 @@
       "propertiesRelativePath": "server.properties",
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 6144,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     }
   ]
 }

@@ -332,6 +332,21 @@ public sealed class AgentConfigurationTests
         Assert.Throws<InvalidDataException>(target.Validate);
     }
 
+    [Fact]
+    public void Validate_AcceptsAllConsoleCommandsPrefix()
+    {
+        var target = CreateTarget(
+            "activity",
+            @"E:\ActivityNeoForge",
+            25568,
+            "owl5-activity-slot") with
+        {
+            AllowedCommandPrefixes = ["*"]
+        };
+
+        target.Validate();
+    }
+
     private static ServerControlAgentConfiguration CreateConfiguration(
         params ServerControlTargetConfiguration[] targets) =>
         new()

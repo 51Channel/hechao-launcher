@@ -540,7 +540,7 @@ public sealed class ServerControlRepository(
                     ServerControlQueueStatus.TargetOffline);
             }
 
-            if (!IsCommandAllowed(
+            if (!ServerControlRules.IsConsoleCommandAllowed(
                     request.ConsoleCommand!,
                     target.AllowedCommandPrefixes))
             {
@@ -1043,17 +1043,6 @@ public sealed class ServerControlRepository(
             ServerControlAction.DeleteServerFiles when !online => null,
             _ => null
         };
-
-    private static bool IsCommandAllowed(
-        string command,
-        IReadOnlyList<string> allowedPrefixes)
-    {
-        var normalized = command.Trim().TrimStart('/');
-        var separator = normalized.IndexOfAny([' ', '\t']);
-        var prefix = (separator < 0 ? normalized : normalized[..separator])
-            .ToLowerInvariant();
-        return allowedPrefixes.Contains(prefix, StringComparer.Ordinal);
-    }
 
     private static async Task<ControlTarget?> ReadTargetForUpdateAsync(
         NpgsqlConnection connection,

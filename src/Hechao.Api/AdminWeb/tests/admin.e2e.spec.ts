@@ -689,6 +689,33 @@ test("control polling preserves dirty settings and console reading position", as
   await page.screenshot({ path: "../../../artifacts/admin-web-control-desktop.png", fullPage: true });
 });
 
+test("all-command console accepts game commands and reserves lifecycle commands", async ({ page }) => {
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path !== "/v1/admin/server-control/targets/activity" || request.method() !== "GET") return false;
+      const result = controlDetail(1);
+      result.target.allowedCommandPrefixes = ["*"];
+      await route.fulfill({ json: result });
+      return true;
+    }
+  });
+
+  await page.goto("/admin/control");
+  await expect(page.getByText("允许命令：全部 Minecraft 与插件命令；停止和重启使用服控按钮"))
+    .toBeVisible();
+
+  const input = page.getByPlaceholder("输入 Minecraft 控制台命令");
+  await input.fill("op 51Channel");
+  await page.getByRole("button", { name: "发送", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "发送 Minecraft 命令" })).toBeVisible();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+
+  await input.fill("stop");
+  await page.getByRole("button", { name: "发送", exact: true }).click();
+  await expect(page.getByRole("alert"))
+    .toContainText("停止与重启必须使用服控按钮");
+});
+
 test("control deep link selects the requested non-default target", async ({ page }) => {
   await mockAdminApi(page, {
     intercept: async (route, request, path) => {

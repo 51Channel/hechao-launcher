@@ -631,9 +631,12 @@ internal sealed class ServerTargetRuntime
         var prefix = (separator < 0 ? normalized : normalized[..separator])
             .ToLowerInvariant();
         return !ReservedTerminalCommands.Contains(prefix) &&
-               Configuration.AllowedCommandPrefixes.Contains(
-                   prefix,
-                   StringComparer.Ordinal);
+               (Configuration.AllowedCommandPrefixes.Contains(
+                    ConfigurationPatterns.AllConsoleCommandsPrefix,
+                    StringComparer.Ordinal) ||
+                Configuration.AllowedCommandPrefixes.Contains(
+                    prefix,
+                    StringComparer.Ordinal));
     }
 
     private async Task<(bool Success, string Message)> SubmitConsoleAsync(

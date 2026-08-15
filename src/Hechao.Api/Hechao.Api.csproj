@@ -27,7 +27,7 @@
     <AssemblyName>Hechao.Api</AssemblyName>
     <RootNamespace>Hechao.Api</RootNamespace>
     <Product>赫朝启动器 API</Product>
-    <Version>0.32.0</Version>
+    <Version>0.32.1</Version>
     <AdminWebRoot>$(MSBuildProjectDirectory)/AdminWeb</AdminWebRoot>
     <AdminWebOutput>$(MSBuildProjectDirectory)/wwwroot/admin</AdminWebOutput>
     <AdminWebBuildStamp>$(AdminWebRoot)/node_modules/.cache/admin-web-build.stamp</AdminWebBuildStamp>

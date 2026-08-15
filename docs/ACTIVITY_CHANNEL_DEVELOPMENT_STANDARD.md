@@ -394,7 +394,7 @@ SHA-256、活动共同 JAR SHA-256 和构建提交。输出目录已存在时先
   "propertiesRelativePath": "server.properties",
   "memorySettingsRelativePath": "<actual-file>",
   "maximumAllowedMemoryMiB": 8192,
-  "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+  "allowedCommandPrefixes": ["*"]
 }
 ```
 
@@ -444,7 +444,7 @@ Authorizer 只属于代理，Lobby Guard、LuckPerms Tier Agent 只属于内部�
 
 - 计划任务结果成功，PID、祖先进程、目录和监听端口一致；
 - 日志出现正确 Minecraft、加载器和活动版本，无模组/插件缺失与注册错误；
-- `list`、保存、白名单和允许的控制台命令正常；
+- `list`、保存、白名单、`op/deop` 和玩法插件命令正常；`stop/restart` 仍只通过结构化按钮；
 - 心跳、TPS/MSPT/GC、CPU、内存、磁盘和世界备份状态新鲜；
 - 直接后端地址不可从公网绕过 Velocity；
 - Velocity modern forwarding、转发密钥和后端身份模式与现有平台一致，没有为测试临时

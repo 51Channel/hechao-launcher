@@ -435,8 +435,12 @@ function requestAction(action: ControlAction): void {
       showToast("请先输入 Minecraft 控制台命令。", true);
       return;
     }
-    const prefix = consoleCommand.replace(/^\//, "").split(/\s+/, 1)[0];
-    if (!target.allowedCommandPrefixes.includes(prefix)) {
+    const prefix = commandPrefix(consoleCommand);
+    if (reservedConsoleCommands.has(prefix)) {
+      showToast("停止与重启必须使用服控按钮，以确保保存、状态和冲突处理完整。", true);
+      return;
+    }
+    if (!commandAllowed(consoleCommand)) {
       showToast(`命令前缀“${prefix}”不在本服白名单中。`, true);
       return;
     }
@@ -499,9 +503,26 @@ function runQuickCommand(value: string): void {
   requestAction("ConsoleCommand");
 }
 
+const reservedConsoleCommands = new Set(["stop", "restart", "shutdown", "end"]);
+
+function commandPrefix(value: string): string {
+  return value.trim().replace(/^\//, "").split(/\s+/, 1)[0].toLowerCase();
+}
+
 function commandAllowed(value: string): boolean {
-  const prefix = value.split(/\s+/, 1)[0];
-  return selectedTarget.value?.allowedCommandPrefixes.includes(prefix) ?? false;
+  const prefixes = selectedTarget.value?.allowedCommandPrefixes ?? [];
+  const prefix = commandPrefix(value);
+  return !reservedConsoleCommands.has(prefix) &&
+    (prefixes.includes("*") || prefixes.includes(prefix));
+}
+
+function commandAccessText(prefixes: string[]): string {
+  if (prefixes.includes("*")) {
+    return "允许命令：全部 Minecraft 与插件命令；停止和重启使用服控按钮";
+  }
+  return prefixes.length
+    ? `允许命令：${prefixes.join("、")}`
+    : "本机未开放控制台命令";
 }
 
 function operationResult(operation: ControlOperation): string {
@@ -517,7 +538,7 @@ function operationResult(operation: ControlOperation): string {
   <section class="view-section">
     <PageHeading
       title="服控面板"
-      description="通过白名单代理执行结构化启停、快捷设置和 Minecraft 控制台命令。"
+      description="通过受控代理执行结构化启停、快捷设置和 Minecraft 控制台命令。"
       :updated-at="overview.lastUpdatedAt.value"
       :stale="Boolean(overview.error.value || targetDetail.error.value)"
     >
@@ -602,11 +623,11 @@ function operationResult(operation: ControlOperation): string {
             </section>
 
             <section class="control-terminal">
-              <div class="control-subheading"><div><h3>Minecraft 控制台</h3><p>{{ selectedTarget.allowedCommandPrefixes.length ? `允许命令：${selectedTarget.allowedCommandPrefixes.join("、")}` : "本机未开放控制台命令" }}</p></div><label class="console-follow"><input v-model="followConsole" type="checkbox" @change="toggleFollowConsole"><span>跟随末尾</span></label></div>
+              <div class="control-subheading"><div><h3>Minecraft 控制台</h3><p>{{ commandAccessText(selectedTarget.allowedCommandPrefixes) }}</p></div><label class="console-follow"><input v-model="followConsole" type="checkbox" @change="toggleFollowConsole"><span>跟随末尾</span></label></div>
               <div class="console-meta"><span>{{ selectedTarget.consoleCapturedAt ? `日志 ${formatRelativeTime(selectedTarget.consoleCapturedAt)}` : "暂无日志" }}</span></div>
               <pre ref="consoleOutput" class="control-console-output" tabindex="0" @scroll.passive="onConsoleScroll">{{ selectedTarget.consoleTail || "服务器尚未产生可读取的控制台日志。" }}</pre>
               <div class="control-quick-commands"><button type="button" :disabled="!consoleEnabled || !commandAllowed('list')" @click="runQuickCommand('list')">在线玩家</button><button type="button" :disabled="!consoleEnabled || !commandAllowed('save-all flush')" @click="runQuickCommand('save-all flush')">立即保存</button><button type="button" :disabled="!consoleEnabled || !commandAllowed('whitelist reload')" @click="runQuickCommand('whitelist reload')">重载白名单</button></div>
-              <form class="control-command-form" @submit.prevent="requestAction('ConsoleCommand')"><input v-model="command" type="text" maxlength="240" autocomplete="off" placeholder="输入白名单内的 Minecraft 命令" :disabled="!consoleEnabled"><button class="button button-secondary" type="submit" :disabled="!consoleEnabled || !command.trim()"><AppIcon name="send" />发送</button></form>
+              <form class="control-command-form" @submit.prevent="requestAction('ConsoleCommand')"><input v-model="command" type="text" maxlength="240" autocomplete="off" placeholder="输入 Minecraft 控制台命令" :disabled="!consoleEnabled"><button class="button button-secondary" type="submit" :disabled="!consoleEnabled || !command.trim()"><AppIcon name="send" />发送</button></form>
             </section>
           </div>
 

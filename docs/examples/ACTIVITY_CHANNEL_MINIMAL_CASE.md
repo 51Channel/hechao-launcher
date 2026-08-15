@@ -203,7 +203,7 @@ ServerControlAgent、StatusCollector、世界备份和告警通过主机目标�
   "propertiesRelativePath": "server.properties",
   "memorySettingsRelativePath": "user_jvm_args.txt",
   "maximumAllowedMemoryMiB": 8192,
-  "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+  "allowedCommandPrefixes": ["*"]
 }
 ```
 

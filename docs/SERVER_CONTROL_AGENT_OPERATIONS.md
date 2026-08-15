@@ -81,15 +81,21 @@ MiB，最小值为 `512 MiB`、步长为 `256 MiB`，并由代理再次核对单
 
 ## 4. Minecraft 控制台
 
-后台显示 `logs\latest.log` 的受限尾部快照，最多 `64 KiB`。控制台只允许每台
-服务器配置中的命令前缀，建议首批仅开放：
+后台显示 `logs\latest.log` 的受限尾部快照，最多 `64 KiB`。`allowedCommandPrefixes`
+既可以列出具体命令前缀，也可以使用唯一通配值 `*`。当前生产策略为所有目标使用
+`["*"]`，即允许全部 Minecraft、模组和插件命令；新建独立槽从固定 `activity` 模板
+继承同一策略。以下生命周期命令始终不通过自由控制台发送：
 
 ```text
-list
-save-all
-say
-whitelist
+stop
+restart
+shutdown
+end
 ```
+
+生命周期命令必须使用后台“停止”或“重启”按钮，让代理先保存世界、等待端口释放、处理
+冲突组并留下完整审计。API、后台和本机代理都会识别 `*`，旧版 API 或代理不接受该值，
+因此启用通配模式时必须先升级 API，再升级对应代理。
 
 控制台桥接任务必须位于登录中的 Administrator 桌面会话，因为 Windows SSH 或
 SYSTEM 会话不能直接附加到可见 Java 控制台。桥接实现和人工应急流程见

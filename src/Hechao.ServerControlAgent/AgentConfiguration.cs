@@ -333,7 +333,7 @@ public sealed record ServerControlTargetConfiguration
             (ServerDeletionEnabled && !IsSafeDeletionRoot()) ||
             AllowedCommandPrefixes.Count is < 1 or > 64 ||
             AllowedCommandPrefixes.Any(prefix =>
-                !ConfigurationPatterns.CommandPrefix().IsMatch(prefix)))
+                !ConfigurationPatterns.IsValidCommandPrefix(prefix)))
         {
             throw new InvalidDataException(
                 $"Server control target '{ServerId}' is invalid.");
@@ -521,6 +521,8 @@ public sealed record DeploymentSlotProvisioningConfiguration
 
 internal static partial class ConfigurationPatterns
 {
+    internal const string AllConsoleCommandsPrefix = "*";
+
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$",
         RegexOptions.CultureInvariant)]
     internal static partial Regex AgentId();
@@ -540,4 +542,11 @@ internal static partial class ConfigurationPatterns
     [GeneratedRegex("^[a-z0-9][a-z0-9:_-]{0,63}$",
         RegexOptions.CultureInvariant)]
     internal static partial Regex CommandPrefix();
+
+    internal static bool IsValidCommandPrefix(string prefix) =>
+        string.Equals(
+            prefix,
+            AllConsoleCommandsPrefix,
+            StringComparison.Ordinal) ||
+        CommandPrefix().IsMatch(prefix);
 }

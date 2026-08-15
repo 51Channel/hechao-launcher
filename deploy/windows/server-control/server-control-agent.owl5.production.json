@@ -24,7 +24,7 @@
       "propertiesRelativePath": "server.properties",
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 4096,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "survival1",
@@ -36,7 +36,7 @@
       "propertiesRelativePath": "server.properties",
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 6144,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "survival2",
@@ -48,7 +48,7 @@
       "propertiesRelativePath": "server.properties",
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 6144,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "dollnight",
@@ -61,7 +61,7 @@
       "memorySettingsRelativePath": "start.bat",
       "maximumAllowedMemoryMiB": 12288,
       "serverDeletionEnabled": true,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "activity",
@@ -78,7 +78,7 @@
       "serverDeletionEnabled": true,
       "hostManagedRelativePaths": ["forwarding.secret"],
       "worldDataRelativePaths": ["world", "world_nether", "world_the_end"],
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "fanstreet",
@@ -91,7 +91,7 @@
       "memorySettingsRelativePath": "start.ps1",
       "maximumAllowedMemoryMiB": 8192,
       "serverDeletionEnabled": true,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     },
     {
       "serverId": "yugong",
@@ -104,7 +104,7 @@
       "memorySettingsRelativePath": "start.ps1",
       "maximumAllowedMemoryMiB": 8192,
       "serverDeletionEnabled": true,
-      "allowedCommandPrefixes": ["list", "save-all", "say", "whitelist"]
+      "allowedCommandPrefixes": ["*"]
     }
   ]
 }

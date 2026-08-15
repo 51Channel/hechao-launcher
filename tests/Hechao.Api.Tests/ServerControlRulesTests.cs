@@ -176,6 +176,44 @@ public sealed class ServerControlRulesTests
     }
 
     [Fact]
+    public void Validate_AcceptsHeartbeatWithAllConsoleCommandsPrefix()
+    {
+        var target = new ServerControlAgentTargetHeartbeat(
+            "activity",
+            "owl5-activity-slot",
+            25568,
+            false,
+            null,
+            null,
+            [ServerControlRules.AllConsoleCommandsPrefix],
+            string.Empty,
+            DateTimeOffset.UtcNow);
+        var request = new ServerControlAgentHeartbeatRequest(
+            "owl5",
+            "0.7.1",
+            DateTimeOffset.UtcNow,
+            [target]);
+
+        Assert.Empty(ServerControlRules.Validate(request));
+    }
+
+    [Theory]
+    [InlineData("op 51Channel", true)]
+    [InlineData("/LuckPerms user 51Channel info", true)]
+    [InlineData("stop", false)]
+    [InlineData("restart", false)]
+    public void ConsoleCommandPolicy_AllowsWildcardButReservesLifecycleCommands(
+        string command,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            ServerControlRules.IsConsoleCommandAllowed(
+                command,
+                [ServerControlRules.AllConsoleCommandsPrefix]));
+    }
+
+    [Fact]
     public void Validate_RejectsHeartbeatConsoleTailWithNullCharacter()
     {
         var target = new ServerControlAgentTargetHeartbeat(

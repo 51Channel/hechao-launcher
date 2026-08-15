@@ -5,6 +5,8 @@ namespace Hechao.Api.ServerControl;
 
 public static partial class ServerControlRules
 {
+    public const string AllConsoleCommandsPrefix = "*";
+
     private static readonly HashSet<string> Difficulties =
         new(StringComparer.Ordinal)
         {
@@ -12,6 +14,15 @@ public static partial class ServerControlRules
             "easy",
             "normal",
             "hard"
+        };
+
+    private static readonly HashSet<string> ReservedConsoleCommands =
+        new(StringComparer.Ordinal)
+        {
+            "stop",
+            "restart",
+            "shutdown",
+            "end"
         };
 
     public static bool IsValidAgentId(string value) =>
@@ -140,7 +151,7 @@ public static partial class ServerControlRules
                  !ConflictGroupRegex().IsMatch(target.ConflictGroup)) ||
                 target.AllowedCommandPrefixes.Count is < 1 or > 64 ||
                 target.AllowedCommandPrefixes.Any(prefix =>
-                    !CommandPrefixRegex().IsMatch(prefix)) ||
+                    !IsValidCommandPrefix(prefix)) ||
                 target.ConsoleTail.Length > 65536 ||
                 target.ConsoleTail.Any(character =>
                     character == '\0' ||
@@ -249,6 +260,33 @@ public static partial class ServerControlRules
         var command = value.TrimStart('/');
         return command.Length > 0;
     }
+
+    public static bool IsConsoleCommandAllowed(
+        string command,
+        IReadOnlyList<string> allowedPrefixes)
+    {
+        if (!IsValidConsoleCommand(command))
+        {
+            return false;
+        }
+
+        var normalized = command.Trim().TrimStart('/');
+        var separator = normalized.IndexOfAny([' ', '\t']);
+        var prefix = (separator < 0 ? normalized : normalized[..separator])
+            .ToLowerInvariant();
+        return !ReservedConsoleCommands.Contains(prefix) &&
+               (allowedPrefixes.Contains(
+                    AllConsoleCommandsPrefix,
+                    StringComparer.Ordinal) ||
+                allowedPrefixes.Contains(prefix, StringComparer.Ordinal));
+    }
+
+    private static bool IsValidCommandPrefix(string prefix) =>
+        string.Equals(
+            prefix,
+            AllConsoleCommandsPrefix,
+            StringComparison.Ordinal) ||
+        CommandPrefixRegex().IsMatch(prefix);
 
     [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$",
         RegexOptions.CultureInvariant)]

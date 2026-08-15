@@ -1,0 +1,30 @@
+# ServerControlAgent 0.7.1 全命令控制台候选
+
+## 范围
+
+- 本机配置接受唯一通配前缀 `*`；
+- 通配模式放行全部 Minecraft、模组和插件命令，包括 `op`、`deop`、LuckPerms 与
+  命名空间命令；
+- `stop`、`restart`、`shutdown`、`end` 即使在通配模式下仍拒绝，防止绕过世界保存、
+  端口释放、冲突编排和审计；
+- owl5、owl9 所有固定目标切换为 `*`；owl5 的动态槽状态与固定模板同步切换，未来槽
+  自动继承该策略。
+
+## 部署边界
+
+- API `0.32.1` 必须先上线并开始接受 `*` 心跳；
+- 每台 VPS 分别备份代理 EXE、配置、动态槽状态和计划任务 XML；
+- 只停止并重启 `Hechao Launcher Server Control Agent`，不操作 Minecraft、Velocity、
+  StatusCollector 或世界文件；
+- 发布后核对全部目标心跳新鲜、允许前缀只有 `*`，并确认升级前后游戏 Java PID、启动
+  时间和监听端口不变。
+
+## 当前验证
+
+- ServerControlAgent：`75/75`；
+- API：`350/350`；
+- 完整解决方案：`789/789`；
+- Vitest：`13/13`；
+- Playwright：`33/33`，覆盖 `op 51Channel` 放行与生命周期命令提示；
+- PowerShell 7 合规：`47/47`；
+- 正式制品、哈希、备份、生产 PID 和回滚目录待发布阶段登记。
