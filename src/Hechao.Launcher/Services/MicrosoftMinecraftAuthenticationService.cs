@@ -358,7 +358,17 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
             var applicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var cacheDirectory = Path.Combine(applicationData, "Hechao", "Launcher", "Identity");
             Directory.CreateDirectory(cacheDirectory);
-            var storageProperties = new StorageCreationPropertiesBuilder("msal-cache.bin", cacheDirectory).Build();
+            var storageBuilder = new StorageCreationPropertiesBuilder(
+                "msal-cache.bin",
+                cacheDirectory);
+            if (OperatingSystem.IsMacOS())
+            {
+                storageBuilder.WithMacKeyChain(
+                    "world.hechao.launcher.identity",
+                    "microsoft-token-cache");
+            }
+
+            var storageProperties = storageBuilder.Build();
             _cacheHelper = await MsalCacheHelper.CreateAsync(storageProperties);
             _cacheHelper.RegisterCache(client.UserTokenCache);
             _microsoftClient = client;

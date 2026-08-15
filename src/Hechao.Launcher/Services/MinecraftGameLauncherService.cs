@@ -14,6 +14,7 @@ using CmlLib.Core.Auth;
 using CmlLib.Core.FileExtractors;
 using CmlLib.Core.Files;
 using CmlLib.Core.ProcessBuilder;
+using CmlLib.Core.Version;
 using CmlLib.Core.VersionLoader;
 using Hechao.Distribution;
 
@@ -420,13 +421,32 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         var parameters = MinecraftLauncherParameters.CreateDefault(minecraftPath, _httpClient);
         parameters.VersionLoader = new LocalJsonVersionLoader(minecraftPath);
 
-        // The signed Hechao manifest owns game files. CmlLib only manages Mojang's Java runtime here.
-        var runtimeExtractors = new FileExtractorCollection();
-        runtimeExtractors.Add(new JavaFileExtractor(
-            _httpClient,
-            parameters.JavaPathResolver ??
-            throw new InvalidOperationException("The Java path resolver is unavailable.")));
-        parameters.FileExtractors = runtimeExtractors;
+        var javaPathResolver = parameters.JavaPathResolver ??
+            throw new InvalidOperationException("The Java path resolver is unavailable.");
+        if (OperatingSystem.IsMacOS())
+        {
+            // The signed profile still owns the version JSON, mods and configuration.
+            // Complete only platform-selected Mojang files so a profile authored on
+            // Windows can acquire macOS ARM64 natives without weakening manifest trust.
+            var platformExtractors = DefaultFileExtractors.CreateDefault(
+                _httpClient,
+                parameters.RulesEvaluator ??
+                    throw new InvalidOperationException(
+                        "The Minecraft rules evaluator is unavailable."),
+                javaPathResolver);
+            platformExtractors.Client = null;
+            parameters.FileExtractors = platformExtractors.ToExtractorCollection();
+        }
+        else
+        {
+            // Preserve the released Windows behavior: the signed Hechao manifest owns
+            // game files and CmlLib only manages Mojang's Java runtime.
+            var runtimeExtractors = new FileExtractorCollection();
+            runtimeExtractors.Add(new JavaFileExtractor(
+                _httpClient,
+                javaPathResolver));
+            parameters.FileExtractors = runtimeExtractors;
+        }
 
         var launcher = new MinecraftLauncher(parameters);
         var fileProgress = new Progress<CmlLib.Core.Installers.InstallerProgressChangedEventArgs>(value =>
@@ -651,7 +671,7 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
             if (!string.Equals(
                     expectedDirectory,
                     directory,
-                    StringComparison.OrdinalIgnoreCase))
+                    GetPathComparison()))
             {
                 throw new InvalidDataException(
                     "Minecraft native directory arguments do not resolve to the same safe path.");
@@ -669,11 +689,11 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         var rewritten = value.Replace(
             gameDirectory,
             launchGameDirectory,
-            StringComparison.OrdinalIgnoreCase);
+            GetPathComparison());
         return rewritten.Replace(
             gameDirectory.Replace('\\', '/'),
             launchGameDirectory.Replace('\\', '/'),
-            StringComparison.OrdinalIgnoreCase);
+            GetPathComparison());
     }
 
     private static readonly string[] NativeDirectoryArgumentPrefixes =
@@ -1087,8 +1107,13 @@ public sealed class MinecraftGameLauncherService : IMinecraftGameLauncherService
         var rootPrefix = root.EndsWith(Path.DirectorySeparatorChar)
             ? root
             : root + Path.DirectorySeparatorChar;
-        return candidate.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase);
+        return candidate.StartsWith(rootPrefix, GetPathComparison());
     }
+
+    private static StringComparison GetPathComparison() =>
+        OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
 
     private void TryAttachPersistedProcess()
     {

@@ -1,5 +1,11 @@
 # 赫朝启动器
 
+> `2026-08-15` 新增仅面向 M4 Mac 的原生 `osx-arm64` 客户端。macOS 版复用正式账号、
+> Microsoft/Minecraft 正版、服务器目录、签名整合包、独立档案和进服授权链路，包含
+> ARM64 Java 准备、启动/停止、下载历史与脱敏诊断。构建、签名和公证边界见
+> [`docs/MACOS_M4_RELEASE.md`](docs/MACOS_M4_RELEASE.md)；没有 Apple Developer ID 时的
+> 交叉构建产物会明确标记为未签名，不作为正式公证包。
+
 > `2026-08-14` Launcher API `0.30.7` 已将活动客户端下载与进服权限分离。已登录玩家
 > 可以看到可见活动并提前下载签名客户端；`canJoin` 独立反映最低称号和单服
 > `Allow` / `Deny`，永久服继续隐藏无权记录，Velocity 保留最终门禁。生产真实认证

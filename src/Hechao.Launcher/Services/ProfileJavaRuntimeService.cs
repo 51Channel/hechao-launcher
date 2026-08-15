@@ -163,6 +163,7 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
             var javaPath = javaPathResolver.GetJavaBinaryPath(
                 javaVersion,
                 rulesContext);
+            EnsureUnixExecutable(javaPath);
             var validated = await JavaRuntimeValidator.ValidateAsync(
                 javaPath,
                 metadata.JavaMajorVersion,
@@ -211,9 +212,10 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
         int javaMajorVersion,
         CancellationToken cancellationToken)
     {
+        var executableName = GetJavaExecutableName();
         if (Directory.EnumerateFiles(
                 runtimeRoot,
-                "java.exe",
+                executableName,
                 SearchOption.AllDirectories).Any())
         {
             return;
@@ -244,7 +246,7 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
                 $"seed-java-{javaMajorVersion}");
             var javaExecutables = Directory.EnumerateFiles(
                 candidateLaunchRoot,
-                "java.exe",
+                executableName,
                 SearchOption.AllDirectories);
             var compatible = false;
             foreach (var javaExecutable in javaExecutables)
@@ -321,6 +323,11 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
                 128 * 1024,
                 FileOptions.Asynchronous | FileOptions.SequentialScan);
             await input.CopyToAsync(output, cancellationToken);
+            await output.FlushAsync(cancellationToken);
+            if (!OperatingSystem.IsWindows())
+            {
+                File.SetUnixFileMode(destination, File.GetUnixFileMode(file.FullName));
+            }
         }
     }
 
@@ -363,7 +370,33 @@ internal sealed class ProfileJavaRuntimeService(HttpClient httpClient)
         var prefix = root.EndsWith(Path.DirectorySeparatorChar)
             ? root
             : root + Path.DirectorySeparatorChar;
-        return candidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        return candidate.StartsWith(
+            prefix,
+            OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal);
+    }
+
+    internal static string GetJavaExecutableName() =>
+        GetJavaExecutableName(OperatingSystem.IsWindows());
+
+    internal static string GetJavaExecutableName(bool isWindows) =>
+        isWindows ? "java.exe" : "java";
+
+    private static void EnsureUnixExecutable(string path)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var mode = File.GetUnixFileMode(path);
+        File.SetUnixFileMode(
+            path,
+            mode |
+            UnixFileMode.UserExecute |
+            UnixFileMode.GroupExecute |
+            UnixFileMode.OtherExecute);
     }
 
     private sealed record ProfileJavaRuntimeState(

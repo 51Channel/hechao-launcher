@@ -7,7 +7,7 @@ namespace Hechao.Launcher.Services;
 public sealed record LauncherSettings(
     string SelectedServerId = "",
     string Memory = "6 GB",
-    string ClientDirectory = JsonLauncherSettingsStore.DefaultClientDataDirectory,
+    string ClientDirectory = "",
     bool CheckForUpdates = true,
     bool KeepDownloadsAfterClose = true,
     bool CloseLauncherAfterGameStart = false,
@@ -25,7 +25,7 @@ public interface ILauncherSettingsStore
 
 public sealed class JsonLauncherSettingsStore : ILauncherSettingsStore
 {
-    public const string DefaultClientDataDirectory = "%LocalAppData%\\Hechao\\GameData";
+    public static string DefaultClientDataDirectory => ClientStorageLayout.GetDefaultDataRoot();
 
     private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
     private readonly string _settingsPath;
@@ -102,7 +102,8 @@ public sealed class JsonLauncherSettingsStore : ILauncherSettingsStore
 
     private LauncherSettings InitializeDefaultStorage()
     {
-        var settings = new LauncherSettings();
+        var settings = new LauncherSettings(
+            ClientDirectory: DefaultClientDataDirectory);
         var legacyRoot = ClientStorageLayout.GetLegacyDefaultInstancesRoot();
         MigrateStorage(legacyRoot, settings.ClientDirectory);
         SaveStorageSettings(settings);

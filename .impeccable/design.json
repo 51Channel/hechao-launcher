@@ -1,0 +1,409 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-15T13:40:45.4517648+08:00",
+  "title": "Design System: 赫朝启动器跨平台设计系统",
+  "extensions": {
+    "colorMeta": {
+      "primary-macos": {
+        "role": "primary",
+        "displayName": "macOS 赫朝红",
+        "tonalRamp": [
+          "oklch(15% 0.11 25)",
+          "oklch(27% 0.11 25)",
+          "oklch(39% 0.11 25)",
+          "oklch(51% 0.11 25)",
+          "oklch(63% 0.11 25)",
+          "oklch(75% 0.11 25)",
+          "oklch(87% 0.11 25)",
+          "oklch(95% 0.11 25)"
+        ]
+      },
+      "primary-macos-hover": {
+        "role": "primary",
+        "displayName": "macOS 深赫朝红",
+        "tonalRamp": [
+          "oklch(15% 0.10 25)",
+          "oklch(27% 0.10 25)",
+          "oklch(39% 0.10 25)",
+          "oklch(51% 0.10 25)",
+          "oklch(63% 0.10 25)",
+          "oklch(75% 0.10 25)",
+          "oklch(87% 0.10 25)",
+          "oklch(95% 0.10 25)"
+        ]
+      },
+      "primary-windows": {
+        "role": "primary",
+        "displayName": "Windows 赫朝红",
+        "tonalRamp": [
+          "oklch(15% 0.15 30)",
+          "oklch(27% 0.15 30)",
+          "oklch(39% 0.15 30)",
+          "oklch(51% 0.15 30)",
+          "oklch(63% 0.15 30)",
+          "oklch(75% 0.15 30)",
+          "oklch(87% 0.15 30)",
+          "oklch(95% 0.15 30)"
+        ]
+      },
+      "primary-windows-dark": {
+        "role": "primary",
+        "displayName": "Windows 深赫朝红",
+        "tonalRamp": [
+          "oklch(15% 0.13 30)",
+          "oklch(27% 0.13 30)",
+          "oklch(39% 0.13 30)",
+          "oklch(51% 0.13 30)",
+          "oklch(63% 0.13 30)",
+          "oklch(75% 0.13 30)",
+          "oklch(87% 0.13 30)",
+          "oklch(95% 0.13 30)"
+        ]
+      },
+      "canvas-macos": {
+        "role": "neutral",
+        "displayName": "macOS 冷白画布",
+        "tonalRamp": [
+          "oklch(15% 0.006 110)",
+          "oklch(27% 0.006 110)",
+          "oklch(39% 0.006 110)",
+          "oklch(51% 0.006 110)",
+          "oklch(63% 0.006 110)",
+          "oklch(75% 0.006 110)",
+          "oklch(87% 0.006 110)",
+          "oklch(95% 0.006 110)"
+        ]
+      },
+      "canvas-windows": {
+        "role": "neutral",
+        "displayName": "Windows 冷白画布",
+        "tonalRamp": [
+          "oklch(15% 0.006 110)",
+          "oklch(27% 0.006 110)",
+          "oklch(39% 0.006 110)",
+          "oklch(51% 0.006 110)",
+          "oklch(63% 0.006 110)",
+          "oklch(75% 0.006 110)",
+          "oklch(87% 0.006 110)",
+          "oklch(95% 0.006 110)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "纯白表面",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "rail-macos": {
+        "role": "neutral",
+        "displayName": "macOS 侧栏白",
+        "tonalRamp": [
+          "oklch(15% 0.005 110)",
+          "oklch(27% 0.005 110)",
+          "oklch(39% 0.005 110)",
+          "oklch(51% 0.005 110)",
+          "oklch(63% 0.005 110)",
+          "oklch(75% 0.005 110)",
+          "oklch(87% 0.005 110)",
+          "oklch(95% 0.005 110)"
+        ]
+      },
+      "rail-windows": {
+        "role": "neutral",
+        "displayName": "Windows 侧栏白",
+        "tonalRamp": [
+          "oklch(15% 0.004 110)",
+          "oklch(27% 0.004 110)",
+          "oklch(39% 0.004 110)",
+          "oklch(51% 0.004 110)",
+          "oklch(63% 0.004 110)",
+          "oklch(75% 0.004 110)",
+          "oklch(87% 0.004 110)",
+          "oklch(95% 0.004 110)"
+        ]
+      },
+      "ink-macos": {
+        "role": "neutral",
+        "displayName": "macOS 石墨正文",
+        "tonalRamp": [
+          "oklch(15% 0.008 110)",
+          "oklch(27% 0.008 110)",
+          "oklch(39% 0.008 110)",
+          "oklch(51% 0.008 110)",
+          "oklch(63% 0.008 110)",
+          "oklch(75% 0.008 110)",
+          "oklch(87% 0.008 110)",
+          "oklch(95% 0.008 110)"
+        ]
+      },
+      "ink-windows": {
+        "role": "neutral",
+        "displayName": "Windows 近黑正文",
+        "tonalRamp": [
+          "oklch(15% 0.004 110)",
+          "oklch(27% 0.004 110)",
+          "oklch(39% 0.004 110)",
+          "oklch(51% 0.004 110)",
+          "oklch(63% 0.004 110)",
+          "oklch(75% 0.004 110)",
+          "oklch(87% 0.004 110)",
+          "oklch(95% 0.004 110)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "弱化石墨",
+        "tonalRamp": [
+          "oklch(15% 0.010 110)",
+          "oklch(27% 0.010 110)",
+          "oklch(39% 0.010 110)",
+          "oklch(51% 0.010 110)",
+          "oklch(63% 0.010 110)",
+          "oklch(75% 0.010 110)",
+          "oklch(87% 0.010 110)",
+          "oklch(95% 0.010 110)"
+        ]
+      },
+      "border-macos": {
+        "role": "neutral",
+        "displayName": "macOS 规则线",
+        "tonalRamp": [
+          "oklch(15% 0.007 110)",
+          "oklch(27% 0.007 110)",
+          "oklch(39% 0.007 110)",
+          "oklch(51% 0.007 110)",
+          "oklch(63% 0.007 110)",
+          "oklch(75% 0.007 110)",
+          "oklch(87% 0.007 110)",
+          "oklch(95% 0.007 110)"
+        ]
+      },
+      "border-windows": {
+        "role": "neutral",
+        "displayName": "Windows 规则线",
+        "tonalRamp": [
+          "oklch(15% 0.006 110)",
+          "oklch(27% 0.006 110)",
+          "oklch(39% 0.006 110)",
+          "oklch(51% 0.006 110)",
+          "oklch(63% 0.006 110)",
+          "oklch(75% 0.006 110)",
+          "oklch(87% 0.006 110)",
+          "oklch(95% 0.006 110)"
+        ]
+      },
+      "status-success": {
+        "role": "tertiary",
+        "displayName": "成功绿",
+        "tonalRamp": [
+          "oklch(15% 0.11 155)",
+          "oklch(27% 0.11 155)",
+          "oklch(39% 0.11 155)",
+          "oklch(51% 0.11 155)",
+          "oklch(63% 0.11 155)",
+          "oklch(75% 0.11 155)",
+          "oklch(87% 0.11 155)",
+          "oklch(95% 0.11 155)"
+        ]
+      },
+      "status-warning": {
+        "role": "tertiary",
+        "displayName": "警告金",
+        "tonalRamp": [
+          "oklch(15% 0.14 75)",
+          "oklch(27% 0.14 75)",
+          "oklch(39% 0.14 75)",
+          "oklch(51% 0.14 75)",
+          "oklch(63% 0.14 75)",
+          "oklch(75% 0.14 75)",
+          "oklch(87% 0.14 75)",
+          "oklch(95% 0.14 75)"
+        ]
+      },
+      "steel-windows": {
+        "role": "secondary",
+        "displayName": "Windows 冷钢蓝灰",
+        "tonalRamp": [
+          "oklch(15% 0.03 225)",
+          "oklch(27% 0.03 225)",
+          "oklch(39% 0.03 225)",
+          "oklch(51% 0.03 225)",
+          "oklch(63% 0.03 225)",
+          "oklch(75% 0.03 225)",
+          "oklch(87% 0.03 225)",
+          "oklch(95% 0.03 225)"
+        ]
+      },
+      "busy-surface": {
+        "role": "neutral",
+        "displayName": "持续任务深色面",
+        "tonalRamp": [
+          "oklch(15% 0.006 110)",
+          "oklch(27% 0.006 110)",
+          "oklch(39% 0.006 110)",
+          "oklch(51% 0.006 110)",
+          "oklch(63% 0.006 110)",
+          "oklch(75% 0.006 110)",
+          "oklch(87% 0.006 110)",
+          "oklch(95% 0.006 110)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display-macos": {
+        "displayName": "macOS 展示标题",
+        "purpose": "页面标题、服务器横幅标题和关键品牌名。"
+      },
+      "title-macos": {
+        "displayName": "macOS 分区标题",
+        "purpose": "目录标题、分区标题和账号显示名。"
+      },
+      "body-macos": {
+        "displayName": "macOS 系统正文",
+        "purpose": "Avalonia 客户端的正文、按钮、字段和辅助信息。"
+      },
+      "body-windows": {
+        "displayName": "Windows 系统正文",
+        "purpose": "WPF 客户端通过 UiFont 使用的正文和控件字体。"
+      },
+      "label-macos": {
+        "displayName": "macOS 字段标签",
+        "purpose": "紧凑字段名、分组名与状态标题。"
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "macOS 主按钮",
+      "kind": "button",
+      "refersTo": "button-primary-macos",
+      "description": "安装、启动、登录和绑定等当前页面唯一主动作。",
+      "html": "<button class=\"ds-btn-primary-macos\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"></polygon></svg><span>安装客户端</span></button>",
+      "css": ".ds-btn-primary-macos { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 9px 12px; border: 1px solid #A8282C; border-radius: 5px; background: #A8282C; color: #FFFFFF; font: 600 14px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-btn-primary-macos svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; } .ds-btn-primary-macos:hover, .ds-btn-primary-macos:active { background: #8E2024; border-color: #8E2024; } .ds-btn-primary-macos:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }"
+    },
+    {
+      "name": "Windows 主按钮",
+      "kind": "button",
+      "refersTo": "button-primary-windows",
+      "description": "WPF 首页的固定规格启动主动作。",
+      "html": "<button class=\"ds-btn-primary-windows\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"></polygon></svg><span>启动游戏</span></button>",
+      "css": ".ds-btn-primary-windows { min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 24px; border: 1px solid #861A14; border-radius: 6px; background: #B3261E; color: #FFFFFF; font: 700 17px 'Microsoft YaHei UI', 'Segoe UI', sans-serif; } .ds-btn-primary-windows svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; } .ds-btn-primary-windows:hover { background: #BD3027; } .ds-btn-primary-windows:active { background: #861A14; } .ds-btn-primary-windows:focus-visible { outline: 1px solid #171716; outline-offset: 2px; }"
+    },
+    {
+      "name": "macOS 次按钮",
+      "kind": "button",
+      "refersTo": "button-secondary-macos",
+      "description": "修复、目录、刷新和其他次级命令。",
+      "html": "<button class=\"ds-btn-secondary-macos\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 7h6l2 2h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z\"></path></svg><span>目录</span></button>",
+      "css": ".ds-btn-secondary-macos { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border: 1px solid #D7D9D4; border-radius: 5px; background: transparent; color: #2C2E2A; font: 400 14px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-btn-secondary-macos svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-btn-secondary-macos:hover, .ds-btn-secondary-macos:active { background: #ECEEE9; } .ds-btn-secondary-macos:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }"
+    },
+    {
+      "name": "macOS 当前导航",
+      "kind": "nav",
+      "refersTo": "navigation-active-macos",
+      "description": "左侧全局导航的当前工作区状态。",
+      "html": "<button class=\"ds-nav-active-macos\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"6\" rx=\"1\"></rect><rect x=\"4\" y=\"14\" width=\"16\" height=\"6\" rx=\"1\"></rect><path d=\"M8 7h.01M8 17h.01\"></path></svg><span>服务器</span></button>",
+      "css": ".ds-nav-active-macos { width: 190px; display: flex; align-items: center; gap: 11px; padding: 11px 14px; border: 0; border-radius: 5px; background: #EEE4E3; color: #8E2024; font: 600 14px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; text-align: left; } .ds-nav-active-macos svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .ds-nav-active-macos:hover, .ds-nav-active-macos:active { background: #ECEEE9; } .ds-nav-active-macos:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }"
+    },
+    {
+      "name": "macOS 已选服务器行",
+      "kind": "nav",
+      "refersTo": "server-row-selected-macos",
+      "description": "连续服务器目录中的当前服务器。",
+      "html": "<button class=\"ds-server-row-selected\"><span class=\"ds-server-mark\">生存</span><span class=\"ds-server-copy\"><strong>赫朝生存二服</strong><small>Minecraft 1.21.11 · Fabric</small></span><span class=\"ds-server-state\">在线</span></button>",
+      "css": ".ds-server-row-selected { width: 338px; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; padding: 15px 18px; border: 0; border-bottom: 1px solid #BE7D7C; border-radius: 0; background: #F1E7E6; color: #262824; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; text-align: left; } .ds-server-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 4px; background: #E7E9E3; font-size: 14px; font-weight: 700; } .ds-server-copy { min-width: 0; display: grid; gap: 4px; } .ds-server-copy strong { font-size: 14px; } .ds-server-copy small { overflow: hidden; color: #6E726B; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; } .ds-server-state { align-self: start; color: #34865A; font-size: 11px; } .ds-server-row-selected:hover, .ds-server-row-selected:active { background: #ECEEE9; } .ds-server-row-selected:focus-visible { outline: 2px solid CanvasText; outline-offset: -3px; }"
+    },
+    {
+      "name": "macOS 文本字段",
+      "kind": "input",
+      "refersTo": "field-macos",
+      "description": "账号、验证码和只读目录等紧凑字段。",
+      "html": "<label class=\"ds-field-macos\"><span>用户名或邮箱</span><input type=\"text\" placeholder=\"输入赫朝账号\"></label>",
+      "css": ".ds-field-macos { width: 320px; display: grid; gap: 6px; color: #62665F; font: 600 12px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-field-macos input { min-height: 38px; padding: 0 10px; border: 1px solid #C9CCC5; border-radius: 4px; background: #FFFFFF; color: #262824; font: 400 14px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-field-macos input:focus-visible { outline: 2px solid CanvasText; outline-offset: 1px; }"
+    },
+    {
+      "name": "macOS 下载任务卡",
+      "kind": "card",
+      "refersTo": "download-card-macos",
+      "description": "单个客户端下载、完成或失败记录。",
+      "html": "<article class=\"ds-download-card\"><div class=\"ds-download-head\"><div><strong>生存二服整合包</strong><small>2026.08.15</small></div><span>下载中</span></div><div class=\"ds-download-track\"><i></i></div><div class=\"ds-download-meta\"><span>libraries/example.jar</span><span>42%</span></div></article>",
+      "css": ".ds-download-card { width: 520px; display: grid; gap: 10px; padding: 18px; border: 1px solid #D8DAD5; border-radius: 6px; background: #FFFFFF; color: #262824; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-download-head, .ds-download-meta { display: flex; justify-content: space-between; gap: 18px; } .ds-download-head div { display: grid; gap: 3px; } .ds-download-head strong { font-size: 15px; } .ds-download-head small, .ds-download-meta { color: #6E726B; font-size: 11px; } .ds-download-head > span { font-size: 14px; font-weight: 600; } .ds-download-track { height: 5px; overflow: hidden; background: #DFE1DC; } .ds-download-track i { display: block; width: 42%; height: 100%; background: #A8282C; } .ds-download-meta span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
+    },
+    {
+      "name": "macOS 顶部状态条",
+      "kind": "custom",
+      "refersTo": "status-strip-info-macos",
+      "description": "跨工作区显示同步、授权和可恢复错误。",
+      "html": "<div class=\"ds-status-strip\" role=\"status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 11v5M12 8h.01\"></path></svg><span>账号与服务器目录已同步。</span></div>",
+      "css": ".ds-status-strip { display: flex; align-items: center; gap: 9px; padding: 9px 18px; border-bottom: 1px solid #D6DFD4; background: #EDF2EC; color: #262824; font: 400 12px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-status-strip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }"
+    },
+    {
+      "name": "macOS 持续任务栏",
+      "kind": "custom",
+      "refersTo": "busy-bar-macos",
+      "description": "安装或下载时固定在窗口底部的跨页面任务反馈。",
+      "html": "<div class=\"ds-busy-bar\"><div class=\"ds-busy-copy\"><div><strong>正在安装客户端</strong><span>42%</span></div><div class=\"ds-busy-track\"><i></i></div></div><button aria-label=\"取消当前任务\">×</button></div>",
+      "css": ".ds-busy-bar { width: 620px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; padding: 12px 18px; background: #20221F; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; } .ds-busy-copy { display: grid; gap: 7px; } .ds-busy-copy > div:first-child { display: flex; justify-content: space-between; gap: 18px; } .ds-busy-copy strong { font-size: 14px; font-weight: 600; } .ds-busy-copy span { color: #C8CBC4; font-size: 12px; } .ds-busy-track { height: 5px; background: #DFE1DC; } .ds-busy-track i { display: block; width: 42%; height: 100%; background: #A8282C; } .ds-busy-bar button { width: 36px; height: 36px; border: 1px solid #5B5E58; border-radius: 5px; background: transparent; color: #FFFFFF; font-size: 20px; } .ds-busy-bar button:hover, .ds-busy-bar button:active { background: #ECEEE9; color: #20221F; } .ds-busy-bar button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "安静的服务器控制台",
+    "overview": "赫朝启动器采用紧凑的 Operate 模式：玩家进入应用后直接选择服务器、检查签名客户端与 ARM64 Java、处理下载状态并启动 Minecraft。品牌表达来自赫朝红、真实堡垒横幅、图标与精准标题，不依赖营销式大标题、装饰性卡片阵列或与任务无关的视觉噱头。\n\nWindows WPF 与 macOS Avalonia 共享“导航、目录、当前任务”这条信息骨架，同时保留各自已实现的平台差异。Windows 使用既有 HechaoTheme.xaml、UiFont 与 IconPark；macOS 使用 Avalonia Compact Fluent、系统正文字体、Lucide 图标和内置得意黑标题字体。两端都以高频操作、真实状态和可恢复失败为界面中心。",
+    "keyCharacteristics": [
+      "三段式桌面工作台，服务器选择和启动主流程保持同屏。",
+      "冷白工作面、石墨正文、1px 规则线与少量赫朝红强调。",
+      "得意黑仅在 macOS 的品牌、页面标题和服务器标题中出现。",
+      "状态同时使用文字与颜色，下载和启动任务持续可见。",
+      "真实目录、公告、活动、账号和品牌资产优先，不制造演示性指标。"
+    ],
+    "rules": [
+      {
+        "name": "The Red Is a Command Rule",
+        "body": "赫朝红优先表示当前选择、主要动作、进度或错误，不把大面积普通容器涂红。",
+        "section": "colors"
+      },
+      {
+        "name": "The Platform Token Rule",
+        "body": "跨平台结构可以共享，但落地颜色必须引用对应平台的实际令牌，禁止把 Windows 或 macOS 的十六进制值直接覆盖到另一端。",
+        "section": "colors"
+      },
+      {
+        "name": "The Display Restraint Rule",
+        "body": "得意黑只用于 macOS 的品牌与标题，不进入按钮正文、表单正文、路径和长说明。",
+        "section": "typography"
+      },
+      {
+        "name": "The Same-Screen Task Rule",
+        "body": "服务器选择、当前客户端状态和主操作必须在桌面首屏同时可定位，不能拆成互不相干的装饰页面。",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-by-Default Rule",
+        "body": "静止表面不靠阴影悬浮；只有明确的容器边界、状态色块和固定任务区建立层级。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** 保持三段式工作台，让选择、客户端状态和主操作在同一桌面上下文中可见。",
+      "**Do** 使用真实服务器目录、公告、活动、账号和当前档案；演示数据必须明确标注“演示”。",
+      "**Do** 在 macOS 品牌与标题中使用内置得意黑，在正文和控件中使用平台系统字体。",
+      "**Do** 复用平台现有图标库、焦点样式、主题控件和颜色令牌。",
+      "**Do** 在默认与最小窗口检查长中文、路径、下载失败和持续任务状态。"
+    ],
+    "donts": [
+      "**Don't** 增加虚假的延迟、标签、收藏、玩家人数、管理员入口或服务器图片差异。",
+      "**Don't** 把页面分区做成浮动卡片阵列，也不要在业务卡片里嵌套装饰卡片。",
+      "**Don't** 用得意黑排正文、表单内容或长说明，也不要使用负字距或视口字号缩放。",
+      "**Don't** 用圆角文字块代替已有的工具图标，或为普通命令制造药丸形按钮。",
+      "**Don't** 用颜色作为状态的唯一信息，也不要隐藏下载、授权、修复和失败恢复路径。"
+    ]
+  }
+}

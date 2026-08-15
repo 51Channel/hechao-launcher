@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Hechao.Launcher.Mac</AssemblyName>
+    <RootNamespace>Hechao.Launcher.Mac</RootNamespace>
+    <Version>0.15.8</Version>
+    <RuntimeIdentifiers>osx-arm64</RuntimeIdentifiers>
+    <AssemblyTitle>赫朝启动器</AssemblyTitle>
+    <Product>赫朝启动器 macOS M4 版</Product>
+    <Description>赫朝社区 Minecraft Java 模组客户端启动器</Description>
+    <ApplicationManifest Condition="$([MSBuild]::IsOSPlatform('Windows'))">app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hechao.Contracts\Hechao.Contracts.csproj" />
+    <ProjectReference Include="..\Hechao.Distribution\Hechao.Distribution.csproj" />
+    <ProjectReference Include="..\Hechao.Launcher.Core\Hechao.Launcher.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.17" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.17" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.17" />
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="..\Hechao.Launcher\Assets\hechao-launcher-icon.png"
+                      Link="Assets\hechao-launcher-icon.png" />
+    <AvaloniaResource Include="..\Hechao.Launcher\Assets\hechao-fortress-banner.png"
+                      Link="Assets\hechao-fortress-banner.png" />
+    <AvaloniaResource Include="Assets\SmileySans-Oblique.otf" />
+    <Content Include="Assets\SmileySans-OFL.txt"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

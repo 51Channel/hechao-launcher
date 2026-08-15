@@ -68,7 +68,23 @@ public sealed class ClientStorageLayout
     {
         var localApplicationData = Environment.GetFolderPath(
             Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(localApplicationData, "Hechao", "GameData");
+        var userProfile = Environment.GetFolderPath(
+            Environment.SpecialFolder.UserProfile);
+        return GetDefaultDataRoot(
+            OperatingSystem.IsMacOS(),
+            userProfile,
+            localApplicationData);
+    }
+
+    internal static string GetDefaultDataRoot(
+        bool isMacOS,
+        string userProfile,
+        string localApplicationData)
+    {
+        var applicationData = isMacOS
+            ? Path.Combine(userProfile, "Library", "Application Support")
+            : localApplicationData;
+        return Path.Combine(applicationData, "Hechao", "GameData");
     }
 
     public static string GetLegacyDefaultInstancesRoot()

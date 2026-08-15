@@ -1,0 +1,695 @@
+<Window x:Class="Hechao.Launcher.Mac.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="赫朝启动器"
+        Width="1380"
+        Height="840"
+        MinWidth="1180"
+        MinHeight="680"
+        Background="#F5F6F3"
+        FontFamily="-apple-system, BlinkMacSystemFont, PingFang SC, Helvetica Neue">
+  <!--
+  THESIS: 原生三段式工作区让服务器选择、客户端状态和启动任务始终同屏，拒绝把高频操作拆成装饰性首页。
+  OWN-WORLD: 赫朝红、石墨文字、冷白工作面和 1px 规则线；紧凑、克制、无嵌套卡片。
+  STORY: 登录并选择服务器，准备签名客户端与 ARM64 Java，然后取得授权启动 Minecraft。
+  FIRST VIEWPORT: 左侧全局导航，中间服务器索引，右侧堡垒横幅、档案状态和底部持续任务区。
+  FORM: 既有视觉世界中的任务阶段工作区，结构候选 3，seed 55a11d38。
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="#262824" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.h1">
+      <Setter Property="FontFamily" Value="avares://Hechao.Launcher.Mac/Assets/SmileySans-Oblique.otf#得意黑" />
+      <Setter Property="FontSize" Value="25" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.h2">
+      <Setter Property="FontFamily" Value="avares://Hechao.Launcher.Mac/Assets/SmileySans-Oblique.otf#得意黑" />
+      <Setter Property="FontSize" Value="17" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.brand, TextBlock.hero-title">
+      <Setter Property="FontFamily" Value="avares://Hechao.Launcher.Mac/Assets/SmileySans-Oblique.otf#得意黑" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#62665F" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="#6E726B" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="12,9" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="#D7D9D4" />
+      <Setter Property="Foreground" Value="#2C2E2A" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#ECEEE9" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#A8282C" />
+      <Setter Property="BorderBrush" Value="#A8282C" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#8E2024" />
+    </Style>
+    <Style Selector="Button.danger">
+      <Setter Property="Foreground" Value="#A8282C" />
+      <Setter Property="BorderBrush" Value="#D8B9B9" />
+    </Style>
+    <Style Selector="Button.nav">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="14,11" />
+      <Setter Property="Margin" Value="0,2" />
+    </Style>
+    <Style Selector="Button.nav.active">
+      <Setter Property="Background" Value="#EEE4E3" />
+      <Setter Property="Foreground" Value="#8E2024" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.server-item">
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="BorderBrush" Value="#E1E3DE" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="18,15" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Button.server-item.selected">
+      <Setter Property="Background" Value="#F1E7E6" />
+      <Setter Property="BorderBrush" Value="#BE7D7C" />
+    </Style>
+    <Style Selector="TextBox, ComboBox">
+      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="BorderBrush" Value="#C9CCC5" />
+      <Setter Property="Background" Value="White" />
+    </Style>
+    <Style Selector="Border.status-strip">
+      <Setter Property="Background" Value="#EDF2EC" />
+      <Setter Property="BorderBrush" Value="#D6DFD4" />
+    </Style>
+    <Style Selector="Border.status-strip.error">
+      <Setter Property="Background" Value="#F7E9E7" />
+      <Setter Property="BorderBrush" Value="#E3C3C0" />
+    </Style>
+    <Style Selector="ProgressBar">
+      <Setter Property="Height" Value="5" />
+      <Setter Property="Foreground" Value="#A8282C" />
+      <Setter Property="Background" Value="#DFE1DC" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" ColumnDefinitions="218,*">
+      <!-- 全局导航 -->
+      <Border Grid.Column="0"
+              Background="#FAFBF8"
+              BorderBrush="#D9DBD6"
+              BorderThickness="0,0,1,0">
+        <Grid Margin="16,20,16,16" RowDefinitions="Auto,26,*,Auto">
+          <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="11">
+            <Image Source="avares://Hechao.Launcher.Mac/Assets/hechao-launcher-icon.png"
+                   Width="36" Height="36" />
+            <StackPanel VerticalAlignment="Center" Spacing="1">
+              <TextBlock Text="赫朝启动器" Classes="brand" FontSize="17" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding LauncherVersionText}" Classes="muted" FontSize="11" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Grid.Row="2" Spacing="1">
+            <Button Classes="nav" Classes.active="{Binding IsHome}"
+                    Command="{Binding NavigateCommand}" CommandParameter="Home">
+              <StackPanel Orientation="Horizontal" Spacing="11">
+                <LucideIcon Kind="Server" Size="18" StrokeWidth="1.8" />
+                <TextBlock Text="服务器" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Classes="nav" Classes.active="{Binding IsDownloads}"
+                    Command="{Binding NavigateCommand}" CommandParameter="Downloads">
+              <StackPanel Orientation="Horizontal" Spacing="11">
+                <LucideIcon Kind="Download" Size="18" StrokeWidth="1.8" />
+                <TextBlock Text="下载任务" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Classes="nav" Classes.active="{Binding IsActivities}"
+                    Command="{Binding NavigateCommand}" CommandParameter="Activities">
+              <StackPanel Orientation="Horizontal" Spacing="11">
+                <LucideIcon Kind="CalendarDays" Size="18" StrokeWidth="1.8" />
+                <TextBlock Text="限时活动" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Classes="nav" Classes.active="{Binding IsAccount}"
+                    Command="{Binding NavigateCommand}" CommandParameter="Account">
+              <StackPanel Orientation="Horizontal" Spacing="11">
+                <LucideIcon Kind="CircleUserRound" Size="18" StrokeWidth="1.8" />
+                <TextBlock Text="账号" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Classes="nav" Classes.active="{Binding IsSettings}"
+                    Command="{Binding NavigateCommand}" CommandParameter="Settings">
+              <StackPanel Orientation="Horizontal" Spacing="11">
+                <LucideIcon Kind="Settings2" Size="18" StrokeWidth="1.8" />
+                <TextBlock Text="设置与诊断" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+          <StackPanel Grid.Row="3" Spacing="12">
+            <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" Padding="0,14,0,0">
+              <Button Classes="nav" Command="{Binding NavigateCommand}" CommandParameter="Account">
+                <Grid ColumnDefinitions="34,*" ColumnSpacing="10">
+                  <Border Width="34" Height="34" CornerRadius="4" Background="#E6E8E2">
+                    <Grid>
+                      <TextBlock Text="赫" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 FontWeight="Bold" Foreground="#8E2024" />
+                      <Image Source="{Binding AccountSkin}" Stretch="UniformToFill"
+                             IsVisible="{Binding HasAccountSkin}" />
+                    </Grid>
+                  </Border>
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                    <TextBlock Text="{Binding AccountDisplayName}" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                    <TextBlock Text="{Binding AccountDetailText}" Classes="muted" FontSize="11"
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+            </Border>
+            <Button Command="{Binding OpenForumCommand}" HorizontalContentAlignment="Left">
+              <StackPanel Orientation="Horizontal" Spacing="9">
+                <LucideIcon Kind="ExternalLink" Size="16" />
+                <TextBlock Text="访问赫朝社区" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- 主工作区 -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Classes="status-strip" Classes.error="{Binding HasError}"
+                BorderThickness="0,0,0,1" Padding="18,9">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="9">
+            <LucideIcon Kind="Info" Size="16" StrokeWidth="2" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" FontSize="12"
+                       VerticalAlignment="Center" />
+          </Grid>
+        </Border>
+
+        <!-- 服务器页 -->
+        <Grid Grid.Row="1" IsVisible="{Binding IsHome}" ColumnDefinitions="338,*">
+          <Border Grid.Column="0" Background="#FAFBF8" BorderBrush="#D9DBD6" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto,*">
+              <Grid Margin="20,20,18,14" ColumnDefinitions="*,Auto">
+                <StackPanel>
+                  <TextBlock Text="常驻服务器" Classes="h2" />
+                  <TextBlock Text="选择后检查本地客户端状态" Classes="muted" Margin="0,3,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding RefreshCatalogCommand}"
+                        Padding="9" ToolTip.Tip="同步服务器目录">
+                  <LucideIcon Kind="RefreshCw" Size="17" />
+                </Button>
+              </Grid>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Servers}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Classes="server-item" Classes.selected="{Binding IsSelected}"
+                              Command="{Binding $parent[Window].DataContext.SelectServerCommand}"
+                              CommandParameter="{Binding}">
+                        <Grid ColumnDefinitions="42,*" ColumnSpacing="12">
+                          <Border Width="42" Height="42" CornerRadius="4" Background="#E7E9E3">
+                            <TextBlock Text="{Binding ShortName}" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" FontSize="17" FontWeight="Bold" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                              <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                         TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                              <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontSize="11"
+                                         Foreground="{Binding StatusColor}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Text="{Binding RuntimeText}" Classes="muted" FontSize="11"
+                                         TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                              <TextBlock Grid.Column="1" Text="{Binding PopulationText}" Classes="muted" FontSize="11" />
+                            </Grid>
+                          </StackPanel>
+                        </Grid>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <Grid Height="214" ClipToBounds="True" Background="#343832">
+                <Image Source="avares://Hechao.Launcher.Mac/Assets/hechao-fortress-banner.png"
+                       Stretch="UniformToFill" />
+                <Border VerticalAlignment="Bottom" Background="#D9141513" Padding="24,17">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <StackPanel Spacing="5">
+                      <TextBlock Text="{Binding SelectedServerName}" Classes="hero-title" FontSize="25" FontWeight="SemiBold"
+                                 Foreground="White" />
+                      <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{Binding SelectedServerStatusText}"
+                                   Foreground="{Binding SelectedServerStatusColor}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding SelectedServerPopulationText}" Foreground="#E7E9E5" />
+                      </StackPanel>
+                    </StackPanel>
+                    <Border Grid.Column="1" Background="#E6F8F8F5" CornerRadius="4" Padding="10,6"
+                            VerticalAlignment="Center">
+                      <TextBlock Text="M4 / ARM64" Foreground="#2A2D28" FontSize="12" FontWeight="SemiBold" />
+                    </Border>
+                  </Grid>
+                </Border>
+              </Grid>
+
+              <Grid Margin="26,24,26,28" ColumnDefinitions="*,270" ColumnSpacing="34">
+                <StackPanel Grid.Column="0" Spacing="22">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="服务器公告" Classes="label" />
+                    <TextBlock Text="{Binding SelectedServerAnnouncement}" FontSize="15" LineHeight="23" />
+                  </StackPanel>
+                  <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="26">
+                    <StackPanel Spacing="5">
+                      <TextBlock Text="游戏环境" Classes="label" />
+                      <TextBlock Text="{Binding SelectedServerRuntimeText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="5">
+                      <TextBlock Text="开放时间" Classes="label" />
+                      <TextBlock Text="{Binding SelectedServerScheduleText}" />
+                    </StackPanel>
+                  </Grid>
+                  <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="客户端档案" Classes="label" />
+                    <TextBlock Text="{Binding SelectedProfileText}" FontWeight="SemiBold" />
+                    <TextBlock Text="整合包清单经过签名校验，并使用独立目录安装；首次启动会补齐 macOS ARM64 依赖。"
+                               Classes="muted" LineHeight="20" />
+                  </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Spacing="14">
+                  <TextBlock Text="准备状态" Classes="label" />
+                  <TextBlock Text="{Binding ClientStateText}" FontSize="15" FontWeight="SemiBold" />
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <LucideIcon Kind="Cpu" Size="17" StrokeWidth="1.8" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Spacing="2">
+                      <TextBlock Text="{Binding ManagedJavaStateText}" FontWeight="SemiBold" FontSize="12" />
+                      <TextBlock Text="{Binding ManagedJavaDetailText}" Classes="muted" FontSize="11" />
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Text="{Binding RunningGameText}" Classes="muted" />
+                  <Button Classes="primary" Command="{Binding PrimaryActionCommand}" MinHeight="44">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <LucideIcon Kind="Play" Size="18" />
+                      <TextBlock Text="{Binding PrimaryActionText}" Foreground="White" />
+                    </StackPanel>
+                  </Button>
+                  <Button Command="{Binding LinkMinecraftCommand}" IsVisible="{Binding NeedsMinecraftLink}">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <LucideIcon Kind="BadgeCheck" Size="17" />
+                      <TextBlock Text="绑定 Minecraft 正版" />
+                    </StackPanel>
+                  </Button>
+                  <Button Command="{Binding StopGameCommand}" IsVisible="{Binding IsGameRunning}">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <LucideIcon Kind="Square" Size="16" />
+                      <TextBlock Text="安全退出游戏" />
+                    </StackPanel>
+                  </Button>
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Button Command="{Binding RepairCommand}" ToolTip.Tip="重新校验并修复当前客户端">
+                      <StackPanel Orientation="Horizontal" Spacing="7">
+                        <LucideIcon Kind="Wrench" Size="15" />
+                        <TextBlock Text="修复" />
+                      </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1" Command="{Binding OpenGameDirectoryCommand}" ToolTip.Tip="打开当前档案目录">
+                      <StackPanel Orientation="Horizontal" Spacing="7">
+                        <LucideIcon Kind="FolderOpen" Size="15" />
+                        <TextBlock Text="目录" />
+                      </StackPanel>
+                    </Button>
+                  </Grid>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- 下载页 -->
+        <Grid Grid.Row="1" IsVisible="{Binding IsDownloads}" RowDefinitions="Auto,*">
+          <Grid Margin="28,24,28,18" ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <TextBlock Text="下载任务" Classes="h1" />
+              <TextBlock Text="{Binding DownloadCountText}" Classes="muted" Margin="0,4,0,0" />
+            </StackPanel>
+            <Button Grid.Column="1" Command="{Binding CancelOperationCommand}" IsVisible="{Binding CanCancelOperation}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <LucideIcon Kind="X" Size="16" />
+                <TextBlock Text="取消当前任务" />
+              </StackPanel>
+            </Button>
+          </Grid>
+          <Grid Grid.Row="1">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9"
+                        IsVisible="{Binding HasNoDownloads}">
+              <LucideIcon Kind="PackageCheck" Size="30" StrokeWidth="1.5" />
+              <TextBlock Text="暂无下载记录" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="选择服务器并安装客户端后，任务会显示在这里。" Classes="muted" />
+            </StackPanel>
+            <ScrollViewer IsVisible="{Binding HasDownloads}" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding Downloads}" Margin="28,0,28,28">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Background="White" BorderBrush="#D8DAD5" BorderThickness="1"
+                            CornerRadius="6" Padding="18" Margin="0,0,0,10">
+                      <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                          <StackPanel>
+                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="15" />
+                            <TextBlock Text="{Binding Version}" Classes="muted" Margin="0,3,0,0" />
+                          </StackPanel>
+                          <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            <TextBlock Text="{Binding TimeText}" Classes="muted" FontSize="11" />
+                          </StackPanel>
+                        </Grid>
+                        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Percent}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Text="{Binding CurrentFile}" Classes="muted" FontSize="11"
+                                     TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                          <TextBlock Grid.Column="1" Text="{Binding ProgressText}" Classes="muted" FontSize="11" />
+                        </Grid>
+                        <TextBlock Text="{Binding FailureMessage}" Foreground="#A8282C" FontSize="12" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Grid>
+
+        <!-- 活动页 -->
+        <Grid Grid.Row="1" IsVisible="{Binding IsActivities}" ColumnDefinitions="338,*">
+          <Border Grid.Column="0" Background="#FAFBF8" BorderBrush="#D9DBD6" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto,*">
+              <StackPanel Margin="20,20,18,14">
+                <TextBlock Text="限时活动" Classes="h2" />
+                <TextBlock Text="可提前安装客户端，权限以目录为准" Classes="muted" Margin="0,3,0,0" />
+              </StackPanel>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Activities}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Classes="server-item" Classes.selected="{Binding IsSelected}"
+                              Command="{Binding $parent[Window].DataContext.SelectServerCommand}"
+                              CommandParameter="{Binding}">
+                        <StackPanel Spacing="6">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding StatusText}" Foreground="{Binding StatusColor}" FontSize="11" />
+                          </Grid>
+                          <TextBlock Text="{Binding ScheduleText}" Classes="muted" FontSize="11" />
+                          <TextBlock Text="{Binding Announcement}" MaxLines="2" TextTrimming="CharacterEllipsis" FontSize="12" />
+                        </StackPanel>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Grid>
+          </Border>
+          <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="28,26" Spacing="24">
+              <StackPanel Spacing="7">
+                <TextBlock Text="活动档案" Classes="label" />
+                <TextBlock Text="{Binding SelectedServerName}" Classes="h1" />
+                <TextBlock Text="{Binding SelectedServerScheduleText}" Foreground="{Binding SelectedServerStatusColor}" />
+              </StackPanel>
+              <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+              <TextBlock Text="{Binding SelectedServerAnnouncement}" FontSize="15" LineHeight="23" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="28">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="运行环境" Classes="label" />
+                  <TextBlock Text="{Binding SelectedServerRuntimeText}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="5">
+                  <TextBlock Text="客户端" Classes="label" />
+                  <TextBlock Text="{Binding SelectedProfileText}" />
+                </StackPanel>
+              </Grid>
+              <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Classes="primary" Command="{Binding PrimaryActionCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="PackageOpen" Size="17" />
+                    <TextBlock Text="{Binding PrimaryActionText}" Foreground="White" />
+                  </StackPanel>
+                </Button>
+                <Button Command="{Binding RepairCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="Wrench" Size="16" />
+                    <TextBlock Text="校验并修复" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- 账号页 -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsAccount}" VerticalScrollBarVisibility="Auto">
+          <Grid Margin="30,26" ColumnDefinitions="1.2*,0.8*" ColumnSpacing="48">
+            <StackPanel Grid.Column="0" Spacing="22">
+              <StackPanel>
+                <TextBlock Text="账号" Classes="h1" />
+                <TextBlock Text="赫朝身份用于同步权限，Minecraft 正版身份用于启动游戏。"
+                           Classes="muted" Margin="0,5,0,0" />
+              </StackPanel>
+
+              <StackPanel IsVisible="{Binding IsSignedOut}" Spacing="16">
+                <StackPanel IsVisible="{Binding IsLoginMode}" Spacing="13">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="用户名或邮箱" Classes="label" />
+                    <TextBox Text="{Binding LoginIdentity}" Watermark="输入赫朝账号" />
+                  </StackPanel>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="密码" Classes="label" />
+                    <TextBox Text="{Binding LoginPassword}" PasswordChar="●" Watermark="输入密码" />
+                  </StackPanel>
+                  <Button Classes="primary" Command="{Binding LoginCommand}" HorizontalAlignment="Left" MinWidth="150">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <LucideIcon Kind="LogIn" Size="17" />
+                      <TextBlock Text="登录赫朝" Foreground="White" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding IsRegistering}" Spacing="13">
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="用户名" Classes="label" />
+                      <TextBox Text="{Binding RegisterUsername}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="6">
+                      <TextBlock Text="显示名称" Classes="label" />
+                      <TextBox Text="{Binding RegisterDisplayName}" />
+                    </StackPanel>
+                  </Grid>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="邮箱" Classes="label" />
+                    <TextBox Text="{Binding RegisterEmail}" />
+                  </StackPanel>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="邮箱验证码" Classes="label" />
+                      <TextBox Text="{Binding RegisterCode}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{Binding SendRegistrationCodeCommand}"
+                            Content="发送验证码" />
+                  </Grid>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="密码" Classes="label" />
+                    <TextBox Text="{Binding RegisterPassword}" PasswordChar="●" />
+                  </StackPanel>
+                  <Button Classes="primary" Command="{Binding RegisterCommand}" HorizontalAlignment="Left" MinWidth="150"
+                          Content="创建并登录" />
+                </StackPanel>
+
+                <Button Command="{Binding ToggleRegistrationCommand}" HorizontalAlignment="Left"
+                        Content="切换登录 / 注册" />
+              </StackPanel>
+
+              <StackPanel IsVisible="{Binding IsAuthenticated}" Spacing="18">
+                <Grid ColumnDefinitions="68,*" ColumnSpacing="16">
+                  <Border Width="68" Height="68" CornerRadius="5" Background="#E5E7E1">
+                    <Grid>
+                      <TextBlock Text="赫" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 FontSize="24" FontWeight="Bold" Foreground="#8E2024" />
+                      <Image Source="{Binding AccountSkin}" Stretch="UniformToFill" IsVisible="{Binding HasAccountSkin}" />
+                    </Grid>
+                  </Border>
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                    <TextBlock Text="{Binding AccountDisplayName}" Classes="h2" />
+                    <TextBlock Text="{Binding AccountDetailText}" Classes="muted" />
+                  </StackPanel>
+                </Grid>
+                <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+                <StackPanel IsVisible="{Binding NeedsMinecraftLink}" Spacing="10">
+                  <TextBlock Text="Minecraft Java 正版尚未绑定" FontWeight="SemiBold" />
+                  <TextBlock Text="系统会打开 Microsoft 登录。启动器只保存续期所需的安全会话，并在 macOS Keychain 中加密。"
+                             Classes="muted" LineHeight="20" />
+                  <Button Classes="primary" Command="{Binding LinkMinecraftCommand}" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <LucideIcon Kind="BadgeCheck" Size="17" />
+                      <TextBlock Text="绑定 Microsoft / Minecraft" Foreground="White" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+                <StackPanel IsVisible="{Binding IsMinecraftLinked}" Spacing="8">
+                  <TextBlock Text="正版身份已绑定" Foreground="#34865A" FontWeight="SemiBold" />
+                  <TextBlock Text="启动时会按需刷新 Minecraft 会话，并在进服前取得赫朝授权。" Classes="muted" />
+                </StackPanel>
+                <Button Command="{Binding LogoutCommand}" HorizontalAlignment="Left">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <LucideIcon Kind="LogOut" Size="16" />
+                    <TextBlock Text="退出赫朝账号" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Spacing="20">
+              <TextBlock Text="身份链路" Classes="label" />
+              <Grid RowDefinitions="Auto,34,Auto,34,Auto">
+                <Grid Grid.Row="0" ColumnDefinitions="30,*" ColumnSpacing="10">
+                  <LucideIcon Kind="UserRoundCheck" Size="21" Foreground="#A8282C" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="赫朝账号" FontWeight="SemiBold" />
+                    <TextBlock Text="成员身份与服务器访问等级" Classes="muted" />
+                  </StackPanel>
+                </Grid>
+                <Border Grid.Row="1" Margin="10,2,0,2" Width="1" Background="#C8CBC4" HorizontalAlignment="Left" />
+                <Grid Grid.Row="2" ColumnDefinitions="30,*" ColumnSpacing="10">
+                  <LucideIcon Kind="KeyRound" Size="21" Foreground="#A8282C" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="Microsoft 正版" FontWeight="SemiBold" />
+                    <TextBlock Text="Minecraft Java 所有权与玩家档案" Classes="muted" />
+                  </StackPanel>
+                </Grid>
+                <Border Grid.Row="3" Margin="10,2,0,2" Width="1" Background="#C8CBC4" HorizontalAlignment="Left" />
+                <Grid Grid.Row="4" ColumnDefinitions="30,*" ColumnSpacing="10">
+                  <LucideIcon Kind="ShieldCheck" Size="21" Foreground="#A8282C" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="启动授权" FontWeight="SemiBold" />
+                    <TextBlock Text="整合包签名校验与进服前授权" Classes="muted" />
+                  </StackPanel>
+                </Grid>
+              </Grid>
+            </StackPanel>
+          </Grid>
+        </ScrollViewer>
+
+        <!-- 设置页 -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsSettings}" VerticalScrollBarVisibility="Auto">
+          <Grid Margin="30,26" ColumnDefinitions="1.3*,0.7*" ColumnSpacing="52">
+            <StackPanel Grid.Column="0" Spacing="24">
+              <StackPanel>
+                <TextBlock Text="设置与诊断" Classes="h1" />
+                <TextBlock Text="这些设置只作用于本机的 M4 / ARM64 客户端。" Classes="muted" Margin="0,5,0,0" />
+              </StackPanel>
+              <StackPanel Spacing="8">
+                <TextBlock Text="游戏内存" Classes="label" />
+                <ComboBox ItemsSource="{Binding MemoryOptions}" SelectedItem="{Binding SelectedMemory}"
+                          HorizontalAlignment="Left" MinWidth="180" />
+                <TextBlock Text="模组较多时建议 6–10 GB；不要分配超过本机可用内存的一半。" Classes="muted" />
+              </StackPanel>
+              <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+              <StackPanel Spacing="8">
+                <TextBlock Text="游戏数据目录" Classes="label" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <TextBox Text="{Binding ClientDirectory}" IsReadOnly="True" />
+                  <Button Grid.Column="1" Click="ChooseClientDirectory_OnClick" ToolTip.Tip="选择游戏数据目录">
+                    <LucideIcon Kind="FolderOpen" Size="17" />
+                  </Button>
+                </Grid>
+                <TextBlock Text="不同服务器使用独立档案；下载缓存与玩家设置可以安全复用。" Classes="muted" />
+              </StackPanel>
+              <Border BorderBrush="#D9DBD6" BorderThickness="0,1,0,0" />
+              <CheckBox IsChecked="{Binding UseSystemProxy}" Content="使用 macOS 系统代理" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Spacing="16">
+              <TextBlock Text="维护工具" Classes="label" />
+              <Button Command="{Binding CreateDiagnosticCommand}" HorizontalContentAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="9">
+                  <LucideIcon Kind="FileArchive" Size="17" />
+                  <TextBlock Text="生成脱敏诊断包" />
+                </StackPanel>
+              </Button>
+              <Button Command="{Binding OpenGameDirectoryCommand}" HorizontalContentAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="9">
+                  <LucideIcon Kind="FolderSearch" Size="17" />
+                  <TextBlock Text="打开当前游戏目录" />
+                </StackPanel>
+              </Button>
+              <Button Command="{Binding RepairCommand}" HorizontalContentAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="9">
+                  <LucideIcon Kind="Wrench" Size="17" />
+                  <TextBlock Text="校验并修复客户端" />
+                </StackPanel>
+              </Button>
+              <Button Classes="danger" Command="{Binding DeleteProfileCommand}" HorizontalContentAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="9">
+                  <LucideIcon Kind="Trash2" Size="17" />
+                  <TextBlock Text="{Binding DeleteActionText}" />
+                </StackPanel>
+              </Button>
+              <TextBlock Text="诊断包会移除账号令牌和敏感启动参数。删除客户端需要二次确认。"
+                         Classes="muted" LineHeight="19" />
+            </StackPanel>
+          </Grid>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+
+    <!-- 跨页面持续任务区 -->
+    <Border Grid.Row="1" IsVisible="{Binding IsBusy}" Background="#20221F" Padding="18,12">
+      <Grid ColumnDefinitions="218,*,Auto" ColumnSpacing="18">
+        <StackPanel Grid.Column="1" Spacing="7">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding BusyText}" Foreground="White" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="1" Text="{Binding OperationProgress, StringFormat='{}{0:0}%'}"
+                       Foreground="#C8CBC4" FontSize="12" />
+          </Grid>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding OperationProgress}" />
+        </StackPanel>
+        <Button Grid.Column="2" Command="{Binding CancelOperationCommand}" ToolTip.Tip="取消当前任务"
+                Padding="9" Foreground="White" BorderBrush="#5B5E58">
+          <LucideIcon Kind="X" Size="17" />
+        </Button>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

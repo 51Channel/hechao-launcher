@@ -27,8 +27,7 @@ internal static partial class JavaRuntimeValidator
             Environment.ExpandEnvironmentVariables(executablePath.Trim()));
         var fileName = Path.GetFileName(fullPath);
         if (!File.Exists(fullPath) ||
-            !fileName.Equals("java.exe", StringComparison.OrdinalIgnoreCase) &&
-            !fileName.Equals("javaw.exe", StringComparison.OrdinalIgnoreCase))
+            !IsSupportedExecutableName(fileName, OperatingSystem.IsWindows()))
         {
             throw new JavaRuntimeValidationException(
                 "The selected file is not a Java executable.");
@@ -40,7 +39,7 @@ internal static partial class JavaRuntimeValidator
         if (!File.Exists(validationPath))
         {
             throw new JavaRuntimeValidationException(
-                "The selected Java runtime does not include java.exe.");
+                "The selected Java runtime does not include a Java executable.");
         }
 
         using var process = new Process
@@ -136,6 +135,12 @@ internal static partial class JavaRuntimeValidator
 
         return int.TryParse(components[0], out var major) ? major : null;
     }
+
+    internal static bool IsSupportedExecutableName(string fileName, bool isWindows) =>
+        isWindows
+            ? fileName.Equals("java.exe", StringComparison.OrdinalIgnoreCase) ||
+              fileName.Equals("javaw.exe", StringComparison.OrdinalIgnoreCase)
+            : fileName.Equals("java", StringComparison.Ordinal);
 
     private static void TryTerminate(Process process)
     {
