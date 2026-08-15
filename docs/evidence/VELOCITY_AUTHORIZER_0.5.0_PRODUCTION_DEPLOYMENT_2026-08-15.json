@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T06:25:27Z",
+  "component": "velocity-authorizer",
+  "version": "0.5.0",
+  "sourceCommit": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19",
+  "releaseTag": "velocity-authorizer-v0.5.0",
+  "mode": "monitor",
+  "artifact": {
+    "name": "HechaoVelocityAuthorizer-0.5.0.jar",
+    "sizeBytes": 24782,
+    "sha256": "15099474278E1A54E41A173232BD3A72B256583C1EC5A55CCDD1629261C76176",
+    "location": "E:\\Velocity\\plugins\\HechaoVelocityAuthorizer-0.5.0.jar"
+  },
+  "backup": {
+    "path": "C:\\ProgramData\\Hechao\\backups\\server-slot-families-pre-0.7.0-20260815T055857Z",
+    "previousVersion": "0.4.0",
+    "previousSha256": "D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120"
+  },
+  "deployment": {
+    "previousProcessId": 3020,
+    "currentProcessId": 4644,
+    "currentStartedAtUtc": "2026-08-15T06:22:08.6812065Z",
+    "taskName": "Codex-Velocity-Live",
+    "taskState": "Running",
+    "establishedConnectionsBefore": 0,
+    "establishedConnectionsAfter": 0,
+    "startupLogVersionVerified": true,
+    "startupLogModeVerified": true,
+    "startupErrors": 0
+  },
+  "backendInvariants": {
+    "fixedActivityProcessId": 4400,
+    "lobbyProcessId": 7328,
+    "industrialSurvivalTaskState": "Ready",
+    "industrialSurvivalPortListeners": 0,
+    "minecraftProcessIdentityChanged": false
+  },
+  "tests": {
+    "gradlePassed": 31,
+    "gradleFailed": 0
+  },
+  "operations": {
+    "onlyVelocityRestarted": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0
+  },
+  "privacy": {
+    "internalTokenIncluded": false,
+    "configurationContentsIncluded": false,
+    "playerIdentifiersIncluded": false
+  }
+}

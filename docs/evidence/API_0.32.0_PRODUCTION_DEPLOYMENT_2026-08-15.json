@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T06:25:27Z",
+  "component": "api",
+  "version": "0.32.0",
+  "releaseId": "0.32.0-20260815T055857Z",
+  "buildSourceCommit": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19",
+  "releaseTag": "api-v0.32.0",
+  "artifact": {
+    "archiveName": "hechao-launcher-api-0.32.0-20260815T055857Z.tar.gz",
+    "archiveSizeBytes": 46284421,
+    "archiveSha256": "2FB737D67F97887BA1E747CC93CB2E654B02791D3B673F041C55CEB087A43B43",
+    "entryCount": 161,
+    "binarySizeBytes": 105321924,
+    "binarySha256": "687CBCC777330ABCEC6293F5A5CAE3CED178ED019DE4512AAEEF12C29908E4D3",
+    "forbiddenFilesFound": 0
+  },
+  "tests": {
+    "apiPassed": 345,
+    "serverControlAgentPassed": 71,
+    "dotnetFullPassed": 780,
+    "velocityAuthorizerPassed": 31,
+    "vitestPassed": 13,
+    "playwrightPassed": 32,
+    "powerShellScriptsParsed": 47,
+    "releaseProvenancePassed": 20,
+    "failed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.31.0-20260815T024200Z",
+    "migrationCount": 29,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260815T060627Z.dump",
+      "sizeBytes": 6426936,
+      "sha256": "EAF89B23C5078F93DD7C29F5D629F625ECEAA5A49788C1F481A81BE4C730C5CF",
+      "restoreListLines": 248
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.32.0-20260815T055857Z.tar.gz",
+      "sizeBytes": 46411335,
+      "sha256": "A8F071EEA4CAB5F6B9CE163B0F43A1DF09B7B620258094E124FCCD1928F3003B"
+    },
+    "activePackageTasks": 0,
+    "activeServerControlTasks": 0
+  },
+  "deployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.32.0-20260815T055857Z",
+    "rollbackRelease": "/opt/hechao-launcher-api/releases/0.31.0-20260815T024200Z",
+    "migrationCount": 30,
+    "latestMigration": "30:independent_deployment_slots",
+    "preAcceptanceRollbackCount": 2,
+    "rollbackReasons": [
+      "Windows tar did not preserve the Linux executable mode and was rejected before switching",
+      "the acceptance probe used GET against a POST-only endpoint and misclassified the correct 405 response"
+    ],
+    "productFaultTriggeredRollback": false
+  },
+  "postDeployment": {
+    "mainPid": 812015,
+    "nRestarts": 0,
+    "healthVersion": "0.32.0",
+    "databaseStatus": "ready",
+    "loopbackPort8090Only": true,
+    "warningOrErrorCount": 0,
+    "publisherPid": 2064,
+    "nginxPid": 1742715,
+    "freshOwl5TargetCount": 8,
+    "activePackageTasks": 0,
+    "activeServerControlTasks": 0,
+    "publicEndpointsHealthy": true,
+    "temporaryUploadRemoved": true
+  },
+  "migratedSlot": {
+    "serverId": "activity-survival",
+    "slotKind": "Survival",
+    "backendPort": 25600,
+    "velocityTarget": "activity-survival",
+    "conflictGroup": null,
+    "status": "Ready",
+    "catalogStatus": "Closed",
+    "visible": false,
+    "reportedOnline": false
+  },
+  "operations": {
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "tokensIncluded": false,
+    "environmentContentsIncluded": false,
+    "accountIdentifiersIncluded": false
+  }
+}

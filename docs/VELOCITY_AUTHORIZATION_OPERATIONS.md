@@ -1,9 +1,8 @@
 # Velocity 进服授权运维
 
-> 当前生产：API `0.31.0`、启动器 `0.15.8`、Velocity Authorizer `0.4.0`
+> 当前生产：API `0.32.0`、启动器 `0.15.8`、Velocity Authorizer `0.5.0`
 > （`monitor`）、Lobby Guard `0.1.0`
 > 当前状态：生产部署和自动验收完成，等待真实账号灰度后切换 `enforce`
-> 独立槽候选：API `0.32.0`、Velocity Authorizer `0.5.0`
 >
 > owl9 边界：Velocity 目标 `pvp` 当前只路由到恐怖整蛊服
 > `C:\mc\server`；真正 PVP 服 `E:\MinecraftServer` 尚无独立目标，不得通过该
@@ -106,10 +105,10 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 
 ## 5. 当前生产基线
 
-- 当前生产插件：`E:\Velocity\plugins\HechaoVelocityAuthorizer-0.4.0.jar`
-- JAR 大小：`22,967` 字节
-- JAR SHA-256：`D3CEB0624A0AD70045897521795F275BC61973CF119873114149BDAEEAA95120`
-- 部署备份：`E:\manual-backups\VelocityAuthorizer-0.4.0-20260729T150949Z`
+- 当前生产插件：`E:\Velocity\plugins\HechaoVelocityAuthorizer-0.5.0.jar`
+- JAR 大小：`24,782` 字节
+- JAR SHA-256：`15099474278E1A54E41A173232BD3A72B256583C1EC5A55CCDD1629261C76176`
+- 部署备份：`C:\ProgramData\Hechao\backups\server-slot-families-pre-0.7.0-20260815T055857Z`
 - 旧回程备份：`E:\manual-backups\LegacyLobbyRouting-20260729T151223Z`
 - API：`https://launcher-api.hechao.world/v1/internal/velocity/authorize`
 - 代理实例：`owl5-main`
@@ -121,10 +120,10 @@ Velocity 发请求时必须持有凭据明文，因此该文件 ACL 只允许 `S
 生产 API 已使用匿名化的真实已绑定身份完成 `8/8` 客户端兼容矩阵：同版本 Paper
 互转允许，Lobby 基础档案转 Activity 被 `ClientProfileMismatch` 拒绝，跨
 1.21.11/1.20.1 被 `MinecraftVersionMismatch` 拒绝，Activity/恐怖整蛊原档案自连允许。
-Authorizer `0.4.0` 的首次故障关闭、基础设施目标拒绝和普通后端会话兼容行为由
-`26/26` 个 Java 测试覆盖。自动验收不替代真实玩家直接路由、切服、断线重连和
+Authorizer `0.5.0` 的首次故障关闭、基础设施目标拒绝、动态后端和普通后端会话兼容
+行为由 `31/31` 个 Java 测试覆盖。自动验收不替代真实玩家直接路由、切服、断线重连和
 API 故障演练。正式记录见
-[`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md)。
+[`VELOCITY_AUTHORIZER_RELEASE_0.5.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.5.0.md)。
 
 owl9 的恐怖整蛊 Fabric `1.20.1` 后端已安装 FabricProxy-Lite `2.6.0`，保持
 `online-mode=true` 并使用与代理一致的 modern forwarding 密钥。真实会话已完成
@@ -170,7 +169,7 @@ owl9 的恐怖整蛊 Fabric `1.20.1` 后端已安装 FabricProxy-Lite `2.6.0`，
 游戏 VPS：
 
 ```powershell
-Get-FileHash 'E:\Velocity\plugins\HechaoVelocityAuthorizer-0.4.0.jar' -Algorithm SHA256
+Get-FileHash 'E:\Velocity\plugins\HechaoVelocityAuthorizer-0.5.0.jar' -Algorithm SHA256
 Select-String -Path 'E:\Velocity\plugins\hechao-velocity-authorizer\config.properties' -Pattern '^mode='
 Get-ChildItem 'E:\Velocity\logs' -File |
     Sort-Object LastWriteTime -Descending |
@@ -211,4 +210,4 @@ API `0.22.0` 已迁移，不应仅为插件回滚而降级数据库。不要通�
 或重启全部 Minecraft 服务来处理授权问题。
 
 详细发布证据见
-[`VELOCITY_AUTHORIZER_RELEASE_0.4.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.4.0.md)。
+[`VELOCITY_AUTHORIZER_RELEASE_0.5.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.5.0.md)。

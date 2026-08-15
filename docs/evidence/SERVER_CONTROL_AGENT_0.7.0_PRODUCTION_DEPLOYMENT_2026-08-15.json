@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-15T06:25:27Z",
+  "component": "server-control-agent",
+  "version": "0.7.0",
+  "sourceCommit": "e7fd989a5edacfafba3999ecf8b7ccef183b7e19",
+  "releaseTag": "server-control-agent-v0.7.0",
+  "host": "owl5",
+  "owl9VersionUnchanged": "0.4.0",
+  "artifact": {
+    "archiveName": "hechao-server-control-agent-0.7.0-20260815T055857Z-win-x64.zip",
+    "archiveSizeBytes": 33253888,
+    "archiveSha256": "F017761314DDCC14E5166CDD268D0824CB2B4BBB0164BD0AED0C3995FF14E53C",
+    "entryCount": 1,
+    "executableSizeBytes": 74191455,
+    "executableSha256": "725A61CFE0344B8E51130553F3576C4312C7F700E1F643137B8710CA191F5F81",
+    "productVersion": "0.7.0+e7fd989a5edacfafba3999ecf8b7ccef183b7e19"
+  },
+  "backup": {
+    "path": "C:\\ProgramData\\Hechao\\backups\\server-slot-families-pre-0.7.0-20260815T055857Z",
+    "fileCount": 20,
+    "totalSizeBytes": 148449351,
+    "manifestSha256": "B3095C71AD3A4A13E916CCF9E633AE6499095DD461271F8D931ABB996910BAE7"
+  },
+  "configuration": {
+    "rootDirectory": "E:\\HechaoActivitySlots",
+    "templateServerId": "activity",
+    "maximumSlots": 12,
+    "firstPort": 25600,
+    "lastPort": 25611
+  },
+  "migratedSlot": {
+    "serverId": "activity-survival",
+    "slotKind": "Survival",
+    "port": 25600,
+    "velocityTarget": "activity-survival",
+    "conflictGroup": null,
+    "taskState": "Ready",
+    "currentPropertiesPort": 25600,
+    "rollbackPropertiesPort": 25600,
+    "deploymentMarkerUnchanged": true,
+    "reportedOnline": false
+  },
+  "postDeployment": {
+    "agentProcessId": 5512,
+    "agentTaskState": "Running",
+    "apiFreshTargetCount": 8,
+    "postDeploymentAgentErrors": 0,
+    "fixedActivityProcessId": 4400,
+    "fixedActivityStartedAtUtc": "2026-08-15T04:26:50.2617940Z",
+    "fixedActivityPort": 25568,
+    "lobbyProcessId": 7328,
+    "velocityProcessId": 4644,
+    "independentPortListeners": 0,
+    "temporaryUploadRemoved": true
+  },
+  "operations": {
+    "onlyControlAgentTaskRestarted": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "agentTokenIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

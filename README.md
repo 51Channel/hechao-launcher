@@ -1,11 +1,14 @@
 # 赫朝启动器
 
-> `2026-08-15` 独立部署槽候选已完成：Launcher API `0.32.0`、owl5
+> `2026-08-15` 独立部署槽已正式上线：Launcher API `0.32.0`、owl5
 > ServerControlAgent `0.7.0` 与 Velocity Authorizer `0.5.0` 支持从固定 `activity`
 > 安全模板创建生存、活动、PVP、小游戏槽。动态槽使用 `25600-25611` 中的独立端口、
 > 独立 Velocity 目标且不属于活动冲突组，因此可与其他槽同时运行；只有固定
-> `activity / 25568 / owl5-activity-slot` 的替换服仍互斥。新槽默认停止、隐藏，未部署
-> 整合包前不能启动，创建失败自动回滚，系统不会主动启动 Minecraft。
+> `activity / 25568 / owl5-activity-slot` 的替换服仍互斥。现有工业季已迁移为停止的
+> `Survival / 25600 / activity-survival` 独立生存槽，固定活动服 PID 和监听未变化。
+> 发布记录见 [`docs/API_RELEASE_0.32.0.md`](docs/API_RELEASE_0.32.0.md)、
+> [`docs/SERVER_CONTROL_AGENT_RELEASE_0.7.0.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.7.0.md)
+> 与 [`docs/VELOCITY_AUTHORIZER_RELEASE_0.5.0.md`](docs/VELOCITY_AUTHORIZER_RELEASE_0.5.0.md)。
 
 > `2026-08-14` Launcher API `0.30.7` 已将活动客户端下载与进服权限分离。已登录玩家
 > 可以看到可见活动并提前下载签名客户端；`canJoin` 独立反映最低称号和单服
@@ -194,7 +197,7 @@
 > 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.8`、API `0.30.7`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.5.0`、owl9 ServerControlAgent `0.4.0`、Velocity Authorizer `0.4.0`（`monitor`）和 Lobby Guard `0.1.0`；可回滚部署、固定整合包、双后台企划日历、单活动排期、官网与启动器同源活动月历、三栏服务器主页、公开下载桥接、成员问卷正版资格桥接与一次性服务端文件清理验收均已完成，剩余门槛只涉及真实四级账号完整路径、真实活动玩法包、QQ 测试群审批验收和 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、活动预下载与进服门禁分离、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作、整合包导入和最小权限服控的 Vue 管理控制台。
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.8`、API `0.32.0`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.7.0`、owl9 ServerControlAgent `0.4.0`、Velocity Authorizer `0.5.0`（`monitor`）和 Lobby Guard `0.1.0`；可回滚部署、独立生存/活动/PVP/小游戏槽、固定整合包、双后台企划日历、单活动排期、官网与启动器同源活动月历、三栏服务器主页、公开下载桥接、成员问卷正版资格桥接与一次性服务端文件清理验收均已完成，剩余门槛只涉及真实四级账号完整路径、真实活动玩法包、QQ 测试群审批验收和 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、活动预下载与进服门禁分离、签名客户端分发、平滑并行断点续传、SHA-256 校验、修复、主动回滚、原子版本切换、每档案独立 `.minecraft`、共享下载对象、每档案受管 Java 与自定义 Java、Windows 安装包、真实 Minecraft 启动、本地脱敏诊断及玩家确认上传、隐私受限运行遥测、Velocity 服务端二次授权、只读实时状态与进程指标采集、统一告警，以及带独立浏览器会话、双重验证、活动排期、玩家搜索、单服权限规则、论坛会话联动、账号安全操作、整合包导入和最小权限服控的 Vue 管理控制台。
 
 2026-07-29 已确认新架构：赫朝启动器成为唯一服务器选择和切换入口；大厅继续作为 LuckPerms 等前置能力的内部承载器，但不再向玩家展示、授权、路由或回退。Velocity 继续负责统一公网入口、forwarding 和服务端二次授权。完整约束、回滚和验收标准见 [`docs/LAUNCHER_ONLY_SERVER_SWITCHING.md`](docs/LAUNCHER_ONLY_SERVER_SWITCHING.md)。
 
