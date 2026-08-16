@@ -1,6 +1,6 @@
 # 天域远征工业季经济插件设计
 
-> 状态：源码与离线一键导入包已实现，尚未生产部署或运行精确交付包
+> 状态：源码与离线一键导入包已实现；2026-08-16 复核发现两个上线阻断，当前禁止生产部署
 > 审查日期：2026-08-14  
 > 输入包：`E:\生存服 交接包（客户端服务端）.zip`  
 > 输入包 SHA-256：`A0393BC880DE4E70181B244E8ED42774AEF582908E2F072D31552317931860E9`
@@ -11,6 +11,8 @@
 
 实现结果、制品哈希、导入验证和仍未验收的生产门槛见
 [`SKYREALM_ECONOMY_INTEGRATION_1.0.9.md`](SKYREALM_ECONOMY_INTEGRATION_1.0.9.md)。
+完整开发过程、三层边界和修复建议见
+[`SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md`](SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md)。
 
 ## 1. 已验证运行基线
 
@@ -32,6 +34,16 @@ Bukkit 插件包括 EssentialsX、GriefPrevention、LuckPerms、PlaceholderAPI�
 和自定义 `SkyrealmCore 0.1.0`。
 
 ## 2. 当前冲突与阻塞项
+
+### 2.0 已确认代码阻断
+
+- NeoForge 屏幕的“服主回收设置”执行 `heco product`，但 Bukkit 路由只在后面至少还有
+  一个参数时才进入商品设置，导致屏幕入口当前失效。
+- C# 规则允许模组命名空间，迁移 `029` 的 `economy_products.item_id` 却只接受
+  `minecraft:`，真实数据库会拒绝模组商品。
+
+修复版必须至少升级到 HechaoEconomy/Screen `0.1.3` 并生成高于 `1.0.9` 的新包。
+在此之前不得上传、部署或启动当前候选。
 
 ### 2.1 EssentialsX 经济冲突
 
