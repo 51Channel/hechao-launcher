@@ -228,6 +228,10 @@ Vanilla、Forge 与 DollNight 档案已于 `2026-07-27` 正式发布：
   推进正式通道。启动器 Test 更新和客户端启动已通过；进服仍被独立的 Velocity
   `lobby` forwarding 问题阻塞。完整记录见
   [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.11.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.11.md)。
+- 工业季生产目录的 `TAB v5.0.7` 已移除默认英文动画、重复 Ping、内存和占位网址，
+  改为由 LuckPerms/HechaoEconomy 提供称号与金币的精简中文面板；热重载成功且没有
+  重启 Java。服务端归档重发前必须同步该配置，见
+  [`SKYREALM_INDUSTRIAL_TAB_REFRESH_2026-08-16.md`](SKYREALM_INDUSTRIAL_TAB_REFRESH_2026-08-16.md)。
 
 ### 启动器 0.11.2 下载链路
 
