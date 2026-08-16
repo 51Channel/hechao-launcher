@@ -218,13 +218,16 @@ Vanilla、Forge 与 DollNight 档案已于 `2026-07-27` 正式发布：
 
 天域远征工业季修复档案已于 `2026-08-16` 发布到 Test 通道：
 
-- `skyrealm-industrial-neoforge-1.21.1` 从 `1.0.9` 升至 `1.0.10`，补齐 NeoForge
-  `bootstraplauncher 2.0.2`、`modlauncher 11.0.5` 和 `securejarhandler 3.0.8`；
-- 旧版 `4453` 个文件全部保持不变，只新增 `3` 个对象、`231,367` 字节；新清单为
-  `1971A8BFB01C26594A8D17D64F8499F3D82F55EF1BEE38A528B77B27E3DF8EEC`；
+- `1.0.10` 补齐 NeoForge 的 `bootstraplauncher 2.0.2`、`modlauncher 11.0.5` 和
+  `securejarhandler 3.0.8`；真实启动继续暴露 Veil Mixin 所需 MixinExtras 初始化过晚；
+- `1.0.11` 在保持 `1.0.10` 的 `4456` 个文件完全不变的基础上，将同一份
+  `mixinextras-neoforge-0.5.3.jar` 外置到 `mods`。只新增 `1` 个对象、`725,927`
+  字节；新清单为
+  `58613946D3CB832C9E06B23CD28669DC562BAE62C40ACB7225F9DE4ED892091C`；
 - 当前只设置 `Test=100%`，Gray 与 Production 未设置。真实启动和进服验收完成前不得
-  推进正式通道。完整记录见
-  [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.10.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.10.md)。
+  推进正式通道。启动器 Test 更新和客户端启动已通过；进服仍被独立的 Velocity
+  `lobby` forwarding 问题阻塞。完整记录见
+  [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.11.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.11.md)。
 
 ### 启动器 0.11.2 下载链路
 

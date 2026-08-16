@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-16T04:46:00Z",
+  "scope": "Skyrealm industrial NeoForge client profile 1.0.11 Test release",
+  "profile": {
+    "id": "skyrealm-industrial-neoforge-1.21.1",
+    "previousVersion": "1.0.10",
+    "version": "1.0.11",
+    "minecraftVersion": "1.21.1",
+    "javaVersion": "21",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "manifestSha256": "58613946d3cb832c9e06b23cd28669dc562bae62c40acb7225f9de4ed892091c",
+    "manifestBytes": 2025517,
+    "logicalFiles": 4457,
+    "logicalBytes": 1203305078,
+    "objects": 4252,
+    "objectBytes": 1203296568
+  },
+  "rootCause": {
+    "stage": "Veil mixin application",
+    "component": "PerformanceAbstractTextureMixin",
+    "mechanism": "MixinExtras @Local was not initialized before Veil mixins",
+    "mixinExtrasVersion": "0.5.3"
+  },
+  "manifestDelta": {
+    "unchangedPreviousFiles": 4456,
+    "changedPreviousFiles": 0,
+    "removedFiles": 0,
+    "addedFiles": 1,
+    "addedBytes": 725927,
+    "addedPath": "mods/mixinextras-neoforge-0.5.3.jar",
+    "addedSha256": "9822e773bd9f42d36ed53ea3d67486207291747a7bfacc29beeb92040721bc9b"
+  },
+  "oss": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 725927,
+    "overwrittenObjects": 0
+  },
+  "channels": {
+    "test": {
+      "manifestSha256": "58613946d3cb832c9e06b23cd28669dc562bae62c40acb7225f9de4ed892091c",
+      "rolloutPercentage": 100,
+      "revision": 4
+    },
+    "gray": {
+      "manifestSha256": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "manifestSha256": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "validation": {
+    "productionTrustVerification": "passed",
+    "distributionClosure": "passed",
+    "oldManifestExactPreservation": "4456/4456",
+    "launcherVersion": "0.15.8",
+    "launcherCatalogVersion": "1.0.11",
+    "localInstalledProfileVersion": "1.0.11",
+    "localManifestSha256": "58613946d3cb832c9e06b23cd28669dc562bae62c40acb7225f9de4ed892091c",
+    "mixinExtrasInitializedBeforeVeil": true,
+    "neoforgeInitialized": true,
+    "veilInitialized": true,
+    "createInitialized": true,
+    "sableInitialized": true,
+    "minecraftProcessExitCode": 0
+  },
+  "remainingIssue": {
+    "scope": "Velocity routing and lobby forwarding",
+    "clientProfileCrashFixed": true,
+    "automaticJoinRejected": true,
+    "reason": "Connection was routed to lobby, whose backend rejected missing Velocity forwarding data",
+    "requiresServerRestart": false
+  },
+  "services": {
+    "api": {
+      "mainPid": 963896,
+      "nRestarts": 0,
+      "active": true,
+      "localHealth": 200,
+      "localReady": 200,
+      "publicHealth": 200,
+      "publicReady": 200
+    },
+    "publisher": {
+      "mainPid": 2064,
+      "nRestarts": 0,
+      "active": true
+    }
+  },
+  "rollback": {
+    "testManifestSha256": "1971a8bfb01c26594a8d17d64f8499f3d82f55ef1bee38a528b77b27e3df8eec",
+    "testVersion": "1.0.10"
+  },
+  "unchanged": [
+    "Gray and Production profile channels",
+    "Minecraft server and Velocity process state",
+    "server-control agents",
+    "API and Publisher processes",
+    "existing immutable manifests and OSS objects"
+  ],
+  "containsSecrets": false
+}
+
