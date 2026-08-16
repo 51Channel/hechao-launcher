@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-16T04:07:00Z",
+  "scope": "Skyrealm industrial NeoForge client profile 1.0.10 Test release",
+  "profile": {
+    "id": "skyrealm-industrial-neoforge-1.21.1",
+    "previousVersion": "1.0.9",
+    "version": "1.0.10",
+    "minecraftVersion": "1.21.1",
+    "javaVersion": "21",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "manifestSha256": "1971a8bfb01c26594a8d17d64f8499f3d82f55ef1bee38a528b77b27e3df8eec",
+    "manifestBytes": 2025098,
+    "logicalFiles": 4456,
+    "logicalBytes": 1202579151,
+    "objects": 4251,
+    "objectBytes": 1202570641
+  },
+  "rootCause": {
+    "exitCode": 1,
+    "representativeLifetimeMilliseconds": 237,
+    "minecraftLogCreated": false,
+    "missingLibraries": [
+      "cpw.mods:bootstraplauncher:2.0.2",
+      "cpw.mods:modlauncher:11.0.5",
+      "cpw.mods:securejarhandler:3.0.8"
+    ]
+  },
+  "manifestDelta": {
+    "unchangedPreviousFiles": 4453,
+    "changedPreviousFiles": 0,
+    "removedFiles": 0,
+    "addedFiles": 3,
+    "addedBytes": 231367
+  },
+  "oss": {
+    "uploadedObjects": 3,
+    "alreadyPresentObjects": 4248,
+    "uploadedBytes": 231367,
+    "overwrittenObjects": 0
+  },
+  "channels": {
+    "test": {
+      "manifestSha256": "1971a8bfb01c26594a8d17d64f8499f3d82f55ef1bee38a528b77b27e3df8eec",
+      "rolloutPercentage": 100,
+      "revision": 3
+    },
+    "gray": {
+      "manifestSha256": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "manifestSha256": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "validation": {
+    "productionTrustVerification": "passed",
+    "distributionClosure": "passed",
+    "oldManifestExactPreservation": "4453/4453",
+    "javaModuleResolutionExitCode": 0,
+    "launcherVersion": "0.15.8",
+    "launcherCatalogVersion": "1.0.10",
+    "localInstalledProfileVersion": "1.0.10",
+    "realMinecraftLaunch": "pending administrator Test acceptance"
+  },
+  "services": {
+    "api": {
+      "mainPid": 963896,
+      "nRestarts": 0,
+      "active": true,
+      "localHealth": 200,
+      "localReady": 200,
+      "publicHealth": 200,
+      "publicReady": 200
+    },
+    "publisher": {
+      "mainPid": 2064,
+      "nRestarts": 0,
+      "active": true
+    }
+  },
+  "backup": {
+    "path": "/var/backups/hechao-launcher/profile-publications/pre-skyrealm-industrial-1.0.10-20260816T040255Z",
+    "databaseSha256": "4af10379f691c3d38e21533fa0e6925832239a267f6b7b6ba4a46fd262579ede",
+    "previousManifestSha256": "77ae2688860d1b62d4bc58d9b66655d119e41742dd515b7191c5bd017933301b"
+  },
+  "unchanged": [
+    "Gray and Production profile channels",
+    "Minecraft and Velocity process state",
+    "server-control agents",
+    "API and Publisher processes",
+    "existing immutable OSS objects"
+  ],
+  "containsSecrets": false
+}

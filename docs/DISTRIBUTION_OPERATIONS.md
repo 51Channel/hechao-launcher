@@ -216,6 +216,16 @@ Vanilla、Forge 与 DollNight 档案已于 `2026-07-27` 正式发布：
 - 生产发布前备份位于 `/var/backups/hechao-launcher/profile-publication/20260726T182024Z`。发布期间 API 未重启，公网 `/healthz`、`/readyz` 正常，warning 及以上日志为 `0`。
 - 完整证据见 [`VANILLA_PROFILE_RELEASE_1.0.0.md`](VANILLA_PROFILE_RELEASE_1.0.0.md)、[`FORGE_PROFILE_RELEASE_1.0.0.md`](FORGE_PROFILE_RELEASE_1.0.0.md) 与 [`DOLLNIGHT_PROFILE_RELEASE_1.0.0.md`](DOLLNIGHT_PROFILE_RELEASE_1.0.0.md)。
 
+天域远征工业季修复档案已于 `2026-08-16` 发布到 Test 通道：
+
+- `skyrealm-industrial-neoforge-1.21.1` 从 `1.0.9` 升至 `1.0.10`，补齐 NeoForge
+  `bootstraplauncher 2.0.2`、`modlauncher 11.0.5` 和 `securejarhandler 3.0.8`；
+- 旧版 `4453` 个文件全部保持不变，只新增 `3` 个对象、`231,367` 字节；新清单为
+  `1971A8BFB01C26594A8D17D64F8499F3D82F55EF1BEE38A528B77B27E3DF8EEC`；
+- 当前只设置 `Test=100%`，Gray 与 Production 未设置。真实启动和进服验收完成前不得
+  推进正式通道。完整记录见
+  [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.10.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.10.md)。
+
 ### 启动器 0.11.2 下载链路
 
 基础档案包含 `4,902` 个逻辑文件和 `4,900` 个去重对象，其中 `4,355` 个对象小于 64 KiB。旧版逐对象串行执行“API 鉴权 -> 302 -> OSS”时，生产实测只有约 `15 KiB/s`。`0.11.2` 改为最多 16 路受控并行，按 SHA-256 去重任务，聚合单调进度，并保留 Range 续传、逐对象哈希和原子目录切换。
