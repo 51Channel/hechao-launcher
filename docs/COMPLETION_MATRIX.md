@@ -41,6 +41,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 独立生存/活动/PVP/小游戏槽 | 已完成 | API `0.32.2`、owl5/owl9 代理 `0.7.2`、Velocity Authorizer `0.5.0` 已生产部署；未发布 Production 客户端的独立槽继续保留在后台，但不会进入普通玩家实时目录 |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条正式企划，`赫朝商务追杀` 作为只读旧排期显示，补齐结束时间与整合包绑定后仍须走正式企划流程；首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
+| 整合包部署前检查 | 本地工具完成，后台规则未部署生产 | WPF 桌面工具、CLI 和后台分析器共享服务端核心/启动命令语义规则；自包含 `win-x64` 制品已生成，支持三态结论、JSON 报告和 CI 退出码，工业季 Arclight 被 NeoForge 绕过的故障已纳入回归测试。见 [`MODPACK_DEPLOYMENT_INSPECTOR.md`](MODPACK_DEPLOYMENT_INSPECTOR.md) |
 | Velocity `0.5.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | Authorizer 已支持受控动态回环后端并保持 `monitor`；零连接重启、插件单例、固定服 PID 与回滚备份已验收，仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.5.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.5.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.7 -> 0.15.8` 隔离覆盖升级、全新安装、双轮卸载、设置与会话文件保留均通过；验收开始时的既有正式启动器进程未被替代关闭 |
 | 私有 OSS 发布 | 已完成 | `0.15.8` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入 Git、文档或终端记录 |

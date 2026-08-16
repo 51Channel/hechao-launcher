@@ -25,14 +25,18 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
                 javaMajorVersion = 17,
                 loader = "Fabric",
                 loaderVersion = "0.16.14",
+                serverCore = "Fabric",
                 clientRoot = "client",
                 serverRoot = "server",
                 sharedRoot = "shared"
             })),
             ("Pack/client/versions/1.20.1/1.20.1.json", "{}"),
             ("Pack/shared/mods/common.jar", "shared-mod"),
-            ("Pack/server/server.properties", "max-players=24\nserver-port=25568\n"),
-            ("Pack/server/start.bat", "java -jar fabric-server-launch.jar nogui\n"));
+            ("Pack/server/server.properties", "server-ip=127.0.0.1\nonline-mode=false\nmax-players=24\nserver-port=25568\n"),
+            ("Pack/server/eula.txt", "eula=true\n"),
+            ("Pack/server/user_jvm_args.txt", "-Xms1024M\n-Xmx2048M\n"),
+            ("Pack/server/start.bat", "@echo off\nif not defined HECHAO_MANAGED_START pause\njava @user_jvm_args.txt -jar fabric-server-launch.jar nogui\n"),
+            ("Pack/server/fabric-server-launch.jar", "fabric-server"));
 
         var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
             source,
@@ -47,12 +51,19 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
         Assert.NotNull(result.Client);
         Assert.NotNull(result.Server);
         Assert.Equal(2, result.Client!.FileCount);
-        Assert.Equal(3, result.Server!.FileCount);
+        Assert.Equal(6, result.Server!.FileCount);
         Assert.Equal(
             ["mods/common.jar", "versions/1.20.1/1.20.1.json"],
             ReadPaths(result.Client.Path));
         Assert.Equal(
-            ["mods/common.jar", "server.properties", "start.bat"],
+            [
+                "eula.txt",
+                "fabric-server-launch.jar",
+                "mods/common.jar",
+                "server.properties",
+                "start.bat",
+                "user_jvm_args.txt"
+            ],
             ReadPaths(result.Server.Path));
     }
 
@@ -71,6 +82,7 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
                   "javaMajorVersion": 17,
                   "loader": "Fabric",
                   "loaderVersion": "0.15.11",
+                  "serverCore": "Fabric",
                   "clientRoot": "client",
                   "serverRoot": "server",
                   "sharedRoot": "shared"
@@ -157,6 +169,145 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public async Task AnalyzeAndSplitAsync_BlocksArclightArchiveThatLaunchesNeoForge()
+    {
+        var source = CreateArchive(
+            ("hechao-pack.json", """
+                {
+                  "schemaVersion":1,
+                  "id":"industrial-neoforge-1.21.1",
+                  "displayName":"工业季",
+                  "version":"1.0.0",
+                  "minecraftVersion":"1.21.1",
+                  "javaMajorVersion":21,
+                  "loader":"NeoForge",
+                  "loaderVersion":"21.1.228",
+                  "serverCore":"Arclight",
+                  "clientRoot":"client",
+                  "serverRoot":"server",
+                  "sharedRoot":"shared"
+                }
+                """),
+            ("client/versions/1.21.1/1.21.1.json", "{}"),
+            ("server/server.properties", "server-ip=127.0.0.1\nonline-mode=false\n"),
+            ("server/eula.txt", "eula=true\n"),
+            ("server/user_jvm_args.txt", "-Xms1024M\n-Xmx4096M\n"),
+            ("server/start.bat", """
+                @echo off
+                if not defined HECHAO_MANAGED_START pause
+                java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt nogui
+                """),
+            ("server/arclight-neoforge-1.21.1.jar", "arclight"),
+            ("server/libraries/net/neoforged/neoforge/21.1.228/win_args.txt", "args"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "arclight-bypassed-out"));
+
+        Assert.True(result.HasBlockingIssues);
+        Assert.NotNull(result.ServerDeployment);
+        Assert.Equal(ServerCoreKind.Arclight, result.ServerDeployment!.ExpectedCore);
+        Assert.Equal(ServerCoreKind.NeoForge, result.ServerDeployment.LaunchCore);
+        Assert.Contains(result.Issues, issue => issue.Code == "SERVER_CORE_LAUNCH_MATCH");
+        Assert.Contains(result.Issues, issue => issue.Code == "ARCLIGHT_BYPASSED");
+    }
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_AcceptsArclightArchiveThatLaunchesArclight()
+    {
+        var source = CreateArchive(
+            ("hechao-pack.json", """
+                {
+                  "schemaVersion":1,
+                  "id":"industrial-neoforge-1.21.1",
+                  "displayName":"工业季",
+                  "version":"1.0.1",
+                  "minecraftVersion":"1.21.1",
+                  "javaMajorVersion":21,
+                  "loader":"NeoForge",
+                  "loaderVersion":"21.1.228",
+                  "serverCore":"Arclight",
+                  "clientRoot":"client",
+                  "serverRoot":"server",
+                  "sharedRoot":"shared"
+                }
+                """),
+            ("client/versions/1.21.1/1.21.1.json", "{}"),
+            ("server/server.properties", "server-ip=127.0.0.1\nonline-mode=false\n"),
+            ("server/eula.txt", "eula=true\n"),
+            ("server/user_jvm_args.txt", "-Xms1024M\n-Xmx4096M\n"),
+            ("server/start.bat", """
+                @echo off
+                if not defined HECHAO_MANAGED_START pause
+                java @user_jvm_args.txt -jar arclight-neoforge-1.21.1.jar nogui
+                """),
+            ("server/arclight-neoforge-1.21.1.jar", "arclight"),
+            ("server/libraries/net/neoforged/neoforge/21.1.228/win_args.txt", "args"));
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "arclight-valid-out"));
+
+        Assert.False(
+            result.HasBlockingIssues,
+            string.Join("; ", result.Issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+        Assert.NotNull(result.ServerDeployment);
+        Assert.Equal(ServerCoreKind.Arclight, result.ServerDeployment!.LaunchCore);
+        Assert.Contains(
+            result.ServerDeployment.Checks,
+            check => check.Code == "SERVER_CORE_LAUNCH_MATCH" &&
+                     check.Status == DeploymentCheckStatus.Passed);
+        Assert.DoesNotContain(result.Issues, issue => issue.Code == "ARCLIGHT_BYPASSED");
+    }
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_BlocksAbsoluteJavaExecutable()
+    {
+        var source = CreateManagedFabricArchive(
+            "\"C:\\Program Files\\Java\\bin\\java.exe\" @user_jvm_args.txt -jar fabric-server-launch.jar nogui");
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "absolute-java-out"));
+
+        Assert.True(result.HasBlockingIssues);
+        Assert.Contains(result.Issues, issue => issue.Code == "PORTABLE_JAVA_COMMAND");
+    }
+
+    [Fact]
+    public async Task AnalyzeAndSplitAsync_BlocksMultipleJavaLaunchCommands()
+    {
+        var source = CreateManagedFabricArchive(
+            "java @user_jvm_args.txt -jar fabric-server-launch.jar nogui\n" +
+            "java @user_jvm_args.txt -jar fabric-server-launch.jar nogui");
+
+        var result = await ModpackArchiveAnalyzer.AnalyzeAndSplitAsync(
+            source,
+            Path.Combine(root, "multiple-java-out"));
+
+        Assert.True(result.HasBlockingIssues);
+        Assert.Contains(result.Issues, issue => issue.Code == "SINGLE_JAVA_LAUNCH_COMMAND");
+    }
+
+    [Fact]
+    public async Task InspectAsync_AnalyzesWithoutMaterializingSplitArchives()
+    {
+        var source = CreateManagedFabricArchive(
+            "java @user_jvm_args.txt -jar fabric-server-launch.jar nogui");
+
+        var result = await ModpackArchiveAnalyzer.InspectAsync(source);
+
+        Assert.False(result.HasBlockingIssues);
+        Assert.NotNull(result.Client);
+        Assert.NotNull(result.Server);
+        Assert.Empty(result.Client!.Path);
+        Assert.Empty(result.Server!.Path);
+        Assert.Empty(result.Files);
+        Assert.True(result.Client.FileCount > 0);
+        Assert.True(result.Server.FileCount > 0);
+    }
+
+    [Fact]
     public async Task AnalyzeAndSplitAsync_RejectsTraversalAndCaseCollision()
     {
         var source = CreateArchive(
@@ -237,9 +388,7 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
             Path.Combine(root, "named-roots-out"));
 
         Assert.Equal(ModpackLayoutKind.Canonical, result.Layout);
-        Assert.False(
-            result.HasBlockingIssues,
-            string.Join("; ", result.Issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+        Assert.True(result.HasBlockingIssues);
         Assert.NotNull(result.Client);
         Assert.NotNull(result.Server);
         Assert.Equal(
@@ -255,6 +404,7 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
             ReadPaths(result.Server!.Path));
         Assert.DoesNotContain(result.Issues, issue => issue.Code == "CLIENT_PART_MISSING");
         Assert.DoesNotContain(result.Issues, issue => issue.Code == "SERVER_PART_MISSING");
+        Assert.Contains(result.Issues, issue => issue.Code == "START_SCRIPT_MISSING");
     }
 
     [Fact]
@@ -285,6 +435,30 @@ public sealed class ModpackArchiveAnalyzerTests : IDisposable
 
         return path;
     }
+
+    private string CreateManagedFabricArchive(string launchCommand) => CreateArchive(
+        ("hechao-pack.json", """
+            {
+              "schemaVersion":1,
+              "id":"fabric-managed-test",
+              "displayName":"Fabric 受管测试",
+              "version":"1.0.0",
+              "minecraftVersion":"1.21.1",
+              "javaMajorVersion":21,
+              "loader":"Fabric",
+              "loaderVersion":"0.16.14",
+              "serverCore":"Fabric",
+              "clientRoot":"client",
+              "serverRoot":"server",
+              "sharedRoot":"shared"
+            }
+            """),
+        ("client/versions/1.21.1/1.21.1.json", "{}"),
+        ("server/server.properties", "server-ip=127.0.0.1\nonline-mode=false\n"),
+        ("server/eula.txt", "eula=true\n"),
+        ("server/user_jvm_args.txt", "-Xms1024M\n-Xmx4096M\n"),
+        ("server/start.bat", $"@echo off\nif not defined HECHAO_MANAGED_START pause\n{launchCommand}\n"),
+        ("server/fabric-server-launch.jar", "fabric"));
 
     private static string[] ReadPaths(string path)
     {

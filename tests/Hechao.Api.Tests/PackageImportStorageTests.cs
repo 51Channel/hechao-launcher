@@ -83,6 +83,32 @@ public sealed class PackageImportStorageTests : IDisposable
         Assert.Equal(0, storage.GetUploadedBytes(importId));
     }
 
+    [Fact]
+    public async Task AnalyzeAsync_BlocksArclightArchiveThatLaunchesNeoForge()
+    {
+        var storage = CreateStorage();
+        var importId = Guid.NewGuid();
+        var archive = CreateArclightBypassArchive();
+        var bytes = await File.ReadAllBytesAsync(archive);
+        storage.Initialize(importId);
+
+        await storage.AppendAsync(
+            importId,
+            0,
+            bytes.Length,
+            new MemoryStream(bytes),
+            CancellationToken.None);
+        await storage.CompleteUploadAsync(
+            importId,
+            bytes.Length,
+            CancellationToken.None);
+
+        var analysis = await storage.AnalyzeAsync(importId, CancellationToken.None);
+
+        Assert.True(analysis.HasBlockingIssues);
+        Assert.Contains(analysis.Issues, issue => issue.Code == "ARCLIGHT_BYPASSED");
+    }
+
     private PackageImportStorage CreateStorage(int chunkBytes = 1024 * 1024) =>
         new(
             Options.Create(new PackageImportOptions
@@ -113,6 +139,7 @@ public sealed class PackageImportStorageTests : IDisposable
               "javaMajorVersion":17,
               "loader":"Fabric",
               "loaderVersion":"0.16.14",
+              "serverCore":"Fabric",
               "clientRoot":"client",
               "serverRoot":"server",
               "sharedRoot":"shared"
@@ -120,8 +147,58 @@ public sealed class PackageImportStorageTests : IDisposable
             """);
         Add(archive, "client/versions/1.20.1/1.20.1.json", "{}");
         Add(archive, "shared/mods/common.jar", "mod");
-        Add(archive, "server/server.properties", "max-players=20");
-        Add(archive, "server/start.bat", "java -jar fabric-server-launch.jar nogui");
+        Add(
+            archive,
+            "server/server.properties",
+            "server-ip=127.0.0.1\nonline-mode=false\nmax-players=20\n");
+        Add(archive, "server/eula.txt", "eula=true\n");
+        Add(archive, "server/user_jvm_args.txt", "-Xms1024M\n-Xmx4096M\n");
+        Add(
+            archive,
+            "server/start.bat",
+            "@echo off\nif not defined HECHAO_MANAGED_START pause\njava @user_jvm_args.txt -jar fabric-server-launch.jar nogui\n");
+        Add(archive, "server/fabric-server-launch.jar", "fabric");
+        return path;
+    }
+
+    private string CreateArclightBypassArchive()
+    {
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "arclight-bypass.zip");
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
+        Add(archive, "hechao-pack.json", """
+            {
+              "schemaVersion":1,
+              "id":"arclight-bypass",
+              "displayName":"Arclight 绕过测试",
+              "version":"1.0.0",
+              "minecraftVersion":"1.21.1",
+              "javaMajorVersion":21,
+              "loader":"NeoForge",
+              "loaderVersion":"21.1.228",
+              "serverCore":"Arclight",
+              "clientRoot":"client",
+              "serverRoot":"server",
+              "sharedRoot":"shared"
+            }
+            """);
+        Add(archive, "client/versions/1.21.1/1.21.1.json", "{}");
+        Add(
+            archive,
+            "server/server.properties",
+            "server-ip=127.0.0.1\nonline-mode=false\n");
+        Add(archive, "server/eula.txt", "eula=true\n");
+        Add(archive, "server/user_jvm_args.txt", "-Xms1024M\n-Xmx4096M\n");
+        Add(
+            archive,
+            "server/start.bat",
+            "@echo off\nif not defined HECHAO_MANAGED_START pause\n" +
+            "java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt nogui\n");
+        Add(archive, "server/arclight-neoforge-1.21.1.jar", "arclight");
+        Add(
+            archive,
+            "server/libraries/net/neoforged/neoforge/21.1.228/win_args.txt",
+            "args");
         return path;
     }
 

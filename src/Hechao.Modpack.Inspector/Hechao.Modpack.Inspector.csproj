@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hechao.Modpack\Hechao.Modpack.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Hechao.Launcher\Controls\IconParkIcon.cs"
+             Link="Controls\IconParkIcon.cs" />
+    <Compile Include="..\Hechao.Launcher\Controls\IconParkGeometryRegistry.g.cs"
+             Link="Controls\IconParkGeometryRegistry.g.cs" />
+    <Resource Include="..\Hechao.Launcher\Assets\hechao-launcher.ico"
+              Link="Assets\hechao-modpack-inspector.ico" />
+    <None Include="..\Hechao.Launcher\Assets\IconPark\LICENSE"
+          Link="Assets\IconPark\LICENSE"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Hechao.Launcher\Assets\IconPark\NOTICE.md"
+          Link="Assets\IconPark\NOTICE.md"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Hechao.Modpack.Inspector</AssemblyName>
+    <RootNamespace>Hechao.Modpack.Inspector</RootNamespace>
+    <Product>赫朝整合包部署检查器</Product>
+    <Version>0.1.0</Version>
+    <ApplicationIcon>..\Hechao.Launcher\Assets\hechao-launcher.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+</Project>

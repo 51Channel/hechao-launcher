@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hechao.Modpack\Hechao.Modpack.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Hechao.Modpack.Check</AssemblyName>
+    <RootNamespace>Hechao.Modpack.Check</RootNamespace>
+    <Product>赫朝整合包部署检查 CLI</Product>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+</Project>

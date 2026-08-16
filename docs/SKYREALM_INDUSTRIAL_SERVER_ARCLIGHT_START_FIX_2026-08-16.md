@@ -110,5 +110,11 @@ E:\manual-backups\activity-survival-arclight-forwarding-20260816T052201Z
 运维不应执行该回滚。重新部署工业季服务端包时，也必须确保 `start.bat` 继续通过
 Arclight JAR 启动。
 
+后续预防措施：整合包分析器和独立部署检查器必须解析 `start.bat` 的实际 Java 命令，
+并核对 `hechao-pack.json.serverCore`、归档核心文件和启动核心。再次遇到“包含 Arclight
+JAR，但实际运行 NeoForge `win_args.txt`”时以 `ARCLIGHT_BYPASSED` 阻断，不能进入后台
+确认。使用方法见
+[`MODPACK_DEPLOYMENT_INSPECTOR.md`](MODPACK_DEPLOYMENT_INSPECTOR.md)。
+
 机器可读证据见
 [`evidence/SKYREALM_INDUSTRIAL_ARCLIGHT_START_FIX_2026-08-16.json`](evidence/SKYREALM_INDUSTRIAL_ARCLIGHT_START_FIX_2026-08-16.json)。

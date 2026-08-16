@@ -27,6 +27,32 @@ public enum ModpackIssueSeverity
     Blocking
 }
 
+public enum DeploymentCheckStatus
+{
+    Passed,
+    Warning,
+    Blocking
+}
+
+public enum ServerCoreKind
+{
+    Unknown,
+    Vanilla,
+    Paper,
+    Purpur,
+    Fabric,
+    Forge,
+    NeoForge,
+    Arclight
+}
+
+public enum DeploymentReadiness
+{
+    Compliant,
+    ReviewRequired,
+    Blocked
+}
+
 public sealed record ModpackIssue(
     string Code,
     ModpackIssueSeverity Severity,
@@ -58,6 +84,56 @@ public sealed record ModpackArchivePart(
     long ExpandedBytes,
     int FileCount);
 
+public sealed record ServerDeploymentCheck(
+    string Code,
+    DeploymentCheckStatus Status,
+    string Title,
+    string Message,
+    string? Path = null,
+    string? Remediation = null);
+
+public sealed record ServerDeploymentInspection(
+    string? DeclaredCore,
+    ServerCoreKind ExpectedCore,
+    IReadOnlyList<ServerCoreKind> DetectedCores,
+    ServerCoreKind LaunchCore,
+    string? LaunchPath,
+    string? LaunchCommand,
+    IReadOnlyList<ServerDeploymentCheck> Checks)
+{
+    public bool HasBlockingIssues =>
+        Checks.Any(check => check.Status == DeploymentCheckStatus.Blocking);
+}
+
+public sealed record ModpackArchivePartSummary(
+    long ExpandedBytes,
+    int FileCount);
+
+public sealed record ModpackDeploymentReport(
+    int SchemaVersion,
+    DateTimeOffset InspectedAtUtc,
+    string ArchiveName,
+    long ArchiveBytes,
+    string ArchiveSha256,
+    DeploymentReadiness Readiness,
+    ModpackLayoutKind Layout,
+    ModpackDetectedMetadata Metadata,
+    ModpackArchivePartSummary? Client,
+    ModpackArchivePartSummary? Server,
+    int SharedFileCount,
+    ServerDeploymentInspection? ServerDeployment,
+    IReadOnlyList<ServerDeploymentCheck> Checks)
+{
+    public int BlockingCount =>
+        Checks.Count(check => check.Status == DeploymentCheckStatus.Blocking);
+
+    public int WarningCount =>
+        Checks.Count(check => check.Status == DeploymentCheckStatus.Warning);
+
+    public int PassedCount =>
+        Checks.Count(check => check.Status == DeploymentCheckStatus.Passed);
+}
+
 public sealed record ModpackAnalysisResult(
     ModpackLayoutKind Layout,
     ModpackDetectedMetadata Metadata,
@@ -66,6 +142,10 @@ public sealed record ModpackAnalysisResult(
     IReadOnlyList<ModpackFileRecord> Files,
     IReadOnlyList<ModpackIssue> Issues)
 {
+    public ServerDeploymentInspection? ServerDeployment { get; init; }
+
+    public int SharedFileCount { get; init; }
+
     public bool HasBlockingIssues =>
         Issues.Any(issue => issue.Severity == ModpackIssueSeverity.Blocking);
 }
@@ -104,6 +184,7 @@ public sealed record HechaoModpackDescriptor
     public int JavaMajorVersion { get; init; }
     public string Loader { get; init; } = string.Empty;
     public string LoaderVersion { get; init; } = string.Empty;
+    public string ServerCore { get; init; } = string.Empty;
     public string ClientRoot { get; init; } = "client";
     public string ServerRoot { get; init; } = "server";
     public string SharedRoot { get; init; } = "shared";

@@ -10,12 +10,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Hechao.Modpack\Hechao.Modpack.csproj" />
-    <ProjectReference Include="..\..\src\Hechao.Modpack.Check\Hechao.Modpack.Check.csproj" />
+    <ProjectReference Include="..\..\src\Hechao.Modpack.Inspector\Hechao.Modpack.Inspector.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>

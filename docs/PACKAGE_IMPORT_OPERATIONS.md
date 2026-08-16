@@ -55,6 +55,8 @@
 - 路径穿越、绝对路径、重复路径、符号链接、重解析点和危险设备名；
 - 文件数量、单文件大小、总解压大小和压缩比；
 - Minecraft 版本、加载器、客户端与服务端文件归属；
+- `hechao-pack.json` 的 `serverCore`、归档核心文件和实际 Java 启动核心；
+- `server.properties`、EULA、JVM 内存、受管启动标记和启动目标完整性；
 - 可疑可执行文件、秘密文件名和无法安全归类的内容。
 
 必须同时识别出客户端与服务端，且没有 `Blocking` 问题，后台才允许确认。管理员仍要
@@ -62,8 +64,11 @@
 
 服务端部分必须包含：
 
-- `server.properties`；部署时强制写入 `server-ip=127.0.0.1`、目标槽的批准端口和
-  `online-mode=false`；
+- 根目录 `hechao-pack.json` 必须使用 `serverCore` 声明实际服务端核心；当前支持
+  `Vanilla`、`Paper`、`Purpur`、`Fabric`、`Forge`、`NeoForge`、`Arclight`；
+- `server.properties`；源包明确写入 `server-ip=127.0.0.1` 和 `online-mode=false`，
+  部署时再写入目标槽的批准端口；
+- 已确认 Mojang EULA 的 `eula.txt`，并包含 `eula=true`；
 - `user_jvm_args.txt`，且能由代理写入唯一的 `-Xms` 与 `-Xmx`；
 - 与 owl5 受管计划任务一致的 `start.bat`；脚本必须单独包含：
 
@@ -74,11 +79,21 @@ if not defined HECHAO_MANAGED_START pause
 该标记使计划任务和手工双击使用同一个明确入口。缺少脚本、扩展名不为 `.bat`、标记
 不匹配或计划任务引用了另一个启动脚本时，安装和部署均失败关闭。
 
-整合包的 `start.bat` 可以调用 `java`，不得依赖制作者电脑上的绝对 Java 路径。owl5
+`start.bat` 必须只有一个可识别的 Java 服务端命令，命令引用的 JAR 或 `win_args.txt`
+必须存在于服务端归档。声明核心、归档核心文件和实际启动核心必须一致。归档包含
+Arclight JAR 但脚本实际运行 NeoForge `win_args.txt` 时，以 `ARCLIGHT_BYPASSED` 直接
+阻断，不能仅凭“目录里有 Arclight”批准部署。
+
+整合包的 `start.bat` 使用 `java` 或 `java.exe`，不得依赖制作者电脑上的绝对 Java
+路径。owl5
 受管 runner 通过机器级 `HECHAO_JAVA_HOME` 提供统一 Java 21，并只为本次服务端进程
 设置 `JAVA_HOME/PATH`；配置路径不存在 `bin\java.exe` 时必须在执行批处理前失败。
 每次更换 Minecraft 或加载器大版本仍要先验证该受管 Java 版本兼容，不能把 PATH 注入
 当作跨版本兼容保证。
+
+上传前可以使用独立的 Windows 桌面检查器或 CLI 运行同一套规则，详见
+[`MODPACK_DEPLOYMENT_INSPECTOR.md`](MODPACK_DEPLOYMENT_INSPECTOR.md)。桌面工具的
+“符合部署标准”只代表静态规则通过，不替代首次真实启动和进服验收。
 
 ## 3. 发布与部署流程
 

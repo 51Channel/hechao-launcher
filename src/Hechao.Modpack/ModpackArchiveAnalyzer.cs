@@ -40,21 +40,51 @@ public static partial class ModpackArchiveAnalyzer
         ".idea/", ".vscode/"
     ];
 
-    public static async Task<ModpackAnalysisResult> AnalyzeAndSplitAsync(
+    public static Task<ModpackAnalysisResult> AnalyzeAndSplitAsync(
         string sourceArchivePath,
         string outputDirectory,
         ModpackInspectionLimits? limits = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        AnalyzeCoreAsync(
+            sourceArchivePath,
+            outputDirectory,
+            limits,
+            cancellationToken);
+
+    public static Task<ModpackAnalysisResult> InspectAsync(
+        string sourceArchivePath,
+        ModpackInspectionLimits? limits = null,
+        CancellationToken cancellationToken = default) =>
+        AnalyzeCoreAsync(
+            sourceArchivePath,
+            outputDirectory: null,
+            limits,
+            cancellationToken);
+
+    private static async Task<ModpackAnalysisResult> AnalyzeCoreAsync(
+        string sourceArchivePath,
+        string? outputDirectory,
+        ModpackInspectionLimits? limits,
+        CancellationToken cancellationToken)
     {
         limits ??= new ModpackInspectionLimits();
         limits.Validate();
         var sourcePath = Path.GetFullPath(sourceArchivePath);
-        var outputRoot = Path.GetFullPath(outputDirectory);
-        Directory.CreateDirectory(outputRoot);
-        var clientArchivePath = Path.Combine(outputRoot, "client.zip");
-        var serverArchivePath = Path.Combine(outputRoot, "server.zip");
-        File.Delete(clientArchivePath);
-        File.Delete(serverArchivePath);
+        var outputRoot = outputDirectory is null
+            ? null
+            : Path.GetFullPath(outputDirectory);
+        var clientArchivePath = outputRoot is null
+            ? null
+            : Path.Combine(outputRoot, "client.zip");
+        var serverArchivePath = outputRoot is null
+            ? null
+            : Path.Combine(outputRoot, "server.zip");
+        if (outputRoot is not null)
+        {
+            Directory.CreateDirectory(outputRoot);
+            File.Delete(clientArchivePath!);
+            File.Delete(serverArchivePath!);
+        }
 
         using var archive = ZipFile.OpenRead(sourcePath);
         var issues = new List<ModpackIssue>();
@@ -129,30 +159,42 @@ public static partial class ModpackArchiveAnalyzer
 
         AddLayoutIssues(classified, issues);
         AddSharedModWarning(classified, issues);
+        var serverDeployment = InspectServerDeployment(
+            classified,
+            descriptor?.ServerCore,
+            issues);
 
         var files = new List<ModpackFileRecord>(classified.Length * 2);
         ModpackArchivePart? clientPart = null;
         ModpackArchivePart? serverPart = null;
-        try
+        if (outputRoot is null)
         {
-            clientPart = await CreatePartAsync(
-                clientArchivePath,
-                classified,
-                ModpackFileSide.Client,
-                files,
-                cancellationToken);
-            serverPart = await CreatePartAsync(
-                serverArchivePath,
-                classified,
-                ModpackFileSide.Server,
-                files,
-                cancellationToken);
+            clientPart = DescribePart(classified, ModpackFileSide.Client);
+            serverPart = DescribePart(classified, ModpackFileSide.Server);
         }
-        catch
+        else
         {
-            File.Delete(clientArchivePath);
-            File.Delete(serverArchivePath);
-            throw;
+            try
+            {
+                clientPart = await CreatePartAsync(
+                    clientArchivePath!,
+                    classified,
+                    ModpackFileSide.Client,
+                    files,
+                    cancellationToken);
+                serverPart = await CreatePartAsync(
+                    serverArchivePath!,
+                    classified,
+                    ModpackFileSide.Server,
+                    files,
+                    cancellationToken);
+            }
+            catch
+            {
+                File.Delete(clientArchivePath!);
+                File.Delete(serverArchivePath!);
+                throw;
+            }
         }
 
         if (clientPart is null)
@@ -177,7 +219,39 @@ public static partial class ModpackArchiveAnalyzer
             clientPart,
             serverPart,
             files,
-            issues);
+            issues)
+        {
+            ServerDeployment = serverDeployment,
+            SharedFileCount = classified.Count(entry =>
+                entry.Side == ModpackFileSide.Shared)
+        };
+    }
+
+    private static ModpackArchivePart? DescribePart(
+        IReadOnlyList<ClassifiedEntry> entries,
+        ModpackFileSide requestedSide)
+    {
+        var selected = entries
+            .Where(entry => entry.Side == requestedSide ||
+                            entry.Side == ModpackFileSide.Shared)
+            .ToArray();
+        if (selected.Length == 0)
+        {
+            return null;
+        }
+
+        long expandedBytes = 0;
+        foreach (var item in selected)
+        {
+            expandedBytes = checked(expandedBytes + item.Entry.Length);
+        }
+
+        return new ModpackArchivePart(
+            string.Empty,
+            string.Empty,
+            0,
+            expandedBytes,
+            selected.Length);
     }
 
     private static async Task<ModpackArchivePart?> CreatePartAsync(
@@ -662,6 +736,43 @@ public static partial class ModpackArchiveAnalyzer
         }
     }
 
+    private static ServerDeploymentInspection? InspectServerDeployment(
+        IReadOnlyList<ClassifiedEntry> entries,
+        string? declaredCore,
+        ICollection<ModpackIssue> issues)
+    {
+        if (!entries.Any(entry => entry.Side == ModpackFileSide.Server))
+        {
+            return null;
+        }
+
+        var serverFiles = new Dictionary<string, ZipArchiveEntry>(
+            StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries.Where(entry =>
+                     entry.Side is ModpackFileSide.Server or ModpackFileSide.Shared))
+        {
+            var targetPath = GetTargetPath(entry, ModpackFileSide.Server);
+            serverFiles.TryAdd(targetPath, entry.Entry);
+        }
+
+        var inspection = ServerDeploymentComplianceInspector.Inspect(
+            serverFiles,
+            declaredCore);
+        foreach (var check in inspection.Checks.Where(check =>
+                     check.Status != DeploymentCheckStatus.Passed))
+        {
+            issues.Add(new ModpackIssue(
+                check.Code,
+                check.Status == DeploymentCheckStatus.Blocking
+                    ? ModpackIssueSeverity.Blocking
+                    : ModpackIssueSeverity.Warning,
+                check.Message,
+                check.Path));
+        }
+
+        return inspection;
+    }
+
     private static string? DetectWrapper(IEnumerable<ZipArchiveEntry> entries)
     {
         var paths = entries
@@ -818,7 +929,7 @@ public static partial class ModpackArchiveAnalyzer
         var values = paths.ToArray();
         foreach (var preferred in new[]
                  {
-                     "run.bat", "start.bat", "start.ps1",
+                     "start.bat", "run.bat", "start.ps1",
                      "fabric-server-launch.jar", "server.jar"
                  })
         {

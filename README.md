@@ -1,5 +1,11 @@
 # 赫朝启动器
 
+> `2026-08-16` 新增“赫朝整合包部署检查器”本地候选：独立 WPF 工具和 CLI 在上传前
+> 检查归档结构、后端安全配置、JVM、受管启动脚本、服务端核心声明与实际 Java 命令；
+> 后台分析器复用同一规则。Arclight JAR 被 NeoForge `win_args.txt` 绕过时直接阻断。
+> 自包含 `win-x64` 发布包已生成，生产 API 尚未部署，详见
+> [`docs/MODPACK_DEPLOYMENT_INSPECTOR.md`](docs/MODPACK_DEPLOYMENT_INSPECTOR.md)。
+
 > `2026-08-15` Launcher API `0.32.2` 已修复未发布客户端档案拖垮整份玩家目录的
 > 问题。API 现在只下发当前玩家能够同时取得客户端档案的服务器；未发布服务器继续
 > 保留在后台等待发布，不再阻断已有正式档案的赫朝商务追杀。生产实时目录已恢复为

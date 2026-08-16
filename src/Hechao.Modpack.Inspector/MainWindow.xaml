@@ -1,0 +1,320 @@
+<Window x:Class="Hechao.Modpack.Inspector.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:icons="clr-namespace:Hechao.Launcher.Controls"
+        xmlns:local="clr-namespace:Hechao.Modpack.Inspector"
+        mc:Ignorable="d"
+        Title="赫朝整合包部署检查器"
+        Width="1180"
+        Height="780"
+        MinWidth="960"
+        MinHeight="640"
+        Icon="Assets/hechao-modpack-inspector.ico"
+        AllowDrop="True"
+        DragEnter="Window_DragEnter"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop">
+    <Window.Resources>
+        <Style x:Key="DetailLabelStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource InkMutedBrush}" />
+        </Style>
+        <Style x:Key="DetailValueStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,14" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Window.Resources>
+    <Grid Background="#FAFAFA">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="68" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid Margin="24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Width="34" Height="34" CornerRadius="6" Background="{StaticResource HechaoRedBrush}">
+                    <icons:IconParkIcon Width="19" Height="19" Kind="Shield" Foreground="White" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock FontSize="18" FontWeight="Bold" Text="赫朝整合包部署检查器" />
+                    <TextBlock Margin="0,2,0,0" FontSize="12" Foreground="{StaticResource InkMutedBrush}"
+                               Text="上传前检查客户端、服务端、启动入口与部署安全配置" />
+                </StackPanel>
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="12"
+                           Foreground="{StaticResource InkMutedBrush}" Text="规则版本 0.1.0" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="24,20,24,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="124" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border x:Name="DropZone" Grid.Row="0" Background="White" CornerRadius="7">
+                <Grid>
+                    <Rectangle Margin="1" RadiusX="7" RadiusY="7" Stroke="#C9CBCD" StrokeThickness="1"
+                               StrokeDashArray="5,4" Fill="Transparent" />
+                    <Grid Margin="22,18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="56" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="48" Height="48" CornerRadius="6" Background="{StaticResource SurfaceMutedBrush}"
+                                VerticalAlignment="Center">
+                            <icons:IconParkIcon Width="24" Height="24" Kind="FolderOpen"
+                                                Foreground="{StaticResource HechaoRedBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="14,0,20,0" VerticalAlignment="Center">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding ArchivePromptTitle}" />
+                            <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="{StaticResource InkMutedBrush}"
+                                       Text="{Binding ArchivePathText}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Margin="0,5,0,0" FontSize="12" Foreground="{StaticResource InkMutedBrush}"
+                                       Text="支持 .zip 与 .mrpack，可将文件拖到窗口任意位置" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="Reinspect_Click" IsEnabled="{Binding CanReinspect}"
+                                    ToolTip="重新检查当前整合包">
+                                <StackPanel Orientation="Horizontal">
+                                    <icons:IconParkIcon Width="16" Height="16" Kind="Refresh"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Margin="7,0,0,0" Text="重新检查" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource PrimaryButtonStyle}" Click="Browse_Click"
+                                    IsEnabled="{Binding CanSelectArchive}">
+                                <StackPanel Orientation="Horizontal">
+                                    <icons:IconParkIcon Width="16" Height="16" Kind="FolderOpen" Foreground="White" />
+                                    <TextBlock Margin="7,0,0,0" Text="选择整合包" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.62*" MinWidth="510" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="1*" MinWidth="320" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="White" BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="7">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="90" />
+                            <RowDefinition Height="48" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Border Padding="18,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="40" Height="40" CornerRadius="20" VerticalAlignment="Center"
+                                        Background="{Binding ResultBackground}">
+                                    <icons:IconParkIcon Width="21" Height="21" Kind="{Binding ResultIcon}"
+                                                        Foreground="{Binding ResultForeground}" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock FontSize="18" FontWeight="Bold" Foreground="{Binding ResultForeground}"
+                                               Text="{Binding ResultTitle}" />
+                                    <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{StaticResource InkMutedBrush}"
+                                               Text="{Binding ResultSubtitle}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Height="36"
+                                        Click="Export_Click" IsEnabled="{Binding CanExport}" ToolTip="导出 JSON 检查报告">
+                                    <StackPanel Orientation="Horizontal">
+                                        <icons:IconParkIcon Width="16" Height="16" Kind="ExternalTransmission"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                        <TextBlock Margin="7,0,0,0" Text="导出报告" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="1" Margin="14,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <RadioButton GroupName="CheckFilter" Content="全部" Tag="All" IsChecked="True"
+                                             Style="{StaticResource FilterToggleStyle}" Checked="Filter_Checked" />
+                                <RadioButton GroupName="CheckFilter" Content="阻断" Tag="Blocking"
+                                             Style="{StaticResource FilterToggleStyle}" Checked="Filter_Checked" />
+                                <RadioButton GroupName="CheckFilter" Content="警告" Tag="Warning"
+                                             Style="{StaticResource FilterToggleStyle}" Checked="Filter_Checked" />
+                                <RadioButton GroupName="CheckFilter" Content="通过" Tag="Passed"
+                                             Style="{StaticResource FilterToggleStyle}" Checked="Filter_Checked" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="12"
+                                       Foreground="{StaticResource InkMutedBrush}" Text="{Binding CheckCountSummary}" />
+                        </Grid>
+
+                        <Grid Grid.Row="2">
+                            <ListBox ItemsSource="{Binding FilteredChecks}" BorderThickness="0" Background="Transparent"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     AutomationProperties.Name="部署检查项">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Focusable" Value="False" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:CheckItemViewModel}">
+                                        <Border Padding="18,13" BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="0,0,0,1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="30" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <icons:IconParkIcon x:Name="StatusIcon" Width="17" Height="17"
+                                                                    Margin="0,2,0,0" VerticalAlignment="Top" />
+                                                <StackPanel Grid.Column="1" Margin="6,0,12,0">
+                                                    <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Title}" />
+                                                    <TextBlock Margin="0,4,0,0" FontSize="12" LineHeight="18"
+                                                               Foreground="{StaticResource InkMutedBrush}"
+                                                               Text="{Binding Message}" TextWrapping="Wrap" />
+                                                    <Border Margin="0,7,0,0" Padding="9,7" CornerRadius="4"
+                                                            Background="{StaticResource SurfaceMutedBrush}"
+                                                            Visibility="{Binding RemediationVisibility}">
+                                                        <TextBlock FontSize="12" LineHeight="18" TextWrapping="Wrap">
+                                                            <Run FontWeight="SemiBold" Text="修复建议：" />
+                                                            <Run Text="{Binding Remediation, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Margin="0,1,0,0" FontFamily="Consolas"
+                                                           MaxWidth="150" FontSize="11"
+                                                           Foreground="{StaticResource InkMutedBrush}"
+                                                           Text="{Binding Code}" TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Code}" />
+                                            </Grid>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Blocking">
+                                                    <Setter TargetName="StatusIcon" Property="Kind" Value="Close" />
+                                                    <Setter TargetName="StatusIcon" Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Warning">
+                                                    <Setter TargetName="StatusIcon" Property="Kind" Value="Remind" />
+                                                    <Setter TargetName="StatusIcon" Property="Foreground" Value="{StaticResource WarningBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Passed">
+                                                    <Setter TargetName="StatusIcon" Property="Kind" Value="CheckOne" />
+                                                    <Setter TargetName="StatusIcon" Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                                </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Visibility="{Binding EmptyStateVisibility}">
+                                <icons:IconParkIcon Width="34" Height="34" Kind="Shield"
+                                                    Foreground="#B8BABD" />
+                                <TextBlock Margin="0,12,0,0" HorizontalAlignment="Center" FontSize="14"
+                                           FontWeight="SemiBold" Text="选择整合包后开始检查" />
+                                <TextBlock Margin="0,5,0,0" HorizontalAlignment="Center" FontSize="12"
+                                           Foreground="{StaticResource InkMutedBrush}" Text="结果会按阻断、警告和通过分类显示" />
+                            </StackPanel>
+
+                            <Grid Background="#CCFFFFFF" Visibility="{Binding BusyVisibility}">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ProgressBar Width="190" Height="4" IsIndeterminate="True" Foreground="{StaticResource HechaoRedBrush}" />
+                                    <TextBlock Margin="0,13,0,0" HorizontalAlignment="Center" FontSize="13"
+                                               FontWeight="SemiBold" Text="正在读取并核对整合包..." />
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Background="White" BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="7">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="18">
+                            <TextBlock FontSize="15" FontWeight="Bold" Text="归档与启动信息" />
+                            <TextBlock Margin="0,4,0,16" FontSize="12" Foreground="{StaticResource InkMutedBrush}"
+                                       Text="用于确认上传对象和实际服务端入口" />
+
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="整合包" />
+                            <TextBlock Style="{StaticResource DetailValueStyle}" Text="{Binding ReportArchiveName}" />
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="档案 / 版本" />
+                            <TextBlock Style="{StaticResource DetailValueStyle}" Text="{Binding ProfileVersionText}" />
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="Minecraft / 加载器" />
+                            <TextBlock Style="{StaticResource DetailValueStyle}" Text="{Binding RuntimeText}" />
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="客户端 / 服务端" />
+                            <TextBlock Style="{StaticResource DetailValueStyle}" Text="{Binding PartSummaryText}" />
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="声明核心 / 实际核心" />
+                            <TextBlock Style="{StaticResource DetailValueStyle}" Text="{Binding CoreSummaryText}" />
+
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="实际启动命令" />
+                            <Border Margin="0,0,0,14" Padding="10,9" Background="#F1F2F3" CornerRadius="4">
+                                <TextBox BorderThickness="0" Background="Transparent" IsReadOnly="True"
+                                         FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"
+                                         Text="{Binding LaunchCommandText, Mode=OneWay}" />
+                            </Border>
+
+                            <TextBlock Style="{StaticResource DetailLabelStyle}" Text="归档 SHA-256" />
+                            <TextBox BorderThickness="0" Background="Transparent" IsReadOnly="True"
+                                     FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"
+                                     Text="{Binding ArchiveSha256Text, Mode=OneWay}" />
+
+                            <Border Margin="0,18,0,0" Padding="12" Background="{Binding ResultBackground}"
+                                    BorderBrush="{Binding ResultForeground}" BorderThickness="1,0,0,0">
+                                <TextBlock FontSize="12" LineHeight="19" TextWrapping="Wrap"
+                                           Foreground="{Binding ResultForeground}" Text="{Binding GuidanceText}" />
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#F1F2F3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="24,0">
+                <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource InkMutedBrush}"
+                           Text="{Binding StatusText}" />
+                <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11"
+                           Foreground="{StaticResource InkMutedBrush}" Text="只读检查 · 不会修改或部署归档" />
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>
