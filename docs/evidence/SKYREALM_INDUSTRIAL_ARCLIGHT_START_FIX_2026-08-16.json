@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-16T13:54:19.1778634+08:00",
+  "scope": {
+    "host": "owl5.vipi9.top",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "minecraftVersion": "1.21.1",
+    "serverCore": "Arclight NeoForge 1.0.2-SNAPSHOT-8086b06",
+    "velocityTarget": "activity-survival",
+    "minecraftEndpoint": "127.0.0.1:25600"
+  },
+  "rootCause": {
+    "originalCommand": "java @user_jvm_args.txt @libraries/net/neoforged/neoforge/21.1.228/win_args.txt nogui",
+    "arclightBypassed": true,
+    "bukkitPluginsLoadedByOriginalCommand": false,
+    "velocityForwardingMixinLoadedByOriginalCommand": false,
+    "velocityRejection": "Backend did not request modern forwarding data"
+  },
+  "change": {
+    "path": "E:\\HechaoActivitySlots\\activity-survival\\start.bat",
+    "newCommand": "java @user_jvm_args.txt -jar arclight-neoforge-1.21.1-1.0.2-SNAPSHOT-8086b06.jar nogui",
+    "beforeSha256": "4968fdf46085deb4fd948d20bc305a7a18448da03403c5be56f5134edf35d1b7",
+    "afterSha256": "29c9da5bc508b666a54632bb0a968be930ee770ca61ecef300b1e2b39f69e976",
+    "backupDirectory": "E:\\manual-backups\\activity-survival-arclight-start-20260816T054137Z",
+    "forwardingConfigBackupDirectory": "E:\\manual-backups\\activity-survival-arclight-forwarding-20260816T052201Z"
+  },
+  "runtimeAcceptance": {
+    "scheduledTask": "Hechao-Server-activity-survival",
+    "scheduledTaskState": "Running",
+    "scheduledTaskLastRunTime": "2026-08-16T13:42:42+08:00",
+    "scheduledTaskLastResult": 267009,
+    "scheduledTaskLastResultMeaning": "Task is currently running",
+    "pid": 5464,
+    "javaExecutable": "E:\\jdk\\bin\\java.exe",
+    "commandLineContainsArclightJar": true,
+    "listener": "127.0.0.1:25600",
+    "doneMarker": true,
+    "bukkitArclightMarker": true,
+    "joinedMarker": true,
+    "leftMarker": true,
+    "fatalLinesInLatestLogTail": 0
+  },
+  "realJoinAcceptance": {
+    "launcherVersion": "0.15.8",
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "profileVersion": "1.0.11",
+    "realMicrosoftMinecraftSession": true,
+    "grantCreatedAt": "2026-08-16T13:44:31+08:00",
+    "grantConsumedAt": "2026-08-16T13:44:55+08:00",
+    "grantTarget": "activity-survival",
+    "grantConsumedBy": "owl5-main",
+    "authenticatedUuidForwarded": true,
+    "originalNonLoopbackAddressForwarded": true,
+    "joinedAt": "2026-08-16T13:44:57+08:00",
+    "stableOnlineSeconds": 150,
+    "visibleInServerList": true,
+    "clientStopMode": "Graceful",
+    "clientExitCode": 0,
+    "serverRecordedNormalLeave": true,
+    "serverRemainedRunning": true,
+    "localProcessesCleanedUp": true,
+    "runningGameMarkerRemoved": true
+  },
+  "knownNonBlockingWarnings": [
+    "Sable-related dedicated-server client class scan and DistCleaner records",
+    "Two Dungeons Arise advancement load failures",
+    "EssentialsX 2.21.0 unsupported hybrid-server warning",
+    "TAB 5.0.7 NMS injection compatibility warning",
+    "Simple Voice Chat UDP authentication is a separate unresolved issue"
+  ],
+  "unchanged": [
+    "Velocity process and configuration",
+    "Other Minecraft backends",
+    "Client profile 1.0.11 and its channel assignments",
+    "API and Publisher services"
+  ],
+  "privacy": {
+    "playerNameStored": false,
+    "fullPlayerUuidStored": false,
+    "playerPublicIpStored": false,
+    "grantIdStored": false,
+    "sessionMaterialStored": false
+  },
+  "containsSecrets": false
+}

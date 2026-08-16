@@ -50,6 +50,12 @@ Mixin 应用阶段退出。Sable 内嵌 Veil `4.1.4`，Veil 的
 档案，必须单独核对一次性授权目标、默认路由和大厅 forwarding；不得通过关闭正版、
 开放直连或重新向玩家开放大厅规避。
 
+后续状态：该进服问题已于 `2026-08-16` 解决。实际根因是工业季 `start.bat` 直接运行
+NeoForge `win_args.txt`，绕过了 Arclight 的 Velocity forwarding mixin；改为从
+Arclight JAR 启动后，真实正版账号已通过 fresh grant 和统一 Velocity 入口稳定进服。
+详见
+[`SKYREALM_INDUSTRIAL_SERVER_ARCLIGHT_START_FIX_2026-08-16.md`](SKYREALM_INDUSTRIAL_SERVER_ARCLIGHT_START_FIX_2026-08-16.md)。
+
 ## 回滚
 
 `1.0.9`、`1.0.10`、`1.0.11` 清单和 OSS 对象均保持不可变。若 Test 后续出现回归，
@@ -63,4 +69,3 @@ Mixin 应用阶段退出。Sable 内嵌 Veil `4.1.4`，Veil 的
 
 结构化证据见
 [`evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.11_TEST_RELEASE_2026-08-16.json`](evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.11_TEST_RELEASE_2026-08-16.json)。
-
