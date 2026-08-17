@@ -125,15 +125,9 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
     }
 
     public void verifyCommandOwnership() {
-        var commandMap = getServer().getCommandMap();
-        var conflicts = java.util.stream.Stream.of(
-                        "money", "balance", "bal", "pay", "sell", "shop", "heco")
-                .filter(name -> {
-                    var command = commandMap.getCommand(name);
-                    return !(command instanceof PluginCommand pluginCommand)
-                            || pluginCommand.getPlugin() != this;
-                })
-                .toList();
+        var conflicts = CommandOwnershipVerifier.findConflicts(
+                this,
+                getServer()::getPluginCommand);
         boolean owner = conflicts.isEmpty();
         commandOwner.set(owner);
         if (!owner) {
@@ -169,6 +163,10 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
 
     public boolean isTradingAvailable() {
         return vaultOwner.get() && commandOwner.get() && gateway.isConfigured();
+    }
+
+    public boolean hasVaultOwnership() {
+        return vaultOwner.get();
     }
 
     public boolean hasCommandOwnership() {

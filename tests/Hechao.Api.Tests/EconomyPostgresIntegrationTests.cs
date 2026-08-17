@@ -53,6 +53,33 @@ public sealed class EconomyPostgresIntegrationTests
         Assert.Equal("minecraft:iron_ingot", vanilla.ItemId);
         Assert.Equal("create:brass_ingot", modded.ItemId);
 
+        var enabledProducts = await repository.ListProductsAsync(
+            includeDisabled: false,
+            CancellationToken.None);
+        Assert.Equal(
+            ["create:brass_ingot", "minecraft:iron_ingot"],
+            enabledProducts.Select(product => product.ItemId));
+
+        var disabled = await repository.DisableProductAsync(
+            vanilla.ItemId,
+            new EconomyProductDisableRequest(actorUuid, "integration-admin"),
+            CancellationToken.None);
+        Assert.Equal(EconomyProductMutationStatus.Applied, disabled);
+
+        var activeProducts = await repository.ListProductsAsync(
+            includeDisabled: false,
+            CancellationToken.None);
+        Assert.Collection(
+            activeProducts,
+            product => Assert.Equal("create:brass_ingot", product.ItemId));
+
+        var allProducts = await repository.ListProductsAsync(
+            includeDisabled: true,
+            CancellationToken.None);
+        Assert.Equal(2, allProducts.Count);
+        Assert.False(allProducts.Single(product =>
+            product.ItemId == "minecraft:iron_ingot").Enabled);
+
         var quote = await repository.CreateSaleQuoteAsync(
             "activity-survival",
             new EconomySaleQuoteRequest(playerUuid, modded.ItemId, 10),

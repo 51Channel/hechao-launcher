@@ -145,7 +145,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 .header("Authorization", "Bearer " + configuration.token())
                 .header("X-Hechao-Server-Id", configuration.serverId())
                 .header("Accept", "application/json")
-                .header("User-Agent", "HechaoEconomy/0.1.3");
+                .header("User-Agent", "HechaoEconomy/0.1.5");
     }
 
     private HttpRequest.Builder jsonRequest(String path, Object ignoredBody) {

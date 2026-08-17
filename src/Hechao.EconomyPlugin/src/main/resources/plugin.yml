@@ -1,5 +1,5 @@
 name: HechaoEconomy
-version: '0.1.3'
+version: '0.1.5'
 main: world.hechao.economy.HechaoEconomyPlugin
 api-version: '1.21'
 load: POSTWORLD
@@ -7,7 +7,6 @@ depend:
   - Vault
 softdepend:
   - PlaceholderAPI
-loadbefore:
   - Essentials
 description: Authoritative fail-closed economy bridge for Hechao survival servers.
 authors:

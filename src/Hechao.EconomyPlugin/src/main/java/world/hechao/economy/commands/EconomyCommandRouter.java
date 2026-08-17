@@ -288,8 +288,9 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
         }
         if (args.length == 1 && "health".equalsIgnoreCase(args[0])) {
             info(sender, "API 配置: " + plugin.gateway().isConfigured()
-                    + " | Vault 权威: " + plugin.isTradingAvailable()
+                    + " | Vault 权威: " + plugin.hasVaultOwnership()
                     + " | 命令权威: " + plugin.hasCommandOwnership()
+                    + " | 可交易: " + plugin.isTradingAvailable()
                     + " | 隔离交易: " + quarantinedSales.count());
             return true;
         }

@@ -1,5 +1,6 @@
 package world.hechao.economy;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -15,7 +16,9 @@ final class PluginDescriptorContractTest {
                 "resources",
                 "plugin.yml"));
 
-        assertTrue(descriptor.contains("loadbefore:\n  - Essentials"));
+        assertTrue(descriptor.contains("version: '0.1.5'"));
+        assertTrue(descriptor.contains("softdepend:\n  - PlaceholderAPI\n  - Essentials"));
+        assertFalse(descriptor.contains("loadbefore:"));
         for (var command : java.util.List.of("money", "pay", "sell", "shop", "heco")) {
             assertTrue(descriptor.contains("  " + command + ":"));
         }

@@ -449,12 +449,7 @@ public sealed class EconomyRepository(
         bool includeDisabled,
         CancellationToken cancellationToken)
     {
-        var sql = """
-            SELECT item_id, unit_price, personal_daily_limit, server_daily_limit,
-                   enabled, updated_by_uuid, updated_by_name, updated_at
-            FROM launcher.economy_products
-            """ + (includeDisabled ? string.Empty : "WHERE enabled\n") +
-            "ORDER BY item_id;";
+        var sql = BuildProductListSql(includeDisabled);
         var products = new List<EconomyProductResponse>();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
@@ -465,6 +460,18 @@ public sealed class EconomyRepository(
         }
 
         return products;
+    }
+
+    internal static string BuildProductListSql(bool includeDisabled)
+    {
+        var enabledFilter = includeDisabled ? string.Empty : "WHERE enabled";
+        return $"""
+            SELECT item_id, unit_price, personal_daily_limit, server_daily_limit,
+                   enabled, updated_by_uuid, updated_by_name, updated_at
+            FROM launcher.economy_products
+            {enabledFilter}
+            ORDER BY item_id;
+            """;
     }
 
     public async Task<EconomyProductResponse> UpsertProductAsync(

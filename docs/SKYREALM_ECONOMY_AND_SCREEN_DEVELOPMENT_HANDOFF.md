@@ -4,8 +4,9 @@
 > 对应开发日期：2026-08-14
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
-> 当前结论：`1.0.9` 的两个阻断已在 `0.1.3` 修复；API `0.33.0`、迁移 `031` 和
-> 客户端档案 `1.0.12` 已完成候选验证，尚未部署生产。
+> 当前结论：API `0.33.0`、迁移 `031` 已部署，客户端档案 `1.0.12` 已进入 Test；真实
+> Arclight 验收新增的兼容和命令归属问题已在 HechaoEconomy `0.1.5` 修复，商品目录 SQL
+> 热修 API `0.33.1` 已完成候选验证，等待最终生产闭环。
 
 ## 1. 文档目的
 
@@ -375,3 +376,18 @@ CHECK (item_id ~ '^minecraft:[a-z0-9_./-]{1,96}$')
 [`SKYREALM_ECONOMY_RELEASE_0.1.3_CANDIDATE.md`](SKYREALM_ECONOMY_RELEASE_0.1.3_CANDIDATE.md)
 和
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12_CANDIDATE.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12_CANDIDATE.md)。
+
+## 15. 2026-08-17 真实 Arclight 与商品目录热修
+
+工业季真实冷启动继续发现两项离线测试未覆盖的问题：
+
+1. HechaoEconomy `0.1.3` 引用了 Arclight 运行时不存在的 `Server.getCommandMap()`；
+2. API `0.33.0` 的启用商品查询把表名与 `WHERE` 拼接成了
+   `launcher.economy_productsWHERE`，生产返回 PostgreSQL `42P01`。
+
+Bukkit 插件 `0.1.5` 已改用 `Server.getPluginCommand()`，并通过 Essentials 软依赖调整
+加载顺序，使全部经济根命令最终归 HechaoEconomy；`/heco health` 的 Vault 状态也改为
+独立报告。API `0.33.1` 使用结构化 SQL 片段，并新增普通 SQL 合同测试与真实 PostgreSQL
+启用/停用目录测试。详细发布边界见
+[`SKYREALM_ECONOMY_RELEASE_0.1.5_CANDIDATE.md`](SKYREALM_ECONOMY_RELEASE_0.1.5_CANDIDATE.md)
+与 [`API_RELEASE_0.33.1_CANDIDATE.md`](API_RELEASE_0.33.1_CANDIDATE.md)。
