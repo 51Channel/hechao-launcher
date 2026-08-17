@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-17T03:21:41Z",
+  "sourceCommit": "5febdd0",
+  "api": {
+    "version": "0.33.1",
+    "releaseId": "0.33.1-20260817T031438Z",
+    "tag": "api-v0.33.1",
+    "archiveBytes": 46320082,
+    "archiveSha256": "C98C0A77DDDB400B706F20E5F951D1B020B79CCA89C251C89945E8335543A2E3",
+    "binaryBytes": 105437636,
+    "binarySha256": "6FB74C1B081DF8BB42EC0E0E7B438AA596A5386E317EA197AA135BFA63529827",
+    "mainPid": 2215592,
+    "nRestarts": 0,
+    "migrationCount": 31,
+    "latestMigration": 31,
+    "productCatalogStatus": 200,
+    "enabledProductCount": 0,
+    "warningOrHigherCount": 0,
+    "rollbackRelease": "0.33.0-20260817T022304Z"
+  },
+  "apiBackups": {
+    "databasePath": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.33.1-20260817T031556Z.dump",
+    "databaseBytes": 6862270,
+    "databaseSha256": "2BB68ED9982EAC651EAE5CCB36450EA95A3E5728DBF9453C757568029AC440B0",
+    "databaseRestoreListLines": 285,
+    "configurationPath": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.33.1-20260817T031556Z.tar.gz",
+    "configurationBytes": 46450282,
+    "configurationSha256": "B8F8BD6EC85029E3329DA3E219649CA1798B9A01953F6CAFE9458270B87EA37A"
+  },
+  "gameServer": {
+    "serverId": "activity-survival",
+    "taskName": "Hechao-Server-activity-survival",
+    "backendPort": 25600,
+    "finalTaskState": "Ready",
+    "finalListenerCount": 0,
+    "finalProcessCount": 0,
+    "pluginVersion": "0.1.5",
+    "pluginSha256": "304794280382DFC6002D316C41ABA7B07602A7C84F29BE443FC9D7A6271ABF47",
+    "screenVersion": "0.1.3",
+    "screenProtocol": 2,
+    "screenSha256": "68891BD42A91F12036DC18F147DB9576EFAAD5F6B695A8E501CFAAF827F638E3",
+    "startScriptSha256": "29C9DA5BC508B666A54632BB0A968BE930EE770CA61ECEF300B1E2B39F69E976",
+    "healthConfigured": true,
+    "healthVaultOwner": true,
+    "healthCommandOwner": true,
+    "healthTradingAvailable": true,
+    "placeholderRegistered": true,
+    "playersObserved": 0,
+    "worldsSavedOnStop": 3,
+    "rollbackDirectory": "E:\\manual-backups\\activity-survival-economy-0.1.5-final-20260817T031824Z"
+  },
+  "clientProfile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.12",
+    "manifestSha256": "25E578B4C1C71996D4787E312D5F62A9BAC879D69ABEAF1B269C449B7577118A",
+    "testRevision": 5,
+    "testAllocationPercent": 100,
+    "grayAssigned": false,
+    "productionAssigned": false
+  },
+  "tests": {
+    "apiPassed": 359,
+    "apiConditionalSkipped": 1,
+    "dotnetFullPassed": 799,
+    "dotnetConditionalSkipped": 1,
+    "postgresIntegrationPassed": 1,
+    "economyPluginPassed": 18,
+    "economyScreenPassed": 8,
+    "failed": 0
+  },
+  "unaffectedServices": {
+    "publisherPid": 2064,
+    "publisherNRestarts": 0,
+    "nginxPid": 1742715,
+    "nginxNRestarts": 0,
+    "publicWebsiteStatus": 200,
+    "publicRelayStatus": 200
+  },
+  "privacy": {
+    "credentialsIncluded": false,
+    "tokensIncluded": false,
+    "environmentContentsIncluded": false,
+    "playerIdentifiersIncluded": false
+  }
+}

@@ -4,9 +4,9 @@
 > 对应开发日期：2026-08-14
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
-> 当前结论：API `0.33.0`、迁移 `031` 已部署，客户端档案 `1.0.12` 已进入 Test；真实
-> Arclight 验收新增的兼容和命令归属问题已在 HechaoEconomy `0.1.5` 修复，商品目录 SQL
-> 热修 API `0.33.1` 已完成候选验证，等待最终生产闭环。
+> 当前结论：API `0.33.1`、迁移 `031`、HechaoEconomy `0.1.5` 与 Screen `0.1.3` 已完成
+> 生产部署和真实 Arclight 冷启动验收；客户端档案 `1.0.12` 仍只在 Test，工业季保持停止，
+> 商品目录当前为空，等待服主配置正式价格与额度。
 
 ## 1. 文档目的
 
@@ -391,3 +391,11 @@ Bukkit 插件 `0.1.5` 已改用 `Server.getPluginCommand()`，并通过 Essentia
 启用/停用目录测试。详细发布边界见
 [`SKYREALM_ECONOMY_RELEASE_0.1.5_CANDIDATE.md`](SKYREALM_ECONOMY_RELEASE_0.1.5_CANDIDATE.md)
 与 [`API_RELEASE_0.33.1_CANDIDATE.md`](API_RELEASE_0.33.1_CANDIDATE.md)。
+
+最终生产闭环于 `2026-08-17` 完成。API 发布 ID 为 `0.33.1-20260817T031438Z`，商品目录
+从 owl5 使用现有外置服务身份返回 `200`。HechaoEconomy `0.1.5` 的最终冷启动确认 API、
+Vault、命令归属与可交易四项均为 `true`，PAPI expansion 正常注册，且没有兼容、命令或
+Vault 冲突。验收后服务端正常保存三个维度并停止，计划任务为 `Ready`、`25600` 无监听。
+正式记录见 [`API_RELEASE_0.33.1.md`](API_RELEASE_0.33.1.md)、
+[`SKYREALM_ECONOMY_RELEASE_0.1.5.md`](SKYREALM_ECONOMY_RELEASE_0.1.5.md) 与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md)。
