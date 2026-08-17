@@ -472,9 +472,9 @@ public sealed class ClientProfileInstallerTests
             new ResumableFileDownloader(httpClient),
             maxConcurrentDownloads: maximumConcurrency);
         using var temporary = new TemporaryDirectory();
-        var progressSamples = new List<long>();
+        var progressSamples = new List<ClientInstallProgress>();
         var progress = new SynchronousProgress<ClientInstallProgress>(
-            value => progressSamples.Add(value.CompletedBytes));
+            progressSamples.Add);
 
         await installer.InstallAsync(
             new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
@@ -484,8 +484,14 @@ public sealed class ClientProfileInstallerTests
         Assert.Equal(fileCount, handler.RequestCount);
         Assert.InRange(handler.MaximumConcurrentRequests, 2, maximumConcurrency);
         Assert.NotEmpty(progressSamples);
-        Assert.True(progressSamples.SequenceEqual(progressSamples.Order()));
-        Assert.Equal(files.Sum(file => file.Size), progressSamples[^1]);
+        var percentSamples = progressSamples.Select(sample => sample.Percent).ToArray();
+        Assert.True(
+            percentSamples.SequenceEqual(percentSamples.Order()),
+            string.Join(", ", progressSamples.Select(sample => $"{sample.Phase}:{sample.Percent:0.###}")));
+        var finalDownloadSample = progressSamples.Last(sample =>
+            sample.Phase == ClientInstallPhase.Downloading);
+        Assert.Equal(files.Sum(file => file.Size), finalDownloadSample.CompletedBytes);
+        Assert.Equal(files.Sum(file => file.Size), finalDownloadSample.TotalBytes);
 
         var gameDirectory = new ClientStorageLayout(temporary.Path)
             .GetProfileGameDirectory(manifest.ProfileId);
@@ -529,14 +535,20 @@ public sealed class ClientProfileInstallerTests
             new ResumableFileDownloader(httpClient),
             maxConcurrentDownloads: 4);
         using var temporary = new TemporaryDirectory();
+        var progressSamples = new List<ClientInstallProgress>();
 
         await installer.InstallAsync(
             new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
-            new ClientInstallationOptions(temporary.Path));
+            new ClientInstallationOptions(temporary.Path),
+            new SynchronousProgress<ClientInstallProgress>(progressSamples.Add));
 
         var gameDirectory = new ClientStorageLayout(temporary.Path)
             .GetProfileGameDirectory(manifest.ProfileId);
         Assert.Single(handler.RequestedOffsets);
+        var finalDownloadSample = progressSamples.Last(sample =>
+            sample.Phase == ClientInstallPhase.Downloading);
+        Assert.Equal(content.Length, finalDownloadSample.CompletedBytes);
+        Assert.Equal(content.Length, finalDownloadSample.TotalBytes);
         Assert.Equal(
             content,
             await File.ReadAllBytesAsync(Path.Combine(
@@ -551,6 +563,105 @@ public sealed class ClientProfileInstallerTests
                 "libraries",
                 "example",
                 "second.jar")));
+    }
+
+    [Fact]
+    public async Task InstallAsync_UpdatesOnlyChangedObjectOverNetwork()
+    {
+        var unchangedMod = "unchanged-mod"u8.ToArray();
+        var unchangedAsset = "unchanged-asset"u8.ToArray();
+        var changedMod = "changed-mod-v2"u8.ToArray();
+        var changedDigest = Convert.ToHexString(SHA256.HashData(changedMod)).ToLowerInvariant();
+        var manifest = ManifestTestData.CreateManifest(changedMod) with
+        {
+            Files =
+            [
+                CreateManifestFile("mods/unchanged.jar", unchangedMod, "unchanged-mod"),
+                CreateManifestFile("assets/indexes/unchanged.json", unchangedAsset, "unchanged-asset"),
+                new ClientManifestFile(
+                    "mods/changed.jar",
+                    changedMod.Length,
+                    changedDigest,
+                    "https://download.hechao.world/objects/changed-mod")
+            ]
+        };
+        var handler = new RangeResponseHandler(changedMod);
+        using var httpClient = new HttpClient(handler);
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var layout = new ClientStorageLayout(temporary.Path);
+        var gameDirectory = layout.GetProfileGameDirectory(manifest.ProfileId);
+        Directory.CreateDirectory(Path.Combine(gameDirectory, "mods"));
+        Directory.CreateDirectory(Path.Combine(gameDirectory, "assets", "indexes"));
+        await File.WriteAllBytesAsync(
+            Path.Combine(gameDirectory, "mods", "unchanged.jar"),
+            unchangedMod);
+        await File.WriteAllBytesAsync(
+            Path.Combine(gameDirectory, "assets", "indexes", "unchanged.json"),
+            unchangedAsset);
+        var progressSamples = new List<ClientInstallProgress>();
+
+        await installer.InstallAsync(
+            new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
+            new ClientInstallationOptions(temporary.Path),
+            new SynchronousProgress<ClientInstallProgress>(progressSamples.Add));
+
+        Assert.Single(handler.RequestedOffsets);
+        var downloadSamples = progressSamples
+            .Where(sample => sample.Phase == ClientInstallPhase.Downloading)
+            .ToArray();
+        Assert.NotEmpty(downloadSamples);
+        Assert.All(downloadSamples, sample => Assert.Equal(changedMod.Length, sample.TotalBytes));
+        Assert.Equal(changedMod.Length, downloadSamples[^1].CompletedBytes);
+        Assert.Equal(
+            changedMod,
+            await File.ReadAllBytesAsync(Path.Combine(gameDirectory, "mods", "changed.jar")));
+    }
+
+    [Fact]
+    public async Task InstallAsync_UsesValidObjectCacheWithoutNetworkRequest()
+    {
+        var content = "cached-client-object"u8.ToArray();
+        var manifest = ManifestTestData.CreateManifest(content);
+        var handler = new ServiceUnavailableHandler();
+        using var httpClient = new HttpClient(handler);
+        var installer = new ClientProfileInstaller(new ResumableFileDownloader(httpClient));
+        using var temporary = new TemporaryDirectory();
+        var layout = new ClientStorageLayout(temporary.Path);
+        var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        var cachePath = Path.Combine(layout.ObjectCacheRoot, digest[..2], digest);
+        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+        await File.WriteAllBytesAsync(cachePath, content);
+        var progressSamples = new List<ClientInstallProgress>();
+
+        await installer.InstallAsync(
+            new VerifiedClientManifest(manifest, new string('a', 64), "release-2026"),
+            new ClientInstallationOptions(temporary.Path),
+            new SynchronousProgress<ClientInstallProgress>(progressSamples.Add));
+
+        Assert.Equal(0, handler.RequestCount);
+        Assert.DoesNotContain(
+            progressSamples,
+            sample => sample.Phase == ClientInstallPhase.Downloading);
+        Assert.Equal(
+            content,
+            await File.ReadAllBytesAsync(Path.Combine(
+                layout.GetProfileGameDirectory(manifest.ProfileId),
+                "mods",
+                "example.jar")));
+    }
+
+    private static ClientManifestFile CreateManifestFile(
+        string path,
+        byte[] content,
+        string objectName)
+    {
+        var digest = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        return new ClientManifestFile(
+            path,
+            content.Length,
+            digest,
+            $"https://download.hechao.world/objects/{objectName}");
     }
 
     private static async Task WriteInstalledProfileAsync(

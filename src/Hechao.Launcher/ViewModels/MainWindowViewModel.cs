@@ -3138,6 +3138,7 @@ public sealed class MainWindowViewModel : ObservableObject
         NotifyProgressStepStatesChanged();
         UpdateProgress = progress.Percent;
         ActiveDownload?.Update(
+            progress.Phase,
             progress.Percent,
             progress.CompletedBytes,
             progress.TotalBytes,
@@ -3174,7 +3175,8 @@ public sealed class MainWindowViewModel : ObservableObject
             DownloadJobStatus.Running,
             0,
             profile.DownloadBytes,
-            string.Empty);
+            string.Empty,
+            phase: ClientInstallPhase.Checking);
         if (OpenDownloadsWhenInstalling)
         {
             ActivePage = LauncherPage.Downloads;

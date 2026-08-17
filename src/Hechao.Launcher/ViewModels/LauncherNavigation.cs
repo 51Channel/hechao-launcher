@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Hechao.Distribution;
 using Hechao.Launcher.Infrastructure;
 
 namespace Hechao.Launcher.ViewModels;
@@ -29,6 +30,7 @@ public sealed class DownloadJobViewModel : ObservableObject
     private DownloadJobStatus _status;
     private DateTimeOffset? _completedAt;
     private string? _failureMessage;
+    private ClientInstallPhase? _phase;
     private readonly Stopwatch _speedClock = Stopwatch.StartNew();
     private long _lastSpeedSampleBytes;
     private TimeSpan _lastSpeedSampleAt;
@@ -45,7 +47,8 @@ public sealed class DownloadJobViewModel : ObservableObject
         long totalBytes,
         string currentFile,
         DateTimeOffset? completedAt = null,
-        string? failureMessage = null)
+        string? failureMessage = null,
+        ClientInstallPhase? phase = null)
     {
         Id = id;
         ProfileId = profileId;
@@ -58,6 +61,7 @@ public sealed class DownloadJobViewModel : ObservableObject
         _currentFile = currentFile;
         _completedAt = completedAt;
         _failureMessage = failureMessage;
+        _phase = phase;
         _percent = CalculatePercent(completedBytes, totalBytes, status);
         _lastSpeedSampleBytes = completedBytes;
     }
@@ -75,36 +79,80 @@ public sealed class DownloadJobViewModel : ObservableObject
     public DownloadJobStatus Status => _status;
     public string? FailureMessage => _failureMessage;
     public double BytesPerSecond => _bytesPerSecond;
+    public ClientInstallPhase? Phase => _phase;
 
     public string StatusText => Status switch
     {
-        DownloadJobStatus.Running => "正在下载",
+        DownloadJobStatus.Running => Phase switch
+        {
+            ClientInstallPhase.Checking => "正在检查本地文件",
+            ClientInstallPhase.Downloading => "正在增量下载",
+            ClientInstallPhase.Staging => "正在准备客户端",
+            ClientInstallPhase.Switching => "正在切换版本",
+            ClientInstallPhase.PreparingRuntime => "正在准备配套 Java",
+            ClientInstallPhase.Complete => "客户端已就绪",
+            _ => "正在准备"
+        },
         DownloadJobStatus.Completed => "已完成",
         DownloadJobStatus.Canceled => "已取消",
         _ => "未完成"
     };
 
-    public string ProgressText => TotalBytes <= 0
-        ? $"{Percent:0}%"
-        : Status == DownloadJobStatus.Running && BytesPerSecond > 0
-            ? $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)} · " +
-              $"{FormatBytes((long)BytesPerSecond)}/s"
-            : $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)}";
+    public string ProgressText => Status switch
+    {
+        DownloadJobStatus.Running when Phase == ClientInstallPhase.Checking =>
+            TotalBytes <= 0
+                ? "正在检查本地文件"
+                : $"已检查 {FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)}",
+        DownloadJobStatus.Running when Phase == ClientInstallPhase.Downloading =>
+            TotalBytes <= 0
+                ? "正在计算增量大小"
+                : BytesPerSecond > 0
+                    ? $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)} · " +
+                      $"{FormatBytes((long)BytesPerSecond)}/s"
+                    : $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)}",
+        DownloadJobStatus.Running when Phase == ClientInstallPhase.Staging => "正在准备客户端文件",
+        DownloadJobStatus.Running when Phase == ClientInstallPhase.Switching => "正在安全切换版本",
+        DownloadJobStatus.Running when Phase == ClientInstallPhase.PreparingRuntime => "正在准备配套 Java",
+        DownloadJobStatus.Completed => "增量安装已完成",
+        _ when TotalBytes <= 0 => $"{Percent:0}%",
+        _ => $"{FormatBytes(CompletedBytes)} / {FormatBytes(TotalBytes)}"
+    };
 
     public string TimeText => (CompletedAt ?? StartedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
 
-    public void Update(double percent, long completedBytes, long totalBytes, string currentFile)
+    public void Update(
+        ClientInstallPhase phase,
+        double percent,
+        long completedBytes,
+        long totalBytes,
+        string currentFile)
     {
+        var phaseChanged = _phase != phase;
+        _phase = phase;
         _percent = Math.Clamp(percent, 0, 100);
         _completedBytes = Math.Max(0, completedBytes);
         _totalBytes = Math.Max(0, totalBytes);
         _currentFile = currentFile;
-        UpdateSpeed(_completedBytes);
+        if (phaseChanged)
+        {
+            ResetSpeed(_completedBytes);
+        }
+        else if (phase == ClientInstallPhase.Downloading)
+        {
+            UpdateSpeed(_completedBytes);
+        }
+        else
+        {
+            _bytesPerSecond = 0;
+        }
+        OnPropertyChanged(nameof(Phase));
         OnPropertyChanged(nameof(Percent));
         OnPropertyChanged(nameof(CompletedBytes));
         OnPropertyChanged(nameof(TotalBytes));
         OnPropertyChanged(nameof(CurrentFile));
         OnPropertyChanged(nameof(BytesPerSecond));
+        OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(ProgressText));
     }
 
@@ -158,6 +206,13 @@ public sealed class DownloadJobViewModel : ObservableObject
                 : _bytesPerSecond * 0.65 + currentBytesPerSecond * 0.35;
         _lastSpeedSampleBytes = completedBytes;
         _lastSpeedSampleAt = now;
+    }
+
+    private void ResetSpeed(long completedBytes)
+    {
+        _lastSpeedSampleBytes = completedBytes;
+        _lastSpeedSampleAt = _speedClock.Elapsed;
+        _bytesPerSecond = 0;
     }
 
     private static double CalculatePercent(
