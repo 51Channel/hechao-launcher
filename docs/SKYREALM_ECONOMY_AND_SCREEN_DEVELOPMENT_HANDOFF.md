@@ -207,14 +207,22 @@ Essentials 本地余额，`HechaoEconomy` 以最高优先级注册，并在服�
 没有正式单价和额度。迁移 `031` 已修复旧候选只接受 `minecraft:` 命名空间的问题，当前
 原版和普通模组注册 ID 都可进入商品目录。
 
-首发白名单、每件物品单价、个人日限和全服日限仍须由服主确认。玩家执行 `/shop` 看到的
-启用目录才是当时真正可以出售的权威清单；文档中的示例不能代替数据库实时目录。
+生产启用目录仍须由服主在完成灰度门禁后确认。玩家执行当前 `/shop` 看到的启用目录才是
+当时真正可以出售的数据库实时清单；任何候选文档都不能代替运行状态。
 
 基于当前整合包实际模组和约 20 人规模整理的单向回收基线见
 [`SKYREALM_ECONOMY_INITIAL_PRODUCT_CATALOG_V1.md`](SKYREALM_ECONOMY_INITIAL_PRODUCT_CATALOG_V1.md)。
 用户随后明确要求参照 DonutSMP 的经济闭环，因此正式目标已调整为
 [`SKYREALM_DONUT_STYLE_ECONOMY_V2.md`](SKYREALM_DONUT_STYLE_ECONOMY_V2.md)：服务器回收、
-服务器商店和玩家 Auction House 共同工作。v1 不得直接部署，生产商品目录继续保持为空。
+服务器商店和玩家 Auction House 共同工作。补齐后的 85 项原版回收表见
+[`SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md`](SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md)，
+它已经通过行数、金额、限额和生产 `1.21.1` 物品 ID 核验，现为 `/sell` 内容的权威候选。
+
+该候选尚未通过上线门禁：当前 API 缺少个人/全服跨商品金额封顶和北京时间额度日，插件
+不能按剩余额度部分回收，回收 GUI 只能显示前 `54` 项，真正的 `/shop` 与 `/ah` 也未实现。
+Create 生产配方还允许无限圆石连续加工为沙砾、沙子、燧石和铁粒；铁锭、金锭、绿宝石及
+大部分木材、作物和掉落物均有自动化来源。正式发布必须先做产量压力测试并选择首批子集，
+不能将 85 项一次全部启用。生产商品目录继续保持为空。
 
 ## 6. NeoForge 第三方屏幕开发过程
 
