@@ -1,12 +1,15 @@
 # 天域远征工业季首发回收目录 v1
 
-- 状态：待服主审核，未部署
+- 状态：已被 DonutSMP 风格 v2 方案替代，未部署
 - 适用服务器：`activity-survival`
 - 货币：金币，保留两位小数
 - 目标规模：约 20 名玩家
 - 额度单位：物品数量/自然日，不是金币金额
 - 制表日期：2026-08-17
 - ID 核验：Minecraft `1.21.1`、Create `6.0.10`、Farmer's Delight `1.3.2` 生产 JAR
+
+> 本文只保留为单向回收价格基线，不得直接部署。当前目标方案见
+> [`SKYREALM_DONUT_STYLE_ECONOMY_V2.md`](SKYREALM_DONUT_STYLE_ECONOMY_V2.md)。
 
 ## 定价原则
 

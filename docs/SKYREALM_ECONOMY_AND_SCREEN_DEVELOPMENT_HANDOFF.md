@@ -210,9 +210,11 @@ Essentials 本地余额，`HechaoEconomy` 以最高优先级注册，并在服�
 首发白名单、每件物品单价、个人日限和全服日限仍须由服主确认。玩家执行 `/shop` 看到的
 启用目录才是当时真正可以出售的权威清单；文档中的示例不能代替数据库实时目录。
 
-基于当前整合包实际模组和约 20 人规模整理的首发候选见
+基于当前整合包实际模组和约 20 人规模整理的单向回收基线见
 [`SKYREALM_ECONOMY_INITIAL_PRODUCT_CATALOG_V1.md`](SKYREALM_ECONOMY_INITIAL_PRODUCT_CATALOG_V1.md)。
-该表在服主确认并写入 Economy Service 前只用于评审，不代表生产目录已经启用。
+用户随后明确要求参照 DonutSMP 的经济闭环，因此正式目标已调整为
+[`SKYREALM_DONUT_STYLE_ECONOMY_V2.md`](SKYREALM_DONUT_STYLE_ECONOMY_V2.md)：服务器回收、
+服务器商店和玩家 Auction House 共同工作。v1 不得直接部署，生产商品目录继续保持为空。
 
 ## 6. NeoForge 第三方屏幕开发过程
 
