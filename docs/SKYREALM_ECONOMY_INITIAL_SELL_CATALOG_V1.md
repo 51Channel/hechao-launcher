@@ -45,7 +45,7 @@
 - 圆石、泥土、木材、竹子、甘蔗、仙人掌、南瓜和西瓜：避免高吞吐自动化农场占满预算。
 - 末影珍珠、黏液球、海晶材料等可集中刷取的掉落物：等待 7 天产量数据后再评估。
 - 所有非 `minecraft:` 命名空间物品：Create、Sable 等模组材料等待配方闭环、单位时间
-  产量和复制路径审计后另建“模组商品表 v2”。
+  产量和复制路径审计后另建“模组商品表 v3”。
 - 改名、附魔、Lore、自定义模型、耐久变化、数据组件或其他 ItemMeta 物品永久不进入
   官方回收；它们应由玩家定价并通过玩家市场交易。
 - Bundle、箱子、木桶、潜影盒、饰纹陶罐、书、药水、药箭、地图、烟花等携带内部数据的
@@ -69,3 +69,6 @@ ID 和数量即可安全定价的标准物品；玩家市场只在买卖双方�
 
 相关开发过程、故障关闭规则和当前上线阻断见
 [`SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md`](SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md)。
+
+纳入低价高产资源、个人/全服总门禁和玩家市场边界的完整扩展候选见
+[`SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md`](SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md)。

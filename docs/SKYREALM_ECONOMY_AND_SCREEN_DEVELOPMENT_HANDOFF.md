@@ -221,6 +221,12 @@ Essentials 本地余额，`HechaoEconomy` 以最高优先级注册，并在服�
 当前摘要仍为：单人全表理论日收入 `5,136`，每项全服额度为个人额度的 `20` 倍，全部
 模组物品首发禁售。该表尚未写入 `1.0.9`、迁移或生产数据库。
 
+在此基础上已经形成包含 `85` 种标准原版物品的完整 `v2` 评审候选：高产资源改为低价
+限量回收，并增加个人每日 `5,000.00`、全服每日 `100,000.00` 的跨商品总门禁；带 NBT/
+数据组件的物品只进入玩家市场。该候选尚未替代 `v1`：
+
+[`SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md`](SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md)
+
 ## 6. NeoForge 第三方屏幕开发过程
 
 ### 6.1 双端安装
