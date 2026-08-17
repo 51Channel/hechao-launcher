@@ -266,4 +266,41 @@ public sealed class DatabaseMigrationTests
         Assert.Contains("backend_port BETWEEN 25600 AND 25611", sql, StringComparison.Ordinal);
         Assert.Contains("velocity_target <> 'activity'", sql, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void EconomyMigration_UsesBalancedLedgerAndSupportsModdedItems()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.031_economy_ledger.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("economy_accounts", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_operations", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_ledger_entries", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_sale_quotes", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_product_audit", sql, StringComparison.Ordinal);
+        Assert.Contains("DEFERRABLE INITIALLY DEFERRED", sql, StringComparison.Ordinal);
+        Assert.Contains("sum(amount)", sql, StringComparison.Ordinal);
+        Assert.Contains(
+            "COALESCE(NEW.operation_id, OLD.operation_id)",
+            sql,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "^[a-z0-9_.-]{1,64}:[a-z0-9_./-]{1,96}$",
+            sql,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "^minecraft:",
+            sql,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "essentials",
+            sql,
+            StringComparison.OrdinalIgnoreCase);
+    }
 }

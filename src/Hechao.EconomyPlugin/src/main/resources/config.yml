@@ -1,0 +1,9 @@
+api-base-url: "https://launcher-api.hechao.world"
+server-id: "skyrealm"
+token-environment-variable: "HECHAO_ECONOMY_TOKEN"
+token-file: "plugins/HechaoEconomy/economy-token.txt"
+request-timeout-seconds: 3
+balance-cache-seconds: 15
+pay-confirm-threshold: 10000.00
+default-personal-daily-limit: 2304
+default-server-daily-limit: 23040

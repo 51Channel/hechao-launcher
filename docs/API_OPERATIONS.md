@@ -31,6 +31,8 @@
 - Velocity 内部授权：`POST /v1/internal/velocity/authorize`
 - LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`、等级命令 `claim` 与 `complete`
 - 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
+- 经济内部端点：`/v1/internal/economy/*`，服务端令牌、服务器白名单和专用限流保护；
+  权威处理余额、转账、报价、出售、商品和审计
 - 管理员票据端点：`POST /v1/admin-auth/tickets`，仅允许 `Administrator` 启动器会话
 - 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF。`POST /v1/admin-auth/trusted-device` 只允许已通过 MFA 的会话签发可撤销本机信任，不能替代启动器一次性票据
 - 玩家诊断端点：`POST /v1/diagnostics/uploads` 与一次性令牌保护的 `PUT /v1/diagnostics/uploads/{id}`
@@ -58,6 +60,10 @@ VelocityAuthorization__MaximumLuckPermsAgeMinutes
 VelocityAuthorization__RequireGrantIpMatch
 ServerHeartbeats__InternalTokenSha256
 ServerHeartbeats__FreshnessSeconds
+EconomyService__InternalTokenSha256
+EconomyService__AllowedServerIds__0
+EconomyService__QuoteLifetimeSeconds
+EconomyService__MaximumTransferAmount
 Distribution__ManifestDirectory
 Distribution__MaximumManifestBytes
 Distribution__OssRegion

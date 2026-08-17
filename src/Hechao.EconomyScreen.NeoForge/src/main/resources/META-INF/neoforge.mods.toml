@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="hechao_economy_screen"
+version="${version}"
+displayName="Hechao Economy Screen"
+description='''
+Server-authoritative navigation screen for the Hechao survival client.
+'''
+authors="Hechao"
+
+[[dependencies.hechao_economy_screen]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.228,22)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.hechao_economy_screen]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.21.2)"
+ordering="NONE"
+side="BOTH"
