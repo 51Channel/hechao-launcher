@@ -58,7 +58,7 @@
   上架，玩家 `/shop` 中实际显示的启用商品才是可售卖清单。
 - 修复版首发配置已经确定为 17 种原版矿产、农作物和怪物掉落物，完整 ID、单价和个人/
   全服日限见
-  [`SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md`](SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md#首发回收表-v1)。
+  [`SKYREALM_ECONOMY_INITIAL_SELL_CATALOG_V1.md`](SKYREALM_ECONOMY_INITIAL_SELL_CATALOG_V1.md)。
   该表尚未写入 `1.0.9` 或生产数据库。
 - 唯一管理权限为 `hechao.economy.admin`。
 - 服主手持原版物品或普通无自定义数据的模组物品，可从自定义屏幕进入“服主回收设置”，
