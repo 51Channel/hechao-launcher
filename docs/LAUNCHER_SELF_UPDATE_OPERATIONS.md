@@ -286,3 +286,18 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
   Nginx、Minecraft、Velocity 和服控代理均未操作。
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.8.md`](LAUNCHER_RELEASE_0.15.8.md)。
+
+## 0.15.9 生产快照
+
+- `2026-08-17` 生产 `LatestVersion=0.15.9`，最低支持版本保持 `0.12.3`。
+- 安装包为 `61,995,538` 字节，SHA-256
+  `88AE1869A47E313291AF0C60F8984BF14C1B5D0719291D72DDA254870487DE79`。
+- 私有对象首次上传成功，重复发布校验后跳过；两轮签名读取 `200`、匿名读取 `403`，
+  签名 URL 未进入 Git、文档、结构化证据或面向用户的输出。
+- 认证会话确认 `0.15.8` 生成更新计划、`0.15.9` 不重复更新；API 签发入口和官网公开
+  下载的长度、SHA-256 均与安装包一致。
+- `0.15.8 -> 0.15.9` 隔离覆盖安装、全新安装、双轮卸载、设置与会话保留均通过。
+- 更新元数据切换一次成功；API 保持 `0.33.1`，常驻 Publisher Agent 保持 `1.2.1`；
+  Nginx、Minecraft、Velocity 和服控代理均未操作。
+
+完整记录见 [`LAUNCHER_RELEASE_0.15.9.md`](LAUNCHER_RELEASE_0.15.9.md)。
