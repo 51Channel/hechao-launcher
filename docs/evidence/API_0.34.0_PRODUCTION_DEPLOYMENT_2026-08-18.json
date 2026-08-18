@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-18T08:23:34Z",
+  "component": "api",
+  "version": "0.34.0",
+  "releaseId": "0.34.0-20260818T080552Z",
+  "buildSourceCommit": "58a9c8f4ab139d7644f2ff58e70f31e8a7c1fe45",
+  "releaseTag": "api-v0.34.0",
+  "artifact": {
+    "archiveName": "hechao-api-0.34.0-20260818T080552Z-linux-x64.tar.gz",
+    "archiveSizeBytes": 46963626,
+    "archiveSha256": "984FBEBA97210C547B94BBE7B6AA2397D7AD4DB8F10E16BA1CE341A10B97C5CE",
+    "entryCount": 164,
+    "fileCount": 159,
+    "binarySizeBytes": 105544260,
+    "binarySha256": "49947B0654724C28A24E8694B1EDFEDB48F88355CC14E5BA1D0870C2D3625284",
+    "pdbCount": 0,
+    "unsafeArchivePathCount": 0
+  },
+  "tests": {
+    "dotnetFullPassed": 815,
+    "apiPassed": 368,
+    "conditionalPostgresSkipped": 1,
+    "vitestPassed": 19,
+    "playwrightPassed": 34,
+    "wcagRoutesPassed": 12,
+    "failed": 0
+  },
+  "preDeployment": {
+    "capturedAtUtc": "2026-08-18T08:09:22Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.33.1-20260817T031438Z",
+    "apiProcessId": 2567946,
+    "apiNRestarts": 0,
+    "migrationCount": 31,
+    "enabledProducts": 85,
+    "totalProducts": 85,
+    "rootAvailableBytes": 11161296896,
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.34.0-20260818T081042Z.dump",
+      "sizeBytes": 7099817,
+      "sha256": "B791F3442205A607772143F017432541E595D9223EE2DBF894D515E1FFB31CAD",
+      "pgRestoreListEntries": 285
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.34.0-20260818T081042Z.tar.gz",
+      "sizeBytes": 46457082,
+      "sha256": "45F6418137421033BD3DCB524A8BA84AEA5FB0F68D62B986B57023A205ABE0FE",
+      "entryCount": 173,
+      "includesDataProtectionKeyRing": true
+    }
+  },
+  "deployment": {
+    "startedAtUtc": "2026-08-18T08:12:51Z",
+    "finishedAtUtc": "2026-08-18T08:12:59Z",
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.34.0-20260818T080552Z",
+    "apiProcessId": 3110051,
+    "apiNRestarts": 0,
+    "healthVersion": "0.34.0",
+    "readyStatus": "ready",
+    "databaseStatus": "ready",
+    "migrationCount": 33,
+    "latestMigration": 33,
+    "analysisIndexesFound": 4,
+    "totalProducts": 85,
+    "enabledProducts": 85,
+    "economyAccounts": 0,
+    "economyOperations": 0,
+    "saleQuotes": 0,
+    "committedSaleQuotes": 0,
+    "adminEconomyPageStatus": 200,
+    "adminEconomyChunkStatus": 200,
+    "anonymousOverviewStatus": 401,
+    "anonymousItemHistoryStatus": 401,
+    "warningOrHigherCount": 0,
+    "publicPort8090Open": false
+  },
+  "publicVerification": {
+    "launcherApiHealthStatus": 200,
+    "launcherApiReadyStatus": 200,
+    "adminEconomyStatus": 200,
+    "websiteStatus": 200,
+    "relayApiStatus": 200
+  },
+  "unaffectedServices": {
+    "publisherProcessIdBefore": 2064,
+    "publisherProcessIdAfter": 2064,
+    "publisherNRestarts": 0,
+    "nginxProcessIdBefore": 1742715,
+    "nginxProcessIdAfter": 1742715,
+    "nginxNRestarts": 0,
+    "minecraftControlCommandsIssued": 0,
+    "minecraftServersStartedByRelease": 0,
+    "minecraftServersStoppedByRelease": 0,
+    "minecraftServersRestartedByRelease": 0,
+    "note": "owl5 的 PID 2836 创建于 08:10:54Z，早于 API 部署开始；本次只通过 SSH 读取进程快照，没有执行游戏服控制。"
+  },
+  "rollback": {
+    "directProgramTarget": "/opt/hechao-launcher-api/releases/0.33.1-20260817T031438Z",
+    "databaseDowngradeRequired": false,
+    "newIndexesMayRemain": true,
+    "automaticReadinessRollbackEnabled": true
+  },
+  "privacy": {
+    "environmentContentsIncluded": false,
+    "tokensIncluded": false,
+    "credentialsIncluded": false,
+    "playerIdentifiersIncluded": false,
+    "serverConsoleIncluded": false
+  }
+}

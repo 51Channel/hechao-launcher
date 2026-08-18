@@ -1,9 +1,9 @@
 # 启动器 API 运维与回滚
 
-> 最近记录的线上版本：`0.33.1-20260817T031438Z`
-> 最近记录的生产迁移：`031`
+> 最近记录的线上版本：`0.34.0-20260818T080552Z`
+> 最近记录的生产迁移：`033`
 > 当前新增能力：活动企划、单活动排期、官网内部桥接、精确部署身份、LuckPerms 代理
-> 版本/协议门禁、Publisher 工作空间日志保护、后台精确服控交接、权威经济账本与游戏屏幕
+> 版本/协议门禁、Publisher 工作空间日志保护、后台精确服控交接、权威经济账本、游戏屏幕与后台经济 K 线
 > 当前阶段：跨版本回大厅方案已取消；基础设施大厅隔离已部署，待真实玩家灰度
 >
 > owl9 边界：API 中现有 server ID `pvp` 实际代表恐怖整蛊服
@@ -32,7 +32,7 @@
 - LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`、等级命令 `claim` 与 `complete`
 - 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
 - 经济内部端点：`/v1/internal/economy/*`，服务端令牌、服务器白名单和专用限流保护；
-- 经济管理只读端点：`/v1/admin/economy/overview` 与 `/v1/admin/economy/items/history`，沿用管理员 Host、会话、MFA、权限和限流边界；候选迁移 032、033 尚未部署生产；
+- 经济管理只读端点：`/v1/admin/economy/overview` 与 `/v1/admin/economy/items/history`，沿用管理员 Host、会话、MFA、权限和限流边界；迁移 032、033 已随 API `0.34.0` 部署；
   权威处理余额、转账、报价、出售、商品和审计
 - 管理员票据端点：`POST /v1/admin-auth/tickets`，仅允许 `Administrator` 启动器会话
 - 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF。`POST /v1/admin-auth/trusted-device` 只允许已通过 MFA 的会话签发可撤销本机信任，不能替代启动器一次性票据
@@ -432,13 +432,15 @@ systemctl reload nginx
 | `0.32.0-20260815T055857Z` | `687CBCC777330ABCEC6293F5A5CAE3CED178ED019DE4512AAEEF12C29908E4D3` | 迁移 030；活动、生存、PVP、小游戏独立槽、独立端口和动态回环目标；`0.32.1` 的直接回滚目标 |
 | `0.32.1-20260815T071021Z` | `A0C848BD912B201411EDC938C8CC9A7ED85DFFC9C88F5975196592AF732D76D2` | 无迁移；`*` 表示全部游戏和插件命令，四条生命周期命令继续强制结构化动作；`0.32.2` 的直接回滚目标 |
 | `0.32.2-20260815T105349Z` | `82EBCA525A776340EC53DEF6E648F78BB175A507A9999F0809E7704D786DE44B` | 无迁移；按玩家可用客户端档案过滤服务器，防止未发布档案拖垮整份目录；历史版本 |
-| `0.33.1-20260817T031438Z` | `6FB74C1B081DF8BB42EC0E0E7B438AA596A5386E317EA197AA135BFA63529827` | 保留迁移 031；修复经济商品目录 SQL 拼接，商品目录、余额和交易接口生产验收通过；当前线上版本 |
+| `0.33.1-20260817T031438Z` | `6FB74C1B081DF8BB42EC0E0E7B438AA596A5386E317EA197AA135BFA63529827` | 保留迁移 031；修复经济商品目录 SQL 拼接，商品目录、余额和交易接口生产验收通过；`0.34.0` 的直接程序回滚目标 |
+| `0.34.0-20260818T080552Z` | `49947B0654724C28A24E8694B1EDFEDB48F88355CC14E5BA1D0870C2D3625284` | 迁移 032、033；上线总体经济监控与按真实回收成交聚合的单品 OHLC K 线；当前线上版本 |
 
 API `0.32.1` 已先于 ServerControlAgent `0.7.2` 部署并接受旧版心跳，再完成双机
 代理升级。10 个目标均以 `*` 新鲜上报，完整记录见
 [`API_RELEASE_0.32.1.md`](API_RELEASE_0.32.1.md)。`0.32.2` 随后修复目录档案引用
 完整性，生产记录见 [`API_RELEASE_0.32.2.md`](API_RELEASE_0.32.2.md)。`0.33.1` 保留
 经济账本迁移 031，并修复商品目录查询，生产记录见
-[`API_RELEASE_0.33.1.md`](API_RELEASE_0.33.1.md)。
+[`API_RELEASE_0.33.1.md`](API_RELEASE_0.33.1.md)。`0.34.0` 新增只读总体经济监控和
+单品官方回收 K 线，记录见 [`API_RELEASE_0.34.0.md`](API_RELEASE_0.34.0.md)。
 
-数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.33.1`、启动器 `0.15.9`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5/owl9 ServerControlAgent `0.7.2`、Authorizer `0.5.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 后台、固定整合包 Test-only 发布、固定与动态部署槽、双后台企划、单活动排期、官网活动投影、启动器下载桥接、经济商品目录和服务端文件删除均已验收；活动日历和槽创建不会自动启停 Minecraft，准入还要求活动槽部署身份与企划绑定整合包完全一致。真实 `vip` 业务变更已跨四个五分钟间隔确认不回退；完整四级角色路径、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，活动企划见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。
+数据库、真实目录与 LuckPerms 链路已于 2026-07-22 完成，Velocity 授权 API 与服务器心跳已于 2026-07-23 完成，赫朝账号、账号安全、论坛统一账号与 Cookie 联动、受控全局等级、授权定向路由、诊断上传、服务器排期、单服规则、三通道客户端发布、隐私受限遥测、服务器进程/磁盘运行指标、统一告警、生产日志脱敏、客户端兼容保护和 Vue 管理后台均已部署。API `0.34.0`、启动器 `0.15.9`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5/owl9 ServerControlAgent `0.7.2`、Authorizer `0.5.0` 和 Lobby Guard `0.1.0` 组成当前启动器唯一切服生产基线。真实管理员 MFA、可信设备、Vue 后台、固定整合包 Test-only 发布、固定与动态部署槽、双后台企划、单活动排期、官网活动投影、启动器下载桥接、经济商品目录、后台经济 K 线和服务端文件删除均已验收；活动日历和槽创建不会自动启停 Minecraft，准入还要求活动槽部署身份与企划绑定整合包完全一致。真实 `vip` 业务变更已跨四个五分钟间隔确认不回退；完整四级角色路径、真实玩法包和多人灰度仍未完成外部验收。认证激活步骤见 [`AUTHENTICATION_OPERATIONS.md`](AUTHENTICATION_OPERATIONS.md)，管理员后台见 [`ADMIN_WEB_OPERATIONS.md`](ADMIN_WEB_OPERATIONS.md)，活动企划见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)，整合包导入见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)，服控与删除边界见 [`SERVER_CONTROL_AGENT_OPERATIONS.md`](SERVER_CONTROL_AGENT_OPERATIONS.md)，Velocity 灰度与强制顺序见 [`VELOCITY_AUTHORIZATION_OPERATIONS.md`](VELOCITY_AUTHORIZATION_OPERATIONS.md)，心跳见 [`SERVER_HEARTBEAT_OPERATIONS.md`](SERVER_HEARTBEAT_OPERATIONS.md)，深度指标见 [`SERVER_RUNTIME_METRICS_OPERATIONS.md`](SERVER_RUNTIME_METRICS_OPERATIONS.md)，统一告警见 [`OPERATIONAL_ALERTS.md`](OPERATIONAL_ALERTS.md)，数据库运维见 [`DATABASE_OPERATIONS.md`](DATABASE_OPERATIONS.md)。

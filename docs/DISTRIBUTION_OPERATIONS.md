@@ -2,7 +2,7 @@
 
 > 启动器正式版本：`0.15.9`
 > 当前发布器：一次性 Launcher 发布 CLI 为 `1.3.0`，常驻 Package Publisher Agent 为 `1.2.1`
-> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.33.1` 托管，启动器 `0.15.9` 已完成按哈希增量更新、分阶段进度、退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录、活动月历、进入页刷新、跨午夜边界修复、参考图主页布局、活动预下载与进服门禁分离和私有 OSS 自更新闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
+> 当前状态：私有 OSS Bucket、下载域名 CNAME/HTTPS、读写分离 RAM 身份、本地鉴权下载链和生产签名信任链均已完成；基础、Vanilla、Forge、NeoForge 活动、恐怖整蛊 Fabric（历史档案 ID `pvp-fabric-1.20.1`）与 DollNight 六份档案由 API `0.34.0` 托管，启动器 `0.15.9` 已完成按哈希增量更新、分阶段进度、退出状态刷新、日志配置恢复、启动检查控制、隐私受限运行遥测、NeoForge 物理原生运行目录、活动月历、进入页刷新、跨午夜边界修复、参考图主页布局、活动预下载与进服门禁分离和私有 OSS 自更新闭环。后台整合包导入只写 `Test` 通道，不能自动推进 Gray 或 Production。
 
 ## 增量更新计量契约
 

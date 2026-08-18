@@ -1,6 +1,6 @@
 # Velocity 进服授权运维
 
-> 当前生产：API `0.33.1`、启动器 `0.15.9`、Velocity Authorizer `0.5.0`
+> 当前生产：API `0.34.0`、启动器 `0.15.9`、Velocity Authorizer `0.5.0`
 > （`monitor`）、Lobby Guard `0.1.0`
 > 当前状态：生产部署和自动验收完成，等待真实账号灰度后切换 `enforce`
 >
