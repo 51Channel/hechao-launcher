@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T05:25:30Z",
+  "source": {
+    "branch": "codex/economy-screen-crisp-rendering",
+    "featureCommit": "f42ededed81d2a105108a342984af533c2c9b47d",
+    "candidateDocumentationCommit": "6f1397c5f746dbc2818923b8f9719b07a2c11484"
+  },
+  "screen": {
+    "version": "0.1.8",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.1.8.jar",
+    "bytes": 52098,
+    "sha256": "61D523AE1D546E72C2B679074F89983B978C29DA6CBD9C2A11AF9A983A32210E",
+    "testsPassed": 24,
+    "testsFailed": 0,
+    "testsSkipped": 0,
+    "renderPipeline": [
+      "single-background-pass",
+      "custom-content",
+      "vanilla-widgets",
+      "tooltips"
+    ]
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.17",
+    "manifestBytes": 2025517,
+    "manifestSha256": "96433353B56F115770C819A487ED4B8BD1F85C1082A4124EA42B31E646CE44A2",
+    "logicalFiles": 4457,
+    "logicalBytes": 1203333576,
+    "uniqueObjects": 4252,
+    "objectBytes": 1203325066,
+    "commonFilesWithPrevious": 4456,
+    "unchangedCommonFiles": 4456,
+    "samePathChangedFiles": 0,
+    "removed": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.7.jar"
+    ],
+    "added": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.8.jar"
+    ]
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 52098,
+    "anonymousManifestStatus": 401,
+    "anonymousObjectStatus": 401,
+    "anonymousAdminStatus": 401
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestBytes": 2025517,
+    "storedManifestSha256": "96433353B56F115770C819A487ED4B8BD1F85C1082A4124EA42B31E646CE44A2",
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "version": "0.33.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "service": "active",
+    "restartCount": 0,
+    "recentWarningOrHigherLogLines": 0,
+    "importAuditId": 8991,
+    "channelAuditId": 8992,
+    "importAuditRecorded": true,
+    "channelAuditRecorded": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.17",
+      "rolloutPercentage": 100,
+      "revision": 10
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.16",
+    "manifestSha256": "91243AC25E78068E2514EC635BC2B42C2B5E3EC09876C1B2BCDF6D89E13E1A64"
+  },
+  "runtime": {
+    "runningClientWasInterrupted": false,
+    "minecraftServerRestarted": false,
+    "velocityRestarted": false,
+    "apiRestarted": false,
+    "proxyRestarted": false,
+    "agentRestarted": false,
+    "liveClientAcceptancePending": true,
+    "productionCatalogRemainsEmpty": true,
+    "productionCatalogRows": 0
+  }
+}
