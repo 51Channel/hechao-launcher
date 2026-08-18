@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T02:09:10Z",
+  "source": {
+    "branch": "codex/economy-screen-donut-layout",
+    "featureCommit": "a6137c7e66958f527c5fab6c01d56c64ccc9d0e9",
+    "candidateDocumentationCommit": "cb6eadc1c23cd470be6377189dca9e390cce0696"
+  },
+  "screen": {
+    "version": "0.1.5",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.1.5.jar",
+    "bytes": 32811,
+    "sha256": "9E253BDDB82A5FDCB0B044D2C41303C86C4877308E785F32D175E30FCC56561B",
+    "testsPassed": 12,
+    "testsFailed": 0,
+    "impeccableFindings": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.14",
+    "manifestBytes": 2025527,
+    "manifestSha256": "F5EB933E865E6F7F4B8C1916FB42319173A482399816E7C8D15C726BE56EF481",
+    "logicalFiles": 4457,
+    "logicalBytes": 1203314289,
+    "uniqueObjects": 4252,
+    "objectBytes": 1203305779,
+    "commonFilesWithPrevious": 4456,
+    "unchangedCommonFiles": 4456,
+    "samePathChangedFiles": 0,
+    "removed": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.4.jar"
+    ],
+    "added": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.5.jar"
+    ]
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 32811,
+    "anonymousOssStatus": 403,
+    "anonymousApiStatus": 401
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestBytes": 2025527,
+    "storedManifestSha256": "F5EB933E865E6F7F4B8C1916FB42319173A482399816E7C8D15C726BE56EF481",
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "version": "0.33.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "service": "active",
+    "restartCount": 0,
+    "importAuditRecorded": true,
+    "channelAuditRecorded": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.14",
+      "rolloutPercentage": 100,
+      "revision": 7
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.13",
+    "manifestSha256": "5939CEFE4061FEAD5BBEBBF9A3E19F7AAC9656500CADF3BB2932F9E0845103FD"
+  },
+  "runtime": {
+    "localJavaProcessObserved": true,
+    "runningClientWasInterrupted": false,
+    "minecraftServerRestarted": false,
+    "velocityRestarted": false,
+    "apiRestarted": false,
+    "liveClientAcceptancePending": true
+  }
+}

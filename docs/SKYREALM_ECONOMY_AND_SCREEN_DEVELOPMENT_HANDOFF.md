@@ -5,8 +5,9 @@
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
 > 当前结论：API `0.33.1`、迁移 `031`、HechaoEconomy `0.1.5` 与服务端 Screen `0.1.3`
-> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.4` 随档案 `1.0.13`
-> 只进入 `Test=100%`，工业季保持停止，商品目录当前为空，等待服主配置正式价格与额度。
+> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.5` 随档案 `1.0.14`
+> 只进入 `Test=r7 / 100%`，Gray 与 Production 未分配；新双列布局的真人视觉验收仍待
+> 玩家退出旧游戏并更新。商品目录当前为空，等待服主配置正式价格与额度。
 
 ## 1. 文档目的
 
@@ -58,7 +59,7 @@ flowchart LR
 | --- | --- | --- |
 | 平台后端 | `Hechao.Api/Economy` | 余额、流水、商品、额度、报价、幂等和审计 |
 | 游戏服插件 | `HechaoEconomy 0.1.5` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
-| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.4` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
+| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.5` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
 
 ## 4. Economy Service 开发过程
 
@@ -445,6 +446,9 @@ Bukkit 插件 `0.1.5` 已改用 `Server.getPluginCommand()`，并通过 Essentia
 从 owl5 使用现有外置服务身份返回 `200`。HechaoEconomy `0.1.5` 的最终冷启动确认 API、
 Vault、命令归属与可交易四项均为 `true`，PAPI expansion 正常注册，且没有兼容、命令或
 Vault 冲突。验收后服务端正常保存三个维度并停止，计划任务为 `Ready`、`25600` 无监听。
+正式记录见 [`API_RELEASE_0.33.1.md`](API_RELEASE_0.33.1.md)、
+[`SKYREALM_ECONOMY_RELEASE_0.1.5.md`](SKYREALM_ECONOMY_RELEASE_0.1.5.md) 与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md)。
 
 ## 16. 2026-08-18 暂停菜单入口修复
 
@@ -463,6 +467,24 @@ OSS 仅新增 `30,988` 字节对象，Test 通道为 `100%`，Gray 与 Productio
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md)
 与
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md)。
-正式记录见 [`API_RELEASE_0.33.1.md`](API_RELEASE_0.33.1.md)、
-[`SKYREALM_ECONOMY_RELEASE_0.1.5.md`](SKYREALM_ECONOMY_RELEASE_0.1.5.md) 与
-[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md)。
+
+## 17. 2026-08-18 第三方屏幕紧凑布局改版
+
+玩家提供的 Donut SMP 参考图采用游戏画面直接承载、居中小标题和密集原版按钮。旧版
+Screen 则使用宽 `420 px` 深色面板、黄色竖线、`30 px` 高按钮和说明文字，在高 GUI
+缩放下占据接近整屏宽度，也削弱了 Minecraft 原版菜单感。
+
+客户端 Screen `0.1.5` 移除面板、竖线、副标题和按钮说明。普通窗口使用居中双列网格，
+总宽约为窗口宽度 `63%`、最大 `406 px`，按钮高度 `20 px`，列间距 `6 px`、行间距
+`5 px`。常见 `512 x 270` GUI 下为 `2 x 3`、单按钮宽 `158 px`；窄窗口自动切换单列，
+矮窗口继续支持分页和滚轮。六个动作及服务端授权链均未改变，协议继续为 `2`，因此生产
+服务端 Screen `0.1.3` 无需重启。
+
+档案 `1.0.14` 与 `1.0.13` 的 `4,456` 个共同文件逐路径、大小、摘要和 URL 不变，只删除
+Screen `0.1.4` 并新增 `0.1.5`。OSS 只新增 `32,811` 字节对象，Test 更新为
+`r7 / 100%`；Gray 与 Production 未分配。Gradle 测试 `12/12`、清单验签、对象闭合、
+生产清单回读、受限权限、API 健康/就绪和审计均通过。真人视觉验收尚未完成，退出旧游戏
+并由启动器增量更新前不得推进其他通道。正式记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.5.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.5.md)
+与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.14.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.14.md)。

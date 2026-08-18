@@ -1,12 +1,13 @@
 # 赫朝启动器
 
-> `2026-08-18` 工业季第三方屏幕入口已恢复：客户端 Screen `0.1.4` 在原生 ESC 暂停
-> 菜单中把“模组”一行拆为“模组 / 天域远征”，点击后仍由服务端命令、短期会话和权限
-> 规则授权。客户端档案 `1.0.13` 只进入 `Test=100%`，Gray 与 Production 未分配；
-> `1.0.12` 的 `4,456` 个共同文件完全不变，OSS 仅新增 `30,988` 字节对象。正式记录见
-> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md)
+> `2026-08-18` 工业季第三方屏幕已按 Donut SMP 参考改为紧凑的原版双列快捷菜单：
+> 移除深色大面板、竖线和按钮说明，保留六个入口、短期会话、动作白名单与服务端权限
+> 规则。客户端 Screen `0.1.5` 随档案 `1.0.14` 只进入 `Test=r7 / 100%`，Gray 与
+> Production 未分配；`1.0.13` 的 `4,456` 个共同文件完全不变，OSS 仅新增
+> `32,811` 字节对象。真人视觉验收仍待玩家退出旧游戏并由启动器增量更新后进行。记录见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.5.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.5.md)
 > 与
-> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md)。
+> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.14.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.14.md)。
 >
 > `2026-08-15` Launcher API `0.32.2` 已修复未发布客户端档案拖垮整份玩家目录的
 > 问题。API 现在只下发当前玩家能够同时取得客户端档案的服务器；未发布服务器继续
