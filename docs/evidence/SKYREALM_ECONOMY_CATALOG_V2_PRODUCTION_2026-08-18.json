@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-18T06:26:06.0303121+00:00",
+  "mode": "Apply",
+  "sourcePath": "SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md",
+  "sourceSha256": "EECC26232421BBDDCBB8D6483FC27DBF185153EC5366F6E827DFC405FD1B5ED4",
+  "serverId": "activity-survival",
+  "actorUuid": "4e3522e2-6f50-45ca-a5b1-84579d225bf2",
+  "actorName": "skyrealm-catalog-v2-publisher",
+  "productCount": 85,
+  "uniqueItemCount": 85,
+  "personalTheoreticalMaximum": 11056.0,
+  "serverTheoreticalMaximum": 221120.0,
+  "previousProductCount": 0,
+  "previousEnabledCount": 0,
+  "changedCount": 85,
+  "verifiedCount": 85,
+  "rollbackAttempted": false,
+  "rollbackSucceeded": null,
+  "status": "Enabled"
+}

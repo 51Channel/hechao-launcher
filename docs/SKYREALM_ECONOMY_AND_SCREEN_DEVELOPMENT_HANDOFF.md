@@ -547,3 +547,24 @@ Screen `0.1.6` 并新增 `0.1.7`。OSS 只新增 `51,271` 字节对象，Test �
 写入合同。候选已通过完整 .NET `815/815`、API `368/368`、Vitest `19/19`、Playwright
 `34/34`、十二路由 WCAG A/AA 与桌面/手机 K 线截图；隔离 PostgreSQL 集成测试等待正式
 发布门的测试库执行。本节是未部署候选记录，生产仍为 API `0.33.1`、迁移 `31/31`。
+
+## 21. 2026-08-18 完整回收目录生产启用
+
+用户明确要求将 v2 表中的全部商品上线。受管工具从
+[`SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md`](SKYREALM_ECONOMY_OFFICIAL_BUYBACK_CATALOG_V2_DRAFT.md)
+解析 `85` 项，验证唯一 ID、单价、单项额度、`20` 倍全服额度和理论总额后，通过 owl5
+现有外置经济服务身份逐项写入。生产目录从 `0` 项变为 `85` 项启用，逐字段回读
+`85/85`，第二次预览为 `0` 差异。商品写入阶段没有重启 Minecraft、Velocity、API 或
+代理。
+
+随后补齐两级分页：HechaoEconomy `0.1.6` 固定使用 `54` 格容器，每批放置 `45` 个商品，
+槽位 `48 / 49 / 50` 分别为上一批、批次信息和下一批；85 项因此分为 `45 + 40`。客户端
+Screen `0.1.9` 识别这些受控槽位，并在每一批内继续按窗口尺寸分页。档案 `1.0.18` 已完成
+验签、对象闭合和增量复核后发布到 `Test=r11 / 100%`，Gray 与 Production 未分配。
+
+服务端在确认 `0/100` 玩家在线并完成 `save-all flush` 后正常停止，完整离线目录备份逐项
+验证 `413/413` 文件，再将插件从 `0.1.5` 原子替换为 `0.1.6`。冷启动继续通过 Arclight，
+插件只加载和启用一次；`/heco health` 的 API、Vault、命令权威和可交易状态均为 `true`，
+隔离交易为 `0`，没有再次出现 Adventure `TextColor` 类缺失。当前仍缺少个人/全服跨商品
+金额门禁、北京时间额度日和部分数量回收；这些风险没有因目录启用而消失。正式记录见
+[`SKYREALM_ECONOMY_CATALOG_V2_RELEASE.md`](SKYREALM_ECONOMY_CATALOG_V2_RELEASE.md)。
