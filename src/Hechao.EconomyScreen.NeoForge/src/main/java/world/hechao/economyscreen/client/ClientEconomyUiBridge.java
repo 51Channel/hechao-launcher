@@ -12,10 +12,17 @@ public final class ClientEconomyUiBridge {
     static final String ECONOMY_PREFIX = "[赫朝经济]";
     static final String CATALOG_TITLE = "赫朝回收目录";
     static final String SELL_TITLE = "赫朝物品回收";
+    static final String MARKET_TITLE = "赫朝玩家市场";
+    static final String MARKET_MINE_TITLE = "赫朝我的挂单";
+    static final String MARKET_DELIVERY_TITLE = "赫朝待领取";
+    static final String MARKET_LISTING_TITLE = "赫朝市场上架";
+    static final String MARKET_PURCHASE_TITLE = "赫朝确认购买";
+    static final String MARKET_CANCEL_TITLE = "赫朝确认下架";
     private static final Set<String> EMBEDDED_ACTIONS = Set.of(
             "balance",
             "shop",
-            "sell");
+            "sell",
+            "market");
 
     private ClientEconomyUiBridge() {
     }
@@ -72,6 +79,35 @@ public final class ClientEconomyUiBridge {
                         container.getMenu(),
                         player.getInventory()));
             }
+        } else if (next instanceof ContainerScreen container
+                && isMarketListTitle(next.getTitle().getString())) {
+            event.setNewScreen(new EconomyMarketScreen(
+                    container.getMenu(),
+                    next.getTitle().getString()));
+        } else if (next instanceof ContainerScreen container
+                && MARKET_LISTING_TITLE.equals(next.getTitle().getString())) {
+            var player = Minecraft.getInstance().player;
+            if (player != null) {
+                event.setNewScreen(new EconomyMarketListingScreen(
+                        container.getMenu(),
+                        player.getInventory()));
+            }
+        } else if (next instanceof ContainerScreen container
+                && isMarketDecisionTitle(next.getTitle().getString())) {
+            event.setNewScreen(new EconomyMarketDecisionScreen(
+                    container.getMenu(),
+                    next.getTitle().getString()));
         }
+    }
+
+    private static boolean isMarketListTitle(String title) {
+        return MARKET_TITLE.equals(title)
+                || MARKET_MINE_TITLE.equals(title)
+                || MARKET_DELIVERY_TITLE.equals(title);
+    }
+
+    private static boolean isMarketDecisionTitle(String title) {
+        return MARKET_PURCHASE_TITLE.equals(title)
+                || MARKET_CANCEL_TITLE.equals(title);
     }
 }

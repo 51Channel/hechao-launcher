@@ -25,6 +25,8 @@ final class SinglePassBackgroundScreenTest {
         for (var fileName : List.of(
                 "EconomyResultScreen.java",
                 "EconomyCatalogScreen.java",
+                "EconomyMarketScreen.java",
+                "EconomyMarketDecisionScreen.java",
                 "HechaoNavigationScreen.java")) {
             var source = readSource(fileName);
             assertTrue(source.contains("extends SinglePassBackgroundScreen"));

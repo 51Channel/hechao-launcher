@@ -43,6 +43,13 @@ public final class MenuActions {
                         "正在打开出售界面...",
                         "hechaoeconomy:sell"));
         actions.put(
+                "market",
+                new Definition(
+                        "玩家市场",
+                        "浏览、上架和领取玩家交易物品",
+                        "正在打开玩家市场...",
+                        "hechaoeconomy:ah"));
+        actions.put(
                 "settings",
                 new Definition(
                         "个人设置",

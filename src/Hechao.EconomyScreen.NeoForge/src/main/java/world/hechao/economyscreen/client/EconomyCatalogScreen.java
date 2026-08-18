@@ -18,6 +18,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private static final int PAGE_BUTTON_WIDTH = 30;
     private static final int CLOSE_BUTTON_WIDTH = 80;
     private static final int BUTTON_HEIGHT = 20;
+    private static final int SEARCH_DELAY_TICKS = 8;
 
     private final ChestMenu menu;
     private EconomyCatalogLayout.Layout layout;
@@ -29,6 +30,8 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private int observedServerPage = -1;
     private boolean moveToLastPageAfterServerChange;
     private String searchQuery = "";
+    private String lastSubmittedSearch = "";
+    private int searchDelay = -1;
 
     EconomyCatalogScreen(ChestMenu menu) {
         super(Component.literal(ClientEconomyUiBridge.CATALOG_TITLE));
@@ -39,6 +42,9 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     protected void init() {
         layout = EconomyCatalogLayout.calculate(width, height);
         int buttonY = layout.footerTop() + 7;
+        int closeWidth = Math.min(
+                CLOSE_BUTTON_WIDTH,
+                Math.max(40, layout.panelWidth() - 96));
         previousButton = new IndustrialButton(
                 layout.panelLeft() + 12,
                 buttonY,
@@ -61,11 +67,11 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         addRenderableWidget(nextButton);
 
         addRenderableWidget(new IndustrialButton(
-                width / 2 - CLOSE_BUTTON_WIDTH / 2,
+                width / 2 - closeWidth / 2,
                 buttonY,
-                CLOSE_BUTTON_WIDTH,
+                closeWidth,
                 BUTTON_HEIGHT,
-                Component.literal("返回首页"),
+                Component.literal(closeWidth < 70 ? "首页" : "返回首页"),
                 ignored -> returnHome()));
         addSearchBox();
         observedServerPage = serverPageInfo().page();
@@ -85,6 +91,13 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             page = 0;
             syncNavigation(filteredProducts().size());
         }
+        if (searchDelay > 0) {
+            searchDelay--;
+        }
+        if (searchDelay == 0) {
+            searchDelay = -1;
+            submitSearch();
+        }
     }
 
     @Override
@@ -101,7 +114,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 layout.panelTop(),
                 layout.panelWidth(),
                 layout.panelHeight());
-        renderHeader(graphics, products.size());
+        renderHeader(graphics);
 
         hovered = ItemStack.EMPTY;
         if (products.isEmpty()) {
@@ -109,7 +122,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                     + (layout.footerTop() - layout.contentTop()) / 2;
             graphics.drawCenteredString(
                     font,
-                    searchQuery.isBlank() ? "暂无已启用的回收商品" : "本批没有匹配商品",
+                    searchQuery.isBlank() ? "暂无已启用的回收商品" : "没有匹配商品",
                     width / 2,
                     centerY - 8,
                     0xFFFFFFFF);
@@ -117,7 +130,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                     font,
                     searchQuery.isBlank()
                             ? "商品开放后会自动显示在这里"
-                            : "可切换批次或调整搜索词",
+                            : "可搜索中文名、物品 ID 或命名空间",
                     width / 2,
                     centerY + 8,
                     0xFF9FA4A9);
@@ -390,12 +403,13 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         searchBox.setResponder(value -> {
             searchQuery = value;
             page = 0;
+            searchDelay = SEARCH_DELAY_TICKS;
             syncNavigation(filteredProducts().size());
         });
         addRenderableWidget(searchBox);
     }
 
-    private void renderHeader(GuiGraphics graphics, int visibleItemCount) {
+    private void renderHeader(GuiGraphics graphics) {
         boolean compact = layout.panelWidth() < 260;
         if (!compact) {
             IndustrialUiTheme.renderEmblem(
@@ -422,9 +436,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 searchBox.isFocused());
 
         if (!compact) {
-            String count = searchQuery.isBlank()
-                    ? serverPageInfo().totalItemCount() + " 项"
-                    : visibleItemCount + " 项";
+            String count = serverPageInfo().totalItemCount() + " 项";
             graphics.drawString(
                     font,
                     count,
@@ -433,6 +445,19 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                     0xFFB7BBC0,
                     false);
         }
+    }
+
+    private void submitSearch() {
+        String normalized = searchQuery.trim();
+        if (normalized.equals(lastSubmittedSearch)) {
+            return;
+        }
+        var connection = minecraft == null ? null : minecraft.getConnection();
+        if (connection == null) {
+            return;
+        }
+        lastSubmittedSearch = normalized;
+        connection.sendCommand(EconomyMarketSearch.encode(normalized).catalogCommand());
     }
 
     private void returnHome() {
