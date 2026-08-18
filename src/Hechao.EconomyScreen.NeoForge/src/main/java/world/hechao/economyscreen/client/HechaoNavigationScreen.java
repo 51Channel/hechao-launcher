@@ -2,6 +2,7 @@ package world.hechao.economyscreen.client;
 
 import java.util.List;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -57,7 +58,7 @@ public final class HechaoNavigationScreen extends Screen {
             int y = layout.gridTop() + row * NavigationLayout.ROW_STRIDE;
             var button = Button.builder(
                             Component.literal(action.definition.label()),
-                            ignored -> sendAction(action.actionId))
+                            ignored -> sendAction(action))
                     .bounds(
                             x,
                             y,
@@ -109,8 +110,16 @@ public final class HechaoNavigationScreen extends Screen {
         return true;
     }
 
-    private void sendAction(String actionId) {
-        PacketDistributor.sendToServer(new MenuActionPayload(payload.sessionId(), actionId));
+    private void sendAction(ActionView action) {
+        PacketDistributor.sendToServer(
+                new MenuActionPayload(payload.sessionId(), action.actionId));
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            player.displayClientMessage(
+                    Component.literal(action.definition.feedback())
+                            .withStyle(ChatFormatting.YELLOW),
+                    true);
+        }
         onClose();
     }
 

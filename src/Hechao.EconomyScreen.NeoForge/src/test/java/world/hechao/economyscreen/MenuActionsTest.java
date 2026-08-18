@@ -19,6 +19,14 @@ final class MenuActionsTest {
     }
 
     @Test
+    void everyActionProvidesImmediateClientFeedback() {
+        for (var action : MenuActions.all().entrySet()) {
+            assertFalse(action.getValue().feedback().isBlank(), action.getKey());
+            assertTrue(action.getValue().feedback().startsWith("正在"), action.getKey());
+        }
+    }
+
+    @Test
     void openMenuPayloadCarriesOnlySessionAndActionIds() throws Exception {
         var source = Files.readString(Path.of(
                 "src",
@@ -53,6 +61,8 @@ final class MenuActionsTest {
         assertTrue(source.contains("NavigationLayout.BUTTON_HEIGHT"));
         assertTrue(source.contains("mouseScrolled"));
         assertTrue(source.contains("菜单内容和权限由服务器决定"));
+        assertTrue(source.contains("displayClientMessage"));
+        assertTrue(source.contains("action.definition.feedback()"));
         assertFalse(source.contains("graphics.fill("));
         assertFalse(source.contains("SUBTITLE"));
         assertFalse(source.contains("plainSubstrByWidth"));
