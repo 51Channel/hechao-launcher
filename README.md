@@ -1,5 +1,16 @@
 # 赫朝启动器
 
+> `2026-08-18` 天域远征玩家市场与全局模糊搜索已完成分阶段部署。API `0.35.0` 和
+> HechaoEconomy `0.2.0` 已生产上线，客户端 Screen `0.2.0` 随不可变档案 `1.0.20`
+> 只进入 `Test=r13 / 100%`；Gray 与 Production 未分配。市场支持上架、购买、下架、
+> 待领取和中文/物品 ID/卖家模糊搜索，事务、幂等和余额由服务端裁决。隔离 PostgreSQL
+> 验证及生产健康通过；双真人账号完整交易、断线、背包竞争、幂等重试和余额守恒仍待
+> Test 验收。记录见
+> [`docs/API_RELEASE_0.35.0.md`](docs/API_RELEASE_0.35.0.md)、
+> [`docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.0.md`](docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.0.md)、
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.0.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.0.md)
+> 与 [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.20.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.20.md)。
+>
 > `2026-08-18` 工业季第三方屏幕已完成 Image2 工业远征风格改版。Screen `0.1.10`
 > 使用生成的机械背景和齿轮罗盘徽记，统一导航、余额、出售结果和 85 项回收目录；业务、
 > 权限、价格和网络协议均未改变。新版随档案 `1.0.19` 只发布到

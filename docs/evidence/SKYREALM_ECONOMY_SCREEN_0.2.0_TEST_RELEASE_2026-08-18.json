@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T13:04:00Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.0",
+  "networkProtocol": "2",
+  "buildSourceCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
+  "featureCommit": "3de487b",
+  "releaseTag": "hechao-economy-screen-v0.2.0",
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.0.jar",
+    "sizeBytes": 894611,
+    "sha256": "294A5CBE839448E3A6777F5BF0C7051D8158E552516D53E14B5E7EB723E61BE3"
+  },
+  "tests": {
+    "passed": 58,
+    "failed": 0
+  },
+  "features": {
+    "playerMarket": true,
+    "itemDepositListing": true,
+    "myListings": true,
+    "pendingDeliveries": true,
+    "purchaseAndCancelConfirmation": true,
+    "localizedFuzzySearch": true,
+    "searchDebounceTicks": 8
+  },
+  "distribution": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "profileVersion": "1.0.20",
+    "testRevision": 13,
+    "testRolloutPercentage": 100,
+    "grayAssigned": false,
+    "productionAssigned": false
+  },
+  "runtime": {
+    "runningClientInterrupted": false,
+    "apiRestartedByProfilePublication": false,
+    "minecraftRestartedByProfilePublication": false,
+    "velocityRestarted": false,
+    "liveClientAcceptancePending": true
+  }
+}

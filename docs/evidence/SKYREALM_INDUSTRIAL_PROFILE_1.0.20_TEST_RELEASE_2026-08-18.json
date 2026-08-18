@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T13:04:00Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "releaseCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
+    "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.20"
+  },
+  "screen": {
+    "version": "0.2.0",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.0.jar",
+    "bytes": 894611,
+    "sha256": "294A5CBE839448E3A6777F5BF0C7051D8158E552516D53E14B5E7EB723E61BE3",
+    "testsPassed": 58,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.20",
+    "publishedAtUtc": "2026-08-18T12:38:36.642358+00:00",
+    "manifestBytes": 2025517,
+    "manifestSha256": "C343D06AD3B209723C9C91C6D53D0C70D61AFD2AE7EA896A7350E38321D7E825",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204176089,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204167579,
+    "commonFilesWithPrevious": 4455,
+    "unchangedCommonFiles": 4455,
+    "samePathChangedFiles": 0,
+    "removed": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.10.jar"
+    ],
+    "added": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.0.jar"
+    ]
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 894611,
+    "immutableObjectOverwrites": 0,
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestBytes": 2025517,
+    "storedManifestSha256": "C343D06AD3B209723C9C91C6D53D0C70D61AFD2AE7EA896A7350E38321D7E825",
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "version": "0.35.0",
+    "release": "0.35.0-20260818T121031Z",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "service": "active",
+    "restartCount": 0,
+    "recentWarningOrHigherLogLines": 0,
+    "importAuditRecorded": true,
+    "channelAuditRecorded": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.20",
+      "rolloutPercentage": 100,
+      "revision": 13
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.19",
+    "manifestSha256": "ABC8B15B512686D35981A378B9D0A92B4AD5A64EE0C290F8865158A8FC470528"
+  },
+  "remainingAcceptance": {
+    "twoRealPlayerMarketFlowPassed": false,
+    "disconnectRecoveryPassed": false,
+    "inventoryRacePassed": false,
+    "idempotentRetryPassed": false,
+    "balanceConservationPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  }
+}

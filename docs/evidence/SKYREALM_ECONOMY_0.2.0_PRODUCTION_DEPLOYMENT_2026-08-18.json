@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T13:04:00Z",
+  "component": "hechao-economy",
+  "version": "0.2.0",
+  "buildSourceCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
+  "featureCommit": "c3457d9",
+  "releaseTag": "hechao-economy-v0.2.0",
+  "artifact": {
+    "name": "HechaoEconomy-0.2.0.jar",
+    "sizeBytes": 440154,
+    "sha256": "43D94F92786D79FA5B4F385C32AF725CBA75587C8DE6CF649BE24D8481664522"
+  },
+  "tests": {
+    "passed": 27,
+    "failed": 0
+  },
+  "deployment": {
+    "serverId": "activity-survival",
+    "serverRoot": "E:\\HechaoActivitySlots\\activity-survival",
+    "playersOnlineBeforeStop": 0,
+    "hotReplaced": false,
+    "normalSaveAndStopCompleted": true,
+    "singleAuthoritativeJar": true,
+    "arclightLaunchPreserved": true,
+    "structuredStartCompleted": true,
+    "otherBackendsOperated": false,
+    "postDeploymentProcessIdSnapshot": 2148,
+    "backupPath": "E:\\manual-backups\\activity-survival-economy-0.2.0-20260818T122955Z"
+  },
+  "runtimeAcceptance": {
+    "apiConfigured": true,
+    "vaultAuthoritative": true,
+    "commandsAuthoritative": true,
+    "tradingEnabled": true,
+    "quarantinedTrades": 0,
+    "currentRuntimeStateRequiresLiveRecheck": true
+  },
+  "remainingAcceptance": {
+    "twoRealPlayerMarketFlowPassed": false,
+    "fuzzySearchPassed": false,
+    "disconnectRecoveryPassed": false,
+    "inventoryRacePassed": false,
+    "idempotentRetryPassed": false,
+    "balanceConservationPassed": false
+  },
+  "rollback": {
+    "kind": "full-offline-server-backup",
+    "target": "E:\\manual-backups\\activity-survival-economy-0.2.0-20260818T122955Z",
+    "normalStopRequired": true,
+    "databaseMigrationMustBeRetained": true
+  }
+}

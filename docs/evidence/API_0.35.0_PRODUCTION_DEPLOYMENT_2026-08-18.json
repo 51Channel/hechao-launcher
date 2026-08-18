@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-08-18T13:03:10Z",
+  "component": "api",
+  "version": "0.35.0",
+  "releaseId": "0.35.0-20260818T121031Z",
+  "buildSourceCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
+  "featureCommit": "e3df1a2",
+  "releaseTag": "api-v0.35.0",
+  "artifact": {
+    "archiveName": "hechao-api-0.35.0-20260818T121031Z-linux-x64.tar.gz",
+    "archiveSizeBytes": 46966874,
+    "archiveSha256": "CF2E845F26F305F58D26020722E24318E7A953558A18D84858396F54DB8B5FD3",
+    "entryCount": 164,
+    "binarySizeBytes": 105636292,
+    "binarySha256": "B9462B7D5AF6FA662408574E078008B03029F269EF7D9DDCC5AE17DBCC512AB8"
+  },
+  "tests": {
+    "dotnetFullPassed": 819,
+    "apiPassed": 372,
+    "regularEnvironmentPostgresSkipped": 1,
+    "isolatedPostgresPassed": 1,
+    "failed": 0
+  },
+  "preDeployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.34.0-20260818T080552Z",
+    "databaseBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.35.0-20260818T121434Z.dump",
+      "sizeBytes": 7131806,
+      "sha256": "17624F8D12794DA44710BD4FF46A64EFF4D510541773260CD86C94C7796AF83D",
+      "mode": "0600",
+      "owner": "root:root"
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.35.0-20260818T121434Z.tar.gz",
+      "sizeBytes": 58118340,
+      "sha256": "69229ECDEFF0EE652334BFE11B71CDA945E4B645EF28FBC7779FEA59131CDD0F",
+      "mode": "0600",
+      "owner": "root:root"
+    }
+  },
+  "deployment": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.35.0-20260818T121031Z",
+    "apiProcessId": 3236646,
+    "apiNRestarts": 0,
+    "activeState": "active",
+    "subState": "running",
+    "healthVersion": "0.35.0",
+    "healthStatus": "ok",
+    "readyStatus": "ready",
+    "databaseStatus": "ready",
+    "migrationCount": 34,
+    "latestMigration": 34,
+    "marketTablesFound": 2,
+    "anonymousMarketStatus": 401,
+    "warningOrHigherCount": 0
+  },
+  "rollback": {
+    "directProgramTarget": "/opt/hechao-launcher-api/releases/0.34.0-20260818T080552Z",
+    "databaseDowngradeRequired": false,
+    "marketDataMustBeRetained": true,
+    "automaticReadinessRollbackEnabled": true
+  },
+  "remainingAcceptance": {
+    "twoRealPlayerMarketFlowPassed": false,
+    "disconnectRecoveryPassed": false,
+    "inventoryRacePassed": false,
+    "balanceConservationPassed": false
+  },
+  "privacy": {
+    "environmentContentsIncluded": false,
+    "tokensIncluded": false,
+    "credentialsIncluded": false,
+    "playerIdentifiersIncluded": false
+  }
+}
