@@ -1,5 +1,12 @@
 # 赫朝启动器
 
+> `2026-08-18` 工业季第三方屏幕已完成 Image2 工业远征风格改版。Screen `0.1.10`
+> 使用生成的机械背景和齿轮罗盘徽记，统一导航、余额、出售结果和 85 项回收目录；业务、
+> 权限、价格和网络协议均未改变。新版随档案 `1.0.19` 只发布到
+> `Test=r12 / 100%`，Gray 与 Production 未分配；玩家退出旧游戏并由启动器增量更新后
+> 仍需完成真人视觉与交互验收。记录见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.10.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.10.md)。
+>
 > `2026-08-18` 工业季回收目录超时已修复。根因是生产 Arclight 缺少 Paper API 的
 > `Material.translationKey()`，HechaoEconomy `0.1.6` 在渲染首个商品时抛出
 > `NoSuchMethodError`，客户端因此等到超时。`0.1.7` 改为保留物品原生可翻译名称，

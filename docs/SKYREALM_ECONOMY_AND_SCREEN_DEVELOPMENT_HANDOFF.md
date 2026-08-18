@@ -5,8 +5,8 @@
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
 > 当前结论：API `0.34.0`、迁移 `033`、HechaoEconomy `0.1.7` 与服务端 Screen `0.1.3`
-> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.9` 随档案 `1.0.18`
-> 只进入 `Test=r11 / 100%`，Gray 与 Production 未分配。生产商品目录为 `85/85` 项启用；
+> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.10` 随档案 `1.0.19`
+> 只进入 `Test=r12 / 100%`，Gray 与 Production 未分配。生产商品目录为 `85/85` 项启用；
 > 后台总体经济监控与单品官方回收 K 线已上线，生产当前尚无经济账户或成交。
 
 ## 1. 文档目的
@@ -58,8 +58,8 @@ flowchart LR
 | 层 | 组件 | 权威范围 |
 | --- | --- | --- |
 | 平台后端 | `Hechao.Api/Economy` | 余额、流水、商品、额度、报价、幂等和审计 |
-| 游戏服插件 | `HechaoEconomy 0.1.5` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
-| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.7` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
+| 游戏服插件 | `HechaoEconomy 0.1.7` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
+| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.10` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
 
 ## 4. Economy Service 开发过程
 
@@ -589,3 +589,23 @@ HechaoEconomy `0.1.7` 不再覆盖商品的原生显示名，由客户端根据�
 `0`。服务端回归已完成；玩家重新进入并点击“回收目录”的最终目视验收仍待完成。正式
 记录见
 [`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md)。
+
+## 23. 2026-08-18 Image2 工业远征界面改版
+
+客户端 Screen `0.1.10` 使用中转站 `gpt-image-2` 生成工业机械全屏背景和透明齿轮罗盘
+徽记。导航、余额、出售结果与回收目录统一使用暗色铁板、铜管、黄铜边框、铆钉和少量
+青绿色状态反馈；中心区域保持低细节，避免遮挡 Minecraft 字体、物品图标、Tooltip 和
+按钮。背景按 `cover` 语义响应式裁切，极矮窗口增加标题区间距。
+
+业务逻辑、85 项商品、价格、分页、服务端权限、短期会话、固定动作、网络载荷和协议 `2`
+均未改变。连续两次 `clean test build` 与 `32/32` 测试通过，可复现 JAR 为
+`841,439` 字节。档案 `1.0.19` 与 `1.0.18` 的 `4,456` 个共同文件全部不变，只删除
+Screen `0.1.9` 并新增 `0.1.10`；OSS 只新增 `841,439` 字节对象。
+
+签名清单已导入生产后台，Test 更新为 `r12 / 100%`，Gray 与 Production 未分配。远端
+清单原始字节、权限、数据库通道和审计均已回读，API `0.34.0` 保持原进程、
+`NRestarts=0`，没有重启 Minecraft、Velocity、API、代理或服控进程。玩家完全退出旧
+游戏并由启动器增量更新后的真人视觉与交互验收仍待完成。正式记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.10.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.10.md)
+与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.19.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.19.md)。

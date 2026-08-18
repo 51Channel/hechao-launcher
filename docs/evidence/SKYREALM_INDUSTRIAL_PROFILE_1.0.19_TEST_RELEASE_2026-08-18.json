@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T09:26:25Z",
+  "source": {
+    "branch": "codex/economy-screen-image2-ui",
+    "featureCommit": "9bae82d33194cb23bb6cf8568c5e6e7685c965c8",
+    "candidateDocumentationCommit": "9bae82d33194cb23bb6cf8568c5e6e7685c965c8"
+  },
+  "screen": {
+    "version": "0.1.10",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.1.10.jar",
+    "bytes": 841439,
+    "sha256": "02FC9FE719A103AAC1FCC0270560D2DD19EC9C51B8E12BD8017E08E35A5A2468",
+    "testsPassed": 32,
+    "testsFailed": 0,
+    "testsSkipped": 0,
+    "generatedAssets": [
+      {
+        "path": "assets/hechao_economy_screen/textures/gui/industrial_backdrop.png",
+        "width": 1024,
+        "height": 576,
+        "bytes": 759132,
+        "sha256": "4E996311E2C3BCAA18364891FA99D2DAF8C9CF83530314F98631030E232085EE"
+      },
+      {
+        "path": "assets/hechao_economy_screen/textures/gui/expedition_emblem.png",
+        "width": 128,
+        "height": 128,
+        "bytes": 20089,
+        "sha256": "716AED2EB082B1B8BC707042BC7AA84893B7B143AC8177DDF75B4F3B2B70D590"
+      }
+    ]
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.19",
+    "manifestBytes": 2025516,
+    "manifestSha256": "ABC8B15B512686D35981A378B9D0A92B4AD5A64EE0C290F8865158A8FC470528",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204122917,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204114407,
+    "commonFilesWithPrevious": 4456,
+    "unchangedCommonFiles": 4456,
+    "samePathChangedFiles": 0,
+    "removed": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.9.jar"
+    ],
+    "added": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.10.jar"
+    ]
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 841439,
+    "anonymousManifestStatus": 401,
+    "anonymousObjectStatus": 401,
+    "anonymousAdminStatus": 401
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestBytes": 2025516,
+    "storedManifestSha256": "ABC8B15B512686D35981A378B9D0A92B4AD5A64EE0C290F8865158A8FC470528",
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "version": "0.34.0",
+    "release": "0.34.0-20260818T080552Z",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "service": "active",
+    "processStartedAt": "2026-08-18T16:12:55+08:00",
+    "restartCount": 0,
+    "recentWarningOrHigherLogLines": 0,
+    "importAuditId": 9075,
+    "channelAuditId": 9076,
+    "importAuditRecorded": true,
+    "channelAuditRecorded": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.19",
+      "rolloutPercentage": 100,
+      "revision": 12
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.18",
+    "manifestSha256": "9BE857DAEAD9743D79C96F04917E4040B5796153A9BA5C91826E3B51809562EB"
+  },
+  "runtime": {
+    "runningClientWasInterrupted": false,
+    "minecraftServerRestarted": false,
+    "velocityRestarted": false,
+    "apiRestarted": false,
+    "proxyRestarted": false,
+    "agentRestarted": false,
+    "liveClientAcceptancePending": true,
+    "productionCatalogRows": 85,
+    "productionCatalogEnabledRows": 85
+  }
+}
+
