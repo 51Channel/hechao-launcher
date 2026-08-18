@@ -14,6 +14,7 @@ const initial = computed(() => props.session.player.minecraftName.slice(0, 1).to
 const nav = [
   ["servers", "server", "服务器目录"], ["users", "users", "玩家与权限"],
   ["profiles", "package", "客户端档案"], ["telemetry", "activity", "运行数据"],
+  ["economy", "database", "经济监控"],
   ["package-imports", "package", "整合包导入"],
   ["activity-plans", "activity", "活动企划"],
   ["runtime", "monitor", "服务状态"], ["control", "server", "服控面板"],

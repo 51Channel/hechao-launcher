@@ -21,7 +21,9 @@
     "@fullcalendar/daygrid": "6.1.21",
     "@fullcalendar/interaction": "6.1.21",
     "@fullcalendar/vue3": "6.1.21",
+    "echarts": "^6.1.0",
     "vue": "^3.5.18",
+    "vue-echarts": "^8.1.0",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {

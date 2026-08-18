@@ -610,3 +610,67 @@ export interface ActivityPlanOverview {
   slot: ActivitySlot;
   unmanagedSchedules: UnmanagedActivitySchedule[];
 }
+
+export interface AdminEconomyServerOption {
+  serverId: string;
+  displayName: string;
+}
+
+export interface AdminEconomySummary {
+  totalSupply: number;
+  windowIssued: number;
+  transferVolume: number;
+  activePlayers: number;
+  operationCount: number;
+}
+
+export interface AdminEconomyWealthSummary {
+  fundedAccounts: number;
+  averageBalance: number;
+  medianBalance: number;
+  p90Balance: number;
+  topTenPercentShare: number;
+}
+
+export interface AdminEconomySeriesPoint {
+  at: string;
+  totalSupply: number;
+  issuedAmount: number;
+}
+
+export interface AdminEconomyPlayerBalance {
+  playerUuid: string;
+  playerName: string | null;
+  balance: number;
+  supplyShare: number;
+}
+
+export interface AdminEconomyProductVolume {
+  itemId: string;
+  quantity: number;
+  amount: number;
+  sellers: number;
+}
+
+export interface AdminEconomyServerVolume {
+  serverId: string;
+  displayName: string;
+  saleVolume: number;
+  transferVolume: number;
+  activePlayers: number;
+  operationCount: number;
+}
+
+export interface AdminEconomyOverview {
+  from: string;
+  to: string;
+  hours: number;
+  serverId: string | null;
+  servers: AdminEconomyServerOption[];
+  summary: AdminEconomySummary;
+  wealth: AdminEconomyWealthSummary;
+  series: AdminEconomySeriesPoint[];
+  topBalances: AdminEconomyPlayerBalance[];
+  products: AdminEconomyProductVolume[];
+  serverVolumes: AdminEconomyServerVolume[];
+}

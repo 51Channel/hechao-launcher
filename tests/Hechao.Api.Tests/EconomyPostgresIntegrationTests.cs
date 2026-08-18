@@ -35,6 +35,21 @@ public sealed class EconomyPostgresIntegrationTests
             var sql = await reader.ReadToEndAsync();
             await using var migration = new NpgsqlCommand(sql, connection);
             await migration.ExecuteNonQueryAsync();
+            await using var dashboardSupport = new NpgsqlCommand(
+                """
+                CREATE TABLE launcher.servers (
+                    id text PRIMARY KEY,
+                    display_name text NOT NULL
+                );
+                CREATE TABLE launcher.minecraft_identities (
+                    minecraft_uuid uuid PRIMARY KEY,
+                    minecraft_name text NOT NULL
+                );
+                INSERT INTO launcher.servers (id, display_name)
+                VALUES ('activity-survival', '活动生存服');
+                """,
+                connection);
+            await dashboardSupport.ExecuteNonQueryAsync();
         }
 
         var repository = new EconomyRepository(dataSource, TimeProvider.System);
@@ -121,6 +136,56 @@ public sealed class EconomyPostgresIntegrationTests
         Assert.Equal(transfer.OperationId, repeatedTransfer.OperationId);
         Assert.Equal(37.50m, transfer.SenderBalance);
         Assert.Equal(12.50m, transfer.RecipientBalance);
+
+        await using (var connection = await dataSource.OpenConnectionAsync())
+        await using (var identities = new NpgsqlCommand(
+            """
+            INSERT INTO launcher.minecraft_identities (minecraft_uuid, minecraft_name)
+            VALUES ($1, 'IntegrationSeller'), ($2, 'IntegrationBuyer');
+            """,
+            connection))
+        {
+            identities.Parameters.AddWithValue(playerUuid);
+            identities.Parameters.AddWithValue(recipientUuid);
+            await identities.ExecuteNonQueryAsync();
+        }
+
+        var dashboard = new AdminEconomyRepository(dataSource, TimeProvider.System);
+        var overview = await dashboard.GetOverviewAsync(
+            24,
+            null,
+            CancellationToken.None);
+        Assert.Equal(50.00m, overview.Summary.TotalSupply);
+        Assert.Equal(50.00m, overview.Summary.WindowIssued);
+        Assert.Equal(12.50m, overview.Summary.TransferVolume);
+        Assert.Equal(2, overview.Summary.ActivePlayers);
+        Assert.Equal(2, overview.Summary.OperationCount);
+        Assert.Equal(2, overview.Wealth.FundedAccounts);
+        Assert.Equal(25.00m, overview.Wealth.AverageBalance);
+        Assert.Equal(25.00m, overview.Wealth.MedianBalance);
+        Assert.Equal(35.00m, overview.Wealth.P90Balance);
+        Assert.Equal(0.75m, overview.Wealth.TopTenPercentShare);
+        Assert.Equal(50.00m, overview.Series[^1].TotalSupply);
+        Assert.Equal(50.00m, overview.Series.Sum(point => point.IssuedAmount));
+        Assert.Contains(overview.TopBalances, player =>
+            player.PlayerName == "IntegrationSeller" && player.Balance == 37.50m);
+        Assert.Collection(
+            overview.Products,
+            product =>
+            {
+                Assert.Equal("create:brass_ingot", product.ItemId);
+                Assert.Equal(10, product.Quantity);
+                Assert.Equal(50.00m, product.Amount);
+            });
+        Assert.Collection(
+            overview.ServerVolumes,
+            server =>
+            {
+                Assert.Equal("activity-survival", server.ServerId);
+                Assert.Equal("活动生存服", server.DisplayName);
+                Assert.Equal(50.00m, server.SaleVolume);
+                Assert.Equal(12.50m, server.TransferVolume);
+            });
 
         await using var verification = await dataSource.OpenConnectionAsync();
         await using (var balanced = new NpgsqlCommand(

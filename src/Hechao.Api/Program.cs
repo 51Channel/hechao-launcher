@@ -539,6 +539,7 @@ builder.Services.AddSingleton<ServerHeartbeatTokenValidator>();
 builder.Services.AddSingleton<ServerHeartbeatRepository>();
 builder.Services.AddSingleton<EconomyServiceTokenValidator>();
 builder.Services.AddSingleton<EconomyRepository>();
+builder.Services.AddSingleton<AdminEconomyRepository>();
 builder.Services.AddSingleton<ServerRuntimeStatusRepository>();
 builder.Services.AddSingleton<ServerControlTokenValidator>();
 builder.Services.AddSingleton<ServerControlRepository>();
@@ -848,6 +849,7 @@ adminApi.MapDelete(
     .AddEndpointFilter<AdminAntiforgeryFilter>();
 adminApi.MapGet("/audit-logs", GetAdminAuditLogsAsync);
 adminApi.MapGet("/telemetry/summary", GetAdminLauncherTelemetrySummaryAsync);
+adminApi.MapAdminEconomy();
 adminApi.MapGet("/server-runtime/summary", GetAdminServerRuntimeSummaryAsync);
 adminApi.MapGet("/server-control/overview", GetAdminServerControlOverviewAsync);
 adminApi.MapGet(

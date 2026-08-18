@@ -8,6 +8,7 @@ const routes: RouteRecordRaw[] = [
   { path: "/package-imports", name: "package-imports", component: () => import("./views/PackageImportsView.vue"), meta: { title: "整合包导入" } },
   { path: "/activity-plans", name: "activity-plans", component: () => import("./views/ActivityPlansView.vue"), meta: { title: "活动企划" } },
   { path: "/telemetry", name: "telemetry", component: () => import("./views/TelemetryView.vue"), meta: { title: "运行数据" } },
+  { path: "/economy", name: "economy", component: () => import("./views/EconomyView.vue"), meta: { title: "经济监控" } },
   { path: "/runtime", name: "runtime", component: () => import("./views/RuntimeView.vue"), meta: { title: "服务状态" } },
   { path: "/control", name: "control", component: () => import("./views/ControlView.vue"), meta: { title: "服控面板" } },
   { path: "/alerts", name: "alerts", component: () => import("./views/AlertsView.vue"), meta: { title: "告警中心" } },

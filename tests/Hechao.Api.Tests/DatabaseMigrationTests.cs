@@ -303,4 +303,24 @@ public sealed class DatabaseMigrationTests
             sql,
             StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void EconomyDashboardMigration_AddsReadOptimizedIndexes()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.032_economy_dashboard_indexes.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("economy_operations", sql, StringComparison.Ordinal);
+        Assert.Contains("server_id, created_at DESC", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE status = 'Applied'", sql, StringComparison.Ordinal);
+        Assert.Contains("committed_operation_id", sql, StringComparison.Ordinal);
+        Assert.Contains(32, DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
+    }
 }

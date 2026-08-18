@@ -1,9 +1,9 @@
 # 管理员 Web 控制台与 MFA
 
-> 当前生产：API `0.30.6`，`AdminWeb__Enabled=true`
-> 生产状态：真实管理员已完成 MFA 和可信设备验收，十一页 Vue 后台与活动企划月历均已部署
+> 当前生产：API `0.33.1`，`AdminWeb__Enabled=true`
+> 生产状态：真实管理员已完成 MFA 和可信设备验收，十一页 Vue 后台与活动企划月历均已部署；第十二页“经济监控”仍是未发布候选
 > 管理入口：`https://admin.hechao.world/admin/`
-> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十一页“活动企划”已完成生产点击验收
+> 前端状态：Vue 3、TypeScript、Vite 与 Vue Router；第十二页“经济监控”已完成本地自动与视觉验收，尚未部署生产
 > 运行边界：服控只能通过独立最小权限代理执行结构化动作，网页不能取得 PowerShell、CMD、SSH 或任意进程权限
 
 ## 1. 登录链路
@@ -52,9 +52,9 @@
 ### 3.1 Vue 前端工程
 
 管理后台源码位于 `src/Hechao.Api/AdminWeb`，使用 Vue 3、TypeScript、Vite 和
-Vue Router。源码候选的十一个页面分别对应 `/admin/servers`、`users`、`profiles`、
-`package-imports`、`activity-plans`、`telemetry`、`runtime`、`control`、`alerts`、
-`diagnostics` 和 `audit`。
+Vue Router。源码候选的十二个页面分别对应 `/admin/servers`、`users`、`profiles`、
+`package-imports`、`activity-plans`、`telemetry`、`economy`、`runtime`、`control`、
+`alerts`、`diagnostics` 和 `audit`。
 ASP.NET Core 使用 `/admin/{*path:nonfile}` 回退到 Vue 入口，因此刷新深层路由仍由
 同一应用接管。
 
@@ -74,7 +74,7 @@ npm run test:e2e
 npm run build
 ```
 
-Playwright 覆盖十一个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
+Playwright 覆盖十二个路由的真实数据形态、移动端横向溢出、WCAG A/AA 自动检查、
 服控轮询期间的脏表单和控制台阅读位置、正式通道确认、修订冲突恢复，以及生产 CSP
 下从整合包页进入 FullCalendar。API 测试另验证静态资源 MIME、构建后样式锚点及哈希、
 `/admin/control` 深层路由、Host 锁定和安全响应头。
@@ -118,6 +118,28 @@ Playwright 覆盖十一个路由的真实数据形态、移动端横向溢出、
 允许进入。部署使用 `DEPLOY <planId>` 精确确认，成功后仍保持停服。页面每 5 秒刷新，
 并通过修订号防止与官网后台互相覆盖。完整操作与双端桥接见
 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md)。
+
+### 3.4 经济监控
+
+`/admin/economy` 通过管理员只读接口
+`GET /v1/admin/economy/overview?hours=<24|168|720|2160>&serverId=<可选>` 展示经济行情。
+页面使用 ECharts 绘制全局货币总量折线和区间新增货币柱线，并保留摘要、财富分布、
+玩家余额、物资回收和服务器流量表，因此图表不可用时仍有可读数据。
+
+货币账户是跨服共享的，服务器筛选不得伪造“单服余额”。红色总量线、余额排行、平均值、
+中位数、P90 和前 10% 财富占比始终按全局账户计算；选服只过滤新增货币、转账额、
+活跃玩家、物资回收与操作次数。没有正式交易时页面显示真实空状态，不生成演示行情。
+
+后端在同一 `RepeatableRead` 数据库快照中聚合所有指标。当前总量来自
+`economy_accounts`；窗口起点通过“当前总量减去窗口内玩家侧净增量”反推，玩家间转账的
+账本净额为零，因此不会错误增加货币供给。迁移 032 只增加已应用操作和已提交报价的
+查询索引，不修改迁移 031 的交易写入合同。
+
+本地候选已通过 API 测试 `366/366`（另有隔离 PostgreSQL 集成测试因本机未配置测试库而
+明确跳过）、Vitest `16/16`、Playwright `34/34`、十二路由 WCAG A/AA、1440px 与
+390px 截图和横向溢出检查。正式上线仍须先备份 PostgreSQL，应用迁移 032，验证空数据与
+真实出售/转账样本，再完成健康、日志、静态资源和直接回滚验收；当前文档不把本地候选
+写成已经生产部署。
 
 ## 4. 配置
 
@@ -181,9 +203,9 @@ location / {
 2. 备份 PostgreSQL，确认 `pg_restore --list` 可读。
 3. 备份 API 环境文件和 Nginx 站点。
 4. 创建并备份 Data Protection key ring。
-5. 部署当前候选 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、迁移 20、迁移 21、迁移 28、`healthz` 和 `readyz`。
+5. 部署当前候选 API 后确认迁移 5、迁移 6、迁移 10、迁移 11、迁移 15、迁移 16、迁移 19、迁移 20、迁移 21、迁移 28、迁移 31、迁移 32、`healthz` 和 `readyz`。
 6. 验证 `launcher-api.hechao.world/admin/` 返回 404，`admin.hechao.world/admin/` 返回控制台。
-7. 验证 `/admin/servers`、`/admin/activity-plans`、`/admin/control` 和 `/admin/audit` 直接刷新均返回 Vue 入口，浏览器控制台没有资源 404。
+7. 验证 `/admin/servers`、`/admin/activity-plans`、`/admin/economy`、`/admin/control` 和 `/admin/audit` 直接刷新均返回 Vue 入口，浏览器控制台没有资源 404。
 8. 用真实管理员从启动器打开后台，完成首次 TOTP 与恢复码保存；显式信任当前电脑后再次从启动器打开后台，确认不再要求动态码。
 9. 用普通成员确认票据端点返回 403。
 10. 创建一条隐藏测试服务器，编辑、归档、恢复，并核对修订冲突与审计记录。

@@ -14,6 +14,7 @@ const migratedRoutes = [
   ["package-imports", "整合包导入"],
   ["activity-plans", "活动企划"],
   ["telemetry", "运行数据"],
+  ["economy", "经济监控"],
   ["runtime", "服务状态"],
   ["control", "服控面板"],
   ["alerts", "统一告警中心"],
@@ -557,6 +558,51 @@ async function mockAdminApi(
         launcherVersions: [{ launcherVersion: "0.14.2", users: 12 }],
         profileVersions: [{ profileId: profileSummary.id, profileVersion: "1.0.0", users: 9, events: 44 }],
         failures: [{ type: "Install", failureCode: "NetworkUnavailable", count: 2 }]
+      } });
+    } else if (path === "/v1/admin/economy/overview") {
+      const windowHours = Number(url.searchParams.get("hours") ?? 24);
+      const pointCount = windowHours === 24 ? 24 : windowHours / 24;
+      const selectedServerId = url.searchParams.get("serverId");
+      await route.fulfill({ json: {
+        from: "2026-08-01T04:00:00Z",
+        to: "2026-08-02T04:00:00Z",
+        hours: windowHours,
+        serverId: selectedServerId,
+        servers: [{ serverId: "survival2", displayName: "天域生存服" }],
+        summary: {
+          totalSupply: 12500,
+          windowIssued: selectedServerId ? 510 : 850,
+          transferVolume: selectedServerId ? 260 : 420,
+          activePlayers: selectedServerId ? 11 : 18,
+          operationCount: selectedServerId ? 28 : 42
+        },
+        wealth: {
+          fundedAccounts: 36,
+          averageBalance: 347.22,
+          medianBalance: 185,
+          p90Balance: 920,
+          topTenPercentShare: 0.41
+        },
+        series: Array.from({ length: pointCount }, (_, index) => ({
+          at: new Date(Date.parse("2026-08-02T04:00:00Z") - (pointCount - index - 1) * (windowHours === 24 ? 3600000 : 86400000)).toISOString(),
+          totalSupply: 9200 + index * 140,
+          issuedAmount: index % 4 === 0 ? 0 : 70 + index * 3
+        })),
+        topBalances: [{
+          playerUuid: "11111111-1111-1111-1111-111111111111",
+          playerName: "HechaoPlayer",
+          balance: 2400,
+          supplyShare: 0.192
+        }],
+        products: [{ itemId: "minecraft:iron_ingot", quantity: 64, amount: 320, sellers: 4 }],
+        serverVolumes: [{
+          serverId: "survival2",
+          displayName: "天域生存服",
+          saleVolume: 510,
+          transferVolume: 260,
+          activePlayers: 11,
+          operationCount: 28
+        }]
       } });
     } else if (path === "/v1/admin/server-runtime/summary") {
       await route.fulfill({ json: {
@@ -1997,6 +2043,32 @@ test("infrastructure servers cannot be restored or converted back to player serv
   await page.getByRole("button", { name: "编辑服务器" }).click();
   await expect(page.getByLabel("服务器角色")).toBeDisabled();
   await expect(page.getByLabel("允许协议转换")).toBeDisabled();
+});
+
+test("economy dashboard renders a responsive market chart and filters server flow", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mockAdminApi(page);
+  await page.goto("/admin/economy");
+
+  await expect(page.locator(".page-heading h1")).toHaveText("经济监控");
+  await expect(page.getByText("12,500.00")).toBeVisible();
+  const canvas = page.locator(".economy-chart canvas");
+  await expect(canvas).toBeVisible();
+  const desktopChart = await page.locator(".economy-chart").boundingBox();
+  expect(desktopChart?.height).toBeGreaterThanOrEqual(420);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: "../../../artifacts/admin-web-economy-desktop.png", fullPage: true });
+
+  await page.getByLabel("服务器范围").selectOption("survival2");
+  await expect(page.getByText("流量范围：天域生存服", { exact: false })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByLabel("服务器范围")).toBeVisible();
+  const mobileChart = await page.locator(".economy-chart").boundingBox();
+  expect(mobileChart?.height).toBeGreaterThanOrEqual(330);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.screenshot({ path: "../../../artifacts/admin-web-economy-mobile.png", fullPage: true });
 });
 
 test("mobile navigation remains scrollable without covering page content", async ({ page }) => {

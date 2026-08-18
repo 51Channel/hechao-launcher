@@ -3031,6 +3031,217 @@ dialog::backdrop {
     }
 }
 
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    margin: -1px;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.economy-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.economy-server-filter {
+    width: 190px;
+}
+
+.economy-server-filter select {
+    height: 38px;
+    font-size: 12px;
+}
+
+.economy-period {
+    margin: 0 0 10px;
+    color: var(--ink-muted);
+    font-size: 11px;
+}
+
+.economy-summary {
+    margin-bottom: 24px;
+}
+
+.economy-market {
+    min-width: 0;
+    margin-bottom: 28px;
+}
+
+.economy-section-heading {
+    min-height: 48px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 10px;
+}
+
+.economy-section-heading h2,
+.economy-section-heading p {
+    margin: 0;
+}
+
+.economy-section-heading h2 {
+    font-size: 15px;
+}
+
+.economy-section-heading p,
+.economy-section-heading > span {
+    margin-top: 5px;
+    color: var(--ink-muted);
+    font-size: 11px;
+}
+
+.economy-section-heading > span {
+    white-space: nowrap;
+}
+
+.economy-chart {
+    width: 100%;
+    height: 430px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.economy-wealth {
+    margin-bottom: 28px;
+}
+
+.economy-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 1px;
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--line);
+}
+
+.economy-facts > div {
+    min-width: 0;
+    padding: 15px 17px;
+    background: var(--surface);
+}
+
+.economy-facts dt {
+    color: var(--ink-muted);
+    font-size: 11px;
+}
+
+.economy-facts dd {
+    margin: 7px 0 0;
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 750;
+}
+
+.economy-table-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.economy-table-grid > section {
+    min-width: 0;
+}
+
+.economy-table {
+    min-width: 560px;
+}
+
+.economy-table th:first-child,
+.economy-table td:first-child {
+    width: 42%;
+}
+
+.economy-table td strong,
+.economy-server-table td strong,
+.economy-server-table td small {
+    display: block;
+}
+
+.economy-table code,
+.economy-server-table td small {
+    color: var(--ink-muted);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 10px;
+}
+
+.economy-server-table {
+    min-width: 720px;
+}
+
+.economy-server-table th:first-child,
+.economy-server-table td:first-child {
+    width: 28%;
+}
+
+.economy-server-table td small {
+    margin-top: 4px;
+}
+
+@media (max-width: 980px) {
+    .economy-filters {
+        align-items: flex-end;
+        flex-direction: column;
+    }
+
+    .economy-table-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 680px) {
+    .economy-filters,
+    .economy-server-filter,
+    .economy-filters .segmented-control {
+        width: 100%;
+    }
+
+    .economy-filters {
+        align-items: stretch;
+    }
+
+    .economy-filters .segmented-control button {
+        min-width: 0;
+        flex: 1;
+        padding: 0 7px;
+    }
+
+    .economy-summary {
+        margin-bottom: 20px;
+    }
+
+    .economy-chart {
+        height: 340px;
+    }
+
+    .economy-section-heading {
+        min-height: 0;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .economy-section-heading > span {
+        margin-top: 0;
+    }
+
+    .economy-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .economy-facts > div {
+        padding: 13px;
+    }
+}
+
 /* Vue application shell and shared component states. */
 :root {
     font-family: "PingFang SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;

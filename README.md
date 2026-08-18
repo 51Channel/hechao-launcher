@@ -7,6 +7,11 @@
 > 完全不变，OSS 仅新增 `51,271` 字节对象。玩家退出旧游戏并由启动器增量更新后仍需完成
 > 真人点击验收。记录见
 > [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.7.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.7.md)
+
+> `2026-08-18` 管理后台经济监控候选：新增跨服货币供给行情、区间新增与转账额、财富
+> 分布、玩家余额、物资回收和服务器流量。总货币量始终按全局共享钱包统计，服务器筛选
+> 只影响交易流量；迁移 032 仅增加分析查询索引。候选尚未部署生产，验证与上线门见
+> [`docs/ADMIN_WEB_OPERATIONS.md`](docs/ADMIN_WEB_OPERATIONS.md#34-经济监控)。
 > 与
 > [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.16.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.16.md)。
 >
