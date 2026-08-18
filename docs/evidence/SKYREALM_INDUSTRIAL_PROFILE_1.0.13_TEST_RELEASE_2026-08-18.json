@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T01:20:00Z",
+  "source": {
+    "branch": "codex/economy-pause-menu-entry",
+    "featureCommit": "6fb3e68",
+    "candidateDocumentationCommit": "4ac0d3e"
+  },
+  "screen": {
+    "version": "0.1.4",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.1.4.jar",
+    "bytes": 30988,
+    "sha256": "9277424D8BD3CA8315A57C371A2712C5E4479725F822F71C6DC4FA4707FDC623",
+    "testsPassed": 9,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.13",
+    "manifestBytes": 2025522,
+    "manifestSha256": "5939CEFE4061FEAD5BBEBBF9A3E19F7AAC9656500CADF3BB2932F9E0845103FD",
+    "logicalFiles": 4457,
+    "logicalBytes": 1203312466,
+    "uniqueObjects": 4252,
+    "objectBytes": 1203303956,
+    "commonFilesWithPrevious": 4456,
+    "unchangedCommonFiles": 4456,
+    "samePathChangedFiles": 0,
+    "removed": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.3.jar"
+    ],
+    "added": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.4.jar"
+    ]
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 30988,
+    "anonymousOssStatus": 403,
+    "anonymousApiStatus": 401
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "health": "ok",
+    "ready": "ok",
+    "service": "active",
+    "restartCount": 0,
+    "importAuditRecorded": true,
+    "channelAuditRecorded": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.13",
+      "rolloutPercentage": 100,
+      "revision": 6
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.12",
+    "manifestSha256": "25E578B4C1C71996D4787E312D5F62A9BAC879D69ABEAF1B269C449B7577118A"
+  },
+  "runtime": {
+    "currentLocalProfileVersion": "1.0.12",
+    "currentLocalScreenVersion": "0.1.3",
+    "runningClientWasInterrupted": false,
+    "minecraftServerRestarted": false,
+    "velocityRestarted": false,
+    "apiRestarted": false,
+    "liveClientAcceptancePending": true
+  }
+}

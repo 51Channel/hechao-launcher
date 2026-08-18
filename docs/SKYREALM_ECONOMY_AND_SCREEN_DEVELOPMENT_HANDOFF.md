@@ -4,9 +4,9 @@
 > 对应开发日期：2026-08-14
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
-> 当前结论：API `0.33.1`、迁移 `031`、HechaoEconomy `0.1.5` 与 Screen `0.1.3` 已完成
-> 生产部署和真实 Arclight 冷启动验收；客户端档案 `1.0.12` 仍只在 Test，工业季保持停止，
-> 商品目录当前为空，等待服主配置正式价格与额度。
+> 当前结论：API `0.33.1`、迁移 `031`、HechaoEconomy `0.1.5` 与服务端 Screen `0.1.3`
+> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.4` 随档案 `1.0.13`
+> 只进入 `Test=100%`，工业季保持停止，商品目录当前为空，等待服主配置正式价格与额度。
 
 ## 1. 文档目的
 
@@ -57,8 +57,8 @@ flowchart LR
 | 层 | 组件 | 权威范围 |
 | --- | --- | --- |
 | 平台后端 | `Hechao.Api/Economy` | 余额、流水、商品、额度、报价、幂等和审计 |
-| 游戏服插件 | `HechaoEconomy 0.1.3` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
-| 双端模组 | `HechaoEconomyScreen 0.1.3` | 屏幕渲染、短期会话、固定按钮动作和网络载荷 |
+| 游戏服插件 | `HechaoEconomy 0.1.5` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
+| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.4` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
 
 ## 4. Economy Service 开发过程
 
@@ -445,6 +445,24 @@ Bukkit 插件 `0.1.5` 已改用 `Server.getPluginCommand()`，并通过 Essentia
 从 owl5 使用现有外置服务身份返回 `200`。HechaoEconomy `0.1.5` 的最终冷启动确认 API、
 Vault、命令归属与可交易四项均为 `true`，PAPI expansion 正常注册，且没有兼容、命令或
 Vault 冲突。验收后服务端正常保存三个维度并停止，计划任务为 `Ready`、`25600` 无监听。
+
+## 16. 2026-08-18 暂停菜单入口修复
+
+客户端 Screen `0.1.3` 只有 `/hechaomenu economy` 与 `/heco menu` 指令入口，没有向
+Minecraft `PauseScreen` 注册按钮。因此暂停菜单仍显示原生整行“模组”，并非布局或
+渲染冲突。
+
+客户端 Screen `0.1.4` 将原生 `204 px` 模组按钮拆为两个 `98 px` 按钮，中间保留
+`8 px` 原生间距；右侧“天域远征”只发送固定命令 `hechaomenu economy`，不会从客户端
+绕过服务端会话和权限检查。网络协议保持 `2`，所以服务端 `0.1.3` 无需重启。
+
+档案 `1.0.13` 保持 `1.0.12` 的 `4,456` 个共同文件逐哈希不变，仅替换 Screen JAR；
+OSS 仅新增 `30,988` 字节对象，Test 通道为 `100%`，Gray 与 Production 未分配。源码
+测试为 `9/9`。当前正在运行的 `1.0.12` 客户端未被热替换，必须退出游戏后由启动器执行
+原子更新再验收 ESC 菜单。正式记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md)
+与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md)。
 正式记录见 [`API_RELEASE_0.33.1.md`](API_RELEASE_0.33.1.md)、
 [`SKYREALM_ECONOMY_RELEASE_0.1.5.md`](SKYREALM_ECONOMY_RELEASE_0.1.5.md) 与
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.12.md)。

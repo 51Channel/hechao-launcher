@@ -1,5 +1,13 @@
 # 赫朝启动器
 
+> `2026-08-18` 工业季第三方屏幕入口已恢复：客户端 Screen `0.1.4` 在原生 ESC 暂停
+> 菜单中把“模组”一行拆为“模组 / 天域远征”，点击后仍由服务端命令、短期会话和权限
+> 规则授权。客户端档案 `1.0.13` 只进入 `Test=100%`，Gray 与 Production 未分配；
+> `1.0.12` 的 `4,456` 个共同文件完全不变，OSS 仅新增 `30,988` 字节对象。正式记录见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.4.md)
+> 与
+> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.13.md)。
+>
 > `2026-08-15` Launcher API `0.32.2` 已修复未发布客户端档案拖垮整份玩家目录的
 > 问题。API 现在只下发当前玩家能够同时取得客户端档案的服务器；未发布服务器继续
 > 保留在后台等待发布，不再阻断已有正式档案的赫朝商务追杀。生产实时目录已恢复为
