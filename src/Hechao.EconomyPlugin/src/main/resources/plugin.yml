@@ -22,8 +22,8 @@ commands:
     usage: /pay <玩家> <金额> [confirm]
     permission: hechao.economy.use
   sell:
-    description: 出售主手中的白名单物品
-    usage: /sell [confirm]
+    description: 打开放入式物品回收界面
+    usage: /sell
     permission: hechao.economy.use
   shop:
     description: 查看服务器回收目录

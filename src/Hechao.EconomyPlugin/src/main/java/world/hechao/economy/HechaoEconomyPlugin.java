@@ -24,6 +24,7 @@ import world.hechao.economy.api.HttpEconomyGateway;
 import world.hechao.economy.api.UnavailableEconomyGateway;
 import world.hechao.economy.commands.EconomyCommandRouter;
 import world.hechao.economy.gui.ShopMenu;
+import world.hechao.economy.gui.SellMenu;
 import world.hechao.economy.inventory.QuarantinedSaleStore;
 import world.hechao.economy.placeholder.HechaoBalanceExpansion;
 import world.hechao.economy.vault.HechaoVaultEconomy;
@@ -40,6 +41,7 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
     private HechaoVaultEconomy vaultProvider;
     private QuarantinedSaleStore quarantinedSales;
     private ShopMenu shopMenu;
+    private SellMenu sellMenu;
 
     @Override
     public void onEnable() {
@@ -61,10 +63,16 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
                 this,
                 ServicePriority.Highest);
         shopMenu = new ShopMenu();
+        sellMenu = new SellMenu(this, quarantinedSales);
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(shopMenu, this);
+        getServer().getPluginManager().registerEvents(sellMenu, this);
 
-        var commands = new EconomyCommandRouter(this, shopMenu, quarantinedSales);
+        var commands = new EconomyCommandRouter(
+                this,
+                shopMenu,
+                sellMenu,
+                quarantinedSales);
         registerCommand("money", commands);
         registerCommand("pay", commands);
         registerCommand("sell", commands);
@@ -87,6 +95,9 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
     public void onDisable() {
         vaultOwner.set(false);
         commandOwner.set(false);
+        if (sellMenu != null) {
+            sellMenu.closeAll();
+        }
         if (vaultProvider != null) {
             getServer().getServicesManager().unregister(Economy.class, vaultProvider);
         }

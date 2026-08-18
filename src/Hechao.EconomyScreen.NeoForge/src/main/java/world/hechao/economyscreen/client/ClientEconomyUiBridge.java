@@ -11,6 +11,7 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class ClientEconomyUiBridge {
     static final String ECONOMY_PREFIX = "[赫朝经济]";
     static final String CATALOG_TITLE = "赫朝回收目录";
+    static final String SELL_TITLE = "赫朝物品回收";
     private static final Set<String> EMBEDDED_ACTIONS = Set.of(
             "balance",
             "shop",
@@ -63,6 +64,14 @@ public final class ClientEconomyUiBridge {
         if (next instanceof ContainerScreen container
                 && CATALOG_TITLE.equals(next.getTitle().getString())) {
             event.setNewScreen(new EconomyCatalogScreen(container.getMenu()));
+        } else if (next instanceof ContainerScreen container
+                && SELL_TITLE.equals(next.getTitle().getString())) {
+            var player = Minecraft.getInstance().player;
+            if (player != null) {
+                event.setNewScreen(new EconomySellScreen(
+                        container.getMenu(),
+                        player.getInventory()));
+            }
         }
     }
 }

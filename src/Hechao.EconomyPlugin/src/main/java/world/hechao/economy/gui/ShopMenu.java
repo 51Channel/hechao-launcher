@@ -50,7 +50,7 @@ public final class ShopMenu implements Listener {
                     ChatColor.GOLD + "回收价: " + product.unitPrice().toPlainString() + " 金币",
                     ChatColor.GRAY + "个人日限: " + product.personalDailyLimit(),
                     ChatColor.GRAY + "全服日限: " + product.serverDailyLimit(),
-                    ChatColor.DARK_GRAY + "手持物品使用 /sell"));
+                    ChatColor.DARK_GRAY + "使用 /sell 放入物品回收"));
             item.setItemMeta(meta);
             session.inventory.setItem(slot, item);
         }

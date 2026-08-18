@@ -2,7 +2,6 @@ package world.hechao.economy.commands;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,21 +25,24 @@ import world.hechao.economy.HechaoEconomyPlugin;
 import world.hechao.economy.api.EconomyGateway;
 import world.hechao.economy.api.EconomyGatewayException;
 import world.hechao.economy.gui.ShopMenu;
+import world.hechao.economy.gui.SellMenu;
 import world.hechao.economy.inventory.QuarantinedSaleStore;
 import world.hechao.economy.inventory.SellItemPolicy;
 
 public final class EconomyCommandRouter implements CommandExecutor, TabCompleter {
     private final HechaoEconomyPlugin plugin;
     private final ShopMenu shopMenu;
+    private final SellMenu sellMenu;
     private final QuarantinedSaleStore quarantinedSales;
-    private final Map<UUID, PendingSale> pendingSales = new ConcurrentHashMap<>();
 
     public EconomyCommandRouter(
             HechaoEconomyPlugin plugin,
             ShopMenu shopMenu,
+            SellMenu sellMenu,
             QuarantinedSaleStore quarantinedSales) {
         this.plugin = plugin;
         this.shopMenu = shopMenu;
+        this.sellMenu = sellMenu;
         this.quarantinedSales = quarantinedSales;
     }
 
@@ -148,120 +150,12 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             unavailable(player);
             return true;
         }
-        if (args.length == 1 && "confirm".equalsIgnoreCase(args[0])) {
-            return confirmSale(player);
-        }
         if (args.length != 0) {
-            error(player, "用法: /sell [confirm]");
+            error(player, "用法: /sell");
             return true;
         }
-        var stack = player.getInventory().getItemInMainHand();
-        var validation = SellItemPolicy.validate(stack);
-        if (!validation.allowed()) {
-            error(player, validation.reason());
-            return true;
-        }
-        int quantity = stack.getAmount();
-        async(
-                () -> plugin.gateway().quote(
-                        player.getUniqueId(),
-                        validation.itemId(),
-                        quantity),
-                quote -> {
-                    pendingSales.put(
-                            player.getUniqueId(),
-                            new PendingSale(quote, Instant.now()));
-                    info(player, "报价: " + quantity + " 个 " + validation.itemId()
-                            + " = " + money(quote.totalAmount()));
-                    info(player, "30 秒内输入 /sell confirm 完成出售。");
-                },
-                exception -> gatewayError(player, exception));
+        sellMenu.open(player);
         return true;
-    }
-
-    private boolean confirmSale(Player player) {
-        var pending = pendingSales.remove(player.getUniqueId());
-        if (pending == null || pending.quote().expiresAt().isBefore(Instant.now())) {
-            error(player, "报价不存在或已经过期，请重新执行 /sell。");
-            return true;
-        }
-        var current = player.getInventory().getItemInMainHand();
-        var validation = SellItemPolicy.validate(current);
-        if (!validation.allowed()
-                || !pending.quote().itemId().equals(validation.itemId())
-                || current.getAmount() < pending.quote().quantity()) {
-            error(player, "主手物品已变化，出售已取消。");
-            return true;
-        }
-        int remaining = current.getAmount() - pending.quote().quantity();
-        var replacement = new ItemStack(Material.AIR);
-        if (remaining > 0) {
-            replacement = current.clone();
-            replacement.setAmount(remaining);
-        }
-        player.getInventory().setItemInMainHand(replacement);
-        var operationKey = UUID.randomUUID();
-        async(
-                () -> plugin.gateway().commit(
-                        "sale:" + operationKey,
-                        pending.quote().quoteId(),
-                        player.getUniqueId()),
-                commit -> {
-                    if ("Applied".equals(commit.status())) {
-                        plugin.updateCachedBalance(player.getUniqueId(), commit.balance());
-                        success(player, "出售成功，获得 " + money(commit.amount()));
-                    } else {
-                        restoreOrQuarantine(
-                                player,
-                                operationKey,
-                                pending.quote().itemId(),
-                                pending.quote().quantity(),
-                                safeCode(commit.failureCode()));
-                    }
-                },
-                exception -> {
-                    if (exception.isOutcomeUnknown()) {
-                        quarantinedSales.add(
-                                player.getUniqueId(),
-                                operationKey,
-                                pending.quote().itemId(),
-                                pending.quote().quantity(),
-                                "OUTCOME_UNKNOWN");
-                        error(player, "交易结果暂时无法确认，物品已进入隔离记录，请联系管理员。");
-                    } else {
-                        restoreOrQuarantine(
-                                player,
-                                operationKey,
-                                pending.quote().itemId(),
-                                pending.quote().quantity(),
-                                "DEFINITE_FAILURE");
-                    }
-                });
-        return true;
-    }
-
-    private void restoreOrQuarantine(
-            Player player,
-            UUID operationId,
-            String itemId,
-            int quantity,
-            String reason) {
-        var material = Material.matchMaterial(itemId);
-        if (material == null) {
-            quarantinedSales.add(
-                    player.getUniqueId(), operationId, itemId, quantity, reason);
-            error(player, "无法恢复物品，已写入隔离记录。");
-            return;
-        }
-        var leftovers = player.getInventory().addItem(new ItemStack(material, quantity));
-        int quarantined = leftovers.values().stream().mapToInt(ItemStack::getAmount).sum();
-        if (quarantined > 0) {
-            quarantinedSales.add(
-                    player.getUniqueId(), operationId, itemId, quarantined, reason);
-            error(player, "背包空间不足，剩余物品已写入隔离记录。");
-        } else {
-            error(player, "出售未完成，物品已退回背包。");
-        }
     }
 
     private boolean shop(CommandSender sender) {
@@ -463,9 +357,7 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             @NotNull String alias,
             @NotNull String[] args) {
         var options = new ArrayList<String>();
-        if ("sell".equalsIgnoreCase(command.getName()) && args.length == 1) {
-            options.add("confirm");
-        } else if ("heco".equalsIgnoreCase(command.getName()) && args.length == 1) {
+        if ("heco".equalsIgnoreCase(command.getName()) && args.length == 1) {
             options.addAll(List.of("health", "menu", "product", "reload"));
         } else if ("heco".equalsIgnoreCase(command.getName())
                 && args.length == 2
@@ -483,8 +375,5 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
     @FunctionalInterface
     private interface CheckedSupplier<T> {
         T get() throws EconomyGatewayException;
-    }
-
-    private record PendingSale(EconomyGateway.SaleQuote quote, Instant createdAt) {
     }
 }

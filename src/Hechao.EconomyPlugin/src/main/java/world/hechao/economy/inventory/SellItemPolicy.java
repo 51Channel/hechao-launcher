@@ -27,7 +27,7 @@ public final class SellItemPolicy {
 
     public static Validation validate(ItemStack stack) {
         if (stack == null) {
-            return new Validation(false, null, "主手没有可出售物品。");
+            return new Validation(false, null, "出售槽中没有物品。");
         }
         var key = stack.getType().getKey();
         return evaluate(
@@ -45,7 +45,7 @@ public final class SellItemPolicy {
             boolean air,
             int amount) {
         if (air || amount < 1) {
-            return new Validation(false, null, "主手没有可出售物品。");
+            return new Validation(false, null, "出售槽中没有物品。");
         }
         if (hasItemMeta) {
             return new Validation(false, null, "带名称、附魔、容器或其他数据的物品不能出售。");
