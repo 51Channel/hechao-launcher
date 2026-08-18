@@ -10,12 +10,26 @@ import org.junit.jupiter.api.Test;
 
 final class MenuActionsTest {
     @Test
-    void includesServerOwnerProductConfigurationAction() {
-        var action = MenuActions.all().get("admin_product");
+    void playerMenuDoesNotExposeServerOwnerConfiguration() {
+        assertFalse(MenuActions.all().containsKey("admin_product"));
+    }
 
-        assertEquals("服主回收设置", action.label());
-        assertEquals("hechaoeconomy:heco product", action.command());
-        assertEquals(true, action.administratorOnly());
+    @Test
+    void externalFeaturesUseTheirOwningPluginNamespace() {
+        assertEquals(
+                "skyrealmcore:settings",
+                MenuActions.all().get("settings").command());
+        assertEquals(
+                "skyrealmcore:team",
+                MenuActions.all().get("team").command());
+    }
+
+    @Test
+    void saleActionOpensDepositWorkflow() {
+        var action = MenuActions.all().get("sell");
+
+        assertEquals("出售物品", action.label());
+        assertEquals("放入物品并确认回收", action.description());
     }
 
     @Test
@@ -70,7 +84,7 @@ final class MenuActionsTest {
     }
 
     @Test
-    void administratorActionsRelyOnBukkitPermissionInsteadOfMinecraftOpLevel()
+    void externalActionsAreFilteredByTheirServerCommandRequirement()
             throws Exception {
         var source = Files.readString(Path.of(
                 "src",
@@ -82,6 +96,7 @@ final class MenuActionsTest {
                 "HechaoEconomyScreenMod.java"));
 
         assertFalse(source.contains("player.hasPermissions(2)"));
+        assertTrue(source.contains("node.canUse(player.createCommandSourceStack())"));
         assertTrue(source.contains("Set.copyOf(actionIds)"));
         assertTrue(source.contains("performPrefixedCommand"));
     }

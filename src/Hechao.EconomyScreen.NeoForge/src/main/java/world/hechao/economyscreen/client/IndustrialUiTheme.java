@@ -109,6 +109,99 @@ final class IndustrialUiTheme {
         graphics.fill(left, top, left + 2, bottom, color);
     }
 
+    static void renderInstrumentBay(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            int accent) {
+        graphics.fill(left + 2, top + 2, left + width + 2, top + height + 2, 0x72000000);
+        graphics.fill(left, top, left + width, top + height, 0xF0181D1F);
+        graphics.renderOutline(left, top, width, height, 0xFF596467);
+        graphics.renderOutline(left + 2, top + 2, width - 4, height - 4, 0xFF2D3638);
+        graphics.fill(left + 3, top + 3, left + width - 3, top + 5, accent);
+        graphics.fill(left + 3, top + height - 5, left + width - 3, top + height - 3,
+                0xFF30393B);
+        renderCornerBracket(graphics, left + 5, top + 7, 1);
+        renderCornerBracket(graphics, left + width - 6, top + 7, -1);
+    }
+
+    static void renderIconDock(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int size,
+            int accent) {
+        graphics.fill(left + 2, top + 2, left + size + 2, top + size + 2, 0x66000000);
+        graphics.fill(left, top, left + size, top + size, 0xFF242B2D);
+        graphics.renderOutline(left, top, size, size, 0xFF657174);
+        graphics.renderOutline(left + 3, top + 3, size - 6, size - 6, 0xFF363F42);
+        graphics.fill(left + 5, top + 5, left + size - 5, top + 7, accent);
+        graphics.fill(left + 5, top + size - 7, left + size - 5, top + size - 5,
+                0xFF3B4547);
+    }
+
+    static void renderStatusLamp(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int color,
+            boolean active) {
+        graphics.fill(left, top, left + 7, top + 7, 0xFF111517);
+        graphics.renderOutline(left, top, 7, 7, 0xFF596366);
+        graphics.fill(
+                left + 2,
+                top + 2,
+                left + 5,
+                top + 5,
+                active ? color : 0xFF30383A);
+    }
+
+    static void renderSignalTicks(
+            GuiGraphics graphics,
+            int left,
+            int right,
+            int y,
+            int color,
+            int activeTicks) {
+        int tickWidth = 7;
+        int gap = 3;
+        int maximum = Math.max(0, (right - left + gap) / (tickWidth + gap));
+        for (int index = 0; index < maximum; index++) {
+            int x = left + index * (tickWidth + gap);
+            graphics.fill(
+                    x,
+                    y,
+                    Math.min(right, x + tickWidth),
+                    y + 2,
+                    index < activeTicks ? color : 0xFF354043);
+        }
+    }
+
+    static void renderInputField(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            boolean focused) {
+        graphics.fill(left + 1, top + 1, left + width + 1, top + height + 1, 0x59000000);
+        graphics.fill(left, top, left + width, top + height, 0xEB171C1E);
+        graphics.renderOutline(
+                left,
+                top,
+                width,
+                height,
+                focused ? 0xFFE2B95F : 0xFF596467);
+        graphics.fill(
+                left + 2,
+                top + height - 2,
+                left + width - 2,
+                top + height - 1,
+                focused ? 0xFF6DAEA8 : 0xFF35494A);
+    }
+
     static void renderEmblem(
             GuiGraphics graphics,
             int left,
@@ -129,5 +222,20 @@ final class IndustrialUiTheme {
     private static void renderRivet(GuiGraphics graphics, int x, int y) {
         graphics.fill(x, y, x + 2, y + 2, 0xFFB78C45);
         graphics.fill(x + 1, y + 1, x + 2, y + 2, 0xFF594421);
+    }
+
+    private static void renderCornerBracket(
+            GuiGraphics graphics,
+            int x,
+            int y,
+            int direction) {
+        int horizontalEnd = x + direction * 7;
+        graphics.fill(
+                Math.min(x, horizontalEnd),
+                y,
+                Math.max(x, horizontalEnd) + 1,
+                y + 1,
+                0xFF8D713E);
+        graphics.fill(x, y, x + 1, y + 7, 0xFF8D713E);
     }
 }

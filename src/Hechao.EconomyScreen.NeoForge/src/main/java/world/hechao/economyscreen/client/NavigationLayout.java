@@ -7,6 +7,8 @@ final class NavigationLayout {
     static final int ROW_STRIDE = BUTTON_HEIGHT + ROW_GAP;
     static final int NAVIGATION_GAP = 8;
     static final int NAVIGATION_HEIGHT = 20;
+    static final int RETURN_GAP = 8;
+    static final int RETURN_HEIGHT = 20;
 
     private static final int TWO_COLUMN_MINIMUM_WIDTH = 430;
     private static final int MAXIMUM_GRID_WIDTH = 406;
@@ -49,12 +51,14 @@ final class NavigationLayout {
         int bottomMargin = screenHeight < 120 ? 4 : BOTTOM_MARGIN;
         int availableHeight = Math.max(
                 BUTTON_HEIGHT,
-                screenHeight - contentTop - bottomMargin);
+                screenHeight - contentTop - bottomMargin
+                        - RETURN_GAP - RETURN_HEIGHT);
         int visibleRows = Math.min(
                 totalRows,
                 Math.max(1, (availableHeight + ROW_GAP) / ROW_STRIDE));
         boolean needsNavigation = totalRows > visibleRows;
-        if (needsNavigation) {
+        boolean sharedFooter = needsNavigation && screenHeight < 130;
+        if (needsNavigation && !sharedFooter) {
             int gridHeightWithNavigation = Math.max(
                     BUTTON_HEIGHT,
                     availableHeight - NAVIGATION_GAP - NAVIGATION_HEIGHT);
@@ -68,7 +72,11 @@ final class NavigationLayout {
         int gridHeight = visibleRows * BUTTON_HEIGHT
                 + Math.max(0, visibleRows - 1) * ROW_GAP;
         int blockHeight = gridHeight
-                + (needsNavigation ? NAVIGATION_GAP + NAVIGATION_HEIGHT : 0);
+                + (needsNavigation && !sharedFooter
+                        ? NAVIGATION_GAP + NAVIGATION_HEIGHT
+                        : 0)
+                + RETURN_GAP
+                + RETURN_HEIGHT;
         int gridTop = Math.max(contentTop, (screenHeight - blockHeight) / 2);
         int maximumGridTop = Math.max(4, screenHeight - bottomMargin - blockHeight);
         gridTop = Math.min(gridTop, maximumGridTop);
@@ -76,6 +84,11 @@ final class NavigationLayout {
         int navigationTop = needsNavigation
                 ? gridTop + gridHeight + NAVIGATION_GAP
                 : -1;
+        int returnTop = sharedFooter
+                ? navigationTop
+                : (needsNavigation
+                ? navigationTop + NAVIGATION_HEIGHT
+                : gridTop + gridHeight) + RETURN_GAP;
 
         return new Layout(
                 columns,
@@ -90,6 +103,8 @@ final class NavigationLayout {
                 buttonWidth,
                 titleTop,
                 navigationTop,
+                returnTop,
+                sharedFooter,
                 needsNavigation);
     }
 
@@ -106,6 +121,8 @@ final class NavigationLayout {
             int buttonWidth,
             int titleTop,
             int navigationTop,
+            int returnTop,
+            boolean sharedFooter,
             boolean needsNavigation) {
     }
 }

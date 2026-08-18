@@ -69,7 +69,7 @@ public final class HechaoEconomyScreenMod {
     private static int openMenu(ServerPlayer player) {
         var actionIds = ACTIONS.entrySet().stream()
                 .filter(entry -> entry.getValue().command().startsWith("hechaoeconomy:")
-                        || isCommandRegistered(player, entry.getValue().command()))
+                        || isCommandUsable(player, entry.getValue().command()))
                 .map(Map.Entry::getKey)
                 .toList();
         if (actionIds.isEmpty()) {
@@ -86,16 +86,17 @@ public final class HechaoEconomyScreenMod {
         return 1;
     }
 
-    private static boolean isCommandRegistered(
+    private static boolean isCommandUsable(
             ServerPlayer player,
             String command) {
         var separator = command.indexOf(' ');
         var root = separator < 0 ? command : command.substring(0, separator);
-        return player.getServer()
+        var node = player.getServer()
                 .getCommands()
                 .getDispatcher()
                 .getRoot()
-                .getChild(root) != null;
+                .getChild(root);
+        return node != null && node.canUse(player.createCommandSourceStack());
     }
 
     private static void handleOpenMenu(

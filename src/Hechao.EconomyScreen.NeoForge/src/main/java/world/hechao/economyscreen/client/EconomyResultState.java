@@ -13,6 +13,7 @@ final class EconomyResultState {
             "不可",
             "拒绝",
             "没有权限",
+            "没有可出售",
             "过期",
             "不存在",
             "无法",

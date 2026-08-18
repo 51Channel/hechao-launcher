@@ -36,6 +36,8 @@ final class NavigationLayoutTest {
         var layout = NavigationLayout.calculate(240, 100, 6, 0);
 
         assertTrue(layout.gridTop() >= layout.titleTop() + 34);
+        assertTrue(layout.sharedFooter());
+        assertEquals(layout.navigationTop(), layout.returnTop());
     }
 
     @Test

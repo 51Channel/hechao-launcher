@@ -5,7 +5,9 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.ChestMenu;
@@ -21,10 +23,12 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private EconomyCatalogLayout.Layout layout;
     private Button previousButton;
     private Button nextButton;
+    private EditBox searchBox;
     private ItemStack hovered = ItemStack.EMPTY;
     private int page;
     private int observedServerPage = -1;
     private boolean moveToLastPageAfterServerChange;
+    private String searchQuery = "";
 
     EconomyCatalogScreen(ChestMenu menu) {
         super(Component.literal(ClientEconomyUiBridge.CATALOG_TITLE));
@@ -61,10 +65,11 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 buttonY,
                 CLOSE_BUTTON_WIDTH,
                 BUTTON_HEIGHT,
-                Component.literal("完成"),
-                ignored -> onClose()));
+                Component.literal("返回首页"),
+                ignored -> returnHome()));
+        addSearchBox();
         observedServerPage = serverPageInfo().page();
-        syncNavigation(products().size());
+        syncNavigation(filteredProducts().size());
     }
 
     @Override
@@ -77,7 +82,8 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 page = maximumPage(products().size());
                 moveToLastPageAfterServerChange = false;
             }
-            syncNavigation(products().size());
+            page = 0;
+            syncNavigation(filteredProducts().size());
         }
     }
 
@@ -87,7 +93,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             int mouseX,
             int mouseY,
             float partialTick) {
-        var products = products();
+        var products = filteredProducts();
         syncNavigation(products.size());
         IndustrialUiTheme.renderPanel(
                 graphics,
@@ -95,26 +101,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 layout.panelTop(),
                 layout.panelWidth(),
                 layout.panelHeight());
-        IndustrialUiTheme.renderEmblem(
-                graphics,
-                layout.panelLeft() + 10,
-                layout.panelTop() + 6,
-                22);
-        graphics.drawString(
-                font,
-                title,
-                layout.panelLeft() + 39,
-                layout.panelTop() + 11,
-                0xFFFFFFFF,
-                true);
-        graphics.drawString(
-                font,
-                serverPageInfo().totalItemCount() + " 项",
-                layout.panelLeft() + layout.panelWidth()
-                        - 12 - font.width(serverPageInfo().totalItemCount() + " 项"),
-                layout.panelTop() + 11,
-                0xFFB7BBC0,
-                false);
+        renderHeader(graphics, products.size());
 
         hovered = ItemStack.EMPTY;
         if (products.isEmpty()) {
@@ -122,13 +109,15 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                     + (layout.footerTop() - layout.contentTop()) / 2;
             graphics.drawCenteredString(
                     font,
-                    "暂无已启用的回收商品",
+                    searchQuery.isBlank() ? "暂无已启用的回收商品" : "本批没有匹配商品",
                     width / 2,
                     centerY - 8,
                     0xFFFFFFFF);
             graphics.drawCenteredString(
                     font,
-                    "商品开放后会自动显示在这里",
+                    searchQuery.isBlank()
+                            ? "商品开放后会自动显示在这里"
+                            : "可切换批次或调整搜索词",
                     width / 2,
                     centerY + 8,
                     0xFF9FA4A9);
@@ -239,6 +228,10 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     }
 
     private List<ItemStack> products() {
+        return filteredProducts();
+    }
+
+    private List<ItemStack> rawProducts() {
         var products = new ArrayList<ItemStack>();
         int productSlots = Math.min(
                 EconomyCatalogServerPage.PRODUCT_SLOTS,
@@ -250,6 +243,15 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             }
         }
         return List.copyOf(products);
+    }
+
+    private List<ItemStack> filteredProducts() {
+        return rawProducts().stream()
+                .filter(item -> EconomyCatalogSearch.matches(
+                        searchQuery,
+                        displayName(item),
+                        BuiltInRegistries.ITEM.getKey(item.getItem()).toString()))
+                .toList();
     }
 
     private void changePage(int direction) {
@@ -317,11 +319,11 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
 
     private EconomyCatalogServerPage.Info serverPageInfo() {
         if (EconomyCatalogServerPage.PAGE_INFO_SLOT >= menu.slots.size()) {
-            return EconomyCatalogServerPage.parse("", products().size());
+            return EconomyCatalogServerPage.parse("", rawProducts().size());
         }
         var item = menu.getSlot(EconomyCatalogServerPage.PAGE_INFO_SLOT).getItem();
         String label = item.isEmpty() ? "" : item.getHoverName().getString();
-        return EconomyCatalogServerPage.parse(label, products().size());
+        return EconomyCatalogServerPage.parse(label, rawProducts().size());
     }
 
     private void clickServerControl(int slot) {
@@ -364,5 +366,81 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         }
         return font.plainSubstrByWidth(text, Math.max(0, maximumWidth - font.width("...")))
                 + "...";
+    }
+
+    private void addSearchBox() {
+        boolean compact = layout.panelWidth() < 260;
+        int searchWidth = compact
+                ? Math.max(80, layout.panelWidth() - 70)
+                : Math.min(132, Math.max(76, layout.panelWidth() - 230));
+        int searchX = compact
+                ? layout.panelLeft() + (layout.panelWidth() - searchWidth) / 2
+                : layout.panelLeft() + layout.panelWidth() - searchWidth - 58;
+        searchBox = new EditBox(
+                font,
+                searchX + 5,
+                layout.panelTop() + 10,
+                searchWidth - 10,
+                16,
+                Component.literal("搜索商品"));
+        searchBox.setBordered(false);
+        searchBox.setMaxLength(48);
+        searchBox.setHint(Component.literal("搜索商品"));
+        searchBox.setValue(searchQuery);
+        searchBox.setResponder(value -> {
+            searchQuery = value;
+            page = 0;
+            syncNavigation(filteredProducts().size());
+        });
+        addRenderableWidget(searchBox);
+    }
+
+    private void renderHeader(GuiGraphics graphics, int visibleItemCount) {
+        boolean compact = layout.panelWidth() < 260;
+        if (!compact) {
+            IndustrialUiTheme.renderEmblem(
+                    graphics,
+                    layout.panelLeft() + 10,
+                    layout.panelTop() + 6,
+                    22);
+            graphics.drawString(
+                    font,
+                    title,
+                    layout.panelLeft() + 39,
+                    layout.panelTop() + 11,
+                    0xFFFFFFFF,
+                    true);
+        }
+
+        int fieldLeft = searchBox.getX() - 5;
+        IndustrialUiTheme.renderInputField(
+                graphics,
+                fieldLeft,
+                layout.panelTop() + 9,
+                searchBox.getWidth() + 10,
+                18,
+                searchBox.isFocused());
+
+        if (!compact) {
+            String count = searchQuery.isBlank()
+                    ? serverPageInfo().totalItemCount() + " 项"
+                    : visibleItemCount + " 项";
+            graphics.drawString(
+                    font,
+                    count,
+                    layout.panelLeft() + layout.panelWidth() - 12 - font.width(count),
+                    layout.panelTop() + 11,
+                    0xFFB7BBC0,
+                    false);
+        }
+    }
+
+    private void returnHome() {
+        if (minecraft != null
+                && minecraft.player != null
+                && minecraft.player.containerMenu == menu) {
+            minecraft.player.closeContainer();
+        }
+        ClientEconomyUiBridge.requestHome();
     }
 }

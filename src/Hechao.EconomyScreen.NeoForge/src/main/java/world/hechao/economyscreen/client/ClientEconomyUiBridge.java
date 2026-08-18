@@ -38,11 +38,23 @@ public final class ClientEconomyUiBridge {
                 loadingMessage));
     }
 
+    static void requestHome() {
+        var connection = Minecraft.getInstance().getConnection();
+        if (connection != null) {
+            connection.sendCommand("hechaomenu economy");
+        }
+    }
+
     private static void onSystemMessage(ClientChatReceivedEvent.System event) {
         var minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof EconomyResultScreen screen
-                && event.getMessage().getString().contains(ECONOMY_PREFIX)) {
+        String message = event.getMessage().getString();
+        if (!message.contains(ECONOMY_PREFIX)) {
+            return;
+        }
+        if (minecraft.screen instanceof EconomyResultScreen screen) {
             screen.acceptMessage(event.getMessage());
+        } else if (minecraft.screen instanceof HechaoNavigationScreen screen) {
+            screen.acceptEconomyMessage(message);
         }
     }
 

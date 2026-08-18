@@ -27,48 +27,35 @@ public final class MenuActions {
                         "我的余额",
                         "查看当前金币余额",
                         "正在查询余额...",
-                        "hechaoeconomy:money",
-                        false));
+                        "hechaoeconomy:money"));
         actions.put(
                 "shop",
                 new Definition(
                         "回收目录",
                         "查看当前可出售物品",
                         "正在打开回收目录...",
-                        "hechaoeconomy:shop",
-                        false));
+                        "hechaoeconomy:shop"));
         actions.put(
                 "sell",
                 new Definition(
-                        "出售主手",
-                        "为主手物品创建报价",
-                        "正在处理主手物品...",
-                        "hechaoeconomy:sell",
-                        false));
-        actions.put(
-                "admin_product",
-                new Definition(
-                        "服主回收设置",
-                        "手持物品配置回收价（管理员）",
-                        "正在打开回收设置...",
-                        "hechaoeconomy:heco product",
-                        true));
+                        "出售物品",
+                        "放入物品并确认回收",
+                        "正在打开出售界面...",
+                        "hechaoeconomy:sell"));
         actions.put(
                 "settings",
                 new Definition(
                         "个人设置",
                         "打开生存服个人设置",
                         "正在打开个人设置...",
-                        "settings",
-                        false));
+                        "skyrealmcore:settings"));
         actions.put(
                 "team",
                 new Definition(
                         "我的队伍",
                         "打开队伍功能",
                         "正在打开队伍...",
-                        "team",
-                        false));
+                        "skyrealmcore:team"));
         return Collections.unmodifiableMap(actions);
     }
 
@@ -76,7 +63,6 @@ public final class MenuActions {
             String label,
             String description,
             String feedback,
-            String command,
-            boolean administratorOnly) {
+            String command) {
     }
 }
