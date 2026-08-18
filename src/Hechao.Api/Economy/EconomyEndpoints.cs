@@ -18,7 +18,214 @@ public static class EconomyEndpoints
         economy.MapPost("/products/disable", DisableProductAsync);
         economy.MapPut("/products/{itemId}", UpsertProductAsync);
         economy.MapPost("/products/{itemId}/disable", DisableProductAsync);
+        economy.MapGet("/market/listings", ListMarketListingsAsync);
+        economy.MapGet("/market/listings/mine/{playerUuid:guid}", ListOwnMarketListingsAsync);
+        economy.MapPost("/market/listings", CreateMarketListingAsync);
+        economy.MapPost("/market/purchases", PurchaseMarketListingAsync);
+        economy.MapPost("/market/cancellations", CancelMarketListingAsync);
+        economy.MapGet("/market/deliveries/{playerUuid:guid}", ListMarketDeliveriesAsync);
+        economy.MapPost("/market/deliveries/claim", ClaimMarketDeliveryAsync);
         return endpoints;
+    }
+
+    private static async Task<IResult> ListMarketListingsAsync(
+        string? query,
+        int? limit,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidMarketQuery(query) || limit is < 1 or > 500)
+        {
+            return Validation("query", "市场搜索参数无效。");
+        }
+
+        return Results.Ok(await repository.ListMarketListingsAsync(
+            serverId!,
+            query?.Trim(),
+            limit ?? 500,
+            cancellationToken));
+    }
+
+    private static async Task<IResult> ListOwnMarketListingsAsync(
+        Guid playerUuid,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        return playerUuid == Guid.Empty
+            ? Validation("playerUuid", "玩家 UUID 无效。")
+            : Results.Ok(await repository.ListOwnMarketListingsAsync(
+                serverId!, playerUuid, cancellationToken));
+    }
+
+    private static async Task<IResult> CreateMarketListingAsync(
+        EconomyMarketCreateListingRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        IOptions<EconomyServiceOptions> options,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        var settings = options.Value;
+        if (!EconomyRules.IsValidMarketListing(request, settings.MaximumTransferAmount))
+        {
+            return Validation("request", "市场上架参数无效。");
+        }
+
+        try
+        {
+            var response = await repository.CreateMarketListingAsync(
+                serverId!,
+                request with
+                {
+                    SellerName = request.SellerName.Trim(),
+                    ItemId = request.ItemId.Trim()
+                },
+                settings.MarketListingFeeRate,
+                settings.MarketMinimumListingFee,
+                settings.MarketMaximumActiveListings,
+                TimeSpan.FromHours(settings.MarketListingLifetimeHours),
+                cancellationToken);
+            return MarketWriteResult(response.Status, response);
+        }
+        catch (EconomyIdempotencyConflictException)
+        {
+            return IdempotencyConflict();
+        }
+    }
+
+    private static async Task<IResult> PurchaseMarketListingAsync(
+        EconomyMarketPurchaseRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        IOptions<EconomyServiceOptions> options,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidMarketPurchase(request))
+        {
+            return Validation("request", "市场购买参数无效。");
+        }
+
+        try
+        {
+            var response = await repository.PurchaseMarketListingAsync(
+                serverId!,
+                request with { BuyerName = request.BuyerName.Trim() },
+                options.Value.MarketTransactionTaxRate,
+                cancellationToken);
+            return MarketWriteResult(response.Status, response);
+        }
+        catch (EconomyIdempotencyConflictException)
+        {
+            return IdempotencyConflict();
+        }
+    }
+
+    private static async Task<IResult> CancelMarketListingAsync(
+        EconomyMarketCancelRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidMarketCancel(request))
+        {
+            return Validation("request", "市场下架参数无效。");
+        }
+
+        try
+        {
+            var response = await repository.CancelMarketListingAsync(
+                serverId!, request, cancellationToken);
+            return MarketWriteResult(response.Status, response);
+        }
+        catch (EconomyIdempotencyConflictException)
+        {
+            return IdempotencyConflict();
+        }
+    }
+
+    private static async Task<IResult> ListMarketDeliveriesAsync(
+        Guid playerUuid,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        return playerUuid == Guid.Empty
+            ? Validation("playerUuid", "玩家 UUID 无效。")
+            : Results.Ok(await repository.ListMarketDeliveriesAsync(
+                serverId!, playerUuid, cancellationToken));
+    }
+
+    private static async Task<IResult> ClaimMarketDeliveryAsync(
+        EconomyMarketClaimRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidMarketClaim(request))
+        {
+            return Validation("request", "待领取物品参数无效。");
+        }
+
+        try
+        {
+            var response = await repository.ClaimMarketDeliveryAsync(
+                serverId!, request, cancellationToken);
+            return MarketWriteResult(response.Status, response);
+        }
+        catch (EconomyIdempotencyConflictException)
+        {
+            return IdempotencyConflict();
+        }
     }
 
     private static async Task<IResult> GetBalanceAsync(
@@ -258,4 +465,9 @@ public static class EconomyEndpoints
         code = "IDEMPOTENCY_CONFLICT",
         message = "幂等键已被另一笔请求使用。"
     });
+
+    private static IResult MarketWriteResult<T>(string status, T response) =>
+        status == "Applied"
+            ? Results.Ok(response)
+            : Results.Json(response, statusCode: StatusCodes.Status409Conflict);
 }

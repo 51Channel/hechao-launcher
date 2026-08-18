@@ -26,15 +26,22 @@ public sealed class EconomyPostgresIntegrationTests
                 connection);
             await reset.ExecuteNonQueryAsync();
 
-            const string resourceName =
-                "Hechao.Api.Database.Migrations.031_economy_ledger.sql";
-            await using var stream = typeof(DatabaseMigrator).Assembly
-                .GetManifestResourceStream(resourceName);
-            Assert.NotNull(stream);
-            using var reader = new StreamReader(stream);
-            var sql = await reader.ReadToEndAsync();
-            await using var migration = new NpgsqlCommand(sql, connection);
-            await migration.ExecuteNonQueryAsync();
+            foreach (var resourceName in new[]
+            {
+                "Hechao.Api.Database.Migrations.031_economy_ledger.sql",
+                "Hechao.Api.Database.Migrations.032_economy_dashboard_indexes.sql",
+                "Hechao.Api.Database.Migrations.033_economy_item_history_index.sql",
+                "Hechao.Api.Database.Migrations.034_economy_player_market.sql"
+            })
+            {
+                await using var stream = typeof(DatabaseMigrator).Assembly
+                    .GetManifestResourceStream(resourceName);
+                Assert.NotNull(stream);
+                using var reader = new StreamReader(stream);
+                var sql = await reader.ReadToEndAsync();
+                await using var migration = new NpgsqlCommand(sql, connection);
+                await migration.ExecuteNonQueryAsync();
+            }
             await using var dashboardSupport = new NpgsqlCommand(
                 """
                 CREATE TABLE launcher.servers (
@@ -264,6 +271,128 @@ public sealed class EconomyPostgresIntegrationTests
             "minecraft:missing_item",
             null,
             CancellationToken.None));
+
+        var listingRequest = new EconomyMarketCreateListingRequest(
+            "market-list:integration-0001",
+            playerUuid,
+            "IntegrationSeller",
+            modded.ItemId,
+            4,
+            20.00m);
+        var listing = await repository.CreateMarketListingAsync(
+            "activity-survival",
+            listingRequest,
+            0.01m,
+            1.00m,
+            5,
+            TimeSpan.FromHours(24),
+            CancellationToken.None);
+        var repeatedListing = await repository.CreateMarketListingAsync(
+            "activity-survival",
+            listingRequest,
+            0.01m,
+            1.00m,
+            5,
+            TimeSpan.FromHours(24),
+            CancellationToken.None);
+        Assert.Equal("Applied", listing.Status);
+        Assert.Equal(1.00m, listing.ListingFee);
+        Assert.Equal(listing.OperationId, repeatedListing.OperationId);
+        Assert.Equal(listing.Listing!.ListingId, repeatedListing.Listing!.ListingId);
+
+        var search = await repository.ListMarketListingsAsync(
+            "activity-survival",
+            "IntegrationSeller",
+            100,
+            CancellationToken.None);
+        Assert.Collection(search, result =>
+        {
+            Assert.Equal(modded.ItemId, result.ItemId);
+            Assert.Equal(4, result.Quantity);
+        });
+        Assert.Empty(await repository.ListMarketListingsAsync(
+            "another-server",
+            null,
+            100,
+            CancellationToken.None));
+
+        var purchaseRequest = new EconomyMarketPurchaseRequest(
+            "market-buy:integration-0001",
+            listing.Listing.ListingId,
+            recipientUuid,
+            "IntegrationBuyer");
+        var purchase = await repository.PurchaseMarketListingAsync(
+            "activity-survival",
+            purchaseRequest,
+            0.03m,
+            CancellationToken.None);
+        var repeatedPurchase = await repository.PurchaseMarketListingAsync(
+            "activity-survival",
+            purchaseRequest,
+            0.03m,
+            CancellationToken.None);
+        Assert.Equal("Applied", purchase.Status);
+        Assert.Equal(purchase.OperationId, repeatedPurchase.OperationId);
+        Assert.Equal(19.40m, purchase.SellerProceeds);
+        Assert.Equal(0.60m, purchase.TransactionTax);
+        Assert.Equal(27.50m, purchase.BuyerBalance);
+
+        var buyerDeliveries = await repository.ListMarketDeliveriesAsync(
+            "activity-survival",
+            recipientUuid,
+            CancellationToken.None);
+        Assert.Collection(buyerDeliveries, delivery =>
+        {
+            Assert.Equal(purchase.DeliveryId, delivery.DeliveryId);
+            Assert.Equal("Purchase", delivery.Reason);
+        });
+        var claimRequest = new EconomyMarketClaimRequest(
+            "market-claim:integration-0001",
+            purchase.DeliveryId!.Value,
+            recipientUuid);
+        var claim = await repository.ClaimMarketDeliveryAsync(
+            "activity-survival",
+            claimRequest,
+            CancellationToken.None);
+        var repeatedClaim = await repository.ClaimMarketDeliveryAsync(
+            "activity-survival",
+            claimRequest,
+            CancellationToken.None);
+        Assert.Equal("Applied", claim.Status);
+        Assert.Equal(claim.OperationId, repeatedClaim.OperationId);
+        Assert.Empty(await repository.ListMarketDeliveriesAsync(
+            "activity-survival",
+            recipientUuid,
+            CancellationToken.None));
+
+        var cancellable = await repository.CreateMarketListingAsync(
+            "activity-survival",
+            listingRequest with
+            {
+                IdempotencyKey = "market-list:integration-0002",
+                Quantity = 2,
+                TotalPrice = 10.00m
+            },
+            0.01m,
+            1.00m,
+            5,
+            TimeSpan.FromHours(24),
+            CancellationToken.None);
+        var cancellation = await repository.CancelMarketListingAsync(
+            "activity-survival",
+            new EconomyMarketCancelRequest(
+                "market-cancel:integration-0001",
+                cancellable.Listing!.ListingId,
+                playerUuid),
+            CancellationToken.None);
+        Assert.Equal("Applied", cancellation.Status);
+        Assert.Contains(
+            await repository.ListMarketDeliveriesAsync(
+                "activity-survival",
+                playerUuid,
+                CancellationToken.None),
+            delivery => delivery.DeliveryId == cancellation.DeliveryId &&
+                        delivery.Reason == "Cancelled");
 
         await using var verification = await dataSource.OpenConnectionAsync();
         await using (var balanced = new NpgsqlCommand(

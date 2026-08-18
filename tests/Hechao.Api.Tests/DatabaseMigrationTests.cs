@@ -342,4 +342,29 @@ public sealed class DatabaseMigrationTests
         Assert.Contains(33, DatabaseMigrator.RegisteredMigrationVersions);
         Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
     }
+
+    [Fact]
+    public void EconomyPlayerMarketMigration_AddsEscrowAndDeliveryTables()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.034_economy_player_market.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("economy_market_listings", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_market_deliveries", sql, StringComparison.Ordinal);
+        Assert.Contains("'MarketList'", sql, StringComparison.Ordinal);
+        Assert.Contains("'MarketBuy'", sql, StringComparison.Ordinal);
+        Assert.Contains("'MarketCancel'", sql, StringComparison.Ordinal);
+        Assert.Contains("'MarketClaim'", sql, StringComparison.Ordinal);
+        Assert.Contains("UNIQUE (source_listing_id, player_uuid, reason)", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE status = 'Active'", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE status = 'Pending'", sql, StringComparison.Ordinal);
+        Assert.Contains(34, DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
+    }
 }

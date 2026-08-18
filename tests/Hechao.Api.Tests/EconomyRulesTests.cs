@@ -69,6 +69,39 @@ public sealed class EconomyRulesTests
     }
 
     [Fact]
+    public void MarketListing_RequiresSafeItemPriceAndIdentity()
+    {
+        var valid = new EconomyMarketCreateListingRequest(
+            "market-list:12345678",
+            Guid.NewGuid(),
+            "PlayerOne",
+            "minecraft:iron_ingot",
+            64,
+            125.00m);
+
+        Assert.True(EconomyRules.IsValidMarketListing(valid, 1_000m));
+        Assert.False(EconomyRules.IsValidMarketListing(
+            valid with { TotalPrice = 0.99m }, 1_000m));
+        Assert.False(EconomyRules.IsValidMarketListing(
+            valid with { ItemId = "minecraft:Iron_Ingot" }, 1_000m));
+        Assert.False(EconomyRules.IsValidMarketListing(
+            valid with { Quantity = 0 }, 1_000m));
+    }
+
+    [Fact]
+    public void MarketOptions_DefaultToDocumentedFeesAndLifetime()
+    {
+        var options = new EconomyServiceOptions();
+
+        Assert.Equal(24, options.MarketListingLifetimeHours);
+        Assert.Equal(5, options.MarketMaximumActiveListings);
+        Assert.Equal(0.01m, options.MarketListingFeeRate);
+        Assert.Equal(1.00m, options.MarketMinimumListingFee);
+        Assert.Equal(0.03m, options.MarketTransactionTaxRate);
+        Assert.True(options.IsValid());
+    }
+
+    [Fact]
     public void TokenValidator_FailsClosedAndChecksServerAllowlist()
     {
         const string token = "economy-test-token-000000000000001";

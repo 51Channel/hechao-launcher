@@ -8,7 +8,7 @@ namespace Hechao.Api.Economy;
 public sealed class EconomyIdempotencyConflictException()
     : InvalidOperationException("The idempotency key was already used for another request.");
 
-public sealed class EconomyRepository(
+public sealed partial class EconomyRepository(
     NpgsqlDataSource dataSource,
     TimeProvider timeProvider)
 {

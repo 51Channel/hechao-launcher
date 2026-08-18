@@ -56,6 +56,41 @@ public static partial class EconomyRules
         request.ActorUuid != Guid.Empty &&
         IsValidActorName(request.ActorName);
 
+    public static bool IsValidMarketListing(
+        EconomyMarketCreateListingRequest? request,
+        decimal maximumPrice) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.SellerUuid != Guid.Empty &&
+        IsValidActorName(request.SellerName) &&
+        IsValidMinecraftItemId(request.ItemId) &&
+        request.Quantity is >= 1 and <= 2304 &&
+        IsCurrencyAmount(request.TotalPrice) &&
+        request.TotalPrice >= 1m &&
+        request.TotalPrice <= maximumPrice;
+
+    public static bool IsValidMarketPurchase(EconomyMarketPurchaseRequest? request) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.ListingId != Guid.Empty &&
+        request.BuyerUuid != Guid.Empty &&
+        IsValidActorName(request.BuyerName);
+
+    public static bool IsValidMarketCancel(EconomyMarketCancelRequest? request) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.ListingId != Guid.Empty &&
+        request.SellerUuid != Guid.Empty;
+
+    public static bool IsValidMarketClaim(EconomyMarketClaimRequest? request) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.DeliveryId != Guid.Empty &&
+        request.PlayerUuid != Guid.Empty;
+
+    public static bool IsValidMarketQuery(string? query) =>
+        query is null || (query.Trim().Length <= 80 && !query.Any(char.IsControl));
+
     public static string Fingerprint(params object?[] values)
     {
         var canonical = string.Join('\n', values.Select(value => value switch

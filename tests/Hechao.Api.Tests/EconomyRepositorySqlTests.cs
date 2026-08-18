@@ -26,4 +26,15 @@ public sealed class EconomyRepositorySqlTests
             sql);
         Assert.DoesNotContain("WHERE enabled", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void MarketListingSql_IsolatedByServerAndSearchesItemOrSeller()
+    {
+        var sql = EconomyRepository.BuildMarketListingSql();
+
+        Assert.Contains("server_id = $1", sql, StringComparison.Ordinal);
+        Assert.Contains("status = 'Active'", sql, StringComparison.Ordinal);
+        Assert.Contains("item_id || ' ' || seller_name", sql, StringComparison.Ordinal);
+        Assert.Contains("LIMIT $4", sql, StringComparison.Ordinal);
+    }
 }

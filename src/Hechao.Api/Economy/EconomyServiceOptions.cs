@@ -14,13 +14,28 @@ public sealed partial class EconomyServiceOptions
 
     public decimal MaximumTransferAmount { get; set; } = 1_000_000m;
 
+    public int MarketListingLifetimeHours { get; set; } = 24;
+
+    public int MarketMaximumActiveListings { get; set; } = 5;
+
+    public decimal MarketListingFeeRate { get; set; } = 0.01m;
+
+    public decimal MarketMinimumListingFee { get; set; } = 1.00m;
+
+    public decimal MarketTransactionTaxRate { get; set; } = 0.03m;
+
     public bool IsConfigured =>
         InternalTokenSha256.Length == 64 && AllowedServerIds.Length > 0;
 
     public bool IsValid()
     {
         if (QuoteLifetimeSeconds is < 10 or > 120 ||
-            MaximumTransferAmount is < 1m or > 100_000_000m)
+            MaximumTransferAmount is < 1m or > 100_000_000m ||
+            MarketListingLifetimeHours is < 1 or > 168 ||
+            MarketMaximumActiveListings is < 1 or > 100 ||
+            MarketListingFeeRate is < 0m or > 0.25m ||
+            MarketMinimumListingFee is < 0.01m or > 10_000m ||
+            MarketTransactionTaxRate is < 0m or > 0.25m)
         {
             return false;
         }
