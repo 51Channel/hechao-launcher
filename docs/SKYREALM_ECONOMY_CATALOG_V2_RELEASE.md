@@ -1,5 +1,10 @@
 # 天域远征工业季回收目录 v2 生产发布
 
+> 上线后首次真人点击暴露 Arclight 缺少 `Material.translationKey()`。服务端插件已于同日
+> 冷更新到 `0.1.7`，商品数据、客户端 Screen `0.1.9` 和档案 `1.0.18` 均未改变。修复与
+> 验收见
+> [`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md)。
+
 ## 发布结果
 
 - 日期：`2026-08-18`

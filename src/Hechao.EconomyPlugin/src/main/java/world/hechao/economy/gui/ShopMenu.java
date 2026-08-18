@@ -46,7 +46,6 @@ public final class ShopMenu implements Listener {
             }
             var item = new ItemStack(material);
             var meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.WHITE + material.translationKey());
             meta.setLore(List.of(
                     ChatColor.GOLD + "回收价: " + product.unitPrice().toPlainString() + " 金币",
                     ChatColor.GRAY + "个人日限: " + product.personalDailyLimit(),

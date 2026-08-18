@@ -570,3 +570,22 @@ Screen `0.1.9` 识别这些受控槽位，并在每一批内继续按窗口尺�
 隔离交易为 `0`，没有再次出现 Adventure `TextColor` 类缺失。当前仍缺少个人/全服跨商品
 金额门禁、北京时间额度日和部分数量回收；这些风险没有因目录启用而消失。正式记录见
 [`SKYREALM_ECONOMY_CATALOG_V2_RELEASE.md`](SKYREALM_ECONOMY_CATALOG_V2_RELEASE.md)。
+
+## 21. 2026-08-18 回收目录 Arclight 兼容修复
+
+85 项目录启用后的首次真人点击暴露了此前空目录无法触发的运行时兼容问题：
+HechaoEconomy `0.1.6` 使用 Paper API 的 `Material.translationKey()` 为商品设置显示名，
+生产 Arclight 没有该方法。请求和商品 API 均正常，但服务端在渲染第一个商品时抛出
+`NoSuchMethodError`，没有打开容器，客户端最终显示“请求超时”。
+
+HechaoEconomy `0.1.7` 不再覆盖商品的原生显示名，由客户端根据物品描述 ID 和语言包
+本地化名称；价格、个人/全服单项额度、分页槽位和服务端权威均不变。新增兼容契约测试
+禁止目录代码再次调用 `translationKey()`，Gradle 归档同时固定无时间戳和稳定文件顺序。
+连续两次 `clean test build` 均通过且 JAR SHA-256 完全一致，测试为 `22/22`。
+
+生产通过后台结构化停止完成世界保存，旧 `0.1.6` 单独备份后离线替换为 `0.1.7`，再通过
+后台结构化启动。最终 Arclight、`Done`、插件加载和启用均恰好一次，`/heco health`
+全绿，启动后 `translationKey`、`NoSuchMethodError` 和 HechaoEconomy 警告/错误均为
+`0`。服务端回归已完成；玩家重新进入并点击“回收目录”的最终目视验收仍待完成。正式
+记录见
+[`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md)。

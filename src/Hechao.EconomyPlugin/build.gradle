@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'world.hechao'
-version = '0.1.6'
+version = '0.1.7'
 
 repositories {
     maven {
@@ -48,6 +48,11 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
 }
 
 tasks.named('jar') {

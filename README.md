@@ -1,5 +1,12 @@
 # 赫朝启动器
 
+> `2026-08-18` 工业季回收目录超时已修复。根因是生产 Arclight 缺少 Paper API 的
+> `Material.translationKey()`，HechaoEconomy `0.1.6` 在渲染首个商品时抛出
+> `NoSuchMethodError`，客户端因此等到超时。`0.1.7` 改为保留物品原生可翻译名称，
+> 已通过受管停服、备份和冷启动上线；`22/22` 测试、可复现 JAR、插件健康与错误日志
+> 均通过。真人重新进服点击仍待最终目视确认。记录见
+> [`docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md`](docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.1.7.md)。
+>
 > `2026-08-18` 工业季完整官方回收目录 v2 已按明确要求启用：生产商品表从 `0` 项更新为
 > `85` 项启用，逐字段回读 `85/85`，二次预览 `0` 差异。服务端 HechaoEconomy `0.1.6`
 > 已完成受管冷更新，目录按 `45 + 40` 分两批；客户端 Screen `0.1.9` 随档案 `1.0.18`

@@ -1,0 +1,60 @@
+{
+  "date": "2026-08-18",
+  "serverId": "activity-survival",
+  "rootCause": {
+    "exception": "java.lang.NoSuchMethodError",
+    "missingMethod": "org.bukkit.Material.translationKey()",
+    "runtime": "Arclight 1.0.2-SNAPSHOT+8086b06",
+    "requestReachedServer": true
+  },
+  "release": {
+    "version": "0.1.7",
+    "featureCommit": "74246b7",
+    "jarName": "HechaoEconomy-0.1.7.jar",
+    "jarLength": 374527,
+    "jarSha256": "56724A063878B1EBB6BBD907D41669B45D62CF1B9647C2B4681B7E5C17DA3760",
+    "reproducibleAcrossTwoCleanBuilds": true,
+    "translationKeyBytecodeReferences": 0
+  },
+  "tests": {
+    "passed": 22,
+    "failed": 0,
+    "errors": 0,
+    "cleanTestBuildRuns": 2
+  },
+  "deployment": {
+    "hotReplaced": false,
+    "structuredStopCompleted": true,
+    "structuredStartCompleted": true,
+    "otherBackendsOperated": false,
+    "backupPath": "E:\\manual-backups\\activity-survival-economy-0.1.7-fix-20260818T1609",
+    "previousJarSha256": "13069366685FAB4BE15BE0F362F8B491727DA6284C8D14C3DCAB099F3C63E315",
+    "singleProductionEconomyJar": true
+  },
+  "runtimeAcceptance": {
+    "checkedAt": "2026-08-18T16:12:28+08:00",
+    "taskState": "Running",
+    "pid": 2836,
+    "port": 25600,
+    "listenerCount": 1,
+    "javaExecutable": "E:\\jdk\\bin\\java.exe",
+    "arclightLaunchPreserved": true,
+    "pluginLoadCount": 1,
+    "pluginEnableCount": 1,
+    "doneCount": 1,
+    "translationKeyErrors": 0,
+    "noSuchMethodErrors": 0,
+    "economyWarningsOrErrors": 0,
+    "health": {
+      "apiConfigured": true,
+      "vaultAuthoritative": true,
+      "commandsAuthoritative": true,
+      "tradingEnabled": true,
+      "quarantinedTrades": 0
+    }
+  },
+  "remainingAcceptance": {
+    "realPlayerRejoinedAfterRestart": false,
+    "realPlayerCatalogVisualClickPassed": false
+  }
+}
