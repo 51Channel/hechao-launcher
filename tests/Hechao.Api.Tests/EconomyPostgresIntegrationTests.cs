@@ -210,7 +210,9 @@ public sealed class EconomyPostgresIntegrationTests
         Assert.Equal(42.50m, overview.Wealth.AverageBalance);
         Assert.Equal(42.50m, overview.Wealth.MedianBalance);
         Assert.Equal(46.50m, overview.Wealth.P90Balance);
-        Assert.Equal(47.50m / 85.00m, overview.Wealth.TopTenPercentShare);
+        Assert.Equal(
+            decimal.Round(47.50m / 85.00m, 20),
+            overview.Wealth.TopTenPercentShare);
         Assert.Equal(85.00m, overview.Series[^1].TotalSupply);
         Assert.Equal(85.00m, overview.Series.Sum(point => point.IssuedAmount));
         Assert.Contains(overview.TopBalances, player =>
