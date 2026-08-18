@@ -1,12 +1,12 @@
 # 赫朝经济系统与第三方自定义屏幕开发交接
 
-> 整理日期：2026-08-16
+> 整理日期：2026-08-18
 > 对应开发日期：2026-08-14
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
 > 当前结论：API `0.33.1`、迁移 `031`、HechaoEconomy `0.1.5` 与服务端 Screen `0.1.3`
-> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.5` 随档案 `1.0.14`
-> 只进入 `Test=r7 / 100%`，Gray 与 Production 未分配；新双列布局的真人视觉验收仍待
+> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.6` 随档案 `1.0.15`
+> 只进入 `Test=r8 / 100%`，Gray 与 Production 未分配。即时点击反馈的真人验收仍待
 > 玩家退出旧游戏并更新。商品目录当前为空，等待服主配置正式价格与额度。
 
 ## 1. 文档目的
@@ -59,7 +59,7 @@ flowchart LR
 | --- | --- | --- |
 | 平台后端 | `Hechao.Api/Economy` | 余额、流水、商品、额度、报价、幂等和审计 |
 | 游戏服插件 | `HechaoEconomy 0.1.5` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
-| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.5` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
+| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.6` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
 
 ## 4. Economy Service 开发过程
 
@@ -488,3 +488,23 @@ Screen `0.1.4` 并新增 `0.1.5`。OSS 只新增 `32,811` 字节对象，Test �
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.5.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.5.md)
 与
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.14.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.14.md)。
+
+## 18. 2026-08-18 按钮即时反馈修复
+
+真人操作时，第三方屏幕按钮会关闭菜单，但玩家没有看到后续变化。客户端 `latest.log`
+确认余额查询和出售请求已经到达服务端，服务端也返回了结果；问题不在网络协议、短期会话
+或权限，而是结果只进入聊天栏，菜单又立即关闭，缺少可见的过渡反馈。
+
+客户端 Screen `0.1.6` 在发包后、关闭菜单前显示动作专属的黄色 ActionBar 提示。余额、
+回收目录、出售主手、服主回收设置、个人设置和队伍均有独立文本。提示只表示客户端已提交
+动作，最终结果和权限仍由服务端裁决。动作 ID、命令映射、短期会话、网络协议 `2` 和
+`0.1.5` 的紧凑双列布局均未改变，生产服务端 Screen `0.1.3` 继续兼容且无需重启。
+
+档案 `1.0.15` 与 `1.0.14` 的 `4,456` 个共同文件逐路径、大小、摘要和 URL 不变，只删除
+Screen `0.1.5` 并新增 `0.1.6`。OSS 只新增 `33,099` 字节对象，Test 更新为
+`r8 / 100%`；Gray 与 Production 未分配。Gradle 测试 `13/13`、清单验签、对象闭合、
+生产清单回读、受限权限、API 健康/就绪和审计均通过。玩家必须退出旧游戏并由启动器更新
+到 `1.0.15` 后进行真实点击验收，完成前不得推进其他通道。正式记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.6.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.6.md)
+与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.15.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.15.md)。

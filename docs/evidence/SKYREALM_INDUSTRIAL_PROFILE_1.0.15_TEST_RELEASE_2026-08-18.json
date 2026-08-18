@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-18T02:57:39Z",
+  "source": {
+    "branch": "codex/economy-screen-donut-layout",
+    "featureCommit": "71db7d528f38325ab4079713d38487cb77b1ecba",
+    "candidateDocumentationCommit": "c1af924a219aa070fa8add6738dc4850693d8a19"
+  },
+  "screen": {
+    "version": "0.1.6",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.1.6.jar",
+    "bytes": 33099,
+    "sha256": "E0A740B34D6AE3020C3A117D0054FFD119DD544B0F88B79F4F5AE0890FFC7C67",
+    "testsPassed": 13,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.15",
+    "manifestBytes": 2025517,
+    "manifestSha256": "C32A8BC5B945B0FDEBC1349AD836D911CA308E91987CDD540E1FBFFBCB59D129",
+    "logicalFiles": 4457,
+    "logicalBytes": 1203314577,
+    "uniqueObjects": 4252,
+    "objectBytes": 1203306067,
+    "commonFilesWithPrevious": 4456,
+    "unchangedCommonFiles": 4456,
+    "samePathChangedFiles": 0,
+    "removed": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.5.jar"
+    ],
+    "added": [
+      "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.1.6.jar"
+    ]
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 33099,
+    "anonymousAdminStatus": 401,
+    "anonymousObjectStatus": 401
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestBytes": 2025517,
+    "storedManifestSha256": "C32A8BC5B945B0FDEBC1349AD836D911CA308E91987CDD540E1FBFFBCB59D129",
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "version": "0.33.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "service": "active",
+    "restartCount": 0,
+    "recentWarningOrHigherLogLines": 0,
+    "importAuditRecorded": true,
+    "channelAuditRecorded": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.15",
+      "rolloutPercentage": 100,
+      "revision": 8
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.14",
+    "manifestSha256": "F5EB933E865E6F7F4B8C1916FB42319173A482399816E7C8D15C726BE56EF481"
+  },
+  "runtime": {
+    "runningClientWasInterrupted": false,
+    "minecraftServerRestarted": false,
+    "velocityRestarted": false,
+    "apiRestarted": false,
+    "proxyRestarted": false,
+    "agentRestarted": false,
+    "liveClientAcceptancePending": true
+  }
+}
