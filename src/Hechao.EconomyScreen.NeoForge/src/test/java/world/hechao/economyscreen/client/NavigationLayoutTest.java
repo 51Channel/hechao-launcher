@@ -32,6 +32,13 @@ final class NavigationLayoutTest {
     }
 
     @Test
+    void keepsButtonsBelowTheIndustrialHeaderOnShortWindows() {
+        var layout = NavigationLayout.calculate(240, 100, 6, 0);
+
+        assertTrue(layout.gridTop() >= layout.titleTop() + 34);
+    }
+
+    @Test
     void rejectsInvalidLayoutInputs() {
         org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalArgumentException.class,

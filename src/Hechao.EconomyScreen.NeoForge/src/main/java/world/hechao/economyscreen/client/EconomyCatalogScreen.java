@@ -35,40 +35,34 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     protected void init() {
         layout = EconomyCatalogLayout.calculate(width, height);
         int buttonY = layout.footerTop() + 7;
-        previousButton = Button.builder(
-                        Component.literal("<"),
-                        ignored -> changePage(-1))
-                .bounds(
-                        layout.panelLeft() + 12,
-                        buttonY,
-                        PAGE_BUTTON_WIDTH,
-                        BUTTON_HEIGHT)
-                .tooltip(Tooltip.create(Component.literal("上一页")))
-                .build();
+        previousButton = new IndustrialButton(
+                layout.panelLeft() + 12,
+                buttonY,
+                PAGE_BUTTON_WIDTH,
+                BUTTON_HEIGHT,
+                Component.literal("<"),
+                ignored -> changePage(-1));
+        previousButton.setTooltip(Tooltip.create(Component.literal("上一页")));
         addRenderableWidget(previousButton);
 
-        nextButton = Button.builder(
-                        Component.literal(">"),
-                        ignored -> changePage(1))
-                .bounds(
-                        layout.panelLeft() + layout.panelWidth()
-                                - PAGE_BUTTON_WIDTH - 12,
-                        buttonY,
-                        PAGE_BUTTON_WIDTH,
-                        BUTTON_HEIGHT)
-                .tooltip(Tooltip.create(Component.literal("下一页")))
-                .build();
+        nextButton = new IndustrialButton(
+                layout.panelLeft() + layout.panelWidth()
+                        - PAGE_BUTTON_WIDTH - 12,
+                buttonY,
+                PAGE_BUTTON_WIDTH,
+                BUTTON_HEIGHT,
+                Component.literal(">"),
+                ignored -> changePage(1));
+        nextButton.setTooltip(Tooltip.create(Component.literal("下一页")));
         addRenderableWidget(nextButton);
 
-        addRenderableWidget(Button.builder(
-                        Component.literal("完成"),
-                        ignored -> onClose())
-                .bounds(
-                        width / 2 - CLOSE_BUTTON_WIDTH / 2,
-                        buttonY,
-                        CLOSE_BUTTON_WIDTH,
-                        BUTTON_HEIGHT)
-                .build());
+        addRenderableWidget(new IndustrialButton(
+                width / 2 - CLOSE_BUTTON_WIDTH / 2,
+                buttonY,
+                CLOSE_BUTTON_WIDTH,
+                BUTTON_HEIGHT,
+                Component.literal("完成"),
+                ignored -> onClose()));
         observedServerPage = serverPageInfo().page();
         syncNavigation(products().size());
     }
@@ -95,28 +89,21 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             float partialTick) {
         var products = products();
         syncNavigation(products.size());
-        graphics.fill(
-                layout.panelLeft(),
-                layout.panelTop(),
-                layout.panelLeft() + layout.panelWidth(),
-                layout.panelTop() + layout.panelHeight(),
-                0xED1C1E21);
-        graphics.renderOutline(
+        IndustrialUiTheme.renderPanel(
+                graphics,
                 layout.panelLeft(),
                 layout.panelTop(),
                 layout.panelWidth(),
-                layout.panelHeight(),
-                0xFF777B80);
-        graphics.fill(
-                layout.panelLeft() + 1,
-                layout.panelTop() + 31,
-                layout.panelLeft() + layout.panelWidth() - 1,
-                layout.panelTop() + 32,
-                0xFFD6A947);
+                layout.panelHeight());
+        IndustrialUiTheme.renderEmblem(
+                graphics,
+                layout.panelLeft() + 10,
+                layout.panelTop() + 6,
+                22);
         graphics.drawString(
                 font,
                 title,
-                layout.panelLeft() + 12,
+                layout.panelLeft() + 39,
                 layout.panelTop() + 11,
                 0xFFFFFFFF,
                 true);
@@ -162,18 +149,13 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                         && mouseX < x + layout.cardWidth()
                         && mouseY >= y
                         && mouseY < y + EconomyCatalogLayout.CARD_HEIGHT;
-                graphics.fill(
-                        x,
-                        y,
-                        x + layout.cardWidth(),
-                        y + EconomyCatalogLayout.CARD_HEIGHT,
-                        isHovered ? 0xF0474B50 : 0xD5323539);
-                graphics.renderOutline(
+                IndustrialUiTheme.renderCard(
+                        graphics,
                         x,
                         y,
                         layout.cardWidth(),
                         EconomyCatalogLayout.CARD_HEIGHT,
-                        isHovered ? 0xFFD6A947 : 0xFF55595E);
+                        isHovered);
                 graphics.renderItem(product, x + 8, y + 10);
                 String name = displayName(product);
                 graphics.drawString(
@@ -197,6 +179,11 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         }
 
         var serverPage = serverPageInfo();
+        IndustrialUiTheme.renderDivider(
+                graphics,
+                layout.panelLeft() + 4,
+                layout.panelLeft() + layout.panelWidth() - 4,
+                layout.footerTop() - 1);
         if (maximumPage(products.size()) > 0 || serverPage.pageCount() > 1) {
             String indicator = serverPage.pageCount() > 1
                     ? "第 " + serverPage.page() + " / " + serverPage.pageCount()

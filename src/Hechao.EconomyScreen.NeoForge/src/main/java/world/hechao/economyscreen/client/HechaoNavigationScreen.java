@@ -4,7 +4,6 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -16,6 +15,8 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     private static final Component TITLE = Component.literal("天域远征");
     private static final Component SERVER_AUTHORIZED_TOOLTIP = Component.literal(
             "菜单内容和权限由服务器决定");
+    private static final int TITLE_EMBLEM_SIZE = 22;
+    private static final int TITLE_EMBLEM_GAP = 7;
     private static final int TITLE_INDICATOR_GAP = 8;
     private static final int TITLE_INDICATOR_SIZE = 20;
     private static final int NAVIGATION_BUTTON_WIDTH = 98;
@@ -55,15 +56,13 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
             int x = layout.gridLeft()
                     + column * (layout.buttonWidth() + NavigationLayout.COLUMN_GAP);
             int y = layout.gridTop() + row * NavigationLayout.ROW_STRIDE;
-            var button = Button.builder(
-                            Component.literal(action.definition.label()),
-                            ignored -> sendAction(action))
-                    .bounds(
-                            x,
-                            y,
-                            layout.buttonWidth(),
-                            NavigationLayout.BUTTON_HEIGHT)
-                    .build();
+            var button = new IndustrialButton(
+                    x,
+                    y,
+                    layout.buttonWidth(),
+                    NavigationLayout.BUTTON_HEIGHT,
+                    Component.literal(action.definition.label()),
+                    ignored -> sendAction(action));
             addRenderableWidget(button);
         }
         if (layout.needsNavigation()) {
@@ -77,13 +76,37 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
             int mouseX,
             int mouseY,
             float partialTick) {
+        int contentBottom = layout.needsNavigation()
+                ? layout.navigationTop() + NavigationLayout.NAVIGATION_HEIGHT
+                : layout.gridTop() + layout.gridHeight();
+        int panelLeft = Math.max(6, layout.gridLeft() - 14);
+        int panelTop = Math.max(4, layout.titleTop() - 10);
+        int panelRight = Math.min(width - 6,
+                layout.gridLeft() + layout.gridWidth() + 14);
+        int panelBottom = Math.min(height - 4, contentBottom + 14);
+        IndustrialUiTheme.renderPanel(
+                graphics,
+                panelLeft,
+                panelTop,
+                panelRight - panelLeft,
+                panelBottom - panelTop);
+
         int titleWidth = font.width(TITLE);
-        int groupWidth = titleWidth + TITLE_INDICATOR_GAP + TITLE_INDICATOR_SIZE;
+        int groupWidth = TITLE_EMBLEM_SIZE
+                + TITLE_EMBLEM_GAP
+                + titleWidth
+                + TITLE_INDICATOR_GAP
+                + TITLE_INDICATOR_SIZE;
         int groupLeft = (width - groupWidth) / 2;
+        IndustrialUiTheme.renderEmblem(
+                graphics,
+                groupLeft,
+                layout.titleTop() - 1,
+                TITLE_EMBLEM_SIZE);
         graphics.drawString(
                 font,
                 TITLE,
-                groupLeft,
+                groupLeft + TITLE_EMBLEM_SIZE + TITLE_EMBLEM_GAP,
                 layout.titleTop() + 6,
                 0xFFFFFFFF,
                 true);
@@ -129,47 +152,48 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
 
     private void addServerAuthorizationIndicator() {
         int titleWidth = font.width(TITLE);
-        int groupWidth = titleWidth + TITLE_INDICATOR_GAP + TITLE_INDICATOR_SIZE;
+        int groupWidth = TITLE_EMBLEM_SIZE
+                + TITLE_EMBLEM_GAP
+                + titleWidth
+                + TITLE_INDICATOR_GAP
+                + TITLE_INDICATOR_SIZE;
         int indicatorLeft = (width - groupWidth) / 2
+                + TITLE_EMBLEM_SIZE
+                + TITLE_EMBLEM_GAP
                 + titleWidth
                 + TITLE_INDICATOR_GAP;
-        addRenderableWidget(Button.builder(
-                        Component.literal("!").withStyle(ChatFormatting.YELLOW),
-                        ignored -> {
-                        })
-                .bounds(
-                        indicatorLeft,
-                        layout.titleTop(),
-                        TITLE_INDICATOR_SIZE,
-                        TITLE_INDICATOR_SIZE)
-                .tooltip(Tooltip.create(SERVER_AUTHORIZED_TOOLTIP))
-                .build());
+        var indicator = new IndustrialButton(
+                indicatorLeft,
+                layout.titleTop(),
+                TITLE_INDICATOR_SIZE,
+                TITLE_INDICATOR_SIZE,
+                Component.literal("!").withStyle(ChatFormatting.YELLOW),
+                ignored -> {
+                });
+        indicator.setTooltip(Tooltip.create(SERVER_AUTHORIZED_TOOLTIP));
+        addRenderableWidget(indicator);
     }
 
     private void addNavigationButtons() {
         int navigationWidth = NAVIGATION_BUTTON_WIDTH * 2 + NavigationLayout.COLUMN_GAP;
         int navigationLeft = (width - navigationWidth) / 2;
-        var previousButton = Button.builder(
-                        Component.literal("上一页"),
-                        ignored -> changePage(-1))
-                .bounds(
-                        navigationLeft,
-                        layout.navigationTop(),
-                        NAVIGATION_BUTTON_WIDTH,
-                        NavigationLayout.NAVIGATION_HEIGHT)
-                .build();
+        var previousButton = new IndustrialButton(
+                navigationLeft,
+                layout.navigationTop(),
+                NAVIGATION_BUTTON_WIDTH,
+                NavigationLayout.NAVIGATION_HEIGHT,
+                Component.literal("上一页"),
+                ignored -> changePage(-1));
         previousButton.active = scrollRow > 0;
         addRenderableWidget(previousButton);
 
-        var nextButton = Button.builder(
-                        Component.literal("下一页"),
-                        ignored -> changePage(1))
-                .bounds(
-                        navigationLeft + NAVIGATION_BUTTON_WIDTH + NavigationLayout.COLUMN_GAP,
-                        layout.navigationTop(),
-                        NAVIGATION_BUTTON_WIDTH,
-                        NavigationLayout.NAVIGATION_HEIGHT)
-                .build();
+        var nextButton = new IndustrialButton(
+                navigationLeft + NAVIGATION_BUTTON_WIDTH + NavigationLayout.COLUMN_GAP,
+                layout.navigationTop(),
+                NAVIGATION_BUTTON_WIDTH,
+                NavigationLayout.NAVIGATION_HEIGHT,
+                Component.literal("下一页"),
+                ignored -> changePage(1));
         nextButton.active = scrollRow < layout.maximumScrollRow();
         addRenderableWidget(nextButton);
     }

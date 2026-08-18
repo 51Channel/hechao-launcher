@@ -45,7 +45,7 @@ final class NavigationLayout {
         int titleTop = screenHeight < 120
                 ? 4
                 : Math.max(12, Math.min(24, screenHeight / 14));
-        int contentTop = titleTop + (screenHeight < 120 ? 24 : 42);
+        int contentTop = titleTop + (screenHeight < 120 ? 34 : 42);
         int bottomMargin = screenHeight < 120 ? 4 : BOTTOM_MARGIN;
         int availableHeight = Math.max(
                 BUTTON_HEIGHT,

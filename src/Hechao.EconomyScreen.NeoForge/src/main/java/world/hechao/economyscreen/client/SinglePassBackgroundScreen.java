@@ -18,6 +18,7 @@ abstract class SinglePassBackgroundScreen extends Screen {
             int mouseY,
             float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
+        IndustrialUiTheme.renderBackdrop(graphics, width, height);
         renderContent(graphics, mouseX, mouseY, partialTick);
 
         renderingWidgets = true;

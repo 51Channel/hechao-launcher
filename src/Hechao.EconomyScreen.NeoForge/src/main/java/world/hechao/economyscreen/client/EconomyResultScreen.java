@@ -39,26 +39,22 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
                 (panelWidth - 24 - GAP) / 2);
         int buttonY = panelTop + panelHeight - BUTTON_HEIGHT - 12;
 
-        confirmButton = Button.builder(
-                        Component.literal("确认出售"),
-                        ignored -> confirmSale())
-                .bounds(
-                        panelLeft + 12,
-                        buttonY,
-                        buttonWidth,
-                        BUTTON_HEIGHT)
-                .build();
+        confirmButton = new IndustrialButton(
+                panelLeft + 12,
+                buttonY,
+                buttonWidth,
+                BUTTON_HEIGHT,
+                Component.literal("确认出售"),
+                ignored -> confirmSale());
         addRenderableWidget(confirmButton);
 
-        closeButton = Button.builder(
-                        Component.literal("完成"),
-                        ignored -> onClose())
-                .bounds(
-                        width / 2 - buttonWidth / 2,
-                        buttonY,
-                        buttonWidth,
-                        BUTTON_HEIGHT)
-                .build();
+        closeButton = new IndustrialButton(
+                width / 2 - buttonWidth / 2,
+                buttonY,
+                buttonWidth,
+                BUTTON_HEIGHT,
+                Component.literal("完成"),
+                ignored -> onClose());
         addRenderableWidget(closeButton);
         syncButtons();
     }
@@ -80,28 +76,21 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
             int mouseX,
             int mouseY,
             float partialTick) {
-        graphics.fill(
-                panelLeft,
-                panelTop,
-                panelLeft + panelWidth,
-                panelTop + panelHeight,
-                0xED1C1E21);
-        graphics.renderOutline(
+        IndustrialUiTheme.renderPanel(
+                graphics,
                 panelLeft,
                 panelTop,
                 panelWidth,
-                panelHeight,
-                0xFF777B80);
-        graphics.fill(
-                panelLeft + 1,
-                panelTop + 32,
-                panelLeft + panelWidth - 1,
-                panelTop + 33,
-                0xFFD6A947);
+                panelHeight);
+        IndustrialUiTheme.renderEmblem(
+                graphics,
+                panelLeft + 10,
+                panelTop + 6,
+                22);
         graphics.drawString(
                 font,
                 title,
-                panelLeft + 14,
+                panelLeft + 39,
                 panelTop + 12,
                 0xFFFFFFFF,
                 true);
@@ -111,6 +100,12 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
             case SUCCESS -> 0xFF8CD99B;
             case ERROR -> 0xFFFF8A80;
         };
+        IndustrialUiTheme.renderStatusRail(
+                graphics,
+                panelLeft + 13,
+                panelTop + 47,
+                panelTop + panelHeight - 43,
+                color);
         int textY = panelTop + 49;
         if (state.messages().isEmpty()) {
             graphics.drawCenteredString(
@@ -127,7 +122,7 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
                     graphics.drawString(
                             font,
                             line,
-                            panelLeft + 14,
+                            panelLeft + 22,
                             textY,
                             color,
                             false);
