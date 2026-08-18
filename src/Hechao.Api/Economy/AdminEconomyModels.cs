@@ -6,6 +6,7 @@ public sealed record AdminEconomyOverview(
     int Hours,
     string? ServerId,
     IReadOnlyList<AdminEconomyServerOption> Servers,
+    IReadOnlyList<AdminEconomyItemOption> Items,
     AdminEconomySummary Summary,
     AdminEconomyWealthSummary Wealth,
     IReadOnlyList<AdminEconomySeriesPoint> Series,
@@ -55,6 +56,45 @@ public sealed record AdminEconomyServerVolume(
 public sealed record AdminEconomyServerOption(
     string ServerId,
     string DisplayName);
+
+public sealed record AdminEconomyItemOption(
+    string ItemId,
+    decimal? CurrentUnitPrice,
+    bool Enabled);
+
+public sealed record AdminEconomyItemHistory(
+    DateTimeOffset From,
+    DateTimeOffset To,
+    int Hours,
+    string? ServerId,
+    string ItemId,
+    decimal? CurrentUnitPrice,
+    bool Enabled,
+    AdminEconomyItemSummary Summary,
+    IReadOnlyList<AdminEconomyItemSeriesPoint> Series);
+
+public sealed record AdminEconomyItemSummary(
+    decimal? OpenUnitPrice,
+    decimal? CloseUnitPrice,
+    decimal? LowUnitPrice,
+    decimal? HighUnitPrice,
+    decimal? PriceChangeRate,
+    long Quantity,
+    decimal Amount,
+    long Sellers,
+    long Transactions);
+
+public sealed record AdminEconomyItemSeriesPoint(
+    DateTimeOffset At,
+    decimal? OpenUnitPrice,
+    decimal? CloseUnitPrice,
+    decimal? AverageUnitPrice,
+    decimal? LowUnitPrice,
+    decimal? HighUnitPrice,
+    long Quantity,
+    decimal Amount,
+    long Sellers,
+    long Transactions);
 
 internal sealed record AdminEconomyWindow(
     int Hours,

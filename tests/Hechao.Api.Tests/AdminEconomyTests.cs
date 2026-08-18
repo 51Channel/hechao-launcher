@@ -49,4 +49,23 @@ public sealed class AdminEconomyTests
         Assert.Contains("le.amount > 0", AdminEconomyRepository.WindowMetricsSql, StringComparison.Ordinal);
         Assert.DoesNotContain("server_id = $3", AdminEconomyRepository.ServerVolumesSql, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ItemQueries_UseCommittedQuotesAndPreserveEmptyPriceBuckets()
+    {
+        var hourly = AdminEconomyRepository.BuildItemSeriesSql(TimeSpan.FromHours(1));
+        var daily = AdminEconomyRepository.BuildItemSeriesSql(TimeSpan.FromDays(1));
+
+        Assert.Contains("date_trunc('hour'", hourly, StringComparison.Ordinal);
+        Assert.Contains("date_trunc('day'", daily, StringComparison.Ordinal);
+        Assert.Contains("q.status = 'Committed'", hourly, StringComparison.Ordinal);
+        Assert.Contains("o.status = 'Applied'", hourly, StringComparison.Ordinal);
+        Assert.Contains("q.item_id = $4", hourly, StringComparison.Ordinal);
+        Assert.Contains("array_agg(q.unit_price ORDER BY o.created_at, q.quote_id)", hourly, StringComparison.Ordinal);
+        Assert.Contains("array_agg(q.unit_price ORDER BY o.created_at DESC, q.quote_id DESC)", hourly, StringComparison.Ordinal);
+        Assert.Contains("sum(q.total_amount) / NULLIF(sum(q.quantity), 0)", hourly, StringComparison.Ordinal);
+        Assert.Contains("count(DISTINCT q.player_uuid)", hourly, StringComparison.Ordinal);
+        Assert.Contains("SELECT item_id FROM launcher.economy_products", AdminEconomyRepository.ItemOptionsSql, StringComparison.Ordinal);
+        Assert.Contains("SELECT item_id FROM launcher.economy_sale_quotes", AdminEconomyRepository.ItemOptionsSql, StringComparison.Ordinal);
+    }
 }

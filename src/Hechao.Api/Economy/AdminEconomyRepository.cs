@@ -60,6 +60,22 @@ public sealed class AdminEconomyRepository(
             o.server_id;
         """;
 
+    internal const string ItemOptionsSql = """
+        WITH item_ids AS (
+            SELECT item_id FROM launcher.economy_products
+            UNION
+            SELECT item_id FROM launcher.economy_sale_quotes
+        )
+        SELECT
+            item.item_id,
+            product.unit_price AS current_unit_price,
+            COALESCE(product.enabled, false) AS enabled
+        FROM item_ids item
+        LEFT JOIN launcher.economy_products product
+          ON product.item_id = item.item_id
+        ORDER BY COALESCE(product.enabled, false) DESC, item.item_id;
+        """;
+
     public async Task<AdminEconomyOverview> GetOverviewAsync(
         int hours,
         string? serverId,
@@ -106,6 +122,10 @@ public sealed class AdminEconomyRepository(
             connection,
             transaction,
             cancellationToken);
+        var items = await ReadItemOptionsAsync(
+            connection,
+            transaction,
+            cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
         return new AdminEconomyOverview(
@@ -114,6 +134,7 @@ public sealed class AdminEconomyRepository(
             window.Hours,
             serverId,
             servers,
+            items,
             new AdminEconomySummary(
                 wealth.TotalSupply,
                 metrics.WindowIssued,
@@ -130,6 +151,57 @@ public sealed class AdminEconomyRepository(
             topBalances,
             products,
             serverVolumes);
+    }
+
+    public async Task<AdminEconomyItemHistory?> GetItemHistoryAsync(
+        int hours,
+        string itemId,
+        string? serverId,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(
+            IsolationLevel.RepeatableRead,
+            cancellationToken);
+        await EstablishSnapshotAsync(connection, transaction, cancellationToken);
+        var window = AdminEconomyWindow.Create(hours, timeProvider.GetUtcNow());
+        var item = await ReadItemOptionAsync(
+            connection,
+            transaction,
+            itemId,
+            cancellationToken);
+        if (item is null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return null;
+        }
+
+        var summary = await ReadItemSummaryAsync(
+            connection,
+            transaction,
+            window,
+            serverId,
+            itemId,
+            cancellationToken);
+        var series = await ReadItemSeriesAsync(
+            connection,
+            transaction,
+            window,
+            serverId,
+            itemId,
+            cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return new AdminEconomyItemHistory(
+            window.From,
+            window.To,
+            window.Hours,
+            serverId,
+            item.ItemId,
+            item.CurrentUnitPrice,
+            item.Enabled,
+            summary,
+            series);
     }
 
     private static async Task<WealthSnapshot> ReadWealthAsync(
@@ -394,6 +466,168 @@ public sealed class AdminEconomyRepository(
         return result;
     }
 
+    private static async Task<IReadOnlyList<AdminEconomyItemOption>> ReadItemOptionsAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        CancellationToken cancellationToken)
+    {
+        var result = new List<AdminEconomyItemOption>();
+        await using var command = new NpgsqlCommand(ItemOptionsSql, connection, transaction);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(ReadItemOption(reader));
+        }
+
+        return result;
+    }
+
+    private static async Task<AdminEconomyItemOption?> ReadItemOptionAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string itemId,
+        CancellationToken cancellationToken)
+    {
+        var sql = $"""
+            SELECT item_id, current_unit_price, enabled
+            FROM ({ItemOptionsSql.Trim().TrimEnd(';')}) item_options
+            WHERE item_id = $1;
+            """;
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue(itemId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken)
+            ? ReadItemOption(reader)
+            : null;
+    }
+
+    private static AdminEconomyItemOption ReadItemOption(NpgsqlDataReader reader) =>
+        new(
+            reader.GetString(0),
+            reader.IsDBNull(1) ? null : reader.GetDecimal(1),
+            reader.GetBoolean(2));
+
+    private static async Task<AdminEconomyItemSummary> ReadItemSummaryAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        AdminEconomyWindow window,
+        string? serverId,
+        string itemId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                (array_agg(q.unit_price ORDER BY o.created_at, q.quote_id))[1],
+                (array_agg(q.unit_price ORDER BY o.created_at DESC, q.quote_id DESC))[1],
+                min(q.unit_price),
+                max(q.unit_price),
+                COALESCE(sum(q.quantity), 0)::bigint,
+                COALESCE(sum(q.total_amount), 0)::numeric,
+                count(DISTINCT q.player_uuid)::bigint,
+                count(*)::bigint
+            FROM launcher.economy_sale_quotes q
+            JOIN launcher.economy_operations o
+              ON o.operation_id = q.committed_operation_id
+            WHERE q.status = 'Committed'
+              AND o.status = 'Applied'
+              AND o.created_at >= $1
+              AND o.created_at < $2
+              AND ($3::text IS NULL OR o.server_id = $3)
+              AND q.item_id = $4;
+            """;
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        AddItemWindowParameters(command, window, serverId, itemId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await reader.ReadAsync(cancellationToken);
+        var open = reader.IsDBNull(0) ? (decimal?)null : reader.GetDecimal(0);
+        var close = reader.IsDBNull(1) ? (decimal?)null : reader.GetDecimal(1);
+        return new AdminEconomyItemSummary(
+            open,
+            close,
+            reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+            reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+            open is > 0 && close is not null ? (close.Value - open.Value) / open.Value : null,
+            reader.GetInt64(4),
+            reader.GetDecimal(5),
+            reader.GetInt64(6),
+            reader.GetInt64(7));
+    }
+
+    private static async Task<IReadOnlyList<AdminEconomyItemSeriesPoint>> ReadItemSeriesAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        AdminEconomyWindow window,
+        string? serverId,
+        string itemId,
+        CancellationToken cancellationToken)
+    {
+        var sql = BuildItemSeriesSql(window.BucketSize);
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        AddItemWindowParameters(command, window, serverId, itemId);
+        var points = new Dictionary<DateTimeOffset, AdminEconomyItemSeriesPoint>();
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var point = new AdminEconomyItemSeriesPoint(
+                    reader.GetFieldValue<DateTimeOffset>(0),
+                    reader.GetDecimal(1),
+                    reader.GetDecimal(2),
+                    reader.GetDecimal(3),
+                    reader.GetDecimal(4),
+                    reader.GetDecimal(5),
+                    reader.GetInt64(6),
+                    reader.GetDecimal(7),
+                    reader.GetInt64(8),
+                    reader.GetInt64(9));
+                points[point.At] = point;
+            }
+        }
+
+        return window.Buckets()
+            .Select(bucket => points.GetValueOrDefault(bucket) ?? new AdminEconomyItemSeriesPoint(
+                bucket,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0,
+                0,
+                0,
+                0))
+            .ToArray();
+    }
+
+    internal static string BuildItemSeriesSql(TimeSpan bucketSize)
+    {
+        var unit = bucketSize == TimeSpan.FromHours(1) ? "hour" : "day";
+        return $$"""
+            SELECT
+                date_trunc('{{unit}}', o.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'UTC',
+                (array_agg(q.unit_price ORDER BY o.created_at, q.quote_id))[1],
+                (array_agg(q.unit_price ORDER BY o.created_at DESC, q.quote_id DESC))[1],
+                (sum(q.total_amount) / NULLIF(sum(q.quantity), 0))::numeric,
+                min(q.unit_price),
+                max(q.unit_price),
+                sum(q.quantity)::bigint,
+                sum(q.total_amount)::numeric,
+                count(DISTINCT q.player_uuid)::bigint,
+                count(*)::bigint
+            FROM launcher.economy_sale_quotes q
+            JOIN launcher.economy_operations o
+              ON o.operation_id = q.committed_operation_id
+            WHERE q.status = 'Committed'
+              AND o.status = 'Applied'
+              AND o.created_at >= $1
+              AND o.created_at < $2
+              AND ($3::text IS NULL OR o.server_id = $3)
+              AND q.item_id = $4
+            GROUP BY 1
+            ORDER BY 1;
+            """;
+    }
+
     private static void AddWindowParameters(
         NpgsqlCommand command,
         AdminEconomyWindow window,
@@ -404,6 +638,16 @@ public sealed class AdminEconomyRepository(
         command.Parameters.AddWithValue(
             NpgsqlDbType.Text,
             serverId is null ? DBNull.Value : serverId);
+    }
+
+    private static void AddItemWindowParameters(
+        NpgsqlCommand command,
+        AdminEconomyWindow window,
+        string? serverId,
+        string itemId)
+    {
+        AddWindowParameters(command, window, serverId);
+        command.Parameters.AddWithValue(itemId);
     }
 
     private sealed record WealthSnapshot(

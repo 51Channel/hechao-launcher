@@ -616,6 +616,12 @@ export interface AdminEconomyServerOption {
   displayName: string;
 }
 
+export interface AdminEconomyItemOption {
+  itemId: string;
+  currentUnitPrice: number | null;
+  enabled: boolean;
+}
+
 export interface AdminEconomySummary {
   totalSupply: number;
   windowIssued: number;
@@ -667,10 +673,48 @@ export interface AdminEconomyOverview {
   hours: number;
   serverId: string | null;
   servers: AdminEconomyServerOption[];
+  items: AdminEconomyItemOption[];
   summary: AdminEconomySummary;
   wealth: AdminEconomyWealthSummary;
   series: AdminEconomySeriesPoint[];
   topBalances: AdminEconomyPlayerBalance[];
   products: AdminEconomyProductVolume[];
   serverVolumes: AdminEconomyServerVolume[];
+}
+
+export interface AdminEconomyItemSummary {
+  openUnitPrice: number | null;
+  closeUnitPrice: number | null;
+  lowUnitPrice: number | null;
+  highUnitPrice: number | null;
+  priceChangeRate: number | null;
+  quantity: number;
+  amount: number;
+  sellers: number;
+  transactions: number;
+}
+
+export interface AdminEconomyItemSeriesPoint {
+  at: string;
+  openUnitPrice: number | null;
+  closeUnitPrice: number | null;
+  averageUnitPrice: number | null;
+  lowUnitPrice: number | null;
+  highUnitPrice: number | null;
+  quantity: number;
+  amount: number;
+  sellers: number;
+  transactions: number;
+}
+
+export interface AdminEconomyItemHistory {
+  from: string;
+  to: string;
+  hours: number;
+  serverId: string | null;
+  itemId: string;
+  currentUnitPrice: number | null;
+  enabled: boolean;
+  summary: AdminEconomyItemSummary;
+  series: AdminEconomyItemSeriesPoint[];
 }

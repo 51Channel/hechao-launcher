@@ -323,4 +323,23 @@ public sealed class DatabaseMigrationTests
         Assert.Contains(32, DatabaseMigrator.RegisteredMigrationVersions);
         Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
     }
+
+    [Fact]
+    public void EconomyItemHistoryMigration_AddsCommittedItemLookupIndex()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.033_economy_item_history_index.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("economy_sale_quotes", sql, StringComparison.Ordinal);
+        Assert.Contains("item_id, committed_operation_id", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE status = 'Committed'", sql, StringComparison.Ordinal);
+        Assert.Contains(33, DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
+    }
 }

@@ -32,7 +32,7 @@
 - LuckPerms 内部端点：`POST /v1/internal/luckperms/snapshot`、等级命令 `claim` 与 `complete`
 - 服务器心跳内部端点：`POST /v1/internal/server-heartbeats`
 - 经济内部端点：`/v1/internal/economy/*`，服务端令牌、服务器白名单和专用限流保护；
-- 经济管理只读端点：`/v1/admin/economy/overview`，沿用管理员 Host、会话、MFA、权限和限流边界；
+- 经济管理只读端点：`/v1/admin/economy/overview` 与 `/v1/admin/economy/items/history`，沿用管理员 Host、会话、MFA、权限和限流边界；候选迁移 032、033 尚未部署生产；
   权威处理余额、转账、报价、出售、商品和审计
 - 管理员票据端点：`POST /v1/admin-auth/tickets`，仅允许 `Administrator` 启动器会话
 - 管理员浏览器与目录端点：`/v1/admin-auth/*`、`/v1/admin/*`，仅允许管理域名上的独立 Cookie 会话；目录写入还要求 MFA 与 CSRF。`POST /v1/admin-auth/trusted-device` 只允许已通过 MFA 的会话签发可撤销本机信任，不能替代启动器一次性票据

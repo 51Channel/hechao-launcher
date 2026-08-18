@@ -137,6 +137,27 @@ public sealed class EconomyPostgresIntegrationTests
         Assert.Equal(37.50m, transfer.SenderBalance);
         Assert.Equal(12.50m, transfer.RecipientBalance);
 
+        var repriced = await repository.UpsertProductAsync(
+            modded.ItemId,
+            new EconomyProductUpsertRequest(7.00m, 64, 640, actorUuid, "integration-admin"),
+            CancellationToken.None);
+        Assert.Equal(7.00m, repriced.UnitPrice);
+        var secondQuote = await repository.CreateSaleQuoteAsync(
+            "activity-survival",
+            new EconomySaleQuoteRequest(recipientUuid, modded.ItemId, 5),
+            TimeSpan.FromSeconds(30),
+            CancellationToken.None);
+        Assert.Equal(EconomyQuoteStatus.Created, secondQuote.Status);
+        var secondSale = await repository.CommitSaleAsync(
+            "activity-survival",
+            new EconomySaleCommitRequest(
+                "sale:integration-0002",
+                secondQuote.Quote!.QuoteId,
+                recipientUuid),
+            CancellationToken.None);
+        Assert.Equal("Applied", secondSale.Status);
+        Assert.Equal(47.50m, secondSale.Balance);
+
         await using (var connection = await dataSource.OpenConnectionAsync())
         await using (var identities = new NpgsqlCommand(
             """
@@ -150,23 +171,41 @@ public sealed class EconomyPostgresIntegrationTests
             await identities.ExecuteNonQueryAsync();
         }
 
+        await using (var connection = await dataSource.OpenConnectionAsync())
+        await using (var operationTimes = new NpgsqlCommand(
+            """
+            UPDATE launcher.economy_operations
+            SET created_at = CASE operation_id
+                WHEN $1 THEN now() - interval '2 hours'
+                WHEN $2 THEN now() - interval '1 hour'
+                ELSE created_at
+            END
+            WHERE operation_id IN ($1, $2);
+            """,
+            connection))
+        {
+            operationTimes.Parameters.AddWithValue(sale.OperationId);
+            operationTimes.Parameters.AddWithValue(secondSale.OperationId);
+            Assert.Equal(2, await operationTimes.ExecuteNonQueryAsync());
+        }
+
         var dashboard = new AdminEconomyRepository(dataSource, TimeProvider.System);
         var overview = await dashboard.GetOverviewAsync(
             24,
             null,
             CancellationToken.None);
-        Assert.Equal(50.00m, overview.Summary.TotalSupply);
-        Assert.Equal(50.00m, overview.Summary.WindowIssued);
+        Assert.Equal(85.00m, overview.Summary.TotalSupply);
+        Assert.Equal(85.00m, overview.Summary.WindowIssued);
         Assert.Equal(12.50m, overview.Summary.TransferVolume);
         Assert.Equal(2, overview.Summary.ActivePlayers);
-        Assert.Equal(2, overview.Summary.OperationCount);
+        Assert.Equal(3, overview.Summary.OperationCount);
         Assert.Equal(2, overview.Wealth.FundedAccounts);
-        Assert.Equal(25.00m, overview.Wealth.AverageBalance);
-        Assert.Equal(25.00m, overview.Wealth.MedianBalance);
-        Assert.Equal(35.00m, overview.Wealth.P90Balance);
-        Assert.Equal(0.75m, overview.Wealth.TopTenPercentShare);
-        Assert.Equal(50.00m, overview.Series[^1].TotalSupply);
-        Assert.Equal(50.00m, overview.Series.Sum(point => point.IssuedAmount));
+        Assert.Equal(42.50m, overview.Wealth.AverageBalance);
+        Assert.Equal(42.50m, overview.Wealth.MedianBalance);
+        Assert.Equal(46.50m, overview.Wealth.P90Balance);
+        Assert.Equal(47.50m / 85.00m, overview.Wealth.TopTenPercentShare);
+        Assert.Equal(85.00m, overview.Series[^1].TotalSupply);
+        Assert.Equal(85.00m, overview.Series.Sum(point => point.IssuedAmount));
         Assert.Contains(overview.TopBalances, player =>
             player.PlayerName == "IntegrationSeller" && player.Balance == 37.50m);
         Assert.Collection(
@@ -174,8 +213,8 @@ public sealed class EconomyPostgresIntegrationTests
             product =>
             {
                 Assert.Equal("create:brass_ingot", product.ItemId);
-                Assert.Equal(10, product.Quantity);
-                Assert.Equal(50.00m, product.Amount);
+                Assert.Equal(15, product.Quantity);
+                Assert.Equal(85.00m, product.Amount);
             });
         Assert.Collection(
             overview.ServerVolumes,
@@ -183,9 +222,48 @@ public sealed class EconomyPostgresIntegrationTests
             {
                 Assert.Equal("activity-survival", server.ServerId);
                 Assert.Equal("活动生存服", server.DisplayName);
-                Assert.Equal(50.00m, server.SaleVolume);
+                Assert.Equal(85.00m, server.SaleVolume);
                 Assert.Equal(12.50m, server.TransferVolume);
             });
+        Assert.Contains(
+            overview.Items,
+            item => item.ItemId == modded.ItemId &&
+                    item.CurrentUnitPrice == 7.00m &&
+                    item.Enabled);
+
+        var itemHistory = await dashboard.GetItemHistoryAsync(
+            24,
+            modded.ItemId,
+            null,
+            CancellationToken.None);
+        Assert.NotNull(itemHistory);
+        Assert.Equal(7.00m, itemHistory.CurrentUnitPrice);
+        Assert.Equal(5.00m, itemHistory.Summary.OpenUnitPrice);
+        Assert.Equal(7.00m, itemHistory.Summary.CloseUnitPrice);
+        Assert.Equal(5.00m, itemHistory.Summary.LowUnitPrice);
+        Assert.Equal(7.00m, itemHistory.Summary.HighUnitPrice);
+        Assert.Equal(0.40m, itemHistory.Summary.PriceChangeRate);
+        Assert.Equal(15, itemHistory.Summary.Quantity);
+        Assert.Equal(85.00m, itemHistory.Summary.Amount);
+        Assert.Equal(2, itemHistory.Summary.Sellers);
+        Assert.Equal(2, itemHistory.Summary.Transactions);
+        Assert.Equal(15, itemHistory.Series.Sum(point => point.Quantity));
+        Assert.Equal(85.00m, itemHistory.Series.Sum(point => point.Amount));
+        Assert.Contains(itemHistory.Series, point =>
+            point.OpenUnitPrice == 5.00m &&
+            point.CloseUnitPrice == 5.00m &&
+            point.LowUnitPrice == 5.00m &&
+            point.HighUnitPrice == 5.00m);
+        Assert.Contains(itemHistory.Series, point =>
+            point.OpenUnitPrice == 7.00m &&
+            point.CloseUnitPrice == 7.00m &&
+            point.LowUnitPrice == 7.00m &&
+            point.HighUnitPrice == 7.00m);
+        Assert.Null(await dashboard.GetItemHistoryAsync(
+            24,
+            "minecraft:missing_item",
+            null,
+            CancellationToken.None));
 
         await using var verification = await dataSource.OpenConnectionAsync();
         await using (var balanced = new NpgsqlCommand(

@@ -569,6 +569,10 @@ async function mockAdminApi(
         hours: windowHours,
         serverId: selectedServerId,
         servers: [{ serverId: "survival2", displayName: "天域生存服" }],
+        items: [
+          { itemId: "minecraft:iron_ingot", currentUnitPrice: 5, enabled: true },
+          { itemId: "minecraft:gold_ingot", currentUnitPrice: 8, enabled: false }
+        ],
         summary: {
           totalSupply: 12500,
           windowIssued: selectedServerId ? 510 : 850,
@@ -603,6 +607,41 @@ async function mockAdminApi(
           activePlayers: 11,
           operationCount: 28
         }]
+      } });
+    } else if (path === "/v1/admin/economy/items/history") {
+      const windowHours = Number(url.searchParams.get("hours") ?? 24);
+      const pointCount = windowHours === 24 ? 24 : windowHours / 24;
+      await route.fulfill({ json: {
+        from: "2026-08-01T04:00:00Z",
+        to: "2026-08-02T04:00:00Z",
+        hours: windowHours,
+        serverId: url.searchParams.get("serverId"),
+        itemId: url.searchParams.get("itemId") ?? "minecraft:iron_ingot",
+        currentUnitPrice: 5,
+        enabled: true,
+        summary: {
+          openUnitPrice: 4.5,
+          closeUnitPrice: 5,
+          lowUnitPrice: 4,
+          highUnitPrice: 5.5,
+          priceChangeRate: 1 / 9,
+          quantity: 64,
+          amount: 320,
+          sellers: 4,
+          transactions: 6
+        },
+        series: Array.from({ length: pointCount }, (_, index) => ({
+          at: new Date(Date.parse("2026-08-02T04:00:00Z") - (pointCount - index - 1) * (windowHours === 24 ? 3600000 : 86400000)).toISOString(),
+          openUnitPrice: index % 5 === 0 ? null : 4.45 + index * 0.02,
+          closeUnitPrice: index % 5 === 0 ? null : 4.45 + index * 0.02 + (index % 2 === 0 ? 0.1 : -0.07),
+          averageUnitPrice: index % 5 === 0 ? null : 4.5 + index * 0.02,
+          lowUnitPrice: index % 5 === 0 ? null : 4.25 + index * 0.02,
+          highUnitPrice: index % 5 === 0 ? null : 4.75 + index * 0.02,
+          quantity: index % 5 === 0 ? 0 : 2 + index,
+          amount: index % 5 === 0 ? 0 : (2 + index) * (4.5 + index * 0.02),
+          sellers: index % 5 === 0 ? 0 : 1 + index % 3,
+          transactions: index % 5 === 0 ? 0 : 1 + index % 2
+        }))
       } });
     } else if (path === "/v1/admin/server-runtime/summary") {
       await route.fulfill({ json: {
@@ -2052,22 +2091,30 @@ test("economy dashboard renders a responsive market chart and filters server flo
 
   await expect(page.locator(".page-heading h1")).toHaveText("经济监控");
   await expect(page.getByText("12,500.00")).toBeVisible();
-  const canvas = page.locator(".economy-chart canvas");
+  const canvas = page.locator(".economy-chart canvas").first();
   await expect(canvas).toBeVisible();
-  const desktopChart = await page.locator(".economy-chart").boundingBox();
+  await expect(page.getByRole("heading", { name: "单品官方回收行情" })).toBeVisible();
+  await expect(page.getByText("+11.11%")).toBeVisible();
+  await expect(page.locator(".economy-item-chart canvas")).toBeVisible();
+  const desktopChart = await page.locator(".economy-chart").first().boundingBox();
   expect(desktopChart?.height).toBeGreaterThanOrEqual(420);
+  expect(await page.locator(".economy-item-market").evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.waitForTimeout(350);
   await page.screenshot({ path: "../../../artifacts/admin-web-economy-desktop.png", fullPage: true });
+  await page.locator(".economy-item-market").screenshot({ path: "../../../artifacts/admin-web-economy-item-desktop.png" });
 
   await page.getByLabel("服务器范围").selectOption("survival2");
   await expect(page.getByText("流量范围：天域生存服", { exact: false })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByLabel("服务器范围")).toBeVisible();
-  const mobileChart = await page.locator(".economy-chart").boundingBox();
+  const mobileChart = await page.locator(".economy-chart").first().boundingBox();
   expect(mobileChart?.height).toBeGreaterThanOrEqual(330);
+  await page.locator(".economy-item-market").scrollIntoViewIfNeeded();
+  expect(await page.locator(".economy-item-market").evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.locator(".economy-item-market").screenshot({ path: "../../../artifacts/admin-web-economy-item-mobile.png" });
   await page.screenshot({ path: "../../../artifacts/admin-web-economy-mobile.png", fullPage: true });
 });
 
