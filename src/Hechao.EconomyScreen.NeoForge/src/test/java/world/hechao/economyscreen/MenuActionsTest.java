@@ -71,4 +71,26 @@ final class MenuActionsTest {
         assertTrue(source.contains("Set.copyOf(actionIds)"));
         assertTrue(source.contains("performPrefixedCommand"));
     }
+
+    @Test
+    void pauseMenuKeepsModsEntryAndRequestsServerAuthorizedMenu()
+            throws Exception {
+        var source = Files.readString(Path.of(
+                "src",
+                "main",
+                "java",
+                "world",
+                "hechao",
+                "economyscreen",
+                "client",
+                "ClientPauseMenuEntry.java"));
+
+        assertTrue(source.contains("instanceof PauseScreen"));
+        assertTrue(source.contains("pauseScreen.showsPauseMenu()"));
+        assertTrue(source.contains("Component.translatable(\"fml.menu.mods\")"));
+        assertTrue(source.contains("modsButton.setWidth(HALF_BUTTON_WIDTH)"));
+        assertTrue(source.contains("event.addListener(hechaoButton)"));
+        assertTrue(source.contains("sendCommand(\"hechaomenu economy\")"));
+        assertFalse(source.contains("new HechaoNavigationScreen"));
+    }
 }

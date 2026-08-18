@@ -19,6 +19,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
+import world.hechao.economyscreen.client.ClientPauseMenuEntry;
 import world.hechao.economyscreen.network.MenuActionPayload;
 import world.hechao.economyscreen.network.OpenMenuPayload;
 
@@ -36,6 +37,9 @@ public final class HechaoEconomyScreenMod {
         modEventBus.addListener(this::registerPayloads);
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
         NeoForge.EVENT_BUS.addListener(this::playerLoggedOut);
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ClientPauseMenuEntry.register();
+        }
     }
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
