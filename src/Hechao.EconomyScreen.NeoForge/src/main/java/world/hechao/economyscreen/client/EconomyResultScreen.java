@@ -2,10 +2,9 @@ package world.hechao.economyscreen.client;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-final class EconomyResultScreen extends Screen {
+final class EconomyResultScreen extends SinglePassBackgroundScreen {
     private static final int PANEL_MAX_WIDTH = 380;
     private static final int PANEL_HEIGHT = 164;
     private static final int BUTTON_MAX_WIDTH = 110;
@@ -76,12 +75,11 @@ final class EconomyResultScreen extends Screen {
     }
 
     @Override
-    public void render(
+    protected void renderContent(
             GuiGraphics graphics,
             int mouseX,
             int mouseY,
             float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(
                 panelLeft,
                 panelTop,
@@ -143,7 +141,6 @@ final class EconomyResultScreen extends Screen {
                 }
             }
         }
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override

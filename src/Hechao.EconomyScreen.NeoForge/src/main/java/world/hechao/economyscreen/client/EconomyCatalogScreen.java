@@ -6,13 +6,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.ItemStack;
 
-final class EconomyCatalogScreen extends Screen {
+final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private static final int PAGE_BUTTON_WIDTH = 30;
     private static final int CLOSE_BUTTON_WIDTH = 80;
     private static final int BUTTON_HEIGHT = 20;
@@ -21,6 +20,7 @@ final class EconomyCatalogScreen extends Screen {
     private EconomyCatalogLayout.Layout layout;
     private Button previousButton;
     private Button nextButton;
+    private ItemStack hovered = ItemStack.EMPTY;
     private int page;
 
     EconomyCatalogScreen(ChestMenu menu) {
@@ -70,14 +70,13 @@ final class EconomyCatalogScreen extends Screen {
     }
 
     @Override
-    public void render(
+    protected void renderContent(
             GuiGraphics graphics,
             int mouseX,
             int mouseY,
             float partialTick) {
         var products = products();
         syncNavigation(products.size());
-        renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(
                 layout.panelLeft(),
                 layout.panelTop(),
@@ -112,7 +111,7 @@ final class EconomyCatalogScreen extends Screen {
                 0xFFB7BBC0,
                 false);
 
-        ItemStack hovered = ItemStack.EMPTY;
+        hovered = ItemStack.EMPTY;
         if (products.isEmpty()) {
             int centerY = layout.contentTop()
                     + (layout.footerTop() - layout.contentTop()) / 2;
@@ -188,7 +187,14 @@ final class EconomyCatalogScreen extends Screen {
                     layout.footerTop() - 10,
                     0xFFB7BBC0);
         }
-        super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    protected void renderOverlay(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            float partialTick) {
         if (!hovered.isEmpty()) {
             graphics.renderTooltip(font, hovered, mouseX, mouseY);
         }

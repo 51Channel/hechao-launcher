@@ -6,14 +6,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 import world.hechao.economyscreen.MenuActions;
 import world.hechao.economyscreen.network.MenuActionPayload;
 import world.hechao.economyscreen.network.OpenMenuPayload;
 
-public final class HechaoNavigationScreen extends Screen {
+public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     private static final Component TITLE = Component.literal("天域远征");
     private static final Component SERVER_AUTHORIZED_TOOLTIP = Component.literal(
             "菜单内容和权限由服务器决定");
@@ -73,12 +72,11 @@ public final class HechaoNavigationScreen extends Screen {
     }
 
     @Override
-    public void render(
+    protected void renderContent(
             GuiGraphics graphics,
             int mouseX,
             int mouseY,
             float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
         int titleWidth = font.width(TITLE);
         int groupWidth = titleWidth + TITLE_INDICATOR_GAP + TITLE_INDICATOR_SIZE;
         int groupLeft = (width - groupWidth) / 2;
@@ -89,7 +87,6 @@ public final class HechaoNavigationScreen extends Screen {
                 layout.titleTop() + 6,
                 0xFFFFFFFF,
                 true);
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
