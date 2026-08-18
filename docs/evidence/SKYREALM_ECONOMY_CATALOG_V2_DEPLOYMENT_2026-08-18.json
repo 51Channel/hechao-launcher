@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-18T07:16:23.2984891+00:00",
+  "serverId": "activity-survival",
+  "catalog": {
+    "sourceSha256": "EECC26232421BBDDCBB8D6483FC27DBF185153EC5366F6E827DFC405FD1B5ED4",
+    "productCount": 85,
+    "enabledCount": 85,
+    "verifiedCount": 85,
+    "secondPreviewDifferenceCount": 0,
+    "serverPages": [45, 40]
+  },
+  "client": {
+    "screenVersion": "0.1.9",
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "profileVersion": "1.0.18",
+    "manifestSha256": "9BE857DAEAD9743D79C96F04917E4040B5796153A9BA5C91826E3B51809562EB",
+    "jarBytes": 55526,
+    "jarSha256": "CAB56EE1062402D72581EE9290C4975DBBBEEFF2F22013F6BD5B585B03358691",
+    "channel": "Test",
+    "channelRevision": "r11",
+    "rolloutPercent": 100,
+    "grayAssigned": false,
+    "productionAssigned": false,
+    "objectVerification": "4252/4252 objects present with matching metadata"
+  },
+  "serverPlugin": {
+    "previousVersion": "0.1.5",
+    "previousSha256": "304794280382DFC6002D316C41ABA7B07602A7C84F29BE443FC9D7A6271ABF47",
+    "version": "0.1.6",
+    "jarBytes": 374547,
+    "jarSha256": "13069366685FAB4BE15BE0F362F8B491727DA6284C8D14C3DCAB099F3C63E315",
+    "productionJarCount": 1,
+    "adventureJarEntryCount": 0
+  },
+  "maintenance": {
+    "playersBeforeStop": 0,
+    "maxPlayers": 100,
+    "saveAllFlushSucceeded": true,
+    "structuredStopSucceeded": true,
+    "offlineBackup": "E:\\manual-backups\\activity-survival-economy-0.1.6-20260818T151016",
+    "backupFileCount": 413,
+    "backupBytes": 405956639,
+    "backupManifestSha256": "5C5341B0B65D4F29244AB6CDCB671AA9975C39732C81F50A98FCE840BC1D925D",
+    "backupVerification": "all source files matched by relative path, length, and SHA-256",
+    "failedVssStateArchived": true,
+    "structuredStartSucceeded": true
+  },
+  "runtime": {
+    "taskState": "Running",
+    "pid": 6184,
+    "port": 25600,
+    "listenerCount": 1,
+    "javaExecutable": "E:\\jdk\\bin\\java.exe",
+    "launchTarget": "arclight-neoforge-1.21.1-1.0.2-SNAPSHOT-8086b06.jar",
+    "startScriptSha256": "29C9DA5BC508B666A54632BB0A968BE930EE770CA61ECEF300B1E2B39F69E976",
+    "arclightRuntimeCount": 1,
+    "doneCount": 1,
+    "pluginLoadCount": 1,
+    "pluginEnableCount": 1,
+    "economyErrorCount": 0,
+    "adventureFailureCount": 0,
+    "health": {
+      "apiConfigured": true,
+      "vaultAuthoritative": true,
+      "commandsAuthoritative": true,
+      "tradingAvailable": true,
+      "quarantinedSales": 0
+    }
+  },
+  "api": {
+    "version": "0.33.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready"
+  },
+  "tests": {
+    "serverPassed": 21,
+    "clientPassed": 26,
+    "failed": 0,
+    "cleanBuildsPassed": 2
+  },
+  "knownRisks": [
+    "personal cross-product daily amount cap is not implemented",
+    "server-wide cross-product daily amount cap is not implemented",
+    "quota day still uses UTC instead of Asia/Shanghai",
+    "partial quantity sale at the remaining quota is not implemented"
+  ]
+}
