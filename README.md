@@ -1,14 +1,14 @@
 # 赫朝启动器
 
-> `2026-08-18` 工业季第三方屏幕已修复按钮点击后缺少可见反馈的问题。客户端日志确认
-> 请求和服务端响应原本正常，旧版只是立即关闭菜单并把结果放进聊天栏。Screen `0.1.6`
-> 现在会先显示动作对应的黄色 ActionBar 提示，再关闭菜单；协议和服务端授权链不变。
-> 新版随档案 `1.0.15` 只进入 `Test=r8 / 100%`，Gray 与 Production 未分配；与
-> `1.0.14` 共同的 `4,456` 个文件完全不变，OSS 仅新增 `33,099` 字节对象。玩家退出旧
-> 游戏并由启动器增量更新后仍需完成真人点击验收。记录见
-> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.6.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.6.md)
+> `2026-08-18` 工业季第三方屏幕已把余额、出售和回收目录改为直接打开模组原生业务 UI。
+> Screen `0.1.7` 支持加载、成功、失败、超时、出售报价确认、空目录和响应式分页；价格、
+> 权限、会话和交易仍由服务端裁决，协议保持 `2`。新版随档案 `1.0.16` 只进入
+> `Test=r9 / 100%`，Gray 与 Production 未分配；与 `1.0.15` 共同的 `4,456` 个文件
+> 完全不变，OSS 仅新增 `51,271` 字节对象。玩家退出旧游戏并由启动器增量更新后仍需完成
+> 真人点击验收。记录见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.7.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.7.md)
 > 与
-> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.15.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.15.md)。
+> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.16.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.16.md)。
 >
 > `2026-08-15` Launcher API `0.32.2` 已修复未发布客户端档案拖垮整份玩家目录的
 > 问题。API 现在只下发当前玩家能够同时取得客户端档案的服务器；未发布服务器继续

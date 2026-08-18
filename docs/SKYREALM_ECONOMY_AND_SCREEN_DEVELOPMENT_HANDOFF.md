@@ -5,9 +5,9 @@
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
 > 当前结论：API `0.33.1`、迁移 `031`、HechaoEconomy `0.1.5` 与服务端 Screen `0.1.3`
-> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.6` 随档案 `1.0.15`
-> 只进入 `Test=r8 / 100%`，Gray 与 Production 未分配。即时点击反馈的真人验收仍待
-> 玩家退出旧游戏并更新。商品目录当前为空，等待服主配置正式价格与额度。
+> 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.7` 随档案 `1.0.16`
+> 只进入 `Test=r9 / 100%`，Gray 与 Production 未分配。原生余额、出售和回收目录 UI
+> 的真人验收仍待玩家退出旧游戏并更新。商品目录当前为空，等待服主配置正式价格与额度。
 
 ## 1. 文档目的
 
@@ -59,7 +59,7 @@ flowchart LR
 | --- | --- | --- |
 | 平台后端 | `Hechao.Api/Economy` | 余额、流水、商品、额度、报价、幂等和审计 |
 | 游戏服插件 | `HechaoEconomy 0.1.5` | 命令、Vault、PAPI、物品核验、异步 API 调用和失败补偿 |
-| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.6` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
+| 双端模组 | 服务端 `0.1.3` / Test 客户端 `0.1.7` | 屏幕渲染、暂停菜单入口、短期会话、固定按钮动作和网络载荷 |
 
 ## 4. Economy Service 开发过程
 
@@ -508,3 +508,26 @@ Screen `0.1.5` 并新增 `0.1.6`。OSS 只新增 `33,099` 字节对象，Test �
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.6.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.6.md)
 与
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.15.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.15.md)。
+
+## 19. 2026-08-18 原生经济结果与目录界面
+
+`0.1.6` 已能证明按钮发包并显示 ActionBar，但余额和出售结果仍进入聊天栏，回收目录仍由
+Bukkit 打开箱子界面。客户端 Screen `0.1.7` 增加结果桥接：余额和出售动作先打开加载页，
+截取带 `[赫朝经济]` 前缀的服务端系统消息后直接更新为成功或错误结果；出售只有收到有效
+报价后才显示“确认出售”，确认仍发送固定命令 `hechaoeconomy:sell confirm`。无响应超过
+`200 tick` 会显示超时，不会让玩家停在无限加载状态。
+
+标题为“赫朝回收目录”的服务端容器改由模组原生目录页承载。页面保留服务端菜单中的真实
+物品和价格，只负责显示图标、名称、价格、Tooltip、空状态与分页；常见 GUI 为三列十二项，
+中等窗口为两列四项，窄窗口为单列一项，并支持按钮和滚轮翻页。客户端不生成商品、不修改
+价格，也不绕过服务端权限。生产商品表继续保持 `0` 条，文档中的 `85` 项待审核候选没有
+导入生产库。
+
+档案 `1.0.16` 与 `1.0.15` 的 `4,456` 个共同文件逐路径、大小、摘要和 URL 不变，只删除
+Screen `0.1.6` 并新增 `0.1.7`。OSS 只新增 `51,271` 字节对象，Test 更新为
+`r9 / 100%`；Gray 与 Production 未分配。Gradle 测试 `22/22`、清单验签、对象闭合、
+生产清单回读、受限权限、API 健康/就绪和两条审计均通过。玩家必须退出旧游戏并由启动器
+更新到 `1.0.16` 后进行真人验收，完成前不得推进其他通道。正式记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.7.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.1.7.md)
+与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.16.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.16.md)。
