@@ -38,7 +38,7 @@ final class MenuActionsTest {
     }
 
     @Test
-    void screenKeepsCompactScrollingLayoutForShortWindows() throws Exception {
+    void screenUsesCompactVanillaGridWithoutOversizedPanel() throws Exception {
         var source = Files.readString(Path.of(
                 "src",
                 "main",
@@ -49,10 +49,13 @@ final class MenuActionsTest {
                 "client",
                 "HechaoNavigationScreen.java"));
 
-        assertTrue(source.contains("compact = height < 180"));
+        assertTrue(source.contains("NavigationLayout.calculate"));
+        assertTrue(source.contains("NavigationLayout.BUTTON_HEIGHT"));
         assertTrue(source.contains("mouseScrolled"));
-        assertTrue(source.contains("maximumScrollRow"));
-        assertTrue(source.contains("plainSubstrByWidth"));
+        assertTrue(source.contains("菜单内容和权限由服务器决定"));
+        assertFalse(source.contains("graphics.fill("));
+        assertFalse(source.contains("SUBTITLE"));
+        assertFalse(source.contains("plainSubstrByWidth"));
     }
 
     @Test
