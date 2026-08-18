@@ -4,7 +4,7 @@
 > 对应开发日期：2026-08-14
 > 开发分支：`codex/skyrealm-one-click-economy-screen`
 > 基线提交：`a4e1da25eff48ce8cf4f08bb92c2321b9b54594b`
-> 当前结论：API `0.34.0`、迁移 `033`、HechaoEconomy `0.1.6` 与服务端 Screen `0.1.3`
+> 当前结论：API `0.34.0`、迁移 `033`、HechaoEconomy `0.1.7` 与服务端 Screen `0.1.3`
 > 已完成生产部署和真实 Arclight 冷启动验收；客户端 Screen `0.1.9` 随档案 `1.0.18`
 > 只进入 `Test=r11 / 100%`，Gray 与 Production 未分配。生产商品目录为 `85/85` 项启用；
 > 后台总体经济监控与单品官方回收 K 线已上线，生产当前尚无经济账户或成交。
@@ -571,7 +571,7 @@ Screen `0.1.9` 识别这些受控槽位，并在每一批内继续按窗口尺�
 金额门禁、北京时间额度日和部分数量回收；这些风险没有因目录启用而消失。正式记录见
 [`SKYREALM_ECONOMY_CATALOG_V2_RELEASE.md`](SKYREALM_ECONOMY_CATALOG_V2_RELEASE.md)。
 
-## 21. 2026-08-18 回收目录 Arclight 兼容修复
+## 22. 2026-08-18 回收目录 Arclight 兼容修复
 
 85 项目录启用后的首次真人点击暴露了此前空目录无法触发的运行时兼容问题：
 HechaoEconomy `0.1.6` 使用 Paper API 的 `Material.translationKey()` 为商品设置显示名，
