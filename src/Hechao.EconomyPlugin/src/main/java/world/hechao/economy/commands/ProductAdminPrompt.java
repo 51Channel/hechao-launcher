@@ -1,10 +1,11 @@
 package world.hechao.economy.commands;
 
 import java.util.List;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.entity.Player;
 
 final class ProductAdminPrompt {
@@ -20,28 +21,33 @@ final class ProductAdminPrompt {
     }
 
     static void send(Player player, String itemId) {
-        player.sendMessage(Component.text("[赫朝经济] ", NamedTextColor.GOLD)
-                .append(Component.text("正在配置主手物品 ", NamedTextColor.WHITE))
-                .append(Component.text(itemId, NamedTextColor.AQUA)));
+        var heading = text("[赫朝经济] ", ChatColor.GOLD);
+        heading.addExtra(text("正在配置主手物品 ", ChatColor.WHITE));
+        heading.addExtra(text(itemId, ChatColor.AQUA));
+        player.spigot().sendMessage(heading);
 
-        var presets = Component.text("常用单价: ", NamedTextColor.GRAY);
+        var presets = text("常用单价: ", ChatColor.GRAY);
         for (var price : PRESET_PRICES) {
-            presets = presets.append(Component.space()).append(priceButton(price));
+            presets.addExtra(" ");
+            presets.addExtra(priceButton(price));
         }
-        player.sendMessage(presets);
+        player.spigot().sendMessage(presets);
 
-        player.sendMessage(Component.text("更多操作: ", NamedTextColor.GRAY)
-                .append(actionButton(
-                        "[自定义价格/额度]",
-                        ClickEvent.suggestCommand("/hechaoeconomy:heco product set "),
-                        "补全单价，可继续填写个人日限和全服日限",
-                        NamedTextColor.AQUA))
-                .append(Component.space())
-                .append(actionButton(
-                        "[暂停回收]",
-                        ClickEvent.runCommand("/hechaoeconomy:heco product remove"),
-                        "立即暂停该物品回收",
-                        NamedTextColor.RED)));
+        var actions = text("更多操作: ", ChatColor.GRAY);
+        actions.addExtra(actionButton(
+                "[自定义价格/额度]",
+                ClickEvent.Action.SUGGEST_COMMAND,
+                "/hechaoeconomy:heco product set ",
+                "补全单价，可继续填写个人日限和全服日限",
+                ChatColor.AQUA));
+        actions.addExtra(" ");
+        actions.addExtra(actionButton(
+                "[暂停回收]",
+                ClickEvent.Action.RUN_COMMAND,
+                "/hechaoeconomy:heco product remove",
+                "立即暂停该物品回收",
+                ChatColor.RED));
+        player.spigot().sendMessage(actions);
     }
 
     static List<String> presetCommands() {
@@ -50,21 +56,30 @@ final class ProductAdminPrompt {
                 .toList();
     }
 
-    private static Component priceButton(String price) {
+    private static TextComponent priceButton(String price) {
         return actionButton(
                 "[" + price + "]",
-                ClickEvent.runCommand("/hechaoeconomy:heco product set " + price),
+                ClickEvent.Action.RUN_COMMAND,
+                "/hechaoeconomy:heco product set " + price,
                 "以 " + price + " 金币启用回收",
-                NamedTextColor.GREEN);
+                ChatColor.GREEN);
     }
 
-    private static Component actionButton(
+    private static TextComponent actionButton(
             String label,
-            ClickEvent click,
+            ClickEvent.Action action,
+            String command,
             String hover,
-            NamedTextColor color) {
-        return Component.text(label, color)
-                .clickEvent(click)
-                .hoverEvent(HoverEvent.showText(Component.text(hover, NamedTextColor.GRAY)));
+            ChatColor color) {
+        var button = text(label, color);
+        button.setClickEvent(new ClickEvent(action, command));
+        button.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(hover)));
+        return button;
+    }
+
+    private static TextComponent text(String value, ChatColor color) {
+        var component = new TextComponent(value);
+        component.setColor(color);
+        return component;
     }
 }

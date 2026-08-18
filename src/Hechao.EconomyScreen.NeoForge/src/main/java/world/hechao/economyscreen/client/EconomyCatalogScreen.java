@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 
 final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
@@ -22,6 +23,8 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private Button nextButton;
     private ItemStack hovered = ItemStack.EMPTY;
     private int page;
+    private int observedServerPage = -1;
+    private boolean moveToLastPageAfterServerChange;
 
     EconomyCatalogScreen(ChestMenu menu) {
         super(Component.literal(ClientEconomyUiBridge.CATALOG_TITLE));
@@ -66,7 +69,22 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                         CLOSE_BUTTON_WIDTH,
                         BUTTON_HEIGHT)
                 .build());
+        observedServerPage = serverPageInfo().page();
         syncNavigation(products().size());
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        var serverPage = serverPageInfo();
+        if (serverPage.page() != observedServerPage) {
+            observedServerPage = serverPage.page();
+            if (moveToLastPageAfterServerChange) {
+                page = maximumPage(products().size());
+                moveToLastPageAfterServerChange = false;
+            }
+            syncNavigation(products().size());
+        }
     }
 
     @Override
@@ -104,9 +122,9 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 true);
         graphics.drawString(
                 font,
-                products.size() + " 项",
+                serverPageInfo().totalItemCount() + " 项",
                 layout.panelLeft() + layout.panelWidth()
-                        - 12 - font.width(products.size() + " 项"),
+                        - 12 - font.width(serverPageInfo().totalItemCount() + " 项"),
                 layout.panelTop() + 11,
                 0xFFB7BBC0,
                 false);
@@ -178,8 +196,13 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             }
         }
 
-        if (maximumPage(products.size()) > 0) {
-            String indicator = (page + 1) + " / " + (maximumPage(products.size()) + 1);
+        var serverPage = serverPageInfo();
+        if (maximumPage(products.size()) > 0 || serverPage.pageCount() > 1) {
+            String indicator = serverPage.pageCount() > 1
+                    ? "第 " + serverPage.page() + " / " + serverPage.pageCount()
+                            + " 批 · 页 " + (page + 1) + " / "
+                            + (maximumPage(products.size()) + 1)
+                    : (page + 1) + " / " + (maximumPage(products.size()) + 1);
             graphics.drawCenteredString(
                     font,
                     indicator,
@@ -206,7 +229,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             double mouseY,
             double scrollX,
             double scrollY) {
-        if (scrollY == 0 || maximumPage(products().size()) == 0) {
+        if (scrollY == 0 || (!canMovePrevious() && !canMoveNext())) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         changePage(scrollY > 0 ? -1 : 1);
@@ -230,7 +253,9 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
 
     private List<ItemStack> products() {
         var products = new ArrayList<ItemStack>();
-        int productSlots = menu.getRowCount() * 9;
+        int productSlots = Math.min(
+                EconomyCatalogServerPage.PRODUCT_SLOTS,
+                menu.getRowCount() * 9);
         for (int index = 0; index < productSlots; index++) {
             var item = menu.getSlot(index).getItem();
             if (!item.isEmpty()) {
@@ -242,7 +267,26 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
 
     private void changePage(int direction) {
         int maximum = maximumPage(products().size());
-        page = Math.max(0, Math.min(maximum, page + direction));
+        if (direction < 0) {
+            if (page > 0) {
+                page--;
+            } else if (hasServerControl(
+                    EconomyCatalogServerPage.PREVIOUS_SLOT,
+                    EconomyCatalogServerPage.PREVIOUS_LABEL)) {
+                moveToLastPageAfterServerChange = true;
+                clickServerControl(EconomyCatalogServerPage.PREVIOUS_SLOT);
+            }
+        } else if (direction > 0) {
+            if (page < maximum) {
+                page++;
+            } else if (hasServerControl(
+                    EconomyCatalogServerPage.NEXT_SLOT,
+                    EconomyCatalogServerPage.NEXT_LABEL)) {
+                page = 0;
+                moveToLastPageAfterServerChange = false;
+                clickServerControl(EconomyCatalogServerPage.NEXT_SLOT);
+            }
+        }
         syncNavigation(products().size());
     }
 
@@ -252,14 +296,57 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         }
         int maximum = maximumPage(itemCount);
         page = Math.min(page, maximum);
-        previousButton.visible = maximum > 0;
-        nextButton.visible = maximum > 0;
-        previousButton.active = page > 0;
-        nextButton.active = page < maximum;
+        boolean canPrevious = canMovePrevious();
+        boolean canNext = canMoveNext();
+        previousButton.visible = canPrevious || canNext;
+        nextButton.visible = canPrevious || canNext;
+        previousButton.active = canPrevious;
+        nextButton.active = canNext;
     }
 
     private int maximumPage(int itemCount) {
         return EconomyCatalogLayout.maximumPage(itemCount, layout.pageSize());
+    }
+
+    private boolean canMovePrevious() {
+        return page > 0 || hasServerControl(
+                EconomyCatalogServerPage.PREVIOUS_SLOT,
+                EconomyCatalogServerPage.PREVIOUS_LABEL);
+    }
+
+    private boolean canMoveNext() {
+        return page < maximumPage(products().size()) || hasServerControl(
+                EconomyCatalogServerPage.NEXT_SLOT,
+                EconomyCatalogServerPage.NEXT_LABEL);
+    }
+
+    private boolean hasServerControl(int slot, String expectedLabel) {
+        if (slot >= menu.slots.size()) {
+            return false;
+        }
+        var item = menu.getSlot(slot).getItem();
+        return !item.isEmpty() && expectedLabel.equals(item.getHoverName().getString());
+    }
+
+    private EconomyCatalogServerPage.Info serverPageInfo() {
+        if (EconomyCatalogServerPage.PAGE_INFO_SLOT >= menu.slots.size()) {
+            return EconomyCatalogServerPage.parse("", products().size());
+        }
+        var item = menu.getSlot(EconomyCatalogServerPage.PAGE_INFO_SLOT).getItem();
+        String label = item.isEmpty() ? "" : item.getHoverName().getString();
+        return EconomyCatalogServerPage.parse(label, products().size());
+    }
+
+    private void clickServerControl(int slot) {
+        if (minecraft == null || minecraft.player == null || minecraft.gameMode == null) {
+            return;
+        }
+        minecraft.gameMode.handleInventoryMouseClick(
+                menu.containerId,
+                slot,
+                0,
+                ClickType.PICKUP,
+                minecraft.player);
     }
 
     private String displayName(ItemStack stack) {
