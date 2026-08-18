@@ -1,5 +1,5 @@
 name: HechaoEconomy
-version: '0.1.7'
+version: '0.2.0'
 main: world.hechao.economy.HechaoEconomyPlugin
 api-version: '1.21'
 load: POSTWORLD
@@ -28,6 +28,11 @@ commands:
   shop:
     description: 查看服务器回收目录
     usage: /shop
+    permission: hechao.economy.use
+  ah:
+    description: 打开玩家市场
+    usage: /ah [browse|sell|mine|claim]
+    aliases: [auctionhouse, market]
     permission: hechao.economy.use
   heco:
     description: 赫朝经济管理

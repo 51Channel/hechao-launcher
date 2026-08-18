@@ -2,6 +2,7 @@ package world.hechao.economy.gui;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -32,14 +33,26 @@ public final class ShopMenu implements Listener {
         openMenus.put(player.getUniqueId(), session);
     }
 
+    public boolean search(Player player, MarketSearchRequest request) {
+        var session = openMenus.get(player.getUniqueId());
+        if (session == null) {
+            return false;
+        }
+        session.query = request.query();
+        session.translatedItemIds = request.translatedItemIds();
+        renderPage(session, 0);
+        return true;
+    }
+
     private void renderPage(MenuSession session, int requestedPage) {
-        int page = ShopMenuPagination.clampPage(requestedPage, session.products.size());
+        var products = filteredProducts(session);
+        int page = ShopMenuPagination.clampPage(requestedPage, products.size());
         session.page = page;
         session.inventory.clear();
-        int first = ShopMenuPagination.firstProductIndex(page, session.products.size());
-        int count = ShopMenuPagination.productsOnPage(page, session.products.size());
+        int first = ShopMenuPagination.firstProductIndex(page, products.size());
+        int count = ShopMenuPagination.productsOnPage(page, products.size());
         for (int slot = 0; slot < count; slot++) {
-            var product = session.products.get(first + slot);
+            var product = products.get(first + slot);
             var material = Material.matchMaterial(product.itemId());
             if (material == null || material.isAir()) {
                 continue;
@@ -55,7 +68,7 @@ public final class ShopMenu implements Listener {
             session.inventory.setItem(slot, item);
         }
 
-        int pageCount = ShopMenuPagination.pageCount(session.products.size());
+        int pageCount = ShopMenuPagination.pageCount(products.size());
         if (page > 0) {
             session.inventory.setItem(
                     ShopMenuPagination.PREVIOUS_SLOT,
@@ -63,7 +76,7 @@ public final class ShopMenu implements Listener {
         }
         session.inventory.setItem(
                 ShopMenuPagination.PAGE_INFO_SLOT,
-                pageInfoItem(page, pageCount, session.products.size()));
+                pageInfoItem(page, pageCount, products.size(), session.query));
         if (page + 1 < pageCount) {
             session.inventory.setItem(
                     ShopMenuPagination.NEXT_SLOT,
@@ -79,12 +92,18 @@ public final class ShopMenu implements Listener {
         return item;
     }
 
-    private ItemStack pageInfoItem(int page, int pageCount, int productCount) {
+    private ItemStack pageInfoItem(
+            int page,
+            int pageCount,
+            int productCount,
+            String query) {
         var item = new ItemStack(Material.PAPER);
         var meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.GOLD + "第 " + (page + 1) + " / " + pageCount
                 + " 批 · 共 " + productCount + " 项");
-        meta.setLore(List.of(ChatColor.GRAY + "目录由服务器实时提供"));
+        meta.setLore(List.of(ChatColor.GRAY + (query.isBlank()
+                ? "目录由服务器实时提供"
+                : "当前搜索: " + query)));
         item.setItemMeta(meta);
         return item;
     }
@@ -103,7 +122,8 @@ public final class ShopMenu implements Listener {
         if (event.getRawSlot() == ShopMenuPagination.PREVIOUS_SLOT && session.page > 0) {
             renderPage(session, session.page - 1);
         } else if (event.getRawSlot() == ShopMenuPagination.NEXT_SLOT
-                && session.page + 1 < ShopMenuPagination.pageCount(session.products.size())) {
+                && session.page + 1
+                        < ShopMenuPagination.pageCount(filteredProducts(session).size())) {
             renderPage(session, session.page + 1);
         }
     }
@@ -116,9 +136,21 @@ public final class ShopMenu implements Listener {
         }
     }
 
+    private static List<Product> filteredProducts(MenuSession session) {
+        return session.products.stream()
+                .filter(product -> MarketplaceSearch.matches(
+                        session.query,
+                        session.translatedItemIds,
+                        product.itemId(),
+                        ""))
+                .toList();
+    }
+
     private static final class MenuSession {
         private final Inventory inventory;
         private final List<Product> products;
+        private String query = "";
+        private Set<String> translatedItemIds = Set.of();
         private int page;
 
         private MenuSession(Inventory inventory, List<Product> products) {

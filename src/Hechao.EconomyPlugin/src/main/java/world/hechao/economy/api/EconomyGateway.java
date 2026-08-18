@@ -33,6 +33,36 @@ public interface EconomyGateway {
     void disableProduct(String itemId, UUID actorUuid, String actorName)
             throws EconomyGatewayException;
 
+    List<MarketListing> marketListings(String query) throws EconomyGatewayException;
+
+    List<MarketListing> ownMarketListings(UUID playerUuid) throws EconomyGatewayException;
+
+    MarketCreate marketCreate(
+            String idempotencyKey,
+            UUID sellerUuid,
+            String sellerName,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice) throws EconomyGatewayException;
+
+    MarketPurchase marketPurchase(
+            String idempotencyKey,
+            UUID listingId,
+            UUID buyerUuid,
+            String buyerName) throws EconomyGatewayException;
+
+    MarketCancel marketCancel(
+            String idempotencyKey,
+            UUID listingId,
+            UUID sellerUuid) throws EconomyGatewayException;
+
+    List<MarketDelivery> marketDeliveries(UUID playerUuid) throws EconomyGatewayException;
+
+    MarketClaim marketClaim(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) throws EconomyGatewayException;
+
     boolean isConfigured();
 
     record Balance(UUID playerUuid, BigDecimal availableBalance, BigDecimal frozenBalance) {
@@ -76,5 +106,73 @@ public interface EconomyGateway {
             int personalDailyLimit,
             int serverDailyLimit,
             boolean enabled) {
+    }
+
+    record MarketListing(
+            UUID listingId,
+            String serverId,
+            UUID sellerUuid,
+            String sellerName,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice,
+            BigDecimal listingFee,
+            String status,
+            java.time.Instant createdAt,
+            java.time.Instant expiresAt) {
+    }
+
+    record MarketCreate(
+            UUID operationId,
+            String status,
+            MarketListing listing,
+            BigDecimal listingFee,
+            BigDecimal balance,
+            String failureCode) {
+    }
+
+    record MarketPurchase(
+            UUID operationId,
+            String status,
+            UUID listingId,
+            UUID deliveryId,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice,
+            BigDecimal sellerProceeds,
+            BigDecimal transactionTax,
+            BigDecimal buyerBalance,
+            String failureCode) {
+    }
+
+    record MarketCancel(
+            UUID operationId,
+            String status,
+            UUID listingId,
+            UUID deliveryId,
+            String itemId,
+            int quantity,
+            String failureCode) {
+    }
+
+    record MarketDelivery(
+            UUID deliveryId,
+            UUID playerUuid,
+            UUID listingId,
+            String serverId,
+            String itemId,
+            int quantity,
+            String reason,
+            String status,
+            java.time.Instant createdAt) {
+    }
+
+    record MarketClaim(
+            UUID operationId,
+            String status,
+            UUID deliveryId,
+            String itemId,
+            int quantity,
+            String failureCode) {
     }
 }

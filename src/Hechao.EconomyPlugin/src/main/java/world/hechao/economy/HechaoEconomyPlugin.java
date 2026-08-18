@@ -25,6 +25,8 @@ import world.hechao.economy.api.UnavailableEconomyGateway;
 import world.hechao.economy.commands.EconomyCommandRouter;
 import world.hechao.economy.gui.ShopMenu;
 import world.hechao.economy.gui.SellMenu;
+import world.hechao.economy.gui.MarketListingMenu;
+import world.hechao.economy.gui.MarketMenu;
 import world.hechao.economy.inventory.QuarantinedSaleStore;
 import world.hechao.economy.placeholder.HechaoBalanceExpansion;
 import world.hechao.economy.vault.HechaoVaultEconomy;
@@ -42,6 +44,8 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
     private QuarantinedSaleStore quarantinedSales;
     private ShopMenu shopMenu;
     private SellMenu sellMenu;
+    private MarketListingMenu marketListingMenu;
+    private MarketMenu marketMenu;
 
     @Override
     public void onEnable() {
@@ -64,19 +68,26 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
                 ServicePriority.Highest);
         shopMenu = new ShopMenu();
         sellMenu = new SellMenu(this, quarantinedSales);
+        marketListingMenu = new MarketListingMenu(this, quarantinedSales);
+        marketMenu = new MarketMenu(this, marketListingMenu, quarantinedSales);
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(shopMenu, this);
         getServer().getPluginManager().registerEvents(sellMenu, this);
+        getServer().getPluginManager().registerEvents(marketListingMenu, this);
+        getServer().getPluginManager().registerEvents(marketMenu, this);
 
         var commands = new EconomyCommandRouter(
                 this,
                 shopMenu,
                 sellMenu,
+                marketListingMenu,
+                marketMenu,
                 quarantinedSales);
         registerCommand("money", commands);
         registerCommand("pay", commands);
         registerCommand("sell", commands);
         registerCommand("shop", commands);
+        registerCommand("ah", commands);
         registerCommand("heco", commands);
 
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
@@ -97,6 +108,12 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
         commandOwner.set(false);
         if (sellMenu != null) {
             sellMenu.closeAll();
+        }
+        if (marketMenu != null) {
+            marketMenu.closeAll();
+        }
+        if (marketListingMenu != null) {
+            marketListingMenu.closeAll();
         }
         if (vaultProvider != null) {
             getServer().getServicesManager().unregister(Economy.class, vaultProvider);

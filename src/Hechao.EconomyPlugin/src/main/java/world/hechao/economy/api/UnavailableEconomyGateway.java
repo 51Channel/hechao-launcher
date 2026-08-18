@@ -62,6 +62,59 @@ public final class UnavailableEconomyGateway implements EconomyGateway {
     }
 
     @Override
+    public List<MarketListing> marketListings(String query) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public List<MarketListing> ownMarketListings(UUID playerUuid)
+            throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public MarketCreate marketCreate(
+            String idempotencyKey,
+            UUID sellerUuid,
+            String sellerName,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public MarketPurchase marketPurchase(
+            String idempotencyKey,
+            UUID listingId,
+            UUID buyerUuid,
+            String buyerName) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public MarketCancel marketCancel(
+            String idempotencyKey,
+            UUID listingId,
+            UUID sellerUuid) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public List<MarketDelivery> marketDeliveries(UUID playerUuid)
+            throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public MarketClaim marketClaim(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
     public boolean isConfigured() {
         return false;
     }

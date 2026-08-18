@@ -26,6 +26,9 @@ import world.hechao.economy.api.EconomyGateway;
 import world.hechao.economy.api.EconomyGatewayException;
 import world.hechao.economy.gui.ShopMenu;
 import world.hechao.economy.gui.SellMenu;
+import world.hechao.economy.gui.MarketListingMenu;
+import world.hechao.economy.gui.MarketMenu;
+import world.hechao.economy.gui.MarketSearchRequest;
 import world.hechao.economy.inventory.QuarantinedSaleStore;
 import world.hechao.economy.inventory.SellItemPolicy;
 
@@ -33,16 +36,22 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
     private final HechaoEconomyPlugin plugin;
     private final ShopMenu shopMenu;
     private final SellMenu sellMenu;
+    private final MarketListingMenu marketListingMenu;
+    private final MarketMenu marketMenu;
     private final QuarantinedSaleStore quarantinedSales;
 
     public EconomyCommandRouter(
             HechaoEconomyPlugin plugin,
             ShopMenu shopMenu,
             SellMenu sellMenu,
+            MarketListingMenu marketListingMenu,
+            MarketMenu marketMenu,
             QuarantinedSaleStore quarantinedSales) {
         this.plugin = plugin;
         this.shopMenu = shopMenu;
         this.sellMenu = sellMenu;
+        this.marketListingMenu = marketListingMenu;
+        this.marketMenu = marketMenu;
         this.quarantinedSales = quarantinedSales;
     }
 
@@ -56,7 +65,8 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             case "money" -> money(sender, args);
             case "pay" -> pay(sender, args);
             case "sell" -> sell(sender, args);
-            case "shop" -> shop(sender);
+            case "shop" -> shop(sender, args);
+            case "ah" -> market(sender, args);
             case "heco" -> admin(sender, args);
             default -> false;
         };
@@ -158,15 +168,87 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
         return true;
     }
 
-    private boolean shop(CommandSender sender) {
+    private boolean shop(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             error(sender, "该命令只能由玩家执行。");
+            return true;
+        }
+        if (args.length == 3 && "search".equalsIgnoreCase(args[0])) {
+            try {
+                var search = MarketSearchRequest.decode(args[1], args[2]);
+                if (!shopMenu.search(player, search)) {
+                    error(player, "请先打开服务器回收目录。");
+                }
+            } catch (IllegalArgumentException exception) {
+                error(player, exception.getMessage());
+            }
+            return true;
+        }
+        if (args.length != 0) {
+            error(player, "用法: /shop");
             return true;
         }
         async(
                 () -> plugin.gateway().products(false),
                 products -> shopMenu.open(player, products),
                 exception -> gatewayError(player, exception));
+        return true;
+    }
+
+    private boolean market(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            error(sender, "该命令只能由玩家执行。");
+            return true;
+        }
+        if (!plugin.isTradingAvailable()) {
+            unavailable(player);
+            return true;
+        }
+        if (args.length == 0 || (args.length == 1 && "browse".equalsIgnoreCase(args[0]))) {
+            async(
+                    () -> plugin.gateway().marketListings(""),
+                    listings -> marketMenu.openBrowse(player, listings),
+                    exception -> gatewayError(player, exception));
+            return true;
+        }
+        if (args.length == 1 && "sell".equalsIgnoreCase(args[0])) {
+            marketListingMenu.open(player);
+            return true;
+        }
+        if (args.length == 1 && "mine".equalsIgnoreCase(args[0])) {
+            async(
+                    () -> plugin.gateway().ownMarketListings(player.getUniqueId()),
+                    listings -> marketMenu.openMine(player, listings),
+                    exception -> gatewayError(player, exception));
+            return true;
+        }
+        if (args.length == 1 && "claim".equalsIgnoreCase(args[0])) {
+            async(
+                    () -> plugin.gateway().marketDeliveries(player.getUniqueId()),
+                    deliveries -> marketMenu.openDeliveries(player, deliveries),
+                    exception -> gatewayError(player, exception));
+            return true;
+        }
+        if (args.length == 2 && "list".equalsIgnoreCase(args[0])) {
+            var totalPrice = parseMoney(args[1]);
+            var failure = marketListingMenu.confirm(player, totalPrice);
+            if (failure != null) {
+                error(player, failure);
+            }
+            return true;
+        }
+        if (args.length == 3 && "search".equalsIgnoreCase(args[0])) {
+            try {
+                var search = MarketSearchRequest.decode(args[1], args[2]);
+                if (!marketMenu.search(player, search)) {
+                    error(player, "请先打开玩家市场、我的挂单或待领取。");
+                }
+            } catch (IllegalArgumentException exception) {
+                error(player, exception.getMessage());
+            }
+            return true;
+        }
+        error(player, "用法: /ah [browse|sell|mine|claim]");
         return true;
     }
 
@@ -357,7 +439,9 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             @NotNull String alias,
             @NotNull String[] args) {
         var options = new ArrayList<String>();
-        if ("heco".equalsIgnoreCase(command.getName()) && args.length == 1) {
+        if ("ah".equalsIgnoreCase(command.getName()) && args.length == 1) {
+            options.addAll(List.of("browse", "sell", "mine", "claim"));
+        } else if ("heco".equalsIgnoreCase(command.getName()) && args.length == 1) {
             options.addAll(List.of("health", "menu", "product", "reload"));
         } else if ("heco".equalsIgnoreCase(command.getName())
                 && args.length == 2

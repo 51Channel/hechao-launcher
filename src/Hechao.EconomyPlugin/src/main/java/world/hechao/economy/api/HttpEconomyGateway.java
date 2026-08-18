@@ -135,6 +135,108 @@ public final class HttpEconomyGateway implements EconomyGateway {
     }
 
     @Override
+    public List<MarketListing> marketListings(String query) throws EconomyGatewayException {
+        var request = request(
+                "/v1/internal/economy/market/listings?limit=500&query="
+                        + queryValue(query == null ? "" : query))
+                .GET()
+                .build();
+        List<MarketListingResponse> response = send(
+                request,
+                new TypeToken<List<MarketListingResponse>>() { }.getType(),
+                false);
+        return response.stream().map(MarketListingResponse::toModel).toList();
+    }
+
+    @Override
+    public List<MarketListing> ownMarketListings(UUID playerUuid)
+            throws EconomyGatewayException {
+        var request = request(
+                "/v1/internal/economy/market/listings/mine/" + playerUuid)
+                .GET()
+                .build();
+        List<MarketListingResponse> response = send(
+                request,
+                new TypeToken<List<MarketListingResponse>>() { }.getType(),
+                false);
+        return response.stream().map(MarketListingResponse::toModel).toList();
+    }
+
+    @Override
+    public MarketCreate marketCreate(
+            String idempotencyKey,
+            UUID sellerUuid,
+            String sellerName,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice) throws EconomyGatewayException {
+        var body = new MarketCreateRequest(
+                idempotencyKey,
+                sellerUuid,
+                sellerName,
+                itemId,
+                quantity,
+                totalPrice);
+        var request = jsonRequest("/v1/internal/economy/market/listings", body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        var response = sendWriteWithSingleRetry(request, MarketCreateResponse.class);
+        return response.toModel();
+    }
+
+    @Override
+    public MarketPurchase marketPurchase(
+            String idempotencyKey,
+            UUID listingId,
+            UUID buyerUuid,
+            String buyerName) throws EconomyGatewayException {
+        var body = new MarketPurchaseRequest(
+                idempotencyKey, listingId, buyerUuid, buyerName);
+        var request = jsonRequest("/v1/internal/economy/market/purchases", body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        return sendWriteWithSingleRetry(request, MarketPurchase.class);
+    }
+
+    @Override
+    public MarketCancel marketCancel(
+            String idempotencyKey,
+            UUID listingId,
+            UUID sellerUuid) throws EconomyGatewayException {
+        var body = new MarketCancelRequest(idempotencyKey, listingId, sellerUuid);
+        var request = jsonRequest("/v1/internal/economy/market/cancellations", body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        return sendWriteWithSingleRetry(request, MarketCancel.class);
+    }
+
+    @Override
+    public List<MarketDelivery> marketDeliveries(UUID playerUuid)
+            throws EconomyGatewayException {
+        var request = request(
+                "/v1/internal/economy/market/deliveries/" + playerUuid)
+                .GET()
+                .build();
+        List<MarketDeliveryResponse> response = send(
+                request,
+                new TypeToken<List<MarketDeliveryResponse>>() { }.getType(),
+                false);
+        return response.stream().map(MarketDeliveryResponse::toModel).toList();
+    }
+
+    @Override
+    public MarketClaim marketClaim(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) throws EconomyGatewayException {
+        var body = new MarketClaimRequest(idempotencyKey, deliveryId, playerUuid);
+        var request = jsonRequest("/v1/internal/economy/market/deliveries/claim", body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        return sendWriteWithSingleRetry(request, MarketClaim.class);
+    }
+
+    @Override
     public boolean isConfigured() {
         return configuration.configured();
     }
@@ -145,7 +247,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 .header("Authorization", "Bearer " + configuration.token())
                 .header("X-Hechao-Server-Id", configuration.serverId())
                 .header("Accept", "application/json")
-                .header("User-Agent", "HechaoEconomy/0.1.5");
+                .header("User-Agent", "HechaoEconomy/0.2.0");
     }
 
     private HttpRequest.Builder jsonRequest(String path, Object ignoredBody) {
@@ -312,5 +414,103 @@ public final class HttpEconomyGateway implements EconomyGateway {
     }
 
     private record ProductDisableRequest(UUID actorUuid, String actorName) {
+    }
+
+    private record MarketCreateRequest(
+            String idempotencyKey,
+            UUID sellerUuid,
+            String sellerName,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice) {
+    }
+
+    private record MarketListingResponse(
+            UUID listingId,
+            String serverId,
+            UUID sellerUuid,
+            String sellerName,
+            String itemId,
+            int quantity,
+            BigDecimal totalPrice,
+            BigDecimal listingFee,
+            String status,
+            String createdAt,
+            String expiresAt) {
+        private MarketListing toModel() {
+            return new MarketListing(
+                    listingId,
+                    serverId,
+                    sellerUuid,
+                    sellerName,
+                    itemId,
+                    quantity,
+                    totalPrice,
+                    listingFee,
+                    status,
+                    Instant.parse(createdAt),
+                    Instant.parse(expiresAt));
+        }
+    }
+
+    private record MarketCreateResponse(
+            UUID operationId,
+            String status,
+            MarketListingResponse listing,
+            BigDecimal listingFee,
+            BigDecimal balance,
+            String failureCode) {
+        private MarketCreate toModel() {
+            return new MarketCreate(
+                    operationId,
+                    status,
+                    listing == null ? null : listing.toModel(),
+                    listingFee,
+                    balance,
+                    failureCode);
+        }
+    }
+
+    private record MarketPurchaseRequest(
+            String idempotencyKey,
+            UUID listingId,
+            UUID buyerUuid,
+            String buyerName) {
+    }
+
+    private record MarketCancelRequest(
+            String idempotencyKey,
+            UUID listingId,
+            UUID sellerUuid) {
+    }
+
+    private record MarketClaimRequest(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) {
+    }
+
+    private record MarketDeliveryResponse(
+            UUID deliveryId,
+            UUID playerUuid,
+            UUID listingId,
+            String serverId,
+            String itemId,
+            int quantity,
+            String reason,
+            String status,
+            String createdAt) {
+        private MarketDelivery toModel() {
+            return new MarketDelivery(
+                    deliveryId,
+                    playerUuid,
+                    listingId,
+                    serverId,
+                    itemId,
+                    quantity,
+                    reason,
+                    status,
+                    Instant.parse(createdAt));
+        }
     }
 }
