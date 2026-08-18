@@ -113,6 +113,13 @@ public final class HechaoNavigationScreen extends Screen {
     private void sendAction(ActionView action) {
         PacketDistributor.sendToServer(
                 new MenuActionPayload(payload.sessionId(), action.actionId));
+        if (ClientEconomyUiBridge.opensEmbeddedScreen(action.actionId)) {
+            ClientEconomyUiBridge.openWaiting(
+                    action.actionId,
+                    action.definition.label(),
+                    action.definition.feedback());
+            return;
+        }
         var player = Minecraft.getInstance().player;
         if (player != null) {
             player.displayClientMessage(

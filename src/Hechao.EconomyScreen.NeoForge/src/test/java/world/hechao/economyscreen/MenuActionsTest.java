@@ -63,6 +63,7 @@ final class MenuActionsTest {
         assertTrue(source.contains("菜单内容和权限由服务器决定"));
         assertTrue(source.contains("displayClientMessage"));
         assertTrue(source.contains("action.definition.feedback()"));
+        assertTrue(source.contains("ClientEconomyUiBridge.openWaiting"));
         assertFalse(source.contains("graphics.fill("));
         assertFalse(source.contains("SUBTITLE"));
         assertFalse(source.contains("plainSubstrByWidth"));
