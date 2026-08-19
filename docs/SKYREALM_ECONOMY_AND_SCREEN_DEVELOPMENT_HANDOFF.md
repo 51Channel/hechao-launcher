@@ -646,3 +646,32 @@ Components/NBT，不能宣称已经实现复杂模组物品托管。
 上线前剩余硬门禁：隔离 PostgreSQL 真实迁移与事务测试、双账号真人完整流程、异常断线与
 背包竞争验收、生产备份和回滚演练、API/插件/客户端档案分阶段发布。候选详情见
 [`SKYREALM_PLAYER_MARKET_0.2.0_CANDIDATE.md`](SKYREALM_PLAYER_MARKET_0.2.0_CANDIDATE.md)。
+
+## 25. 2026-08-19 账户、队伍、设置与出售页修复
+
+HechaoEconomy `0.2.1` 与 Screen `0.2.1` 已完成代码修改和生产服务端部署。账户命令现在
+同时返回可用余额与冻结余额；Screen 计算总资产但不改变服务端权威。队伍入口明确发送
+`skyrealmcore:team list`，结果页可连续接收队伍、队长和成员多行响应；消息只在队伍页
+接管，避免吞掉普通聊天。个人设置页由 Screen 替换原版容器，出售页按窗口空间自适应，
+三项改动均保留服务端槽位和权限裁决。
+
+服务端制品 `HechaoEconomy-0.2.1.jar` 为 `440,200` 字节，SHA-256 为
+`B9F41A0559C6F2EFC7925451B8E2EEDABD8C0AAE17D9A8F7C511F42B7867E395`；Screen 制品为
+`908,221` 字节，SHA-256 为
+`53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E`。测试分别为
+`28/28` 和 `68/68`，生产服务端当前唯一监听 `127.0.0.1:25600`，`/heco health` 全绿，
+`NoSuchMethodError=0`。服务端必须和客户端同步，因为队伍命令映射、设置容器替换和结果
+多行接收都在 Screen/服务端协议边界内协作。
+
+客户端档案 `1.0.21` 暴露出一个发布元数据错误：清单写成 NeoForge `21.11.42`，但实际
+客户端和构建版本为 `21.1.228`。`1.0.21` 不删除、不覆盖，仅保留审计；已从同一客户端
+内容重新生成 `1.0.22`，清单 SHA-256 为
+`6841C556CDDAF6E69B546DEA2C5969A481C1672B66DBC6BACAA60D15EE78D5B8`，逻辑文件 `4,457`、
+逻辑字节 `1,204,189,699`、对象 `4,252`。OSS 校验复用全部对象，没有上传或覆盖对象。
+
+`1.0.22` 必须通过赫朝启动器管理员入口重新签发后台票据后导入，并且只推进
+`Test=100%`；Gray 与 Production 保持未分配。`RuntimeDistCleaner` 在服务端日志中仍为
+`12` 行，与历史成功启动基线一致，是整合包扫描噪声，不是本次回归。正式记录见
+[`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.1.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.1.md)、
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.1.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.1.md) 和
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.22.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.22.md)。

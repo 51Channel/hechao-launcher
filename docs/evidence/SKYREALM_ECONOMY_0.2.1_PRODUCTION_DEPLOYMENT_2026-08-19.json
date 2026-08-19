@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-19T04:37:45.8282983Z",
+  "component": "hechao-economy",
+  "version": "0.2.1",
+  "buildSourceCommit": "2ca51f09338c52f412a6ab26112a01da591e11af",
+  "releaseTag": "hechao-economy-v0.2.1",
+  "artifact": {
+    "name": "HechaoEconomy-0.2.1.jar",
+    "sizeBytes": 440200,
+    "sha256": "B9F41A0559C6F2EFC7925451B8E2EEDABD8C0AAE17D9A8F7C511F42B7867E395"
+  },
+  "tests": {
+    "passed": 28,
+    "failed": 0
+  },
+  "features": {
+    "availableBalanceReturned": true,
+    "frozenBalanceReturned": true,
+    "ledgerRulesChanged": false,
+    "marketRulesChanged": false
+  },
+  "deployment": {
+    "serverId": "activity-survival",
+    "serverRoot": "E:\\HechaoActivitySlots\\activity-survival",
+    "playersOnlineBeforeStop": 0,
+    "hotReplaced": false,
+    "normalSaveAndStopCompleted": true,
+    "singleAuthoritativeJar": true,
+    "arclightLaunchPreserved": true,
+    "structuredStartCompleted": true,
+    "otherBackendsOperated": false,
+    "postDeploymentProcessIdSnapshot": 7436,
+    "listenAddress": "127.0.0.1",
+    "listenPort": 25600,
+    "backupPath": "E:\\manual-backups\\activity-survival-economy-screen-0.2.1-20260819T033107Z"
+  },
+  "runtimeAcceptance": {
+    "taskState": "Running",
+    "runningOnBukkitArclightLines": 1,
+    "pluginLoadingLines": 1,
+    "pluginEnablingLines": 1,
+    "doneLines": 1,
+    "noSuchMethodErrorLines": 0,
+    "apiConfigured": true,
+    "vaultAuthoritative": true,
+    "commandsAuthoritative": true,
+    "tradingEnabled": true,
+    "quarantinedTrades": 0,
+    "currentRuntimeStateRequiresLiveRecheck": true
+  },
+  "remainingAcceptance": {
+    "realClientAccountLayoutPassed": false,
+    "frozenBalancePresentationPassed": false,
+    "accountShortcutNavigationPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  },
+  "rollback": {
+    "kind": "full-offline-server-backup",
+    "target": "E:\\manual-backups\\activity-survival-economy-screen-0.2.1-20260819T033107Z",
+    "normalStopRequired": true,
+    "databaseMigrationMustBeRetained": true
+  }
+}
