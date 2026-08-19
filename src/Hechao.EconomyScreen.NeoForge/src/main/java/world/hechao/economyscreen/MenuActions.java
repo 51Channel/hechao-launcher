@@ -60,7 +60,7 @@ public final class MenuActions {
                 "team",
                 new Definition(
                         "我的队伍",
-                        "打开队伍功能",
+                        "管理邀请、成员和队伍聊天",
                         "正在打开队伍...",
                         "skyrealmcore:team list"));
         return Collections.unmodifiableMap(actions);

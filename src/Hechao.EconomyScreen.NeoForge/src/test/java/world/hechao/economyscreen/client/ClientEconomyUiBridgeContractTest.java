@@ -26,5 +26,6 @@ final class ClientEconomyUiBridgeContractTest {
         assertTrue(source.contains("new SkyrealmSettingsScreen(container.getMenu())"));
         assertTrue(source.contains("new EconomyMarketScreen("));
         assertTrue(source.contains("new EconomyMarketListingScreen("));
+        assertTrue(source.contains("new TeamManagementScreen("));
     }
 }

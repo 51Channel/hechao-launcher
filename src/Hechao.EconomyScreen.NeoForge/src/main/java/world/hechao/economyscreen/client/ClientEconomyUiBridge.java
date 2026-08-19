@@ -42,6 +42,11 @@ public final class ClientEconomyUiBridge {
             String actionId,
             String title,
             String loadingMessage) {
+        if ("team".equals(actionId)) {
+            Minecraft.getInstance().setScreen(new TeamManagementScreen(
+                    Component.literal(title)));
+            return;
+        }
         Minecraft.getInstance().setScreen(new EconomyResultScreen(
                 actionId,
                 Component.literal(title),
@@ -59,7 +64,10 @@ public final class ClientEconomyUiBridge {
         var minecraft = Minecraft.getInstance();
         String message = event.getMessage().getString();
         if (!message.contains(ECONOMY_PREFIX)) {
-            if (minecraft.screen instanceof EconomyResultScreen screen
+            if (minecraft.screen instanceof TeamManagementScreen screen
+                    && screen.acceptsSystemMessage(message)) {
+                screen.acceptMessage(event.getMessage());
+            } else if (minecraft.screen instanceof EconomyResultScreen screen
                     && screen.acceptsSystemMessage(message)) {
                 screen.acceptMessage(event.getMessage());
             }

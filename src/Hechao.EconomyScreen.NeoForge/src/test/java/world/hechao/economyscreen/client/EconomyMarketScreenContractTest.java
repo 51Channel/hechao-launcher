@@ -39,6 +39,10 @@ final class EconomyMarketScreenContractTest {
         assertTrue(source.contains("MarketPriceInput.parse"));
         assertTrue(source.contains("hechaoeconomy:ah list "));
         assertTrue(source.contains("handleInventoryMouseClick("));
+        assertTrue(source.contains("CUSTOM_IMAGE_WIDTH = 278"));
+        assertTrue(source.contains("visibleSlot(slot)"));
+        assertTrue(source.contains("上架规则"));
+        assertTrue(source.contains("slotClicked(Slot"));
     }
 
     private static String read(String fileName) throws IOException {

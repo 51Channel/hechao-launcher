@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'world.hechao'
-version = '0.2.1'
+version = '0.2.3'
 
 base {
     archivesName = 'HechaoEconomyScreen-NeoForge-1.21.1'

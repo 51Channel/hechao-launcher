@@ -9,12 +9,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Items;
 
 final class EconomyMarketListingScreen extends ContainerScreen {
+    private static final int CUSTOM_IMAGE_WIDTH = 278;
     private static final int INPUT_SLOT = 13;
     private static final int STATUS_SLOT = 4;
     private static final int CONFIRM_SLOT = 22;
     private static final int RETURN_SLOT = 26;
+    private static final int PRICE_LEFT = 178;
+    private static final int PRICE_TOP = 40;
+    private static final int PRICE_WIDTH = 88;
 
     private EditBox priceBox;
     private Button confirmButton;
@@ -23,6 +29,7 @@ final class EconomyMarketListingScreen extends ContainerScreen {
 
     EconomyMarketListingScreen(ChestMenu menu, Inventory playerInventory) {
         super(menu, playerInventory, Component.literal(ClientEconomyUiBridge.MARKET_LISTING_TITLE));
+        imageWidth = CUSTOM_IMAGE_WIDTH;
         inventoryLabelY = imageHeight - 94;
         titleLabelY = 7;
     }
@@ -32,9 +39,9 @@ final class EconomyMarketListingScreen extends ContainerScreen {
         super.init();
         priceBox = new EditBox(
                 font,
-                leftPos + 13,
-                topPos + 60,
-                75,
+                leftPos + PRICE_LEFT + 5,
+                topPos + PRICE_TOP + 2,
+                PRICE_WIDTH - 10,
                 16,
                 Component.literal("挂单总价"));
         priceBox.setBordered(false);
@@ -49,9 +56,9 @@ final class EconomyMarketListingScreen extends ContainerScreen {
         addRenderableWidget(priceBox);
 
         confirmButton = new IndustrialButton(
-                leftPos + 96,
-                topPos + 58,
-                72,
+                leftPos + PRICE_LEFT,
+                topPos + 61,
+                PRICE_WIDTH,
                 20,
                 Component.literal("确认上架"),
                 ignored -> submitListing());
@@ -87,7 +94,9 @@ final class EconomyMarketListingScreen extends ContainerScreen {
             float partialTick) {
         syncButtons();
         super.render(graphics, mouseX, mouseY, partialTick);
-        renderTooltip(graphics, mouseX, mouseY);
+        if (hoveredSlot == null || visibleSlot(hoveredSlot)) {
+            renderTooltip(graphics, mouseX, mouseY);
+        }
     }
 
     @Override
@@ -107,6 +116,13 @@ final class EconomyMarketListingScreen extends ContainerScreen {
         int inputY = topPos + menu.getSlot(INPUT_SLOT).y;
         IndustrialUiTheme.renderIconDock(graphics, inputX - 7, inputY - 7, 30, 0xFFE2B95F);
         graphics.renderOutline(inputX - 1, inputY - 1, 18, 18, 0xFFFFD75A);
+        IndustrialUiTheme.renderInstrumentBay(
+                graphics,
+                leftPos + PRICE_LEFT - 2,
+                topPos + 33,
+                PRICE_WIDTH + 4,
+                50,
+                0xFFE2B95F);
         IndustrialUiTheme.renderInputField(
                 graphics,
                 priceBox.getX() - 5,
@@ -118,7 +134,7 @@ final class EconomyMarketListingScreen extends ContainerScreen {
                 graphics,
                 leftPos + 8,
                 leftPos + imageWidth - 8,
-                topPos + 82);
+                topPos + 84);
         renderInventorySlots(graphics);
     }
 
@@ -138,10 +154,52 @@ final class EconomyMarketListingScreen extends ContainerScreen {
                 false);
 
         var status = menu.getSlot(STATUS_SLOT).getItem();
-        String heading = status.isEmpty()
+        String statusText = status.isEmpty()
                 ? "放入一组普通物品"
                 : status.getHoverName().getString();
-        graphics.drawCenteredString(font, fit(heading, 126), imageWidth / 2, 31, 0xFFFFD75A);
+        var input = menu.getSlot(INPUT_SLOT).getItem();
+        String itemName = input.isEmpty()
+                ? "等待放入物品"
+                : input.getHoverName().getString() + " × " + input.getCount();
+        int statusColor = status.is(Items.REDSTONE) ? 0xFFFF8A80 : 0xFFFFD75A;
+
+        graphics.drawString(font, "上架物品", 12, 39, 0xFFADB5B7, false);
+        graphics.drawString(font, fit(itemName, 66), 106, 39, 0xFFFFFFFF, false);
+        graphics.drawString(font, fit(statusText, 156), 12, 62, statusColor, false);
+        graphics.drawString(font, "挂单总价", PRICE_LEFT + 7, 36, 0xFFADB5B7, false);
+        graphics.drawString(
+                font,
+                fit("上架规则：最低 1.00 · 手续费 1%", 166),
+                12,
+                75,
+                0xFF8CD99B,
+                false);
+    }
+
+    @Override
+    protected void renderSlot(GuiGraphics graphics, Slot slot) {
+        if (visibleSlot(slot)) {
+            super.renderSlot(graphics, slot);
+        }
+    }
+
+    @Override
+    protected void renderSlotHighlight(
+            GuiGraphics graphics,
+            Slot slot,
+            int mouseX,
+            int mouseY,
+            float partialTick) {
+        if (visibleSlot(slot)) {
+            super.renderSlotHighlight(graphics, slot, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
+    protected void slotClicked(Slot slot, int button, int clickType, ClickType type) {
+        if (slot != null && visibleSlot(slot)) {
+            super.slotClicked(slot, button, clickType, type);
+        }
     }
 
     @Override
@@ -192,6 +250,10 @@ final class EconomyMarketListingScreen extends ContainerScreen {
             graphics.fill(x, y, x + 18, y + 18, 0xA5121719);
             graphics.renderOutline(x, y, 18, 18, 0xFF465154);
         }
+    }
+
+    private static boolean visibleSlot(Slot slot) {
+        return slot.index == INPUT_SLOT || slot.index >= 27;
     }
 
     private String fit(String text, int maximumWidth) {
