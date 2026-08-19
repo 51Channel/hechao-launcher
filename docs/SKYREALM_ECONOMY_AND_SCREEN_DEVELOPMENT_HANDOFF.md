@@ -678,3 +678,32 @@ PostgreSQL、审计、API 健康/就绪、`NRestarts=0` 和零发布窗口 warni
 [`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.1.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.1.md)、
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.1.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.1.md) 和
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.22.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.22.md)。
+
+## 26. 2026-08-19 Screen 0.2.3 与客户端档案 1.0.23 Test 发布
+
+Screen `0.2.3` 修复玩家市场上架页与背包槽位重叠、隐藏服务端控制槽误点击，并增强我的
+队伍成员列表、成员选择、队长移出保护和队伍状态解析。客户端仍只发送既有
+`skyrealmcore:team` 命令，网络协议保持 `2`；服务端 `HechaoEconomy 0.2.1` 不需要重启或
+改动。Screen JAR 为 `927,120` 字节，SHA-256 为
+`9C56DBCC357745056FECAB701EC9E3D9E874C8FD64B3AB581839FC262DB72802`，测试 `78/78`。
+
+客户端档案 `1.0.23` 从 `1.0.22` 的内容寻址对象重建，`4,456` 个共同文件逐哈希不变，只
+替换 Screen 文件；清单 `2,025,521` 字节，SHA-256 为
+`61B9851E9A62C4E799D82CCBBB7E99FD8D64B289FA2F10B0E7ED8AF527732020`，逻辑文件 `4,457`，
+逻辑字节 `1,204,208,598`。Publisher 新增对象 `1` 个、跳过既有对象 `4,251` 个，上传
+`927,120` 字节且没有覆盖旧对象。
+
+`1.0.23` 已由 `51Channel / owner` 管理员会话导入，并将 Test 从
+`1.0.22 / 100% / r15` 切到 `1.0.23 / 100% / r16`；导入审计为 `9438`，通道审计为
+`9439`。Gray 保持未分配 `0% / r1`，Production 保持未分配 `100% / r1`；`1.0.22` 继续
+作为回滚目标。远端清单为 `hechao-api:hechao-api / 0640`，原始字节和摘要一致，匿名清单
+与新 Screen 对象均返回 `401`。API `0.35.0` 健康/就绪、数据库 `ready`、`NRestarts=0`
+和发布窗口零 warning 以上日志通过，未重启任何游戏服、Velocity、API、Publisher 或服控
+进程。
+
+发布后仍需由启动器增量更新并完成真人账户、队伍、个人设置、出售页和双账号市场的完整
+交互、断线、背包竞争和幂等重试验收；这些门禁完成前不得推进 Gray 或 Production。正式
+记录见 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.3.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.3.md)、
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md)
+和结构化证据
+[`evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.23_TEST_RELEASE_2026-08-19.json`](evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.23_TEST_RELEASE_2026-08-19.json)。

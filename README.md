@@ -1,14 +1,13 @@
 # 赫朝启动器
 
-> `2026-08-19` 天域远征第三方屏幕 `0.2.3` 已完成本地候选构建，并生成客户端档案 `1.0.23`
-> 的本地签名清单。上架物品页面收回
-> 规则区域，避免与玩家背包槽重叠，并拦截隐藏服务端控制槽的误点击；我的队伍页面增加
-> 成员列表、点击成员自动填入操作框、队长移出保护和更宽容的队伍状态解析。客户端仍只
-> 发送既有 `skyrealmcore:team` 命令，未新增服务端能力；当前未部署到生产，需真人验收后
-> 才能上传并发布档案。记录见
-> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.3_CANDIDATE.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.3_CANDIDATE.md)。
+> `2026-08-19` 天域远征第三方屏幕 `0.2.3` 已随客户端档案 `1.0.23` 发布到
+> `Test=100% / r16`。上架物品页面收回规则区域，避免与玩家背包槽重叠，并拦截隐藏服务端
+> 控制槽的误点击；我的队伍页面增加成员列表、点击成员自动填入操作框、队长移出保护和
+> 更宽容的队伍状态解析。客户端仍只发送既有 `skyrealmcore:team` 命令，未新增服务端能力。
+> Gray 与 Production 保持未分配，`1.0.22` 保留为回滚目标。记录见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.3.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.3.md)。
 > 档案记录见
-> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23_CANDIDATE.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23_CANDIDATE.md)。
+> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md)。
 >
 > `2026-08-18` 天域远征玩家市场与全局模糊搜索已完成分阶段部署。API `0.35.0` 和
 > HechaoEconomy `0.2.0` 已生产上线，客户端 Screen `0.2.0` 随不可变档案 `1.0.20`

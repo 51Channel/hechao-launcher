@@ -1,8 +1,8 @@
 # 赫朝启动器完成矩阵
 
-> 更新时间：`2026-08-18`
+> 更新时间：`2026-08-19`
 >
-> 当前生产：启动器 `0.15.9`、API `0.34.0`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
+> 当前生产：启动器 `0.15.9`、API `0.35.0`、LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、
 > owl5/owl9 ServerControlAgent `0.7.2`、
 > Velocity Authorizer `0.5.0`（`monitor`）、Lobby Guard `0.1.0`
 >
@@ -37,7 +37,8 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 项目 | 状态 | 证据或剩余条件 |
 | --- | --- | --- |
 | 启动器 | 已发布，更新通道已开放 | `0.15.9` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，公开元数据、官网下载网关和认证会话更新计划均通过，见 [`LAUNCHER_RELEASE_0.15.9.md`](LAUNCHER_RELEASE_0.15.9.md) |
-| API `0.34.0` | 已完成 | 保留迁移 031 的经济写入合同，新增迁移 032/033 分析索引、总体经济监控和单品官方回收 K 线。内外网健康、数据库 `33/33`、`85/85` 商品、静态资源和回滚均已验收，见 [`API_RELEASE_0.34.0.md`](API_RELEASE_0.34.0.md) |
+| API `0.35.0` | 已完成 | 在 `0.34.0` 经济监控基础上上线玩家市场、挂单、购买、下架、待领取和模糊搜索；迁移 `034/034`、生产健康/就绪和回滚均已验收，见 [`API_RELEASE_0.35.0.md`](API_RELEASE_0.35.0.md) |
+| 天域远征客户端档案 `1.0.23` / Screen `0.2.3` | 已部署待外部验收 | Test `100% / r16`，Gray 与 Production 未分配；保留 `1.0.22` 作为回滚目标。清单、对象、权限、审计和 API 健康见 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md) 与 [`evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.23_TEST_RELEASE_2026-08-19.json`](evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.23_TEST_RELEASE_2026-08-19.json) |
 | 独立生存/活动/PVP/小游戏槽 | 已完成 | API `0.34.0`、owl5/owl9 代理 `0.7.2`、Velocity Authorizer `0.5.0` 已生产部署；未发布 Production 客户端的独立槽继续保留在后台，但不会进入普通玩家实时目录 |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条正式企划，`赫朝商务追杀` 作为只读旧排期显示，补齐结束时间与整合包绑定后仍须走正式企划流程；首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
 | 整合包导入 | 已完成（停止槽固定试包） | API `0.27.0`、Publisher `1.0.0` 与 owl5 ServerControlAgent `0.3.1` 已部署。固定试包完成上传、识别、客户端 Test-only 发布、停止活动槽部署、隐藏关闭目录和原活动目录恢复；Gray/Production、Velocity 路由、活动服停止状态和五个 Java PID 未变化。真实玩法包与真人进服仍按每个活动单独验收，见 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md) 与 [`evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json`](evidence/PACKAGE_IMPORT_PRODUCTION_ACCEPTANCE_2026-08-05.json) |
