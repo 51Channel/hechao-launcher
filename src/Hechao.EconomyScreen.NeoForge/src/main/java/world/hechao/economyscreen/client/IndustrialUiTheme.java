@@ -50,26 +50,53 @@ final class IndustrialUiTheme {
             int top,
             int width,
             int height) {
+        renderPanel(graphics, left, top, width, height, HEADER_HEIGHT);
+    }
+
+    static void renderPanel(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            int headerHeight) {
         graphics.fill(left + 3, top + 3, left + width + 3, top + height + 3, 0x8A000000);
         graphics.fill(left, top, left + width, top + height, 0xF21A1E20);
         graphics.renderOutline(left, top, width, height, 0xFF9E793E);
         graphics.renderOutline(left + 2, top + 2, width - 4, height - 4, 0xFF3E474A);
+        int safeHeaderHeight = Math.max(8, Math.min(headerHeight, height - 8));
         graphics.fill(
                 left + 3,
                 top + 3,
                 left + width - 3,
-                top + HEADER_HEIGHT,
+                top + safeHeaderHeight,
                 0xF02B3032);
         graphics.fill(
                 left + 3,
-                top + HEADER_HEIGHT - 1,
+                top + safeHeaderHeight - 1,
                 left + width - 3,
-                top + HEADER_HEIGHT + 1,
+                top + safeHeaderHeight + 1,
                 0xFFD1A64D);
         renderRivet(graphics, left + 5, top + 5);
         renderRivet(graphics, left + width - 7, top + 5);
         renderRivet(graphics, left + 5, top + height - 7);
         renderRivet(graphics, left + width - 7, top + height - 7);
+    }
+
+    static void renderModule(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            int accent) {
+        graphics.fill(left + 2, top + 2, left + width + 2, top + height + 2, 0x65000000);
+        graphics.fill(left, top, left + width, top + height, 0xE3181D1F);
+        graphics.renderOutline(left, top, width, height, 0xFF566164);
+        graphics.renderOutline(left + 2, top + 2, width - 4, height - 4, 0xFF2D3638);
+        graphics.fill(left + 3, top + 3, left + width - 3, top + 5, accent);
+        graphics.fill(left + 3, top + height - 5, left + width - 3, top + height - 3,
+                0xFF30393B);
     }
 
     static void renderCard(

@@ -40,8 +40,13 @@ final class EconomyMarketScreenContractTest {
         assertTrue(source.contains("hechaoeconomy:ah list "));
         assertTrue(source.contains("handleInventoryMouseClick("));
         assertTrue(source.contains("CUSTOM_IMAGE_WIDTH = 278"));
+        assertTrue(source.contains("ITEM_MODULE_LEFT"));
+        assertTrue(source.contains("PRICE_MODULE_LEFT"));
+        assertTrue(source.contains("INVENTORY_MODULE_LEFT"));
+        assertTrue(source.contains("GUIDE_MODULE_LEFT"));
+        assertTrue(source.contains("renderModule("));
         assertTrue(source.contains("visibleSlot(slot)"));
-        assertTrue(source.contains("上架规则"));
+        assertTrue(source.contains("上架说明"));
         assertTrue(source.contains("slotClicked(Slot"));
     }
 
