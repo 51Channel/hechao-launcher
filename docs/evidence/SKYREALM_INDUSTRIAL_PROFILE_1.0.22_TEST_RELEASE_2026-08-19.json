@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-19T06:27:55Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "buildSourceCommit": "2ca51f09338c52f412a6ab26112a01da591e11af",
+    "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.22"
+  },
+  "screen": {
+    "version": "0.2.1",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.1.jar",
+    "bytes": 908221,
+    "sha256": "53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E",
+    "testsPassed": 68,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.22",
+    "publishedAtUtc": "2026-08-19T04:43:48.3812724Z",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "javaVersion": "21",
+    "manifestBytes": 2025521,
+    "manifestSha256": "6841C556CDDAF6E69B546DEA2C5969A481C1672B66DBC6BACAA60D15EE78D5B8",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204189699,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204181189,
+    "previousImmutableVersionRetained": "1.0.21"
+  },
+  "distribution": {
+    "uploadedObjects": 0,
+    "alreadyPresentObjects": 4252,
+    "uploadedBytes": 0,
+    "immutableObjectOverwrites": 0,
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true
+  },
+  "api": {
+    "manifestStored": true,
+    "storedManifestBytes": 2025521,
+    "storedManifestSha256": "6841C556CDDAF6E69B546DEA2C5969A481C1672B66DBC6BACAA60D15EE78D5B8",
+    "storedManifestMode": "0640",
+    "storedManifestOwner": "hechao-api:hechao-api",
+    "anonymousManifestStatus": 401,
+    "anonymousScreenObjectStatus": 401,
+    "version": "0.35.0",
+    "release": "0.35.0-20260818T121031Z",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "service": "active",
+    "mainProcessId": 3236646,
+    "restartCount": 0,
+    "recentWarningOrHigherLogLines": 0,
+    "importAuditId": 9349,
+    "channelAuditId": 9350
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.22",
+      "manifestSha256": "6841C556CDDAF6E69B546DEA2C5969A481C1672B66DBC6BACAA60D15EE78D5B8",
+      "rolloutPercentage": 100,
+      "revision": 15
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.20",
+    "manifestSha256": "C343D06AD3B209723C9C91C6D53D0C70D61AFD2AE7EA896A7350E38321D7E825",
+    "immutableVersionsToRetain": [
+      "1.0.21",
+      "1.0.22"
+    ]
+  },
+  "remainingAcceptance": {
+    "authorizedLauncherManifestDownloadPassed": false,
+    "realClientAccountLayoutPassed": false,
+    "teamFlowPassed": false,
+    "settingsFlowPassed": false,
+    "sellLayoutPassed": false,
+    "twoRealPlayerMarketFlowPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  }
+}

@@ -669,9 +669,12 @@ HechaoEconomy `0.2.1` 与 Screen `0.2.1` 已完成代码修改和生产服务端
 `6841C556CDDAF6E69B546DEA2C5969A481C1672B66DBC6BACAA60D15EE78D5B8`，逻辑文件 `4,457`、
 逻辑字节 `1,204,189,699`、对象 `4,252`。OSS 校验复用全部对象，没有上传或覆盖对象。
 
-`1.0.22` 必须通过赫朝启动器管理员入口重新签发后台票据后导入，并且只推进
-`Test=100%`；Gray 与 Production 保持未分配。`RuntimeDistCleaner` 在服务端日志中仍为
-`12` 行，与历史成功启动基线一致，是整合包扫描噪声，不是本次回归。正式记录见
+`1.0.22` 已通过 `51Channel / owner` 管理员会话导入并只推进到
+`Test=100% / r15`；Gray 与 Production 保持未分配。远端清单摘要、`0640` 权限、后台、
+PostgreSQL、审计、API 健康/就绪、`NRestarts=0` 和零发布窗口 warning 以上日志均已回读。
+`RuntimeDistCleaner` 在服务端日志中仍为 `12` 行，与历史成功启动基线一致，是整合包扫描
+噪声，不是本次回归。剩余门禁为真人 UI 和双账号市场完整流程，未通过前不得推进 Gray
+或 Production。正式记录见
 [`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.1.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.1.md)、
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.1.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.1.md) 和
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.22.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.22.md)。

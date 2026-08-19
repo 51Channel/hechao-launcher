@@ -28,13 +28,15 @@
 - 服务端 Screen `0.2.1` 已部署到 `activity-survival`，与客户端制品哈希一致。
 
 客户端档案 `1.0.22` 已在本地生成、离线验签、完整对象闭合校验并完成 OSS 逐对象校验，
-但后台管理员会话当前过期，尚未导入 API 或推进 Test。Gray 与 Production 不得推进。
+随后由 `51Channel / owner` 管理员会话完成后台导入。后台、数据库和审计回读一致：Test
+为 `1.0.22 / 100% / r15`，Gray 与 Production 均未分配。远端不可变清单为
+`2,025,521` 字节，SHA-256 与本地一致，权限为 `hechao-api:hechao-api / 0640`。
 
 ## 待完成门禁
 
-1. 通过赫朝启动器管理员入口重新签发后台票据；
-2. 导入 `1.0.22`，确认清单显示 NeoForge `21.1.228`；
-3. 仅将 Test 更新为 `1.0.22 / 100%`，确认 Gray 和 Production 仍未分配；
-4. 用启动器安装更新后的客户端完成个人账户、队伍、设置和出售页真人目视验收。
+用启动器安装 Test 客户端后，仍需完成个人账户、队伍、设置和出售页真人目视验收；玩家
+市场双账号流程、断线恢复、背包竞争、幂等重试和余额守恒也仍是 Gray 前硬门禁。在这些
+验收完成前不得推进 Gray 或 Production。
 
-结构化证据将在管理员通道更新完成后补齐。
+结构化证据见
+[`evidence/SKYREALM_ECONOMY_SCREEN_0.2.1_TEST_RELEASE_2026-08-19.json`](evidence/SKYREALM_ECONOMY_SCREEN_0.2.1_TEST_RELEASE_2026-08-19.json)。

@@ -31,8 +31,24 @@
 
 ## 后台发布状态
 
-后台管理员会话当前过期，`1.0.22` 尚未导入生产 API；因此 Test、Gray、Production 均以
-后台实时回读为准，不能仅凭本地制品宣称已发布。管理员入口恢复后只允许执行导入和 Test
-发布，Gray 与 Production 保持不分配。
+`1.0.22` 已由 `51Channel / owner` 管理员会话导入，并且只发布到 Test。2026-08-19
+14:27 CST 的后台和 PostgreSQL 回读结果为：
+
+- Test：`1.0.22 / 100% / r15`，清单 SHA-256 为
+  `6841C556CDDAF6E69B546DEA2C5969A481C1672B66DBC6BACAA60D15EE78D5B8`；
+- Gray：未分配，`0% / r1`；
+- Production：未分配，`r1`。
+
+后台版本详情显示 NeoForge `21.1.228`、Java `21`、`4,457` 个文件。审计 `9349` 记录
+不可变版本导入，审计 `9350` 记录 Test 从 `1.0.21 / r14` 切换到 `1.0.22 / r15`。
+生产 API `0.35.0` 健康与就绪均为 `200`，数据库为 `ready`，`NRestarts=0`，发布窗口
+warning 以上日志为 `0`。
+
+远端不可变清单位于受控清单目录，大小与摘要均和本地一致，权限为
+`hechao-api:hechao-api / 0640`。匿名访问清单和 Screen 对象都返回 `401`；玩家 Test
+会话的实际下载与页面目视验收仍待在启动器内完成。
 
 回滚目标为 Test 恢复到 `1.0.20`，不删除 `1.0.21`、`1.0.22` 清单或其 OSS 对象。
+
+结构化证据见
+[`evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.22_TEST_RELEASE_2026-08-19.json`](evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.22_TEST_RELEASE_2026-08-19.json)。

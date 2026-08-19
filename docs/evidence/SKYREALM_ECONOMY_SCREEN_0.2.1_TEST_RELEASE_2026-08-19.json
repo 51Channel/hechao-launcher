@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-19T06:27:55Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.1",
+  "networkProtocol": "2",
+  "buildSourceCommit": "2ca51f09338c52f412a6ab26112a01da591e11af",
+  "releaseTag": "hechao-economy-screen-v0.2.1",
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.1.jar",
+    "sizeBytes": 908221,
+    "sha256": "53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E"
+  },
+  "tests": {
+    "passed": 68,
+    "failed": 0
+  },
+  "features": {
+    "availableFrozenAndTotalBalance": true,
+    "accountShortcuts": true,
+    "teamMultilineResult": true,
+    "customSettingsScreen": true,
+    "responsiveSellLayout": true,
+    "serverAuthorityPreserved": true
+  },
+  "serverDeployment": {
+    "serverId": "activity-survival",
+    "serverRoot": "E:\\HechaoActivitySlots\\activity-survival",
+    "serverArtifactMatchesClient": true,
+    "arclightLaunchPreserved": true,
+    "postDeploymentProcessIdSnapshot": 7436,
+    "listenAddress": "127.0.0.1",
+    "listenPort": 25600
+  },
+  "distribution": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "profileVersion": "1.0.22",
+    "testRevision": 15,
+    "testRolloutPercentage": 100,
+    "grayAssigned": false,
+    "productionAssigned": false,
+    "importAuditId": 9349,
+    "channelAuditId": 9350
+  },
+  "runtime": {
+    "apiVersion": "0.35.0",
+    "apiRestartedByProfilePublication": false,
+    "minecraftRestartedByProfilePublication": false,
+    "velocityRestarted": false,
+    "liveClientAcceptancePending": true
+  }
+}
