@@ -11,12 +11,16 @@ import net.minecraft.world.item.Items;
 
 final class EconomyResultScreen extends SinglePassBackgroundScreen {
     private static final int BUTTON_GAP = 8;
+    private static final int ACCOUNT_BUTTON_GAP = 5;
     private static final int ICON_DOCK_SIZE = 42;
     private static final int ICON_SIZE = 16;
 
     private final EconomyResultState state;
     private Button confirmButton;
     private Button closeButton;
+    private Button marketButton;
+    private Button listingsButton;
+    private Button deliveriesButton;
     private EconomyResultLayout.Layout layout;
     private int animationTick;
 
@@ -48,12 +52,19 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
                 Component.literal("返回首页"),
                 ignored -> ClientEconomyUiBridge.requestHome());
         addRenderableWidget(closeButton);
+        marketButton = accountButton("市场", "hechaoeconomy:ah");
+        listingsButton = accountButton("我的挂单", "hechaoeconomy:ah mine");
+        deliveriesButton = accountButton("待领取", "hechaoeconomy:ah claim");
         syncButtons();
     }
 
     void acceptMessage(Component message) {
         state.accept(message.getString());
         syncButtons();
+    }
+
+    boolean acceptsSystemMessage(String message) {
+        return state.acceptsUnprefixedMessage(message);
     }
 
     @Override
@@ -268,6 +279,7 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
         return switch (presentation.kind()) {
             case LOADING -> new ItemStack(Items.CLOCK);
             case BALANCE, SALE_SUCCESS -> new ItemStack(Items.GOLD_INGOT);
+            case TEAM -> new ItemStack(Items.PLAYER_HEAD);
             case QUOTE -> itemIcon(presentation.itemId());
             case SUCCESS -> new ItemStack(Items.EMERALD);
             case ERROR -> new ItemStack(Items.BARRIER);
@@ -337,18 +349,74 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
     }
 
     private void syncButtons() {
-        if (confirmButton == null || closeButton == null) {
+        if (confirmButton == null
+                || closeButton == null
+                || marketButton == null
+                || listingsButton == null
+                || deliveriesButton == null) {
             return;
         }
-        confirmButton.visible = state.canConfirmSale();
+        boolean account = state.isAction("balance");
+        int accountWidth = Math.max(
+                1,
+                (layout.panelWidth() - 24 - ACCOUNT_BUTTON_GAP * 3) / 4);
+        int accountLeft = layout.panelLeft() + 12;
+
+        marketButton.visible = account;
+        listingsButton.visible = account;
+        deliveriesButton.visible = account;
+        closeButton.setMessage(Component.literal(account ? "首页" : "返回首页"));
+        closeButton.setWidth(account ? accountWidth : layout.buttonWidth());
+        if (account) {
+            closeButton.setX(accountLeft);
+            configureAccountButton(marketButton, 1, accountLeft, accountWidth);
+            configureAccountButton(listingsButton, 2, accountLeft, accountWidth);
+            configureAccountButton(deliveriesButton, 3, accountLeft, accountWidth);
+        }
+
+        confirmButton.visible = !account && state.canConfirmSale();
         closeButton.setX(confirmButton.visible
                 ? layout.panelLeft() + layout.panelWidth()
                         - 12 - layout.buttonWidth()
-                : width / 2 - layout.buttonWidth() / 2);
+                : account
+                        ? accountLeft
+                        : width / 2 - layout.buttonWidth() / 2);
         if (confirmButton.visible) {
             confirmButton.setX(
                     layout.panelLeft() + layout.panelWidth() / 2
                             - BUTTON_GAP / 2 - layout.buttonWidth());
         }
+    }
+
+    private Button accountButton(String label, String command) {
+        var button = new IndustrialButton(
+                layout.panelLeft(),
+                layout.buttonY(),
+                1,
+                EconomyResultLayout.BUTTON_HEIGHT,
+                Component.literal(label),
+                ignored -> sendCommand(command));
+        button.visible = false;
+        addRenderableWidget(button);
+        return button;
+    }
+
+    private void configureAccountButton(
+            Button button,
+            int index,
+            int accountLeft,
+            int accountWidth) {
+        button.setX(accountLeft + index * (accountWidth + ACCOUNT_BUTTON_GAP));
+        button.setWidth(accountWidth);
+    }
+
+    private void sendCommand(String command) {
+        var connection = minecraft == null ? null : minecraft.getConnection();
+        if (connection == null) {
+            state.accept("经济连接已经断开。");
+            syncButtons();
+            return;
+        }
+        connection.sendCommand(command);
     }
 }

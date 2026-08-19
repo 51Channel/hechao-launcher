@@ -95,6 +95,7 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
                 balance -> {
                     plugin.updateCachedBalance(target, balance.availableBalance());
                     info(sender, displayName + " 的余额: " + money(balance.availableBalance()));
+                    info(sender, "冻结余额: " + money(balance.frozenBalance()));
                 },
                 exception -> gatewayError(sender, exception));
         return true;

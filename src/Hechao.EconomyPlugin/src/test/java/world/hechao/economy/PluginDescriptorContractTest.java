@@ -16,7 +16,7 @@ final class PluginDescriptorContractTest {
                 "resources",
                 "plugin.yml"));
 
-        assertTrue(descriptor.contains("version: '0.2.0'"));
+        assertTrue(descriptor.contains("version: '0.2.1'"));
         assertTrue(descriptor.contains("softdepend:\n  - PlaceholderAPI\n  - Essentials"));
         assertFalse(descriptor.contains("loadbefore:"));
         for (var command : java.util.List.of("money", "pay", "sell", "shop", "ah", "heco")) {

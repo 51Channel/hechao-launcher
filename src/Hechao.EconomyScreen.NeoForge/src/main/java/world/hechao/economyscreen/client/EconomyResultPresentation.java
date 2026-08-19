@@ -1,5 +1,6 @@
 package world.hechao.economyscreen.client;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -7,6 +8,8 @@ import java.util.regex.Pattern;
 final class EconomyResultPresentation {
     private static final Pattern BALANCE = Pattern.compile(
             "^(.+?)\\s+的余额:\\s*([+-]?\\d+(?:\\.\\d+)?)\\s*金币[。.]?$");
+    private static final Pattern FROZEN_BALANCE = Pattern.compile(
+            "^冻结余额:\\s*([+-]?\\d+(?:\\.\\d+)?)\\s*金币[。.]?$");
     private static final Pattern QUOTE = Pattern.compile(
             "^报价:\\s*(\\d+)\\s*个\\s+(.+?)\\s*=\\s*"
                     + "([+-]?\\d+(?:\\.\\d+)?)\\s*金币[。.]?$");
@@ -44,15 +47,36 @@ final class EconomyResultPresentation {
             var balance = balance(message);
             if (balance.isPresent()) {
                 var value = balance.get();
+                var frozen = messages.stream()
+                        .map(EconomyResultPresentation::frozenBalance)
+                        .flatMap(Optional::stream)
+                        .findFirst();
                 return new View(
                         Kind.BALANCE,
-                        "可用余额",
+                        "个人账户",
                         value.amount(),
                         "金币",
-                        value.playerName() + " · 查询完成",
-                        "",
+                        value.playerName() + " · 可用余额",
+                        frozen.map(amount -> "冻结 " + amount + " 金币 · 总资产 "
+                                        + total(value.amount(), amount) + " 金币")
+                                .orElse(""),
                         "");
             }
+        }
+
+        if (state.isAction("team")) {
+            String detail = String.join("  ", messages);
+            boolean withoutTeam = detail.contains("没有队伍")
+                    || detail.contains("未加入队伍")
+                    || detail.contains("不在队伍");
+            return new View(
+                    Kind.TEAM,
+                    "队伍状态",
+                    withoutTeam ? "尚未加入队伍" : "当前队伍",
+                    "",
+                    withoutTeam ? "服务器实时状态" : "成员信息已同步",
+                    detail,
+                    "");
         }
 
         for (String message : messages) {
@@ -104,11 +128,24 @@ final class EconomyResultPresentation {
                 : Optional.empty();
     }
 
+    private static Optional<String> frozenBalance(String message) {
+        var match = FROZEN_BALANCE.matcher(EconomyResultState.normalize(message));
+        return match.matches() ? Optional.of(match.group(1)) : Optional.empty();
+    }
+
+    private static String total(String available, String frozen) {
+        return new BigDecimal(available)
+                .add(new BigDecimal(frozen))
+                .setScale(2, java.math.RoundingMode.HALF_UP)
+                .toPlainString();
+    }
+
     enum Kind {
         LOADING,
         BALANCE,
         QUOTE,
         SALE_SUCCESS,
+        TEAM,
         SUCCESS,
         ERROR
     }

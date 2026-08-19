@@ -14,10 +14,9 @@ final class EconomySellScreen extends ContainerScreen {
     private static final int STATUS_SLOT = 4;
     private static final int CONFIRM_SLOT = 22;
     private static final int RETURN_SLOT = 26;
-    private static final int BUTTON_WIDTH = 82;
-    private static final int BUTTON_HEIGHT = 20;
 
     private Button confirmButton;
+    private EconomySellLayout.Layout layout;
 
     EconomySellScreen(ChestMenu menu, Inventory playerInventory) {
         super(menu, playerInventory, Component.literal(ClientEconomyUiBridge.SELL_TITLE));
@@ -28,22 +27,31 @@ final class EconomySellScreen extends ContainerScreen {
     @Override
     protected void init() {
         super.init();
-        int buttonY = topPos + 58;
+        layout = EconomySellLayout.calculate(
+                width,
+                height,
+                leftPos,
+                topPos,
+                imageWidth,
+                imageHeight);
+        if (!layout.customControls()) {
+            return;
+        }
         confirmButton = new IndustrialButton(
-                leftPos + 5,
-                buttonY,
-                BUTTON_WIDTH,
-                BUTTON_HEIGHT,
+                layout.confirmX(),
+                layout.buttonY(),
+                EconomySellLayout.BUTTON_WIDTH,
+                EconomySellLayout.BUTTON_HEIGHT,
                 Component.literal("确认出售"),
                 ignored -> clickControl(CONFIRM_SLOT));
         confirmButton.setTooltip(Tooltip.create(Component.literal("报价完成后提交交易")));
         addRenderableWidget(confirmButton);
 
         var returnButton = new IndustrialButton(
-                leftPos + imageWidth - BUTTON_WIDTH - 5,
-                buttonY,
-                BUTTON_WIDTH,
-                BUTTON_HEIGHT,
+                layout.returnX(),
+                layout.buttonY(),
+                EconomySellLayout.BUTTON_WIDTH,
+                EconomySellLayout.BUTTON_HEIGHT,
                 Component.literal("返回首页"),
                 ignored -> returnHome());
         returnButton.setTooltip(Tooltip.create(Component.literal("取回未出售物品并返回")));
@@ -69,12 +77,16 @@ final class EconomySellScreen extends ContainerScreen {
             int mouseX,
             int mouseY) {
         IndustrialUiTheme.renderBackdrop(graphics, width, height);
-        IndustrialUiTheme.renderPanel(
-                graphics,
-                leftPos - 4,
-                topPos - 4,
-                imageWidth + 8,
-                imageHeight + 8);
+        if (layout.expandedHeader()) {
+            IndustrialUiTheme.renderPanel(
+                    graphics,
+                    layout.panelLeft(),
+                    layout.panelTop(),
+                    layout.panelWidth(),
+                    layout.panelHeight());
+        } else {
+            renderCompactPanel(graphics);
+        }
         renderTopArea(graphics);
         renderInventorySlots(graphics);
     }
@@ -84,8 +96,9 @@ final class EconomySellScreen extends ContainerScreen {
             GuiGraphics graphics,
             int mouseX,
             int mouseY) {
-        IndustrialUiTheme.renderEmblem(graphics, 7, 3, 22);
-        graphics.drawString(font, title, 35, 10, 0xFFFFFFFF, true);
+        int titleY = layout.titleY() - topPos;
+        IndustrialUiTheme.renderEmblem(graphics, 7, titleY - 4, 22);
+        graphics.drawString(font, title, 35, titleY + 2, 0xFFFFFFFF, true);
         graphics.drawString(
                 font,
                 playerInventoryTitle,
@@ -98,13 +111,14 @@ final class EconomySellScreen extends ContainerScreen {
         String heading = status.isEmpty()
                 ? "等待放入物品"
                 : status.getHoverName().getString();
-        graphics.drawCenteredString(font, fit(heading, 124), imageWidth / 2, 31, 0xFFFFD75A);
-        graphics.drawCenteredString(
-                font,
-                "把一组普通物品放入中央槽位",
-                imageWidth / 2,
-                45,
-                0xFFADB5B7);
+        if (layout.statusY() >= 0) {
+            graphics.drawCenteredString(
+                    font,
+                    fit(heading, imageWidth - 18),
+                    imageWidth / 2,
+                    layout.statusY() - topPos,
+                    0xFFFFD75A);
+        }
     }
 
     @Override
@@ -132,6 +146,22 @@ final class EconomySellScreen extends ContainerScreen {
             graphics.fill(x, y, x + 18, y + 18, 0xA5121719);
             graphics.renderOutline(x, y, 18, 18, 0xFF465154);
         }
+    }
+
+    private void renderCompactPanel(GuiGraphics graphics) {
+        int left = layout.panelLeft();
+        int top = layout.panelTop();
+        int right = left + layout.panelWidth();
+        int bottom = top + layout.panelHeight();
+        graphics.fill(left + 3, top + 3, right + 3, bottom + 3, 0x8A000000);
+        graphics.fill(left, top, right, bottom, 0xF21A1E20);
+        graphics.renderOutline(left, top, layout.panelWidth(), layout.panelHeight(), 0xFF9E793E);
+        graphics.renderOutline(
+                left + 2,
+                top + 2,
+                layout.panelWidth() - 4,
+                layout.panelHeight() - 4,
+                0xFF3E474A);
     }
 
     private void syncButtons() {

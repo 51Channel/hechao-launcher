@@ -24,9 +24,9 @@ public final class MenuActions {
         actions.put(
                 "balance",
                 new Definition(
-                        "我的余额",
-                        "查看当前金币余额",
-                        "正在查询余额...",
+                        "个人账户",
+                        "查看余额并管理个人交易",
+                        "正在同步账户...",
                         "hechaoeconomy:money"));
         actions.put(
                 "shop",
@@ -62,7 +62,7 @@ public final class MenuActions {
                         "我的队伍",
                         "打开队伍功能",
                         "正在打开队伍...",
-                        "skyrealmcore:team"));
+                        "skyrealmcore:team list"));
         return Collections.unmodifiableMap(actions);
     }
 

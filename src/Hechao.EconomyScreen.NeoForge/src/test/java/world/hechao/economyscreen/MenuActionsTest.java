@@ -20,7 +20,7 @@ final class MenuActionsTest {
                 "skyrealmcore:settings",
                 MenuActions.all().get("settings").command());
         assertEquals(
-                "skyrealmcore:team",
+                "skyrealmcore:team list",
                 MenuActions.all().get("team").command());
     }
 

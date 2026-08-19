@@ -14,11 +14,38 @@ final class EconomyResultPresentationTest {
         var view = EconomyResultPresentation.from(state);
 
         assertEquals(EconomyResultPresentation.Kind.BALANCE, view.kind());
-        assertEquals("可用余额", view.label());
+        assertEquals("个人账户", view.label());
         assertEquals("12.50", view.primary());
         assertEquals("金币", view.unit());
-        assertEquals("51Channel · 查询完成", view.secondary());
+        assertEquals("51Channel · 可用余额", view.secondary());
         assertTrue(view.hasMonetaryValue());
+    }
+
+    @Test
+    void presentsFrozenBalanceAndTotalAssets() {
+        var state = new EconomyResultState("balance", "正在同步账户...");
+        state.accept("[赫朝经济] 51Channel 的余额: 12.50 金币");
+        state.accept("[赫朝经济] 冻结余额: 7.50 金币");
+
+        var view = EconomyResultPresentation.from(state);
+
+        assertEquals("12.50", view.primary());
+        assertEquals("51Channel · 可用余额", view.secondary());
+        assertEquals("冻结 7.50 金币 · 总资产 20.00 金币", view.detail());
+    }
+
+    @Test
+    void presentsTeamResultAsDedicatedState() {
+        var state = new EconomyResultState("team", "正在打开队伍...");
+        state.accept("队长: 51Channel");
+        state.accept("成员: Alice");
+
+        var view = EconomyResultPresentation.from(state);
+
+        assertEquals(EconomyResultPresentation.Kind.TEAM, view.kind());
+        assertEquals("当前队伍", view.primary());
+        assertEquals("成员信息已同步", view.secondary());
+        assertTrue(view.detail().contains("成员: Alice"));
     }
 
     @Test

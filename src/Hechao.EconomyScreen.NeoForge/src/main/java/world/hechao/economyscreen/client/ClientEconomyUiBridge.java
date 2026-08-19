@@ -10,6 +10,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 public final class ClientEconomyUiBridge {
     static final String ECONOMY_PREFIX = "[赫朝经济]";
+    static final String SETTINGS_TITLE = "天域设置";
     static final String CATALOG_TITLE = "赫朝回收目录";
     static final String SELL_TITLE = "赫朝物品回收";
     static final String MARKET_TITLE = "赫朝玩家市场";
@@ -22,7 +23,8 @@ public final class ClientEconomyUiBridge {
             "balance",
             "shop",
             "sell",
-            "market");
+            "market",
+            "team");
 
     private ClientEconomyUiBridge() {
     }
@@ -57,6 +59,10 @@ public final class ClientEconomyUiBridge {
         var minecraft = Minecraft.getInstance();
         String message = event.getMessage().getString();
         if (!message.contains(ECONOMY_PREFIX)) {
+            if (minecraft.screen instanceof EconomyResultScreen screen
+                    && screen.acceptsSystemMessage(message)) {
+                screen.acceptMessage(event.getMessage());
+            }
             return;
         }
         if (minecraft.screen instanceof EconomyResultScreen screen) {
@@ -69,6 +75,9 @@ public final class ClientEconomyUiBridge {
     private static void onScreenOpening(ScreenEvent.Opening event) {
         var next = event.getNewScreen();
         if (next instanceof ContainerScreen container
+                && SETTINGS_TITLE.equals(next.getTitle().getString())) {
+            event.setNewScreen(new SkyrealmSettingsScreen(container.getMenu()));
+        } else if (next instanceof ContainerScreen container
                 && CATALOG_TITLE.equals(next.getTitle().getString())) {
             event.setNewScreen(new EconomyCatalogScreen(container.getMenu()));
         } else if (next instanceof ContainerScreen container

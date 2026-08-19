@@ -45,6 +45,29 @@ final class EconomyResultStateTest {
     }
 
     @Test
+    void teamScreenAcceptsEveryLineOfAnUnprefixedResponse() {
+        var state = new EconomyResultState("team", "正在打开队伍...");
+
+        assertTrue(state.acceptsUnprefixedMessage("队伍: 工业远征队"));
+        state.accept("队伍: 工业远征队");
+        assertTrue(state.acceptsUnprefixedMessage("队长: 51Channel"));
+        state.accept("队长: 51Channel");
+        assertTrue(state.acceptsUnprefixedMessage("成员: Alice"));
+        state.accept("成员: Alice");
+
+        assertEquals(3, state.messages().size());
+        assertEquals(EconomyResultState.Tone.SUCCESS, state.tone());
+        assertFalse(state.acceptsUnprefixedMessage("Alice 加入了游戏"));
+    }
+
+    @Test
+    void nonTeamScreensRejectUnprefixedTeamMessages() {
+        var state = new EconomyResultState("balance", "正在查询余额...");
+
+        assertFalse(state.acceptsUnprefixedMessage("成员: Alice"));
+    }
+
+    @Test
     void loadingStateTimesOut() {
         var state = new EconomyResultState("balance", "正在查询余额...");
 

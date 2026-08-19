@@ -20,6 +20,10 @@ final class EconomyResultState {
             "取消",
             "联系管理员",
             "http");
+    private static final List<String> TEAM_RESPONSE_MARKERS = List.of(
+            "队伍",
+            "队长",
+            "成员");
 
     private final String actionId;
     private final ArrayList<String> messages = new ArrayList<>();
@@ -70,6 +74,15 @@ final class EconomyResultState {
 
     Tone tone() {
         return tone;
+    }
+
+    boolean isAction(String expectedActionId) {
+        return actionId.equals(expectedActionId);
+    }
+
+    boolean acceptsUnprefixedMessage(String message) {
+        return isAction("team")
+                && TEAM_RESPONSE_MARKERS.stream().anyMatch(message::contains);
     }
 
     boolean canConfirmSale() {
