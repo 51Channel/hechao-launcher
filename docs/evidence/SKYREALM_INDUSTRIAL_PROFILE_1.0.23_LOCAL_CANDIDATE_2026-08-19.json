@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-19T11:08:06.2653034Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "buildSourceCommit": "73136ff569e434ef30bc94ff2705b1b819bfa592",
+    "baselineProfileVersion": "1.0.22",
+    "candidateStatus": "local-only"
+  },
+  "screen": {
+    "version": "0.2.3",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.3.jar",
+    "bytes": 927120,
+    "sha256": "9C56DBCC357745056FECAB701EC9E3D9E874C8FD64B3AB581839FC262DB72802",
+    "testsPassed": 78,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.23",
+    "publishedAtUtc": "2026-08-19T11:08:06.2653034Z",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "javaVersion": 21,
+    "manifestBytes": 2025521,
+    "manifestSha256": "61B9851E9A62C4E799D82CCBBB7E99FD8D64B289FA2F10B0E7ED8AF527732020",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204208598,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204200088,
+    "previousImmutableVersionRetained": "1.0.22"
+  },
+  "delta": {
+    "commonFilesUnchanged": 4456,
+    "removedPath": "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.1.jar",
+    "addedPath": "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.3.jar",
+    "samePathContentChanges": 0,
+    "removedObjectSha256": "53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E",
+    "addedObjectSha256": "9C56DBCC357745056FECAB701EC9E3D9E874C8FD64B3AB581839FC262DB72802"
+  },
+  "distribution": {
+    "uploadedObjects": 0,
+    "uploadedBytes": 0,
+    "immutableObjectOverwrites": 0,
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true,
+    "ossUploadExecuted": false,
+    "apiImportExecuted": false,
+    "channelPointerChanged": false
+  },
+  "localInstance": {
+    "profileVersion": "1.0.22",
+    "screenVersion": "0.2.1",
+    "playerDataPreserved": true,
+    "modified": false,
+    "gameStarted": false
+  },
+  "remainingAcceptance": {
+    "localCandidateInstallPassed": false,
+    "authorizedLauncherManifestDownloadPassed": false,
+    "realClientAccountLayoutPassed": false,
+    "teamFlowPassed": false,
+    "settingsFlowPassed": false,
+    "sellLayoutPassed": false,
+    "twoRealPlayerMarketFlowPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  }
+}
