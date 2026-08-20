@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-18T13:04:28Z",
+  "generatedAtUtc": "2026-08-20T04:23:03Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -76,65 +76,66 @@
     },
     {
       "component": "hechao-economy-screen",
-      "version": "0.2.0",
-      "releaseTag": "hechao-economy-screen-v0.2.0",
-      "releaseCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
-      "taggedAt": "2026-08-18T21:04:28+08:00",
+      "version": "0.2.4",
+      "releaseTag": "hechao-economy-screen-v0.2.4",
+      "releaseCommit": "02a9727fa05948a21e830dc19d15376ed5b3d7d2",
+      "taggedAt": "2026-08-20T12:24:26+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "426b23fa98fdc9d76c97b2006c50da0fe315a00c"
+        "value": "02a9727fa05948a21e830dc19d15376ed5b3d7d2"
       },
-      "deploymentState": "test-profile-1.0.20-only-live-client-acceptance-pending",
+      "deploymentState": "test-profile-1.0.24-r17-live-client-acceptance-pending",
+      "historicalNote": "Gray and Production remain unassigned until launcher download and real-player market acceptance passes.",
       "artifacts": [
         {
-          "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.0.jar",
-          "location": "objects/29/294a5cbe839448e3a6777f5bf0c7051d8158e552516d53e14b5e7eb723e61be3",
-          "size": 894611,
-          "sha256": "294A5CBE839448E3A6777F5BF0C7051D8158E552516D53E14B5E7EB723E61BE3",
+          "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.4.jar",
+          "location": "objects/52/5219350d7a10e3005da4af10dca1b3edc21c877050ff05228c67c7f41d6f386f",
+          "size": 927658,
+          "sha256": "5219350D7A10E3005DA4AF10DCA1B3EDC21C877050FF05228C67C7F41D6F386F",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "test-channel-pointer",
-        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.19"
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.23"
       },
       "evidence": [
-        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.0.md",
-        "docs/evidence/SKYREALM_ECONOMY_SCREEN_0.2.0_TEST_RELEASE_2026-08-18.json",
-        "docs/SKYREALM_PLAYER_MARKET_0.2.0_CANDIDATE.md"
+        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.4.md",
+        "docs/evidence/SKYREALM_ECONOMY_SCREEN_0.2.4_TEST_RELEASE_2026-08-20.json",
+        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.4_CANDIDATE.md"
       ]
     },
     {
       "component": "profile-skyrealm-industrial-neoforge-1.21.1",
-      "version": "1.0.20",
-      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.20",
-      "releaseCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
-      "taggedAt": "2026-08-18T21:04:28+08:00",
+      "version": "1.0.24",
+      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.24",
+      "releaseCommit": "02a9727fa05948a21e830dc19d15376ed5b3d7d2",
+      "taggedAt": "2026-08-20T12:24:26+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "signed-manifest",
-        "value": "C343D06AD3B209723C9C91C6D53D0C70D61AFD2AE7EA896A7350E38321D7E825"
+        "value": "EF965B1795C66CC1CC2396BD87A380F71DE3CC185315A811E3889EFCADDC046E"
       },
-      "deploymentState": "test-r13-100-percent-gray-production-unassigned",
-      "historicalNote": "1.0.19 remains the Test rollback. Gray and Production must remain unassigned until two-player market acceptance passes.",
+      "deploymentState": "test-r17-100-percent-gray-production-unassigned",
+      "historicalNote": "1.0.23 remains the Test rollback. Gray and Production remain unassigned until real-player account, team, settings and two-account market acceptance passes.",
       "artifacts": [
         {
-          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.20 signed manifest",
+          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.24 signed manifest",
           "location": "production manifest store",
-          "size": 2025517,
-          "sha256": "C343D06AD3B209723C9C91C6D53D0C70D61AFD2AE7EA896A7350E38321D7E825",
+          "size": 2025541,
+          "sha256": "EF965B1795C66CC1CC2396BD87A380F71DE3CC185315A811E3889EFCADDC046E",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "test-channel-pointer",
-        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.19"
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.23"
       },
       "evidence": [
-        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.20.md",
-        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.20_TEST_RELEASE_2026-08-18.json",
-        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.0.md"
+        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.24.md",
+        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.24_TEST_RELEASE_2026-08-20.json",
+        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.4.md"
       ]
     },
     {

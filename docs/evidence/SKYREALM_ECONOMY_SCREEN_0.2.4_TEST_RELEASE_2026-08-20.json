@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-20T04:16:08Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.4",
+  "networkProtocol": "2",
+  "buildSourceCommit": "02a9727",
+  "releaseTag": "hechao-economy-screen-v0.2.4",
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.4.jar",
+    "sizeBytes": 927658,
+    "sha256": "5219350D7A10E3005DA4AF10DCA1B3EDC21C877050FF05228C67C7F41D6F386F"
+  },
+  "tests": {
+    "passed": 78,
+    "failed": 0,
+    "impeccableLayoutFindings": 0
+  },
+  "features": {
+    "modularMarketListingLayout": true,
+    "serverAuthorityPreserved": true,
+    "networkProtocolUnchanged": true,
+    "serverDeploymentChanged": false
+  },
+  "distribution": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "profileVersion": "1.0.24",
+    "testRevision": 17,
+    "testRolloutPercentage": 100,
+    "grayAssigned": false,
+    "productionAssigned": false,
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 927658,
+    "immutableObjectOverwrites": 0,
+    "importAuditId": 9645,
+    "channelAuditId": 9647
+  },
+  "runtime": {
+    "apiVersion": "0.35.0",
+    "apiRelease": "0.35.0-20260818T121031Z",
+    "apiHealth": "ok",
+    "apiReady": "ready",
+    "apiDatabase": "ready",
+    "apiService": "active/running",
+    "apiMainProcessId": 3236646,
+    "apiRestartCount": 0,
+    "recentWarningOrHigherLogLines": 0,
+    "apiRestartedByProfilePublication": false,
+    "minecraftRestartedByProfilePublication": false,
+    "velocityRestarted": false,
+    "liveClientAcceptancePending": true
+  }
+}

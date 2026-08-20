@@ -2,7 +2,8 @@
 
 - 记录日期：`2026-08-19`
 - 组件：`HechaoEconomyScreen-NeoForge-1.21.1-0.2.4.jar`
-- 状态：本地候选，未上传 OSS，未导入客户端档案，未切换 Test、Gray 或 Production
+- 状态：候选已完成发布；客户端档案 `1.0.24` 已导入并仅切换到 Test `100% / r17`
+- 后续正式记录：[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.4.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.4.md)
 - 网络协议：`2`，服务端协议和经济交易合同未改变
 
 ## 本轮改版
