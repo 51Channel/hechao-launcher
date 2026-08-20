@@ -91,6 +91,35 @@ public static partial class EconomyRules
     public static bool IsValidMarketQuery(string? query) =>
         query is null || (query.Trim().Length <= 80 && !query.Any(char.IsControl));
 
+    public static bool TryParseMarketSort(
+        string? value,
+        out EconomyMarketSort sort)
+    {
+        sort = value?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or "recently_listed" => EconomyMarketSort.RecentlyListed,
+            "lowest_unit_price" => EconomyMarketSort.LowestUnitPrice,
+            "highest_unit_price" => EconomyMarketSort.HighestUnitPrice,
+            "expiring_soon" => EconomyMarketSort.ExpiringSoon,
+            _ => default
+        };
+
+        return value is null
+            || value.Trim().Length == 0
+            || value.Trim().Equals("recently_listed", StringComparison.OrdinalIgnoreCase)
+            || value.Trim().Equals("lowest_unit_price", StringComparison.OrdinalIgnoreCase)
+            || value.Trim().Equals("highest_unit_price", StringComparison.OrdinalIgnoreCase)
+            || value.Trim().Equals("expiring_soon", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string MarketSortValue(EconomyMarketSort sort) => sort switch
+    {
+        EconomyMarketSort.LowestUnitPrice => "lowest_unit_price",
+        EconomyMarketSort.HighestUnitPrice => "highest_unit_price",
+        EconomyMarketSort.ExpiringSoon => "expiring_soon",
+        _ => "recently_listed"
+    };
+
     public static string Fingerprint(params object?[] values)
     {
         var canonical = string.Join('\n', values.Select(value => value switch

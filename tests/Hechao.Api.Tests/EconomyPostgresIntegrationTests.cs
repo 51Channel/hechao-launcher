@@ -311,6 +311,7 @@ public sealed class EconomyPostgresIntegrationTests
         {
             Assert.Equal(modded.ItemId, result.ItemId);
             Assert.Equal(4, result.Quantity);
+            Assert.Equal(5.0000m, result.UnitPrice);
         });
         Assert.Empty(await repository.ListMarketListingsAsync(
             "another-server",

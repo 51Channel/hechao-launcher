@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 final class EconomyMarketScreen extends SinglePassBackgroundScreen {
     private static final int PAGE_BUTTON_WIDTH = 30;
     private static final int HOME_BUTTON_WIDTH = 80;
+    private static final int SORT_BUTTON_WIDTH = 46;
     private static final int SEARCH_DELAY_TICKS = 8;
 
     private final ChestMenu menu;
@@ -23,6 +24,7 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
     private EconomyMarketLayout.Layout layout;
     private Button previousButton;
     private Button nextButton;
+    private Button sortButton;
     private EditBox searchBox;
     private ItemStack hovered = ItemStack.EMPTY;
     private String searchQuery = "";
@@ -66,6 +68,12 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
         if (searchDelay == 0) {
             searchDelay = -1;
             submitSearch();
+        }
+        if (sortButton != null) {
+            String controlLabel = sortControlLabel();
+            sortButton.setMessage(Component.literal(sortButtonLabel()));
+            sortButton.setTooltip(Tooltip.create(Component.literal(controlLabel)));
+            sortButton.active = !controlLabel.startsWith("正在刷新");
         }
     }
 
@@ -223,12 +231,28 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
 
     private void addSearchBox() {
         boolean compact = layout.panelWidth() < 260;
+        boolean hasSort = hasSortControl();
+        int sortWidth = hasSort ? SORT_BUTTON_WIDTH : 0;
+        int sortGap = hasSort ? 8 : 0;
         int searchWidth = compact
-                ? Math.max(82, layout.panelWidth() - 70)
-                : Math.min(148, Math.max(92, layout.panelWidth() - 230));
+                ? hasSort
+                        ? Math.max(70, layout.panelWidth() - 24 - sortWidth - sortGap)
+                        : Math.max(82, layout.panelWidth() - 70)
+                : hasSort
+                        ? Math.min(136, Math.max(86, layout.panelWidth() - 250 - sortWidth))
+                        : Math.min(148, Math.max(92, layout.panelWidth() - 230));
         int searchX = compact
-                ? layout.panelLeft() + (layout.panelWidth() - searchWidth) / 2
-                : layout.panelLeft() + layout.panelWidth() - searchWidth - 58;
+                ? hasSort
+                        ? layout.panelLeft() + 12
+                        : layout.panelLeft() + (layout.panelWidth() - searchWidth) / 2
+                : hasSort
+                        ? layout.panelLeft()
+                                + layout.panelWidth()
+                                - searchWidth
+                                - sortWidth
+                                - sortGap
+                                - 10
+                        : layout.panelLeft() + layout.panelWidth() - searchWidth - 58;
         searchBox = new EditBox(
                 font,
                 searchX + 5,
@@ -246,6 +270,18 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
             searchDelay = SEARCH_DELAY_TICKS;
         });
         addRenderableWidget(searchBox);
+        if (hasSort) {
+            int sortX = layout.panelLeft() + layout.panelWidth() - SORT_BUTTON_WIDTH - 10;
+            sortButton = new IndustrialButton(
+                    sortX,
+                    layout.panelTop() + 9,
+                    SORT_BUTTON_WIDTH,
+                    18,
+                    Component.literal(sortButtonLabel()),
+                    ignored -> clickServerSlot(EconomyMarketServerPage.SORT_SLOT));
+            sortButton.setTooltip(Tooltip.create(Component.literal(sortControlLabel())));
+            addRenderableWidget(sortButton);
+        }
     }
 
     private void submitSearch() {
@@ -364,6 +400,16 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
                             ? 0xFF8CD99B
                             : 0xFFFFD75A,
                     false);
+            String unit = unitSummary(offer.stack());
+            if (!unit.isBlank() && layout.cardHeight() >= 42) {
+                graphics.drawString(
+                        font,
+                        fit(unit, layout.cardWidth() - 38),
+                        x + 30,
+                        y + 31,
+                        0xFF8DC7C1,
+                        false);
+            }
         }
         if (isHovered) {
             hovered = offer.stack();
@@ -421,13 +467,32 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
     }
 
     private String summary(ItemStack stack) {
+        return loreLine(stack, 0);
+    }
+
+    private String unitSummary(ItemStack stack) {
         var lore = stack.get(DataComponents.LORE);
-        if (lore == null || lore.lines().isEmpty()) {
+        if (lore == null) {
+            return "";
+        }
+        for (var line : lore.lines()) {
+            String value = line.getString()
+                    .replace(ChatFormatting.RESET.toString(), "");
+            if (value.startsWith("单位价:")) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private String loreLine(ItemStack stack, int index) {
+        var lore = stack.get(DataComponents.LORE);
+        if (lore == null || lore.lines().size() <= index) {
             return ClientEconomyUiBridge.MARKET_DELIVERY_TITLE.equals(serverTitle)
                     ? "点击领取"
                     : "价格待同步";
         }
-        return lore.lines().getFirst().getString()
+        return lore.lines().get(index).getString()
                 .replace(ChatFormatting.RESET.toString(), "");
     }
 
@@ -501,6 +566,41 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
         }
         var item = menu.getSlot(EconomyMarketServerPage.PAGE_INFO_SLOT).getItem();
         return item.isEmpty() ? "" : item.getHoverName().getString();
+    }
+
+    private boolean hasSortControl() {
+        return !sortControlLabel().isBlank();
+    }
+
+    private String sortControlLabel() {
+        if (EconomyMarketServerPage.SORT_SLOT >= menu.slots.size()) {
+            return "";
+        }
+        var item = menu.getSlot(EconomyMarketServerPage.SORT_SLOT).getItem();
+        if (item.isEmpty()) {
+            return "";
+        }
+        String label = item.getHoverName().getString();
+        return label.startsWith("排序:") || label.startsWith("正在刷新")
+                ? label
+                : "";
+    }
+
+    private String sortButtonLabel() {
+        String label = sortControlLabel();
+        if (label.startsWith("正在刷新")) {
+            return "刷新";
+        }
+        if (label.contains("低价")) {
+            return "低价";
+        }
+        if (label.contains("高价")) {
+            return "高价";
+        }
+        if (label.contains("临期")) {
+            return "临期";
+        }
+        return "最新";
     }
 
     private void clickServerSlot(int slot) {

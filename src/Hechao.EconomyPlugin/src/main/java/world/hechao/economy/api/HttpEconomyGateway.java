@@ -135,10 +135,13 @@ public final class HttpEconomyGateway implements EconomyGateway {
     }
 
     @Override
-    public List<MarketListing> marketListings(String query) throws EconomyGatewayException {
+    public List<MarketListing> marketListings(
+            String query,
+            MarketSort sort) throws EconomyGatewayException {
         var request = request(
                 "/v1/internal/economy/market/listings?limit=500&query="
-                        + queryValue(query == null ? "" : query))
+                        + queryValue(query == null ? "" : query)
+                        + "&sort=" + queryValue(sort.apiValue()))
                 .GET()
                 .build();
         List<MarketListingResponse> response = send(
@@ -247,7 +250,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 .header("Authorization", "Bearer " + configuration.token())
                 .header("X-Hechao-Server-Id", configuration.serverId())
                 .header("Accept", "application/json")
-                .header("User-Agent", "HechaoEconomy/0.2.0");
+                .header("User-Agent", "HechaoEconomy/0.2.2");
     }
 
     private HttpRequest.Builder jsonRequest(String path, Object ignoredBody) {

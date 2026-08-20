@@ -10,6 +10,19 @@ public sealed partial class EconomyRepository
         string? query,
         int limit,
         CancellationToken cancellationToken)
+        => await ListMarketListingsAsync(
+            serverId,
+            query,
+            limit,
+            EconomyMarketSort.RecentlyListed,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<EconomyMarketListingResponse>> ListMarketListingsAsync(
+        string serverId,
+        string? query,
+        int limit,
+        EconomyMarketSort sort,
+        CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -19,7 +32,7 @@ public sealed partial class EconomyRepository
 
         var listings = new List<EconomyMarketListingResponse>();
         await using (var command = new NpgsqlCommand(
-            BuildMarketListingSql(), connection, transaction))
+            BuildMarketListingSql(sort), connection, transaction))
         {
             command.Parameters.AddWithValue(serverId);
             command.Parameters.AddWithValue(now);
@@ -598,15 +611,32 @@ public sealed partial class EconomyRepository
         return response;
     }
 
-    internal static string BuildMarketListingSql() => """
-        SELECT listing_id, server_id, seller_uuid, seller_name, item_id,
-               quantity, total_price, listing_fee, status, created_at, expires_at
-        FROM launcher.economy_market_listings
-        WHERE server_id = $1 AND status = 'Active' AND expires_at > $2
-          AND ($3 = '' OR position(lower($3) in lower(item_id || ' ' || seller_name)) > 0)
-        ORDER BY created_at DESC, listing_id
-        LIMIT $4;
-        """;
+    internal static string BuildMarketListingSql() =>
+        BuildMarketListingSql(EconomyMarketSort.RecentlyListed);
+
+    internal static string BuildMarketListingSql(EconomyMarketSort sort)
+    {
+        var orderBy = sort switch
+        {
+            EconomyMarketSort.LowestUnitPrice =>
+                "total_price / quantity ASC, created_at DESC, listing_id",
+            EconomyMarketSort.HighestUnitPrice =>
+                "total_price / quantity DESC, created_at DESC, listing_id",
+            EconomyMarketSort.ExpiringSoon =>
+                "expires_at ASC, created_at DESC, listing_id",
+            _ => "created_at DESC, listing_id"
+        };
+
+        return $"""
+            SELECT listing_id, server_id, seller_uuid, seller_name, item_id,
+                   quantity, total_price, listing_fee, status, created_at, expires_at
+            FROM launcher.economy_market_listings
+            WHERE server_id = $1 AND status = 'Active' AND expires_at > $2
+              AND ($3 = '' OR position(lower($3) in lower(item_id || ' ' || seller_name)) > 0)
+            ORDER BY {orderBy}
+            LIMIT $4;
+            """;
+    }
 
     private static async Task LockMarketActorAsync(
         NpgsqlConnection connection,

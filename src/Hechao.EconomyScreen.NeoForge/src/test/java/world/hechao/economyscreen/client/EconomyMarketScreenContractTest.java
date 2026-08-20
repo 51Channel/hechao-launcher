@@ -28,6 +28,9 @@ final class EconomyMarketScreenContractTest {
         assertTrue(source.contains("SEARCH_DELAY_TICKS"));
         assertTrue(source.contains("marketCommand()"));
         assertTrue(source.contains("搜索商品或卖家"));
+        assertTrue(source.contains("SORT_SLOT"));
+        assertTrue(source.contains("sortButtonLabel"));
+        assertTrue(source.contains("单位价:"));
     }
 
     @Test

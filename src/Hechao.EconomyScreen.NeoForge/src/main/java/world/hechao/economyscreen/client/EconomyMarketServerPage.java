@@ -7,6 +7,7 @@ final class EconomyMarketServerPage {
     static final int PREVIOUS_SLOT = 48;
     static final int PAGE_INFO_SLOT = 49;
     static final int NEXT_SLOT = 50;
+    static final int SORT_SLOT = 51;
     static final String PREVIOUS_LABEL = "上一页";
     static final String NEXT_LABEL = "下一页";
 

@@ -42,6 +42,7 @@ public final class MarketMenu implements Listener {
     public static final int PREVIOUS_SLOT = 48;
     public static final int PAGE_INFO_SLOT = 49;
     public static final int NEXT_SLOT = 50;
+    public static final int SORT_SLOT = 51;
     public static final int DELIVERY_SLOT = 52;
     public static final int RETURN_SLOT = 53;
     public static final int DECISION_ITEM_SLOT = 13;
@@ -69,17 +70,32 @@ public final class MarketMenu implements Listener {
     }
 
     public void openBrowse(Player player, List<EconomyGateway.MarketListing> listings) {
-        open(player, new Session(Mode.BROWSE, listings, List.of()));
+        openBrowse(player, listings, EconomyGateway.MarketSort.RECENTLY_LISTED);
+    }
+
+    public void openBrowse(
+            Player player,
+            List<EconomyGateway.MarketListing> listings,
+            EconomyGateway.MarketSort sort) {
+        open(player, new Session(Mode.BROWSE, listings, List.of(), sort));
     }
 
     public void openMine(Player player, List<EconomyGateway.MarketListing> listings) {
-        open(player, new Session(Mode.MINE, listings, List.of()));
+        open(player, new Session(
+                Mode.MINE,
+                listings,
+                List.of(),
+                EconomyGateway.MarketSort.RECENTLY_LISTED));
     }
 
     public void openDeliveries(
             Player player,
             List<EconomyGateway.MarketDelivery> deliveries) {
-        open(player, new Session(Mode.DELIVERIES, List.of(), deliveries));
+        open(player, new Session(
+                Mode.DELIVERIES,
+                List.of(),
+                deliveries,
+                EconomyGateway.MarketSort.RECENTLY_LISTED));
     }
 
     public boolean search(Player player, MarketSearchRequest search) {
@@ -145,6 +161,7 @@ public final class MarketMenu implements Listener {
             case BROWSE_SLOT -> refreshBrowse(player);
             case PREVIOUS_SLOT -> changePage(session, -1);
             case NEXT_SLOT -> changePage(session, 1);
+            case SORT_SLOT -> cycleSort(player, session);
             case DELIVERY_SLOT -> refreshDeliveries(player);
             case RETURN_SLOT -> returnHome(player);
             default -> {
@@ -264,6 +281,18 @@ public final class MarketMenu implements Listener {
             session.inventory.setItem(
                     NEXT_SLOT,
                     control(Material.ARROW, "下一页", "查看下一页"));
+        }
+        if (session.mode == Mode.BROWSE) {
+            session.inventory.setItem(
+                    SORT_SLOT,
+                    control(
+                            Material.HOPPER,
+                            session.refreshing
+                                    ? "正在刷新排序"
+                                    : "排序: " + session.sort.displayName(),
+                            session.refreshing
+                                    ? "请稍候"
+                                    : "点击切换排序方式"));
         }
         session.inventory.setItem(
                 DELIVERY_SLOT,
@@ -471,11 +500,49 @@ public final class MarketMenu implements Listener {
     }
 
     private void refreshBrowse(Player player) {
+        refreshBrowse(player, EconomyGateway.MarketSort.RECENTLY_LISTED);
+    }
+
+    private void refreshBrowse(
+            Player player,
+            EconomyGateway.MarketSort sort) {
         async(
-                () -> plugin.gateway().marketListings(""),
-                listings -> openBrowse(player, listings),
+                () -> plugin.gateway().marketListings("", sort),
+                listings -> openBrowse(player, listings, sort),
                 exception -> player.sendMessage(PREFIX + ChatColor.RED
                         + "玩家市场暂时无法读取。"));
+    }
+
+    private void cycleSort(Player player, Session session) {
+        if (session.mode != Mode.BROWSE || session.refreshing) {
+            return;
+        }
+        var previous = session.sort;
+        var next = previous.next();
+        session.sort = next;
+        session.refreshing = true;
+        render(session);
+        async(
+                () -> plugin.gateway().marketListings("", next),
+                listings -> {
+                    if (sessions.get(player.getUniqueId()) != session) {
+                        return;
+                    }
+                    session.listings = List.copyOf(listings);
+                    session.page = 0;
+                    session.refreshing = false;
+                    render(session);
+                },
+                exception -> {
+                    if (sessions.get(player.getUniqueId()) != session) {
+                        return;
+                    }
+                    session.sort = previous;
+                    session.refreshing = false;
+                    render(session);
+                    player.sendMessage(PREFIX + ChatColor.RED
+                            + "市场排序暂时无法刷新。");
+                });
     }
 
     private void refreshDeliveries(Player player) {
@@ -512,6 +579,7 @@ public final class MarketMenu implements Listener {
         var meta = stack.getItemMeta();
         meta.setLore(List.of(
                 ChatColor.GOLD + "总价: " + money(listing.totalPrice()),
+                ChatColor.AQUA + "单位价: " + unitMoney(listing.unitPrice()) + " / 个",
                 ChatColor.GRAY + "数量: " + listing.quantity(),
                 ChatColor.GRAY + "卖家: " + listing.sellerName(),
                 ChatColor.DARK_GRAY + "剩余: " + remaining(listing.expiresAt()),
@@ -615,6 +683,13 @@ public final class MarketMenu implements Listener {
         return amount.setScale(2, RoundingMode.HALF_UP).toPlainString() + " 金币";
     }
 
+    private static String unitMoney(BigDecimal amount) {
+        return amount.setScale(4, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString()
+                + " 金币";
+    }
+
     private static String remaining(Instant expiresAt) {
         long minutes = Math.max(0, Duration.between(Instant.now(), expiresAt).toMinutes());
         return minutes >= 60
@@ -666,7 +741,7 @@ public final class MarketMenu implements Listener {
 
     private static final class Session {
         private final Mode mode;
-        private final List<EconomyGateway.MarketListing> listings;
+        private List<EconomyGateway.MarketListing> listings;
         private List<EconomyGateway.MarketDelivery> deliveries;
         private final Map<Integer, EconomyGateway.MarketListing> visibleListings = new HashMap<>();
         private final Map<Integer, EconomyGateway.MarketDelivery> visibleDeliveries = new HashMap<>();
@@ -676,14 +751,18 @@ public final class MarketMenu implements Listener {
         private int page;
         private int filteredCount;
         private boolean suspended;
+        private EconomyGateway.MarketSort sort;
+        private boolean refreshing;
 
         private Session(
                 Mode mode,
                 List<EconomyGateway.MarketListing> listings,
-                List<EconomyGateway.MarketDelivery> deliveries) {
+                List<EconomyGateway.MarketDelivery> deliveries,
+                EconomyGateway.MarketSort sort) {
             this.mode = mode;
             this.listings = List.copyOf(listings);
             this.deliveries = List.copyOf(deliveries);
+            this.sort = sort;
         }
     }
 

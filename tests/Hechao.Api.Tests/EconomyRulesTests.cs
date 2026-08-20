@@ -1,5 +1,6 @@
 using Hechao.Api.Economy;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace Hechao.Api.Tests;
 
@@ -86,6 +87,45 @@ public sealed class EconomyRulesTests
             valid with { ItemId = "minecraft:Iron_Ingot" }, 1_000m));
         Assert.False(EconomyRules.IsValidMarketListing(
             valid with { Quantity = 0 }, 1_000m));
+    }
+
+    [Fact]
+    public void MarketSort_UsesAClosedWireVocabulary()
+    {
+        Assert.True(EconomyRules.TryParseMarketSort(null, out var defaultSort));
+        Assert.Equal(EconomyMarketSort.RecentlyListed, defaultSort);
+        Assert.True(EconomyRules.TryParseMarketSort(
+            "lowest_unit_price", out var lowest));
+        Assert.Equal(EconomyMarketSort.LowestUnitPrice, lowest);
+        Assert.True(EconomyRules.TryParseMarketSort(
+            " EXPIRING_SOON ", out var expiring));
+        Assert.Equal(EconomyMarketSort.ExpiringSoon, expiring);
+        Assert.False(EconomyRules.TryParseMarketSort("total_price", out _));
+        Assert.Equal(
+            "highest_unit_price",
+            EconomyRules.MarketSortValue(EconomyMarketSort.HighestUnitPrice));
+    }
+
+    [Fact]
+    public void MarketListing_ExposesRoundedUnitPriceWithoutChangingTotalPrice()
+    {
+        var listing = new EconomyMarketListingResponse(
+            Guid.NewGuid(),
+            "activity-survival",
+            Guid.NewGuid(),
+            "Seller",
+            "minecraft:iron_ingot",
+            64,
+            125.00m,
+            1.25m,
+            "Active",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddHours(24));
+
+        Assert.Equal(1.9531m, listing.UnitPrice);
+        Assert.Equal(125.00m, listing.TotalPrice);
+        var json = JsonSerializer.Serialize(listing, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.Contains("\"unitPrice\":1.9531", json, StringComparison.Ordinal);
     }
 
     [Fact]

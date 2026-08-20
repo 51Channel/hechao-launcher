@@ -707,3 +707,19 @@ Screen `0.2.3` 修复玩家市场上架页与背包槽位重叠、隐藏服务�
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.23.md)
 和结构化证据
 [`evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.23_TEST_RELEASE_2026-08-19.json`](evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.23_TEST_RELEASE_2026-08-19.json)。
+
+## 27. 2026-08-20 玩家市场排序与单位价候选
+
+本地分支新增 API `0.36.0`、HechaoEconomy `0.2.2` 和客户端 Screen `0.2.7` 候选。API
+市场列表增加 `recently_listed`、`lowest_unit_price`、`highest_unit_price` 和
+`expiring_soon` 四个白名单排序；挂单响应增加四位小数的 `unitPrice`。SQL 使用稳定的
+二级排序，未知排序值拒绝，省略参数继续使用最新上架。没有新增数据库迁移，也没有改变
+市场写入事务。
+
+Bukkit 市场底部第 `51` 槽提供排序循环，挂单 Lore 增加单位价；NeoForge Screen 在搜索框旁
+提供紧凑排序按钮，并在卡片空间足够时显示总价与单位价。排序刷新使用异步网关，失败恢复旧
+排序，客户端旧命令和旧 API 调用保持兼容。
+
+本轮仅完成本地源码和自动测试，未上传 OSS、未导入客户端档案、未部署 API/插件/Screen，
+也未启停任何 Minecraft、Velocity 或服控进程。候选详情与上线门禁见
+[`SKYREALM_PLAYER_MARKET_0.2.2_CANDIDATE.md`](SKYREALM_PLAYER_MARKET_0.2.2_CANDIDATE.md)。

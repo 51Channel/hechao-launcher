@@ -37,4 +37,29 @@ public sealed class EconomyRepositorySqlTests
         Assert.Contains("item_id || ' ' || seller_name", sql, StringComparison.Ordinal);
         Assert.Contains("LIMIT $4", sql, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void MarketListingSql_UsesOnlyKnownStableSortExpressions()
+    {
+        var lowest = EconomyRepository.BuildMarketListingSql(
+            EconomyMarketSort.LowestUnitPrice);
+        var highest = EconomyRepository.BuildMarketListingSql(
+            EconomyMarketSort.HighestUnitPrice);
+        var expiring = EconomyRepository.BuildMarketListingSql(
+            EconomyMarketSort.ExpiringSoon);
+
+        Assert.Contains(
+            "ORDER BY total_price / quantity ASC, created_at DESC, listing_id",
+            lowest,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ORDER BY total_price / quantity DESC, created_at DESC, listing_id",
+            highest,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ORDER BY expires_at ASC, created_at DESC, listing_id",
+            expiring,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("$5", lowest, StringComparison.Ordinal);
+    }
 }

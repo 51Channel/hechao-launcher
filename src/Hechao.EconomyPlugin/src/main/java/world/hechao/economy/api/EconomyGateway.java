@@ -1,6 +1,7 @@
 package world.hechao.economy.api;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +34,13 @@ public interface EconomyGateway {
     void disableProduct(String itemId, UUID actorUuid, String actorName)
             throws EconomyGatewayException;
 
-    List<MarketListing> marketListings(String query) throws EconomyGatewayException;
+    default List<MarketListing> marketListings(String query)
+            throws EconomyGatewayException {
+        return marketListings(query, MarketSort.RECENTLY_LISTED);
+    }
+
+    List<MarketListing> marketListings(String query, MarketSort sort)
+            throws EconomyGatewayException;
 
     List<MarketListing> ownMarketListings(UUID playerUuid) throws EconomyGatewayException;
 
@@ -64,6 +71,34 @@ public interface EconomyGateway {
             UUID playerUuid) throws EconomyGatewayException;
 
     boolean isConfigured();
+
+    enum MarketSort {
+        RECENTLY_LISTED("recently_listed", "最新上架"),
+        LOWEST_UNIT_PRICE("lowest_unit_price", "低价优先"),
+        HIGHEST_UNIT_PRICE("highest_unit_price", "高价优先"),
+        EXPIRING_SOON("expiring_soon", "临期优先");
+
+        private final String apiValue;
+        private final String displayName;
+
+        MarketSort(String apiValue, String displayName) {
+            this.apiValue = apiValue;
+            this.displayName = displayName;
+        }
+
+        public String apiValue() {
+            return apiValue;
+        }
+
+        public String displayName() {
+            return displayName;
+        }
+
+        public MarketSort next() {
+            var values = values();
+            return values[(ordinal() + 1) % values.length];
+        }
+    }
 
     record Balance(UUID playerUuid, BigDecimal availableBalance, BigDecimal frozenBalance) {
     }
@@ -120,6 +155,14 @@ public interface EconomyGateway {
             String status,
             java.time.Instant createdAt,
             java.time.Instant expiresAt) {
+        public BigDecimal unitPrice() {
+            return quantity <= 0
+                    ? BigDecimal.ZERO
+                    : totalPrice.divide(
+                            BigDecimal.valueOf(quantity),
+                            4,
+                            RoundingMode.HALF_UP);
+        }
     }
 
     record MarketCreate(

@@ -31,6 +31,7 @@ public static class EconomyEndpoints
     private static async Task<IResult> ListMarketListingsAsync(
         string? query,
         int? limit,
+        string? sort,
         HttpContext context,
         EconomyServiceTokenValidator tokenValidator,
         EconomyRepository repository,
@@ -47,10 +48,16 @@ public static class EconomyEndpoints
             return Validation("query", "市场搜索参数无效。");
         }
 
+        if (!EconomyRules.TryParseMarketSort(sort, out var marketSort))
+        {
+            return Validation("sort", "市场排序参数无效。");
+        }
+
         return Results.Ok(await repository.ListMarketListingsAsync(
             serverId!,
             query?.Trim(),
             limit ?? 500,
+            marketSort,
             cancellationToken));
     }
 

@@ -76,6 +76,14 @@ public sealed record EconomyProductResponse(
     string UpdatedByName,
     DateTimeOffset UpdatedAt);
 
+public enum EconomyMarketSort
+{
+    RecentlyListed,
+    LowestUnitPrice,
+    HighestUnitPrice,
+    ExpiringSoon
+}
+
 public enum EconomyQuoteStatus
 {
     Created,
@@ -106,7 +114,15 @@ public sealed record EconomyMarketListingResponse(
     decimal ListingFee,
     string Status,
     DateTimeOffset CreatedAt,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt)
+{
+    public decimal UnitPrice => Quantity <= 0
+        ? 0m
+        : decimal.Round(
+            TotalPrice / Quantity,
+            4,
+            MidpointRounding.AwayFromZero);
+}
 
 public sealed record EconomyMarketCreateListingRequest(
     string IdempotencyKey,

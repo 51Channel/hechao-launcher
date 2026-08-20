@@ -62,7 +62,9 @@ public final class UnavailableEconomyGateway implements EconomyGateway {
     }
 
     @Override
-    public List<MarketListing> marketListings(String query) throws EconomyGatewayException {
+    public List<MarketListing> marketListings(
+            String query,
+            MarketSort sort) throws EconomyGatewayException {
         throw unavailable();
     }
 
