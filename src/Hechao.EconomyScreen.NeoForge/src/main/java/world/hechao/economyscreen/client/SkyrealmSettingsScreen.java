@@ -172,7 +172,6 @@ final class SkyrealmSettingsScreen extends SinglePassBackgroundScreen {
     }
 
     private void returnHome() {
-        closeContainer();
         ClientEconomyUiBridge.requestHome();
     }
 

@@ -8,21 +8,31 @@ import org.junit.jupiter.api.Test;
 
 final class NavigationLayoutTest {
     @Test
-    void matchesCompactTwoColumnReferenceAtCommonScaledResolution() {
+    void commonScaledResolutionUsesThreeByTwoShortcutGrid() {
         var layout = NavigationLayout.calculate(512, 270, 6, 0);
+
+        assertEquals(3, layout.columns());
+        assertEquals(2, layout.visibleRows());
+        assertEquals(100, layout.buttonWidth());
+        assertEquals(312, layout.gridWidth());
+        assertFalse(layout.needsNavigation());
+        assertEquals((512 - 312) / 2, layout.gridLeft());
+    }
+
+    @Test
+    void mediumResolutionUsesCompactTwoColumnGrid() {
+        var layout = NavigationLayout.calculate(320, 180, 6, 0);
 
         assertEquals(2, layout.columns());
         assertEquals(3, layout.visibleRows());
-        assertEquals(158, layout.buttonWidth());
-        assertEquals(322, layout.gridWidth());
+        assertEquals(106, layout.buttonWidth());
         assertFalse(layout.needsNavigation());
-        assertEquals((512 - 322) / 2, layout.gridLeft());
     }
 
     @Test
     void retainsAllActionsThroughPaginationOnSmallWindows() {
-        var firstPage = NavigationLayout.calculate(320, 160, 6, 0);
-        var lastPage = NavigationLayout.calculate(320, 160, 6, 99);
+        var firstPage = NavigationLayout.calculate(240, 160, 6, 0);
+        var lastPage = NavigationLayout.calculate(240, 160, 6, 99);
 
         assertEquals(1, firstPage.columns());
         assertTrue(firstPage.needsNavigation());
@@ -35,7 +45,7 @@ final class NavigationLayoutTest {
     void keepsButtonsBelowTheIndustrialHeaderOnShortWindows() {
         var layout = NavigationLayout.calculate(240, 100, 6, 0);
 
-        assertTrue(layout.gridTop() >= layout.titleTop() + 34);
+        assertTrue(layout.gridTop() >= layout.titleTop() + 22);
         assertTrue(layout.sharedFooter());
         assertEquals(layout.navigationTop(), layout.returnTop());
     }

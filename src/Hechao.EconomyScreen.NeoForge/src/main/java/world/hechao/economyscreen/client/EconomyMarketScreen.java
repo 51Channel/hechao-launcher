@@ -516,7 +516,7 @@ final class EconomyMarketScreen extends SinglePassBackgroundScreen {
     }
 
     private void returnHome() {
-        clickServerSlot(53);
+        ClientEconomyUiBridge.requestHome();
     }
 
     private String searchHint() {

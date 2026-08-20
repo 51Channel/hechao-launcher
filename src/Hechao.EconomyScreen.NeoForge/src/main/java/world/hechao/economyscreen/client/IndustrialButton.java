@@ -5,8 +5,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 final class IndustrialButton extends Button {
+    private static final int ICON_GAP = 4;
+
+    private final ItemStack icon;
+
     IndustrialButton(
             int x,
             int y,
@@ -14,7 +19,19 @@ final class IndustrialButton extends Button {
             int height,
             Component message,
             OnPress onPress) {
+        this(x, y, width, height, message, ItemStack.EMPTY, onPress);
+    }
+
+    IndustrialButton(
+            int x,
+            int y,
+            int width,
+            int height,
+            Component message,
+            ItemStack icon,
+            OnPress onPress) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
+        this.icon = icon.copy();
     }
 
     @Override
@@ -54,12 +71,28 @@ final class IndustrialButton extends Button {
         }
 
         var minecraft = Minecraft.getInstance();
-        var text = minecraft.font.ellipsize(getMessage(), width - 10);
-        graphics.drawCenteredString(
+        int iconWidth = icon.isEmpty() ? 0 : 16 + ICON_GAP;
+        var text = minecraft.font.ellipsize(getMessage(), width - 10 - iconWidth);
+        var visualText = Language.getInstance().getVisualOrder(text);
+        if (icon.isEmpty()) {
+            graphics.drawCenteredString(
+                    minecraft.font,
+                    visualText,
+                    getX() + width / 2,
+                    getY() + (height - 8) / 2,
+                    textColor);
+            return;
+        }
+
+        int contentWidth = 16 + ICON_GAP + minecraft.font.width(text);
+        int contentLeft = getX() + Math.max(5, (width - contentWidth) / 2);
+        graphics.renderItem(icon, contentLeft, getY() + (height - 16) / 2);
+        graphics.drawString(
                 minecraft.font,
-                Language.getInstance().getVisualOrder(text),
-                getX() + width / 2,
+                visualText,
+                contentLeft + 16 + ICON_GAP,
                 getY() + (height - 8) / 2,
-                textColor);
+                textColor,
+                false);
     }
 }

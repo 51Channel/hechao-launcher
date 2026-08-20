@@ -4,6 +4,7 @@ import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -54,10 +55,39 @@ public final class ClientEconomyUiBridge {
     }
 
     static void requestHome() {
+        closeOpenContainerWithoutClosingScreen();
+        sendCommand("hechaomenu economy");
+    }
+
+    static boolean requestOfficialBuyback() {
+        return sendCommand("hechaoeconomy:sell");
+    }
+
+    static boolean requestMarketListing() {
+        return sendCommand("hechaoeconomy:ah sell");
+    }
+
+    private static boolean sendCommand(String command) {
         var connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.sendCommand("hechaomenu economy");
+        if (connection == null) {
+            return false;
         }
+        connection.sendCommand(command);
+        return true;
+    }
+
+    private static void closeOpenContainerWithoutClosingScreen() {
+        var minecraft = Minecraft.getInstance();
+        var player = minecraft.player;
+        var connection = minecraft.getConnection();
+        if (player == null
+                || connection == null
+                || player.containerMenu == player.inventoryMenu) {
+            return;
+        }
+        connection.send(new ServerboundContainerClosePacket(
+                player.containerMenu.containerId));
+        player.containerMenu = player.inventoryMenu;
     }
 
     private static void onSystemMessage(ClientChatReceivedEvent.System event) {

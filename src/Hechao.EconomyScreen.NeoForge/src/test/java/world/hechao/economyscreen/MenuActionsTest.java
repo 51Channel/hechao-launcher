@@ -25,11 +25,12 @@ final class MenuActionsTest {
     }
 
     @Test
-    void saleActionOpensDepositWorkflow() {
+    void saleActionOpensPlayerMarketListingWorkflow() {
         var action = MenuActions.all().get("sell");
 
-        assertEquals("出售物品", action.label());
-        assertEquals("放入物品并确认回收", action.description());
+        assertEquals("上架物品", action.label());
+        assertEquals("放入物品并设置玩家市场售价", action.description());
+        assertEquals("hechaoeconomy:ah sell", action.command());
     }
 
     @Test
@@ -60,7 +61,7 @@ final class MenuActionsTest {
     }
 
     @Test
-    void screenUsesCompactVanillaGridWithoutOversizedPanel() throws Exception {
+    void screenUsesCompactShortcutGridWithoutDashboardChrome() throws Exception {
         var source = Files.readString(Path.of(
                 "src",
                 "main",
@@ -74,10 +75,13 @@ final class MenuActionsTest {
         assertTrue(source.contains("NavigationLayout.calculate"));
         assertTrue(source.contains("NavigationLayout.BUTTON_HEIGHT"));
         assertTrue(source.contains("mouseScrolled"));
-        assertTrue(source.contains("菜单内容和权限由服务器决定"));
         assertTrue(source.contains("displayClientMessage"));
         assertTrue(source.contains("action.definition.feedback()"));
         assertTrue(source.contains("ClientEconomyUiBridge.openWaiting"));
+        assertTrue(source.contains("ClientEconomyUiBridge.requestMarketListing()"));
+        assertTrue(source.contains("actionIcon(action.actionId)"));
+        assertFalse(source.contains("addServerAuthorizationIndicator"));
+        assertFalse(source.contains("renderStatusLamp"));
         assertFalse(source.contains("graphics.fill("));
         assertFalse(source.contains("SUBTITLE"));
         assertFalse(source.contains("plainSubstrByWidth"));

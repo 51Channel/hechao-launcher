@@ -38,10 +38,10 @@ public final class MenuActions {
         actions.put(
                 "sell",
                 new Definition(
-                        "出售物品",
-                        "放入物品并确认回收",
-                        "正在打开出售界面...",
-                        "hechaoeconomy:sell"));
+                        "上架物品",
+                        "放入物品并设置玩家市场售价",
+                        "正在打开市场上架...",
+                        "hechaoeconomy:ah sell"));
         actions.put(
                 "market",
                 new Definition(

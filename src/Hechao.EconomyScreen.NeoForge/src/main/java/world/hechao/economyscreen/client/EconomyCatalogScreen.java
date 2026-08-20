@@ -19,6 +19,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private static final int CLOSE_BUTTON_WIDTH = 80;
     private static final int BUTTON_HEIGHT = 20;
     private static final int SEARCH_DELAY_TICKS = 8;
+    private static final int OPEN_BUYBACK_COOLDOWN_TICKS = 10;
 
     private final ChestMenu menu;
     private EconomyCatalogLayout.Layout layout;
@@ -32,6 +33,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private String searchQuery = "";
     private String lastSubmittedSearch = "";
     private int searchDelay = -1;
+    private int openBuybackCooldown;
 
     EconomyCatalogScreen(ChestMenu menu) {
         super(Component.literal(ClientEconomyUiBridge.CATALOG_TITLE));
@@ -97,6 +99,9 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         if (searchDelay == 0) {
             searchDelay = -1;
             submitSearch();
+        }
+        if (openBuybackCooldown > 0) {
+            openBuybackCooldown--;
         }
     }
 
@@ -169,10 +174,18 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                         false);
                 graphics.drawString(
                         font,
-                        fit(price(product), layout.cardWidth() - 38),
+                        fit(price(product), priceWidth(x)),
                         x + 30,
                         y + 20,
                         0xFFFFD75A,
+                        false);
+                String actionLabel = "回收 >";
+                graphics.drawString(
+                        font,
+                        actionLabel,
+                        x + layout.cardWidth() - 7 - font.width(actionLabel),
+                        y + 20,
+                        isHovered ? 0xFFFFE2A2 : 0xFF8DBBB7,
                         false);
                 if (isHovered) {
                     hovered = product;
@@ -199,6 +212,17 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                     layout.footerTop() - 10,
                     0xFFB7BBC0);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && openBuybackCooldown == 0 && productAt(mouseX, mouseY) != null) {
+            if (ClientEconomyUiBridge.requestOfficialBuyback()) {
+                openBuybackCooldown = OPEN_BUYBACK_COOLDOWN_TICKS;
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
@@ -351,6 +375,32 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                 minecraft.player);
     }
 
+    private ItemStack productAt(double mouseX, double mouseY) {
+        var products = filteredProducts();
+        int first = page * layout.pageSize();
+        int last = Math.min(products.size(), first + layout.pageSize());
+        for (int index = first; index < last; index++) {
+            int relative = index - first;
+            int column = relative % layout.columns();
+            int row = relative / layout.columns();
+            int x = layout.contentLeft()
+                    + column * (layout.cardWidth() + EconomyCatalogLayout.CARD_GAP);
+            int y = layout.contentTop()
+                    + row * (EconomyCatalogLayout.CARD_HEIGHT
+                            + EconomyCatalogLayout.CARD_GAP);
+            if (mouseX >= x && mouseX < x + layout.cardWidth()
+                    && mouseY >= y && mouseY < y + EconomyCatalogLayout.CARD_HEIGHT) {
+                return products.get(index);
+            }
+        }
+        return null;
+    }
+
+    private int priceWidth(int cardLeft) {
+        int actionLeft = cardLeft + layout.cardWidth() - 7 - font.width("回收 >");
+        return Math.max(12, actionLeft - (cardLeft + 30) - 4);
+    }
+
     private String displayName(ItemStack stack) {
         String name = stack.getHoverName().getString();
         if (name.startsWith("item.minecraft.")
@@ -461,11 +511,6 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     }
 
     private void returnHome() {
-        if (minecraft != null
-                && minecraft.player != null
-                && minecraft.player.containerMenu == menu) {
-            minecraft.player.closeContainer();
-        }
         ClientEconomyUiBridge.requestHome();
     }
 }

@@ -186,7 +186,6 @@ final class EconomySellScreen extends ContainerScreen {
     }
 
     private void returnHome() {
-        clickControl(RETURN_SLOT);
         ClientEconomyUiBridge.requestHome();
     }
 

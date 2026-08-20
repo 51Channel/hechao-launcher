@@ -6,6 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.network.PacketDistributor;
 import world.hechao.economyscreen.MenuActions;
 import world.hechao.economyscreen.network.MenuActionPayload;
@@ -13,14 +15,10 @@ import world.hechao.economyscreen.network.OpenMenuPayload;
 
 public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     private static final Component TITLE = Component.literal("天域远征");
-    private static final Component SERVER_AUTHORIZED_TOOLTIP = Component.literal(
-            "菜单内容和权限由服务器决定");
-    private static final int TITLE_EMBLEM_SIZE = 22;
-    private static final int TITLE_EMBLEM_GAP = 7;
-    private static final int TITLE_INDICATOR_GAP = 8;
-    private static final int TITLE_INDICATOR_SIZE = 20;
+    private static final int TITLE_EMBLEM_SIZE = 18;
+    private static final int TITLE_EMBLEM_GAP = 5;
     private static final int NAVIGATION_BUTTON_WIDTH = 98;
-    private static final int RETURN_BUTTON_WIDTH = 110;
+    private static final int RETURN_BUTTON_WIDTH = 88;
 
     private final OpenMenuPayload payload;
     private final List<ActionView> actions;
@@ -46,7 +44,6 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
         layout = NavigationLayout.calculate(width, height, actions.size(), scrollRow);
         scrollRow = layout.scrollRow();
         requestBalance();
-        addServerAuthorizationIndicator();
 
         int firstIndex = scrollRow * layout.columns();
         int lastIndex = Math.min(
@@ -66,7 +63,10 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
                     layout.buttonWidth(),
                     NavigationLayout.BUTTON_HEIGHT,
                     Component.literal(action.definition.label()),
+                    actionIcon(action.actionId),
                     ignored -> sendAction(action));
+            button.setTooltip(Tooltip.create(Component.literal(
+                    action.definition.description())));
             addRenderableWidget(button);
         }
         if (layout.needsNavigation()) {
@@ -94,13 +94,14 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
                 panel.left(),
                 panel.top(),
                 panel.width(),
-                panel.height());
+                panel.height(),
+                28);
 
         int groupLeft = panel.left() + 10;
         IndustrialUiTheme.renderEmblem(
                 graphics,
                 groupLeft,
-                layout.titleTop() - 1,
+                layout.titleTop() + 1,
                 TITLE_EMBLEM_SIZE);
         graphics.drawString(
                 font,
@@ -135,8 +136,14 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     }
 
     private void sendAction(ActionView action) {
-        PacketDistributor.sendToServer(
-                new MenuActionPayload(payload.sessionId(), action.actionId));
+        if ("sell".equals(action.actionId)) {
+            if (!ClientEconomyUiBridge.requestMarketListing()) {
+                return;
+            }
+        } else {
+            PacketDistributor.sendToServer(
+                    new MenuActionPayload(payload.sessionId(), action.actionId));
+        }
         if (ClientEconomyUiBridge.opensEmbeddedScreen(action.actionId)) {
             ClientEconomyUiBridge.openWaiting(
                     action.actionId,
@@ -154,26 +161,6 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
         onClose();
     }
 
-    private void addServerAuthorizationIndicator() {
-        var panel = panelBounds();
-        int titleWidth = font.width(TITLE);
-        int indicatorLeft = panel.left() + 10
-                + TITLE_EMBLEM_SIZE
-                + TITLE_EMBLEM_GAP
-                + titleWidth
-                + TITLE_INDICATOR_GAP;
-        var indicator = new IndustrialButton(
-                indicatorLeft,
-                layout.titleTop(),
-                TITLE_INDICATOR_SIZE,
-                TITLE_INDICATOR_SIZE,
-                Component.literal("!").withStyle(ChatFormatting.YELLOW),
-                ignored -> {
-                });
-        indicator.setTooltip(Tooltip.create(SERVER_AUTHORIZED_TOOLTIP));
-        addRenderableWidget(indicator);
-    }
-
     private void requestBalance() {
         if (balanceRequested) {
             return;
@@ -189,27 +176,16 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     private void renderBalance(GuiGraphics graphics, PanelBounds panel) {
         String text = balance == null
                 ? "余额同步中"
-                : (panel.width() >= 280 ? "余额 " : "")
-                        + balance.amount()
-                        + " 金币";
+                : balance.amount() + " 金币";
         int textWidth = font.width(text);
         int textX = panel.left() + panel.width() - 12 - textWidth;
-        int lampX = textX - 11;
         int titleRight = panel.left() + 10
                 + TITLE_EMBLEM_SIZE
                 + TITLE_EMBLEM_GAP
-                + font.width(TITLE)
-                + TITLE_INDICATOR_GAP
-                + TITLE_INDICATOR_SIZE;
-        if (lampX <= titleRight + 6) {
+                + font.width(TITLE);
+        if (textX <= titleRight + 6) {
             return;
         }
-        IndustrialUiTheme.renderStatusLamp(
-                graphics,
-                lampX,
-                layout.titleTop() + 6,
-                balance == null ? 0xFFFFD75A : 0xFF8CD99B,
-                balance != null);
         graphics.drawString(
                 font,
                 text,
@@ -284,12 +260,24 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
 
     private PanelBounds panelBounds() {
         int contentBottom = layout.returnTop() + NavigationLayout.RETURN_HEIGHT;
-        int left = Math.max(6, layout.gridLeft() - 14);
-        int top = Math.max(4, layout.titleTop() - 10);
+        int left = Math.max(6, layout.gridLeft() - 10);
+        int top = Math.max(4, layout.titleTop() - 8);
         int right = Math.min(width - 6,
-                layout.gridLeft() + layout.gridWidth() + 14);
-        int bottom = Math.min(height - 4, contentBottom + 14);
+                layout.gridLeft() + layout.gridWidth() + 10);
+        int bottom = Math.min(height - 4, contentBottom + 10);
         return new PanelBounds(left, top, right - left, bottom - top);
+    }
+
+    private static ItemStack actionIcon(String actionId) {
+        return switch (actionId) {
+            case "balance" -> new ItemStack(Items.GOLD_INGOT);
+            case "shop" -> new ItemStack(Items.HOPPER);
+            case "sell" -> new ItemStack(Items.EMERALD);
+            case "market" -> new ItemStack(Items.CHEST);
+            case "settings" -> new ItemStack(Items.COMPARATOR);
+            case "team" -> new ItemStack(Items.PLAYER_HEAD);
+            default -> ItemStack.EMPTY;
+        };
     }
 
     private record ActionView(
