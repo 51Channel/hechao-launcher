@@ -36,13 +36,6 @@ public final class MenuActions {
                         "正在打开回收目录...",
                         "hechaoeconomy:shop"));
         actions.put(
-                "sell",
-                new Definition(
-                        "上架物品",
-                        "放入物品并设置玩家市场售价",
-                        "正在打开市场上架...",
-                        "hechaoeconomy:ah sell"));
-        actions.put(
                 "market",
                 new Definition(
                         "玩家市场",
@@ -50,12 +43,12 @@ public final class MenuActions {
                         "正在打开玩家市场...",
                         "hechaoeconomy:ah"));
         actions.put(
-                "settings",
+                "sell",
                 new Definition(
-                        "个人设置",
-                        "打开生存服个人设置",
-                        "正在打开个人设置...",
-                        "skyrealmcore:settings"));
+                        "市场上架",
+                        "玩家市场快捷入口：放入物品并设置售价",
+                        "正在打开市场上架...",
+                        "hechaoeconomy:ah sell"));
         actions.put(
                 "team",
                 new Definition(
@@ -63,6 +56,13 @@ public final class MenuActions {
                         "管理邀请、成员和队伍聊天",
                         "正在打开队伍...",
                         "skyrealmcore:team list"));
+        actions.put(
+                "settings",
+                new Definition(
+                        "个人设置",
+                        "打开生存服个人设置",
+                        "正在打开个人设置...",
+                        "skyrealmcore:settings"));
         return Collections.unmodifiableMap(actions);
     }
 

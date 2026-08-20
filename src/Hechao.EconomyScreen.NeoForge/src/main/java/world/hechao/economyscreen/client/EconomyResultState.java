@@ -18,6 +18,8 @@ final class EconomyResultState {
             "不存在",
             "无法",
             "取消",
+            "失效",
+            "太快",
             "联系管理员",
             "http");
     private static final List<String> TEAM_RESPONSE_MARKERS = List.of(

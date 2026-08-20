@@ -17,6 +17,7 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
 
     private final EconomyResultState state;
     private Button confirmButton;
+    private Button retryButton;
     private Button closeButton;
     private Button marketButton;
     private Button listingsButton;
@@ -43,6 +44,16 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
                 Component.literal("确认出售"),
                 ignored -> confirmSale());
         addRenderableWidget(confirmButton);
+
+        retryButton = new IndustrialButton(
+                layout.panelLeft() + 12,
+                layout.buttonY(),
+                layout.buttonWidth(),
+                EconomyResultLayout.BUTTON_HEIGHT,
+                Component.literal("重试"),
+                ignored -> retry());
+        retryButton.visible = false;
+        addRenderableWidget(retryButton);
 
         closeButton = new IndustrialButton(
                 width / 2 - layout.buttonWidth() / 2,
@@ -350,13 +361,17 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
 
     private void syncButtons() {
         if (confirmButton == null
+                || retryButton == null
                 || closeButton == null
                 || marketButton == null
                 || listingsButton == null
                 || deliveriesButton == null) {
             return;
         }
-        boolean account = state.isAction("balance");
+        boolean account = state.isAction("balance")
+                && state.tone() != EconomyResultState.Tone.ERROR;
+        boolean retryable = state.tone() == EconomyResultState.Tone.ERROR
+                && retryCommand() != null;
         int accountWidth = Math.max(
                 1,
                 (layout.panelWidth() - 24 - ACCOUNT_BUTTON_GAP * 3) / 4);
@@ -365,6 +380,7 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
         marketButton.visible = account;
         listingsButton.visible = account;
         deliveriesButton.visible = account;
+        retryButton.visible = retryable;
         closeButton.setMessage(Component.literal(account ? "首页" : "返回首页"));
         closeButton.setWidth(account ? accountWidth : layout.buttonWidth());
         if (account) {
@@ -380,9 +396,16 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
                         - 12 - layout.buttonWidth()
                 : account
                         ? accountLeft
-                        : width / 2 - layout.buttonWidth() / 2);
+                        : retryable
+                                ? width / 2 + BUTTON_GAP / 2
+                                : width / 2 - layout.buttonWidth() / 2);
         if (confirmButton.visible) {
             confirmButton.setX(
+                    layout.panelLeft() + layout.panelWidth() / 2
+                            - BUTTON_GAP / 2 - layout.buttonWidth());
+        }
+        if (retryable) {
+            retryButton.setX(
                     layout.panelLeft() + layout.panelWidth() / 2
                             - BUTTON_GAP / 2 - layout.buttonWidth());
         }
@@ -418,5 +441,44 @@ final class EconomyResultScreen extends SinglePassBackgroundScreen {
             return;
         }
         connection.sendCommand(command);
+    }
+
+    private void retry() {
+        String command = retryCommand();
+        if (command == null) {
+            return;
+        }
+        state.begin(retryLoadingMessage());
+        sendCommand(command);
+        syncButtons();
+    }
+
+    private String retryCommand() {
+        if (state.isAction("balance")) {
+            return "hechaoeconomy:money";
+        }
+        if (state.isAction("shop")) {
+            return "hechaoeconomy:shop";
+        }
+        if (state.isAction("sell")) {
+            return "hechaoeconomy:ah sell";
+        }
+        if (state.isAction("market")) {
+            return "hechaoeconomy:ah";
+        }
+        return null;
+    }
+
+    private String retryLoadingMessage() {
+        if (state.isAction("balance")) {
+            return "正在重新同步账户...";
+        }
+        if (state.isAction("shop")) {
+            return "正在重新打开回收目录...";
+        }
+        if (state.isAction("sell")) {
+            return "正在重新打开市场上架...";
+        }
+        return "正在重新打开玩家市场...";
     }
 }

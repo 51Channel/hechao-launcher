@@ -28,4 +28,16 @@ final class ClientEconomyUiBridgeContractTest {
         assertTrue(source.contains("new EconomyMarketListingScreen("));
         assertTrue(source.contains("new TeamManagementScreen("));
     }
+
+    @Test
+    void routesOnlyMenuLifecycleErrorsIntoTheTeamWaitingScreen()
+            throws IOException {
+        String source = Files.readString(SOURCE);
+
+        assertTrue(source.contains("minecraft.screen instanceof TeamManagementScreen screen"));
+        assertTrue(source.contains("isMenuActionError(message)"));
+        assertTrue(source.contains("message.contains(\"菜单已失效\")"));
+        assertTrue(source.contains("message.contains(\"操作太快\")"));
+        assertTrue(source.contains("message.contains(\"当前功能不可用\")"));
+    }
 }

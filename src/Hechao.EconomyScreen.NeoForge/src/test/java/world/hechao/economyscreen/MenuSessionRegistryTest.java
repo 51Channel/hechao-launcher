@@ -58,7 +58,7 @@ final class MenuSessionRegistryTest {
     }
 
     @Test
-    void rejectsActionThatWasNotGrantedAndConsumesSession() {
+    void rejectsActionThatWasNotGrantedAndKeepsSessionForTheGrantedAction() {
         var player = UUID.randomUUID();
         var now = Instant.parse("2026-08-14T03:00:00Z");
         var session = registry.issue(player, Set.of("balance"), now);
@@ -70,6 +70,14 @@ final class MenuSessionRegistryTest {
                         session,
                         "admin_product",
                         now.plusSeconds(1)));
+        assertEquals(1, registry.activeSessionCount());
+        assertEquals(
+                MenuSessionRegistry.Validation.ALLOWED,
+                registry.validateAndConsume(
+                        player,
+                        session,
+                        "balance",
+                        now.plusSeconds(2)));
         assertEquals(0, registry.activeSessionCount());
     }
 
@@ -94,5 +102,13 @@ final class MenuSessionRegistryTest {
                         second,
                         "balance",
                         now.plusMillis(1200)));
+        assertEquals(1, registry.activeSessionCount());
+        assertEquals(
+                MenuSessionRegistry.Validation.ALLOWED,
+                registry.validateAndConsume(
+                        player,
+                        second,
+                        "balance",
+                        now.plusMillis(1500)));
     }
 }

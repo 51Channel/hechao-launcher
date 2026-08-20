@@ -128,7 +128,7 @@ final class EconomyResultPresentation {
                 : Optional.empty();
     }
 
-    private static Optional<String> frozenBalance(String message) {
+    static Optional<String> frozenBalance(String message) {
         var match = FROZEN_BALANCE.matcher(EconomyResultState.normalize(message));
         return match.matches() ? Optional.of(match.group(1)) : Optional.empty();
     }

@@ -14,7 +14,6 @@ public final class ClientPauseMenuEntry {
     private static final Component MODS_LABEL = Component.translatable("fml.menu.mods");
     private static final Component HECHAO_LABEL = Component.translatable(
             "hechao_economy_screen.pause_menu");
-    private static final int FULL_BUTTON_WIDTH = 204;
     private static final int HALF_BUTTON_WIDTH = 98;
     private static final int BUTTON_GAP = 8;
 
@@ -30,30 +29,41 @@ public final class ClientPauseMenuEntry {
                 || !pauseScreen.showsPauseMenu()) {
             return;
         }
+        if (hasHechaoButton(event)) {
+            return;
+        }
 
         var modsButton = event.getListenersList().stream()
                 .filter(Button.class::isInstance)
                 .map(Button.class::cast)
                 .filter(button -> button.getMessage().equals(MODS_LABEL))
-                .filter(button -> button.getWidth() == FULL_BUTTON_WIDTH)
                 .findFirst()
                 .orElse(null);
-        if (modsButton == null) {
+        if (modsButton == null
+                || modsButton.getWidth() < HALF_BUTTON_WIDTH * 2 + BUTTON_GAP) {
             return;
         }
 
-        modsButton.setWidth(HALF_BUTTON_WIDTH);
+        int splitWidth = (modsButton.getWidth() - BUTTON_GAP) / 2;
+        modsButton.setWidth(splitWidth);
         var hechaoButton = Button.builder(
                         HECHAO_LABEL,
                         ignored -> requestServerMenu())
                 .bounds(
-                        modsButton.getX() + HALF_BUTTON_WIDTH + BUTTON_GAP,
+                        modsButton.getX() + splitWidth + BUTTON_GAP,
                         modsButton.getY(),
-                        HALF_BUTTON_WIDTH,
+                        splitWidth,
                         modsButton.getHeight())
                 .build();
         hechaoButton.active = Minecraft.getInstance().getConnection() != null;
         event.addListener(hechaoButton);
+    }
+
+    private static boolean hasHechaoButton(ScreenEvent.Init.Post event) {
+        return event.getListenersList().stream()
+                .filter(Button.class::isInstance)
+                .map(Button.class::cast)
+                .anyMatch(button -> button.getMessage().equals(HECHAO_LABEL));
     }
 
     private static void requestServerMenu() {

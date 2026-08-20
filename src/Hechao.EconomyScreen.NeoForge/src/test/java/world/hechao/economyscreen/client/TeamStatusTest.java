@@ -9,6 +9,17 @@ import org.junit.jupiter.api.Test;
 
 final class TeamStatusTest {
     @Test
+    void menuSessionFailureStopsTheLoadingState() {
+        var status = new TeamStatus();
+
+        status.accept("[赫朝经济] 菜单已失效，请重新打开。");
+
+        assertTrue(status.error());
+        assertFalse(status.waiting());
+        assertEquals("菜单已失效，请重新打开。", status.feedback());
+    }
+
+    @Test
     void parsesCurrentProductionMemberListShape() {
         var status = new TeamStatus();
 

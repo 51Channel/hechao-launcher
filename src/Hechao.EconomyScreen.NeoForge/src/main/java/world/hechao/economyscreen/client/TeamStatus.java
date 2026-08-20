@@ -30,7 +30,10 @@ final class TeamStatus {
             "没有",
             "未找到",
             "过期",
-            "断开");
+            "断开",
+            "失效",
+            "太快",
+            "不可用");
 
     private Membership membership = Membership.LOADING;
     private String leader = "";

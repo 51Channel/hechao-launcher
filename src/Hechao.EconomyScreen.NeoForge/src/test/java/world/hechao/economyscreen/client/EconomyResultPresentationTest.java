@@ -32,6 +32,10 @@ final class EconomyResultPresentationTest {
         assertEquals("12.50", view.primary());
         assertEquals("51Channel · 可用余额", view.secondary());
         assertEquals("冻结 7.50 金币 · 总资产 20.00 金币", view.detail());
+        assertEquals(
+                "7.50",
+                EconomyResultPresentation.frozenBalance(
+                        "[赫朝经济] 冻结余额: 7.50 金币").orElseThrow());
     }
 
     @Test

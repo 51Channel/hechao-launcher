@@ -25,7 +25,9 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     private int scrollRow;
     private NavigationLayout.Layout layout;
     private EconomyResultPresentation.Balance balance;
+    private String frozenBalance;
     private boolean balanceRequested;
+    private boolean actionSubmitted;
 
     public HechaoNavigationScreen(OpenMenuPayload payload) {
         super(TITLE);
@@ -115,6 +117,8 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
 
     void acceptEconomyMessage(String message) {
         EconomyResultPresentation.balance(message).ifPresent(value -> balance = value);
+        EconomyResultPresentation.frozenBalance(message)
+                .ifPresent(value -> frozenBalance = value);
     }
 
     @Override
@@ -136,14 +140,12 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
     }
 
     private void sendAction(ActionView action) {
-        if ("sell".equals(action.actionId)) {
-            if (!ClientEconomyUiBridge.requestMarketListing()) {
-                return;
-            }
-        } else {
-            PacketDistributor.sendToServer(
-                    new MenuActionPayload(payload.sessionId(), action.actionId));
+        if (actionSubmitted) {
+            return;
         }
+        actionSubmitted = true;
+        PacketDistributor.sendToServer(
+                new MenuActionPayload(payload.sessionId(), action.actionId));
         if (ClientEconomyUiBridge.opensEmbeddedScreen(action.actionId)) {
             ClientEconomyUiBridge.openWaiting(
                     action.actionId,
@@ -175,8 +177,10 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
 
     private void renderBalance(GuiGraphics graphics, PanelBounds panel) {
         String text = balance == null
-                ? "余额同步中"
-                : balance.amount() + " 金币";
+                ? "资产同步中"
+                : frozenBalance == null
+                        ? "可用 " + balance.amount()
+                        : "可用 " + balance.amount() + " · 冻结 " + frozenBalance;
         int textWidth = font.width(text);
         int textX = panel.left() + panel.width() - 12 - textWidth;
         int titleRight = panel.left() + 10

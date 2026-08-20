@@ -45,6 +45,15 @@ final class EconomyResultStateTest {
     }
 
     @Test
+    void staleMenuResponseIsActionableError() {
+        var state = new EconomyResultState("market", "正在打开玩家市场...");
+
+        state.accept("[赫朝经济] 菜单已失效，请重新打开。");
+
+        assertEquals(EconomyResultState.Tone.ERROR, state.tone());
+    }
+
+    @Test
     void teamScreenAcceptsEveryLineOfAnUnprefixedResponse() {
         var state = new EconomyResultState("team", "正在打开队伍...");
 
@@ -77,5 +86,18 @@ final class EconomyResultStateTest {
 
         assertEquals(EconomyResultState.Tone.ERROR, state.tone());
         assertEquals("请求超时，请稍后重试。", state.messages().getFirst());
+    }
+
+    @Test
+    void errorStateCanBeResetForRetry() {
+        var state = new EconomyResultState("market", "正在打开玩家市场...");
+        for (int tick = 0; tick < 200; tick++) {
+            state.tick();
+        }
+
+        state.begin("正在重新打开玩家市场...");
+
+        assertEquals(EconomyResultState.Tone.LOADING, state.tone());
+        assertTrue(state.messages().isEmpty());
     }
 }

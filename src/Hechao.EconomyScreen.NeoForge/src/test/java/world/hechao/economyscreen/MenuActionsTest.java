@@ -28,9 +28,17 @@ final class MenuActionsTest {
     void saleActionOpensPlayerMarketListingWorkflow() {
         var action = MenuActions.all().get("sell");
 
-        assertEquals("上架物品", action.label());
-        assertEquals("放入物品并设置玩家市场售价", action.description());
+        assertEquals("市场上架", action.label());
+        assertEquals("玩家市场快捷入口：放入物品并设置售价", action.description());
         assertEquals("hechaoeconomy:ah sell", action.command());
+    }
+
+    @Test
+    void commonThreeColumnLayoutGroupsPrimaryDestinationsBeforeShortcuts() {
+        assertEquals(
+                java.util.List.of(
+                        "balance", "shop", "market", "sell", "team", "settings"),
+                MenuActions.all().keySet().stream().toList());
     }
 
     @Test
@@ -78,7 +86,10 @@ final class MenuActionsTest {
         assertTrue(source.contains("displayClientMessage"));
         assertTrue(source.contains("action.definition.feedback()"));
         assertTrue(source.contains("ClientEconomyUiBridge.openWaiting"));
-        assertTrue(source.contains("ClientEconomyUiBridge.requestMarketListing()"));
+        assertTrue(source.contains("new MenuActionPayload(payload.sessionId(), action.actionId)"));
+        assertFalse(source.contains("requestMarketListing()"));
+        assertTrue(source.contains("if (actionSubmitted)"));
+        assertTrue(source.contains("actionSubmitted = true"));
         assertTrue(source.contains("actionIcon(action.actionId)"));
         assertFalse(source.contains("addServerAuthorizationIndicator"));
         assertFalse(source.contains("renderStatusLamp"));
@@ -101,8 +112,13 @@ final class MenuActionsTest {
 
         assertFalse(source.contains("player.hasPermissions(2)"));
         assertTrue(source.contains("node.canUse(player.createCommandSourceStack())"));
+        assertTrue(source.contains(".filter(entry -> isCommandUsable(player, entry.getValue().command()))"));
+        assertFalse(source.contains("command().startsWith(\"hechaoeconomy:\")"));
         assertTrue(source.contains("Set.copyOf(actionIds)"));
         assertTrue(source.contains("performPrefixedCommand"));
+        assertTrue(source.contains("case RATE_LIMITED"));
+        assertTrue(source.contains("case ACTION_NOT_ALLOWED"));
+        assertTrue(source.contains("[赫朝经济] 菜单已失效，请重新打开。"));
     }
 
     @Test
@@ -121,7 +137,10 @@ final class MenuActionsTest {
         assertTrue(source.contains("instanceof PauseScreen"));
         assertTrue(source.contains("pauseScreen.showsPauseMenu()"));
         assertTrue(source.contains("Component.translatable(\"fml.menu.mods\")"));
-        assertTrue(source.contains("modsButton.setWidth(HALF_BUTTON_WIDTH)"));
+        assertTrue(source.contains("hasHechaoButton(event)"));
+        assertTrue(source.contains("modsButton.getWidth() < HALF_BUTTON_WIDTH * 2 + BUTTON_GAP"));
+        assertTrue(source.contains("int splitWidth = (modsButton.getWidth() - BUTTON_GAP) / 2"));
+        assertTrue(source.contains("modsButton.setWidth(splitWidth)"));
         assertTrue(source.contains("event.addListener(hechaoButton)"));
         assertTrue(source.contains("sendCommand(\"hechaomenu economy\")"));
         assertFalse(source.contains("new HechaoNavigationScreen"));

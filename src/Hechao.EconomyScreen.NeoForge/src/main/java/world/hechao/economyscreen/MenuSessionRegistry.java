@@ -37,8 +37,8 @@ final class MenuSessionRegistry {
             return Validation.MISSING;
         }
 
-        sessions.remove(playerUuid);
         if (!current.expiresAt.isAfter(now)) {
+            sessions.remove(playerUuid);
             return Validation.EXPIRED;
         }
         if (!current.allowedActions.contains(actionId)) {
@@ -49,6 +49,7 @@ final class MenuSessionRegistry {
                 && previousAction.plus(minimumActionInterval).isAfter(now)) {
             return Validation.RATE_LIMITED;
         }
+        sessions.remove(playerUuid);
         lastActions.put(playerUuid, now);
         return Validation.ALLOWED;
     }

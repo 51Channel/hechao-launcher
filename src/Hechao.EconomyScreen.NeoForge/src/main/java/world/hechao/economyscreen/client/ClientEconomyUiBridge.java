@@ -63,10 +63,6 @@ public final class ClientEconomyUiBridge {
         return sendCommand("hechaoeconomy:sell");
     }
 
-    static boolean requestMarketListing() {
-        return sendCommand("hechaoeconomy:ah sell");
-    }
-
     private static boolean sendCommand(String command) {
         var connection = Minecraft.getInstance().getConnection();
         if (connection == null) {
@@ -104,6 +100,9 @@ public final class ClientEconomyUiBridge {
             return;
         }
         if (minecraft.screen instanceof EconomyResultScreen screen) {
+            screen.acceptMessage(event.getMessage());
+        } else if (minecraft.screen instanceof TeamManagementScreen screen
+                && isMenuActionError(message)) {
             screen.acceptMessage(event.getMessage());
         } else if (minecraft.screen instanceof HechaoNavigationScreen screen) {
             screen.acceptEconomyMessage(message);
@@ -156,5 +155,11 @@ public final class ClientEconomyUiBridge {
     private static boolean isMarketDecisionTitle(String title) {
         return MARKET_PURCHASE_TITLE.equals(title)
                 || MARKET_CANCEL_TITLE.equals(title);
+    }
+
+    private static boolean isMenuActionError(String message) {
+        return message.contains("菜单已失效")
+                || message.contains("操作太快")
+                || message.contains("当前功能不可用");
     }
 }

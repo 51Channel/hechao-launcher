@@ -68,8 +68,7 @@ public final class HechaoEconomyScreenMod {
 
     private static int openMenu(ServerPlayer player) {
         var actionIds = ACTIONS.entrySet().stream()
-                .filter(entry -> entry.getValue().command().startsWith("hechaoeconomy:")
-                        || isCommandUsable(player, entry.getValue().command()))
+                .filter(entry -> isCommandUsable(player, entry.getValue().command()))
                 .map(Map.Entry::getKey)
                 .toList();
         if (actionIds.isEmpty()) {
@@ -125,7 +124,7 @@ public final class HechaoEconomyScreenMod {
                         payload.actionId(),
                         player.getUUID(),
                         validation);
-                player.sendSystemMessage(Component.literal("菜单已失效，请重新打开。"));
+                player.sendSystemMessage(Component.literal(rejectionMessage(validation)));
                 return;
             }
             var action = ACTIONS.get(payload.actionId());
@@ -140,5 +139,13 @@ public final class HechaoEconomyScreenMod {
 
     private void playerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         SESSIONS.remove(event.getEntity().getUUID());
+    }
+
+    private static String rejectionMessage(MenuSessionRegistry.Validation validation) {
+        return switch (validation) {
+            case RATE_LIMITED -> "[赫朝经济] 操作太快，请稍后重试。";
+            case ACTION_NOT_ALLOWED -> "[赫朝经济] 当前功能不可用，请重新打开菜单。";
+            default -> "[赫朝经济] 菜单已失效，请重新打开。";
+        };
     }
 }
