@@ -13,59 +13,45 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Items;
 
 final class EconomyMarketListingScreen extends ContainerScreen {
-    private static final int CUSTOM_IMAGE_WIDTH = 278;
     private static final int INPUT_SLOT = 13;
     private static final int STATUS_SLOT = 4;
     private static final int CONFIRM_SLOT = 22;
     private static final int RETURN_SLOT = 26;
     private static final int LISTING_HEADER_HEIGHT = 28;
-    private static final int ITEM_MODULE_LEFT = 10;
-    private static final int ITEM_MODULE_TOP = 31;
-    private static final int ITEM_MODULE_WIDTH = 146;
-    private static final int ITEM_MODULE_HEIGHT = 46;
-    private static final int PRICE_MODULE_LEFT = 162;
-    private static final int PRICE_MODULE_TOP = 31;
-    private static final int PRICE_MODULE_WIDTH = 106;
-    private static final int PRICE_MODULE_HEIGHT = 49;
-    private static final int PRICE_LEFT = 168;
-    private static final int PRICE_TOP = 43;
-    private static final int PRICE_WIDTH = 94;
-    private static final int CONFIRM_TOP = 61;
-    private static final int INVENTORY_MODULE_LEFT = 5;
-    private static final int INVENTORY_MODULE_TOP = 80;
-    private static final int INVENTORY_MODULE_WIDTH = 170;
-    private static final int INVENTORY_MODULE_HEIGHT = 85;
-    private static final int GUIDE_MODULE_LEFT = 181;
-    private static final int GUIDE_MODULE_TOP = 80;
-    private static final int GUIDE_MODULE_WIDTH = 87;
-    private static final int GUIDE_MODULE_HEIGHT = 85;
 
     private EditBox priceBox;
     private Button confirmButton;
     private String priceText = "";
     private int submitCooldown;
+    private EconomyMarketListingLayout.Layout layout;
 
     EconomyMarketListingScreen(ChestMenu menu, Inventory playerInventory) {
         super(menu, playerInventory, Component.literal(ClientEconomyUiBridge.MARKET_LISTING_TITLE));
-        imageWidth = CUSTOM_IMAGE_WIDTH;
-        inventoryLabelY = imageHeight - 94;
+        imageWidth = EconomyMarketListingLayout.IMAGE_WIDTH;
+        inventoryLabelY = EconomyMarketListingLayout.IMAGE_HEIGHT - 96;
         titleLabelY = 7;
     }
 
     @Override
     protected void init() {
         super.init();
+        layout = EconomyMarketListingLayout.calculate(
+                imageWidth,
+                imageHeight,
+                menu.getSlot(INPUT_SLOT).x,
+                menu.getSlot(INPUT_SLOT).y);
+        var priceField = layout.priceField();
         priceBox = new EditBox(
                 font,
-                leftPos + PRICE_LEFT + 5,
-                topPos + PRICE_TOP + 2,
-                PRICE_WIDTH - 10,
-                16,
+                leftPos + priceField.left() + 4,
+                topPos + priceField.top() + 2,
+                priceField.width() - 8,
+                priceField.height() - 4,
                 Component.literal("挂单总价"));
         priceBox.setBordered(false);
         priceBox.setMaxLength(13);
         priceBox.setFilter(MarketPriceInput::accepts);
-        priceBox.setHint(Component.literal("总价，最低 1.00"));
+        priceBox.setHint(Component.literal("最低1.00"));
         priceBox.setValue(priceText);
         priceBox.setResponder(value -> {
             priceText = value;
@@ -73,21 +59,23 @@ final class EconomyMarketListingScreen extends ContainerScreen {
         });
         addRenderableWidget(priceBox);
 
+        var confirmBounds = layout.confirmButton();
         confirmButton = new IndustrialButton(
-                leftPos + PRICE_LEFT,
-                topPos + CONFIRM_TOP,
-                PRICE_WIDTH,
-                18,
-                Component.literal("确认上架"),
+                leftPos + confirmBounds.left(),
+                topPos + confirmBounds.top(),
+                confirmBounds.width(),
+                confirmBounds.height(),
+                Component.literal("上架"),
                 ignored -> submitListing());
         confirmButton.setTooltip(Tooltip.create(Component.literal("提交挂单并支付上架费")));
         addRenderableWidget(confirmButton);
 
+        var returnBounds = layout.returnButton();
         var returnButton = new IndustrialButton(
-                leftPos + imageWidth - 29,
-                topPos + 6,
-                20,
-                20,
+                leftPos + returnBounds.left(),
+                topPos + returnBounds.top(),
+                returnBounds.width(),
+                returnBounds.height(),
                 Component.literal("<"),
                 ignored -> clickControl(RETURN_SLOT));
         returnButton.setTooltip(Tooltip.create(Component.literal("取回物品并返回玩家市场")));
@@ -126,56 +114,55 @@ final class EconomyMarketListingScreen extends ContainerScreen {
         IndustrialUiTheme.renderBackdrop(graphics, width, height);
         IndustrialUiTheme.renderPanel(
                 graphics,
-                leftPos - 4,
-                topPos - 4,
-                imageWidth + 8,
-                imageHeight + 8,
+                leftPos + layout.panel().left(),
+                topPos + layout.panel().top(),
+                layout.panel().width(),
+                layout.panel().height(),
                 LISTING_HEADER_HEIGHT);
         IndustrialUiTheme.renderModule(
                 graphics,
-                leftPos + ITEM_MODULE_LEFT,
-                topPos + ITEM_MODULE_TOP,
-                ITEM_MODULE_WIDTH,
-                ITEM_MODULE_HEIGHT,
+                leftPos + layout.itemModule().left(),
+                topPos + layout.itemModule().top(),
+                layout.itemModule().width(),
+                layout.itemModule().height(),
                 0xFFE2B95F);
         IndustrialUiTheme.renderModule(
                 graphics,
-                leftPos + PRICE_MODULE_LEFT,
-                topPos + PRICE_MODULE_TOP,
-                PRICE_MODULE_WIDTH,
-                PRICE_MODULE_HEIGHT,
+                leftPos + layout.priceModule().left(),
+                topPos + layout.priceModule().top(),
+                layout.priceModule().width(),
+                layout.priceModule().height(),
                 0xFF6DAEA8);
         IndustrialUiTheme.renderModule(
                 graphics,
-                leftPos + INVENTORY_MODULE_LEFT,
-                topPos + INVENTORY_MODULE_TOP,
-                INVENTORY_MODULE_WIDTH,
-                INVENTORY_MODULE_HEIGHT,
+                leftPos + layout.inventoryModule().left(),
+                topPos + layout.inventoryModule().top(),
+                layout.inventoryModule().width(),
+                layout.inventoryModule().height(),
                 0xFF3E7C79);
         IndustrialUiTheme.renderModule(
                 graphics,
-                leftPos + GUIDE_MODULE_LEFT,
-                topPos + GUIDE_MODULE_TOP,
-                GUIDE_MODULE_WIDTH,
-                GUIDE_MODULE_HEIGHT,
+                leftPos + layout.guideModule().left(),
+                topPos + layout.guideModule().top(),
+                layout.guideModule().width(),
+                layout.guideModule().height(),
                 0xFF6DAEA8);
         int inputX = leftPos + menu.getSlot(INPUT_SLOT).x;
         int inputY = topPos + menu.getSlot(INPUT_SLOT).y;
-        IndustrialUiTheme.renderIconDock(graphics, inputX - 7, inputY - 7, 30, 0xFFE2B95F);
-        graphics.renderOutline(inputX - 1, inputY - 1, 18, 18, 0xFFFFD75A);
-        IndustrialUiTheme.renderInstrumentBay(
+        IndustrialUiTheme.renderIconDock(
                 graphics,
-                leftPos + PRICE_LEFT - 2,
-                topPos + 33,
-                PRICE_WIDTH + 4,
-                50,
+                leftPos + layout.inputDock().left(),
+                topPos + layout.inputDock().top(),
+                layout.inputDock().width(),
                 0xFFE2B95F);
+        graphics.renderOutline(inputX - 1, inputY - 1, 18, 18, 0xFFFFD75A);
+        var field = layout.priceField();
         IndustrialUiTheme.renderInputField(
                 graphics,
-                priceBox.getX() - 5,
-                priceBox.getY() - 1,
-                priceBox.getWidth() + 10,
-                18,
+                leftPos + field.left(),
+                topPos + field.top(),
+                field.width(),
+                field.height(),
                 priceBox.isFocused());
         renderInventorySlots(graphics);
     }
@@ -191,36 +178,36 @@ final class EconomyMarketListingScreen extends ContainerScreen {
                 font,
                 playerInventoryTitle,
                 inventoryLabelX,
-                inventoryLabelY,
+                layout.inventoryLabelY(),
                 0xFFB7BBC0,
                 false);
 
         var status = menu.getSlot(STATUS_SLOT).getItem();
-        String statusText = status.isEmpty()
+        String statusText = compactStatus(status.isEmpty()
                 ? "放入一组普通物品"
-                : status.getHoverName().getString();
+                : status.getHoverName().getString());
         var input = menu.getSlot(INPUT_SLOT).getItem();
         String itemName = input.isEmpty()
                 ? "等待放入物品"
                 : input.getHoverName().getString() + " × " + input.getCount();
         int statusColor = status.is(Items.REDSTONE) ? 0xFFFF8A80 : 0xFFFFD75A;
 
-        graphics.drawString(font, "物品槽", ITEM_MODULE_LEFT + 8, ITEM_MODULE_TOP + 10,
+        graphics.drawString(font, "物品槽", layout.itemLabelX(), layout.itemLabelY(),
                 0xFFADB5B7, false);
-        graphics.drawString(font, fit(itemName, 56), ITEM_MODULE_LEFT + 8,
-                ITEM_MODULE_TOP + 28, 0xFFFFFFFF, false);
-        graphics.drawString(font, "定价与操作", PRICE_MODULE_LEFT + 8,
-                PRICE_MODULE_TOP + 10, 0xFFADB5B7, false);
-        graphics.drawString(font, "上架说明", GUIDE_MODULE_LEFT + 8, GUIDE_MODULE_TOP + 10,
+        graphics.drawString(font, fit(itemName, layout.itemTextWidth()), layout.itemLabelX(),
+                layout.itemNameY(), 0xFFFFFFFF, false);
+        graphics.drawString(font, "定价与操作", layout.priceLabelX(), layout.priceLabelY(),
                 0xFFADB5B7, false);
-        graphics.drawString(font, fit(statusText, GUIDE_MODULE_WIDTH - 16),
-                GUIDE_MODULE_LEFT + 8, GUIDE_MODULE_TOP + 27, statusColor, false);
-        graphics.drawString(font, "最低 1.00", GUIDE_MODULE_LEFT + 8,
-                GUIDE_MODULE_TOP + 43, 0xFF8CD99B, false);
-        graphics.drawString(font, "手续费 1%", GUIDE_MODULE_LEFT + 8,
-                GUIDE_MODULE_TOP + 57, 0xFF8CD99B, false);
-        graphics.drawString(font, "放入后定价", GUIDE_MODULE_LEFT + 8,
-                GUIDE_MODULE_TOP + 71, 0xFF8D9799, false);
+        graphics.drawString(font, "上架说明", layout.guideLabelX(), layout.guideLabelY(),
+                0xFFADB5B7, false);
+        graphics.drawString(font, fit(statusText, layout.guideModule().width() - 16),
+                layout.guideLabelX(), layout.guideStatusY(), statusColor, false);
+        graphics.drawString(font, "最低 1.00", layout.guideLabelX(),
+                layout.guideMinimumY(), 0xFF8CD99B, false);
+        graphics.drawString(font, "手续费 1%", layout.guideLabelX(),
+                layout.guideFeeY(), 0xFF8CD99B, false);
+        graphics.drawString(font, "放入后定价", layout.guideLabelX(),
+                layout.guidePromptY(), 0xFF8D9799, false);
     }
 
     @Override
@@ -297,6 +284,15 @@ final class EconomyMarketListingScreen extends ContainerScreen {
             graphics.fill(x, y, x + 18, y + 18, 0xA5121719);
             graphics.renderOutline(x, y, 18, 18, 0xFF465154);
         }
+    }
+
+    private static String compactStatus(String statusText) {
+        return switch (statusText) {
+            case "放入要上架的普通物品" -> "等待放入物品";
+            case "正在提交挂单" -> "提交中";
+            case "上架结果暂时无法确认" -> "待确认结果";
+            default -> statusText;
+        };
     }
 
     private static boolean visibleSlot(Slot slot) {

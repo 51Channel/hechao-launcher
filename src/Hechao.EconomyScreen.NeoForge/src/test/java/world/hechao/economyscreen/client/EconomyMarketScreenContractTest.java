@@ -39,15 +39,22 @@ final class EconomyMarketScreenContractTest {
         assertTrue(source.contains("MarketPriceInput.parse"));
         assertTrue(source.contains("hechaoeconomy:ah list "));
         assertTrue(source.contains("handleInventoryMouseClick("));
-        assertTrue(source.contains("CUSTOM_IMAGE_WIDTH = 278"));
-        assertTrue(source.contains("ITEM_MODULE_LEFT"));
-        assertTrue(source.contains("PRICE_MODULE_LEFT"));
-        assertTrue(source.contains("INVENTORY_MODULE_LEFT"));
-        assertTrue(source.contains("GUIDE_MODULE_LEFT"));
+        assertTrue(source.contains("EconomyMarketListingLayout.calculate("));
+        assertTrue(source.contains("layout.itemModule()"));
+        assertTrue(source.contains("layout.priceModule()"));
+        assertTrue(source.contains("layout.inventoryModule()"));
+        assertTrue(source.contains("layout.guideModule()"));
         assertTrue(source.contains("renderModule("));
         assertTrue(source.contains("visibleSlot(slot)"));
         assertTrue(source.contains("上架说明"));
+        assertTrue(source.contains("compactStatus("));
         assertTrue(source.contains("slotClicked(Slot"));
+
+        var layout = read("EconomyMarketListingLayout.java");
+        assertTrue(layout.contains("IMAGE_WIDTH = 278"));
+        assertTrue(layout.contains("TOP_MODULE_TOP = 26"));
+        assertTrue(layout.contains("priceField = new Rect(170, 46, 50, 18)"));
+        assertTrue(layout.contains("confirmButton = new Rect(224, 46, 36, 18)"));
     }
 
     private static String read(String fileName) throws IOException {
