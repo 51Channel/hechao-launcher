@@ -102,6 +102,21 @@ public sealed class EconomyPostgresIntegrationTests
         Assert.False(allProducts.Single(product =>
             product.ItemId == "minecraft:iron_ingot").Enabled);
 
+        var cappedProduct = await repository.UpsertProductAsync(
+            "minecraft:apple",
+            new EconomyProductUpsertRequest(2.00m, 32, 640, actorUuid, "integration-admin"),
+            CancellationToken.None);
+        var partialQuote = await repository.CreateSaleQuoteAsync(
+            "activity-survival",
+            new EconomySaleQuoteRequest(playerUuid, cappedProduct.ItemId, 64),
+            TimeSpan.FromSeconds(30),
+            CancellationToken.None);
+        Assert.Equal(EconomyQuoteStatus.Created, partialQuote.Status);
+        Assert.Equal(32, partialQuote.Quote!.Quantity);
+        Assert.Equal(64.00m, partialQuote.Quote.TotalAmount);
+        Assert.Equal(0, partialQuote.Quote.PersonalRemaining);
+        Assert.Equal(608, partialQuote.Quote.ServerRemaining);
+
         var quote = await repository.CreateSaleQuoteAsync(
             "activity-survival",
             new EconomySaleQuoteRequest(playerUuid, modded.ItemId, 10),

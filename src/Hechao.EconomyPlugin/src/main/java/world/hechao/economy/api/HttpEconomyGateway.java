@@ -250,7 +250,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 .header("Authorization", "Bearer " + configuration.token())
                 .header("X-Hechao-Server-Id", configuration.serverId())
                 .header("Accept", "application/json")
-                .header("User-Agent", "HechaoEconomy/0.2.2");
+                .header("User-Agent", "HechaoEconomy/0.2.3");
     }
 
     private HttpRequest.Builder jsonRequest(String path, Object ignoredBody) {
@@ -325,7 +325,8 @@ public final class HttpEconomyGateway implements EconomyGateway {
         throw new EconomyGatewayException(
                 "economy service returned HTTP " + status,
                 false,
-                status);
+                status,
+                readErrorCode(response.body()));
     }
 
     private void sendNoContent(HttpRequest request) throws EconomyGatewayException {
@@ -375,6 +376,19 @@ public final class HttpEconomyGateway implements EconomyGateway {
             return object != null && object.has("operationId");
         } catch (RuntimeException ignored) {
             return false;
+        }
+    }
+
+    static String readErrorCode(String json) {
+        try {
+            JsonObject object = GSON.fromJson(json, JsonObject.class);
+            if (object == null || !object.has("code") || object.get("code").isJsonNull()) {
+                return null;
+            }
+            var code = object.get("code").getAsString().trim();
+            return code.matches("[A-Z][A-Z0-9_]{0,63}") ? code : null;
+        } catch (RuntimeException ignored) {
+            return null;
         }
     }
 

@@ -1,6 +1,7 @@
 package world.hechao.economy.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
@@ -71,5 +72,16 @@ final class HttpEconomyGatewayTest {
                 }));
 
         assertEquals(1, attempts.get());
+    }
+
+    @Test
+    void readsOnlySafeStructuredApiErrorCodes() {
+        assertEquals(
+                "PERSONAL_LIMIT_EXCEEDED",
+                HttpEconomyGateway.readErrorCode(
+                        "{\"code\":\"PERSONAL_LIMIT_EXCEEDED\",\"message\":\"quota\"}"));
+        assertNull(HttpEconomyGateway.readErrorCode("{\"message\":\"quota\"}"));
+        assertNull(HttpEconomyGateway.readErrorCode("not-json"));
+        assertNull(HttpEconomyGateway.readErrorCode("{\"code\":\"bad code\"}"));
     }
 }

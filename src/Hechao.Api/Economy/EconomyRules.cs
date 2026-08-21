@@ -41,6 +41,26 @@ public static partial class EconomyRules
         request.QuoteId != Guid.Empty &&
         IsValidIdempotencyKey(request.IdempotencyKey);
 
+    public static int CalculateSaleQuantity(
+        int requestedQuantity,
+        int personalUsed,
+        int personalLimit,
+        int serverUsed,
+        int serverLimit)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(requestedQuantity, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(personalUsed);
+        ArgumentOutOfRangeException.ThrowIfNegative(personalLimit);
+        ArgumentOutOfRangeException.ThrowIfNegative(serverUsed);
+        ArgumentOutOfRangeException.ThrowIfNegative(serverLimit);
+
+        var personalRemaining = Math.Max(0, personalLimit - personalUsed);
+        var serverRemaining = Math.Max(0, serverLimit - serverUsed);
+        return Math.Min(
+            requestedQuantity,
+            Math.Min(personalRemaining, serverRemaining));
+    }
+
     public static bool IsValidProductMutation(EconomyProductUpsertRequest? request) =>
         request is not null &&
         request.ActorUuid != Guid.Empty &&

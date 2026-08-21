@@ -1,5 +1,5 @@
 name: HechaoEconomy
-version: '0.2.2'
+version: '0.2.3'
 main: world.hechao.economy.HechaoEconomyPlugin
 api-version: '1.21'
 load: POSTWORLD

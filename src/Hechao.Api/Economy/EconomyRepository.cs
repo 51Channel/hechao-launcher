@@ -214,12 +214,18 @@ public sealed partial class EconomyRepository(
             serverId,
             request.ItemId,
             cancellationToken);
-        if (personalUsed + request.Quantity > personalLimit)
+        var saleQuantity = EconomyRules.CalculateSaleQuantity(
+            request.Quantity,
+            personalUsed,
+            personalLimit,
+            serverUsed,
+            serverLimit);
+        if (saleQuantity == 0 && personalUsed >= personalLimit)
         {
             return new EconomyQuoteResult(EconomyQuoteStatus.PersonalLimitExceeded);
         }
 
-        if (serverUsed + request.Quantity > serverLimit)
+        if (saleQuantity == 0)
         {
             return new EconomyQuoteResult(EconomyQuoteStatus.ServerLimitExceeded);
         }
@@ -228,11 +234,11 @@ public sealed partial class EconomyRepository(
             Guid.NewGuid(),
             request.PlayerUuid,
             request.ItemId,
-            request.Quantity,
+            saleQuantity,
             unitPrice,
-            decimal.Round(unitPrice * request.Quantity, 2),
-            personalLimit - personalUsed - request.Quantity,
-            serverLimit - serverUsed - request.Quantity,
+            decimal.Round(unitPrice * saleQuantity, 2),
+            Math.Max(0, personalLimit - personalUsed - saleQuantity),
+            Math.Max(0, serverLimit - serverUsed - saleQuantity),
             now.Add(lifetime));
         const string insertSql = """
             INSERT INTO launcher.economy_sale_quotes

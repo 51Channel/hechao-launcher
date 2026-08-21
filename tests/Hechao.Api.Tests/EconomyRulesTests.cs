@@ -56,6 +56,29 @@ public sealed class EconomyRulesTests
             100m));
     }
 
+    [Theory]
+    [InlineData(64, 0, 32, 0, 640, 32)]
+    [InlineData(64, 10, 64, 628, 640, 12)]
+    [InlineData(10, 0, 64, 0, 640, 10)]
+    [InlineData(64, 32, 32, 0, 640, 0)]
+    public void SaleQuantity_UsesTheSmallestRemainingQuota(
+        int requestedQuantity,
+        int personalUsed,
+        int personalLimit,
+        int serverUsed,
+        int serverLimit,
+        int expectedQuantity)
+    {
+        Assert.Equal(
+            expectedQuantity,
+            EconomyRules.CalculateSaleQuantity(
+                requestedQuantity,
+                personalUsed,
+                personalLimit,
+                serverUsed,
+                serverLimit));
+    }
+
     [Fact]
     public void Fingerprint_IsStableButRequestSensitive()
     {

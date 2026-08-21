@@ -167,9 +167,23 @@ public final class SellMenu implements Listener {
     }
 
     static String quoteError(EconomyGatewayException exception) {
+        var errorCode = exception.errorCode();
+        if (errorCode != null) {
+            return switch (errorCode) {
+                case "PRODUCT_NOT_FOUND" -> "该物品未加入服务器回收目录。";
+                case "PRODUCT_DISABLED" -> "该物品的回收已暂停。";
+                case "PERSONAL_LIMIT_EXCEEDED" -> "该物品的个人今日回收额度已用完。";
+                case "SERVER_LIMIT_EXCEEDED" -> "该物品的全服今日回收额度已用完。";
+                default -> fallbackQuoteError(exception);
+            };
+        }
+        return fallbackQuoteError(exception);
+    }
+
+    private static String fallbackQuoteError(EconomyGatewayException exception) {
         return switch (exception.statusCode()) {
             case 404 -> "该物品未加入服务器回收目录。";
-            case 409 -> "该物品当前额度不足或回收已暂停。";
+            case 409 -> "服务器拒绝了本次回收报价，请重新尝试。";
             case 401, 403 -> "经济服务拒绝了当前服务器身份。";
             case 429 -> "请求过于频繁，请稍后再试。";
             default -> exception.isOutcomeUnknown()
@@ -212,6 +226,7 @@ public final class SellMenu implements Listener {
         int revision = ++session.revision;
         session.quote = null;
         session.snapshot = null;
+        session.quantityPlan = null;
         var stack = session.inventory.getItem(INPUT_SLOT);
         if (empty(stack)) {
             render(session, State.EMPTY, "放入一组普通物品", List.of(
@@ -237,11 +252,32 @@ public final class SellMenu implements Listener {
                     if (!isCurrent(player, session, revision, snapshot)) {
                         return;
                     }
+                    SellQuantityPlan quantityPlan;
+                    try {
+                        if (!player.getUniqueId().equals(quote.playerUuid())
+                                || !validation.itemId().equals(quote.itemId())) {
+                            throw new IllegalArgumentException("quote identity mismatch");
+                        }
+                        quantityPlan = SellQuantityPlan.create(
+                                snapshot.getAmount(), quote.quantity());
+                    } catch (IllegalArgumentException exception) {
+                        render(session, State.ERROR, "服务器返回了无效报价", List.of(
+                                "物品仍在出售槽中，请稍后重试"));
+                        return;
+                    }
                     session.quote = quote;
                     session.snapshot = snapshot;
-                    render(session, State.READY, "预计获得 " + money(quote.totalAmount()), List.of(
-                            quote.itemId() + " × " + quote.quantity(),
-                            "点击确认后才会扣除物品"));
+                    session.quantityPlan = quantityPlan;
+                    var details = quantityPlan.partial()
+                            ? List.of(
+                                    quote.itemId() + " × " + quote.quantity(),
+                                    "超出额度的 " + quantityPlan.remainingQuantity()
+                                            + " 个会保留在出售槽",
+                                    "点击确认后只扣除报价数量")
+                            : List.of(
+                                    quote.itemId() + " × " + quote.quantity(),
+                                    "点击确认后才会扣除物品");
+                    render(session, State.READY, "预计获得 " + money(quote.totalAmount()), details);
                 },
                 exception -> {
                     if (!isCurrent(player, session, revision, snapshot)) {
@@ -253,7 +289,10 @@ public final class SellMenu implements Listener {
     }
 
     private void confirm(Player player, Session session) {
-        if (session.busy || session.quote == null || session.snapshot == null) {
+        if (session.busy
+                || session.quote == null
+                || session.snapshot == null
+                || session.quantityPlan == null) {
             reject(player, session, "报价尚未完成，暂时不能确认出售。");
             return;
         }
@@ -263,9 +302,10 @@ public final class SellMenu implements Listener {
             return;
         }
         var current = session.inventory.getItem(INPUT_SLOT);
+        var quantityPlan = session.quantityPlan;
         if (empty(current)
                 || !current.isSimilar(session.snapshot)
-                || current.getAmount() != session.quote.quantity()) {
+                || current.getAmount() != quantityPlan.requestedQuantity()) {
             refreshQuote(player, session);
             reject(player, session, "物品已经变化，正在重新计算报价。");
             return;
@@ -273,23 +313,36 @@ public final class SellMenu implements Listener {
 
         var quote = session.quote;
         var escrow = current.clone();
+        escrow.setAmount(quantityPlan.quotedQuantity());
+        ItemStack remainder = null;
+        if (quantityPlan.remainingQuantity() > 0) {
+            remainder = current.clone();
+            remainder.setAmount(quantityPlan.remainingQuantity());
+        }
         var operationId = UUID.randomUUID();
-        session.inventory.setItem(INPUT_SLOT, null);
+        session.inventory.setItem(INPUT_SLOT, remainder);
         session.busy = true;
         session.escrow = escrow;
         session.quote = null;
         session.snapshot = null;
+        session.quantityPlan = null;
         session.revision++;
-        render(session, State.COMMITTING, "正在提交交易", List.of(
-                "物品已进入服务端托管，请勿重复操作"));
+        var committingDetails = quantityPlan.partial()
+                ? List.of(
+                        "正在托管 " + quantityPlan.quotedQuantity() + " 个物品",
+                        "未报价的 " + quantityPlan.remainingQuantity() + " 个仍在出售槽")
+                : List.of("物品已进入服务端托管，请勿重复操作");
+        render(session, State.COMMITTING, "正在提交交易", committingDetails);
 
         async(
                 () -> plugin.gateway().commit(
                         "sale:" + operationId,
                         quote.quoteId(),
                         player.getUniqueId()),
-                commit -> finishCommit(player, session, operationId, quote, commit),
-                exception -> failCommit(player, session, operationId, quote, exception));
+                commit -> finishCommit(
+                        player, session, operationId, quote, quantityPlan, commit),
+                exception -> failCommit(
+                        player, session, operationId, quote, quantityPlan, exception));
     }
 
     private void finishCommit(
@@ -297,19 +350,30 @@ public final class SellMenu implements Listener {
             Session session,
             UUID operationId,
             EconomyGateway.SaleQuote quote,
+            SellQuantityPlan quantityPlan,
             EconomyGateway.SaleCommit commit) {
         if ("Applied".equals(commit.status())) {
             plugin.updateCachedBalance(player.getUniqueId(), commit.balance());
             session.escrow = null;
             session.busy = false;
             if (session.open) {
-                render(session, State.SUCCESS, "出售完成 · " + money(commit.amount()), List.of(
-                        "当前余额: " + money(commit.balance()),
-                        "可以继续放入下一组物品"));
+                var details = quantityPlan.partial()
+                        ? List.of(
+                                "本次回收 " + quantityPlan.quotedQuantity() + " 个",
+                                "未回收 " + quantityPlan.remainingQuantity() + " 个已保留",
+                                "当前余额: " + money(commit.balance()))
+                        : List.of(
+                                "当前余额: " + money(commit.balance()),
+                                "可以继续放入下一组物品");
+                render(session, State.SUCCESS, "出售完成 · " + money(commit.amount()), details);
             } else {
                 openMenus.remove(player.getUniqueId(), session);
             }
-            player.sendMessage(PREFIX + "出售成功，获得 " + money(commit.amount()) + "。");
+            var remainderMessage = quantityPlan.partial()
+                    ? "，未回收的 " + quantityPlan.remainingQuantity() + " 个已保留"
+                    : "";
+            player.sendMessage(PREFIX + "成功回收 " + quantityPlan.quotedQuantity()
+                    + " 个，获得 " + money(commit.amount()) + remainderMessage + "。");
             return;
         }
         restoreEscrow(player, session, operationId, quote.itemId(), "COMMIT_REJECTED");
@@ -320,6 +384,7 @@ public final class SellMenu implements Listener {
             Session session,
             UUID operationId,
             EconomyGateway.SaleQuote quote,
+            SellQuantityPlan quantityPlan,
             EconomyGatewayException exception) {
         if (exception.isOutcomeUnknown()) {
             quarantinedSales.add(
@@ -331,8 +396,14 @@ public final class SellMenu implements Listener {
             session.escrow = null;
             session.busy = false;
             if (session.open) {
-                render(session, State.ERROR, "交易结果暂时无法确认", List.of(
-                        "物品已进入隔离记录，请联系管理员"));
+                var details = quantityPlan.partial()
+                        ? List.of(
+                                "报价的 " + quantityPlan.quotedQuantity()
+                                        + " 个已进入隔离记录",
+                                "未报价的 " + quantityPlan.remainingQuantity()
+                                        + " 个仍在出售槽")
+                        : List.of("物品已进入隔离记录，请联系管理员");
+                render(session, State.ERROR, "交易结果暂时无法确认", details);
             } else {
                 openMenus.remove(player.getUniqueId(), session);
             }
@@ -352,14 +423,35 @@ public final class SellMenu implements Listener {
         var escrow = session.escrow;
         session.escrow = null;
         session.busy = false;
-        if (session.open && empty(session.inventory.getItem(INPUT_SLOT))) {
-            session.inventory.setItem(INPUT_SLOT, escrow);
+        if (session.open && mergeIntoInput(session.inventory, escrow)) {
             refreshQuote(player, session);
         } else {
             returnStack(player, operationId, itemId, escrow, reason);
-            openMenus.remove(player.getUniqueId(), session);
+            if (session.open) {
+                refreshQuote(player, session);
+            } else {
+                openMenus.remove(player.getUniqueId(), session);
+            }
         }
         player.sendMessage(PREFIX + ChatColor.RED + "出售未完成，物品已退回。");
+    }
+
+    static boolean mergeIntoInput(Inventory inventory, ItemStack escrow) {
+        if (escrow == null || escrow.getAmount() < 1) {
+            return true;
+        }
+        var input = inventory.getItem(INPUT_SLOT);
+        if (input == null || input.getAmount() < 1) {
+            inventory.setItem(INPUT_SLOT, escrow);
+            return true;
+        }
+        if (!input.isSimilar(escrow)
+                || input.getAmount() > input.getMaxStackSize() - escrow.getAmount()) {
+            return false;
+        }
+        input.setAmount(input.getAmount() + escrow.getAmount());
+        inventory.setItem(INPUT_SLOT, input);
+        return true;
     }
 
     private void reject(Player player, Session session, String message) {
@@ -526,6 +618,7 @@ public final class SellMenu implements Listener {
         private final Inventory inventory;
         private EconomyGateway.SaleQuote quote;
         private ItemStack snapshot;
+        private SellQuantityPlan quantityPlan;
         private ItemStack escrow;
         private int revision;
         private boolean busy;
