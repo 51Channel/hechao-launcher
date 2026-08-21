@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-21T02:53:07.8276396Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "buildSourceCommit": "fe81d4a3a3d5a947fc11487191d2a9957f1f43bf",
+    "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.26"
+  },
+  "screen": {
+    "version": "0.2.7",
+    "networkProtocol": "2",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.7.jar",
+    "bytes": 937825,
+    "sha256": "71E3FE9C74BBBF439AC91461E564E43096B7EA7E2D7DB3585CE45FFC8383A658",
+    "testsPassed": 91,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.26",
+    "publishedAtUtc": "2026-08-20T15:24:14.8578775Z",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "javaVersion": "21",
+    "manifestBytes": 2025516,
+    "manifestSha256": "66DC6FB9754CE37A0635E8B79FC1DF1B531B6694728245D68B4D236B9A7DA38A",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204219303,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204210793,
+    "signatureKeyId": "release-2026-07-primary",
+    "previousImmutableVersionRetained": "1.0.25"
+  },
+  "distribution": {
+    "uploadedObjects": 1,
+    "alreadyPresentObjects": 4251,
+    "uploadedBytes": 937825,
+    "immutableObjectOverwrites": 0,
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true,
+    "importAuditId": 9935,
+    "channelAuditId": 9936
+  },
+  "api": {
+    "version": "0.36.0",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "manifestStored": true,
+    "anonymousObjectAccessRestricted": true
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.26",
+      "manifestSha256": "66DC6FB9754CE37A0635E8B79FC1DF1B531B6694728245D68B4D236B9A7DA38A",
+      "rolloutPercentage": 100,
+      "revision": 19
+    },
+    "gray": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "rollback": {
+    "testVersion": "1.0.25",
+    "previousManifestSha256": "D8AC9C449926897B7A5B9361182D8706F3034565383733362FBFFA22341C9F06",
+    "immutableVersionsToRetain": [
+      "1.0.24",
+      "1.0.25",
+      "1.0.26"
+    ]
+  },
+  "remainingAcceptance": {
+    "authorizedLauncherManifestDownloadPassed": false,
+    "compactShortcutMenuPassed": false,
+    "catalogCardBuybackPassed": false,
+    "marketListingEntryPassed": false,
+    "returnWithoutGameFrameFlashPassed": false,
+    "returnWithoutMouseRecenteringPassed": false,
+    "twoRealPlayerMarketFlowPassed": false,
+    "disconnectInventoryRaceIdempotencyPassed": false,
+    "balanceConservationPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  }
+}
