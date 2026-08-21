@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-21T03:00:59Z",
+  "generatedAtUtc": "2026-08-21T09:10:00Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -69,73 +69,73 @@
     },
     {
       "component": "api",
-      "version": "0.35.0-20260818T121031Z",
-      "releaseTag": "api-v0.35.0",
-      "releaseCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
-      "taggedAt": "2026-08-18T21:04:28+08:00",
+      "version": "0.36.1-20260821T083823Z",
+      "releaseTag": "api-v0.36.1",
+      "releaseCommit": "9b00be37100548274da611454f1c59a791dfdf27",
+      "taggedAt": "2026-08-21T17:05:27+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "426b23fa98fdc9d76c97b2006c50da0fe315a00c"
+        "value": "9b00be37100548274da611454f1c59a791dfdf27"
       },
-      "deploymentState": "production-player-market-health-ready",
-      "historicalNote": "0.34.0 is the direct program rollback. Migration 034 and all market audit or escrow data must be retained during rollback.",
+      "deploymentState": "production-partial-buyback-health-ready-smoke-accepted",
+      "historicalNote": "0.36.0 and HechaoEconomy 0.2.2 are the coordinated rollback pair. No database migration was added.",
       "artifacts": [
         {
-          "name": "hechao-api-0.35.0-20260818T121031Z-linux-x64.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.35.0-20260818T121031Z",
-          "size": 46966874,
-          "sha256": "CF2E845F26F305F58D26020722E24318E7A953558A18D84858396F54DB8B5FD3",
+          "name": "hechao-api-0.36.1-20260821T083823Z-linux-x64.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.36.1-20260821T083823Z",
+          "size": 46989572,
+          "sha256": "1333B9AB4CE402141EBC258AA5E9FF90DBD9AE2C8937B59F39E6CFF1667731C7",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.35.0-20260818T121031Z/Hechao.Api",
-          "size": 105636292,
-          "sha256": "B9462B7D5AF6FA662408574E078008B03029F269EF7D9DDCC5AE17DBCC512AB8",
+          "location": "/opt/hechao-launcher-api/releases/0.36.1-20260821T083823Z/Hechao.Api",
+          "size": 105646660,
+          "sha256": "999FD3AE22748906781DA0977101B60495BEAAA3B6EE53EBEF811EFDEC4E9CDA",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.34.0-20260818T080552Z"
+        "target": "/opt/hechao-launcher-api/releases/0.36.0-20260820T145340Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.35.0.md",
-        "docs/evidence/API_0.35.0_PRODUCTION_DEPLOYMENT_2026-08-18.json",
-        "docs/SKYREALM_PLAYER_MARKET_0.2.0_CANDIDATE.md"
+        "docs/API_RELEASE_0.36.1.md",
+        "docs/evidence/API_0.36.1_PRODUCTION_DEPLOYMENT_2026-08-21.json",
+        "docs/SKYREALM_PARTIAL_BUYBACK_0.2.3_CANDIDATE.md"
       ]
     },
     {
       "component": "hechao-economy",
-      "version": "0.2.0",
-      "releaseTag": "hechao-economy-v0.2.0",
-      "releaseCommit": "426b23fa98fdc9d76c97b2006c50da0fe315a00c",
-      "taggedAt": "2026-08-18T21:04:28+08:00",
+      "version": "0.2.3",
+      "releaseTag": "hechao-economy-v0.2.3",
+      "releaseCommit": "9b00be37100548274da611454f1c59a791dfdf27",
+      "taggedAt": "2026-08-21T17:05:40+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "426b23fa98fdc9d76c97b2006c50da0fe315a00c"
+        "value": "9b00be37100548274da611454f1c59a791dfdf27"
       },
-      "deploymentState": "production-activity-survival-cold-deployed",
-      "historicalNote": "Server deployment is complete; two-player transaction, disconnect, inventory race, retry and balance-conservation acceptance remain pending.",
+      "deploymentState": "production-activity-survival-cold-deployed-partial-buyback-api-smoke-accepted",
+      "historicalNote": "The API contract and server plugin are deployed together. Live inventory visual acceptance remains pending until a player performs the next buyback.",
       "artifacts": [
         {
-          "name": "HechaoEconomy-0.2.0.jar",
-          "location": "E:\\HechaoActivitySlots\\activity-survival\\plugins\\HechaoEconomy-0.2.0.jar",
-          "size": 440154,
-          "sha256": "43D94F92786D79FA5B4F385C32AF725CBA75587C8DE6CF649BE24D8481664522",
+          "name": "HechaoEconomy-0.2.3.jar",
+          "location": "E:\\HechaoActivitySlots\\activity-survival\\plugins\\HechaoEconomy-0.2.3.jar",
+          "size": 446608,
+          "sha256": "87ACFC0F23564BE3773D2CEB080CC2AEBC8DA8A8E68C24A0841DDEAC8FED80CA",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "full-offline-server-backup",
-        "target": "E:\\manual-backups\\activity-survival-economy-0.2.0-20260818T122955Z"
+        "target": "E:\\manual-backups\\activity-survival-economy-0.2.3-20260821T085846Z"
       },
       "evidence": [
-        "docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.0.md",
-        "docs/evidence/SKYREALM_ECONOMY_0.2.0_PRODUCTION_DEPLOYMENT_2026-08-18.json",
-        "docs/SKYREALM_PLAYER_MARKET_0.2.0_CANDIDATE.md"
+        "docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.3.md",
+        "docs/evidence/SKYREALM_ECONOMY_0.2.3_PRODUCTION_DEPLOYMENT_2026-08-21.json",
+        "docs/SKYREALM_PARTIAL_BUYBACK_0.2.3_CANDIDATE.md"
       ]
     },
     {

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "component": "hechao-economy",
+  "version": "0.2.3",
+  "releaseTag": "hechao-economy-v0.2.3",
+  "releaseCommit": "9b00be37100548274da611454f1c59a791dfdf27",
+  "serverId": "activity-survival",
+  "deployedAtUtc": "2026-08-21T09:01:15Z",
+  "artifact": {
+    "name": "HechaoEconomy-0.2.3.jar",
+    "path": "E:\\HechaoActivitySlots\\activity-survival\\plugins\\HechaoEconomy-0.2.3.jar",
+    "size": 446608,
+    "sha256": "87ACFC0F23564BE3773D2CEB080CC2AEBC8DA8A8E68C24A0841DDEAC8FED80CA"
+  },
+  "backup": {
+    "path": "E:\\manual-backups\\activity-survival-economy-0.2.3-20260821T085846Z",
+    "files": 434,
+    "bytes": 408019578,
+    "inventoryDifferences": 0,
+    "quickRollbackJar": "C:\\Users\\Administrator\\HechaoEconomy-0.2.2.jar.rollback-20260821T0900Z"
+  },
+  "acceptance": {
+    "taskState": "Running",
+    "processId": 7452,
+    "processStartedAtUtc": "2026-08-21T09:01:15.3885406Z",
+    "listener": "127.0.0.1:25600",
+    "startupCommand": "java @user_jvm_args.txt -jar arclight-neoforge-1.21.1-1.0.2-SNAPSHOT-8086b06.jar nogui",
+    "doneCount": 1,
+    "pluginEnableCount": 1,
+    "pluginErrorCount": 0,
+    "health": {
+      "api": true,
+      "vault": true,
+      "commandOwnership": true,
+      "transactionGate": true,
+      "quarantinedSales": 0
+    },
+    "onlinePlayers": 0,
+    "maximumPlayers": 100,
+    "productionPartialQuoteAccepted": true,
+    "liveInventoryVisualAcceptancePending": true
+  },
+  "clientChanged": false,
+  "credentialsRecorded": false
+}

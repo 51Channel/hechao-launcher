@@ -724,7 +724,7 @@ Bukkit 市场底部第 `51` 槽提供排序循环，挂单 Lore 增加单位价�
 也未启停任何 Minecraft、Velocity 或服控进程。候选详情与上线门禁见
 [`SKYREALM_PLAYER_MARKET_0.2.2_CANDIDATE.md`](SKYREALM_PLAYER_MARKET_0.2.2_CANDIDATE.md)。
 
-## 28. 2026-08-21 官方回收部分额度候选
+## 28. 2026-08-21 官方回收部分额度发布
 
 API `0.36.1` 与 HechaoEconomy `0.2.3` 将官方回收从“整组必须完全落在额度内”改为
 “只回收剩余额度内的数量”。权威计算为请求数量、个人剩余额度、全服剩余额度三者最小值；
@@ -744,3 +744,11 @@ API `0.36.1` 与 HechaoEconomy `0.2.3` 将官方回收从“整组必须完全�
 `87ACFC0F23564BE3773D2CEB080CC2AEBC8DA8A8E68C24A0841DDEAC8FED80CA`。
 候选详情见
 [`SKYREALM_PARTIAL_BUYBACK_0.2.3_CANDIDATE.md`](SKYREALM_PARTIAL_BUYBACK_0.2.3_CANDIDATE.md)。
+
+API `0.36.1-20260821T083823Z` 与 HechaoEconomy `0.2.3` 已在零玩家窗口协调部署。生产
+`64` 个苹果报价烟测返回 `32` 个、`64.00` 金币、个人剩余 `0` 和全服剩余 `608`；测试
+报价已删除，报价表恢复为 `0`。服务端已通过 Arclight 冷启动、单端口、唯一插件 JAR、
+`/heco health` 和零插件错误门禁。Screen `0.2.7`、客户端档案 `1.0.26` 及 Test、Gray、
+Production 指针均未改变；真人槽位余量目视验收仍待玩家上线。正式记录见
+[`API_RELEASE_0.36.1.md`](API_RELEASE_0.36.1.md) 和
+[`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.3.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.3.md)。

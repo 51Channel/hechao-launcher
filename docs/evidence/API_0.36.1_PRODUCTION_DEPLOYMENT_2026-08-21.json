@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "component": "api",
+  "version": "0.36.1-20260821T083823Z",
+  "releaseTag": "api-v0.36.1",
+  "releaseCommit": "9b00be37100548274da611454f1c59a791dfdf27",
+  "deployedAtUtc": "2026-08-21T09:00:04Z",
+  "artifact": {
+    "name": "hechao-api-0.36.1-20260821T083823Z-linux-x64.tar.gz",
+    "size": 46989572,
+    "sha256": "1333B9AB4CE402141EBC258AA5E9FF90DBD9AE2C8937B59F39E6CFF1667731C7",
+    "binarySize": 105646660,
+    "binarySha256": "999FD3AE22748906781DA0977101B60495BEAAA3B6EE53EBEF811EFDEC4E9CDA"
+  },
+  "backup": {
+    "databasePath": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.36.1-20260821T084804Z.dump",
+    "databaseSize": 7720856,
+    "databaseSha256": "D83CFB227642D8306208CCC35644A0DC68B5179783C5F8A578ACD8232AEAA2DF",
+    "databaseRestoreListEntries": 304,
+    "configurationPath": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.36.1-20260821T084804Z-precise.tar.gz",
+    "configurationSize": 62365043,
+    "configurationSha256": "5ECFD07BD114D1CE981DF9B39C7A2E388B58E4C44E7C613AD66F41305856326D"
+  },
+  "acceptance": {
+    "currentRelease": "/opt/hechao-launcher-api/releases/0.36.1-20260821T083823Z",
+    "mainPid": 525035,
+    "nRestarts": 0,
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "migrations": "34/34",
+    "products": "85/85 enabled",
+    "warningOrHigherLogs": 0,
+    "partialQuote": {
+      "itemId": "minecraft:apple",
+      "requestedQuantity": 64,
+      "quotedQuantity": 32,
+      "unitPrice": 2.0,
+      "totalAmount": 64.0,
+      "personalRemaining": 0,
+      "serverRemaining": 608,
+      "deletedTestQuotes": 1,
+      "remainingTestQuotes": 0,
+      "finalQuoteTableRows": 0
+    }
+  },
+  "rollback": "/opt/hechao-launcher-api/releases/0.36.0-20260820T145340Z",
+  "credentialsRecorded": false
+}
