@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,6 +33,8 @@ public final class HechaoEconomyScreenMod {
     private static final MenuSessionRegistry SESSIONS = new MenuSessionRegistry(
             Duration.ofMinutes(2),
             Duration.ofMillis(350));
+    private static final RtpCooldownRegistry RTP_COOLDOWNS =
+            new RtpCooldownRegistry(Duration.ofSeconds(60));
     private static final Map<String, MenuActions.Definition> ACTIONS = MenuActions.all();
 
     public HechaoEconomyScreenMod(IEventBus modEventBus) {
@@ -63,7 +66,79 @@ public final class HechaoEconomyScreenMod {
                                 context.getSource().getPlayerOrException()))
                         .then(Commands.literal("economy")
                                 .executes(context -> openMenu(
-                                        context.getSource().getPlayerOrException()))));
+                                        context.getSource().getPlayerOrException())))
+                        .then(Commands.literal("rtp")
+                                .executes(context -> randomTeleport(
+                                        context.getSource().getPlayerOrException())))
+                        .then(Commands.literal("setcity")
+                                .requires(source -> source.hasPermission(2))
+                                .executes(context -> setCity(context.getSource()))));
+        event.getDispatcher().register(
+                Commands.literal("rtp")
+                        .executes(context -> randomTeleport(
+                                context.getSource().getPlayerOrException())));
+        event.getDispatcher().register(
+                Commands.literal("setcity")
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> setCity(context.getSource())));
+    }
+
+    private static int randomTeleport(ServerPlayer player) {
+        var now = Instant.now();
+        var cooldown = RTP_COOLDOWNS.tryAcquire(player.getUUID(), now);
+        if (!cooldown.allowed()) {
+            long seconds = Math.max(
+                    1,
+                    (cooldown.remaining().toMillis() + 999) / 1000);
+            player.sendSystemMessage(Component.literal(
+                    "[天域远征] 随机传送冷却中，请等待 " + seconds + " 秒。"));
+            return 0;
+        }
+
+        var worldBorder = player.serverLevel().getWorldBorder();
+        var plan = RtpCommandPlan.create(
+                worldBorder.getCenterX(),
+                worldBorder.getCenterZ(),
+                worldBorder.getSize());
+        if (plan.isEmpty()) {
+            RTP_COOLDOWNS.release(player.getUUID());
+            player.sendSystemMessage(Component.literal(
+                    "[天域远征] 当前世界边界过小，无法随机传送。"));
+            return 0;
+        }
+
+        try {
+            var commandSource = player.createCommandSourceStack()
+                    .withPermission(2)
+                    .withCallback((success, ignoredResult) -> {
+                        if (!success) {
+                            RTP_COOLDOWNS.release(player.getUUID());
+                        }
+                    });
+            player.getServer().getCommands().performPrefixedCommand(
+                    commandSource,
+                    plan.orElseThrow().command());
+            return 1;
+        } catch (RuntimeException exception) {
+            RTP_COOLDOWNS.release(player.getUUID());
+            LOGGER.error("Random teleport failed for player {}", player.getUUID(), exception);
+            player.sendSystemMessage(Component.literal(
+                    "[天域远征] 暂时无法找到安全落点，请稍后重试。"));
+            return 0;
+        }
+    }
+
+    private static int setCity(CommandSourceStack source) {
+        var command = "essentialsspawn:setspawn";
+        if (!isCommandUsable(source, command)) {
+            source.sendFailure(Component.literal(
+                    "[天域远征] 主城组件当前不可用，位置没有修改。"));
+            return 0;
+        }
+        source.getServer().getCommands().performPrefixedCommand(
+                source,
+                command);
+        return 1;
     }
 
     private static int openMenu(ServerPlayer player) {
@@ -88,14 +163,20 @@ public final class HechaoEconomyScreenMod {
     private static boolean isCommandUsable(
             ServerPlayer player,
             String command) {
+        return isCommandUsable(player.createCommandSourceStack(), command);
+    }
+
+    private static boolean isCommandUsable(
+            CommandSourceStack source,
+            String command) {
         var separator = command.indexOf(' ');
         var root = separator < 0 ? command : command.substring(0, separator);
-        var node = player.getServer()
+        var node = source.getServer()
                 .getCommands()
                 .getDispatcher()
                 .getRoot()
                 .getChild(root);
-        return node != null && node.canUse(player.createCommandSourceStack());
+        return node != null && node.canUse(source);
     }
 
     private static void handleOpenMenu(
@@ -155,6 +236,7 @@ public final class HechaoEconomyScreenMod {
 
     private void playerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         SESSIONS.remove(event.getEntity().getUUID());
+        RTP_COOLDOWNS.release(event.getEntity().getUUID());
     }
 
     private static String rejectionMessage(MenuSessionRegistry.Validation validation) {

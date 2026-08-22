@@ -26,6 +26,9 @@ final class MenuActionsTest {
                 "essentialsspawn:spawn",
                 MenuActions.all().get("spawn").command());
         assertEquals(
+                "hechaomenu rtp",
+                MenuActions.all().get("rtp").command());
+        assertEquals(
                 "griefprevention:claimslist",
                 MenuActions.all().get("claims").command());
     }
@@ -54,6 +57,7 @@ final class MenuActionsTest {
                         "teleport",
                         "home",
                         "spawn",
+                        "rtp",
                         "back",
                         "claims",
                         "settings"),
@@ -144,12 +148,18 @@ final class MenuActionsTest {
                 "HechaoEconomyScreenMod.java"));
 
         assertFalse(source.contains("player.hasPermissions(2)"));
-        assertTrue(source.contains("node.canUse(player.createCommandSourceStack())"));
+        assertTrue(source.contains("node.canUse(source)"));
         assertTrue(source.contains(".filter(entry -> isCommandUsable(player, entry.getValue().command()))"));
         assertFalse(source.contains("command().startsWith(\"hechaoeconomy:\")"));
         assertTrue(source.contains("Set.copyOf(actionIds)"));
         assertTrue(source.contains("event.registrar(\"3\")"));
+        assertTrue(source.contains("Commands.literal(\"rtp\")"));
+        assertTrue(source.contains("Commands.literal(\"setcity\")"));
+        assertTrue(source.contains("source.hasPermission(2)"));
+        assertTrue(source.contains("essentialsspawn:setspawn"));
         assertTrue(source.contains("performPrefixedCommand"));
+        assertTrue(source.contains("withCallback((success, ignoredResult)"));
+        assertTrue(source.contains("RTP_COOLDOWNS.release(player.getUUID())"));
         assertTrue(source.contains("action.executionMode() == MenuActions.ExecutionMode.SERVER"));
         assertTrue(source.contains("EconomyMessageProtocol.authorization("));
         assertTrue(source.contains("payload.sessionId()"));

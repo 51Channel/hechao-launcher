@@ -110,6 +110,14 @@ public final class MenuActions {
                         "essentialsspawn:spawn",
                         ExecutionMode.SERVER));
         actions.put(
+                "rtp",
+                new Definition(
+                        "随机传送",
+                        "随机传送到当前世界边界内的安全位置",
+                        "正在寻找安全落点...",
+                        "hechaomenu rtp",
+                        ExecutionMode.SERVER));
+        actions.put(
                 "back",
                 new Definition(
                         "返回上次位置",

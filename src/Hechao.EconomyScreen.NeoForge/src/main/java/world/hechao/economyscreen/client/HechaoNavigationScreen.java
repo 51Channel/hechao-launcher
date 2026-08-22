@@ -295,6 +295,7 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
             case "teleport" -> new ItemStack(Items.ENDER_PEARL);
             case "home" -> new ItemStack(Items.RED_BED);
             case "spawn" -> new ItemStack(Items.COMPASS);
+            case "rtp" -> new ItemStack(Items.ENDER_EYE);
             case "back" -> new ItemStack(Items.CLOCK);
             case "claims" -> new ItemStack(Items.GOLDEN_SHOVEL);
             default -> ItemStack.EMPTY;
