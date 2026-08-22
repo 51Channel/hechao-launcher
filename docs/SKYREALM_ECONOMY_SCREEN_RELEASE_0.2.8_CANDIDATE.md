@@ -1,5 +1,9 @@
 # 天域远征工业季第三方屏幕 0.2.8 候选记录
 
+> 状态更新（2026-08-22）：本候选已完成服务端成对冷部署并仅切 Test。正式状态以
+> [SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8.md](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8.md)
+> 为准；本文件保留候选阶段证据，不代表当前实时状态。
+
 - 记录日期：`2026-08-22`
 - 组件：`HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar`
 - 状态：候选 JAR 与档案已签名、验签、完成对象闭合并上传 OSS；尚未导入后台、部署服务端或切换发布通道

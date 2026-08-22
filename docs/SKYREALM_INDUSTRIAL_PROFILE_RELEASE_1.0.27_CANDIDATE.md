@@ -1,5 +1,9 @@
 # 天域远征工业季客户端档案 1.0.27 OSS 候选
 
+> 状态更新（2026-08-22）：本候选已导入后台并仅切 Test `100% / r20`。正式状态以
+> [SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27.md](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27.md)
+> 为准；本文件保留候选阶段证据，不代表当前实时状态。
+
 - 候选核验日期：2026-08-22
 - 档案 ID：`skyrealm-industrial-neoforge-1.21.1`
 - Minecraft：`1.21.1`
