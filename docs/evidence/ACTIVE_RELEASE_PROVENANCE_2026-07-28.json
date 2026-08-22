@@ -1,70 +1,72 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-21T09:10:00Z",
+  "generatedAtUtc": "2026-08-22T12:35:57Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
       "component": "hechao-economy-screen",
-      "version": "0.2.7",
-      "releaseTag": "hechao-economy-screen-v0.2.7",
-      "releaseCommit": "eab2f9ad6e43307cabb22dce13c3db4f5964f662",
-      "taggedAt": "2026-08-21T11:00:59+08:00",
+      "version": "0.2.8",
+      "releaseTag": "hechao-economy-screen-v0.2.8",
+      "releaseCommit": "8937a5fb4f6d6535ef8e6af4e7b0e29ae049462f",
+      "taggedAt": "2026-08-22T20:35:57+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "fe81d4a3a3d5a947fc11487191d2a9957f1f43bf"
+        "value": "1020ba6f31132605d5bc28283d1e45c50072dcd4"
       },
-      "deploymentState": "test-profile-1.0.26-r19-live-client-acceptance-pending",
-      "historicalNote": "Gray and Production remain unassigned until authorized launcher download, visual checks and two-player market acceptance pass.",
+      "deploymentState": "test-profile-1.0.27-r20-server-cold-deployed-real-player-acceptance-pending",
+      "historicalNote": "Protocol 3 was cold-deployed to activity-survival before Test moved to 1.0.27. Gray and Production remain unassigned until authorized launcher download, fourteen-action visual checks, transfer, TPA and two-player market acceptance pass.",
       "artifacts": [
         {
-          "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.7.jar",
-          "location": "objects/71/71e3fe9c74bbbf439ac91461e564e43096b7ea7e2d7db3585ce45ffc8383a658",
-          "size": 937825,
-          "sha256": "71E3FE9C74BBBF439AC91461E564E43096B7EA7E2D7DB3585CE45FFC8383A658",
+          "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar",
+          "location": "objects/00/0050ed8611248b447f7e95205db62aeff1e7a5fe7d34eccf74deb8dbac5d23ac",
+          "size": 971287,
+          "sha256": "0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC",
           "primary": true
         }
       ],
       "rollback": {
-        "kind": "test-channel-pointer",
-        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.25"
+        "kind": "paired-test-channel-and-full-offline-server-backup",
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.26; E:\\manual-backups\\activity-survival-screen-0.2.8-20260822T114459Z; previous server Screen SHA-256 53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E"
       },
       "evidence": [
-        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.7.md",
-        "docs/evidence/SKYREALM_ECONOMY_SCREEN_0.2.7_TEST_RELEASE_2026-08-21.json",
-        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.26.md"
+        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8.md",
+        "docs/evidence/SKYREALM_ECONOMY_SCREEN_0.2.8_TEST_RELEASE_2026-08-22.json",
+        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27.md",
+        "docs/SKYREALM_HECHAO_MENU_FLOW_2026-08-20.md"
       ]
     },
     {
       "component": "profile-skyrealm-industrial-neoforge-1.21.1",
-      "version": "1.0.26",
-      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.26",
-      "releaseCommit": "eab2f9ad6e43307cabb22dce13c3db4f5964f662",
-      "taggedAt": "2026-08-21T11:00:59+08:00",
+      "version": "1.0.27",
+      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.27",
+      "releaseCommit": "8937a5fb4f6d6535ef8e6af4e7b0e29ae049462f",
+      "taggedAt": "2026-08-22T20:35:57+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "signed-manifest",
-        "value": "66DC6FB9754CE37A0635E8B79FC1DF1B531B6694728245D68B4D236B9A7DA38A"
+        "value": "E3D85D4068CD9DCD2882DF0B365D471B93CE82D6C1C98B89A6EA082DA5FC33B5"
       },
-      "deploymentState": "test-r19-100-percent-gray-production-unassigned",
-      "historicalNote": "1.0.25 remains the Test rollback. Gray and Production remain unassigned until real-client menu, buyback, return navigation and two-account market acceptance pass.",
+      "deploymentState": "test-r20-100-percent-gray-production-unassigned-server-protocol-3-compatible",
+      "historicalNote": "1.0.26 remains the paired Test rollback. Gray and Production remain unassigned until real-client incremental download, fourteen-action menu, transfer, TPA, return navigation and two-account market acceptance pass.",
       "artifacts": [
         {
-          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.26 signed manifest",
-          "location": "production manifest store",
-          "size": 2025516,
-          "sha256": "66DC6FB9754CE37A0635E8B79FC1DF1B531B6694728245D68B4D236B9A7DA38A",
+          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.27 signed manifest",
+          "location": "/var/lib/hechao-launcher-api/manifests/releases/skyrealm-industrial-neoforge-1.21.1/e3d85d4068cd9dcd2882df0b365d471b93ce82d6c1c98b89a6ea082da5fc33b5.json",
+          "size": 2025536,
+          "sha256": "E3D85D4068CD9DCD2882DF0B365D471B93CE82D6C1C98B89A6EA082DA5FC33B5",
           "primary": true
         }
       ],
       "rollback": {
-        "kind": "test-channel-pointer",
-        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.25"
+        "kind": "paired-test-channel-and-full-offline-server-backup",
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.26; E:\\manual-backups\\activity-survival-screen-0.2.8-20260822T114459Z"
       },
       "evidence": [
-        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.26.md",
-        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.26_TEST_RELEASE_2026-08-21.json",
-        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.7.md"
+        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27.md",
+        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.27_TEST_RELEASE_2026-08-22.json",
+        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8.md",
+        "docs/SKYREALM_HECHAO_MENU_FLOW_2026-08-20.md"
       ]
     },
     {
