@@ -2,10 +2,10 @@
 
 - 记录日期：`2026-08-22`
 - 组件：`HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar`
-- 状态：本地候选，尚未上传 OSS、导入后台、部署服务端或切换发布通道
+- 状态：候选 JAR 与档案已签名、验签、完成对象闭合并上传 OSS；尚未导入后台、部署服务端或切换发布通道
 - 目标客户端档案：`skyrealm-industrial-neoforge-1.21.1 / 1.0.27`
 - 网络协议：`3`，客户端与服务端 Screen 必须同步冷更新
-- 当前线上基线：Test `1.0.26 / Screen 0.2.7`；`activity-survival` 服务端仍为 Screen `0.2.1`
+- 当前线上基线：Test `1.0.26 / Screen 0.2.7 / r19`；`activity-survival` 服务端仍为 Screen `0.2.1`
 
 ## 本轮能力
 
@@ -44,7 +44,7 @@ Screen `0.2.1` 与 `0.2.7` 使用网络协议 `2`。0.2.8 将协议升为 `3`，
 
 服务端无法冷更新时，可以先完成不可变客户端制品与 OSS 上传，但不得提前切换 Test。
 
-## 本地验证
+## 制品与分发验证
 
 - PowerShell 7、Java 21、Gradle 8.12；
 - 连续两次 `clean test build --no-daemon` 均通过；
@@ -55,6 +55,23 @@ Screen `0.2.1` 与 `0.2.7` 使用网络协议 `2`。0.2.8 将协议升为 `3`，
 - Impeccable detector：无发现；
 - `git diff --check`：通过。
 
+目标档案 `1.0.27` 已从不可变 `1.0.26` 基线隔离制作：
+
+- 逻辑文件：`4,457`；逻辑字节：`1,204,252,765`；
+- `4,456` 个共同文件逐路径、大小和 SHA-256 不变，同路径内容变化为 `0`；
+- 仅删除 Screen `0.2.7` JAR，并新增 Screen `0.2.8` JAR；
+- 清单大小：`2,025,536` 字节；清单 SHA-256：
+  `E3D85D4068CD9DCD2882DF0B365D471B93CE82D6C1C98B89A6EA082DA5FC33B5`；
+- 正式信任包离线验签和对象闭合校验均通过；
+- 去重对象：`4,252`；对象字节：`1,204,244,255`；
+- OSS 首轮新增 `1` 个对象、复用 `4,251` 个对象，上传 `971,287` 字节；第二轮全量校验
+  `4,252` 个对象均已存在，上传 `0` 字节，未覆盖不可变对象。
+
+2026-08-22 实时只读复核确认，生产 API 为 `0.36.1` 且健康、就绪、数据库均正常；后台
+尚无 `1.0.27` 发布记录，Test 保持 `1.0.26 / 100% / r19`，Gray 与 Production 未分配。
+owl5 的 `activity-survival` 当时正在运行，唯一 Screen JAR 仍为 `0.2.1`，因此没有执行
+协议 `3` 的客户端通道切换。
+
 ## 发布门禁
 
 - 只允许进入 Test；Gray 与 Production 不得分配；
@@ -63,3 +80,8 @@ Screen `0.2.1` 与 `0.2.7` 使用网络协议 `2`。0.2.8 将协议升为 `3`，
 - 真人双账号至少验证：14 项菜单可见性、旧会话重放拒绝、转账成功/失败/未知、TPA 四动作、
   返回首页无闪屏，以及现有市场上架、购买、下架、待领取和余额守恒；
 - 上述证据完成前，不得扩大到 Gray 或 Production。
+
+档案候选记录见
+[SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27_CANDIDATE.md](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27_CANDIDATE.md)。
+结构化证据见
+[evidence/SKYREALM_ECONOMY_SCREEN_0.2.8_OSS_CANDIDATE_2026-08-22.json](evidence/SKYREALM_ECONOMY_SCREEN_0.2.8_OSS_CANDIDATE_2026-08-22.json)。

@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-22T11:07:34.0388495Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "buildSourceCommit": "1020ba6f31132605d5bc28283d1e45c50072dcd4",
+    "baselineProfileVersion": "1.0.26",
+    "plannedReleaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.27",
+    "candidateStatus": "oss-uploaded-awaiting-coordinated-deploy"
+  },
+  "screen": {
+    "version": "0.2.8",
+    "networkProtocol": "3",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar",
+    "bytes": 971287,
+    "sha256": "0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC",
+    "testsPassed": 104,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.27",
+    "publishedAtUtc": "2026-08-22T10:52:02.2068407Z",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "javaVersion": "21",
+    "manifestBytes": 2025536,
+    "manifestSha256": "E3D85D4068CD9DCD2882DF0B365D471B93CE82D6C1C98B89A6EA082DA5FC33B5",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204252765,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204244255,
+    "signatureKeyId": "release-2026-07-primary",
+    "previousImmutableVersionRetained": "1.0.26"
+  },
+  "delta": {
+    "commonFilesUnchanged": 4456,
+    "samePathContentChanges": 0,
+    "removedPath": "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.7.jar",
+    "addedPath": "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar",
+    "removedObjectSha256": "71E3FE9C74BBBF439AC91461E564E43096B7EA7E2D7DB3585CE45FFC8383A658",
+    "addedObjectSha256": "0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC"
+  },
+  "distribution": {
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true,
+    "ossUploadExecuted": true,
+    "firstPassUploadedObjects": 1,
+    "firstPassAlreadyPresentObjects": 4251,
+    "firstPassUploadedBytes": 971287,
+    "secondPassUploadedObjects": 0,
+    "secondPassAlreadyPresentObjects": 4252,
+    "secondPassUploadedBytes": 0,
+    "ossLastVerifiedAtUtc": "2026-08-22T11:11:57.3478432Z",
+    "immutableObjectOverwrites": 0,
+    "apiImportExecuted": false,
+    "channelPointerChanged": false
+  },
+  "apiAndChannelsSnapshot": {
+    "checkedAtUtc": "2026-08-22T11:05:03.7507395Z",
+    "apiVersion": "0.36.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "candidateReleaseRowExists": false,
+    "test": {
+      "version": "1.0.26",
+      "manifestSha256": "66DC6FB9754CE37A0635E8B79FC1DF1B531B6694728245D68B4D236B9A7DA38A",
+      "rolloutPercentage": 100,
+      "revision": 19
+    },
+    "gray": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "runtimeCompatibilitySnapshot": {
+    "checkedAtUtc": "2026-08-22T11:07:05.7420572Z",
+    "activitySurvivalTaskState": "Running",
+    "activitySurvivalPid": 7452,
+    "activitySurvivalPort": 25600,
+    "activitySurvivalListenerCount": 1,
+    "activitySurvivalEstablishedBackendConnections": 0,
+    "serverScreenVersion": "0.2.1",
+    "serverScreenSha256": "53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E",
+    "compatibleWithCandidateProtocol": false,
+    "minecraftLifecycleChanged": false
+  },
+  "remainingAcceptance": {
+    "coordinatedServerColdDeploymentPassed": false,
+    "apiImportPassed": false,
+    "testChannelCutoverPassed": false,
+    "authorizedLauncherManifestDownloadPassed": false,
+    "fourteenShortcutActionsPassed": false,
+    "transferAndTpaRealPlayersPassed": false,
+    "twoRealPlayerMarketFlowPassed": false,
+    "disconnectInventoryRaceIdempotencyPassed": false,
+    "balanceConservationPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  }
+}

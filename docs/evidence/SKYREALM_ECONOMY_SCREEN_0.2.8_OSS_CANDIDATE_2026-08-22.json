@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-22T11:07:34.0388495Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.8",
+  "networkProtocol": "3",
+  "buildSourceCommit": "1020ba6f31132605d5bc28283d1e45c50072dcd4",
+  "plannedReleaseTag": "hechao-economy-screen-v0.2.8",
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar",
+    "sizeBytes": 971287,
+    "sha256": "0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC"
+  },
+  "tests": {
+    "screenPassed": 104,
+    "reproducibleBuildRuns": 2,
+    "impeccableLayoutFindings": 0,
+    "failed": 0
+  },
+  "features": {
+    "shortcutActionCount": 14,
+    "nativeTransferForm": true,
+    "nativeTpaForm": true,
+    "authorizationBoundToSessionAndAction": true,
+    "internalAuthorizationReceiptHidden": true,
+    "businessReceiptClassification": true,
+    "pendingStateBlocksDuplicateSubmission": true,
+    "unknownResultRequiresReconciliation": true,
+    "compactStatusRegionPreserved": true,
+    "serverAuthorityPreserved": true
+  },
+  "distribution": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "profileVersion": "1.0.27",
+    "manifestSha256": "E3D85D4068CD9DCD2882DF0B365D471B93CE82D6C1C98B89A6EA082DA5FC33B5",
+    "firstPassUploadedObjects": 1,
+    "firstPassAlreadyPresentObjects": 4251,
+    "firstPassUploadedBytes": 971287,
+    "secondPassUploadedObjects": 0,
+    "secondPassAlreadyPresentObjects": 4252,
+    "secondPassUploadedBytes": 0,
+    "ossLastVerifiedAtUtc": "2026-08-22T11:11:57.3478432Z",
+    "immutableObjectOverwrites": 0,
+    "apiImportExecuted": false,
+    "channelPointerChanged": false
+  },
+  "runtimeSnapshot": {
+    "checkedAtUtc": "2026-08-22T11:07:05.7420572Z",
+    "apiVersion": "0.36.1",
+    "apiHealth": "ok",
+    "apiReady": "ready",
+    "apiDatabase": "ready",
+    "activitySurvivalTaskState": "Running",
+    "activitySurvivalPid": 7452,
+    "activitySurvivalPort": 25600,
+    "activitySurvivalListenerCount": 1,
+    "activitySurvivalEstablishedBackendConnections": 0,
+    "serverScreenVersion": "0.2.1",
+    "serverScreenPath": "E:\\HechaoActivitySlots\\activity-survival\\mods\\HechaoEconomyScreen-NeoForge-1.21.1-0.2.1.jar",
+    "serverScreenSizeBytes": 908221,
+    "serverScreenSha256": "53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E",
+    "minecraftLifecycleChanged": false
+  },
+  "acceptance": {
+    "codeContractAndAutomatedValidationPassed": true,
+    "signedManifestAndObjectClosurePassed": true,
+    "ossObjectVerificationPassed": true,
+    "coordinatedServerDeploymentPassed": false,
+    "authorizedLauncherManifestDownloadPassed": false,
+    "transferAndTpaRealPlayersPassed": false,
+    "twoRealPlayerMarketFlowPassed": false,
+    "disconnectInventoryRaceAndIdempotencyPassed": false,
+    "balanceConservationPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  },
+  "rollback": {
+    "testVersion": "1.0.26",
+    "previousScreenVersion": "0.2.7",
+    "previousClientScreenSha256": "71E3FE9C74BBBF439AC91461E564E43096B7EA7E2D7DB3585CE45FFC8383A658",
+    "serverScreenVersion": "0.2.1",
+    "serverScreenSha256": "53DDD560994C0AE1A7CBE6C0673E38EECFA79171DACEA519ACB7B2756218873E",
+    "pairedProtocolRollbackRequired": true
+  }
+}

@@ -1,11 +1,13 @@
 # 赫朝启动器
 
-> `2026-08-22` 天域远征 Screen `0.2.8` 已形成可复现本地候选：快捷首页扩展为
+> `2026-08-22` 天域远征 Screen `0.2.8` 已形成可复现 OSS 候选：快捷首页扩展为
 > 14 项交易、社交和生存操作，新增服务端授权的玩家转账与 TPA 表单。会话授权和拒绝
 > 同时绑定 UUID 与动作 ID，转账/传送只消费对应业务回执；网络协议升为 `3`，必须与
-> 服务端同步冷更新。`104/104` 测试和两轮一致 SHA-256 已通过。目标档案 `1.0.27`
-> 尚未切换，线上 Test 仍为 `1.0.26 / Screen 0.2.7`，Gray 与 Production 不动。详情见
-> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md)。
+> 服务端同步冷更新。`104/104` 测试和两轮一致 SHA-256 已通过；目标档案 `1.0.27` 已签名、
+> 验签、完成对象闭合并上传 OSS，尚未导入后台或切换通道。线上 Test 仍为
+> `1.0.26 / Screen 0.2.7`，Gray 与 Production 不动。详情见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md)
+> 和 [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27_CANDIDATE.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27_CANDIDATE.md)。
 
 > `2026-08-21` 官方回收部分额度修复已联动发布：API `0.36.1` 会把请求数量裁剪到
 > 个人与全服剩余额度，HechaoEconomy `0.2.3` 只托管报价数量并把余量保留在出售槽。
