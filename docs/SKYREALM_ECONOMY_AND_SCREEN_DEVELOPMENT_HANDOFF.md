@@ -776,3 +776,33 @@ Screen 连续两次 `clean test build --no-daemon` 均为 `104/104`，JAR 均为
 `0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC`；
 Impeccable detector 与 `git diff --check` 均无发现。候选记录见
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md)。
+
+## 30. 2026-08-22 Screen 0.2.9 与客户端档案 1.0.28 Test 发布
+
+Screen `0.2.9` 在既有协议 `3` 上把“天域远征”从 14 项扩展为 15 项，新增服务端授权的
+随机传送。玩家可使用 `/rtp` 或快捷菜单；服务端只执行固定的原版
+`minecraft:spreadplayers`，按玩家当前维度的世界边界计算范围，最大 `5000` 格、边界内缩
+`32` 格，可用范围不足 `64` 格时拒绝。每名玩家冷却 `60` 秒，原版命令失败会释放冷却，
+玩家退出会清理状态。
+
+返回主城继续固定执行 `essentialsspawn:spawn`。新增 `/setcity` 与
+`/hechaomenu setcity`，要求 Minecraft 权限等级 `2`，并固定执行
+`essentialsspawn:setspawn`。使用 EssentialsXSpawn 命名空间命令，避免其他插件覆盖
+`/spawn` 或 `/setspawn`。部署过程没有执行 RTP 或设置主城，不改变玩家位置和现有主城。
+
+两轮 `clean test build --no-daemon` 均为 `109/109`。JAR 为 `978,031` 字节，SHA-256 为
+`295FD4C83962697EA7D0981B4DA40E7430669D9B72C902F1DEBC74C927E7361F`。owl5 的
+`activity-survival` 已在零玩家窗口完成保存、正常停止、完整离线备份、离线替换和 Arclight
+冷启动；完整备份为
+`E:\manual-backups\activity-survival-screen-0.2.9-20260822T150407Z`。最终任务为
+`Running`，PID `5056`，`127.0.0.1:25600` 单监听，唯一 Screen JAR 与发布摘要一致，
+`Done (4.273s)`，命令帮助树存在 `rtp` 和 `setcity`，Screen 专属 warning/error 为 `0`。
+
+客户端档案 `1.0.28` 仅把 Screen 0.2.8 替换为 0.2.9；`4,456` 个共同文件逐哈希不变，
+清单为 `2,025,526` 字节，SHA-256 为
+`753F98221520B2A7330775C983133A985CF5DB7436769F4A4A9ADF7C7ABE88FC`。OSS 首轮仅新增
+`978,031` 字节对象，第二轮上传 `0`，不可变覆盖为 `0`。后台 Test 已切到
+`1.0.28 / 100% / r21`，Gray 与 Production 未分配；真人 RTP、主城、15 项菜单和既有
+双账号交易回归验收完成前不得推进。正式记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md) 与
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md)。

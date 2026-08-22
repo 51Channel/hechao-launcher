@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-22T15:40:27.0566820Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "buildSourceCommit": "e4401c0253563606e9bdab71ec9b0e8915df2069",
+    "baselineProfileVersion": "1.0.27",
+    "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.28"
+  },
+  "screen": {
+    "version": "0.2.9",
+    "networkProtocol": "3",
+    "jarName": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.9.jar",
+    "bytes": 978031,
+    "sha256": "295FD4C83962697EA7D0981B4DA40E7430669D9B72C902F1DEBC74C927E7361F",
+    "testsPassed": 109,
+    "testsFailed": 0
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.28",
+    "publishedAtUtc": "2026-08-22T14:47:48.4883471Z",
+    "importedAtUtc": "2026-08-22T15:25:13.421Z",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "javaVersion": "21",
+    "manifestBytes": 2025526,
+    "manifestSha256": "753F98221520B2A7330775C983133A985CF5DB7436769F4A4A9ADF7C7ABE88FC",
+    "manifestProductionPath": "/var/lib/hechao-launcher-api/manifests/releases/skyrealm-industrial-neoforge-1.21.1/753f98221520b2a7330775c983133a985cf5db7436769f4a4a9adf7c7abe88fc.json",
+    "manifestMode": "0640",
+    "manifestOwner": "hechao-api:hechao-api",
+    "logicalFiles": 4457,
+    "logicalBytes": 1204259509,
+    "uniqueObjects": 4252,
+    "objectBytes": 1204250999,
+    "signatureKeyId": "release-2026-07-primary",
+    "isPaused": false,
+    "activeFlagChanged": false,
+    "previousImmutableVersionRetained": "1.0.27"
+  },
+  "delta": {
+    "commonFilesUnchanged": 4456,
+    "samePathContentChanges": 0,
+    "removedPath": "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.8.jar",
+    "addedPath": "mods/HechaoEconomyScreen-NeoForge-1.21.1-0.2.9.jar",
+    "removedObjectSha256": "0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC",
+    "addedObjectSha256": "295FD4C83962697EA7D0981B4DA40E7430669D9B72C902F1DEBC74C927E7361F"
+  },
+  "distribution": {
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true,
+    "firstPassUploadedObjects": 1,
+    "firstPassAlreadyPresentObjects": 4251,
+    "firstPassUploadedBytes": 978031,
+    "secondPassUploadedObjects": 0,
+    "secondPassAlreadyPresentObjects": 4252,
+    "secondPassUploadedBytes": 0,
+    "immutableObjectOverwrites": 0,
+    "importAuditId": 10401,
+    "channelAuditId": 10402,
+    "temporaryAdminSessionCreateAuditId": 10400,
+    "temporaryAdminSessionRevokeAuditId": 10403
+  },
+  "api": {
+    "checkedAtUtc": "2026-08-22T15:35:56.9674642Z",
+    "version": "0.36.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "mainPid": 525035,
+    "restartCount": 0,
+    "migrationsApplied": 34,
+    "migrationsExpected": 34
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.28",
+      "manifestSha256": "753F98221520B2A7330775C983133A985CF5DB7436769F4A4A9ADF7C7ABE88FC",
+      "rolloutPercentage": 100,
+      "revision": 21,
+      "updatedAtUtc": "2026-08-22T15:25:13.655Z"
+    },
+    "gray": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 0,
+      "revision": 1,
+      "updatedAtUtc": "2026-08-15T03:41:03.609Z"
+    },
+    "production": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 100,
+      "revision": 1,
+      "updatedAtUtc": "2026-08-15T03:41:03.609Z"
+    }
+  },
+  "serverCompatibility": {
+    "checkedAtUtc": "2026-08-22T15:39:05.3047286Z",
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "taskState": "Running",
+    "pid": 5056,
+    "port": 25600,
+    "listenerCount": 1,
+    "establishedBackendConnections": 0,
+    "onlinePlayers": 0,
+    "serverScreenVersion": "0.2.9",
+    "serverScreenSha256": "295FD4C83962697EA7D0981B4DA40E7430669D9B72C902F1DEBC74C927E7361F",
+    "compatibleWithProfileProtocol": true,
+    "coordinatedColdDeploymentPassed": true,
+    "fullBackupPath": "E:\\manual-backups\\activity-survival-screen-0.2.9-20260822T150407Z"
+  },
+  "remainingAcceptance": {
+    "authorizedLauncherManifestDownloadPassed": false,
+    "fifteenShortcutActionsPassed": false,
+    "realPlayerRtpPassed": false,
+    "realOwnerSetCityPassed": false,
+    "ordinaryPlayerSetCityDeniedPassed": false,
+    "returnCityToUpdatedLocationPassed": false,
+    "existingTransferTpaAndMarketRegressionPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  },
+  "rollback": {
+    "coordinatedClientAndServerRollbackRequired": true,
+    "testVersion": "1.0.27",
+    "previousManifestSha256": "E3D85D4068CD9DCD2882DF0B365D471B93CE82D6C1C98B89A6EA082DA5FC33B5",
+    "serverFullBackup": "E:\\manual-backups\\activity-survival-screen-0.2.9-20260822T150407Z",
+    "previousServerScreenVersion": "0.2.8",
+    "previousServerScreenSha256": "0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC",
+    "immutableVersionsToRetain": [
+      "1.0.26",
+      "1.0.27",
+      "1.0.28"
+    ]
+  }
+}

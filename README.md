@@ -1,13 +1,14 @@
 # 赫朝启动器
 
-> `2026-08-22` 天域远征 Screen `0.2.8` 已形成可复现 OSS 候选：快捷首页扩展为
-> 14 项交易、社交和生存操作，新增服务端授权的玩家转账与 TPA 表单。会话授权和拒绝
-> 同时绑定 UUID 与动作 ID，转账/传送只消费对应业务回执；网络协议升为 `3`，必须与
-> 服务端同步冷更新。`104/104` 测试和两轮一致 SHA-256 已通过；目标档案 `1.0.27` 已签名、
-> 验签、完成对象闭合并上传 OSS，尚未导入后台或切换通道。线上 Test 仍为
-> `1.0.26 / Screen 0.2.7`，Gray 与 Production 不动。详情见
-> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md)
-> 和 [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27_CANDIDATE.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.27_CANDIDATE.md)。
+> `2026-08-22` 天域远征 Screen `0.2.9` 已与客户端档案 `1.0.28` 成对发布到
+> `Test=100% / r21`。快捷首页现有 15 项操作，新增 `/rtp` 随机传送；RTP 按当前维度
+> 世界边界计算范围，最大 `5000` 格、边界保留 `32` 格并有 `60` 秒玩家冷却。返回主城
+> 继续由 EssentialsXSpawn 执行，服主可在目标位置使用 `/setcity` 更新主城，权限等级为
+> `2`。服务端已完成零玩家保存、完整离线备份和 Arclight 冷部署；`109/109` 测试、
+> 可复现构建、签名清单、OSS 对象闭合和生产 API 验收均通过。Gray 与 Production 仍未
+> 分配，真人 RTP、主城设置与 15 项菜单验收完成前不得推进。详情见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md)
+> 和 [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md)。
 
 > `2026-08-21` 官方回收部分额度修复已联动发布：API `0.36.1` 会把请求数量裁剪到
 > 个人与全服剩余额度，HechaoEconomy `0.2.3` 只托管报价数量并把余量保留在出售槽。
