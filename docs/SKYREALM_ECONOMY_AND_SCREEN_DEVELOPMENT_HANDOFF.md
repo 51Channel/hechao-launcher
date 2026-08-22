@@ -752,3 +752,27 @@ API `0.36.1-20260821T083823Z` 与 HechaoEconomy `0.2.3` 已在零玩家窗口协
 Production 指针均未改变；真人槽位余量目视验收仍待玩家上线。正式记录见
 [`API_RELEASE_0.36.1.md`](API_RELEASE_0.36.1.md) 和
 [`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.3.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.3.md)。
+
+## 29. 2026-08-22 Screen 0.2.8 与客户端档案 1.0.27 候选
+
+客户端 Screen `0.2.8` 将“天域远征”整理为 14 项快捷操作：个人账户、回收目录、玩家
+市场、市场上架、我的挂单、待领取、玩家转账、我的队伍、玩家传送、返回家园、返回主城、
+返回上次位置、我的领地和个人设置。新转账页在短确认窗口内要求二次点击，只发送固定
+`hechaoeconomy:pay <player> <amount> confirm`；新传送页只发送已核验的
+`skyrealmcore:tpa`、`tpahere`、`tpaccept` 和 `tpdeny`。
+
+客户端表单必须先收到服务端菜单授权。授权和拒绝回执绑定菜单 UUID 与动作 ID，内部回执
+不会显示到聊天；转账、TPA 回执按真实业务消息分类，等待态禁止重复提交和退出，超时进入
+结果未知并要求返回首页核对。`240 x 100` 紧凑布局保留至少 `16 px` 状态区。
+
+本轮把网络协议从 `2` 升为 `3`。线上 `activity-survival` 的服务端 Screen 仍为 `0.2.1`
+且正在使用协议 `2`，因此新旧版本不得混连。目标档案 `1.0.27` 可以先从 `1.0.26` 的
+不可变基线制作、签名和上传，但必须等服务端正常保存、停止、备份、离线替换为 `0.2.8`
+并冷启动验收后，才能把 Test 指针切到 `1.0.27`。不得热替换，也不得修改 Gray 或
+Production。
+
+Screen 连续两次 `clean test build --no-daemon` 均为 `104/104`，JAR 均为
+`971,287` 字节，SHA-256 均为
+`0050ED8611248B447F7E95205DB62AEFF1E7A5FE7D34ECCF74DEB8DBAC5D23AC`；
+Impeccable detector 与 `git diff --check` 均无发现。候选记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.8_CANDIDATE.md)。

@@ -27,6 +27,10 @@ final class ClientEconomyUiBridgeContractTest {
         assertTrue(source.contains("new EconomyMarketScreen("));
         assertTrue(source.contains("new EconomyMarketListingScreen("));
         assertTrue(source.contains("new TeamManagementScreen("));
+        assertTrue(source.contains("new PlayerPaymentScreen("));
+        assertTrue(source.contains("new PlayerTeleportScreen("));
+        assertTrue(source.contains("EconomyMessageProtocol.isMenuSessionReceipt(message)"));
+        assertTrue(source.contains("event.setCanceled(true)"));
     }
 
     @Test
@@ -39,5 +43,17 @@ final class ClientEconomyUiBridgeContractTest {
         assertTrue(source.contains("message.contains(\"菜单已失效\")"));
         assertTrue(source.contains("message.contains(\"操作太快\")"));
         assertTrue(source.contains("message.contains(\"当前功能不可用\")"));
+    }
+
+    @Test
+    void routesPaymentAndTeleportResponsesOnlyToTheirActiveScreens()
+            throws IOException {
+        String source = Files.readString(SOURCE);
+
+        assertTrue(source.contains("minecraft.screen instanceof PlayerPaymentScreen screen"));
+        assertTrue(source.contains("screen.acceptsSystemMessage(message)"));
+        assertTrue(source.contains("minecraft.screen instanceof PlayerTeleportScreen screen"));
+        assertTrue(source.contains("EconomyMessageProtocol.isMenuSessionReceipt(message)"));
+        assertTrue(source.contains("screen.acceptMessage(event.getMessage())"));
     }
 }

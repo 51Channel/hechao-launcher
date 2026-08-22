@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test;
 
 final class NavigationLayoutTest {
     @Test
-    void commonScaledResolutionUsesThreeByTwoShortcutGrid() {
-        var layout = NavigationLayout.calculate(512, 270, 6, 0);
+    void commonScaledResolutionShowsAllFourteenShortcutsWithoutPagination() {
+        var layout = NavigationLayout.calculate(512, 270, 14, 0);
 
         assertEquals(3, layout.columns());
-        assertEquals(2, layout.visibleRows());
+        assertEquals(5, layout.visibleRows());
         assertEquals(100, layout.buttonWidth());
         assertEquals(312, layout.gridWidth());
         assertFalse(layout.needsNavigation());
@@ -21,24 +21,24 @@ final class NavigationLayoutTest {
 
     @Test
     void mediumResolutionUsesCompactTwoColumnGrid() {
-        var layout = NavigationLayout.calculate(320, 180, 6, 0);
+        var layout = NavigationLayout.calculate(320, 180, 14, 0);
 
         assertEquals(2, layout.columns());
-        assertEquals(3, layout.visibleRows());
+        assertTrue(layout.visibleRows() >= 1);
         assertEquals(106, layout.buttonWidth());
-        assertFalse(layout.needsNavigation());
+        assertTrue(layout.needsNavigation());
     }
 
     @Test
     void retainsAllActionsThroughPaginationOnSmallWindows() {
-        var firstPage = NavigationLayout.calculate(240, 160, 6, 0);
-        var lastPage = NavigationLayout.calculate(240, 160, 6, 99);
+        var firstPage = NavigationLayout.calculate(240, 160, 14, 0);
+        var lastPage = NavigationLayout.calculate(240, 160, 14, 99);
 
         assertEquals(1, firstPage.columns());
         assertTrue(firstPage.needsNavigation());
         assertTrue(firstPage.visibleRows() >= 1);
         assertEquals(firstPage.maximumScrollRow(), lastPage.scrollRow());
-        assertEquals(6, firstPage.totalRows());
+        assertEquals(14, firstPage.totalRows());
     }
 
     @Test

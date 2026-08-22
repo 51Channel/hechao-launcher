@@ -22,6 +22,12 @@ final class MenuActionsTest {
         assertEquals(
                 "skyrealmcore:team list",
                 MenuActions.all().get("team").command());
+        assertEquals(
+                "essentialsspawn:spawn",
+                MenuActions.all().get("spawn").command());
+        assertEquals(
+                "griefprevention:claimslist",
+                MenuActions.all().get("claims").command());
     }
 
     @Test
@@ -37,8 +43,35 @@ final class MenuActionsTest {
     void commonThreeColumnLayoutGroupsPrimaryDestinationsBeforeShortcuts() {
         assertEquals(
                 java.util.List.of(
-                        "balance", "shop", "market", "sell", "team", "settings"),
+                        "balance",
+                        "shop",
+                        "market",
+                        "sell",
+                        "market_mine",
+                        "market_claim",
+                        "payment",
+                        "team",
+                        "teleport",
+                        "home",
+                        "spawn",
+                        "back",
+                        "claims",
+                        "settings"),
                 MenuActions.all().keySet().stream().toList());
+        assertTrue(MenuActions.all().size() <= 16);
+    }
+
+    @Test
+    void formActionsConsumeAuthorizationWithoutDirectServerExecution() {
+        assertEquals(
+                MenuActions.ExecutionMode.CLIENT_SCREEN,
+                MenuActions.all().get("payment").executionMode());
+        assertEquals(
+                MenuActions.ExecutionMode.CLIENT_SCREEN,
+                MenuActions.all().get("teleport").executionMode());
+        assertEquals(
+                MenuActions.ExecutionMode.SERVER,
+                MenuActions.all().get("market").executionMode());
     }
 
     @Test
@@ -115,7 +148,11 @@ final class MenuActionsTest {
         assertTrue(source.contains(".filter(entry -> isCommandUsable(player, entry.getValue().command()))"));
         assertFalse(source.contains("command().startsWith(\"hechaoeconomy:\")"));
         assertTrue(source.contains("Set.copyOf(actionIds)"));
+        assertTrue(source.contains("event.registrar(\"3\")"));
         assertTrue(source.contains("performPrefixedCommand"));
+        assertTrue(source.contains("action.executionMode() == MenuActions.ExecutionMode.SERVER"));
+        assertTrue(source.contains("EconomyMessageProtocol.authorization("));
+        assertTrue(source.contains("payload.sessionId()"));
         assertTrue(source.contains("case RATE_LIMITED"));
         assertTrue(source.contains("case ACTION_NOT_ALLOWED"));
         assertTrue(source.contains("[赫朝经济] 菜单已失效，请重新打开。"));

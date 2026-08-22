@@ -27,7 +27,9 @@ final class SinglePassBackgroundScreenTest {
                 "EconomyCatalogScreen.java",
                 "EconomyMarketScreen.java",
                 "EconomyMarketDecisionScreen.java",
-                "HechaoNavigationScreen.java")) {
+                "HechaoNavigationScreen.java",
+                "PlayerPaymentScreen.java",
+                "PlayerTeleportScreen.java")) {
             var source = readSource(fileName);
             assertTrue(source.contains("extends SinglePassBackgroundScreen"));
             assertTrue(source.contains("protected void renderContent("));

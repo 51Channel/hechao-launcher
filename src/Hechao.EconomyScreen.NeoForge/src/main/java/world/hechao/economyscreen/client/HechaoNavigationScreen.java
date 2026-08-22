@@ -146,8 +146,17 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
         actionSubmitted = true;
         PacketDistributor.sendToServer(
                 new MenuActionPayload(payload.sessionId(), action.actionId));
+        if (action.definition.executionMode() == MenuActions.ExecutionMode.CLIENT_SCREEN) {
+            ClientEconomyUiBridge.openWaiting(
+                    payload.sessionId(),
+                    action.actionId,
+                    action.definition.label(),
+                    action.definition.feedback());
+            return;
+        }
         if (ClientEconomyUiBridge.opensEmbeddedScreen(action.actionId)) {
             ClientEconomyUiBridge.openWaiting(
+                    payload.sessionId(),
                     action.actionId,
                     action.definition.label(),
                     action.definition.feedback());
@@ -278,8 +287,16 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
             case "shop" -> new ItemStack(Items.HOPPER);
             case "sell" -> new ItemStack(Items.EMERALD);
             case "market" -> new ItemStack(Items.CHEST);
+            case "market_mine" -> new ItemStack(Items.BARREL);
+            case "market_claim" -> new ItemStack(Items.ENDER_CHEST);
+            case "payment" -> new ItemStack(Items.GOLD_NUGGET);
             case "settings" -> new ItemStack(Items.COMPARATOR);
             case "team" -> new ItemStack(Items.PLAYER_HEAD);
+            case "teleport" -> new ItemStack(Items.ENDER_PEARL);
+            case "home" -> new ItemStack(Items.RED_BED);
+            case "spawn" -> new ItemStack(Items.COMPASS);
+            case "back" -> new ItemStack(Items.CLOCK);
+            case "claims" -> new ItemStack(Items.GOLDEN_SHOVEL);
             default -> ItemStack.EMPTY;
         };
     }

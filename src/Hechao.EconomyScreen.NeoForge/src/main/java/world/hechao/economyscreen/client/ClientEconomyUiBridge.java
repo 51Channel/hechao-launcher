@@ -1,6 +1,7 @@
 package world.hechao.economyscreen.client;
 
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -8,9 +9,10 @@ import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import world.hechao.economyscreen.EconomyMessageProtocol;
 
 public final class ClientEconomyUiBridge {
-    static final String ECONOMY_PREFIX = "[赫朝经济]";
+    static final String ECONOMY_PREFIX = EconomyMessageProtocol.PREFIX;
     static final String SETTINGS_TITLE = "天域设置";
     static final String CATALOG_TITLE = "赫朝回收目录";
     static final String SELL_TITLE = "赫朝物品回收";
@@ -25,6 +27,8 @@ public final class ClientEconomyUiBridge {
             "shop",
             "sell",
             "market",
+            "market_mine",
+            "market_claim",
             "team");
 
     private ClientEconomyUiBridge() {
@@ -40,11 +44,24 @@ public final class ClientEconomyUiBridge {
     }
 
     static void openWaiting(
+            UUID sessionId,
             String actionId,
             String title,
             String loadingMessage) {
         if ("team".equals(actionId)) {
             Minecraft.getInstance().setScreen(new TeamManagementScreen(
+                    Component.literal(title)));
+            return;
+        }
+        if ("payment".equals(actionId)) {
+            Minecraft.getInstance().setScreen(new PlayerPaymentScreen(
+                    sessionId,
+                    Component.literal(title)));
+            return;
+        }
+        if ("teleport".equals(actionId)) {
+            Minecraft.getInstance().setScreen(new PlayerTeleportScreen(
+                    sessionId,
                     Component.literal(title)));
             return;
         }
@@ -89,6 +106,26 @@ public final class ClientEconomyUiBridge {
     private static void onSystemMessage(ClientChatReceivedEvent.System event) {
         var minecraft = Minecraft.getInstance();
         String message = event.getMessage().getString();
+        if (minecraft.screen instanceof PlayerPaymentScreen screen
+                && screen.acceptsSystemMessage(message)) {
+            screen.acceptMessage(event.getMessage());
+            if (EconomyMessageProtocol.isMenuSessionReceipt(message)) {
+                event.setCanceled(true);
+            }
+            return;
+        }
+        if (minecraft.screen instanceof PlayerTeleportScreen screen
+                && screen.acceptsSystemMessage(message)) {
+            screen.acceptMessage(event.getMessage());
+            if (EconomyMessageProtocol.isMenuSessionReceipt(message)) {
+                event.setCanceled(true);
+            }
+            return;
+        }
+        if (EconomyMessageProtocol.isMenuSessionReceipt(message)) {
+            event.setCanceled(true);
+            return;
+        }
         if (!message.contains(ECONOMY_PREFIX)) {
             if (minecraft.screen instanceof TeamManagementScreen screen
                     && screen.acceptsSystemMessage(message)) {

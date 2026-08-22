@@ -154,6 +154,19 @@ final class IndustrialUiTheme {
         renderCornerBracket(graphics, left + width - 6, top + 7, -1);
     }
 
+    static void renderCompactStatusBay(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            int accent) {
+        graphics.fill(left + 1, top + 1, left + width + 1, top + height + 1, 0x60000000);
+        graphics.fill(left, top, left + width, top + height, 0xF0181D1F);
+        graphics.renderOutline(left, top, width, height, 0xFF596467);
+        graphics.fill(left + 2, top + 2, left + 4, top + height - 2, accent);
+    }
+
     static void renderIconDock(
             GuiGraphics graphics,
             int left,

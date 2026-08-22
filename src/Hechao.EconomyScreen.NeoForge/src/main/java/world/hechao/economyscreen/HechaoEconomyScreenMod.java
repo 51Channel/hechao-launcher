@@ -45,7 +45,7 @@ public final class HechaoEconomyScreenMod {
     }
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("2");
+        var registrar = event.registrar("3");
         registrar.playToClient(
                 OpenMenuPayload.TYPE,
                 OpenMenuPayload.STREAM_CODEC,
@@ -118,22 +118,38 @@ public final class HechaoEconomyScreenMod {
                     payload.sessionId(),
                     payload.actionId(),
                     Instant.now());
+            var action = ACTIONS.get(payload.actionId());
             if (validation != MenuSessionRegistry.Validation.ALLOWED) {
                 LOGGER.warn(
                         "Rejected menu action {} from player {}: {}",
                         payload.actionId(),
                         player.getUUID(),
                         validation);
-                player.sendSystemMessage(Component.literal(rejectionMessage(validation)));
+                String rejection = rejectionMessage(validation);
+                if (action != null
+                        && action.executionMode()
+                                == MenuActions.ExecutionMode.CLIENT_SCREEN) {
+                    rejection = EconomyMessageProtocol.rejection(
+                            payload.sessionId(),
+                            payload.actionId(),
+                            rejection);
+                }
+                player.sendSystemMessage(Component.literal(rejection));
                 return;
             }
-            var action = ACTIONS.get(payload.actionId());
             if (action == null) {
                 return;
             }
-            player.getServer().getCommands().performPrefixedCommand(
-                    player.createCommandSourceStack(),
-                    action.command());
+            if (action.executionMode() == MenuActions.ExecutionMode.SERVER) {
+                player.getServer().getCommands().performPrefixedCommand(
+                        player.createCommandSourceStack(),
+                        action.command());
+            } else {
+                player.sendSystemMessage(Component.literal(
+                        EconomyMessageProtocol.authorization(
+                                payload.sessionId(),
+                                payload.actionId())));
+            }
         });
     }
 
