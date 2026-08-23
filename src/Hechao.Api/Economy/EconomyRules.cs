@@ -76,6 +76,32 @@ public static partial class EconomyRules
         request.ActorUuid != Guid.Empty &&
         IsValidActorName(request.ActorName);
 
+    public static bool IsValidShopProductMutation(
+        EconomyShopProductUpsertRequest? request) =>
+        request is not null &&
+        request.ActorUuid != Guid.Empty &&
+        IsValidActorName(request.ActorName) &&
+        IsCurrencyAmount(request.ShopUnitPrice);
+
+    public static bool IsValidShopProductDisable(
+        EconomyShopProductDisableRequest? request) =>
+        request is not null &&
+        request.ActorUuid != Guid.Empty &&
+        IsValidActorName(request.ActorName);
+
+    public static bool IsValidShopPurchase(EconomyShopPurchaseRequest? request) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.PlayerUuid != Guid.Empty &&
+        IsValidMinecraftItemId(request.ItemId) &&
+        request.Quantity is >= 1 and <= 2304;
+
+    public static bool IsValidShopClaim(EconomyShopClaimRequest? request) =>
+        request is not null &&
+        IsValidIdempotencyKey(request.IdempotencyKey) &&
+        request.DeliveryId != Guid.Empty &&
+        request.PlayerUuid != Guid.Empty;
+
     public static bool IsValidMarketListing(
         EconomyMarketCreateListingRequest? request,
         decimal maximumPrice) =>

@@ -30,6 +30,8 @@ public sealed class EconomyRulesTests
 
         Assert.Contains("MapPut(\"/products\"", source, StringComparison.Ordinal);
         Assert.Contains("MapPost(\"/products/disable\"", source, StringComparison.Ordinal);
+        Assert.Contains("MapPut(\"/products/shop\"", source, StringComparison.Ordinal);
+        Assert.Contains("MapPost(\"/products/shop/disable\"", source, StringComparison.Ordinal);
         Assert.Contains("MapPut(\"/products/{itemId}\"", source, StringComparison.Ordinal);
         Assert.Contains("MapPost(\"/products/{itemId}/disable\"", source, StringComparison.Ordinal);
     }
@@ -110,6 +112,40 @@ public sealed class EconomyRulesTests
             valid with { ItemId = "minecraft:Iron_Ingot" }, 1_000m));
         Assert.False(EconomyRules.IsValidMarketListing(
             valid with { Quantity = 0 }, 1_000m));
+    }
+
+    [Fact]
+    public void ShopPurchase_RequiresSafeQuantityAndIdempotency()
+    {
+        var valid = new EconomyShopPurchaseRequest(
+            "shop-buy:12345678",
+            Guid.NewGuid(),
+            "minecraft:iron_ingot",
+            64);
+
+        Assert.True(EconomyRules.IsValidShopPurchase(valid));
+        Assert.False(EconomyRules.IsValidShopPurchase(valid with { Quantity = 0 }));
+        Assert.False(EconomyRules.IsValidShopPurchase(
+            valid with { ItemId = "minecraft:Iron_Ingot" }));
+        Assert.False(EconomyRules.IsValidShopPurchase(
+            valid with { IdempotencyKey = "short" }));
+    }
+
+    [Fact]
+    public void ShopConfiguration_RequiresAnActorAndCurrencyPrecision()
+    {
+        var valid = new EconomyShopProductUpsertRequest(
+            8.00m,
+            Guid.NewGuid(),
+            "integration-admin");
+
+        Assert.True(EconomyRules.IsValidShopProductMutation(valid));
+        Assert.False(EconomyRules.IsValidShopProductMutation(
+            valid with { ShopUnitPrice = 8.001m }));
+        Assert.False(EconomyRules.IsValidShopProductMutation(
+            valid with { ActorUuid = Guid.Empty }));
+        Assert.False(EconomyRules.IsValidShopProductMutation(
+            valid with { ActorName = " " }));
     }
 
     [Fact]

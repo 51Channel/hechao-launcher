@@ -32,10 +32,18 @@ public final class MenuActions {
         actions.put(
                 "shop",
                 new Definition(
-                        "回收目录",
-                        "查看当前可出售物品",
-                        "正在打开回收目录...",
+                        "服务器商城",
+                        "用金币购买基础物资",
+                        "正在打开服务器商城...",
                         "hechaoeconomy:shop",
+                        ExecutionMode.SERVER));
+        actions.put(
+                "prices",
+                new Definition(
+                        "回收目录",
+                        "查看服务器收购物品和回收价格",
+                        "正在打开回收目录...",
+                        "hechaoeconomy:prices",
                         ExecutionMode.SERVER));
         actions.put(
                 "market",

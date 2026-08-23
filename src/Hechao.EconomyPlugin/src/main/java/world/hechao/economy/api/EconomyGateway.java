@@ -34,6 +34,30 @@ public interface EconomyGateway {
     void disableProduct(String itemId, UUID actorUuid, String actorName)
             throws EconomyGatewayException;
 
+    List<Product> shopProducts() throws EconomyGatewayException;
+
+    Product upsertShopProduct(
+            String itemId,
+            BigDecimal shopUnitPrice,
+            UUID actorUuid,
+            String actorName) throws EconomyGatewayException;
+
+    void disableShopProduct(String itemId, UUID actorUuid, String actorName)
+            throws EconomyGatewayException;
+
+    ShopPurchase shopPurchase(
+            String idempotencyKey,
+            UUID playerUuid,
+            String itemId,
+            int quantity) throws EconomyGatewayException;
+
+    List<ShopDelivery> shopDeliveries(UUID playerUuid) throws EconomyGatewayException;
+
+    ShopClaim shopClaim(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) throws EconomyGatewayException;
+
     default List<MarketListing> marketListings(String query)
             throws EconomyGatewayException {
         return marketListings(query, MarketSort.RECENTLY_LISTED);
@@ -140,7 +164,42 @@ public interface EconomyGateway {
             BigDecimal unitPrice,
             int personalDailyLimit,
             int serverDailyLimit,
-            boolean enabled) {
+            boolean enabled,
+            BigDecimal shopUnitPrice) {
+    }
+
+    record ShopPurchase(
+            UUID operationId,
+            String status,
+            UUID playerUuid,
+            UUID deliveryId,
+            String itemId,
+            int quantity,
+            BigDecimal unitPrice,
+            BigDecimal totalAmount,
+            BigDecimal balance,
+            String failureCode) {
+    }
+
+    record ShopDelivery(
+            UUID deliveryId,
+            UUID playerUuid,
+            String serverId,
+            String itemId,
+            int quantity,
+            BigDecimal unitPrice,
+            BigDecimal totalAmount,
+            String status,
+            java.time.Instant createdAt) {
+    }
+
+    record ShopClaim(
+            UUID operationId,
+            String status,
+            UUID deliveryId,
+            String itemId,
+            int quantity,
+            String failureCode) {
     }
 
     record MarketListing(

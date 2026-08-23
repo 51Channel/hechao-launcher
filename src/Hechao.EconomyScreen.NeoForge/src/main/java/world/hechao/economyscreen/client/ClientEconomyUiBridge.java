@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.world.inventory.ChestMenu;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -14,6 +15,7 @@ import world.hechao.economyscreen.EconomyMessageProtocol;
 public final class ClientEconomyUiBridge {
     static final String ECONOMY_PREFIX = EconomyMessageProtocol.PREFIX;
     static final String SETTINGS_TITLE = "天域设置";
+    static final String SHOP_TITLE = "赫朝官方商城";
     static final String CATALOG_TITLE = "赫朝回收目录";
     static final String SELL_TITLE = "赫朝物品回收";
     static final String MARKET_TITLE = "赫朝玩家市场";
@@ -22,6 +24,7 @@ public final class ClientEconomyUiBridge {
     static final String MARKET_LISTING_TITLE = "赫朝市场上架";
     static final String MARKET_PURCHASE_TITLE = "赫朝确认购买";
     static final String MARKET_CANCEL_TITLE = "赫朝确认下架";
+    static final String SHOP_PURCHASE_TITLE = "赫朝商城确认购买";
     private static final Set<String> EMBEDDED_ACTIONS = Set.of(
             "balance",
             "shop",
@@ -152,8 +155,11 @@ public final class ClientEconomyUiBridge {
                 && SETTINGS_TITLE.equals(next.getTitle().getString())) {
             event.setNewScreen(new SkyrealmSettingsScreen(container.getMenu()));
         } else if (next instanceof ContainerScreen container
+                && SHOP_TITLE.equals(next.getTitle().getString())) {
+            event.setNewScreen(new EconomyCatalogScreen(container.getMenu(), true));
+        } else if (next instanceof ContainerScreen container
                 && CATALOG_TITLE.equals(next.getTitle().getString())) {
-            event.setNewScreen(new EconomyCatalogScreen(container.getMenu()));
+            event.setNewScreen(new EconomyCatalogScreen(container.getMenu(), false));
         } else if (next instanceof ContainerScreen container
                 && SELL_TITLE.equals(next.getTitle().getString())) {
             var player = Minecraft.getInstance().player;
@@ -180,6 +186,9 @@ public final class ClientEconomyUiBridge {
             event.setNewScreen(new EconomyMarketDecisionScreen(
                     container.getMenu(),
                     next.getTitle().getString()));
+        } else if (next instanceof ContainerScreen container
+                && SHOP_PURCHASE_TITLE.equals(next.getTitle().getString())) {
+            event.setNewScreen(new EconomyShopPurchaseScreen(container.getMenu()));
         }
     }
 
@@ -198,5 +207,19 @@ public final class ClientEconomyUiBridge {
         return message.contains("菜单已失效")
                 || message.contains("操作太快")
                 || message.contains("当前功能不可用");
+    }
+
+    static boolean requestShopProduct(ChestMenu menu, int slot) {
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.gameMode == null) {
+            return false;
+        }
+        minecraft.gameMode.handleInventoryMouseClick(
+                menu.containerId,
+                slot,
+                0,
+                net.minecraft.world.inventory.ClickType.PICKUP,
+                minecraft.player);
+        return true;
     }
 }

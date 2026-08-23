@@ -23,6 +23,16 @@ final class ProductAdminPromptTest {
     }
 
     @Test
+    void exposesSeparateOfficialShopConfigurationActions() {
+        assertEquals(
+                "/hechaoeconomy:heco product shop ",
+                ProductAdminPrompt.shopPriceSuggestionCommand());
+        assertEquals(
+                "/hechaoeconomy:heco product shop remove",
+                ProductAdminPrompt.shopDisableCommand());
+    }
+
+    @Test
     void doesNotLinkAdventureClassesMissingFromArclight() throws IOException {
         try (var stream = ProductAdminPrompt.class.getResourceAsStream("ProductAdminPrompt.class")) {
             var bytecode = new String(stream.readAllBytes(), StandardCharsets.ISO_8859_1);

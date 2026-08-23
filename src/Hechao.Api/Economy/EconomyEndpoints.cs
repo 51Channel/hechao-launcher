@@ -14,10 +14,19 @@ public static class EconomyEndpoints
         economy.MapPost("/sales/quotes", CreateQuoteAsync);
         economy.MapPost("/sales/commit", CommitSaleAsync);
         economy.MapGet("/products", ListProductsAsync);
+        economy.MapGet("/shop/products", ListShopProductsAsync);
+        economy.MapPost("/shop/purchases", PurchaseShopProductAsync);
+        economy.MapGet("/shop/deliveries/{playerUuid:guid}", ListShopDeliveriesAsync);
+        economy.MapPost("/shop/deliveries/claim", ClaimShopDeliveryAsync);
         economy.MapPut("/products", UpsertProductAsync);
         economy.MapPost("/products/disable", DisableProductAsync);
+        // Keep item IDs in the query string for clients that may contain a slash in the path.
+        economy.MapPut("/products/shop", UpsertShopProductAsync);
+        economy.MapPost("/products/shop/disable", DisableShopProductAsync);
         economy.MapPut("/products/{itemId}", UpsertProductAsync);
         economy.MapPost("/products/{itemId}/disable", DisableProductAsync);
+        economy.MapPut("/products/{itemId}/shop", UpsertShopProductAsync);
+        economy.MapPost("/products/{itemId}/shop/disable", DisableShopProductAsync);
         economy.MapGet("/market/listings", ListMarketListingsAsync);
         economy.MapGet("/market/listings/mine/{playerUuid:guid}", ListOwnMarketListingsAsync);
         economy.MapPost("/market/listings", CreateMarketListingAsync);
@@ -387,6 +396,98 @@ public static class EconomyEndpoints
             await repository.ListProductsAsync(includeDisabled, cancellationToken));
     }
 
+    private static async Task<IResult> ListShopProductsAsync(
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out _);
+        return authentication ?? Results.Ok(
+            await repository.ListShopProductsAsync(cancellationToken));
+    }
+
+    private static async Task<IResult> PurchaseShopProductAsync(
+        EconomyShopPurchaseRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidShopPurchase(request))
+        {
+            return Validation("request", "商城购买参数无效。");
+        }
+
+        try
+        {
+            var response = await repository.PurchaseShopProductAsync(
+                serverId!,
+                request with { ItemId = request.ItemId.Trim() },
+                cancellationToken);
+            return MarketWriteResult(response.Status, response);
+        }
+        catch (EconomyIdempotencyConflictException)
+        {
+            return IdempotencyConflict();
+        }
+    }
+
+    private static async Task<IResult> ListShopDeliveriesAsync(
+        Guid playerUuid,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        return playerUuid == Guid.Empty
+            ? Validation("playerUuid", "玩家 UUID 无效。")
+            : Results.Ok(await repository.ListShopDeliveriesAsync(
+                serverId!, playerUuid, cancellationToken));
+    }
+
+    private static async Task<IResult> ClaimShopDeliveryAsync(
+        EconomyShopClaimRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out var serverId);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidShopClaim(request))
+        {
+            return Validation("request", "商城待领取参数无效。");
+        }
+
+        try
+        {
+            var response = await repository.ClaimShopDeliveryAsync(
+                serverId!, request, cancellationToken);
+            return MarketWriteResult(response.Status, response);
+        }
+        catch (EconomyIdempotencyConflictException)
+        {
+            return IdempotencyConflict();
+        }
+    }
+
     private static async Task<IResult> UpsertProductAsync(
         string itemId,
         EconomyProductUpsertRequest request,
@@ -407,10 +508,21 @@ public static class EconomyEndpoints
             return Validation("request", "商品配置无效，请检查物品 ID、价格和额度。");
         }
 
-        return Results.Ok(await repository.UpsertProductAsync(
-            itemId,
-            request with { ActorName = request.ActorName.Trim() },
-            cancellationToken));
+        try
+        {
+            return Results.Ok(await repository.UpsertProductAsync(
+                itemId,
+                request with { ActorName = request.ActorName.Trim() },
+                cancellationToken));
+        }
+        catch (EconomyBuybackPriceConflictException)
+        {
+            return Results.Conflict(new
+            {
+                code = "BUYBACK_PRICE_NOT_BELOW_SHOP",
+                message = "新的回收价必须低于当前商城购买价，请先调整或暂停商城售价。"
+            });
+        }
     }
 
     private static async Task<IResult> DisableProductAsync(
@@ -434,6 +546,73 @@ public static class EconomyEndpoints
         }
 
         var status = await repository.DisableProductAsync(
+            itemId,
+            request with { ActorName = request.ActorName.Trim() },
+            cancellationToken);
+        return status == EconomyProductMutationStatus.Applied
+            ? Results.NoContent()
+            : Results.NotFound();
+    }
+
+    private static async Task<IResult> UpsertShopProductAsync(
+        string itemId,
+        EconomyShopProductUpsertRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out _);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidMinecraftItemId(itemId) ||
+            !EconomyRules.IsValidShopProductMutation(request))
+        {
+            return Validation("request", "商城商品配置无效。");
+        }
+
+        try
+        {
+            var product = await repository.UpsertShopProductAsync(
+                itemId,
+                request with { ActorName = request.ActorName.Trim() },
+                cancellationToken);
+            return product is null ? Results.NotFound() : Results.Ok(product);
+        }
+        catch (EconomyShopPriceConflictException)
+        {
+            return Results.Conflict(new
+            {
+                code = "SHOP_PRICE_NOT_ABOVE_BUYBACK",
+                message = "商城购买价必须高于当前回收价。"
+            });
+        }
+    }
+
+    private static async Task<IResult> DisableShopProductAsync(
+        string itemId,
+        EconomyShopProductDisableRequest request,
+        HttpContext context,
+        EconomyServiceTokenValidator tokenValidator,
+        EconomyRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var authentication = Authenticate(context, tokenValidator, out _);
+        if (authentication is not null)
+        {
+            return authentication;
+        }
+
+        if (!EconomyRules.IsValidMinecraftItemId(itemId) ||
+            !EconomyRules.IsValidShopProductDisable(request))
+        {
+            return Validation("request", "商城商品停用参数无效。");
+        }
+
+        var status = await repository.DisableShopProductAsync(
             itemId,
             request with { ActorName = request.ActorName.Trim() },
             cancellationToken);

@@ -3,8 +3,11 @@ package world.hechao.economy.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +17,22 @@ final class HttpEconomyGatewayTest {
         assertEquals(
                 "example_mod%3Aparts%2Fbrass_sheet",
                 HttpEconomyGateway.queryValue("example_mod:parts/brass_sheet"));
+    }
+
+    @Test
+    void shopAdminRoutesKeepItemIdsInTheQueryString() throws Exception {
+        String source = Files.readString(Path.of(
+                "src",
+                "main",
+                "java",
+                "world",
+                "hechao",
+                "economy",
+                "api",
+                "HttpEconomyGateway.java"));
+
+        assertTrue(source.contains("/v1/internal/economy/products/shop?itemId="));
+        assertTrue(source.contains("/v1/internal/economy/products/shop/disable?itemId="));
     }
 
     @Test

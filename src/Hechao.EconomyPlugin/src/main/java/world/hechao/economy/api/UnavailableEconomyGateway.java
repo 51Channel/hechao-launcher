@@ -62,6 +62,49 @@ public final class UnavailableEconomyGateway implements EconomyGateway {
     }
 
     @Override
+    public List<Product> shopProducts() throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public Product upsertShopProduct(
+            String itemId,
+            BigDecimal shopUnitPrice,
+            UUID actorUuid,
+            String actorName) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public void disableShopProduct(String itemId, UUID actorUuid, String actorName)
+            throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public ShopPurchase shopPurchase(
+            String idempotencyKey,
+            UUID playerUuid,
+            String itemId,
+            int quantity) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public List<ShopDelivery> shopDeliveries(UUID playerUuid)
+            throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
+    public ShopClaim shopClaim(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) throws EconomyGatewayException {
+        throw unavailable();
+    }
+
+    @Override
     public List<MarketListing> marketListings(
             String query,
             MarketSort sort) throws EconomyGatewayException {

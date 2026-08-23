@@ -1,6 +1,7 @@
 package world.hechao.economyscreen.client;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +32,17 @@ final class ClientEconomyUiBridgeContractTest {
         assertTrue(source.contains("new PlayerTeleportScreen("));
         assertTrue(source.contains("EconomyMessageProtocol.isMenuSessionReceipt(message)"));
         assertTrue(source.contains("event.setCanceled(true)"));
+    }
+
+    @Test
+    void keepsOfficialShopPurchaseDistinctFromPlayerMarketPurchase() throws IOException {
+        assertNotEquals(
+                ClientEconomyUiBridge.MARKET_PURCHASE_TITLE,
+                ClientEconomyUiBridge.SHOP_PURCHASE_TITLE);
+
+        String source = Files.readString(SOURCE);
+        assertTrue(source.contains("new EconomyShopPurchaseScreen(container.getMenu())"));
+        assertTrue(source.contains("SHOP_PURCHASE_TITLE.equals(next.getTitle().getString())"));
     }
 
     @Test

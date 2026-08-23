@@ -31,7 +31,8 @@ public sealed class EconomyPostgresIntegrationTests
                 "Hechao.Api.Database.Migrations.031_economy_ledger.sql",
                 "Hechao.Api.Database.Migrations.032_economy_dashboard_indexes.sql",
                 "Hechao.Api.Database.Migrations.033_economy_item_history_index.sql",
-                "Hechao.Api.Database.Migrations.034_economy_player_market.sql"
+                "Hechao.Api.Database.Migrations.034_economy_player_market.sql",
+                "Hechao.Api.Database.Migrations.035_economy_server_shop.sql"
             })
             {
                 await using var stream = typeof(DatabaseMigrator).Assembly
@@ -288,6 +289,85 @@ public sealed class EconomyPostgresIntegrationTests
             "minecraft:missing_item",
             null,
             CancellationToken.None));
+
+        var shopProduct = await repository.UpsertShopProductAsync(
+            modded.ItemId,
+            new EconomyShopProductUpsertRequest(20.00m, actorUuid, "integration-admin"),
+            CancellationToken.None);
+        Assert.Equal(20.00m, shopProduct!.ShopUnitPrice);
+        await Assert.ThrowsAsync<EconomyBuybackPriceConflictException>(() =>
+            repository.UpsertProductAsync(
+                modded.ItemId,
+                new EconomyProductUpsertRequest(
+                    20.00m,
+                    100,
+                    1000,
+                    actorUuid,
+                    "integration-admin"),
+                CancellationToken.None));
+        await Assert.ThrowsAsync<EconomyShopPriceConflictException>(() =>
+            repository.UpsertShopProductAsync(
+                modded.ItemId,
+                new EconomyShopProductUpsertRequest(7.00m, actorUuid, "integration-admin"),
+                CancellationToken.None));
+        Assert.Single(await repository.ListShopProductsAsync(CancellationToken.None));
+        var shopRequest = new EconomyShopPurchaseRequest(
+            "shop-buy:integration-0001",
+            playerUuid,
+            modded.ItemId,
+            1);
+        var shopPurchase = await repository.PurchaseShopProductAsync(
+            "activity-survival",
+            shopRequest,
+            CancellationToken.None);
+        var repeatedShopPurchase = await repository.PurchaseShopProductAsync(
+            "activity-survival",
+            shopRequest,
+            CancellationToken.None);
+        Assert.Equal("Applied", shopPurchase.Status);
+        Assert.Equal(shopPurchase.OperationId, repeatedShopPurchase.OperationId);
+        Assert.Equal(17.50m, shopPurchase.Balance);
+        Assert.NotNull(shopPurchase.DeliveryId);
+        var shopDeliveries = await repository.ListShopDeliveriesAsync(
+            "activity-survival",
+            playerUuid,
+            CancellationToken.None);
+        Assert.Single(shopDeliveries);
+        var shopClaimRequest = new EconomyShopClaimRequest(
+            "shop-claim:integration-0001",
+            shopPurchase.DeliveryId!.Value,
+            playerUuid);
+        var shopClaim = await repository.ClaimShopDeliveryAsync(
+            "activity-survival",
+            shopClaimRequest,
+            CancellationToken.None);
+        var repeatedShopClaim = await repository.ClaimShopDeliveryAsync(
+            "activity-survival",
+            shopClaimRequest,
+            CancellationToken.None);
+        Assert.Equal("Applied", shopClaim.Status);
+        Assert.Equal(shopClaim.OperationId, repeatedShopClaim.OperationId);
+        Assert.Empty(await repository.ListShopDeliveriesAsync(
+            "activity-survival",
+            playerUuid,
+            CancellationToken.None));
+        Assert.Empty(await repository.ListShopDeliveriesAsync(
+            "another-server",
+            playerUuid,
+            CancellationToken.None));
+
+        var insufficientShopPurchase = await repository.PurchaseShopProductAsync(
+            "activity-survival",
+            new EconomyShopPurchaseRequest(
+                "shop-buy:integration-insufficient",
+                playerUuid,
+                modded.ItemId,
+                1),
+            CancellationToken.None);
+        Assert.Equal("Rejected", insufficientShopPurchase.Status);
+        Assert.Equal("INSUFFICIENT_FUNDS", insufficientShopPurchase.FailureCode);
+        Assert.Equal(17.50m, insufficientShopPurchase.Balance);
+        Assert.Null(insufficientShopPurchase.DeliveryId);
 
         var listingRequest = new EconomyMarketCreateListingRequest(
             "market-list:integration-0001",

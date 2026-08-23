@@ -46,7 +46,12 @@ final class EconomyMarketSearch {
         }
 
         String catalogCommand() {
-            return "hechaoeconomy:shop search " + encodedQuery + " " + encodedItemIds;
+            return catalogCommand("shop");
+        }
+
+        String catalogCommand(String catalog) {
+            return "hechaoeconomy:" + catalog + " search "
+                    + encodedQuery + " " + encodedItemIds;
         }
     }
 }

@@ -26,8 +26,12 @@ commands:
     usage: /sell
     permission: hechao.economy.use
   shop:
+    description: 打开服务器官方购买商城
+    usage: /shop [claim]
+    permission: hechao.economy.use
+  prices:
     description: 查看服务器回收目录
-    usage: /shop
+    usage: /prices
     permission: hechao.economy.use
   ah:
     description: 打开玩家市场

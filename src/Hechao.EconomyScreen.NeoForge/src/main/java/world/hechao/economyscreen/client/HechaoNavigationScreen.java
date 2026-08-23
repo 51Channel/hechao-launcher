@@ -285,6 +285,7 @@ public final class HechaoNavigationScreen extends SinglePassBackgroundScreen {
         return switch (actionId) {
             case "balance" -> new ItemStack(Items.GOLD_INGOT);
             case "shop" -> new ItemStack(Items.HOPPER);
+            case "prices" -> new ItemStack(Items.PAPER);
             case "sell" -> new ItemStack(Items.EMERALD);
             case "market" -> new ItemStack(Items.CHEST);
             case "market_mine" -> new ItemStack(Items.BARREL);

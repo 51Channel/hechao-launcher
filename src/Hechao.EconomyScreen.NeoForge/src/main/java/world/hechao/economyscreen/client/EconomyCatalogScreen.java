@@ -22,6 +22,7 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private static final int OPEN_BUYBACK_COOLDOWN_TICKS = 10;
 
     private final ChestMenu menu;
+    private final boolean shopMode;
     private EconomyCatalogLayout.Layout layout;
     private Button previousButton;
     private Button nextButton;
@@ -36,8 +37,15 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     private int openBuybackCooldown;
 
     EconomyCatalogScreen(ChestMenu menu) {
-        super(Component.literal(ClientEconomyUiBridge.CATALOG_TITLE));
+        this(menu, false);
+    }
+
+    EconomyCatalogScreen(ChestMenu menu, boolean shopMode) {
+        super(Component.literal(shopMode
+                ? ClientEconomyUiBridge.SHOP_TITLE
+                : ClientEconomyUiBridge.CATALOG_TITLE));
         this.menu = menu;
+        this.shopMode = shopMode;
     }
 
     @Override
@@ -127,14 +135,17 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                     + (layout.footerTop() - layout.contentTop()) / 2;
             graphics.drawCenteredString(
                     font,
-                    searchQuery.isBlank() ? "暂无已启用的回收商品" : "没有匹配商品",
+                    searchQuery.isBlank()
+                            ? shopMode ? "暂无已开放的商城商品" : "暂无已启用的回收商品"
+                            : "没有匹配商品",
                     width / 2,
                     centerY - 8,
                     0xFFFFFFFF);
             graphics.drawCenteredString(
                     font,
                     searchQuery.isBlank()
-                            ? "商品开放后会自动显示在这里"
+                            ? shopMode ? "服主开放商品后会自动显示在这里"
+                                    : "商品开放后会自动显示在这里"
                             : "可搜索中文名、物品 ID 或命名空间",
                     width / 2,
                     centerY + 8,
@@ -172,14 +183,14 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
                         y + 7,
                         0xFFFFFFFF,
                         false);
+                String actionLabel = shopMode ? "购买 >" : "回收 >";
                 graphics.drawString(
                         font,
-                        fit(price(product), priceWidth(x)),
+                        fit(price(product, shopMode), priceWidth(x, actionLabel)),
                         x + 30,
                         y + 20,
                         0xFFFFD75A,
                         false);
-                String actionLabel = "回收 >";
                 graphics.drawString(
                         font,
                         actionLabel,
@@ -217,7 +228,12 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0 && openBuybackCooldown == 0 && productAt(mouseX, mouseY) != null) {
-            if (ClientEconomyUiBridge.requestOfficialBuyback()) {
+            if (shopMode) {
+                int slot = productSlotAt(mouseX, mouseY);
+                if (slot >= 0 && ClientEconomyUiBridge.requestShopProduct(menu, slot)) {
+                    openBuybackCooldown = OPEN_BUYBACK_COOLDOWN_TICKS;
+                }
+            } else if (ClientEconomyUiBridge.requestOfficialBuyback()) {
                 openBuybackCooldown = OPEN_BUYBACK_COOLDOWN_TICKS;
             }
             return true;
@@ -396,8 +412,8 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         return null;
     }
 
-    private int priceWidth(int cardLeft) {
-        int actionLeft = cardLeft + layout.cardWidth() - 7 - font.width("回收 >");
+    private int priceWidth(int cardLeft, String actionLabel) {
+        int actionLeft = cardLeft + layout.cardWidth() - 7 - font.width(actionLabel);
         return Math.max(12, actionLeft - (cardLeft + 30) - 4);
     }
 
@@ -410,14 +426,14 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
         return name;
     }
 
-    private static String price(ItemStack stack) {
+    private static String price(ItemStack stack, boolean shopMode) {
         var lore = stack.get(DataComponents.LORE);
         if (lore == null) {
             return "价格待同步";
         }
         return lore.lines().stream()
                 .map(Component::getString)
-                .filter(line -> line.startsWith("回收价:"))
+                .filter(line -> line.startsWith(shopMode ? "购买价:" : "回收价:"))
                 .findFirst()
                 .orElse("价格待同步")
                 .replace(ChatFormatting.RESET.toString(), "");
@@ -507,10 +523,32 @@ final class EconomyCatalogScreen extends SinglePassBackgroundScreen {
             return;
         }
         lastSubmittedSearch = normalized;
-        connection.sendCommand(EconomyMarketSearch.encode(normalized).catalogCommand());
+        connection.sendCommand(EconomyMarketSearch.encode(normalized)
+                .catalogCommand(shopMode ? "shop" : "prices"));
     }
 
     private void returnHome() {
         ClientEconomyUiBridge.requestHome();
+    }
+
+    private int productSlotAt(double mouseX, double mouseY) {
+        var products = filteredProducts();
+        int first = page * layout.pageSize();
+        int last = Math.min(products.size(), first + layout.pageSize());
+        for (int index = first; index < last; index++) {
+            int relative = index - first;
+            int column = relative % layout.columns();
+            int row = relative / layout.columns();
+            int x = layout.contentLeft()
+                    + column * (layout.cardWidth() + EconomyCatalogLayout.CARD_GAP);
+            int y = layout.contentTop()
+                    + row * (EconomyCatalogLayout.CARD_HEIGHT
+                            + EconomyCatalogLayout.CARD_GAP);
+            if (mouseX >= x && mouseX < x + layout.cardWidth()
+                    && mouseY >= y && mouseY < y + EconomyCatalogLayout.CARD_HEIGHT) {
+                return relative;
+            }
+        }
+        return -1;
     }
 }

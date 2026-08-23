@@ -867,4 +867,24 @@ Screen 仍为 `0.2.9`。候选尚未部署、未启动新的服务端、未切�
 窗口后完成备份、冷替换、冷启动和下界真人验收。候选记录见
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.10_CANDIDATE.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.10_CANDIDATE.md)
 与
-[`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md)。
+ [`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md)。
+
+## 33. 2026-08-24 官方商城直接购买候选
+
+本轮把系统商城从“只有回收目录入口”补成独立的服务器购买闭环。回收目录固定使用
+`/prices`，官方商城固定使用 `/shop`，玩家市场继续使用 `/ah`，三者不再共用一个业务语义。
+
+- API 新增迁移 `035_economy_server_shop`、商城商品售价字段、购买/待领取表和
+  `ShopBuy`、`ShopClaim` 审计分录；购买在一个数据库事务中扣款、写入
+  `system:shop-sink` 并创建待领取记录；
+- HechaoEconomy 增加 `/shop`、`/shop claim`、数量确认、背包容量检查、结果未知隔离和
+  `/heco product shop <价格>` 管理入口；商城售价由服主单独配置，API 强制高于回收价；
+- Screen 快捷菜单增加官方商城卡片和购买确认页；修复官方商城与玩家市场购买确认标题冲突，
+  防止客户端把商城购买误路由到玩家市场；
+- 管理物品 ID 默认走查询参数路由，保留旧路径路由兼容含 `/` 的模组物品 ID；
+- 空商城显示明确状态，不把“尚未配置购买价”伪装成网络故障。
+
+本候选只完成代码和离线验证，不自动把历史 27 项价格锚或 85 项回收表写入商城，也没有
+操作生产服务。上线前仍需服主确认首批售价、隔离 PostgreSQL 集成测试、双账号购买和领取
+验收、背包满/断线/重启恢复测试，以及新的 Test 客户端档案发布。详细记录见
+[`SKYREALM_SERVER_SHOP_0.1.0_CANDIDATE.md`](SKYREALM_SERVER_SHOP_0.1.0_CANDIDATE.md)。

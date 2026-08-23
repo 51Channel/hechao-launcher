@@ -135,6 +135,92 @@ public final class HttpEconomyGateway implements EconomyGateway {
     }
 
     @Override
+    public List<Product> shopProducts() throws EconomyGatewayException {
+        var request = request("/v1/internal/economy/shop/products")
+                .GET()
+                .build();
+        return send(
+                request,
+                new TypeToken<List<Product>>() { }.getType(),
+                false);
+    }
+
+    @Override
+    public Product upsertShopProduct(
+            String itemId,
+            BigDecimal shopUnitPrice,
+            UUID actorUuid,
+            String actorName) throws EconomyGatewayException {
+        var body = new ShopProductUpsertRequest(
+                shopUnitPrice,
+                actorUuid,
+                actorName);
+        var request = jsonRequest(
+                        "/v1/internal/economy/products/shop?itemId="
+                                + queryValue(itemId),
+                        body)
+                .PUT(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        return send(request, Product.class, false);
+    }
+
+    @Override
+    public void disableShopProduct(String itemId, UUID actorUuid, String actorName)
+            throws EconomyGatewayException {
+        var body = new ShopProductDisableRequest(actorUuid, actorName);
+        var request = jsonRequest(
+                        "/v1/internal/economy/products/shop/disable?itemId="
+                                + queryValue(itemId),
+                        body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        sendNoContent(request);
+    }
+
+    @Override
+    public ShopPurchase shopPurchase(
+            String idempotencyKey,
+            UUID playerUuid,
+            String itemId,
+            int quantity) throws EconomyGatewayException {
+        var body = new ShopPurchaseRequest(
+                idempotencyKey,
+                playerUuid,
+                itemId,
+                quantity);
+        var request = jsonRequest("/v1/internal/economy/shop/purchases", body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        return sendWriteWithSingleRetry(request, ShopPurchase.class);
+    }
+
+    @Override
+    public List<ShopDelivery> shopDeliveries(UUID playerUuid)
+            throws EconomyGatewayException {
+        var request = request(
+                "/v1/internal/economy/shop/deliveries/" + playerUuid)
+                .GET()
+                .build();
+        List<ShopDeliveryResponse> response = send(
+                request,
+                new TypeToken<List<ShopDeliveryResponse>>() { }.getType(),
+                false);
+        return response.stream().map(ShopDeliveryResponse::toModel).toList();
+    }
+
+    @Override
+    public ShopClaim shopClaim(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) throws EconomyGatewayException {
+        var body = new ShopClaimRequest(idempotencyKey, deliveryId, playerUuid);
+        var request = jsonRequest("/v1/internal/economy/shop/deliveries/claim", body)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+        return sendWriteWithSingleRetry(request, ShopClaim.class);
+    }
+
+    @Override
     public List<MarketListing> marketListings(
             String query,
             MarketSort sort) throws EconomyGatewayException {
@@ -250,7 +336,7 @@ public final class HttpEconomyGateway implements EconomyGateway {
                 .header("Authorization", "Bearer " + configuration.token())
                 .header("X-Hechao-Server-Id", configuration.serverId())
                 .header("Accept", "application/json")
-                .header("User-Agent", "HechaoEconomy/0.2.3");
+                .header("User-Agent", "HechaoEconomy/0.2.4");
     }
 
     private HttpRequest.Builder jsonRequest(String path, Object ignoredBody) {
@@ -431,6 +517,52 @@ public final class HttpEconomyGateway implements EconomyGateway {
     }
 
     private record ProductDisableRequest(UUID actorUuid, String actorName) {
+    }
+
+    private record ShopProductUpsertRequest(
+            BigDecimal shopUnitPrice,
+            UUID actorUuid,
+            String actorName) {
+    }
+
+    private record ShopProductDisableRequest(UUID actorUuid, String actorName) {
+    }
+
+    private record ShopPurchaseRequest(
+            String idempotencyKey,
+            UUID playerUuid,
+            String itemId,
+            int quantity) {
+    }
+
+    private record ShopClaimRequest(
+            String idempotencyKey,
+            UUID deliveryId,
+            UUID playerUuid) {
+    }
+
+    private record ShopDeliveryResponse(
+            UUID deliveryId,
+            UUID playerUuid,
+            String serverId,
+            String itemId,
+            int quantity,
+            BigDecimal unitPrice,
+            BigDecimal totalAmount,
+            String status,
+            String createdAt) {
+        private ShopDelivery toModel() {
+            return new ShopDelivery(
+                    deliveryId,
+                    playerUuid,
+                    serverId,
+                    itemId,
+                    quantity,
+                    unitPrice,
+                    totalAmount,
+                    status,
+                    Instant.parse(createdAt));
+        }
     }
 
     private record MarketCreateRequest(

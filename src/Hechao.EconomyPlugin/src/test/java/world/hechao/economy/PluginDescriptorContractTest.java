@@ -19,7 +19,8 @@ final class PluginDescriptorContractTest {
         assertTrue(descriptor.contains("version: '0.2.4'"));
         assertTrue(descriptor.contains("softdepend:\n  - PlaceholderAPI\n  - Essentials"));
         assertFalse(descriptor.contains("loadbefore:"));
-        for (var command : java.util.List.of("money", "pay", "sell", "shop", "ah", "heco")) {
+        for (var command : java.util.List.of(
+                "money", "pay", "sell", "shop", "prices", "ah", "heco")) {
             assertTrue(descriptor.contains("  " + command + ":"));
         }
     }

@@ -25,6 +25,7 @@ import world.hechao.economy.HechaoEconomyPlugin;
 import world.hechao.economy.api.EconomyGateway;
 import world.hechao.economy.api.EconomyGatewayException;
 import world.hechao.economy.gui.ShopMenu;
+import world.hechao.economy.gui.ShopDeliveryMenu;
 import world.hechao.economy.gui.SellMenu;
 import world.hechao.economy.gui.MarketListingMenu;
 import world.hechao.economy.gui.MarketMenu;
@@ -35,6 +36,7 @@ import world.hechao.economy.inventory.SellItemPolicy;
 public final class EconomyCommandRouter implements CommandExecutor, TabCompleter {
     private final HechaoEconomyPlugin plugin;
     private final ShopMenu shopMenu;
+    private final ShopDeliveryMenu shopDeliveryMenu;
     private final SellMenu sellMenu;
     private final MarketListingMenu marketListingMenu;
     private final MarketMenu marketMenu;
@@ -43,12 +45,14 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
     public EconomyCommandRouter(
             HechaoEconomyPlugin plugin,
             ShopMenu shopMenu,
+            ShopDeliveryMenu shopDeliveryMenu,
             SellMenu sellMenu,
             MarketListingMenu marketListingMenu,
             MarketMenu marketMenu,
             QuarantinedSaleStore quarantinedSales) {
         this.plugin = plugin;
         this.shopMenu = shopMenu;
+        this.shopDeliveryMenu = shopDeliveryMenu;
         this.sellMenu = sellMenu;
         this.marketListingMenu = marketListingMenu;
         this.marketMenu = marketMenu;
@@ -66,6 +70,7 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             case "pay" -> pay(sender, args);
             case "sell" -> sell(sender, args);
             case "shop" -> shop(sender, args);
+            case "prices" -> prices(sender, args);
             case "ah" -> market(sender, args);
             case "heco" -> admin(sender, args);
             default -> false;
@@ -178,6 +183,40 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             try {
                 var search = MarketSearchRequest.decode(args[1], args[2]);
                 if (!shopMenu.search(player, search)) {
+                    error(player, "请先打开官方商城。");
+                }
+            } catch (IllegalArgumentException exception) {
+                error(player, exception.getMessage());
+            }
+            return true;
+        }
+        if (args.length == 1 && "claim".equalsIgnoreCase(args[0])) {
+            async(
+                    () -> plugin.gateway().shopDeliveries(player.getUniqueId()),
+                    deliveries -> shopDeliveryMenu.open(player, deliveries),
+                    exception -> gatewayError(player, exception));
+            return true;
+        }
+        if (args.length != 0) {
+            error(player, "用法: /shop [claim]");
+            return true;
+        }
+        async(
+                () -> plugin.gateway().shopProducts(),
+                products -> shopMenu.openShop(player, products),
+                exception -> gatewayError(player, exception));
+        return true;
+    }
+
+    private boolean prices(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            error(sender, "该命令只能由玩家执行。");
+            return true;
+        }
+        if (args.length == 3 && "search".equalsIgnoreCase(args[0])) {
+            try {
+                var search = MarketSearchRequest.decode(args[1], args[2]);
+                if (!shopMenu.search(player, search)) {
                     error(player, "请先打开服务器回收目录。");
                 }
             } catch (IllegalArgumentException exception) {
@@ -186,12 +225,12 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
             return true;
         }
         if (args.length != 0) {
-            error(player, "用法: /shop");
+            error(player, "用法: /prices");
             return true;
         }
         async(
                 () -> plugin.gateway().products(false),
-                products -> shopMenu.open(player, products),
+                products -> shopMenu.openBuyback(player, products),
                 exception -> gatewayError(player, exception));
         return true;
     }
@@ -348,6 +387,37 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
                     exception -> gatewayError(player, exception));
             return true;
         }
+        if (args.length == 2 && "shop".equalsIgnoreCase(args[0])
+                && "remove".equalsIgnoreCase(args[1])) {
+            async(
+                    () -> {
+                        plugin.gateway().disableShopProduct(
+                                validation.itemId(),
+                                player.getUniqueId(),
+                                player.getName());
+                        return validation.itemId();
+                    },
+                    itemId -> success(player, "已暂停商城出售 " + itemId),
+                    exception -> gatewayError(player, exception));
+            return true;
+        }
+        if (args.length >= 2 && "shop".equalsIgnoreCase(args[0])) {
+            var price = parseMoney(args[1]);
+            if (price == null) {
+                error(player, "商城价格必须是大于 0 且最多两位小数的数字。");
+                return true;
+            }
+            async(
+                    () -> plugin.gateway().upsertShopProduct(
+                            validation.itemId(),
+                            price,
+                            player.getUniqueId(),
+                            player.getName()),
+                    product -> success(player, "已启用商城商品 " + product.itemId()
+                            + "，购买价 " + money(product.shopUnitPrice())),
+                    exception -> gatewayError(player, exception));
+            return true;
+        }
         ProductAdminPrompt.send(player, validation.itemId());
         return true;
     }
@@ -416,6 +486,14 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
     }
 
     private static void gatewayError(CommandSender sender, EconomyGatewayException exception) {
+        if ("SHOP_PRICE_NOT_ABOVE_BUYBACK".equals(exception.errorCode())) {
+            error(sender, "商城购买价必须高于当前回收价。\n请重新输入 /heco product shop <价格>。");
+            return;
+        }
+        if ("BUYBACK_PRICE_NOT_BELOW_SHOP".equals(exception.errorCode())) {
+            error(sender, "新的回收价必须低于当前商城购买价。\n请先调整或暂停商城售价。");
+            return;
+        }
         error(sender, exception.isOutcomeUnknown()
                 ? "经济服务暂时无法确认请求结果，请稍后重试。"
                 : "经济请求被拒绝（HTTP " + exception.statusCode() + "）。");
@@ -442,12 +520,21 @@ public final class EconomyCommandRouter implements CommandExecutor, TabCompleter
         var options = new ArrayList<String>();
         if ("ah".equalsIgnoreCase(command.getName()) && args.length == 1) {
             options.addAll(List.of("browse", "sell", "mine", "claim"));
+        } else if ("shop".equalsIgnoreCase(command.getName()) && args.length == 1) {
+            options.add("claim");
+        } else if ("prices".equalsIgnoreCase(command.getName()) && args.length == 1) {
+            options.add("search");
         } else if ("heco".equalsIgnoreCase(command.getName()) && args.length == 1) {
             options.addAll(List.of("health", "menu", "product", "reload"));
         } else if ("heco".equalsIgnoreCase(command.getName())
                 && args.length == 2
                 && "product".equalsIgnoreCase(args[0])) {
-            options.addAll(List.of("set", "remove"));
+            options.addAll(List.of("set", "remove", "shop"));
+        } else if ("heco".equalsIgnoreCase(command.getName())
+                && args.length == 3
+                && "product".equalsIgnoreCase(args[0])
+                && "shop".equalsIgnoreCase(args[1])) {
+            options.add("remove");
         } else if ("pay".equalsIgnoreCase(command.getName()) && args.length == 1) {
             Bukkit.getOnlinePlayers().forEach(player -> options.add(player.getName()));
         }

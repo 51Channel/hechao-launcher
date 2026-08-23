@@ -62,7 +62,16 @@ public sealed record EconomyProductUpsertRequest(
     Guid ActorUuid,
     string ActorName);
 
+public sealed record EconomyShopProductUpsertRequest(
+    decimal ShopUnitPrice,
+    Guid ActorUuid,
+    string ActorName);
+
 public sealed record EconomyProductDisableRequest(
+    Guid ActorUuid,
+    string ActorName);
+
+public sealed record EconomyShopProductDisableRequest(
     Guid ActorUuid,
     string ActorName);
 
@@ -74,7 +83,50 @@ public sealed record EconomyProductResponse(
     bool Enabled,
     Guid UpdatedByUuid,
     string UpdatedByName,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    decimal? ShopUnitPrice = null);
+
+public sealed record EconomyShopPurchaseRequest(
+    string IdempotencyKey,
+    Guid PlayerUuid,
+    string ItemId,
+    int Quantity);
+
+public sealed record EconomyShopPurchaseResponse(
+    Guid OperationId,
+    string Status,
+    Guid PlayerUuid,
+    Guid? DeliveryId,
+    string ItemId,
+    int Quantity,
+    decimal UnitPrice,
+    decimal TotalAmount,
+    decimal Balance,
+    string? FailureCode = null);
+
+public sealed record EconomyShopDeliveryResponse(
+    Guid DeliveryId,
+    Guid PlayerUuid,
+    string ServerId,
+    string ItemId,
+    int Quantity,
+    decimal UnitPrice,
+    decimal TotalAmount,
+    string Status,
+    DateTimeOffset CreatedAt);
+
+public sealed record EconomyShopClaimRequest(
+    string IdempotencyKey,
+    Guid DeliveryId,
+    Guid PlayerUuid);
+
+public sealed record EconomyShopClaimResponse(
+    Guid OperationId,
+    string Status,
+    Guid DeliveryId,
+    string ItemId,
+    int Quantity,
+    string? FailureCode = null);
 
 public enum EconomyMarketSort
 {

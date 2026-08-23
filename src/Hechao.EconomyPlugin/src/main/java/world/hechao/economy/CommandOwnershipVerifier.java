@@ -7,7 +7,7 @@ import org.bukkit.plugin.Plugin;
 
 final class CommandOwnershipVerifier {
     static final List<String> REQUIRED_COMMANDS = List.of(
-            "money", "balance", "bal", "pay", "sell", "shop", "heco");
+            "money", "balance", "bal", "pay", "sell", "shop", "prices", "heco");
 
     private CommandOwnershipVerifier() {
     }

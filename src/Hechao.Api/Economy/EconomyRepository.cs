@@ -473,11 +473,35 @@ public sealed partial class EconomyRepository(
         var enabledFilter = includeDisabled ? string.Empty : "WHERE enabled";
         return $"""
             SELECT item_id, unit_price, personal_daily_limit, server_daily_limit,
-                   enabled, updated_by_uuid, updated_by_name, updated_at
+                   enabled, updated_by_uuid, updated_by_name, updated_at,
+                   shop_unit_price
             FROM launcher.economy_products
             {enabledFilter}
             ORDER BY item_id;
             """;
+    }
+
+    public async Task<IReadOnlyList<EconomyProductResponse>> ListShopProductsAsync(
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT item_id, unit_price, personal_daily_limit, server_daily_limit,
+                   enabled, updated_by_uuid, updated_by_name, updated_at,
+                   shop_unit_price
+            FROM launcher.economy_products
+            WHERE enabled AND shop_unit_price IS NOT NULL
+            ORDER BY item_id;
+            """;
+        var products = new List<EconomyProductResponse>();
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            products.Add(ReadProduct(reader));
+        }
+
+        return products;
     }
 
     public async Task<EconomyProductResponse> UpsertProductAsync(
@@ -493,11 +517,19 @@ public sealed partial class EconomyRepository(
             transaction,
             itemId,
             cancellationToken);
+        if (before?.ShopUnitPrice is decimal shopUnitPrice &&
+            request.UnitPrice >= shopUnitPrice)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw new EconomyBuybackPriceConflictException();
+        }
+
         const string sql = """
             INSERT INTO launcher.economy_products
                 (item_id, unit_price, personal_daily_limit, server_daily_limit,
-                 enabled, updated_by_uuid, updated_by_name, updated_at)
-            VALUES ($1, $2, $3, $4, true, $5, $6, $7)
+                 enabled, updated_by_uuid, updated_by_name, updated_at,
+                 shop_unit_price)
+            VALUES ($1, $2, $3, $4, true, $5, $6, $7, NULL)
             ON CONFLICT (item_id) DO UPDATE
             SET unit_price = EXCLUDED.unit_price,
                 personal_daily_limit = EXCLUDED.personal_daily_limit,
@@ -508,7 +540,7 @@ public sealed partial class EconomyRepository(
                 updated_at = EXCLUDED.updated_at
             RETURNING item_id, unit_price, personal_daily_limit,
                       server_daily_limit, enabled, updated_by_uuid,
-                      updated_by_name, updated_at;
+                      updated_by_name, updated_at, shop_unit_price;
             """;
         EconomyProductResponse result;
         await using (var command = new NpgsqlCommand(sql, connection, transaction))
@@ -881,7 +913,8 @@ public sealed partial class EconomyRepository(
     {
         const string sql = """
             SELECT item_id, unit_price, personal_daily_limit, server_daily_limit,
-                   enabled, updated_by_uuid, updated_by_name, updated_at
+                   enabled, updated_by_uuid, updated_by_name, updated_at,
+                   shop_unit_price
             FROM launcher.economy_products
             WHERE item_id = $1
             FOR UPDATE;
@@ -900,7 +933,8 @@ public sealed partial class EconomyRepository(
         reader.GetBoolean(4),
         reader.GetGuid(5),
         reader.GetString(6),
-        reader.GetFieldValue<DateTimeOffset>(7));
+        reader.GetFieldValue<DateTimeOffset>(7),
+        reader.IsDBNull(8) ? null : reader.GetDecimal(8));
 
     private static async Task<EconomySaleCommitResponse> RejectSaleAsync(
         NpgsqlConnection connection,

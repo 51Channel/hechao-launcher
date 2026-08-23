@@ -367,4 +367,25 @@ public sealed class DatabaseMigrationTests
         Assert.Contains(34, DatabaseMigrator.RegisteredMigrationVersions);
         Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
     }
+
+    [Fact]
+    public void EconomyServerShopMigration_AddsPurchaseAndDeliveryContracts()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.035_economy_server_shop.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream!);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("shop_unit_price", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_products_shop_price_above_buyback_check", sql, StringComparison.Ordinal);
+        Assert.Contains("ShopBuy", sql, StringComparison.Ordinal);
+        Assert.Contains("ShopClaim", sql, StringComparison.Ordinal);
+        Assert.Contains("economy_shop_deliveries", sql, StringComparison.Ordinal);
+        Assert.Contains(35, DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
+    }
 }

@@ -47,6 +47,20 @@ final class ProductAdminPrompt {
                 "/hechaoeconomy:heco product remove",
                 "立即暂停该物品回收",
                 ChatColor.RED));
+        actions.addExtra(" ");
+        actions.addExtra(actionButton(
+                "[设置商城售价]",
+                ClickEvent.Action.SUGGEST_COMMAND,
+                shopPriceSuggestionCommand(),
+                "商城购买价必须高于当前回收价",
+                ChatColor.AQUA));
+        actions.addExtra(" ");
+        actions.addExtra(actionButton(
+                "[暂停商城出售]",
+                ClickEvent.Action.RUN_COMMAND,
+                shopDisableCommand(),
+                "立即从官方商城隐藏该物品",
+                ChatColor.RED));
         player.spigot().sendMessage(actions);
     }
 
@@ -54,6 +68,14 @@ final class ProductAdminPrompt {
         return PRESET_PRICES.stream()
                 .map(price -> "/hechaoeconomy:heco product set " + price)
                 .toList();
+    }
+
+    static String shopPriceSuggestionCommand() {
+        return "/hechaoeconomy:heco product shop ";
+    }
+
+    static String shopDisableCommand() {
+        return "/hechaoeconomy:heco product shop remove";
     }
 
     private static TextComponent priceButton(String price) {

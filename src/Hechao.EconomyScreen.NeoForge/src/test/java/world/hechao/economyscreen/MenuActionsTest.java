@@ -48,6 +48,7 @@ final class MenuActionsTest {
                 java.util.List.of(
                         "balance",
                         "shop",
+                        "prices",
                         "market",
                         "sell",
                         "market_mine",

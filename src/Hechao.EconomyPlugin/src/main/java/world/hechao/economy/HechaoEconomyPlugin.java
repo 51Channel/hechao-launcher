@@ -23,7 +23,9 @@ import world.hechao.economy.api.EconomyGatewayException;
 import world.hechao.economy.api.HttpEconomyGateway;
 import world.hechao.economy.api.UnavailableEconomyGateway;
 import world.hechao.economy.commands.EconomyCommandRouter;
+import world.hechao.economy.gui.ShopDeliveryMenu;
 import world.hechao.economy.gui.ShopMenu;
+import world.hechao.economy.gui.ShopPurchaseMenu;
 import world.hechao.economy.gui.SellMenu;
 import world.hechao.economy.gui.MarketListingMenu;
 import world.hechao.economy.gui.MarketMenu;
@@ -43,6 +45,8 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
     private HechaoVaultEconomy vaultProvider;
     private QuarantinedSaleStore quarantinedSales;
     private ShopMenu shopMenu;
+    private ShopPurchaseMenu shopPurchaseMenu;
+    private ShopDeliveryMenu shopDeliveryMenu;
     private SellMenu sellMenu;
     private MarketListingMenu marketListingMenu;
     private MarketMenu marketMenu;
@@ -66,12 +70,16 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
                 vaultProvider,
                 this,
                 ServicePriority.Highest);
-        shopMenu = new ShopMenu();
+        shopPurchaseMenu = new ShopPurchaseMenu(this, quarantinedSales);
+        shopDeliveryMenu = new ShopDeliveryMenu(this, quarantinedSales);
+        shopMenu = new ShopMenu(shopPurchaseMenu);
         sellMenu = new SellMenu(this, quarantinedSales);
         marketListingMenu = new MarketListingMenu(this, quarantinedSales);
         marketMenu = new MarketMenu(this, marketListingMenu, quarantinedSales);
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(shopMenu, this);
+        getServer().getPluginManager().registerEvents(shopPurchaseMenu, this);
+        getServer().getPluginManager().registerEvents(shopDeliveryMenu, this);
         getServer().getPluginManager().registerEvents(sellMenu, this);
         getServer().getPluginManager().registerEvents(marketListingMenu, this);
         getServer().getPluginManager().registerEvents(marketMenu, this);
@@ -79,6 +87,7 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
         var commands = new EconomyCommandRouter(
                 this,
                 shopMenu,
+                shopDeliveryMenu,
                 sellMenu,
                 marketListingMenu,
                 marketMenu,
@@ -87,6 +96,7 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
         registerCommand("pay", commands);
         registerCommand("sell", commands);
         registerCommand("shop", commands);
+        registerCommand("prices", commands);
         registerCommand("ah", commands);
         registerCommand("heco", commands);
 
@@ -108,6 +118,12 @@ public final class HechaoEconomyPlugin extends JavaPlugin implements Listener {
         commandOwner.set(false);
         if (sellMenu != null) {
             sellMenu.closeAll();
+        }
+        if (shopPurchaseMenu != null) {
+            shopPurchaseMenu.closeAll();
+        }
+        if (shopDeliveryMenu != null) {
+            shopDeliveryMenu.closeAll();
         }
         if (marketMenu != null) {
             marketMenu.closeAll();
