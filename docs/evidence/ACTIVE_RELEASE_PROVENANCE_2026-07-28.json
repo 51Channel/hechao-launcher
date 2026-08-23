@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-22T15:47:37Z",
+  "generatedAtUtc": "2026-08-23T06:22:00Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -14,8 +14,8 @@
         "kind": "git-commit",
         "value": "e4401c0253563606e9bdab71ec9b0e8915df2069"
       },
-      "deploymentState": "test-profile-1.0.28-r21-server-cold-deployed-rtp-city-real-player-acceptance-pending",
-      "historicalNote": "Protocol 3 remained unchanged. Screen 0.2.9 was cold-deployed to activity-survival before Test moved to 1.0.28. Gray and Production remain unassigned until authorized launcher download, fifteen-action visual checks, RTP, set-city, transfer, TPA and two-player market acceptance pass.",
+      "deploymentState": "test-profile-1.0.29-r22-server-toms-storage-2.4.1-cold-deployed-real-client-acceptance-pending",
+      "historicalNote": "Protocol 3 and Screen 0.2.9 remain unchanged. Test moved from 1.0.28 to 1.0.29 only after Tom's Simple Storage 2.4.1 was cold-deployed to activity-survival. Gray and Production remain unassigned until authorized launcher download, storage interaction and the existing fifteen-action menu regression acceptance pass.",
       "artifacts": [
         {
           "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.9.jar",
@@ -32,41 +32,40 @@
       "evidence": [
         "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md",
         "docs/evidence/SKYREALM_ECONOMY_SCREEN_0.2.9_TEST_RELEASE_2026-08-22.json",
-        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md",
+        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md",
         "docs/SKYREALM_HECHAO_MENU_FLOW_2026-08-20.md"
       ]
     },
     {
       "component": "profile-skyrealm-industrial-neoforge-1.21.1",
-      "version": "1.0.28",
-      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.28",
-      "releaseCommit": "42f0785e5afc29cec1b06bad9d27cbe644b76d06",
-      "taggedAt": "2026-08-22T23:47:37+08:00",
+      "version": "1.0.29",
+      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.29",
+      "releaseCommit": "3dfd3114538e72b6f3696341c38d882cf8717515",
+      "taggedAt": "2026-08-23T14:21:35+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "signed-manifest",
-        "value": "753F98221520B2A7330775C983133A985CF5DB7436769F4A4A9ADF7C7ABE88FC"
+        "value": "7DC19884A1E52F7AB0DD27827104C70A831D129F2E3D53071FAC2D0B9B88A31B"
       },
-      "deploymentState": "test-r21-100-percent-gray-production-unassigned-server-screen-0.2.9-protocol-3-compatible",
-      "historicalNote": "1.0.27 remains the coordinated Test rollback. Gray and Production remain unassigned until real-client incremental download, fifteen-action menu, RTP, set-city, return navigation and existing transfer, TPA and two-account market regression acceptance pass.",
+      "deploymentState": "test-r22-100-percent-gray-production-unassigned-server-toms-storage-2.4.1-cold-deployed",
+      "historicalNote": "1.0.28 remains the coordinated Test rollback. Gray and Production remain unassigned until real-client incremental download, Tom's Simple Storage inventory interaction, multi-player concurrency, restart persistence and the existing fifteen-action menu regression acceptance pass.",
       "artifacts": [
         {
-          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.28 signed manifest",
-          "location": "/var/lib/hechao-launcher-api/manifests/releases/skyrealm-industrial-neoforge-1.21.1/753f98221520b2a7330775c983133a985cf5db7436769f4a4a9adf7c7abe88fc.json",
-          "size": 2025526,
-          "sha256": "753F98221520B2A7330775C983133A985CF5DB7436769F4A4A9ADF7C7ABE88FC",
+          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.29 signed manifest",
+          "location": "/var/lib/hechao-launcher-api/manifests/releases/skyrealm-industrial-neoforge-1.21.1/7dc19884a1e52f7ab0dd27827104c70a831d129f2e3d53071fac2d0b9b88a31b.json",
+          "size": 2025941,
+          "sha256": "7DC19884A1E52F7AB0DD27827104C70A831D129F2E3D53071FAC2D0B9B88A31B",
           "primary": true
         }
       ],
       "rollback": {
         "kind": "paired-test-channel-and-full-offline-server-backup",
-        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.27; E:\\manual-backups\\activity-survival-screen-0.2.9-20260822T150407Z"
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.28; E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
       },
       "evidence": [
-        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md",
-        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.28_TEST_RELEASE_2026-08-22.json",
-        "docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md",
-        "docs/SKYREALM_HECHAO_MENU_FLOW_2026-08-20.md"
+        "docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md",
+        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.29_TEST_RELEASE_2026-08-23.json",
+        "docs/SKYREALM_ECONOMY_AND_SCREEN_DEVELOPMENT_HANDOFF.md"
       ]
     },
     {
