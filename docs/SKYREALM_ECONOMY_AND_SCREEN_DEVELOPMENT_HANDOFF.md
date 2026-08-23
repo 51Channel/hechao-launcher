@@ -834,3 +834,37 @@ SHA-256 为
 分配。真人启动器增量下载、库存网络、存取搜索、多人并发、断线重连、重启持久化和既有
 15 项快捷菜单回归完成前不得推进。正式记录见
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md)。
+
+## 32. 2026-08-23 Essentials、商城与下界 RTP 问题核验
+
+本轮针对 `activity-survival` 的玩家反馈完成线上核验和本地修复候选：
+
+- LuckPerms 使用本地 H2，`default` 组原先没有 Essentials 权限；已在线写入
+  `essentials.sethome`、`essentials.sethome.multiple`、
+  `essentials.sethome.multiple.default`、`essentials.home`、`essentials.delhome`、
+  `essentials.renamehome`、`essentials.warp`、`essentials.warps`、`essentials.setwarp`、
+  `essentials.spawn`、`essentials.back`，并从日志确认 11 个节点写入成功。`setwarp` 当前
+  按用户要求对普通玩家开放；若以后只允许管理组，应移到专用 staff 组。
+- 线上 `plugins/HechaoEconomy/config.yml` 的 `server-id` 已为 `activity-survival`。
+  生产接口以该身份返回 HTTP `200` 和 `85` 个启用商品，商城不是“以后才开始卖”；此前
+  空目录来自运行时服标识未正确加载，执行 `heco reload` 后接口恢复。商品目录与运行状态
+  仍需实时复核。
+- 露天岩浆池属于下界地形生成内容，不会因为 RTP 或时间周期自动刷新。RTP 为了安全也会
+  主动拒绝岩浆、流体和基岩附近的位置，因此“多次 RTP 找不到露天岩浆池”本身是预期结果，
+  不能用 RTP 作为找岩浆池工具。
+- Screen `0.2.9` 的 RTP 曾直接调用 `minecraft:spreadplayers`，下界可能落在顶部基岩层
+  附近。本地 `0.2.10` 候选改为服务端主线程安全落点筛选，保持最大半径 `5000`、边界内缩
+  `32`、最小范围 `64` 和 `60` 秒冷却；找不到安全点会释放冷却，不传送到危险位置。
+- 候选源码提交为 `9e7a54d46f69f583c696095ad83394c3f012955f`；Screen `0.2.10` 构建为
+  `112/112`，JAR `984,197` 字节，SHA-256 为
+  `F3EE295297522F60D7CBD4CE608E43A5A296F0C2A9DEB014DA481E7ADDAA8B93`。经济插件配置改动
+  已升为 `HechaoEconomy 0.2.4`，测试 `37/37`，JAR `446,655` 字节，SHA-256 为
+  `886E21CFF52A6DE25FAF3ECBAEEA77E2CE2870979A26970E55C90D81EF87FF29`；两者均只属于本地
+  候选，不能视为线上已部署。
+
+2026-08-23 实时复核时服务端仍在运行（Java PID `1524`、`127.0.0.1:25600`），线上唯一
+Screen 仍为 `0.2.9`。候选尚未部署、未启动新的服务端、未切换客户端通道；必须等明确维护
+窗口后完成备份、冷替换、冷启动和下界真人验收。候选记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.10_CANDIDATE.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.10_CANDIDATE.md)
+与
+[`SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md`](SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md)。

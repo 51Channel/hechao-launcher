@@ -1,5 +1,17 @@
 # 赫朝启动器
 
+> `2026-08-23` 天域远征 RTP 安全落点修复已形成本地 `0.2.10` 候选。服务端不再把玩家
+> 交给一次性 `spreadplayers`，而是在当前维度边界内筛选两格净空、固体支撑、无流体、
+> 无基岩和危险方块的落点；范围仍为最大 `5000` 格，冷却仍为 `60` 秒。当前线上服仍
+> 运行 Screen `0.2.9`，候选尚未部署、未切换客户端通道，需等待维护窗口后冷更新并完成
+> 下界真人验收。详情见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.10_CANDIDATE.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.10_CANDIDATE.md)。
+
+> 同次核验形成 HechaoEconomy `0.2.4` 配置安全候选：默认 `server-id` 从旧的 `skyrealm`
+> 改为当前目标 `activity-survival`，避免新部署以错误身份请求 API。线上正式插件仍为
+> `0.2.3`，现有配置已热重载恢复 `200 / 85`，候选尚未冷部署。详情见
+> [`docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md`](docs/SKYREALM_ECONOMY_PLUGIN_RELEASE_0.2.4_CANDIDATE.md)。
+
 > `2026-08-23` Tom's Simple Storage `2.4.1` 已成对部署到天域远征工业季服务端和客户端
 > 档案 `1.0.29`，后台仅切换到 `Test=100% / r22`。1.0.29 在 1.0.28 基线上只新增
 > `toms_storage-1.21-2.4.1.jar`，原有 `4,457` 个文件逐哈希不变；签名清单、OSS 两轮对象
