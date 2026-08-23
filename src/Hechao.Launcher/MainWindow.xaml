@@ -579,23 +579,21 @@
                                                    Margin="0,3,0,0" />
                                     </StackPanel>
 
-                                    <StackPanel Grid.Column="3"
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Right"
-                                                Margin="0,0,7,0">
-                                        <TextBlock Text="{Binding OnlinePlayers}"
-                                                   FontFamily="Segoe UI"
-                                                   FontSize="13"
-                                                   FontWeight="Bold"
-                                                   HorizontalAlignment="Right" />
-                                        <TextBlock FontFamily="Segoe UI"
-                                                   FontSize="10"
-                                                   Foreground="{StaticResource InkMutedBrush}"
-                                                   HorizontalAlignment="Right">
+                                    <TextBlock Grid.Column="3"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Right"
+                                               Margin="0,0,7,0"
+                                               FontFamily="Segoe UI"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkMutedBrush}">
+                                        <Run Text="在线 " />
+                                        <Run Text="{Binding OnlinePlayers}"
+                                             FontSize="13"
+                                             FontWeight="Bold"
+                                             Foreground="{StaticResource InkBrush}" />
                                             <Run Text="/" />
                                             <Run Text="{Binding MaxPlayers}" />
-                                        </TextBlock>
-                                    </StackPanel>
+                                    </TextBlock>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -1345,13 +1343,17 @@
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                    <ToggleButton Style="{StaticResource QuietIconToggleButtonStyle}"
-                                  Width="46"
-                                  Height="64"
-                                  Content="&#xE7F4;"
-                                  IsChecked="{Binding IsNotificationsOpen, Mode=TwoWay}"
-                                  ToolTip="通知中心"
-                                  AutomationProperties.Name="通知中心" />
+                    <Grid Width="46" Height="64">
+                        <ToggleButton Style="{StaticResource QuietIconToggleButtonStyle}"
+                                      Width="38"
+                                      Height="38"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Center"
+                                      Content="&#xE7F4;"
+                                      IsChecked="{Binding IsNotificationsOpen, Mode=TwoWay}"
+                                      ToolTip="通知中心"
+                                      AutomationProperties.Name="通知中心" />
+                    </Grid>
                     <Border Width="1"
                             Height="24"
                             Background="{StaticResource BorderBrush}"
@@ -2475,6 +2477,7 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             <TextBlock Text="账号名"
                                                        Style="{StaticResource FormLabelStyle}" />
@@ -2546,12 +2549,22 @@
                                                        FontSize="11"
                                                        Foreground="{StaticResource InkFaintBrush}"
                                                        Margin="0,6,0,0" />
-                                            <Button Grid.Row="7"
+                                            <CheckBox Grid.Row="7"
+                                                      Grid.ColumnSpan="2"
+                                                      Margin="0,12,0,0"
+                                                      Foreground="{StaticResource InkMutedBrush}"
+                                                      IsChecked="{Binding IsRegistrationLegalAccepted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      AutomationProperties.Name="同意用户协议、隐私政策与社区规则">
+                                                <TextBlock Text="我已阅读并同意用户协议、隐私政策与社区规则"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap" />
+                                            </CheckBox>
+                                            <Button Grid.Row="8"
                                                     Grid.ColumnSpan="2"
                                                     Height="46"
                                                     Margin="0,18,0,0"
                                                     Style="{StaticResource PrimaryButtonStyle}"
-                                                    IsEnabled="{Binding CanSubmitAccountForms}"
+                                                    IsEnabled="{Binding CanSubmitRegistrationForm}"
                                                     AutomationProperties.Name="创建赫朝账号"
                                                     Click="RegisterAccountButton_OnClick">
                                                 <TextBlock Text="创建赫朝账号"
@@ -3318,9 +3331,9 @@
                     AutomationProperties.Name="通知中心"
                     Visibility="{Binding IsNotificationsOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border.Effect>
-                    <DropShadowEffect Color="#36000000"
-                                      BlurRadius="20"
-                                      ShadowDepth="6"
+                    <DropShadowEffect Color="#22000000"
+                                      BlurRadius="12"
+                                      ShadowDepth="3"
                                       Direction="270" />
                 </Border.Effect>
                 <StackPanel>

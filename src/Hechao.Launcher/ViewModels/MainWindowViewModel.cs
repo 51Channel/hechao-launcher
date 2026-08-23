@@ -95,6 +95,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isAccountFormError;
     private int _accountFormAnnouncementRevision;
     private bool _isRegistrationCodeCooldownActive;
+    private bool _isRegistrationLegalAccepted;
     private CancellationTokenSource? _registrationCodeCooldownCancellation;
     private bool _isMicrosoftSignInVisible;
     private CancellationTokenSource? _microsoftSignInCancellation;
@@ -356,7 +357,7 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(IsSettingsPage));
             OnPropertyChanged(nameof(CurrentPageTitle));
 
-            if (value == LauncherPage.Activities)
+            if (IsCatalogPageVisible)
             {
                 StartActivityCatalogRefresh(refreshImmediately: true);
             }
@@ -580,6 +581,19 @@ public sealed class MainWindowViewModel : ObservableObject
         !string.IsNullOrWhiteSpace(AccountFormMessage);
     public int AccountFormAnnouncementRevision => _accountFormAnnouncementRevision;
     public bool CanSubmitAccountForms => !IsAccountBusy;
+    public bool IsRegistrationLegalAccepted
+    {
+        get => _isRegistrationLegalAccepted;
+        set
+        {
+            if (SetProperty(ref _isRegistrationLegalAccepted, value))
+            {
+                OnPropertyChanged(nameof(CanSubmitRegistrationForm));
+            }
+        }
+    }
+    public bool CanSubmitRegistrationForm =>
+        CanSubmitAccountForms && IsRegistrationLegalAccepted;
     public bool CanSendRegistrationCode =>
         CanSubmitAccountForms && !_isRegistrationCodeCooldownActive;
     public string RegistrationCodeActionText => _isRegistrationCodeCooldownActive
@@ -638,6 +652,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
             OnPropertyChanged(nameof(AccountStatusText));
             OnPropertyChanged(nameof(CanSubmitAccountForms));
+            OnPropertyChanged(nameof(CanSubmitRegistrationForm));
             OnPropertyChanged(nameof(CanSendRegistrationCode));
             OnPropertyChanged(nameof(RegistrationCodeActionText));
             AccountActionCommand.RaiseCanExecuteChanged();
@@ -1206,7 +1221,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         await TryImportPlayerGameSettingsAsync();
         await LoadCatalogAsync();
-        if (IsActivitiesPage)
+        if (IsCatalogPageVisible)
         {
             StartActivityCatalogRefresh(refreshImmediately: false);
         }
@@ -1771,7 +1786,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 await Task.Delay(
                     _activityCatalogRefreshInterval,
                     cancellation.Token);
-                if (!IsActivitiesPage ||
+                if (!IsCatalogPageVisible ||
                     !ReferenceEquals(
                         Volatile.Read(ref _activityCatalogRefreshCancellation),
                         cancellation))
@@ -1805,6 +1820,9 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    private bool IsCatalogPageVisible =>
+        ActivePage is LauncherPage.Servers or LauncherPage.Activities;
 
     private async Task RetryCatalogAfterFallbackAsync(
         CancellationTokenSource cancellation)
@@ -3964,7 +3982,8 @@ public sealed class MainWindowViewModel : ObservableObject
         string displayName,
         string password,
         string email,
-        string code)
+        string code,
+        bool legalAccepted)
     {
         if (IsAccountBusy)
         {
@@ -3983,6 +4002,14 @@ public sealed class MainWindowViewModel : ObservableObject
             return false;
         }
 
+        if (!legalAccepted)
+        {
+            SetAccountFormStatus(
+                "请先勾选并同意用户协议、隐私政策与社区规则。",
+                isError: true);
+            return false;
+        }
+
         IsAccountBusy = true;
         SetAccountFormStatus("正在创建赫朝账号…", isError: false);
         try
@@ -3992,7 +4019,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 displayName.Trim(),
                 password,
                 email.Trim(),
-                code.Trim());
+                code.Trim(),
+                legalAccepted);
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
