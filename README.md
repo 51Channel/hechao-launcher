@@ -1,5 +1,13 @@
 # 赫朝启动器
 
+> `2026-08-23` Tom's Simple Storage `2.4.1` 已成对部署到天域远征工业季服务端和客户端
+> 档案 `1.0.29`，后台仅切换到 `Test=100% / r22`。1.0.29 在 1.0.28 基线上只新增
+> `toms_storage-1.21-2.4.1.jar`，原有 `4,457` 个文件逐哈希不变；签名清单、OSS 两轮对象
+> 闭合、生产 API、owl5 Arclight 冷启动、单端口和 Tom's Storage 双配置加载均已验收。
+> Gray 与 Production 仍未分配，真人增量下载、库存连接、存取搜索、多人并发与重启持久化
+> 验收完成前不得推进。详情见
+> [`docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md`](docs/SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md)。
+
 > `2026-08-22` 天域远征 Screen `0.2.9` 已与客户端档案 `1.0.28` 成对发布到
 > `Test=100% / r21`。快捷首页现有 15 项操作，新增 `/rtp` 随机传送；RTP 按当前维度
 > 世界边界计算范围，最大 `5000` 格、边界保留 `32` 格并有 `60` 秒玩家冷却。返回主城

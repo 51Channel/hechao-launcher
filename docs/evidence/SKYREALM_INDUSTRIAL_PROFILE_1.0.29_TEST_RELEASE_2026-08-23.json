@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-23T06:18:30Z",
+  "source": {
+    "branch": "codex/economy-screen-result-ui",
+    "buildSourceCommit": "2ca3420121233a1a8ab492befa7b226486b0ac60",
+    "baselineProfileVersion": "1.0.28",
+    "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.29"
+  },
+  "mod": {
+    "name": "Tom's Simple Storage",
+    "version": "2.4.1",
+    "jarName": "toms_storage-1.21-2.4.1.jar",
+    "clientPath": "mods/toms_storage-1.21-2.4.1.jar",
+    "serverPath": "E:\\HechaoActivitySlots\\activity-survival\\mods\\toms_storage-1.21-2.4.1.jar",
+    "bytes": 855813,
+    "sha256": "BB31B1CA0F6421F2828658B003F552D278B95DAAF827C0F41A6D080ED7E2614F",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "clientRequired": true,
+    "serverRequired": true
+  },
+  "profile": {
+    "profileId": "skyrealm-industrial-neoforge-1.21.1",
+    "version": "1.0.29",
+    "publishedAtUtc": "2026-08-22T20:00:43.6050526Z",
+    "importedAtUtc": "2026-08-23T05:33:52.584128Z",
+    "minecraftVersion": "1.21.1",
+    "loader": "NeoForge",
+    "loaderVersion": "21.1.228",
+    "javaVersion": "21",
+    "manifestBytes": 2025941,
+    "manifestSha256": "7DC19884A1E52F7AB0DD27827104C70A831D129F2E3D53071FAC2D0B9B88A31B",
+    "manifestProductionPath": "/var/lib/hechao-launcher-api/manifests/releases/skyrealm-industrial-neoforge-1.21.1/7dc19884a1e52f7ab0dd27827104c70a831d129f2e3d53071fac2d0b9b88a31b.json",
+    "manifestMode": "0640",
+    "manifestOwner": "hechao-api:hechao-api",
+    "logicalFiles": 4458,
+    "logicalBytes": 1205115322,
+    "uniqueObjects": 4253,
+    "objectBytes": 1205106812,
+    "signatureKeyId": "release-2026-07-primary",
+    "isPaused": false,
+    "activeFlagChanged": false,
+    "previousImmutableVersionRetained": "1.0.28"
+  },
+  "delta": {
+    "commonFilesUnchanged": 4457,
+    "samePathContentChanges": 0,
+    "removedPaths": [],
+    "addedPath": "mods/toms_storage-1.21-2.4.1.jar",
+    "addedObjectSha256": "BB31B1CA0F6421F2828658B003F552D278B95DAAF827C0F41A6D080ED7E2614F"
+  },
+  "distribution": {
+    "publishPassed": true,
+    "verifyPassed": true,
+    "releaseValidationPassed": true,
+    "firstPassUploadedObjects": 1,
+    "firstPassAlreadyPresentObjects": 4252,
+    "firstPassUploadedBytes": 855813,
+    "secondPassUploadedObjects": 0,
+    "secondPassAlreadyPresentObjects": 4253,
+    "secondPassUploadedBytes": 0,
+    "immutableObjectOverwrites": 0,
+    "importAuditId": 10580,
+    "channelAuditId": 10585,
+    "adminSessionCreateAuditId": 10577,
+    "trustedDeviceUseAuditId": 10578,
+    "adminSessionExpiredNaturally": true,
+    "sessionOrTrustedDeviceRevocationAuditCountSinceSessionCreation": 0,
+    "activeAdminSessionsAfterExpiry": 0,
+    "activeTrustedDevicesRetained": 3
+  },
+  "api": {
+    "checkedAtUtc": "2026-08-23T06:14:29.4054866Z",
+    "version": "0.36.1",
+    "health": "ok",
+    "ready": "ready",
+    "database": "ready",
+    "mainPid": 525035,
+    "restartCount": 0,
+    "migrationsApplied": 34,
+    "migrationsExpected": 34
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.29",
+      "manifestSha256": "7DC19884A1E52F7AB0DD27827104C70A831D129F2E3D53071FAC2D0B9B88A31B",
+      "rolloutPercentage": 100,
+      "revision": 22,
+      "updatedAtUtc": "2026-08-23T05:57:05.815606Z"
+    },
+    "gray": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 0,
+      "revision": 1,
+      "updatedAtUtc": "2026-08-15T03:41:03.609866Z"
+    },
+    "production": {
+      "version": null,
+      "manifestSha256": null,
+      "rolloutPercentage": 100,
+      "revision": 1,
+      "updatedAtUtc": "2026-08-15T03:41:03.609866Z"
+    }
+  },
+  "serverCompatibility": {
+    "checkedAtUtc": "2026-08-23T06:16:37.8770403Z",
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "pid": 1524,
+    "port": 25600,
+    "listenerCount": 1,
+    "establishedBackendConnections": 0,
+    "launchJar": "arclight-neoforge-1.21.1-1.0.2-SNAPSHOT-8086b06.jar",
+    "serverModVersion": "2.4.1",
+    "serverModBytes": 855813,
+    "serverModSha256": "BB31B1CA0F6421F2828658B003F552D278B95DAAF827C0F41A6D080ED7E2614F",
+    "matchingServerJarCount": 1,
+    "commonConfigLoaded": true,
+    "serverConfigLoaded": true,
+    "startupDoneSeconds": 4.376,
+    "modRelatedErrorCount": 0,
+    "coordinatedColdDeploymentPassed": true,
+    "fullBackupPath": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z",
+    "fullBackupExists": true,
+    "finalVerificationRestartedServer": false
+  },
+  "remainingAcceptance": {
+    "authorizedLauncherIncrementalDownloadPassed": false,
+    "realClientJoinedServerPassed": false,
+    "storageUiOpenPassed": false,
+    "adjacentInventoryConnectionPassed": false,
+    "itemDepositWithdrawAndSearchPassed": false,
+    "multiPlayerConcurrentAccessPassed": false,
+    "disconnectReconnectPassed": false,
+    "serverRestartPersistencePassed": false,
+    "existingFifteenActionMenuRegressionPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  },
+  "rollback": {
+    "coordinatedClientAndServerRollbackRequired": true,
+    "testVersion": "1.0.28",
+    "previousManifestSha256": "753F98221520B2A7330775C983133A985CF5DB7436769F4A4A9ADF7C7ABE88FC",
+    "serverFullBackup": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z",
+    "immutableVersionsToRetain": [
+      "1.0.27",
+      "1.0.28",
+      "1.0.29"
+    ]
+  }
+}

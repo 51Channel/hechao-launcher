@@ -806,3 +806,31 @@ Screen `0.2.9` 在既有协议 `3` 上把“天域远征”从 14 项扩展为 1
 双账号交易回归验收完成前不得推进。正式记录见
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.9.md) 与
 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.28.md)。
+
+## 31. 2026-08-23 Tom's Simple Storage 与客户端档案 1.0.29 Test 发布
+
+天域远征工业季新增 Tom's Simple Storage `2.4.1`。本轮不修改 API、HechaoEconomy、
+HechaoEconomyScreen 或网络协议；客户端与服务端使用完全相同的
+`toms_storage-1.21-2.4.1.jar`，大小 `855,813` 字节，SHA-256 为
+`BB31B1CA0F6421F2828658B003F552D278B95DAAF827C0F41A6D080ED7E2614F`。
+
+owl5 的 `activity-survival` 已先完成完整离线备份、服务端模组部署和 Arclight 冷启动。
+完整备份为
+`E:\manual-backups\activity-survival-toms-storage-2.4.1-20260822T201140Z`。2026-08-23
+14:16 CST 最终只读回查为任务 `Running`、Java PID `1524`、`127.0.0.1:25600` 单监听、
+零已建立后端连接；唯一 Tom's Storage JAR 摘要正确，common/server 配置均已加载，
+`Done (4.376s)`，模组相关错误为 `0`。收口阶段没有再次停止或重启服务端。
+
+客户端档案 `1.0.29` 从不可变 `1.0.28` 隔离制作，只新增上述一个必需模组；原有
+`4,457` 个文件逐哈希不变，没有删除路径或同路径内容变化。清单为 `2,025,941` 字节，
+SHA-256 为
+`7DC19884A1E52F7AB0DD27827104C70A831D129F2E3D53071FAC2D0B9B88A31B`；逻辑文件
+`4,458` 个、逻辑字节 `1,205,115,322`、去重对象 `4,253` 个。OSS 首轮只上传新增
+`855,813` 字节对象，第二轮上传 `0`，不可变覆盖 `0`。
+
+后台导入审计为 `#10580`，Test 通道切换审计为 `#10585`。发布会话由 `#10577` 创建并
+使用既有可信设备 `#10578`，随后自然到期；活跃会话为 `0`，可信设备仍为 `3`，没有因
+退出后台而撤销可信设备。Test 当前为 `1.0.29 / 100% / r22`，Gray 与 Production 未
+分配。真人启动器增量下载、库存网络、存取搜索、多人并发、断线重连、重启持久化和既有
+15 项快捷菜单回归完成前不得推进。正式记录见
+[`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.29.md)。
