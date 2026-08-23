@@ -97,7 +97,7 @@ record EconomyConfiguration(
     static EconomyConfiguration failClosedDefaults() {
         return new EconomyConfiguration(
                 URI.create("https://launcher-api.hechao.world"),
-                "skyrealm",
+                "activity-survival",
                 "",
                 Duration.ofSeconds(3),
                 Duration.ofSeconds(15),

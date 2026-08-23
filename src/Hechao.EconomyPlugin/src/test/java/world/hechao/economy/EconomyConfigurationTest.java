@@ -22,7 +22,7 @@ final class EconomyConfigurationTest {
         var result = EconomyConfiguration.load(config, temporaryDirectory);
 
         assertFalse(result.isConfigured());
-        assertEquals("skyrealm", result.serverId());
+        assertEquals("activity-survival", result.serverId());
     }
 
     @Test
@@ -50,7 +50,7 @@ final class EconomyConfigurationTest {
         var result = EconomyConfiguration.failClosedDefaults();
 
         assertFalse(result.isConfigured());
-        assertEquals("skyrealm", result.serverId());
+        assertEquals("activity-survival", result.serverId());
         assertEquals(15, result.balanceCacheLifetime().toSeconds());
     }
 
@@ -58,7 +58,7 @@ final class EconomyConfigurationTest {
         var config = mock(FileConfiguration.class);
         when(config.getString("api-base-url"))
                 .thenReturn("https://launcher-api.hechao.world");
-        when(config.getString("server-id")).thenReturn("skyrealm");
+        when(config.getString("server-id")).thenReturn("activity-survival");
         when(config.getString("token-environment-variable"))
                 .thenReturn("HECHAO_ECONOMY_TEST_TOKEN_DO_NOT_SET");
         when(config.getString("token-file"))

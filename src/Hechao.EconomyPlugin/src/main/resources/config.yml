@@ -1,5 +1,6 @@
 api-base-url: "https://launcher-api.hechao.world"
-server-id: "skyrealm"
+# Override this value for every separately deployed server.
+server-id: "activity-survival"
 token-environment-variable: "HECHAO_ECONOMY_TOKEN"
 token-file: "plugins/HechaoEconomy/economy-token.txt"
 request-timeout-seconds: 3

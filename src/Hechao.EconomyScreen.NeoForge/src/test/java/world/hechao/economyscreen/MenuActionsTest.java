@@ -157,8 +157,10 @@ final class MenuActionsTest {
         assertTrue(source.contains("Commands.literal(\"setcity\")"));
         assertTrue(source.contains("source.hasPermission(2)"));
         assertTrue(source.contains("essentialsspawn:setspawn"));
-        assertTrue(source.contains("performPrefixedCommand"));
-        assertTrue(source.contains("withCallback((success, ignoredResult)"));
+        assertTrue(source.contains("RtpSafeLocationFinder.find("));
+        assertTrue(source.contains("player.teleportTo(target.x(), target.y(), target.z())"));
+        assertTrue(source.contains("player.setDeltaMovement(Vec3.ZERO)"));
+        assertTrue(source.contains("player.resetFallDistance()"));
         assertTrue(source.contains("RTP_COOLDOWNS.release(player.getUUID())"));
         assertTrue(source.contains("action.executionMode() == MenuActions.ExecutionMode.SERVER"));
         assertTrue(source.contains("EconomyMessageProtocol.authorization("));

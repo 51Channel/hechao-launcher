@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'world.hechao'
-version = '0.2.3'
+version = '0.2.4'
 
 repositories {
     maven {

@@ -9,6 +9,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -107,17 +108,21 @@ public final class HechaoEconomyScreenMod {
             return 0;
         }
 
+        var location = RtpSafeLocationFinder.find(
+                player,
+                plan.orElseThrow().maximumRange());
+        if (location.isEmpty()) {
+            RTP_COOLDOWNS.release(player.getUUID());
+            player.sendSystemMessage(Component.literal(
+                    "[天域远征] 没有找到安全落点，请稍后再试。"));
+            return 0;
+        }
+
         try {
-            var commandSource = player.createCommandSourceStack()
-                    .withPermission(2)
-                    .withCallback((success, ignoredResult) -> {
-                        if (!success) {
-                            RTP_COOLDOWNS.release(player.getUUID());
-                        }
-                    });
-            player.getServer().getCommands().performPrefixedCommand(
-                    commandSource,
-                    plan.orElseThrow().command());
+            var target = location.orElseThrow();
+            player.teleportTo(target.x(), target.y(), target.z());
+            player.setDeltaMovement(Vec3.ZERO);
+            player.resetFallDistance();
             return 1;
         } catch (RuntimeException exception) {
             RTP_COOLDOWNS.release(player.getUUID());
