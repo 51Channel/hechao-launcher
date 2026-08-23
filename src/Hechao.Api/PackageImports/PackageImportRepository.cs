@@ -452,7 +452,9 @@ public sealed class PackageImportRepository
             importId,
             PackageImportStatus.QueuedForPublishing,
             "PUBLISH_CONFIRMED",
-            "管理员已确认部署预览，等待客户端发布代理。",
+            request.DeployServer
+                ? "管理员已确认客户端发布与所选槽部署，等待客户端发布代理。"
+                : "管理员已确认仅发布客户端并保存服务端制品，等待客户端发布代理。",
             now,
             cancellationToken);
         await WriteAuditAsync(

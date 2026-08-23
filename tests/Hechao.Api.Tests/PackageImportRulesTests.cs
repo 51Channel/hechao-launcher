@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Hechao.Api.PackageImports;
 using Hechao.Contracts;
 
@@ -66,6 +67,50 @@ public sealed class PackageImportRulesTests
                 Confirmation = $"发布并入库 {importId:D}"
             },
             import));
+    }
+
+    [Fact]
+    public void Contracts_DefaultMissingDeployServerToTestOnly()
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var requestJson = JsonSerializer.Serialize(new
+        {
+            expectedRevision = 1L,
+            profileId = "summer-fabric-1.20.1",
+            profileDisplayName = "夏日活动",
+            version = "1.0.0",
+            targetServerId = PackageImportRules.ActivityServerId,
+            preserveWorldData = false,
+            syncServerCatalog = true,
+            serverDisplayName = "夏日活动",
+            minimumTier = AccessTier.Participant,
+            maximumMemoryMiB = 4096,
+            confirmation = "发布并入库"
+        }, options);
+        var planJson = JsonSerializer.Serialize(new
+        {
+            profileId = "summer-fabric-1.20.1",
+            profileDisplayName = "夏日活动",
+            version = "1.0.0",
+            targetServerId = PackageImportRules.ActivityServerId,
+            preserveWorldData = false,
+            syncServerCatalog = true,
+            serverDisplayName = "夏日活动",
+            minimumTier = AccessTier.Participant,
+            maximumMemoryMiB = 4096
+        }, options);
+
+        var request = JsonSerializer.Deserialize<AdminPackageImportConfirmRequest>(
+            requestJson,
+            options);
+        var plan = JsonSerializer.Deserialize<PackageImportDeploymentPlanRecord>(
+            planJson,
+            options);
+
+        Assert.NotNull(request);
+        Assert.False(request.DeployServer);
+        Assert.NotNull(plan);
+        Assert.False(plan.DeployServer);
     }
 
     [Fact]
