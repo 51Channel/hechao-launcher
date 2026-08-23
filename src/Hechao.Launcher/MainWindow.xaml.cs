@@ -307,7 +307,8 @@ public partial class MainWindow : Window
                 RegisterDisplayNameTextBox.Text,
                 RegisterPasswordBox.Password,
                 RegisterEmailTextBox.Text,
-                RegisterCodeTextBox.Text))
+                RegisterCodeTextBox.Text,
+                viewModel.IsRegistrationLegalAccepted))
         {
             RegisterPasswordBox.Clear();
             RegisterCodeTextBox.Clear();

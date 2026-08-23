@@ -68,11 +68,12 @@ public sealed class ForumRegistrationClient
         string email,
         string password,
         string code,
+        bool legalAccepted,
         CancellationToken cancellationToken = default)
     {
         using var response = await _httpClient.PostAsJsonAsync(
             "api/forum/register",
-            new { username, displayName, email, password, code },
+            new { username, displayName, email, password, code, legalAccepted },
             cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
     }

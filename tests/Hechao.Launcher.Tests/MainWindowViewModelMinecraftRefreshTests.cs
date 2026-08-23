@@ -1032,7 +1032,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
     }
 
     [Fact]
-    public async Task ActivityPage_RefreshesCatalogWhileVisibleAndStopsAfterLeaving()
+    public async Task CatalogPages_RefreshCatalogWhileVisibleAndStopAfterLeaving()
     {
         var catalog = new CountingCatalogClient(
             CreatePermanentAndActivityCatalog());
@@ -1043,11 +1043,13 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             activityCatalogRefreshInterval: TimeSpan.FromMilliseconds(20));
 
         await WaitUntilAsync(() =>
-            catalog.RequestCount == 1 && !viewModel.IsCatalogLoading);
-        viewModel.IsActivitiesPage = true;
-        await WaitUntilAsync(() => catalog.RequestCount >= 3);
+            catalog.RequestCount >= 2 && !viewModel.IsCatalogLoading);
+        var requestsOnServersPage = catalog.RequestCount;
 
-        viewModel.IsServersPage = true;
+        viewModel.IsActivitiesPage = true;
+        await WaitUntilAsync(() => catalog.RequestCount > requestsOnServersPage);
+
+        viewModel.IsDownloadsPage = true;
         await Task.Delay(30);
         var requestsAfterLeaving = catalog.RequestCount;
         await Task.Delay(80);
@@ -1333,7 +1335,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             "测试玩家",
             "password",
             "tester@example.com",
-            "123456");
+            "123456",
+            true);
         await WaitUntilAsync(() => authentication.RegisterRequestCount == 1);
 
         Assert.True(viewModel.IsAccountBusy);
@@ -1342,7 +1345,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             "测试玩家",
             "password",
             "tester@example.com",
-            "123456"));
+            "123456",
+            true));
         Assert.Equal(1, authentication.RegisterRequestCount);
 
         registerResponse.SetException(new RegistrationLoginFailedException(
@@ -1375,7 +1379,8 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             "测试玩家",
             "password",
             "tester@example.com",
-            "123456");
+            "123456",
+            true);
         await WaitUntilAsync(() => authentication.RegisterRequestCount == 1);
         registerResponse.SetException(new JsonException("malformed response"));
 
@@ -1384,6 +1389,35 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
         Assert.True(viewModel.IsAccountFormError);
         Assert.True(viewModel.CanSubmitAccountForms);
         Assert.False(string.IsNullOrWhiteSpace(viewModel.AccountFormMessage));
+    }
+
+    [Fact]
+    public async Task RegistrationRequiresLegalAcceptanceBeforeCallingService()
+    {
+        var authentication = new StubAuthenticationService
+        {
+            CurrentAccount = null
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            new StubGameLauncherService());
+
+        Assert.False(viewModel.IsRegistrationLegalAccepted);
+        Assert.False(viewModel.CanSubmitRegistrationForm);
+        Assert.False(await viewModel.RegisterAccountAsync(
+            "tester",
+            "测试玩家",
+            "password123",
+            "tester@example.com",
+            "123456",
+            legalAccepted: false));
+
+        Assert.Equal(0, authentication.RegisterRequestCount);
+        Assert.True(viewModel.IsAccountFormError);
+        Assert.Contains("用户协议", viewModel.AccountFormMessage, StringComparison.Ordinal);
+
+        viewModel.IsRegistrationLegalAccepted = true;
+        Assert.True(viewModel.CanSubmitRegistrationForm);
     }
 
     [Fact]
@@ -2079,6 +2113,7 @@ public sealed class MainWindowViewModelMinecraftRefreshTests
             string password,
             string email,
             string code,
+            bool legalAccepted,
             CancellationToken cancellationToken = default)
         {
             RegisterRequestCount++;

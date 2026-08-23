@@ -1248,6 +1248,54 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void RegistrationAndNotifications_ExposeExplicitConsentAndCompactChrome()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var consent = document
+            .Descendants(presentation + "CheckBox")
+            .Single(element =>
+                element.Attribute("IsChecked")?.Value.Contains(
+                    "IsRegistrationLegalAccepted",
+                    StringComparison.Ordinal) == true);
+        Assert.Contains(
+            consent.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value.Contains(
+                "用户协议",
+                StringComparison.Ordinal) == true);
+
+        var registerButton = document
+            .Descendants(presentation + "Button")
+            .Single(element =>
+                element.Attribute("AutomationProperties.Name")?.Value == "创建赫朝账号");
+        Assert.Equal(
+            "{Binding CanSubmitRegistrationForm}",
+            registerButton.Attribute("IsEnabled")?.Value);
+
+        var notificationToggle = document
+            .Descendants(presentation + "ToggleButton")
+            .Single(element => element.Attribute("Content")?.Value == "\uE7F4");
+        Assert.Equal("38", notificationToggle.Attribute("Width")?.Value);
+        Assert.Equal("38", notificationToggle.Attribute("Height")?.Value);
+        Assert.Equal("46", notificationToggle.Parent?.Attribute("Width")?.Value);
+        Assert.Equal("64", notificationToggle.Parent?.Attribute("Height")?.Value);
+
+        var notificationPanel = document
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value == "NotificationsPanel");
+        var shadow = notificationPanel
+            .Descendants(presentation + "DropShadowEffect")
+            .Single();
+        Assert.Equal("#22000000", shadow.Attribute("Color")?.Value);
+        Assert.Equal("12", shadow.Attribute("BlurRadius")?.Value);
+        Assert.Equal("3", shadow.Attribute("ShadowDepth")?.Value);
+    }
+
+    [Fact]
     public void ActivityPage_UsesSixWeekCalendarAndIconParkMonthNavigation()
     {
         var document = LoadLauncherXaml();
