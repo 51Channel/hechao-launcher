@@ -311,7 +311,9 @@ owl5 升级只重启代理计划任务，代理 PID 从 `7436` 变为 `8848`，�
 
 活动目标必须声明 `startScriptRelativePath=start.bat`，且脚本与计划任务同时满足
 `HECHAO_MANAGED_START` 契约。`forwarding.secret` 等主机固定文件只能从旧受控目录复制；
-世界仅在管理员明确选择时保留。目录切换失败会自动恢复旧版本，成功后保留一个受控
+Paper 活动还必须成对保留已经启用 modern forwarding 的
+`config\paper-global.yml`，上传包不能携带或替换其中任何密钥。世界仅在管理员明确选择时
+保留。目录切换失败会自动恢复旧版本，成功后保留一个受控
 回滚目录并保持停服。完整流程见
 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。`0.3.0` 已只部署到 owl5，
 owl9 保持 `0.2.1`；升级服控代理时五个既有 Minecraft Java PID 未变化，活动服没有

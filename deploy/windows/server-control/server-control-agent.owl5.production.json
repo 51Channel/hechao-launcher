@@ -76,8 +76,15 @@
       "maximumAllowedMemoryMiB": 8192,
       "packageDeploymentEnabled": true,
       "serverDeletionEnabled": true,
-      "hostManagedRelativePaths": ["forwarding.secret"],
-      "worldDataRelativePaths": ["world", "world_nether", "world_the_end"],
+      "hostManagedRelativePaths": [
+        "config\\paper-global.yml",
+        "forwarding.secret"
+      ],
+      "worldDataRelativePaths": [
+        "airship_escape",
+        "airship_escape_nether",
+        "airship_escape_the_end"
+      ],
       "allowedCommandPrefixes": ["*"]
     },
     {

@@ -449,6 +449,8 @@ Authorizer 只属于代理，Lobby Guard、LuckPerms Tier Agent 只属于内部�
 - 直接后端地址不可从公网绕过 Velocity；
 - Velocity modern forwarding、转发密钥和后端身份模式与现有平台一致，没有为测试临时
   开放直连或关闭身份校验；
+- Paper 后端的 `config/paper-global.yml` 与 `forwarding.secret` 由主机固定快照成对保留，
+  上传包、源码、日志和验收记录均不包含密钥内容；
 - 错误客户端被清楚拒绝，正确管理员客户端能通过一次性授权进入。
 
 ## 9. 目录切换与活动上线

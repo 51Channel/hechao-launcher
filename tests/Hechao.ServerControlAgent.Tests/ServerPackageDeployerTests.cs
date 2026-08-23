@@ -16,11 +16,18 @@ public sealed class ServerPackageDeployerTests : IDisposable
     {
         var server = Path.Combine(root, "ActivityNeoForge");
         var backup = Path.Combine(root, "agent-backups");
-        Directory.CreateDirectory(server);
+        Directory.CreateDirectory(Path.Combine(server, "config"));
         await File.WriteAllTextAsync(
             Path.Combine(server, "forwarding.secret"),
             "host-secret");
-        var configuration = CreateConfiguration(server);
+        await File.WriteAllTextAsync(
+            Path.Combine(server, "config", "paper-global.yml"),
+            "proxies:\n  velocity:\n    enabled: true\n    secret: host-secret\n");
+        var configuration = CreateConfiguration(server) with
+        {
+            HostManagedRelativePaths =
+                [@"config\paper-global.yml", "forwarding.secret"]
+        };
         new HostManagedSnapshotStore(configuration, backup).CaptureFromServer();
         Directory.Delete(server, recursive: true);
         var archive = CreateServerArchive();
@@ -52,6 +59,11 @@ public sealed class ServerPackageDeployerTests : IDisposable
             "host-secret",
             await File.ReadAllTextAsync(
                 Path.Combine(server, "forwarding.secret")));
+        Assert.Contains(
+            "secret: host-secret",
+            await File.ReadAllTextAsync(
+                Path.Combine(server, "config", "paper-global.yml")),
+            StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(server, "new-server.jar")));
         Assert.False(Directory.Exists(
             Path.Combine(root, ".ActivityNeoForge.hechao-rollback")));

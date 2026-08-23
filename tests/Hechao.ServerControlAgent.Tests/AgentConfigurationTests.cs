@@ -101,9 +101,15 @@ public sealed class AgentConfigurationTests
             var activity = Assert.Single(deploymentTargets);
             Assert.Equal("activity", activity.ServerId);
             Assert.Equal("start.bat", activity.StartScriptRelativePath);
-            Assert.Equal(["forwarding.secret"], activity.HostManagedRelativePaths);
             Assert.Equal(
-                ["world", "world_nether", "world_the_end"],
+                [@"config\paper-global.yml", "forwarding.secret"],
+                activity.HostManagedRelativePaths);
+            Assert.Equal(
+                [
+                    "airship_escape",
+                    "airship_escape_nether",
+                    "airship_escape_the_end"
+                ],
                 activity.WorldDataRelativePaths);
         }
         else
