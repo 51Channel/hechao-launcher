@@ -1210,9 +1210,21 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             SetCurrentAccount(await _authenticationService.TryRestoreAsync());
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or LauncherApiException)
+        catch (Exception exception) when (
+            exception is HttpRequestException or
+            TaskCanceledException or
+            LauncherApiException or
+            IOException)
         {
-            SetCurrentAccount(null);
+            // A failed restore is not the same as a revoked session. Keep
+            // the account already loaded by the API client and let the
+            // catalog retry refresh the session when connectivity returns.
+            var account = _authenticationService.CurrentAccount;
+            SetCurrentAccount(account);
+            _accountStatusHint = account is null
+                ? "暂时无法验证登录状态，请稍后重试"
+                : "网络暂时不可用，已保留登录状态";
+            OnPropertyChanged(nameof(AccountStatusText));
         }
         finally
         {
@@ -1629,6 +1641,10 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (LauncherAuthenticationRequiredException)
         {
+            // This branch is reserved for an authoritative 401/invalid
+            // session. Transient transport failures are handled above and do
+            // not clear the account.
+            SetCurrentAccount(_authenticationService.CurrentAccount);
             CancelActivityClientStateRefresh();
             _catalogPlayerServers.Clear();
             Servers.Clear();

@@ -333,7 +333,9 @@
 - 通过 `IServerCatalogClient` 从 HTTPS API 读取服务器目录，并按“在线 API、上次成功缓存、内置应急目录”顺序降级。
 - 使用赫朝账号建立社区会话；绑定游戏身份时使用系统浏览器执行 Microsoft OAuth 与 PKCE，再通过 Xbox/XSTS/Minecraft 验证 Java 正版权益。
 - 进入服务器时优先静默续期 Minecraft 游戏会话；缓存无法续期时自动打开系统浏览器刷新 Microsoft 凭据，校验所选账号与已绑定 Minecraft UUID 一致后继续启动，不要求退出赫朝账号。
-- 使用 15 分钟访问令牌和可撤销、轮换的刷新令牌；刷新会话由 Windows DPAPI 保护。
+- 使用 15 分钟访问令牌和可撤销、轮换的刷新令牌；完整短期会话由 Windows DPAPI 保护，
+  会话文件采用原子替换并保留加密备份。启动时优先复用仍有效的访问令牌；API 暂时断网、
+  超时或 5xx 时保留本地登录态并自动等待后续刷新，只有服务端明确返回 401 才清除会话。
 - 账户页支持退出当前设备、原子撤销全部设备及后台会话，并在校验当前赫朝密码后解除 Minecraft 身份绑定；解除绑定会撤销全部会话和待使用进服授权，并把等级回退为 `Member`。
 - 从共享 LuckPerms 数据库每 5 分钟同步主组，按 `Member`、`Participant`、`Collaborator`、`Administrator` 过滤目录。
 - 私有 OSS 下载通过启动器 API 鉴权；API 仅为清单内对象签发 5 分钟 V4 URL，Bearer 不会随跳转发送到 OSS。

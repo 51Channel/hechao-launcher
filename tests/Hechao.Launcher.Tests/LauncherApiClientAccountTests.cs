@@ -73,6 +73,136 @@ public sealed class LauncherApiClientAccountTests
     }
 
     [Fact]
+    public async Task TryRestoreSessionAsync_WithFreshPersistedAccessTokenDoesNotRefresh()
+    {
+        var handler = new RecordingHandler();
+        var storedSession = new StoredLauncherSession(
+            "refresh-token",
+            UnlinkedAccount,
+            "access-token",
+            DateTimeOffset.UtcNow.AddMinutes(10),
+            DateTimeOffset.UtcNow.AddDays(30));
+        var store = new InMemorySessionStore(storedSession);
+        var client = CreateClient(handler, store);
+
+        var account = await client.TryRestoreSessionAsync();
+
+        Assert.Equal(UnlinkedAccount, account);
+        Assert.Equal(UnlinkedAccount, client.CurrentAccount);
+        Assert.Equal(storedSession, store.Session);
+        Assert.Equal(0, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task TryRestoreSessionAsync_WhenRefreshNetworkFailsKeepsSession()
+    {
+        var handler = new RecordingHandler(_ =>
+            Task.FromException<HttpResponseMessage>(
+                new HttpRequestException("synthetic offline failure")));
+        var storedSession = new StoredLauncherSession(
+            "refresh-token",
+            UnlinkedAccount,
+            "expired-access-token",
+            DateTimeOffset.UtcNow.AddMinutes(-1),
+            DateTimeOffset.UtcNow.AddDays(30));
+        var store = new InMemorySessionStore(storedSession);
+        var client = CreateClient(handler, store);
+
+        var account = await client.TryRestoreSessionAsync();
+
+        Assert.Equal(UnlinkedAccount, account);
+        Assert.Equal(UnlinkedAccount, client.CurrentAccount);
+        Assert.Equal(storedSession, store.Session);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task TryRestoreSessionAsync_WhenRefreshIsUnauthorizedClearsSession()
+    {
+        var handler = new RecordingHandler(_ =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)));
+        var store = new InMemorySessionStore(
+            new StoredLauncherSession(
+                "refresh-token",
+                UnlinkedAccount,
+                "expired-access-token",
+                DateTimeOffset.UtcNow.AddMinutes(-1),
+                DateTimeOffset.UtcNow.AddDays(30)));
+        var client = CreateClient(handler, store);
+
+        var account = await client.TryRestoreSessionAsync();
+
+        Assert.Null(account);
+        Assert.Null(client.CurrentAccount);
+        Assert.Null(store.Session);
+    }
+
+    [Fact]
+    public async Task RefreshedSession_IsReusableOnNextStartWithoutAnotherRefresh()
+    {
+        var refreshResponse = Session(UnlinkedAccount);
+        var firstHandler = new RecordingHandler(_ =>
+            Task.FromResult(JsonResponse(refreshResponse)));
+        var store = new InMemorySessionStore(
+            new StoredLauncherSession("refresh-token", UnlinkedAccount));
+        var firstClient = CreateClient(firstHandler, store);
+
+        await firstClient.TryRestoreSessionAsync();
+
+        var secondHandler = new RecordingHandler();
+        var secondClient = CreateClient(secondHandler, store);
+        var account = await secondClient.TryRestoreSessionAsync();
+
+        Assert.Equal(UnlinkedAccount, account);
+        Assert.Equal(refreshResponse.AccessToken, store.Session!.AccessToken);
+        Assert.Equal(refreshResponse.AccessTokenExpiresAt, store.Session.AccessTokenExpiresAt);
+        Assert.Equal(refreshResponse.RefreshTokenExpiresAt, store.Session.RefreshTokenExpiresAt);
+        Assert.Equal(0, secondHandler.RequestCount);
+    }
+
+    [Fact]
+    public async Task RetriedRequest_WhenNewAccessTokenIsUnauthorizedClearsSession()
+    {
+        var handler = new RecordingHandler(
+            request =>
+            {
+                Assert.Equal("/v1/launcher/update", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized));
+            },
+            request =>
+            {
+                Assert.Equal("/v1/auth/refresh", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(JsonResponse(new AuthSessionResponse(
+                    "refreshed-access-token",
+                    DateTimeOffset.UtcNow.AddMinutes(15),
+                    "refreshed-refresh-token",
+                    DateTimeOffset.UtcNow.AddDays(30),
+                    UnlinkedAccount)));
+            },
+            request =>
+            {
+                Assert.Equal("/v1/launcher/update", request.RequestUri!.AbsolutePath);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized));
+            });
+        var store = new InMemorySessionStore(
+            new StoredLauncherSession(
+                "refresh-token",
+                UnlinkedAccount,
+                "access-token",
+                DateTimeOffset.UtcNow.AddMinutes(10),
+                DateTimeOffset.UtcNow.AddDays(30)));
+        var client = CreateClient(handler, store);
+
+        await client.TryRestoreSessionAsync();
+        await Assert.ThrowsAsync<LauncherAuthenticationRequiredException>(
+            () => client.GetLauncherUpdateAsync());
+
+        Assert.Null(client.CurrentAccount);
+        Assert.Null(store.Session);
+        Assert.Equal(3, handler.RequestCount);
+    }
+
+    [Fact]
     public async Task RegisterAccountAsync_UsesFirstValidationMessage()
     {
         var handler = new RecordingHandler(_ =>

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Hechao.Contracts;
 
@@ -13,77 +14,212 @@ public interface ISecureSessionStore
     Task ClearAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed record StoredLauncherSession(string RefreshToken, HechaoAccount Account);
+public sealed record StoredLauncherSession(
+    string RefreshToken,
+    HechaoAccount Account,
+    string? AccessToken = null,
+    DateTimeOffset? AccessTokenExpiresAt = null,
+    DateTimeOffset? RefreshTokenExpiresAt = null);
 
 public sealed class DpapiSessionStore : ISecureSessionStore
 {
     private const int CryptProtectUiForbidden = 0x1;
     private const int MaximumSessionFileBytes = 64 * 1024;
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly SemaphoreSlim SaveGate = new(1, 1);
     private readonly string _sessionPath;
+    private readonly string _backupPath;
+    private readonly Func<byte[], byte[]> _protect;
+    private readonly Func<byte[], byte[]> _unprotect;
 
     public DpapiSessionStore()
+        : this(GetDefaultSessionPath())
     {
-        var applicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        _sessionPath = Path.Combine(applicationData, "Hechao", "Launcher", "session.dat");
+    }
+
+    internal DpapiSessionStore(
+        string sessionPath,
+        Func<byte[], byte[]>? protect = null,
+        Func<byte[], byte[]>? unprotect = null)
+    {
+        _sessionPath = Path.GetFullPath(sessionPath);
+        _backupPath = _sessionPath + ".bak";
+        _protect = protect ?? Protect;
+        _unprotect = unprotect ?? Unprotect;
     }
 
     public async Task<StoredLauncherSession?> LoadAsync(CancellationToken cancellationToken = default)
     {
-        try
+        foreach (var path in new[] { _sessionPath, _backupPath })
         {
-            if (!File.Exists(_sessionPath))
+            var session = await TryLoadFileAsync(path, cancellationToken);
+            if (session is not null)
             {
-                return null;
+                return session;
             }
-
-            var file = new FileInfo(_sessionPath);
-            if (file.Length is <= 0 or > MaximumSessionFileBytes)
-            {
-                await ClearAsync(cancellationToken);
-                return null;
-            }
-
-            var encrypted = await File.ReadAllBytesAsync(_sessionPath, cancellationToken);
-            var plaintext = Unprotect(encrypted);
-            var session = JsonSerializer.Deserialize<StoredLauncherSession>(
-                plaintext,
-                SerializerOptions);
-            if (session?.Account is null ||
-                string.IsNullOrWhiteSpace(session.RefreshToken))
-            {
-                await ClearAsync(cancellationToken);
-                return null;
-            }
-
-            return session;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or Win32Exception)
-        {
-            await ClearAsync(cancellationToken);
-            return null;
-        }
+
+        return null;
     }
 
     public async Task SaveAsync(StoredLauncherSession session, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(session);
         var plaintext = JsonSerializer.SerializeToUtf8Bytes(session, SerializerOptions);
-        var encrypted = Protect(plaintext);
+        var encrypted = _protect(plaintext);
+        if (encrypted.Length is <= 0 or > MaximumSessionFileBytes)
+        {
+            throw new InvalidDataException("The encrypted launcher session is invalid.");
+        }
+
         var directory = Path.GetDirectoryName(_sessionPath)!;
-        var temporaryPath = _sessionPath + ".tmp";
-
         Directory.CreateDirectory(directory);
-        await File.WriteAllBytesAsync(temporaryPath, encrypted, cancellationToken);
-        File.Move(temporaryPath, _sessionPath, overwrite: true);
-    }
-
-    public Task ClearAsync(CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
+        await SaveGate.WaitAsync(cancellationToken);
+        string? temporaryPath = null;
         try
         {
-            File.Delete(_sessionPath);
-            File.Delete(_sessionPath + ".tmp");
+            temporaryPath = Path.Combine(
+                directory,
+                $".{Path.GetFileName(_sessionPath)}.{Guid.NewGuid():N}.tmp");
+            await using (var stream = new FileStream(
+                temporaryPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                64 * 1024,
+                FileOptions.Asynchronous | FileOptions.WriteThrough))
+            {
+                await stream.WriteAsync(encrypted, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(flushToDisk: true);
+            }
+
+            ReplaceAtomically(temporaryPath);
+            temporaryPath = null;
+        }
+        finally
+        {
+            if (temporaryPath is not null)
+            {
+                TryDelete(temporaryPath);
+            }
+
+            SaveGate.Release();
+        }
+    }
+
+    public async Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await SaveGate.WaitAsync(cancellationToken);
+        try
+        {
+            TryDelete(_sessionPath);
+            TryDelete(_backupPath);
+            var directory = Path.GetDirectoryName(_sessionPath);
+            if (directory is not null && Directory.Exists(directory))
+            {
+                try
+                {
+                    var temporaryPrefix = $".{Path.GetFileName(_sessionPath)}.";
+                    foreach (var path in Directory.EnumerateFiles(directory, $"{temporaryPrefix}*.tmp"))
+                    {
+                        TryDelete(path);
+                    }
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+        }
+        finally
+        {
+            SaveGate.Release();
+        }
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            // Keep the async method's cancellation contract explicit even
+            // though file deletion itself is best-effort.
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+    }
+
+    private async Task<StoredLauncherSession?> TryLoadFileAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            var file = new FileInfo(path);
+            if (file.Length is <= 0 or > MaximumSessionFileBytes)
+            {
+                return null;
+            }
+
+            var encrypted = await File.ReadAllBytesAsync(path, cancellationToken);
+            var plaintext = _unprotect(encrypted);
+            var session = JsonSerializer.Deserialize<StoredLauncherSession>(
+                plaintext,
+                SerializerOptions);
+            return session?.Account is not null &&
+                   !string.IsNullOrWhiteSpace(session.RefreshToken)
+                ? session
+                : null;
+        }
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            JsonException or
+            Win32Exception or
+            CryptographicException or
+            InvalidDataException or
+            ArgumentException)
+        {
+            // A transient DPAPI/file error must not delete the only durable
+            // session. A later start or an explicit login can recover it.
+            return null;
+        }
+    }
+
+    private void ReplaceAtomically(string temporaryPath)
+    {
+        if (!File.Exists(_sessionPath))
+        {
+            File.Move(temporaryPath, _sessionPath);
+            return;
+        }
+
+        try
+        {
+            File.Replace(
+                temporaryPath,
+                _sessionPath,
+                _backupPath,
+                ignoreMetadataErrors: true);
+            return;
+        }
+        catch (PlatformNotSupportedException)
+        {
+        }
+        catch (IOException)
+        {
+            // File.Replace is not available on every volume. The fallback
+            // still replaces the file only after the complete temp file was
+            // flushed, so a partial JSON payload cannot become current.
+        }
+
+        try
+        {
+            File.Copy(_sessionPath, _backupPath, overwrite: true);
         }
         catch (IOException)
         {
@@ -92,7 +228,31 @@ public sealed class DpapiSessionStore : ISecureSessionStore
         {
         }
 
-        return Task.CompletedTask;
+        File.Move(temporaryPath, _sessionPath, overwrite: true);
+    }
+
+    private static string GetDefaultSessionPath()
+    {
+        var applicationData = Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(applicationData, "Hechao", "Launcher", "session.dat");
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+        catch (Win32Exception)
+        {
+        }
     }
 
     private static byte[] Protect(byte[] plaintext)
