@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-24T16:13:29Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.11",
+  "networkProtocol": "3",
+  "buildSourceCommit": "894a2e75d7c60d28ef3e91c5db02cec400cbc8fa",
+  "releaseTag": "hechao-economy-screen-v0.2.11",
+  "serverOnlyHotfix": true,
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.11.jar",
+    "sizeBytes": 998394,
+    "sha256": "90E55908673C0B8B47673AA13200CC09387E46BD368FA2F1B8B762A029979BD7"
+  },
+  "rootCause": {
+    "crashReport": "crash-2026-08-24_21.25.09-server.txt",
+    "watchdogSeconds": 60,
+    "dragonFightFailure": false,
+    "synchronousRtpChunkLoad": true
+  },
+  "features": {
+    "rtpMaximumRange": 5000,
+    "rtpBorderMargin": 32,
+    "rtpMinimumRange": 64,
+    "rtpCooldownSeconds": 60,
+    "rtpMaximumAttempts": 48,
+    "rtpSearchTimeoutSeconds": 30,
+    "sequentialChunkFutureLoads": true,
+    "chunkFutureInitiatedOffServerThread": true,
+    "loadedChunkOnlyBlockReads": true,
+    "duplicateRequestSuppression": true,
+    "disconnectDimensionAndShutdownCleanup": true,
+    "vanillaRespawnListenerRestored": true
+  },
+  "tests": {
+    "screenPassed": 116,
+    "failed": 0,
+    "consecutiveCleanBuilds": 2,
+    "reproducibleArtifact": true,
+    "gitDiffCheckPassed": true
+  },
+  "backup": {
+    "path": "E:\\manual-backups\\activity-survival-bed-rtp-0.2.11-20260825T000757",
+    "fileCount": 1519,
+    "directoryCount": 523,
+    "totalBytes": 1205524893,
+    "fileDifferenceCount": 0,
+    "directoryDifferenceCount": 0
+  },
+  "serverDeployment": {
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "artifactPath": "E:\\HechaoActivitySlots\\activity-survival\\mods\\HechaoEconomyScreen-NeoForge-1.21.1-0.2.11.jar",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "listener": "127.0.0.1:25600",
+    "listenerCount": 1,
+    "uniqueScreenJarCount": 1,
+    "arclightReady": true,
+    "doneSeconds": 4.543,
+    "stabilityCheckUptimeSeconds": 377,
+    "stabilityCheckCpuPercentOfHost": 1.22,
+    "stabilityCheckWorkingSetMiB": 965.7,
+    "newErrorSignatureCount": 0,
+    "screenProblemCount": 0,
+    "afterDoneCriticalCount": 0,
+    "afterDoneLagWarningCount": 0,
+    "newCrashAfterStartCount": 0,
+    "serverRestartedThisRelease": true
+  },
+  "channels": {
+    "changed": false,
+    "test": { "version": "1.0.30", "rolloutPercentage": 100, "revision": 23 },
+    "gray": { "version": null, "rolloutPercentage": 0, "revision": 1 },
+    "production": { "version": "1.0.29", "rolloutPercentage": 100, "revision": 2 }
+  },
+  "humanAcceptance": {
+    "bedRespawn": false,
+    "overworldRtp": false,
+    "netherRtp": false,
+    "concurrentRtpPerformance": false
+  },
+  "grayPromotionAllowed": false,
+  "productionPromotionAllowed": false,
+  "credentialsRecorded": false
+}

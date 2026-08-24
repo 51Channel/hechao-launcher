@@ -888,3 +888,36 @@ Screen 仍为 `0.2.9`。候选尚未部署、未启动新的服务端、未切�
 操作生产服务。上线前仍需服主确认首批售价、隔离 PostgreSQL 集成测试、双账号购买和领取
 验收、背包满/断线/重启恢复测试，以及新的 Test 客户端档案发布。详细记录见
 [`SKYREALM_SERVER_SHOP_0.1.0_CANDIDATE.md`](SKYREALM_SERVER_SHOP_0.1.0_CANDIDATE.md)。
+
+## 34. 2026-08-25 Screen 0.2.11 异步 RTP 与床重生热修
+
+`activity-survival` 在 `2026-08-24 21:25:09` 被 Watchdog 强制关闭。崩溃堆栈不在
+末影龙战斗或结算，而在龙战后触发的 Screen `0.2.10` RTP：服务端主线程通过
+`Level.getBlockState -> ServerChunkCache.getChunk` 同步加载远处区块，单 tick 达到
+`60` 秒。日志此前已出现落后 `24,017 ms / 480 ticks`，随后 spark 世界统计超时并崩溃。
+
+Screen `0.2.11` 保持最大范围 `5000`、边界内缩 `32`、最小范围 `64`、`60` 秒冷却和
+最多 `48` 个候选不变。每次只从专用守护线程发起一个 `getChunkFuture`，使用独立区块票据
+固定候选，Future 完成后回主线程只读取返回的 `LevelChunk`。总查找超时为 `30` 秒；重复
+请求、掉线、死亡、换维度、超时、异常和停服都会释放请求状态与票据。成功传送继续使用
+原版 `POST_TELEPORT` 票据。本版网络协议仍为 `3`，没有修改客户端 UI 或负载，因此客户端
+档案保持 `1.0.30 / Test r23`，没有重新上传 OSS。
+
+床无法作为重生点的根因是 EssentialsSpawn 以 `high` 优先级接管重生，但配置同时设置
+`respawn-at-home: false`；其 `respawn-at-home-bed: true` 在前者为 false 时不会生效。
+生产配置现将 `respawn-listener-priority` 改为 `none`，交回原版床、重生锚与世界出生点；
+没有开启死亡回第一个 home。
+
+源码提交 `894a2e7` 已推送。Java 21 / Gradle 9.5.1 连续两次 `116/116`，JAR 均为
+`998,394` 字节，SHA-256 均为
+`90E55908673C0B8B47673AA13200CC09387E46BD368FA2F1B8B762A029979BD7`。完整离线备份为
+`E:\manual-backups\activity-survival-bed-rtp-0.2.11-20260825T000757`，包含 `1,519`
+个文件、`523` 个目录和 `1,205,524,893` 字节，路径、长度、哈希和目录集合差异为 `0`。
+
+受管冷启动后，任务为 `Running`、Java PID `8092`、`127.0.0.1:25600` 单监听，日志加载
+Screen `0.2.11`、Arclight、Essentials 和 EssentialsSpawn，并在 `4.543` 秒完成。相对
+备份日志新增错误签名 `0`，Screen/RTP 错误 `0`，`Done` 后严重错误 `0`，没有生成新崩溃
+报告。第二次回查时同一进程已运行 `377` 秒，`Done` 后卡服警告仍为 `0`。床重生、主世界/
+下界 RTP、掉线/换维度取消和多人 TPS/MSPT 仍需真人验收，完成前
+不得推进 Gray 或 Production。完整记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.11.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.11.md)。
