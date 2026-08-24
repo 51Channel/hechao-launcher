@@ -327,9 +327,9 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.12.md`](LAUNCHER_RELEASE_0.15.12.md)。
 
-## 0.15.13 生产快照
+## 0.15.13 历史快照
 
-- `2026-08-24` 生产当前为 `LatestVersion=0.15.13`，最低支持版本保持 `0.12.3`；
+- `2026-08-24` 生产曾切换为 `LatestVersion=0.15.13`，最低支持版本保持 `0.12.3`；
 - 安装包为 `61,999,226` 字节，SHA-256
   `48F7D8FFE06F4D6A7E5CB763FA63144A4A48E1DEE29857EC86931E19BA1CA257`；
 - 使用最终赫朝品牌图标统一 WPF、主程序、任务栏、安装器、卸载器和快捷方式，并完整继承
@@ -341,3 +341,21 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
   Minecraft 和 Velocity 未操作。
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.13.md`](LAUNCHER_RELEASE_0.15.13.md)。
+
+## 0.15.14 生产快照
+
+- `2026-08-24` 生产当前为 `LatestVersion=0.15.14`，最低支持版本保持 `0.12.3`；
+- 安装包为 `61,997,617` 字节，SHA-256
+  `E5329650A3961A39A69D41ADDBC6768AB3349227D931D0CC7D94EA4514E5274C`；
+- 侧栏和页头改用官方图标加“赫朝”组合标；Windows 图标按最终 SVG 几何分别生成七个
+  像素尺寸，避免小尺寸抗锯齿缩放失真；
+- 私有对象首次上传成功，重复发布校验后跳过；两轮签名读取 `200`、匿名读取 `403`；
+- API 返回的私有签名下载地址使用
+  `hechaoworld.oss-cn-shanghai.aliyuncs.com`，私有发布验证脚本需显式传入对应
+  `-ExpectedDownloadHost`；
+- `0.15.13 -> 0.15.14` 覆盖安装、全新安装、双轮卸载、设置与会话保留通过；
+- 认证会话确认 `0.15.13` 生成更新计划、`0.15.14` 不重复更新，完整下载长度和 SHA-256
+  一致；API `0.37.0` 健康/就绪、数据库、官网下载页和回滚备份通过；Publisher、Nginx、
+  Minecraft 和 Velocity 未操作。
+
+完整记录见 [`LAUNCHER_RELEASE_0.15.14.md`](LAUNCHER_RELEASE_0.15.14.md)。

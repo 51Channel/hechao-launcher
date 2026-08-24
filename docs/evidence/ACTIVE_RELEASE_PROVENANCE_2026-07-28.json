@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-24T08:11:08Z",
+  "generatedAtUtc": "2026-08-24T09:38:57Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -986,7 +986,7 @@
         "kind": "git-commit",
         "value": "9e75d5ef0dac5a189f9fd2891620042f7bd6c0ce"
       },
-      "deploymentState": "production-shop-migration-health-ready-update-channel-0.15.13",
+      "deploymentState": "production-shop-migration-health-ready-update-channel-0.15.14",
       "historicalNote": "API 0.37.0 includes the official shop contract and keeps the previous API release as the program rollback target.",
       "artifacts": [
         {
@@ -1078,7 +1078,7 @@
         "value": "c37717f0465c3e94675fe6a7148be59f1c5a5c98"
       },
       "deploymentState": "historical-production-private-oss-durable-session-fix-superseded-by-0.15.13",
-      "historicalNote": "Launcher 0.15.12 made DPAPI sessions durable across valid startups and transient network failures. It remains the immediate metadata rollback for 0.15.13; the executable is unsigned by project decision.",
+      "historicalNote": "Launcher 0.15.12 made DPAPI sessions durable across valid startups and transient network failures. It was the immediate metadata rollback for 0.15.13 and remains immutable; the executable is unsigned by project decision.",
       "artifacts": [
         {
           "name": "Hechao-Launcher-Setup-0.15.12-win-x64.exe",
@@ -1108,8 +1108,8 @@
         "kind": "git-commit",
         "value": "8d019f9b409ab7f4b774900796ef8e877327af37"
       },
-      "deploymentState": "production-update-channel-private-oss-final-brand-icon-authenticated-acceptance",
-      "historicalNote": "Launcher 0.15.13 adopts the final Hechao brand icon for WPF, EXE, installer, uninstaller and shortcuts while preserving the durable session behavior from 0.15.12. The executable remains unsigned by project decision.",
+      "deploymentState": "historical-production-private-oss-final-brand-icon-superseded-by-0.15.14",
+      "historicalNote": "Launcher 0.15.13 adopted the final Hechao brand icon for WPF, EXE, installer, uninstaller and shortcuts while preserving the durable session behavior from 0.15.12. It is the immediate metadata rollback for 0.15.14; the executable remains unsigned by project decision.",
       "artifacts": [
         {
           "name": "Hechao-Launcher-Setup-0.15.13-win-x64.exe",
@@ -1126,6 +1126,37 @@
       "evidence": [
         "docs/LAUNCHER_RELEASE_0.15.13.md",
         "docs/evidence/LAUNCHER_0.15.13_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.14",
+      "releaseTag": "launcher-v0.15.14",
+      "releaseCommit": "24e4cdaeac65eaf6c90782d5d4968b9d516c1cae",
+      "taggedAt": "2026-08-24T17:38:14+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "8a47513a9e54fb349fbdf90d25ad683f055dde1a"
+      },
+      "deploymentState": "production-update-channel-private-oss-official-brand-lockup-crisp-icon-authenticated-acceptance",
+      "historicalNote": "Launcher 0.15.14 uses the approved icon-and-wordmark lockup in the sidebar and header, generates each Windows icon size directly from the final eight-rectangle geometry, and preserves the durable session behavior. The executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.14-win-x64.exe",
+          "location": "releases/launcher/0.15.14/Hechao-Launcher-Setup-0.15.14-win-x64.exe",
+          "size": 61997617,
+          "sha256": "E5329650A3961A39A69D41ADDBC6768AB3349227D931D0CC7D94EA4514E5274C",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T092853Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.14.md",
+        "docs/evidence/LAUNCHER_0.15.14_RELEASE_ACCEPTANCE_2026-08-24.json"
       ]
     }
   ]
