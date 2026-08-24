@@ -253,6 +253,102 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
+    public void Branding_UsesOfficialInterfaceLockupAndCrispMultiSizeAppIcon()
+    {
+        const string lockupSource =
+            "/Hechao.Launcher;component/Assets/hechao-launcher-lockup-37h.png";
+        const string appIconSource =
+            "/Hechao.Launcher;component/Assets/hechao-launcher.ico";
+        var repositoryRoot = FindRepositoryRoot();
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        Assert.Equal(appIconSource, document.Root?.Attribute("Icon")?.Value);
+
+        var lockups = document
+            .Descendants(presentation + "Image")
+            .Where(image => image.Attribute("Source")?.Value == lockupSource)
+            .ToArray();
+        Assert.Equal(2, lockups.Length);
+        Assert.All(lockups, image =>
+        {
+            Assert.Equal("75", image.Attribute("Width")?.Value);
+            Assert.Equal("37", image.Attribute("Height")?.Value);
+            Assert.Equal("None", image.Attribute("Stretch")?.Value);
+            Assert.Equal("True", image.Attribute("SnapsToDevicePixels")?.Value);
+        });
+        Assert.DoesNotContain(
+            document.Descendants(presentation + "Image"),
+            image => image.Attribute("Source")?.Value?.EndsWith(
+                "/hechao-launcher-icon.png",
+                StringComparison.Ordinal) == true);
+
+        var project = XDocument.Load(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Launcher",
+            "Hechao.Launcher.csproj"));
+        var resources = project
+            .Descendants("Resource")
+            .Select(resource => resource.Attribute("Include")?.Value)
+            .ToArray();
+        Assert.Contains(@"Assets\hechao-launcher-lockup-37h.png", resources);
+
+        var generator = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "tools",
+            "Generate-AppIcon.ps1"));
+        Assert.Contains("#D74735", generator, StringComparison.Ordinal);
+        Assert.Contains("#24211F", generator, StringComparison.Ordinal);
+        Assert.Contains("#FFFBF5", generator, StringComparison.Ordinal);
+        Assert.Contains("SmoothingMode]::None", generator, StringComparison.Ordinal);
+        Assert.DoesNotContain("#AB251E", generator, StringComparison.Ordinal);
+        Assert.DoesNotContain("New-RoundedPath", generator, StringComparison.Ordinal);
+
+        var iconPath = Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Launcher",
+            "Assets",
+            "hechao-launcher.ico");
+        using var stream = File.OpenRead(iconPath);
+        using var reader = new BinaryReader(stream);
+        Assert.Equal((ushort)0, reader.ReadUInt16());
+        Assert.Equal((ushort)1, reader.ReadUInt16());
+        var count = reader.ReadUInt16();
+        Assert.Equal((ushort)7, count);
+
+        var frames = new List<(int Size, uint Length, uint Offset)>();
+        for (var index = 0; index < count; index++)
+        {
+            var width = reader.ReadByte();
+            var height = reader.ReadByte();
+            reader.ReadByte();
+            reader.ReadByte();
+            Assert.Equal((ushort)1, reader.ReadUInt16());
+            Assert.Equal((ushort)32, reader.ReadUInt16());
+            var length = reader.ReadUInt32();
+            var offset = reader.ReadUInt32();
+            var size = width == 0 ? 256 : width;
+            Assert.Equal(size, height == 0 ? 256 : height);
+            frames.Add((size, length, offset));
+        }
+
+        Assert.Equal(
+            new[] { 16, 24, 32, 48, 64, 128, 256 },
+            frames.Select(frame => frame.Size));
+        foreach (var frame in frames)
+        {
+            Assert.True(frame.Length > 8);
+            stream.Position = frame.Offset;
+            Assert.Equal(
+                new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 },
+                reader.ReadBytes(8));
+        }
+    }
+
+    [Fact]
     public void ServerMaintenanceActions_AreConsolidatedInPrimaryActionMenu()
     {
         var document = LoadLauncherXaml();

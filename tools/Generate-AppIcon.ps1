@@ -1,86 +1,82 @@
+[CmdletBinding()]
 param(
     [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\Hechao.Launcher\Assets\hechao-launcher.ico"),
-    [string]$PreviewPath = (Join-Path $PSScriptRoot "..\src\Hechao.Launcher\Assets\hechao-launcher-icon.png")
+    [string]$PreviewPath = (Join-Path $PSScriptRoot "..\src\Hechao.Launcher\Assets\hechao-launcher-icon.png"),
+    [switch]$WritePreview
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 Add-Type -AssemblyName System.Drawing
 
-function New-RoundedPath {
+$iconCanvasSize = 180.0
+$iconShapes = @(
+    [pscustomobject]@{ X = 8.0; Y = 8.0; Width = 164.0; Height = 164.0; Color = "#D74735" },
+    [pscustomobject]@{ X = 18.0; Y = 18.0; Width = 144.0; Height = 144.0; Color = "#FFFBF5" },
+    [pscustomobject]@{ X = 36.0; Y = 36.0; Width = 108.0; Height = 108.0; Color = "#24211F" },
+    [pscustomobject]@{ X = 32.0; Y = 32.0; Width = 36.0; Height = 36.0; Color = "#D74735" },
+    [pscustomobject]@{ X = 112.0; Y = 32.0; Width = 36.0; Height = 36.0; Color = "#D74735" },
+    [pscustomobject]@{ X = 32.0; Y = 112.0; Width = 36.0; Height = 36.0; Color = "#D74735" },
+    [pscustomobject]@{ X = 112.0; Y = 112.0; Width = 36.0; Height = 36.0; Color = "#D74735" },
+    [pscustomobject]@{ X = 76.0; Y = 76.0; Width = 28.0; Height = 28.0; Color = "#FFFBF5" }
+)
+
+function Convert-IconBoundary {
     param(
-        [float]$X,
-        [float]$Y,
-        [float]$Width,
-        [float]$Height,
-        [float]$Radius
+        [Parameter(Mandatory)][double]$Coordinate,
+        [Parameter(Mandatory)][int]$Size
     )
 
-    $path = [System.Drawing.Drawing2D.GraphicsPath]::new()
-    $diameter = $Radius * 2
-    $path.AddArc($X, $Y, $diameter, $diameter, 180, 90)
-    $path.AddArc($X + $Width - $diameter, $Y, $diameter, $diameter, 270, 90)
-    $path.AddArc($X + $Width - $diameter, $Y + $Height - $diameter, $diameter, $diameter, 0, 90)
-    $path.AddArc($X, $Y + $Height - $diameter, $diameter, $diameter, 90, 90)
-    $path.CloseFigure()
-    return $path
+    return [int][Math]::Round(
+        ($Coordinate * $Size) / $iconCanvasSize,
+        [MidpointRounding]::AwayFromZero)
 }
 
 function New-IconBitmap {
-    param([int]$Size)
+    param([Parameter(Mandatory)][int]$Size)
 
-    $bitmap = [System.Drawing.Bitmap]::new(
+    $bitmap = [Drawing.Bitmap]::new(
         $Size,
         $Size,
-        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
-    )
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphics.Clear([System.Drawing.Color]::Transparent)
-    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+        [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $graphics = [Drawing.Graphics]::FromImage($bitmap)
+    try {
+        $graphics.CompositingMode =
+            [Drawing.Drawing2D.CompositingMode]::SourceCopy
+        $graphics.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::None
+        $graphics.InterpolationMode =
+            [Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+        $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::None
+        $graphics.Clear([Drawing.Color]::Transparent)
 
-    $ink = [System.Drawing.ColorTranslator]::FromHtml("#171310")
-    $red = [System.Drawing.ColorTranslator]::FromHtml("#AB251E")
-    $paper = [System.Drawing.ColorTranslator]::FromHtml("#FFF9F3")
-    $white = [System.Drawing.Color]::White
-
-    $shadowPath = New-RoundedPath ($Size * 0.12) ($Size * 0.13) ($Size * 0.77) ($Size * 0.77) ($Size * 0.075)
-    $cardPath = New-RoundedPath ($Size * 0.07) ($Size * 0.06) ($Size * 0.78) ($Size * 0.78) ($Size * 0.075)
-    $letterPath = New-RoundedPath ($Size * 0.29) ($Size * 0.20) ($Size * 0.38) ($Size * 0.52) ($Size * 0.15)
-    $letterCutoutPath = New-RoundedPath ($Size * 0.39) ($Size * 0.31) ($Size * 0.19) ($Size * 0.30) ($Size * 0.085)
-
-    $inkBrush = [System.Drawing.SolidBrush]::new($ink)
-    $redBrush = [System.Drawing.SolidBrush]::new($red)
-    $paperBrush = [System.Drawing.SolidBrush]::new($paper)
-    $whiteBrush = [System.Drawing.SolidBrush]::new($white)
-
-    $graphics.FillPath($inkBrush, $shadowPath)
-    $graphics.FillPath($redBrush, $cardPath)
-    $graphics.FillRectangle(
-        $paperBrush,
-        $Size * 0.72,
-        $Size * 0.06,
-        $Size * 0.15,
-        $Size * 0.085
-    )
-
-    $graphics.FillPath($whiteBrush, $letterPath)
-    $graphics.FillPath($redBrush, $letterCutoutPath)
-    $graphics.FillRectangle(
-        $redBrush,
-        $Size * 0.52,
-        $Size * 0.31,
-        $Size * 0.18,
-        $Size * 0.30
-    )
-
-    $shadowPath.Dispose()
-    $cardPath.Dispose()
-    $letterPath.Dispose()
-    $letterCutoutPath.Dispose()
-    $inkBrush.Dispose()
-    $redBrush.Dispose()
-    $paperBrush.Dispose()
-    $whiteBrush.Dispose()
-    $graphics.Dispose()
+        foreach ($shape in $iconShapes) {
+            $left = Convert-IconBoundary -Coordinate $shape.X -Size $Size
+            $top = Convert-IconBoundary -Coordinate $shape.Y -Size $Size
+            $right = Convert-IconBoundary `
+                -Coordinate ($shape.X + $shape.Width) `
+                -Size $Size
+            $bottom = Convert-IconBoundary `
+                -Coordinate ($shape.Y + $shape.Height) `
+                -Size $Size
+            $brush = [Drawing.SolidBrush]::new(
+                [Drawing.ColorTranslator]::FromHtml($shape.Color))
+            try {
+                $graphics.FillRectangle(
+                    $brush,
+                    $left,
+                    $top,
+                    [Math]::Max(1, $right - $left),
+                    [Math]::Max(1, $bottom - $top))
+            }
+            finally {
+                $brush.Dispose()
+            }
+        }
+    }
+    finally {
+        $graphics.Dispose()
+    }
 
     return $bitmap
 }
@@ -91,44 +87,66 @@ New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 $sizes = @(16, 24, 32, 48, 64, 128, 256)
 $images = @()
 foreach ($size in $sizes) {
-    $bitmap = New-IconBitmap $size
-    $memory = [System.IO.MemoryStream]::new()
-    $bitmap.Save($memory, [System.Drawing.Imaging.ImageFormat]::Png)
-    $images += , ([byte[]]$memory.ToArray())
-    $memory.Dispose()
-    $bitmap.Dispose()
+    $bitmap = New-IconBitmap -Size $size
+    try {
+        $memory = [IO.MemoryStream]::new()
+        try {
+            $bitmap.Save($memory, [Drawing.Imaging.ImageFormat]::Png)
+            $images += , ([byte[]]$memory.ToArray())
+        }
+        finally {
+            $memory.Dispose()
+        }
+    }
+    finally {
+        $bitmap.Dispose()
+    }
 }
 
-$file = [System.IO.File]::Open($OutputPath, [System.IO.FileMode]::Create)
-$writer = [System.IO.BinaryWriter]::new($file)
-$writer.Write([uint16]0)
-$writer.Write([uint16]1)
-$writer.Write([uint16]$sizes.Count)
-
-$offset = 6 + (16 * $sizes.Count)
-for ($index = 0; $index -lt $sizes.Count; $index++) {
-    $sizeByte = if ($sizes[$index] -ge 256) { 0 } else { $sizes[$index] }
-    $writer.Write([byte]$sizeByte)
-    $writer.Write([byte]$sizeByte)
-    $writer.Write([byte]0)
-    $writer.Write([byte]0)
+$file = [IO.File]::Open($OutputPath, [IO.FileMode]::Create)
+$writer = [IO.BinaryWriter]::new($file)
+try {
+    $writer.Write([uint16]0)
     $writer.Write([uint16]1)
-    $writer.Write([uint16]32)
-    $writer.Write([uint32]$images[$index].Length)
-    $writer.Write([uint32]$offset)
-    $offset += $images[$index].Length
+    $writer.Write([uint16]$sizes.Count)
+
+    $offset = 6 + (16 * $sizes.Count)
+    for ($index = 0; $index -lt $sizes.Count; $index++) {
+        $sizeByte = if ($sizes[$index] -ge 256) { 0 } else { $sizes[$index] }
+        $writer.Write([byte]$sizeByte)
+        $writer.Write([byte]$sizeByte)
+        $writer.Write([byte]0)
+        $writer.Write([byte]0)
+        $writer.Write([uint16]1)
+        $writer.Write([uint16]32)
+        $writer.Write([uint32]$images[$index].Length)
+        $writer.Write([uint32]$offset)
+        $offset += $images[$index].Length
+    }
+
+    foreach ($image in $images) {
+        $writer.Write([byte[]]$image)
+    }
+}
+finally {
+    $writer.Dispose()
+    $file.Dispose()
 }
 
-foreach ($image in $images) {
-    $writer.Write([byte[]]$image)
+if ($WritePreview) {
+    $previewDirectory = Split-Path -Parent $PreviewPath
+    New-Item -ItemType Directory -Force -Path $previewDirectory | Out-Null
+    $preview = New-IconBitmap -Size 2048
+    try {
+        $preview.Save($PreviewPath, [Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally {
+        $preview.Dispose()
+    }
 }
-
-$writer.Dispose()
-$file.Dispose()
-
-$preview = New-IconBitmap 512
-$preview.Save($PreviewPath, [System.Drawing.Imaging.ImageFormat]::Png)
-$preview.Dispose()
+elseif (-not (Test-Path -LiteralPath $PreviewPath -PathType Leaf)) {
+    throw "The approved high-resolution preview is missing: $PreviewPath"
+}
 
 Write-Output $OutputPath
 Write-Output $PreviewPath
