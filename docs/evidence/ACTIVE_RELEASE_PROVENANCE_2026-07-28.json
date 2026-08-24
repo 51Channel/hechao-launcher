@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-24T06:15:27Z",
+  "generatedAtUtc": "2026-08-24T08:11:08Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -986,7 +986,7 @@
         "kind": "git-commit",
         "value": "9e75d5ef0dac5a189f9fd2891620042f7bd6c0ce"
       },
-      "deploymentState": "production-shop-migration-health-ready-update-channel-0.15.10",
+      "deploymentState": "production-shop-migration-health-ready-update-channel-0.15.13",
       "historicalNote": "API 0.37.0 includes the official shop contract and keeps the previous API release as the program rollback target.",
       "artifacts": [
         {
@@ -1064,6 +1064,68 @@
       "evidence": [
         "docs/LAUNCHER_RELEASE_0.15.10.md",
         "docs/evidence/LAUNCHER_0.15.10_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.12",
+      "releaseTag": "launcher-v0.15.12",
+      "releaseCommit": "b0de8a87045d1f723202a07a8ec5c1376c1ef4c5",
+      "taggedAt": "2026-08-24T15:40:51+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "c37717f0465c3e94675fe6a7148be59f1c5a5c98"
+      },
+      "deploymentState": "historical-production-private-oss-durable-session-fix-superseded-by-0.15.13",
+      "historicalNote": "Launcher 0.15.12 made DPAPI sessions durable across valid startups and transient network failures. It remains the immediate metadata rollback for 0.15.13; the executable is unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.12-win-x64.exe",
+          "location": "releases/launcher/0.15.12/Hechao-Launcher-Setup-0.15.12-win-x64.exe",
+          "size": 61998219,
+          "sha256": "ED3E6100652D81450ACF5392E584ECC04EEBA14E5EA2B65C60A6CCE98C5F0DB3",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T073202Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.12.md",
+        "docs/evidence/LAUNCHER_0.15.12_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.13",
+      "releaseTag": "launcher-v0.15.13",
+      "releaseCommit": "ad2c9eec3779da8900bdd1d135b5205541b53b30",
+      "taggedAt": "2026-08-24T16:10:34+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "8d019f9b409ab7f4b774900796ef8e877327af37"
+      },
+      "deploymentState": "production-update-channel-private-oss-final-brand-icon-authenticated-acceptance",
+      "historicalNote": "Launcher 0.15.13 adopts the final Hechao brand icon for WPF, EXE, installer, uninstaller and shortcuts while preserving the durable session behavior from 0.15.12. The executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.13-win-x64.exe",
+          "location": "releases/launcher/0.15.13/Hechao-Launcher-Setup-0.15.13-win-x64.exe",
+          "size": 61999226,
+          "sha256": "48F7D8FFE06F4D6A7E5CB763FA63144A4A48E1DEE29857EC86931E19BA1CA257",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T080213Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.13.md",
+        "docs/evidence/LAUNCHER_0.15.13_RELEASE_ACCEPTANCE_2026-08-24.json"
       ]
     }
   ]
