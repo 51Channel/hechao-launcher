@@ -259,8 +259,15 @@ EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，�
 {
   "startScriptRelativePath": "start.bat",
   "packageDeploymentEnabled": true,
-  "hostManagedRelativePaths": ["forwarding.secret"],
-  "worldDataRelativePaths": ["world", "world_nether", "world_the_end"]
+  "hostManagedRelativePaths": [
+    "config\\paper-global.yml",
+    "forwarding.secret"
+  ],
+  "worldDataRelativePaths": [
+    "airship_escape",
+    "airship_escape_nether",
+    "airship_escape_the_end"
+  ]
 }
 ```
 
@@ -292,6 +299,12 @@ Velocity Authorizer 只接受 API 返回的 `127.0.0.1` / `::1` 动态地址，�
 不能提供或替换这些文件。`worldDataRelativePaths` 只有管理员勾选“保留世界”时才迁移。
 两组路径彼此不能重复、嵌套或重叠，也不能覆盖 `server.properties`、JVM 参数文件、
 启动脚本或部署所有权标记。代理会在读取配置时失败关闭，而不是等到目录切换后处理。
+
+Paper 活动必须把 `config\paper-global.yml` 和 `forwarding.secret` 同时作为主机固定文件。
+前者保存已启用的 Velocity modern forwarding 配置，后者保留代理侧固定密钥；上传包不得
+携带任一文件。第一次删除旧活动目录或向空槽部署前，必须在停服状态下从当前受控目录重建
+主机固定快照，并只核对两处密钥等值、ACL 与非空摘要，不输出密钥内容。快照缺任一文件时
+部署应失败关闭，不能先开服再手工补配置。
 
 更新代理前，`Install-ServerControlAgent.ps1` 会确认活动目录里的 `start.bat` 带受管
 标记，并确认 `Hechao-Server-Activity` 计划任务明确引用同一绝对路径。该检查只验证

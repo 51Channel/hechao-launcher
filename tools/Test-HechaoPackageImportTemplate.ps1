@@ -237,6 +237,28 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
         $zip.Dispose()
     }
 
+    Remove-Item -LiteralPath (Join-Path $fixture "shared\mods\hechao-contract.jar") -Force
+    $noSharedValidation = & $validator -SourceDirectory $fixture -PassThru
+    Assert-True ($noSharedValidation.totals.sharedFileCount -eq 0) "Validator did not accept an optional empty shared root."
+    Assert-True ($noSharedValidation.totals.sharedBytes -eq 0) "Validator did not report zero bytes for an optional empty shared root."
+    Assert-True `
+        (@($noSharedValidation.warnings | Where-Object {
+                    $_ -match 'No common client/server JAR was detected'
+                }).Count -eq 1) `
+        "Validator did not retain the no-common-JAR warning for an optional empty shared root."
+
+    $noSharedArchive = Join-Path $temporaryRoot "Hechao-contract-fixture-no-shared-1.0.0.zip"
+    & $builder -SourceDirectory $fixture -OutputArchive $noSharedArchive | Out-Null
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($noSharedArchive)
+    try {
+        Assert-True `
+            (@($zip.Entries | Where-Object FullName -Like 'shared/*').Count -eq 0) `
+            "Business archive contains an entry under the optional empty shared root."
+    }
+    finally {
+        $zip.Dispose()
+    }
+
     $forbiddenPath = Join-Path $fixture "server\forwarding.secret"
     Write-Utf8Text $forbiddenPath "not-a-real-secret"
     $secretRejected = $false
@@ -267,6 +289,7 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
     Write-Output ([pscustomobject] [ordered]@{
         sourceContract = "passed"
         businessArchive = "passed"
+        optionalEmptyShared = "passed"
         secretRejection = "passed"
         commonJarMismatchRejection = "passed"
         handoffArchive = if ([string]::IsNullOrWhiteSpace($HandoffArchive)) { "not-requested" } else { "passed" }

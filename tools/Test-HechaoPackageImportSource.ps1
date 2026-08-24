@@ -648,11 +648,17 @@ $report = [pscustomobject] [ordered]@{
         fileCount = $records.Count
         expandedBytes = $expandedBytes
         clientFileCount = $clientRecords.Count
-        clientBytes = [long] (($clientRecords | Measure-Object size -Sum).Sum ?? 0)
+        clientBytes = [long] (($clientRecords |
+                Measure-Object size -Sum |
+                Select-Object -ExpandProperty Sum) ?? 0)
         serverFileCount = $serverRecords.Count
-        serverBytes = [long] (($serverRecords | Measure-Object size -Sum).Sum ?? 0)
+        serverBytes = [long] (($serverRecords |
+                Measure-Object size -Sum |
+                Select-Object -ExpandProperty Sum) ?? 0)
         sharedFileCount = $sharedRecords.Count
-        sharedBytes = [long] (($sharedRecords | Measure-Object size -Sum).Sum ?? 0)
+        sharedBytes = [long] (($sharedRecords |
+                Measure-Object size -Sum |
+                Select-Object -ExpandProperty Sum) ?? 0)
         metadataFileCount = $metadataRecords.Count
     }
     commonJars = @($commonJars)

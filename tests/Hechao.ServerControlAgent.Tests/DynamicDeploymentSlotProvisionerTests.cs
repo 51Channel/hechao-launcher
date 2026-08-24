@@ -26,6 +26,11 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
             await File.ReadAllTextAsync(
                 Path.Combine(targetDirectory, "forwarding.secret")));
         Assert.Contains(
+            "secret: forwarding-secret",
+            await File.ReadAllTextAsync(
+                Path.Combine(targetDirectory, "config", "paper-global.yml")),
+            StringComparison.Ordinal);
+        Assert.Contains(
             "if not defined HECHAO_MANAGED_START pause",
             await File.ReadAllTextAsync(
                 Path.Combine(targetDirectory, "start.bat")),
@@ -265,10 +270,14 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
         var backupRoot = Path.Combine(root, "backups");
         var runtimeDirectory = Path.Combine(stateDirectory, "runtime");
         Directory.CreateDirectory(templateDirectory);
+        Directory.CreateDirectory(Path.Combine(templateDirectory, "config"));
         Directory.CreateDirectory(runtimeDirectory);
         File.WriteAllText(
             Path.Combine(templateDirectory, "forwarding.secret"),
             "forwarding-secret");
+        File.WriteAllText(
+            Path.Combine(templateDirectory, "config", "paper-global.yml"),
+            "proxies:\r\n  velocity:\r\n    enabled: true\r\n    secret: forwarding-secret\r\n");
         File.WriteAllText(
             Path.Combine(templateDirectory, "server.properties"),
             "server-port=25568\r\n");
@@ -291,8 +300,14 @@ public sealed class DynamicDeploymentSlotProvisionerTests : IDisposable
             MaximumAllowedMemoryMiB = 8192,
             PackageDeploymentEnabled = true,
             ServerDeletionEnabled = true,
-            HostManagedRelativePaths = ["forwarding.secret"],
-            WorldDataRelativePaths = ["world", "world_nether", "world_the_end"],
+            HostManagedRelativePaths =
+                [@"config\paper-global.yml", "forwarding.secret"],
+            WorldDataRelativePaths =
+                [
+                    "airship_escape",
+                    "airship_escape_nether",
+                    "airship_escape_the_end"
+                ],
             AllowedCommandPrefixes = ["list", "say", "save-all"]
         }.Normalize();
         var configuration = new ServerControlAgentConfiguration
