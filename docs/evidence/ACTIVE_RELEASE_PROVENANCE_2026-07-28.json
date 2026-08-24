@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-23T06:22:00Z",
+  "generatedAtUtc": "2026-08-24T06:15:27Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -914,6 +914,156 @@
       "evidence": [
         "docs/DOLLNIGHT_PROFILE_RELEASE_1.0.0.md",
         "docs/ASSET_INVENTORY.md"
+      ]
+    },
+    {
+      "component": "hechao-economy-screen",
+      "version": "0.2.10",
+      "releaseTag": "hechao-economy-screen-v0.2.10",
+      "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+      "taggedAt": "2026-08-24T14:13:41+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "9e7a54d46f69f583c696095ad83394c3f012955f"
+      },
+      "deploymentState": "test-profile-1.0.30-r23-server-screen-0.2.10-real-client-acceptance-pending",
+      "historicalNote": "Screen 0.2.10 is deployed to activity-survival and Test points to profile 1.0.30. Gray remains unassigned and Production remains on 1.0.29.",
+      "artifacts": [
+        {
+          "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.10.jar",
+          "location": "E:\\HechaoActivitySlots\\activity-survival\\mods\\HechaoEconomyScreen-NeoForge-1.21.1-0.2.10.jar",
+          "size": 990638,
+          "sha256": "601A077D267CD6794B7D8DBF2C40975B08BF1A3E4094014B69D151A86A2345A6",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "paired-test-channel-and-server-backup",
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.29; E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+      },
+      "evidence": [
+        "docs/evidence/SKYREALM_ECONOMY_SCREEN_0.2.10_TEST_RELEASE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "profile-skyrealm-industrial-neoforge-1.21.1",
+      "version": "1.0.30",
+      "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.30",
+      "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+      "taggedAt": "2026-08-24T14:13:41+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "2B937DD3CDD166630C5310C8A3396F106B76F981474EA25480E132D903E15A88"
+      },
+      "deploymentState": "test-r23-100-percent-gray-production-unassigned",
+      "historicalNote": "Profile 1.0.30 changes only Screen 0.2.9 to 0.2.10. The Test rollback remains 1.0.29 and real-client storage/economy acceptance is still pending.",
+      "artifacts": [
+        {
+          "name": "skyrealm-industrial-neoforge-1.21.1 1.0.30 signed manifest",
+          "location": "production manifest store",
+          "sha256": "2B937DD3CDD166630C5310C8A3396F106B76F981474EA25480E132D903E15A88",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "paired-test-channel-and-server-backup",
+        "target": "skyrealm-industrial-neoforge-1.21.1/1.0.29; E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+      },
+      "evidence": [
+        "docs/evidence/SKYREALM_INDUSTRIAL_PROFILE_1.0.30_TEST_RELEASE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "api",
+      "version": "0.37.0-20260823T182444Z",
+      "releaseTag": "api-v0.37.0",
+      "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+      "taggedAt": "2026-08-24T14:13:40+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "9e75d5ef0dac5a189f9fd2891620042f7bd6c0ce"
+      },
+      "deploymentState": "production-shop-migration-health-ready-update-channel-0.15.10",
+      "historicalNote": "API 0.37.0 includes the official shop contract and keeps the previous API release as the program rollback target.",
+      "artifacts": [
+        {
+          "name": "Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.37.0-20260823T182444Z/Hechao.Api",
+          "size": 105704004,
+          "sha256": "F5C89C28ED6A6D2B585960AE36FA96250FAFD36CA9333D3D3B367F0BAC986450",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "release-directory-and-environment-backup",
+        "target": "/opt/hechao-launcher-api/releases/0.36.1-20260821T083823Z"
+      },
+      "evidence": [
+        "docs/evidence/API_0.37.0_PRODUCTION_DEPLOYMENT_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "hechao-economy",
+      "version": "0.2.4",
+      "releaseTag": "hechao-economy-v0.2.4",
+      "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+      "taggedAt": "2026-08-24T14:13:41+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "9e75d5ef0dac5a189f9fd2891620042f7bd6c0ce"
+      },
+      "deploymentState": "test-activity-survival-deployed-api-0.37.0-paired",
+      "historicalNote": "HechaoEconomy 0.2.4 is paired with API 0.37.0 and Screen 0.2.10; Gray and Production are not promoted.",
+      "artifacts": [
+        {
+          "name": "HechaoEconomy-0.2.4.jar",
+          "location": "E:\\HechaoActivitySlots\\activity-survival\\plugins\\HechaoEconomy-0.2.4.jar",
+          "size": 480903,
+          "sha256": "E403DA7349D8AFE105D3B728743A30D92C235AC3C69EC346063E25A00ECEF28E",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "full-offline-server-backup",
+        "target": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+      },
+      "evidence": [
+        "docs/evidence/SKYREALM_ECONOMY_0.2.4_TEST_RELEASE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.10",
+      "releaseTag": "launcher-v0.15.10",
+      "releaseCommit": "6801d8d490d90e8e4be3aef473342f0ea9b20f93",
+      "taggedAt": "2026-08-24T14:14:37+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "eece13dec1c46ff4d70125fb71277c673de522b3"
+      },
+      "deploymentState": "production-update-channel-private-oss-authenticated-acceptance",
+      "historicalNote": "Launcher 0.15.10 is published as a private immutable installer and authenticated self-update; the executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.10-win-x64.exe",
+          "location": "releases/launcher/0.15.10/Hechao-Launcher-Setup-0.15.10-win-x64.exe",
+          "size": 61997588,
+          "sha256": "6E3E449BA1FF59EF3B3AEA1EFD627F30A03E769BC57484033EA8D326AFCD4CC5",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "higher-version-fix-or-disable-update-channel",
+        "target": "restore API 0.36.1 and its launcher-update environment backup"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.10.md",
+        "docs/evidence/LAUNCHER_0.15.10_RELEASE_ACCEPTANCE_2026-08-24.json"
       ]
     }
   ]

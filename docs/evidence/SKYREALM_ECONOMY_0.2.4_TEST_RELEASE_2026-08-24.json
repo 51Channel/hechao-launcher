@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "component": "hechao-economy",
+  "version": "0.2.4",
+  "releaseTag": "hechao-economy-v0.2.4",
+  "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+  "serverId": "activity-survival",
+  "artifact": {
+    "name": "HechaoEconomy-0.2.4.jar",
+    "sizeBytes": 480903,
+    "sha256": "E403DA7349D8AFE105D3B728743A30D92C235AC3C69EC346063E25A00ECEF28E"
+  },
+  "tests": { "passed": 39, "failed": 0 },
+  "deploymentState": "test",
+  "rollback": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+}

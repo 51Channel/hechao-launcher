@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "component": "profile-skyrealm-industrial-neoforge-1.21.1",
+  "version": "1.0.30",
+  "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.30",
+  "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+  "baseVersion": "1.0.29",
+  "manifestSha256": "2B937DD3CDD166630C5310C8A3396F106B76F981474EA25480E132D903E15A88",
+  "logicalFiles": 4458,
+  "logicalBytes": 1205127929,
+  "uniqueObjects": 4253,
+  "uniqueObjectBytes": 1205119419,
+  "deploymentState": "test",
+  "rollback": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+}

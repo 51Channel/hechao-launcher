@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "component": "api",
+  "version": "0.37.0-20260823T182444Z",
+  "releaseTag": "api-v0.37.0",
+  "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+  "artifact": {
+    "name": "Hechao.Api",
+    "sizeBytes": 105704004,
+    "sha256": "F5C89C28ED6A6D2B585960AE36FA96250FAFD36CA9333D3D3B367F0BAC986450"
+  },
+  "deploymentState": "production-health-ready",
+  "launcherUpdateChannel": "0.15.10",
+  "rollback": "/opt/hechao-launcher-api/releases/0.36.1-20260821T083823Z"
+}

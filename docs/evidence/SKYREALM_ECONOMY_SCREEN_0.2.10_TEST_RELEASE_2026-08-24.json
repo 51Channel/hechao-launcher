@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "component": "hechao-economy-screen",
+  "version": "0.2.10",
+  "releaseTag": "hechao-economy-screen-v0.2.10",
+  "releaseCommit": "ccf7e8851a08db559bd99391fe5be7c3229a4d44",
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.10.jar",
+    "sizeBytes": 990638,
+    "sha256": "601A077D267CD6794B7D8DBF2C40975B08BF1A3E4094014B69D151A86A2345A6"
+  },
+  "networkProtocol": "3",
+  "tests": { "passed": 113, "failed": 0 },
+  "deploymentState": "test",
+  "rollback": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+}
