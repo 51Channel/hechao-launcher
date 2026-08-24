@@ -162,12 +162,10 @@
                                 VerticalAlignment="Center"
                                 MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown">
                         <Border Width="40"
-                                Height="40"
-                                Background="{StaticResource HechaoRedBrush}"
-                                CornerRadius="5">
+                                Height="40">
                             <Image Source="/Hechao.Launcher;component/Assets/hechao-launcher-icon.png"
-                                   Width="34"
-                                   Height="34"
+                                   Width="40"
+                                   Height="40"
                                    Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border>
@@ -1316,13 +1314,12 @@
                             Margin="26,0,0,0"
                             VerticalAlignment="Center">
                     <Border Width="28"
-                            Height="28"
-                            Background="{StaticResource HechaoRedBrush}"
-                            CornerRadius="4">
+                            Height="28">
                         <Image Source="/Hechao.Launcher;component/Assets/hechao-launcher-icon.png"
-                               Width="24"
-                               Height="24"
-                               Stretch="Uniform" />
+                               Width="28"
+                               Height="28"
+                               Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
                     </Border>
                     <TextBlock Text="赫朝"
                                FontSize="14"
