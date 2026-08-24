@@ -9,7 +9,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -17,6 +16,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -34,14 +34,14 @@ public final class HechaoEconomyScreenMod {
     private static final MenuSessionRegistry SESSIONS = new MenuSessionRegistry(
             Duration.ofMinutes(2),
             Duration.ofMillis(350));
-    private static final RtpCooldownRegistry RTP_COOLDOWNS =
-            new RtpCooldownRegistry(Duration.ofSeconds(60));
+    private static final RtpTeleportService RTP = new RtpTeleportService();
     private static final Map<String, MenuActions.Definition> ACTIONS = MenuActions.all();
 
     public HechaoEconomyScreenMod(IEventBus modEventBus) {
         modEventBus.addListener(this::registerPayloads);
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
         NeoForge.EVENT_BUS.addListener(this::playerLoggedOut);
+        NeoForge.EVENT_BUS.addListener(this::serverStopping);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ClientPauseMenuEntry.register();
             ClientEconomyUiBridge.register();
@@ -85,52 +85,7 @@ public final class HechaoEconomyScreenMod {
     }
 
     private static int randomTeleport(ServerPlayer player) {
-        var now = Instant.now();
-        var cooldown = RTP_COOLDOWNS.tryAcquire(player.getUUID(), now);
-        if (!cooldown.allowed()) {
-            long seconds = Math.max(
-                    1,
-                    (cooldown.remaining().toMillis() + 999) / 1000);
-            player.sendSystemMessage(Component.literal(
-                    "[天域远征] 随机传送冷却中，请等待 " + seconds + " 秒。"));
-            return 0;
-        }
-
-        var worldBorder = player.serverLevel().getWorldBorder();
-        var plan = RtpCommandPlan.create(
-                worldBorder.getCenterX(),
-                worldBorder.getCenterZ(),
-                worldBorder.getSize());
-        if (plan.isEmpty()) {
-            RTP_COOLDOWNS.release(player.getUUID());
-            player.sendSystemMessage(Component.literal(
-                    "[天域远征] 当前世界边界过小，无法随机传送。"));
-            return 0;
-        }
-
-        var location = RtpSafeLocationFinder.find(
-                player,
-                plan.orElseThrow().maximumRange());
-        if (location.isEmpty()) {
-            RTP_COOLDOWNS.release(player.getUUID());
-            player.sendSystemMessage(Component.literal(
-                    "[天域远征] 没有找到安全落点，请稍后再试。"));
-            return 0;
-        }
-
-        try {
-            var target = location.orElseThrow();
-            player.teleportTo(target.x(), target.y(), target.z());
-            player.setDeltaMovement(Vec3.ZERO);
-            player.resetFallDistance();
-            return 1;
-        } catch (RuntimeException exception) {
-            RTP_COOLDOWNS.release(player.getUUID());
-            LOGGER.error("Random teleport failed for player {}", player.getUUID(), exception);
-            player.sendSystemMessage(Component.literal(
-                    "[天域远征] 暂时无法找到安全落点，请稍后重试。"));
-            return 0;
-        }
+        return RTP.start(player);
     }
 
     private static int setCity(CommandSourceStack source) {
@@ -241,7 +196,11 @@ public final class HechaoEconomyScreenMod {
 
     private void playerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         SESSIONS.remove(event.getEntity().getUUID());
-        RTP_COOLDOWNS.release(event.getEntity().getUUID());
+        RTP.playerLoggedOut(event.getEntity().getUUID());
+    }
+
+    private void serverStopping(ServerStoppingEvent event) {
+        RTP.serverStopping(event.getServer());
     }
 
     private static String rejectionMessage(MenuSessionRegistry.Validation validation) {
