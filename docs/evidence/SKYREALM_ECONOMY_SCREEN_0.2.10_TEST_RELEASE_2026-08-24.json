@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-24T06:05:36Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.10",
+  "networkProtocol": "3",
+  "buildSourceCommit": "9e7a54d46f69f583c696095ad83394c3f012955f",
+  "releaseTag": "hechao-economy-screen-v0.2.10",
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.10.jar",
+    "sizeBytes": 990638,
+    "sha256": "601A077D267CD6794B7D8DBF2C40975B08BF1A3E4094014B69D151A86A2345A6"
+  },
+  "features": {
+    "shortcutActionCount": 15,
+    "rtpMaximumRange": 5000,
+    "rtpBorderMargin": 32,
+    "rtpMinimumRange": 64,
+    "rtpCooldownSeconds": 60,
+    "rtpSafeLandingFilter": true,
+    "rtpFailureReleasesCooldown": true,
+    "serverThreadWorldAccessOnly": true
+  },
+  "tests": {
+    "screenPassed": 113,
+    "failed": 0,
+    "cleanTestBuildPassed": true
+  },
+  "serverDeployment": {
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "artifactPath": "E:\\HechaoActivitySlots\\activity-survival\\mods\\HechaoEconomyScreen-NeoForge-1.21.1-0.2.10.jar",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "listener": "127.0.0.1:25600",
+    "listenerCount": 1,
+    "uniqueScreenJarCount": 1,
+    "readOnlyVerificationPassed": true,
+    "serverRestartedThisRelease": false
+  },
+  "channels": {
+    "test": { "version": "1.0.30", "rolloutPercentage": 100, "revision": 23 },
+    "gray": { "version": null, "rolloutPercentage": 0, "revision": 1 },
+    "production": { "version": "1.0.29", "rolloutPercentage": 100, "revision": 2 }
+  },
+  "rollback": {
+    "testVersion": "1.0.29",
+    "serverVersion": "0.2.9",
+    "fullBackupPath": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+  },
+  "grayPromotionAllowed": false,
+  "productionPromotionAllowed": false,
+  "credentialsRecorded": false
+}

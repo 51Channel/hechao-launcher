@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-24T06:05:36Z",
+  "component": "hechao-economy",
+  "version": "0.2.4",
+  "releaseTag": "hechao-economy-v0.2.4",
+  "releaseCommit": "9e75d5ef0dac5a189f9fd2891620042f7bd6c0ce",
+  "serverId": "activity-survival",
+  "artifact": {
+    "name": "HechaoEconomy-0.2.4.jar",
+    "path": "E:\\HechaoActivitySlots\\activity-survival\\plugins\\HechaoEconomy-0.2.4.jar",
+    "sizeBytes": 480903,
+    "sha256": "E403DA7349D8AFE105D3B728743A30D92C235AC3C69EC346063E25A00ECEF28E"
+  },
+  "features": {
+    "serverIdDefault": "activity-survival",
+    "officialShop": true,
+    "buybackCatalog": true,
+    "playerMarket": true,
+    "serverIdIsolation": true,
+    "failClosedOnInvalidCredentials": true
+  },
+  "tests": {
+    "economyPassed": 39,
+    "failed": 0,
+    "cleanTestBuildPassed": true
+  },
+  "serverDeployment": {
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "listener": "127.0.0.1:25600",
+    "listenerCount": 1,
+    "readOnlyVerificationPassed": true,
+    "serverRestartedThisRelease": false,
+    "apiHealth": true,
+    "vaultHealth": true,
+    "commandOwnership": true,
+    "transactionGate": true
+  },
+  "rollback": {
+    "targetVersion": "0.2.3",
+    "fullBackupPath": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+  },
+  "grayPromotionAllowed": false,
+  "productionPromotionAllowed": false,
+  "credentialsRecorded": false
+}

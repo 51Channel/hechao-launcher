@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-24T06:05:36Z",
+  "component": "api",
+  "version": "0.37.0-20260823T182444Z",
+  "releaseTag": "api-v0.37.0",
+  "releaseCommit": "9e75d5ef0dac5a189f9fd2891620042f7bd6c0ce",
+  "releaseDirectory": "/opt/hechao-launcher-api/releases/0.37.0-20260823T182444Z",
+  "artifact": {
+    "name": "Hechao.Api",
+    "sizeBytes": 105704004,
+    "sha256": "F5C89C28ED6A6D2B585960AE36FA96250FAFD36CA9333D3D3B367F0BAC986450"
+  },
+  "database": {
+    "migrationIncluded": "035_economy_server_shop",
+    "ready": true,
+    "productionDatabaseUsedAsTestTarget": false
+  },
+  "backup": {
+    "environmentPath": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T053328Z.bak",
+    "environmentSha256": "DBBDD10DD672C163247ACFA685E3752CBD87C3555B80B4B3D1E72B71E14E66A7",
+    "environmentMode": "600",
+    "environmentOwner": "root:root"
+  },
+  "acceptance": {
+    "mainPid": 1838027,
+    "nRestarts": 0,
+    "healthz": "200",
+    "readyz": "200",
+    "databaseReady": true,
+    "warningOrHigherLogs": 0,
+    "rollbackNeeded": false
+  },
+  "launcherUpdateChannel": {
+    "latestVersion": "0.15.10",
+    "minimumSupportedVersion": "0.12.3",
+    "installerBytes": 61997588,
+    "installerSha256": "6E3E449BA1FF59EF3B3AEA1EFD627F30A03E769BC57484033EA8D326AFCD4CC5",
+    "publishedAtUtc": "2026-08-24T05:33:27Z"
+  },
+  "rollback": "/opt/hechao-launcher-api/releases/0.36.1-20260821T083823Z",
+  "minecraftServersOperated": false,
+  "credentialsRecorded": false
+}

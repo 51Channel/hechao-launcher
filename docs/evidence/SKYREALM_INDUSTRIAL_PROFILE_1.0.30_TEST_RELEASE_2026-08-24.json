@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-24T06:05:36Z",
+  "component": "profile-skyrealm-industrial-neoforge-1.21.1",
+  "version": "1.0.30",
+  "releaseTag": "profile-skyrealm-industrial-neoforge-1.21.1-v1.0.30",
+  "source": {
+    "baseVersion": "1.0.29",
+    "delta": "replace Screen 0.2.9 with Screen 0.2.10 only",
+    "deletedPaths": 0,
+    "changedExistingPaths": 0,
+    "unchangedCommonFiles": 4458
+  },
+  "profile": {
+    "minecraftVersion": "1.21.1",
+    "neoForgeVersion": "21.1.228",
+    "javaVersion": "21",
+    "logicalFiles": 4458,
+    "logicalBytes": 1205127929,
+    "uniqueObjects": 4253,
+    "uniqueObjectBytes": 1205119419,
+    "manifestSha256": "2B937DD3CDD166630C5310C8A3396F106B76F981474EA25480E132D903E15A88"
+  },
+  "screen": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.10.jar",
+    "sizeBytes": 990638,
+    "sha256": "601A077D267CD6794B7D8DBF2C40975B08BF1A3E4094014B69D151A86A2345A6"
+  },
+  "distribution": {
+    "firstRunNewObjects": 1,
+    "firstRunUploadedBytes": 990638,
+    "secondRunUploadedObjects": 0,
+    "immutableObjectsOverwritten": 0,
+    "signedManifestVerified": true,
+    "objectClosureVerified": true
+  },
+  "channels": {
+    "test": { "version": "1.0.30", "rolloutPercentage": 100, "revision": 23 },
+    "gray": { "version": null, "rolloutPercentage": 0, "revision": 1 },
+    "production": { "version": "1.0.29", "rolloutPercentage": 100, "revision": 2 }
+  },
+  "serverCompatibility": {
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "listener": "127.0.0.1:25600",
+    "serverScreenVersion": "0.2.10",
+    "serverEconomyVersion": "0.2.4",
+    "serverTomStorageVersion": "2.4.1",
+    "serverRestartedThisRelease": false,
+    "readOnlyVerificationPassed": true
+  },
+  "remainingAcceptance": {
+    "authorizedLauncherIncrementalDownloadPassed": true,
+    "realClientJoinedServerPassed": false,
+    "economyShopPurchaseAndClaimPassed": false,
+    "tomStorageInteractionPassed": false,
+    "multiPlayerConcurrentAccessPassed": false,
+    "disconnectReconnectPassed": false,
+    "serverRestartPersistencePassed": false,
+    "shortcutMenuRegressionPassed": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false
+  },
+  "rollback": {
+    "testVersion": "1.0.29",
+    "serverFullBackup": "E:\\manual-backups\\activity-survival-toms-storage-2.4.1-20260822T201140Z"
+  },
+  "credentialsRecorded": false
+}
