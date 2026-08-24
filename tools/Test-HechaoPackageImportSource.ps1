@@ -297,8 +297,8 @@ if ($expandedBytes -gt $maximumExpandedBytes) {
 $descriptor = Read-StrictJsonHashtable $descriptorPath "hechao-pack.json"
 $descriptorProperties = @(
     "schemaVersion", "id", "displayName", "version", "minecraftVersion",
-    "javaMajorVersion", "loader", "loaderVersion", "clientRoot", "serverRoot",
-    "sharedRoot"
+    "javaMajorVersion", "loader", "loaderVersion", "serverCore", "clientRoot",
+    "serverRoot", "sharedRoot"
 )
 if ($null -ne $descriptor) {
     Test-JsonShape $descriptor $descriptorProperties "hechao-pack.json"
@@ -332,6 +332,17 @@ if ($null -ne $descriptor) {
     }
     if ([string] $descriptor['loader'] -notin $supportedLoaders) {
         Add-ValidationError "hechao-pack.json loader must be one of: $($supportedLoaders -join ', ')."
+    }
+    if ($descriptor.ContainsKey('serverCore')) {
+        $supportedServerCores = @(
+            "Vanilla", "Paper", "Purpur", "Fabric", "Forge", "NeoForge",
+            "Arclight"
+        )
+        if (Test-RequiredString $descriptor['serverCore'] "hechao-pack.json serverCore" 40) {
+            if ([string] $descriptor['serverCore'] -cnotin $supportedServerCores) {
+                Add-ValidationError "hechao-pack.json serverCore must be one of: $($supportedServerCores -join ', ')."
+            }
+        }
     }
     foreach ($rootName in @("clientRoot", "serverRoot", "sharedRoot")) {
         $expected = $rootName.Substring(0, $rootName.Length - 4).ToLowerInvariant()
@@ -642,6 +653,12 @@ $report = [pscustomobject] [ordered]@{
         javaMajorVersion = [int] $descriptor['javaMajorVersion']
         loader = [string] $descriptor['loader']
         loaderVersion = [string] $descriptor['loaderVersion']
+        serverCore = if ($descriptor.ContainsKey('serverCore')) {
+            [string] $descriptor['serverCore']
+        }
+        else {
+            $null
+        }
         clientVersionId = [string] $clientMetadata['versionId']
     }
     totals = [pscustomobject] [ordered]@{

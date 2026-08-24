@@ -165,6 +165,7 @@ try {
   "javaMajorVersion": 17,
   "loader": "Fabric",
   "loaderVersion": "0.15.11",
+  "serverCore": "Fabric",
   "clientRoot": "client",
   "serverRoot": "server",
   "sharedRoot": "shared"
@@ -209,6 +210,7 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
 
     $validation = & $validator -SourceDirectory $fixture -PassThru
     Assert-True ($validation.package.id -eq "activity-contract-fixture-fabric-1.20.1") "Validator returned the wrong package ID."
+    Assert-True ($validation.package.serverCore -eq "Fabric") "Validator returned the wrong server core."
     Assert-True ($validation.totals.clientFileCount -gt 0) "Validator did not classify client files."
     Assert-True ($validation.totals.serverFileCount -gt 0) "Validator did not classify server files."
     Assert-True ($validation.totals.sharedFileCount -eq 1) "Validator did not classify the shared fixture."
@@ -249,6 +251,22 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
     Assert-True $secretRejected "Validator did not reject forwarding.secret."
     Remove-Item -LiteralPath $forbiddenPath -Force
 
+    $descriptorPath = Join-Path $fixture "hechao-pack.json"
+    $validDescriptor = [IO.File]::ReadAllText($descriptorPath)
+    Write-Utf8Text $descriptorPath (
+        $validDescriptor.Replace(
+            '"serverCore": "Fabric"',
+            '"serverCore": "Unsupported"'))
+    $unknownCoreRejected = $false
+    try {
+        & $validator -SourceDirectory $fixture -PassThru | Out-Null
+    }
+    catch {
+        $unknownCoreRejected = $_.Exception.Message -match 'serverCore|validation failed'
+    }
+    Assert-True $unknownCoreRejected "Validator did not reject an unsupported server core."
+    Write-Utf8Text $descriptorPath $validDescriptor
+
     Write-FixtureBytes (Join-Path $fixture "client\mods\mismatch.jar") "client-bytes"
     Write-FixtureBytes (Join-Path $fixture "server\mods\mismatch.jar") "server-bytes"
     $mismatchRejected = $false
@@ -268,6 +286,7 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
         sourceContract = "passed"
         businessArchive = "passed"
         secretRejection = "passed"
+        unsupportedServerCoreRejection = "passed"
         commonJarMismatchRejection = "passed"
         handoffArchive = if ([string]::IsNullOrWhiteSpace($HandoffArchive)) { "not-requested" } else { "passed" }
         fixtureFiles = [int] $validation.totals.fileCount

@@ -34,6 +34,9 @@
       "enum": ["Vanilla", "Paper", "NeoForge", "Fabric", "Forge"]
     },
     "loaderVersion": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "serverCore": {
+      "enum": ["Vanilla", "Paper", "Purpur", "Fabric", "Forge", "NeoForge", "Arclight"]
+    },
     "clientRoot": { "const": "client" },
     "serverRoot": { "const": "server" },
     "sharedRoot": { "const": "shared" }
