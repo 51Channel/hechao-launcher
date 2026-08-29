@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-29T11:34:00Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.13",
+  "networkProtocol": "3",
+  "buildSourceCommit": "0560640fed9a78851f87f628eec09ec0442c0790",
+  "releaseTag": "hechao-economy-screen-v0.2.13",
+  "serverOnlyHotfix": true,
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.13.jar",
+    "sizeBytes": 998709,
+    "sha256": "BCA9A5BFB14A805FDD44EC0FDDA15A13E11E312764C9D049E0EE11EEF8EB7A6A"
+  },
+  "features": {
+    "rtpCooldownSecondsBefore": 60,
+    "rtpCooldownSecondsAfter": 10,
+    "activeRequestStillExclusive": true,
+    "failedRequestReleasesCooldown": true,
+    "rtpMaximumRange": 5000,
+    "rtpBorderMargin": 32,
+    "rtpMinimumRange": 64,
+    "rtpMaximumAttempts": 48,
+    "rtpSearchTimeoutSeconds": 30,
+    "clientProfileChanged": false
+  },
+  "tests": {
+    "screenPassed": 118,
+    "failed": 0,
+    "consecutiveCleanBuilds": 2,
+    "reproducibleArtifact": true,
+    "gitDiffCheckPassed": true
+  },
+  "maintenance": {
+    "playersBeforeMaintenance": 2,
+    "establishedConnectionsBeforeMaintenance": 2,
+    "warningAnnouncementsSent": 3,
+    "saveAllFlushSucceeded": true,
+    "oldProcessId": 7892,
+    "normalStopSucceeded": true
+  },
+  "backup": {
+    "path": "E:\\manual-backups\\activity-survival-rtp-0.2.13-20260829T112824Z",
+    "fileCount": 2970,
+    "directoryCount": 620,
+    "totalBytes": 2525971197,
+    "pathOrLengthDifferenceCount": 0,
+    "oldJarSha256": "DB9AA15D1851CF3E23E53F3411CF2CF03BF508F9334BA8F06E432C077F872471"
+  },
+  "serverDeployment": {
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "artifactPath": "E:\\HechaoActivitySlots\\activity-survival\\mods\\HechaoEconomyScreen-NeoForge-1.21.1-0.2.13.jar",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "processId": 8348,
+    "listener": "127.0.0.1:25600",
+    "uniqueScreenJarCount": 1,
+    "doneSeconds": 4.514,
+    "rollbackPerformed": false,
+    "stabilityUptimeSeconds": 220.3,
+    "playersAtStabilityCheck": 0,
+    "tps": 20.0,
+    "tickDurationLastMinuteMs": {
+      "minimum": 2.1,
+      "median": 2.7,
+      "p95": 3.8,
+      "maximum": 31.2
+    },
+    "newCrashCount": 0,
+    "fatalSignatureCount": 0,
+    "rtpProblemSignatureCount": 0
+  },
+  "humanAcceptance": {
+    "tenSecondCooldown": false,
+    "activeRequestDuplicateRejection": false
+  },
+  "credentialsRecorded": false
+}

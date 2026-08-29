@@ -968,3 +968,24 @@ TPS 仍为 `20.0`，最近一分钟 tick 中位 `19.8ms`、95 分位 `24.2ms`、
 验收必须确认连续跑图不会生成新的 `RtpSafeLocationFinder`、`BlockCollisions` 或
 `ServerChunkCache.getChunk` Watchdog 栈。完整记录见
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.12.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.12.md)。
+
+## 36. 2026-08-29 Screen 0.2.13 RTP 冷却调整
+
+按运营要求，RTP 每名玩家成功冷却由 `60` 秒改为 `10` 秒。正在异步寻找安全落点的玩家
+仍由活动请求表拒绝重复操作，因此缩短成功冷却不会并发创建区块请求。失败、超时、掉线、
+死亡和换维度继续释放冷却；半径、边界、安全落点、候选次数、查找超时和协议均未改动。
+
+源码提交 `0560640fed9a78851f87f628eec09ec0442c0790` 已推送到开发分支。Java 21 / Gradle
+9.5.1 连续两次干净构建均为 `118/118`，JAR 均为 `998,709` 字节，SHA-256 均为
+`BCA9A5BFB14A805FDD44EC0FDDA15A13E11E312764C9D049E0EE11EEF8EB7A6A`。
+
+部署前有 2 名玩家在线，服务器发送维护倒计时后执行 `save-all flush` 并收到
+`Saved the game`，随后正常停止。完整离线备份为
+`E:\manual-backups\activity-survival-rtp-0.2.13-20260829T112824Z`，包含 `2,970` 个文件、
+`620` 个目录和 `2,525,971,197` 字节，路径与长度差异为 `0`。
+
+冷启动后计划任务为 `Running`、Java PID `8348`、`127.0.0.1:25600` 单监听、唯一 Screen
+JAR 为 `0.2.13`，`Done (4.514s)`。约 220 秒回查仍为同一进程，TPS `20.0`，最近一分钟
+tick 中位 `2.7ms`、95 分位 `3.8ms`；新增崩溃、致命启动和 RTP 问题签名均为 `0`。
+服务端回查时无人在线，10 秒真人冷却与查找中重复点击仍需下一名玩家验收。完整记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.13.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.13.md)。
