@@ -921,3 +921,50 @@ Screen `0.2.11`、Arclight、Essentials 和 EssentialsSpawn，并在 `4.543` 秒
 下界 RTP、掉线/换维度取消和多人 TPS/MSPT 仍需真人验收，完成前
 不得推进 Gray 或 Production。完整记录见
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.11.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.11.md)。
+
+## 35. 2026-08-29 Screen 0.2.12 RTP 相邻区块死锁热修
+
+`0.2.11` 上线后并未彻底消除 RTP 卡服。`2026-08-28 18:11:36` 和
+`2026-08-29 13:11:04` 又生成两份 `Watching Server` 崩溃报告，主线程均停在：
+
+```text
+ServerChunkCache.getChunk
+Level.getChunkForCollisions
+BlockCollisions.getChunk
+CollisionGetter.noCollision
+RtpSafeLocationFinder.isSafe
+RtpTeleportService.chunkReady
+```
+
+候选区块 Future 本身已经完成，但 `level.noCollision` 会遍历玩家碰撞箱附近的区块；候选
+靠近区块边缘时，它会同步等待尚未就绪的相邻区块，而相邻区块完成又需要主线程继续处理
+任务，最终形成主线程等待并被 60 秒 Watchdog 关闭。事故期间没有
+`OutOfMemoryError`、JVM fatal error、磁盘故障或系统 Java 崩溃事件，不能归因于内存。
+
+Screen `0.2.12` 删除 `level.noCollision`，落点验证只使用 Future 返回的唯一
+`LevelChunk`：脚部、头部和支撑方块均从该区块读取，支撑碰撞形状也以该区块作为
+`BlockGetter`。玩家当前碰撞箱平移到候选点后，必须完整位于已验证为空气的两格柱体内；
+越界只会放弃该候选，不会访问邻区块。RTP 最大范围 `5000`、边界内缩 `32`、最小范围
+`64`、`60` 秒冷却、`48` 次候选和 `30` 秒超时全部保持不变，网络协议仍为 `3`，客户端
+档案未改且无需重新下载。
+
+源码提交 `e2c7fe0aee627aa0d89fca0d6fadf8aa099eb245` 已推送到 `main` 和开发分支。
+Java 21 / Gradle 9.5.1 连续两次干净构建均为 `117/117`，JAR 均为 `998,677` 字节，
+SHA-256 均为
+`DB9AA15D1851CF3E23E53F3411CF2CF03BF508F9334BA8F06E432C077F872471`。
+
+生产服在 `0/100` 玩家、TCP 已建立连接 `0` 时执行 `save-all flush` 并正常停止。完整冷备份
+位于 `E:\manual-backups\activity-survival-rtp-0.2.12-20260829T185800`，包含 `2,968`
+个文件、`620` 个目录和 `2,523,290,230` 字节，路径与长度差异为 `0`。原子替换后受管
+冷启动成功：Java PID `7892`、`127.0.0.1:25600` 单监听、Screen `0.2.12` 唯一 JAR、
+`Done (4.216s)`、新崩溃 `0`、致命签名 `0`。空服 TPS 为 `20.0`；最近一分钟 tick
+耗时为最小 `1.9ms`、中位 `2.5ms`、95 分位 `3.3ms`、最大 `34.1ms`。
+运行 `517` 秒后的二次回查仍为同一进程，Done 后卡服警告和 RTP 错误均为 `0`。期间有
+1 名真实玩家正常进入；Create 初始化记录了 5 条无效 air 物品错误，但修复前的 8 月 29、
+28 日归档分别已有 `90` 和 `7` 条同签名，因此归类为既有非致命问题。1 名玩家在线时
+TPS 仍为 `20.0`，最近一分钟 tick 中位 `19.8ms`、95 分位 `24.2ms`、最大 `39.1ms`。
+
+自动门禁只能证明启动和空服稳定，不能替代主世界、下界以及多人并发 RTP 真人验收。后续
+验收必须确认连续跑图不会生成新的 `RtpSafeLocationFinder`、`BlockCollisions` 或
+`ServerChunkCache.getChunk` Watchdog 栈。完整记录见
+[`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.12.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.12.md)。

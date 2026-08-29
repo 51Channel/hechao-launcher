@@ -1,12 +1,11 @@
 # 赫朝启动器
 
-> `2026-08-25` 天域远征 Screen `0.2.11` 已完成服务端热修。`0.2.10` 曾在 RTP 时于
-> 主线程同步加载远处区块，触发 60 秒 Watchdog；新版从专用线程发起区块 Future，逐个
-> 候选加载，回到服务端线程后只检查已加载区块，并在超时、掉线、死亡、换维度或停服时
-> 清理票据和冷却。最大范围仍为 `5000` 格、冷却仍为 `60` 秒。EssentialsSpawn 重生监听
-> 已关闭，让原版床、重生锚和世界出生点重新接管。协议保持 `3`，客户端档案继续使用
-> `1.0.30`，无需重新下载；真人床重生和 RTP 仍待玩家验收。详情见
-> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.11.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.11.md)。
+> `2026-08-29` 天域远征 Screen `0.2.12` 已完成服务端热修。`0.2.11` 虽把候选区块改为
+> Future 加载，但落点的 `level.noCollision` 仍会在主线程同步索取相邻区块，已于 8 月 28、
+> 29 日再次触发 60 秒 Watchdog。新版完全移除世界碰撞扫描，只读取 Future 返回的
+> `LevelChunk`，并要求玩家碰撞箱完整位于已经验证为空气的两格柱体内。最大范围仍为
+> `5000` 格、冷却仍为 `60` 秒，协议保持 `3`，无需重新下载客户端。详情见
+> [`docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.12.md`](docs/SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.12.md)。
 
 > `2026-08-24` HechaoEconomy `0.2.4` 已部署到 `activity-survival`，并与 API `0.37.0`
 > 完成官方商城购买和待领取闭环。服务端配置明确使用 `server-id=activity-survival`；其他

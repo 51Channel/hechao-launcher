@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-29T11:03:00Z",
+  "component": "hechao-economy-screen",
+  "version": "0.2.12",
+  "networkProtocol": "3",
+  "buildSourceCommit": "e2c7fe0aee627aa0d89fca0d6fadf8aa099eb245",
+  "releaseTag": "hechao-economy-screen-v0.2.12",
+  "serverOnlyHotfix": true,
+  "artifact": {
+    "name": "HechaoEconomyScreen-NeoForge-1.21.1-0.2.12.jar",
+    "sizeBytes": 998677,
+    "sha256": "DB9AA15D1851CF3E23E53F3411CF2CF03BF508F9334BA8F06E432C077F872471"
+  },
+  "rootCause": {
+    "crashReports": [
+      "crash-2026-08-28_18.11.36-server.txt",
+      "crash-2026-08-29_13.11.04-server.txt"
+    ],
+    "watchdogSeconds": 60,
+    "priorAsyncHotfixIncomplete": true,
+    "candidateChunkFutureCompleted": true,
+    "worldCollisionScanRequestedAdjacentChunk": true,
+    "blockedCall": "CollisionGetter.noCollision -> BlockCollisions.getChunk -> ServerChunkCache.getChunk",
+    "outOfMemory": false,
+    "jvmFatalError": false,
+    "diskFailure": false
+  },
+  "features": {
+    "rtpMaximumRange": 5000,
+    "rtpBorderMargin": 32,
+    "rtpMinimumRange": 64,
+    "rtpCooldownSeconds": 60,
+    "rtpMaximumAttempts": 48,
+    "rtpSearchTimeoutSeconds": 30,
+    "loadedChunkOnlyBlockReads": true,
+    "worldNoCollisionRemoved": true,
+    "supportShapeUsesLoadedChunk": true,
+    "playerBoxMustFitCheckedAirColumn": true,
+    "clientProfileChanged": false
+  },
+  "tests": {
+    "screenPassed": 117,
+    "failed": 0,
+    "consecutiveCleanBuilds": 2,
+    "reproducibleArtifact": true,
+    "gitDiffCheckPassed": true
+  },
+  "backup": {
+    "path": "E:\\manual-backups\\activity-survival-rtp-0.2.12-20260829T185800",
+    "fileCount": 2968,
+    "directoryCount": 620,
+    "totalBytes": 2523290230,
+    "pathOrLengthDifferenceCount": 0,
+    "oldJarSha256": "90E55908673C0B8B47673AA13200CC09387E46BD368FA2F1B8B762A029979BD7"
+  },
+  "serverDeployment": {
+    "host": "owl5",
+    "serverId": "activity-survival",
+    "serverDirectory": "E:\\HechaoActivitySlots\\activity-survival",
+    "artifactPath": "E:\\HechaoActivitySlots\\activity-survival\\mods\\HechaoEconomyScreen-NeoForge-1.21.1-0.2.12.jar",
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "processId": 7892,
+    "listener": "127.0.0.1:25600",
+    "uniqueScreenJarCount": 1,
+    "doneSeconds": 4.216,
+    "playersBeforeMaintenance": 0,
+    "establishedConnectionsBeforeMaintenance": 0,
+    "saveAllFlushSucceeded": true,
+    "rollbackPerformed": false,
+    "startupUptimeSecondsAtFirstStabilityCheck": 96,
+    "startupUptimeSecondsAtSecondStabilityCheck": 517,
+    "tps": 20.0,
+    "tickDurationLastMinuteMs": {
+      "minimum": 1.9,
+      "median": 2.5,
+      "p95": 3.3,
+      "maximum": 34.1
+    },
+    "newCrashCount": 0,
+    "fatalSignatureCount": 0,
+    "afterDoneLagWarningCount": 0,
+    "afterDoneRtpProblemCount": 0,
+    "livePlayerLoginObserved": true,
+    "onePlayerTickDurationLastMinuteMs": {
+      "minimum": 13.9,
+      "median": 19.8,
+      "p95": 24.2,
+      "maximum": 39.1
+    },
+    "preexistingInvalidAirItemSignature": {
+      "currentCount": 5,
+      "previous20260829Count": 90,
+      "previous20260828Count": 7,
+      "fatal": false
+    }
+  },
+  "humanAcceptance": {
+    "overworldRtp": false,
+    "netherRtp": false,
+    "concurrentRtp": false,
+    "distributedExploration": false,
+    "createAndSableWorkload": false
+  },
+  "credentialsRecorded": false
+}
