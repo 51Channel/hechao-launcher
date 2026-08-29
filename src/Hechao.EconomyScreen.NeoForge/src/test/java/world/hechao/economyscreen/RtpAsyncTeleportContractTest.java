@@ -9,6 +9,18 @@ import org.junit.jupiter.api.Test;
 
 final class RtpAsyncTeleportContractTest {
     @Test
+    void playerCooldownIsTenSecondsWhileActiveRequestsStayExclusive()
+            throws Exception {
+        String source = Files.readString(sourcePath("RtpTeleportService.java"));
+
+        assertTrue(source.contains(
+                "PLAYER_COOLDOWN = Duration.ofSeconds(10)"));
+        assertTrue(source.contains(
+                "new RtpCooldownRegistry(PLAYER_COOLDOWN)"));
+        assertTrue(source.contains("requests.containsKey(playerUuid)"));
+    }
+
+    @Test
     void chunkGenerationNeverWaitsOnTheServerThread() throws Exception {
         String source = Files.readString(sourcePath("RtpTeleportService.java"));
 

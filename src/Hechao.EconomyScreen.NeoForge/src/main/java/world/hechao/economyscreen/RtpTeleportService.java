@@ -28,13 +28,14 @@ import org.slf4j.Logger;
 
 final class RtpTeleportService {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Duration PLAYER_COOLDOWN = Duration.ofSeconds(10);
     private static final Duration SEARCH_TIMEOUT = Duration.ofSeconds(30);
     private static final TicketType<UUID> CHUNK_TICKET = TicketType.create(
             "hechao_rtp",
             UUID::compareTo);
 
     private final RtpCooldownRegistry cooldowns =
-            new RtpCooldownRegistry(Duration.ofSeconds(60));
+            new RtpCooldownRegistry(PLAYER_COOLDOWN);
     private final HashMap<UUID, Request> requests = new HashMap<>();
     private final ScheduledExecutorService chunkExecutor =
             Executors.newSingleThreadScheduledExecutor(task -> {
