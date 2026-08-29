@@ -989,3 +989,21 @@ JAR 为 `0.2.13`，`Done (4.514s)`。约 220 秒回查仍为同一进程，TPS `
 tick 中位 `2.7ms`、95 分位 `3.8ms`；新增崩溃、致命启动和 RTP 问题签名均为 `0`。
 服务端回查时无人在线，10 秒真人冷却与查找中重复点击仍需下一名玩家验收。完整记录见
 [`SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.13.md`](SKYREALM_ECONOMY_SCREEN_RELEASE_0.2.13.md)。
+
+## 37. 2026-08-29 GriefPrevention 战斗交互限制关闭
+
+玩家反馈互相造成一次伤害后长时间不能开箱或互动。生产插件清单没有 CombatLog 或
+PvPManager；GriefPrevention `16.18.5` 配置在三个维度启用 PvP 规则，并把
+`CombatTimeoutSeconds` 设为 `15`。对应版本源码确认容器、工作站和存储矿车都会在
+`PlayerData.inPvpCombat()` 为真时拒绝交互，同一状态也限制部分传送指令、丢物、领地内
+建造、创建领地和战斗退出。
+
+生产配置已原子改为 `CombatTimeoutSeconds: 0` 并执行 `gpreload`。插件明确返回
+`Configuration updated`，Java PID `8348`、计划任务、单监听和两名玩家连接均未变化。
+独立回滚备份位于
+`E:\manual-backups\activity-survival-griefprevention-combat-timeout-20260829T140541Z\config.yml`。
+
+该变更关闭整套 GriefPrevention 战斗标记限制，但不关闭正常 PVP、领地 PVP 安全区、领地
+容器授权或防盗规则。在线玩家已收到验证通知；互相伤害后立即开箱和无授权领地继续拒绝
+仍需真人确认。完整记录见
+[`SKYREALM_GRIEFPREVENTION_COMBAT_INTERACTION_2026-08-29.md`](SKYREALM_GRIEFPREVENTION_COMBAT_INTERACTION_2026-08-29.md)。

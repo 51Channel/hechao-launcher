@@ -1,5 +1,11 @@
 # 赫朝启动器
 
+> `2026-08-29` 天域远征已关闭 GriefPrevention 的战斗标记限制：
+> `CombatTimeoutSeconds` 从 `15` 调整为 `0` 并完成热重载。玩家互相造成伤害后不再被禁止
+> 开箱、使用工作站、丢物、建造或执行原有受限传送指令；正常 PVP、领地容器授权和防盗
+> 规则仍保留。服务器未重启，两名在线玩家连接未中断。详情见
+> [`docs/SKYREALM_GRIEFPREVENTION_COMBAT_INTERACTION_2026-08-29.md`](docs/SKYREALM_GRIEFPREVENTION_COMBAT_INTERACTION_2026-08-29.md)。
+
 > `2026-08-29` 天域远征 Screen `0.2.13` 将每名玩家的 RTP 成功冷却从 `60` 秒调整为
 > `10` 秒。安全落点仍在异步查找，查找完成前的重复请求继续拒绝；范围、边界、安全策略、
 > 超时和网络协议均未改变，现有客户端无需更新。详情见

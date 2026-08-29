@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-29T14:07:00Z",
+  "host": "owl5",
+  "serverId": "activity-survival",
+  "component": "GriefPrevention",
+  "componentVersion": "16.18.5",
+  "pluginJar": {
+    "sizeBytes": 369245,
+    "sha256": "194F5FB319425FC7A62DD27D174A0795CE2BEDBAF45782AD207F9BB684F4951D"
+  },
+  "rootCause": {
+    "combatTimeoutSecondsBefore": 15,
+    "containerInteractionUsesCombatState": true,
+    "storageEntityInteractionUsesCombatState": true,
+    "sourceVersionAudited": "16.18.5"
+  },
+  "change": {
+    "combatTimeoutSecondsAfter": 0,
+    "hotReloadCommand": "gpreload",
+    "reloadConfirmed": true,
+    "serverRestarted": false,
+    "rollbackPerformed": false
+  },
+  "configuration": {
+    "path": "E:\\HechaoActivitySlots\\activity-survival\\plugins\\GriefPreventionData\\config.yml",
+    "backupPath": "E:\\manual-backups\\activity-survival-griefprevention-combat-timeout-20260829T140541Z\\config.yml",
+    "sha256Before": "FDE3FBA294532507B9C7637ED74A936E729874A3B4335AE1AAD87B862C3BEC2A",
+    "sha256After": "8771F916AD2F9FB33A3FDAFB0D3EAFDFBA9364AC2D639F56E1DF861F9E1D8092",
+    "onlyTimeoutScalarChanged": true
+  },
+  "runtime": {
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "processIdBefore": 8348,
+    "processIdAfter": 8348,
+    "listener": "127.0.0.1:25600",
+    "playersConnectedBefore": 2,
+    "playersConnectedAfter": 2
+  },
+  "preserved": {
+    "normalPvp": true,
+    "claimContainerPermissions": true,
+    "claimTheftProtection": true,
+    "claimPvpSafeZones": true
+  },
+  "disabledWithCombatTag": {
+    "containerLock": true,
+    "blockedCommands": true,
+    "itemDropLock": true,
+    "claimBuildLock": true,
+    "claimCreationLock": true,
+    "logoutPunishment": true
+  },
+  "humanAcceptance": {
+    "immediateChestOpenAfterPvpHit": false,
+    "claimPermissionStillEnforced": false
+  },
+  "credentialsRecorded": false
+}
