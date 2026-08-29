@@ -63,7 +63,7 @@ final class RtpSafeLocationFinder {
                 startY - MAX_VERTICAL_SCAN);
         for (int y = startY; y >= endY; y--) {
             BlockPos feet = new BlockPos(candidate.x(), y, candidate.z());
-            if (isSafe(level, player, border, chunk, feet)) {
+            if (isSafe(player, border, chunk, feet)) {
                 return Optional.of(new Location(
                         candidate.x() + 0.5,
                         y,
@@ -74,7 +74,6 @@ final class RtpSafeLocationFinder {
     }
 
     private static boolean isSafe(
-            ServerLevel level,
             ServerPlayer player,
             WorldBorder border,
             LevelChunk chunk,
@@ -83,7 +82,7 @@ final class RtpSafeLocationFinder {
         BlockState headState = chunk.getBlockState(feet.above());
         BlockState supportState = chunk.getBlockState(feet.below());
         boolean supportSolid = !supportState.getCollisionShape(
-                level,
+                chunk,
                 feet.below(),
                 CollisionContext.empty()).isEmpty();
         boolean fluidsClear = feetState.getFluidState().isEmpty()
@@ -104,6 +103,16 @@ final class RtpSafeLocationFinder {
                 feet.getX() + 0.5 - player.getX(),
                 feet.getY() - player.getY(),
                 feet.getZ() + 0.5 - player.getZ());
+        boolean collisionClear = RtpSafetyPolicy.fitsInsideCheckedAirColumn(
+                targetBox.minX,
+                targetBox.minY,
+                targetBox.minZ,
+                targetBox.maxX,
+                targetBox.maxY,
+                targetBox.maxZ,
+                feet.getX(),
+                feet.getY(),
+                feet.getZ());
 
         return RtpSafetyPolicy.accepts(new RtpSafetyPolicy.Surface(
                 insideBorder(border, feet.getX() + 0.5, feet.getZ() + 0.5),
@@ -112,7 +121,7 @@ final class RtpSafeLocationFinder {
                 headState.isAir(),
                 fluidsClear,
                 hazardsClear,
-                level.noCollision(player, targetBox)));
+                collisionClear));
     }
 
     private static boolean isHazard(BlockState state) {

@@ -43,6 +43,24 @@ final class RtpAsyncTeleportContractTest {
         assertTrue(source.contains("chunk.getBlockState("));
         assertFalse(source.contains("level.getHeight("));
         assertFalse(source.contains("level.getBlockState("));
+        assertFalse(source.contains("level.noCollision("));
+        assertTrue(source.contains("supportState.getCollisionShape(\n                chunk,"));
+    }
+
+    @Test
+    void landingCollisionBoxMustStayInsideTheCheckedAirColumn() {
+        assertTrue(RtpSafetyPolicy.fitsInsideCheckedAirColumn(
+                10.2, 64.0, 20.2,
+                10.8, 65.8, 20.8,
+                10, 64, 20));
+        assertFalse(RtpSafetyPolicy.fitsInsideCheckedAirColumn(
+                9.9, 64.0, 20.2,
+                10.8, 65.8, 20.8,
+                10, 64, 20));
+        assertFalse(RtpSafetyPolicy.fitsInsideCheckedAirColumn(
+                10.2, 64.0, 20.2,
+                10.8, 66.1, 20.8,
+                10, 64, 20));
     }
 
     private static Path sourcePath(String fileName) {
