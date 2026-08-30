@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-08-30T11:30:26.745Z",
+  "host": "owl5",
+  "serverId": "activity-survival",
+  "change": {
+    "gameRule": "doInsomnia",
+    "valueBefore": true,
+    "valueAfter": false,
+    "setCommand": "gamerule doInsomnia false",
+    "saveCommand": "save-all flush",
+    "setConfirmed": true,
+    "saveConfirmed": true,
+    "serverRestarted": false
+  },
+  "dimensionQueries": {
+    "minecraft:overworld": false,
+    "minecraft:the_nether": false,
+    "minecraft:the_end": false
+  },
+  "behavior": {
+    "insomniaPhantomNaturalSpawningDisabled": true,
+    "otherNaturalMobSpawningChanged": false,
+    "existingPhantomsRemoved": false,
+    "administrativePhantomSpawningBlocked": false
+  },
+  "rollback": {
+    "automaticRollbackTested": true,
+    "initialRollbackReason": "save confirmation window was shorter than the actual save duration",
+    "finalRollbackPerformed": false,
+    "restoreCommand": "gamerule doInsomnia true"
+  },
+  "runtime": {
+    "taskName": "Hechao-Server-activity-survival",
+    "taskState": "Running",
+    "processIdBefore": 8348,
+    "processIdAfter": 8348,
+    "listener": "127.0.0.1:25600",
+    "playersOnlineAfter": 5,
+    "maxPlayers": 100,
+    "finalSaveTickDelayMilliseconds": 2328,
+    "newCrashOrFatalLines": 0
+  },
+  "credentialsRecorded": false,
+  "playerIdentitiesRecorded": false
+}

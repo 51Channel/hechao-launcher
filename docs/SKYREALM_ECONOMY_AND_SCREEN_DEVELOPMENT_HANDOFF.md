@@ -1007,3 +1007,15 @@ PvPManager；GriefPrevention `16.18.5` 配置在三个维度启用 PvP 规则，
 容器授权或防盗规则。在线玩家已收到验证通知；互相伤害后立即开箱和无授权领地继续拒绝
 仍需真人确认。完整记录见
 [`SKYREALM_GRIEFPREVENTION_COMBAT_INTERACTION_2026-08-29.md`](SKYREALM_GRIEFPREVENTION_COMBAT_INTERACTION_2026-08-29.md)。
+
+## 38. 2026-08-30 幻翼自然生成关闭
+
+按运营要求，生产服通过受管控制台把游戏规则 `doInsomnia` 从 `true` 改为 `false`，关闭由
+玩家长期不睡觉触发的幻翼自然生成。该变更不影响其他生物自然生成，不清除已经存在的
+幻翼，也不封锁管理员命令或刷怪蛋主动生成。
+
+服务器已明确返回规则修改成功和 `Saved the game`，随后在主世界、下界和末地分别查询均
+为 `false`。计划任务保持 `Running`，Java PID `8348` 与 `127.0.0.1:25600` 单监听未变化，
+修改后有 `5/100` 名玩家在线，未重启 Minecraft、Velocity 或服控代理。PID、在线人数和
+运行状态属于当时快照，后续须实时复核。完整记录见
+[`SKYREALM_PHANTOM_SPAWNING_DISABLED_2026-08-30.md`](SKYREALM_PHANTOM_SPAWNING_DISABLED_2026-08-30.md)。
