@@ -159,7 +159,8 @@ owl9 的历史 Velocity 目标 `pvp` 实际是
    `C:\ProgramData\Hechao\ServerControl`；
 2. 安装 Minecraft 控制台桥；
 3. 让现有启动批处理支持 `HECHAO_MANAGED_START`；
-4. 为每个真实目标重建受管启动任务，并明确传入 `-ServerId`；
+4. 为每个真实目标重建使用 `S4U` 的受管启动任务，并明确传入 `-ServerId`；该任务不得依赖
+   Administrator 交互登录会话；
 5. 用 `New-ServerControlAgentToken.ps1` 生成一次性随机令牌文件和 SHA-256；
 6. 将 SHA-256 配到 API，将 DPAPI `LocalMachine` 密文留在对应 VPS；
 7. 发布代理单文件 EXE，并用 `Install-ServerControlAgent.ps1` 校验哈希、配置、

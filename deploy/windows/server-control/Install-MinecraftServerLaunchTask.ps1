@@ -82,7 +82,7 @@ $action = New-ScheduledTaskAction `
     -WorkingDirectory $resolvedDirectory
 $principal = New-ScheduledTaskPrincipal `
     -UserId $RunAsUser `
-    -LogonType Interactive `
+    -LogonType S4U `
     -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
@@ -100,6 +100,9 @@ Register-ScheduledTask `
     Out-Null
 
 $installed = Get-ScheduledTask -TaskName $taskName
+if ($installed.Principal.LogonType -ne 'S4U') {
+    throw "Managed launch task must use unattended S4U logon: $taskName"
+}
 [pscustomobject]@{
     task_name = $installed.TaskName
     task_state = [string]$installed.State

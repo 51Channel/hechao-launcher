@@ -76,8 +76,7 @@ Manual double-click starts still pause when Java exits. A managed start sets
 the environment marker, so the scheduled task exits cleanly after a graceful
 server shutdown.
 
-Then run the task installer while the target Administrator desktop session is
-logged in:
+Then run the task installer from an elevated PowerShell 7 session:
 
 ```powershell
 .\Install-MinecraftServerLaunchTask.ps1 `
@@ -92,6 +91,12 @@ therefore runs only after an explicit:
 ```powershell
 Start-ScheduledTask -TaskName Hechao-Server-Survival1
 ```
+
+The task uses the passwordless `S4U` logon type. It can therefore start while
+the target Administrator has no interactive desktop session, including after
+a VPS reboot. Do not change managed launch tasks back to `InteractiveToken`;
+Task Scheduler can accept `/Run` without actually launching the runner when no
+matching desktop session exists.
 
 An existing task with the same name is exported below
 `E:\manual-backups\server-control-<UTC timestamp>` before replacement.
