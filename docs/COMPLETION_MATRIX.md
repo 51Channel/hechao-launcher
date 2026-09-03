@@ -39,13 +39,13 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 启动器 | 已发布，更新通道已开放 | `0.15.14` 已发布到私有 OSS；两轮签名回读 `200`、匿名读取 `403`，公开元数据、官网下载网关和认证会话更新计划均通过；正式来源为标签 `launcher-v0.15.14` |
 | API `0.38.0` | 已完成 | 把已确认的整合包 Java 主版本传递到直接部署和活动企划部署命令；数据库保持 `35/35`，生产健康、就绪、队列和回滚均已验收，见 [`API_RELEASE_0.38.0.md`](API_RELEASE_0.38.0.md) |
 | 天域远征客户端档案 `1.0.30` / Screen `0.2.10` | 已部署待外部验收 | Test `100% / r23`，Gray 未分配，Production 保持 `1.0.29`；保留 `1.0.29` 作为 Test 回滚目标，见 [`SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.30.md`](SKYREALM_INDUSTRIAL_PROFILE_RELEASE_1.0.30.md) |
-| 独立生存/活动/PVP/小游戏槽 | 已完成 | API `0.38.0`、owl5 Agent `0.8.1`、owl9 Agent `0.7.2` 与 Velocity Authorizer `0.5.0` 已生产部署；未发布 Production 客户端的独立槽继续保留在后台，但不会进入普通玩家实时目录 |
+| 独立生存/活动/PVP/小游戏槽 | 已完成 | API `0.38.0`、owl5 Agent `0.8.2`、owl9 Agent `0.7.2` 与 Velocity Authorizer `0.5.0` 已生产部署；owl5 动态启动任务和控制台桥已改为无人登录可运行的 `S4U`；未发布 Production 客户端的独立槽继续保留在后台，但不会进入普通玩家实时目录 |
 | 活动企划与单活动槽 | 已部署待真实活动验收 | 官网与 Launcher 双后台读取同一 PostgreSQL 企划，玩家可提前下载，开放前和部署不匹配时故障关闭；生产当前 0 条正式企划，`赫朝商务追杀` 作为只读旧排期显示，补齐结束时间与整合包绑定后仍须走正式企划流程；首次真实玩法包仍需单独执行客户端、服务端和真人进服验收，见 [`ACTIVITY_PLAN_OPERATIONS.md`](ACTIVITY_PLAN_OPERATIONS.md) |
-| 整合包导入 | 已完成（真实 Java 8 包 Test-only） | API `0.38.0`、Publisher `1.2.1` 与 owl5 Agent `0.8.1` 已完成商业街 Forge `1.12.2` 标准包分析、客户端 Test-only 发布和独立 Minigame 停止槽部署；目录隐藏、`Closed`，Gray/Production 未分配且游戏服从未启动。真人进服及玩法仍按活动单独验收，见 [`COMMERCIAL_STREET_PACKAGE_1.0.0.md`](COMMERCIAL_STREET_PACKAGE_1.0.0.md) |
+| 整合包导入 | 已完成（真实 Java 8 包 Test-only） | API `0.38.0`、Publisher `1.2.1` 与 owl5 Agent `0.8.2` 已完成商业街 Forge `1.12.2` 标准包分析、客户端 Test-only 发布、独立 Minigame 部署及无人登录真实启动；协议 `340`、`SELFTEST PASS`、控制台 `list` 和零启动错误通过。目录仍隐藏并保持 `Closed`，Gray/Production 未分配；真人进服及玩法仍按活动单独验收，见 [`COMMERCIAL_STREET_PACKAGE_1.0.0.md`](COMMERCIAL_STREET_PACKAGE_1.0.0.md) |
 | Velocity `0.5.0` / Lobby Guard `0.1.0` | 已部署待外部验收 | Authorizer 已支持受控动态回环后端并保持 `monitor`；零连接重启、插件单例、固定服 PID 与回滚备份已验收，仍需四级账号旁路验证，见 [`VELOCITY_AUTHORIZER_RELEASE_0.5.0.md`](VELOCITY_AUTHORIZER_RELEASE_0.5.0.md) 和 [`LOBBY_GUARD_RELEASE_0.1.0.md`](LOBBY_GUARD_RELEASE_0.1.0.md) |
 | Windows 安装、覆盖升级与卸载 | 已完成 | `0.15.13 -> 0.15.14` 隔离覆盖升级、全新安装、双轮卸载、设置与会话文件保留均通过；验收开始时的既有正式启动器进程未被替代关闭 |
 | 私有 OSS 发布 | 已完成 | `0.15.14` 不可变对象已发布；第二轮重复发布校验后跳过，匿名读取 `403`，两轮签名回读 `200`，私有签名 URL 未进入 Git、文档或终端记录 |
-| 自动测试 | 已完成 | API `383/383`、Agent `82/82`、完整解决方案 `836` 项通过，`1` 项外部 PostgreSQL 条件测试跳过；Release 构建 `0` 警告、`0` 错误，证据 JSON、PowerShell 7 脚本和 `git diff --check` 通过 |
+| 自动测试 | 已完成 | API `383/383`、Agent `84/84`、完整解决方案 `838` 项通过，`1` 项外部 PostgreSQL 条件测试跳过；Release 构建 `0` 警告、`0` 错误，证据 JSON、PowerShell 7 脚本和 `git diff --check` 通过 |
 | 2 至 3 人真实灰度 | 外部验收 | 待按 `0.15.14` 单进程切服、活动权限拆分与 Lobby 隔离清单执行；商业街还须先完成专属准入门禁 |
 | 5 人与 20 人灰度 | 外部验收 | 前一档无阻断后逐级开放 |
 
@@ -166,7 +166,7 @@ owl9 命名边界：历史 server ID / Velocity target `pvp` 与档案
 | 单服白名单、拒绝规则与有效期 | 已完成 | 允许/拒绝、原因、UTC 有效期、修订冲突与事务审计均已上线 |
 | 玩家实际目录/进服结果预览 | 已完成 | 管理员可按玩家预览每个服务器的最终允许结果及拒绝原因 |
 | 客户端档案创建、上传、签名与发布通道 | 已实现待生产验收 | API `0.17.0` 已生产部署，隔离生产副本真实验签与三通道闭环通过；真实管理员 MFA 已登记，仍待在生产管理页面完成创建、上传和发布操作验收 |
-| ZIP/MRPACK 客户端与服务端自动导入 | 已完成（真实 Java 8 包 Test-only） | Vue 路由支持 8 MiB 分块续传、取消、识别结果、动态槽选择/创建和精确确认；独立 Publisher 只写 Test，服控部署后保持停服。商业街标准包已完成真实 OSS、Java 8 标记、独立 Minigame 槽和旧 Forge 设置心跳闭环；入口不自动启动服务端，真人进服仍按活动单独验收 |
+| ZIP/MRPACK 客户端与服务端自动导入 | 已完成（真实 Java 8 包 Test-only） | Vue 路由支持 8 MiB 分块续传、取消、识别结果、动态槽选择/创建和精确确认；独立 Publisher 只写 Test，部署完成后默认保持停服。商业街标准包已完成真实 OSS、Java 8 标记、独立 Minigame 槽、旧 Forge 设置心跳及 `S4U` 真实启动闭环；真人进服仍按活动单独验收 |
 | 下载量、失败率与版本分布 | 已实现待生产验收 | 当前 API `0.38.0` 保留迁移 15、30 天留存、幂等批次和后台“运行数据”，并对客户端下载失败率建立统一告警；真实基础、Activity 与恐怖整蛊安装样本已完成，仍需真实回滚、完整 Launch/GameExit 和多人样本 |
 | 经济行情、财富分布、玩家市场与单品 K 线 | 已部署待真实交易验收 | API `0.35.0+` 已上线玩家挂单、购买、下架、待领取和模糊搜索；当前 `0.38.0` 同时保留 24 小时、7/30/90 天货币供给、财富分布、官方回收和真实成交 K 线。事务、幂等与余额由服务端裁决；双真人账号的完整交易、断线、背包竞争和余额守恒仍待 Test 验收 |
 | 暂停问题版本和主动回滚 | 已实现待生产验收 | API `0.17.0` 已完成暂停自动回滚、恢复不自动推广、修订冲突和审计；真实管理员 MFA 已登记，仍待在生产管理页面完成暂停与回滚操作验收 |

@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-09-03T23:23:05Z",
+  "component": "server-control-agent",
+  "version": "0.8.2",
+  "sourceCommits": {
+    "agent": "049344d7d2b68d8f21ef1bd1f26b3a9272e94dd1",
+    "consoleBridge": "1ab7671a64448c61c1148ccc0a3c1ad78c89a339"
+  },
+  "releaseTag": "server-control-agent-v0.8.2",
+  "rootCause": {
+    "code": "INTERACTIVE_TASK_WITHOUT_DESKTOP_SESSION",
+    "affectedHost": "owl5",
+    "affectedServerId": "minigame-commercial-street",
+    "previousStartResult": "START_TIMEOUT",
+    "remediation": "Use passwordless S4U scheduled tasks and verify the installed LogonType."
+  },
+  "artifact": {
+    "archiveName": "hechao-server-control-agent-0.8.2-20260903T225950Z-win-x64.zip",
+    "archiveSizeBytes": 33255805,
+    "archiveSha256": "66C15994C7FFB02EBD10C6918CD7E95829E699FE84548B5E88E842B984D830C1",
+    "entryCount": 1,
+    "executableSizeBytes": 74196063,
+    "executableSha256": "7E8DFB43089FD7F930AB709F2DC06EE61475FD51072D820A49111B978492DC24",
+    "productVersion": "0.8.2+049344d7d2b68d8f21ef1bd1f26b3a9272e94dd1"
+  },
+  "tests": {
+    "serverControlAgentPassed": 84,
+    "apiPassed": 383,
+    "solutionPassed": 838,
+    "externalPostgresSkipped": 1,
+    "failed": 0
+  },
+  "host": {
+    "agentId": "owl5",
+    "previousVersion": "0.8.1",
+    "finalVersion": "0.8.2+049344d7d2b68d8f21ef1bd1f26b3a9272e94dd1",
+    "finalProcessId": 4764,
+    "taskState": "Running",
+    "targetCount": 10,
+    "freshHeartbeatCount": 10,
+    "agentErrorsSinceDeployment": 0,
+    "agentBackup": {
+      "path": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260903T230221Z",
+      "fileCount": 3,
+      "sizeBytes": 74201597,
+      "previousExecutableSha256": "6A36645D82F3FF40BE020E6EE8E13ED43E657B84D54F4A3C252561E95331C402"
+    },
+    "dynamicTaskBackup": {
+      "path": "C:\\ProgramData\\Hechao\\backups\\dynamic-task-s4u-pre-20260903T225355Z",
+      "fileCount": 6,
+      "sizeBytes": 12934,
+      "manifestSha256": "4E3A18D9874E658EDC874373DBAEF7244DF93FFA22E11F12A873F40C94C9F145"
+    }
+  },
+  "scheduledTasks": [
+    {
+      "name": "Hechao-Server-activity-survival",
+      "logonType": "S4U",
+      "state": "Ready",
+      "lastTaskResult": "0x0"
+    },
+    {
+      "name": "Hechao-Server-activity-modular-boss",
+      "logonType": "S4U",
+      "state": "Ready",
+      "lastTaskResult": "0x0"
+    },
+    {
+      "name": "Hechao-Server-minigame-commercial-street",
+      "logonType": "S4U",
+      "state": "Running",
+      "lastTaskResult": "0x41301"
+    }
+  ],
+  "consoleBridge": {
+    "taskName": "Hechao-MinecraftConsoleBridge",
+    "logonType": "S4U",
+    "taskState": "Ready",
+    "lastTaskResult": "0x0",
+    "installerSha256": "3868F0945FBD8E3AA137936BF9861243A76E23D76257099621685665106BA073",
+    "backupPath": "C:\\ProgramData\\Hechao\\backups\\console-bridge-s4u-pre-20260903T231509Z",
+    "pendingRequests": 0,
+    "streetSelftest": "succeeded",
+    "listProbe": "succeeded"
+  },
+  "commercialStreet": {
+    "serverId": "minigame-commercial-street",
+    "processId": 2948,
+    "javaExecutable": "E:\\Java\\temurin8-jre-8u504-b01\\bin\\java.exe",
+    "initialMemoryMiB": 1024,
+    "maximumMemoryMiB": 6144,
+    "backendAddress": "127.0.0.1",
+    "backendPort": 25602,
+    "minecraftVersion": "1.12.2",
+    "protocol": 340,
+    "onlinePlayers": 0,
+    "maximumPlayers": 24,
+    "protocolProbePassed": true,
+    "doneCount": 1,
+    "startupErrorCount": 0,
+    "selftestPassed": true,
+    "reportedOnline": true,
+    "catalogStatus": "Closed",
+    "catalogVisible": false
+  },
+  "controlPlane": {
+    "apiServiceState": "active",
+    "apiRestarts": 0,
+    "activeOperations": 0,
+    "activeCommands": 0,
+    "owl9Version": "0.7.2",
+    "owl9TargetCount": 2,
+    "owl9FreshHeartbeatCount": 2,
+    "owl9Changed": false
+  },
+  "releaseBoundaries": {
+    "testVersion": "1.0.0",
+    "testRolloutPercentage": 100,
+    "grayAssigned": false,
+    "productionAssigned": false,
+    "catalogVisible": false,
+    "catalogStatus": "Closed",
+    "productionPromotionAllowed": false
+  },
+  "privacy": {
+    "credentialsRecorded": false,
+    "agentTokenRecorded": false,
+    "forwardingSecretRecorded": false,
+    "signedUrlsRecorded": false,
+    "playerIdentityRecorded": false
+  }
+}

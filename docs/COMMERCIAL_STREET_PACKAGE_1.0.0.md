@@ -70,6 +70,20 @@
 隔离环境中的 Forge 冷启动、协议 `340`、玩法 `SELFTEST PASS`、`save-all` 和正常停止只证明
 包本身可运行，不替代上述生产门禁，也不授权临时关闭正版验证或绕过 Velocity。
 
+## 2026-09-04 启动故障修复
+
+用户后续明确要求启动该服。首次后台启动返回 `START_TIMEOUT`，根因是 owl5 重启后没有
+Administrator 桌面会话，而动态槽计划任务仍使用 `InteractiveToken`。ServerControlAgent
+`0.8.2` 已把动态槽启动任务改为无密码 `S4U` 并完成真实安装类型校验；Minecraft 控制台桥
+也使用 `S4U`，避免同一条件下命令超时。
+
+修复后商业街以 PID `2948` 在 `127.0.0.1:25602` 运行，协议探针返回
+`1.12.2 / 340 / 0/24`，日志出现 `Done (3.235s)`，启动错误、FATAL、崩溃和 OOM 均为
+`0`。`street selftest` 返回 `SELFTEST PASS`，控制台 `list` 成功且队列为零；API 心跳已同步
+`reported_online=true`。修复前的失败操作继续作为审计历史保留。目录仍隐藏并保持
+`Closed`，Gray/Production 与其余开放门禁没有改变。完整记录见
+[`SERVER_CONTROL_AGENT_RELEASE_0.8.2.md`](SERVER_CONTROL_AGENT_RELEASE_0.8.2.md)。
+
 ## 回滚
 
 客户端回滚先取消 Test 对 `1.0.0` 的分配，保留不可变清单和 OSS 对象。服务端回滚必须在

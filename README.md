@@ -1,13 +1,13 @@
 # 赫朝启动器
 
-> `2026-09-03` 赫朝商业街建筑对决 Forge `1.12.2` 标准整合包已完成生产导入：客户端
+> `2026-09-04` 赫朝商业街建筑对决 Forge `1.12.2` 标准整合包已完成生产导入：客户端
 > 仅发布到 `Test=100% / r2`，服务端以 Java `8`、`Xms=1024 MiB`、`Xmx=6144 MiB`
 > 部署到独立小游戏槽 `minigame-commercial-street / 25602`。配套 API `0.38.0` 与 owl5
-> ServerControlAgent `0.8.1` 已上线；目录继续隐藏并保持 `Closed`，Gray/Production 未分配，
-> 服务端从未启动。详情见
+> ServerControlAgent `0.8.2` 已上线并修复主机重启后无人登录时的启动失败；商业街当前通过
+> `S4U` 后台任务稳定运行，目录继续隐藏并保持 `Closed`，Gray/Production 未分配。详情见
 > [`docs/COMMERCIAL_STREET_PACKAGE_1.0.0.md`](docs/COMMERCIAL_STREET_PACKAGE_1.0.0.md)、
 > [`docs/API_RELEASE_0.38.0.md`](docs/API_RELEASE_0.38.0.md) 和
-> [`docs/SERVER_CONTROL_AGENT_RELEASE_0.8.1.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.8.1.md)。
+> [`docs/SERVER_CONTROL_AGENT_RELEASE_0.8.2.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.8.2.md)。
 
 > `2026-08-29` 天域远征已关闭 GriefPrevention 的战斗标记限制：
 > `CombatTimeoutSeconds` 从 `15` 调整为 `0` 并完成热重载。玩家互相造成伤害后不再被禁止
@@ -331,12 +331,12 @@
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
 赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.14`、API `0.38.0`、
-LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.8.1`、
+LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.8.2`、
 owl9 ServerControlAgent `0.7.2`、Velocity Authorizer `0.5.0`（`monitor`）和 Lobby Guard
 `0.1.0`；可回滚部署、独立生存/活动/PVP/小游戏槽、全权限游戏控制台、标准整合包、
 双后台企划日历、单活动排期、官网与启动器同源活动月历、三栏服务器主页、公开下载桥接、
 成员问卷正版资格桥接与一次性服务端文件清理验收均已完成。商业街已完成真实 Java 8 包的
-Test-only 与停止槽闭环，仍需转发兼容、世界恢复、许可证、语音 UDP、深度指标、真人账号和
+Test-only、无人登录启动和控制台自检闭环，仍需转发兼容、世界恢复、许可证、语音 UDP、深度指标、真人账号和
 `2/3/5/20` 人逐级灰度。平台已经完成 C 版响应式视觉系统、启动时自动检查并安装启动器更新、
 客户端档案删除、跨档案玩家设置共享、运行中服控目标自动发现、赫朝账号、
 Microsoft/Minecraft 正版绑定、HTTPS 服务器目录、LuckPerms 等级同步与受控修改、权限过滤、

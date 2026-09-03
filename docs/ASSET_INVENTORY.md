@@ -157,7 +157,7 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   清单 SHA-256 为 `43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE`；
   客户端包含 `1,405` 个文件、`352,494,958` 字节，加载器为 Forge `14.23.5.2859`，
   运行时为 Java `8`。Test 为 `100% / r2`，Gray/Production 未分配；目录隐藏并保持
-  `Closed`，对应小游戏槽停止且从未启动。完整记录见
+  `Closed`。2026-09-04 已用 Agent `0.8.2` 完成无人登录真实启动、协议和控制台自检。完整记录见
   [`COMMERCIAL_STREET_PACKAGE_1.0.0.md`](COMMERCIAL_STREET_PACKAGE_1.0.0.md)。
 - 独立发布 RAM 用户 `hechao-launcher-publisher` 当前绑定
   `HechaoLauncherOssObjectPublish` v5，只可对 `hechaoworld/objects/*`、
@@ -279,11 +279,11 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 | 逆转未来独立服 | `E:\StandaloneServers\ReverseFuture233\standalone-runtime` | `25569` | 运行中，PID `4500` |
 | 天域远征独立槽 | `E:\HechaoActivitySlots\activity-survival` | `25600` | 已停止；任务 `Ready`，无监听 |
 | 模块首领独立槽 | `E:\HechaoActivitySlots\activity-modular-boss` | 动态槽 | 已停止；任务 `Ready`，无监听 |
-| 商业街小游戏槽 | `E:\HechaoActivitySlots\minigame-commercial-street` | `25602` | 已停止；任务 `Ready`，隐藏且 `Closed` |
+| 商业街小游戏槽 | `E:\HechaoActivitySlots\minigame-commercial-street` | `25602` | 运行中，PID `2948`；任务 `S4U`，隐藏且 `Closed` |
 
-上述状态为 `2026-09-03` Agent `0.8.1` 上线后的只读快照：owl5 仅逆转未来、Velocity
-和内部大厅三个 Java 进程运行。快照采集和商业街停止部署均未执行任何 Minecraft 启停或
-控制台命令，后续运维动作前仍须重新核验。
+上述状态于 `2026-09-04` 使用 Agent `0.8.2` 重新核验：owl5 的 Java 进程为逆转未来
+`4500`、Velocity `5040`、内部大厅 `5160` 和商业街 `2948`。商业街 `25602` 单监听，
+其余表中停止目标仍无监听。运行状态容易变化，后续运维动作前仍须实时核验。
 
 Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`、`pvp -> owl9.vipi9.top:19243`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
 
