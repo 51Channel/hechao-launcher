@@ -1,5 +1,8 @@
 # 赫朝启动器 API 0.38.0 多 Java 部署候选
 
+> 晋级状态：本候选已于 `2026-09-03` 部署生产，正式记录见
+> [`API_RELEASE_0.38.0.md`](API_RELEASE_0.38.0.md)。
+
 ## 范围
 
 - 整合包确认后，把分析器得到的 `javaMajorVersion` 写入 `DeployPackage` 命令；
@@ -35,7 +38,7 @@ Java 主版本。API 可以先回滚到 `0.37.0` 并关闭整合包导入；一�
   `tests/Hechao.Launcher.Tests/MinecraftRunningStateStoreTests.cs` 旧缩进阻断，本候选没有
   把该无关文件混入改动；正式发布制品与生产健康检查仍待发布阶段执行。
 
-## 当前状态
+## 晋级结果
 
-这是未部署候选。生产仍为 API `0.37.0`；本记录不授权启动、停止、重启或开放任何
-Minecraft 服务端。
+生产已切换到 `0.38.0-20260903T084151Z`，数据库迁移保持 `35/35`。该发布只重启 API，
+没有操作任何 Minecraft 服务端；商业街后续部署继续保持停止、隐藏和 Test-only。

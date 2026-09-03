@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-09-03T10:44:17Z",
+  "component": "api",
+  "version": "0.38.0-20260903T084151Z",
+  "releaseTag": "api-v0.38.0",
+  "releaseCommit": "4838bc303fad960db9f9b8822c6061b9c297932c",
+  "releaseDirectory": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z",
+  "artifact": {
+    "archiveName": "hechao-api-0.38.0-20260903T084151Z-linux-x64.tar.gz",
+    "archiveSizeBytes": 46999748,
+    "archiveSha256": "F70ACFDAC99DE18D8EED1ECA0D5BD3B53ADF7191FD468CFB6CECD28BBD50A5DA",
+    "executableSizeBytes": 105703492,
+    "executableSha256": "EB3897FD162B192916F40FA8E6C75CB1CA2620475A54E1FBE1066F8CB30533ED",
+    "productionHashMatched": true
+  },
+  "database": {
+    "migrationCount": 35,
+    "migrationMaximum": 35,
+    "migrationAddedByRelease": false,
+    "ready": true,
+    "latestVerifiedBackup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-20260902T194802Z.dump",
+      "sizeBytes": 8154397,
+      "sha256": "82B3D0211203DCC7E36182A5FD9B457EBFFBF53A28C69CE3BC9F3E3996270299"
+    }
+  },
+  "tests": {
+    "apiPassed": 383,
+    "serverControlAgentPassed": 82,
+    "solutionPassed": 836,
+    "externalPostgresSkipped": 1,
+    "failed": 0,
+    "releaseBuildWarnings": 0,
+    "releaseBuildErrors": 0
+  },
+  "acceptance": {
+    "mainPid": 1287130,
+    "nRestarts": 0,
+    "serviceState": "active/running",
+    "healthz": 200,
+    "readyz": 200,
+    "warningOrHigherLogs": 0,
+    "packageImportQueue": 0,
+    "serverControlOperationQueue": 0,
+    "serverControlCommandQueue": 0,
+    "activityDeploymentQueue": 0,
+    "rollbackNeeded": false
+  },
+  "javaVersionPropagation": {
+    "directPackageDeploymentCovered": true,
+    "activityPlanDeploymentCovered": true,
+    "legacyPayloadCompatible": true,
+    "commercialStreetJavaMajorVersion": 8
+  },
+  "rollback": "/opt/hechao-launcher-api/releases/0.37.0-20260823T182444Z",
+  "operations": {
+    "apiServiceRestarted": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "credentialsRecorded": false,
+    "signedUrlsRecorded": false,
+    "personalAccountDetailsRecorded": false
+  }
+}

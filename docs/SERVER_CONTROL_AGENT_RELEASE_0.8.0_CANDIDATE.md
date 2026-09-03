@@ -1,5 +1,9 @@
 # ServerControlAgent 0.8.0 多 Java 运行时候选
 
+> 晋级状态：`0.8.0` 曾作为生产过渡版本验证多 Java 部署，但旧 Forge
+> `server.properties` 心跳兼容问题由 `0.8.1` 修复；`0.8.0` 不创建正式标签。正式记录见
+> [`SERVER_CONTROL_AGENT_RELEASE_0.8.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.8.1.md)。
+
 ## 范围
 
 - 部署标记新增可选 `javaMajorVersion`，值来自 API 已确认的整合包分析结果；
@@ -40,4 +44,5 @@
 重启代理。若 Java 8 标记已经存在，先关闭整合包导入并保留 Agent `0.8.0`；不能让旧
 runner 以默认 Java 21 启动 Forge 1.12.2。
 
-当前未部署生产，也未启动、停止或重启任何游戏服。
+`0.8.0` 的过渡部署只重启 Agent，随后以前滚方式升级到 `0.8.1`；整个过程没有启动、
+停止或重启任何游戏服。

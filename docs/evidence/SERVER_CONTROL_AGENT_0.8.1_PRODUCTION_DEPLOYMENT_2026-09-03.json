@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-09-03T10:44:17Z",
+  "component": "server-control-agent",
+  "version": "0.8.1",
+  "sourceCommit": "14adba190158b1f84d1aa5946965059a3a93e015",
+  "configurationCommit": "3150720c8b4bad0009a90646f359641ba43bdcde",
+  "releaseTag": "server-control-agent-v0.8.1",
+  "artifact": {
+    "archiveName": "hechao-server-control-agent-0.8.1-20260903T101920Z-win-x64.zip",
+    "archiveSizeBytes": 33255103,
+    "archiveSha256": "2394345A9AB2B70C48A8328E062C57AF274DB5072CD10726751AEA5A27F0FC6C",
+    "entryCount": 1,
+    "executableSizeBytes": 74195551,
+    "executableSha256": "6A36645D82F3FF40BE020E6EE8E13ED43E657B84D54F4A3C252561E95331C402",
+    "productVersion": "0.8.1+14adba190158b1f84d1aa5946965059a3a93e015"
+  },
+  "tests": {
+    "serverControlAgentPassed": 82,
+    "apiPassed": 383,
+    "solutionPassed": 836,
+    "externalPostgresSkipped": 1,
+    "failed": 0,
+    "releaseBuildWarnings": 0,
+    "releaseBuildErrors": 0
+  },
+  "host": {
+    "agentId": "owl5",
+    "previousVersion": "0.8.0+4838bc303fad960db9f9b8822c6061b9c297932c",
+    "previousExecutableSha256": "AE2CC63686943037A20EC8808CF8F5CDE567AAE9E982CE045BDF597A044B4380",
+    "finalVersion": "0.8.1+14adba190158b1f84d1aa5946965059a3a93e015",
+    "finalProcessId": 152,
+    "taskState": "Running",
+    "targetCount": 10,
+    "freshHeartbeatCount": 10,
+    "backup": {
+      "path": "C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.8.1-20260903T102131Z",
+      "fileCount": 5,
+      "sizeBytes": 74206019
+    },
+    "template": {
+      "hostManagedRelativePaths": ["forwarding.secret"],
+      "worldDataRelativePaths": ["world", "world_nether", "world_the_end"]
+    },
+    "javaProcessIdsBefore": [4500, 5040, 5160],
+    "javaProcessIdsAfter": [4500, 5040, 5160],
+    "javaProcessesUnchanged": true
+  },
+  "legacyForgeSettingsAcceptance": {
+    "serverId": "minigame-commercial-street",
+    "maxPlayers": 24,
+    "viewDistance": 10,
+    "simulationDistance": 10,
+    "difficulty": "easy",
+    "whiteList": false,
+    "initialMemoryMiB": 1024,
+    "maximumMemoryMiB": 6144,
+    "maximumAllowedMemoryMiB": 18176,
+    "taskState": "Ready",
+    "reportedOnline": false,
+    "processId": null,
+    "backendPort": 25602,
+    "listenerCount": 0
+  },
+  "owl9": {
+    "version": "0.7.2",
+    "targetCount": 2,
+    "freshHeartbeatCount": 2,
+    "changed": false
+  },
+  "operations": {
+    "onlyControlAgentTaskRestarted": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "agentTokenIncluded": false,
+    "configurationContentsIncluded": false,
+    "serverConsoleIncluded": false,
+    "personalAccountDetailsIncluded": false
+  }
+}

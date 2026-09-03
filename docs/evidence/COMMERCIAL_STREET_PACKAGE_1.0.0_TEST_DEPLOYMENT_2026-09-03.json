@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-09-03T10:44:17Z",
+  "component": "profile-minigame-commercial-street-forge-1.12.2",
+  "version": "1.0.0",
+  "releaseTag": "profile-minigame-commercial-street-forge-1.12.2-v1.0.0",
+  "sourceHandoff": {
+    "fileName": "commercial-street-handoff.zip",
+    "sha256": "7F0889734DB894AD711642D1D1CC986DA748D71F6DA5434A9F47CAD9F81F8A9A",
+    "nestedArchive": true
+  },
+  "canonicalPackage": {
+    "fileName": "minigame-commercial-street-forge-1.12.2-1.0.0.zip",
+    "localPath": "H:\\MCMOD\\artifacts\\package-import\\minigame-commercial-street-forge-1.12.2-1.0.0.zip",
+    "sizeBytes": 465456939,
+    "sha256": "BA59F103599ADBEFFE9CB5EB706732936B2616579D1D7B04430CE3F8FC76BBD2",
+    "fileCount": 1475,
+    "expandedBytes": 465156465,
+    "layout": "Canonical",
+    "analysisIssueCount": 0,
+    "analysisBlockingIssueCount": 0,
+    "commonJarCount": 10
+  },
+  "platformImport": {
+    "importId": "26837294-6723-4394-a8b1-1a23fd392df7",
+    "status": "Completed",
+    "revision": 10,
+    "createdAtUtc": "2026-09-03T09:40:58.700177Z",
+    "completedAtUtc": "2026-09-03T09:56:08.963399Z",
+    "manifestSha256": "43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE",
+    "publisherVersion": "1.2.1",
+    "publisherUploadedObjects": 15,
+    "publisherExistingObjects": 1387,
+    "publisherUploadedBytes": 12952949
+  },
+  "profile": {
+    "profileId": "minigame-commercial-street-forge-1.12.2",
+    "minecraftVersion": "1.12.2",
+    "loader": "Forge",
+    "loaderVersion": "14.23.5.2859",
+    "javaVersion": "8",
+    "fileCount": 1405,
+    "downloadBytes": 352494958,
+    "publishedAtUtc": "2026-09-03T09:55:32.051605Z",
+    "isPaused": false
+  },
+  "channels": {
+    "test": {
+      "version": "1.0.0",
+      "rolloutPercentage": 100,
+      "revision": 2
+    },
+    "gray": {
+      "version": null,
+      "rolloutPercentage": 0,
+      "revision": 1
+    },
+    "production": {
+      "version": null,
+      "rolloutPercentage": 100,
+      "revision": 1
+    }
+  },
+  "serverDeployment": {
+    "operationId": "8c1da871-cb70-4965-98bc-1deda8eb36a7",
+    "operationStatus": "Succeeded",
+    "operationResultCode": "SUCCEEDED",
+    "commandResultCode": "PACKAGE_DEPLOYED_STOPPED",
+    "serverArchiveSizeBytes": 112672330,
+    "serverArchiveSha256": "E21541D0E595C23FF636343A59B5F42CEB5C3C9E6601585F7DE80CD9C3FDE185",
+    "serverExpandedBytes": 112661170,
+    "serverFileCount": 69,
+    "preserveWorldData": false,
+    "javaMajorVersion": 8,
+    "initialMemoryMiB": 1024,
+    "maximumMemoryMiB": 6144,
+    "automaticallyStoppedServerIds": []
+  },
+  "slot": {
+    "serverId": "minigame-commercial-street",
+    "slotKind": "Minigame",
+    "status": "Ready",
+    "serverDirectory": "E:\\HechaoActivitySlots\\minigame-commercial-street",
+    "startTaskName": "Hechao-Server-minigame-commercial-street",
+    "backendPort": 25602,
+    "velocityTarget": "minigame-commercial-street",
+    "conflictGroup": null,
+    "taskState": "Ready",
+    "reportedOnline": false,
+    "processId": null,
+    "listenerCount": 0,
+    "agentVersion": "0.8.1"
+  },
+  "reportedSettings": {
+    "maxPlayers": 24,
+    "viewDistance": 10,
+    "simulationDistance": 10,
+    "difficulty": "easy",
+    "whiteList": false,
+    "initialMemoryMiB": 1024,
+    "maximumMemoryMiB": 6144,
+    "maximumAllowedMemoryMiB": 18176
+  },
+  "catalog": {
+    "displayName": "Hechao Commercial Street Build Battle",
+    "status": "Closed",
+    "isVisible": false,
+    "minimumTier": "Participant",
+    "maxPlayers": 24
+  },
+  "runtimeIsolation": {
+    "javaProcessIdsBefore": [4500, 5040, 5160],
+    "javaProcessIdsAfter": [4500, 5040, 5160],
+    "javaProcessesUnchanged": true,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "legacyNestedImport": {
+    "importId": "adf0e962-e79b-411e-9b63-011fc94193b6",
+    "status": "AwaitingReview",
+    "changed": false
+  },
+  "activeQueues": {
+    "packageImports": 0,
+    "serverControlOperations": 0,
+    "serverControlCommands": 0,
+    "activityDeployments": 0
+  },
+  "productionGates": {
+    "velocityModernForwardingApproved": false,
+    "forgeDeepMetricsAvailable": false,
+    "voiceUdpResolved": false,
+    "thirdPartyLicenseReviewComplete": false,
+    "worldRestoreVerified": false,
+    "freshGrantAcceptanceComplete": false,
+    "stagedMultiplayerAcceptanceComplete": false,
+    "grayPromotionAllowed": false,
+    "productionPromotionAllowed": false,
+    "serverStartAuthorized": false
+  },
+  "privacy": {
+    "credentialsRecorded": false,
+    "forwardingSecretRecorded": false,
+    "signedUrlsRecorded": false,
+    "playerIdentityRecorded": false
+  }
+}

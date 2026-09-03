@@ -1,8 +1,8 @@
 # 赫朝服务端控制代理运维手册
 
-> 状态：生产基线为 API `0.32.2` 与 owl5/owl9 代理 `0.7.2`。
-> 当前登记 10 个目标和 2 个在线代理，其中 owl5 包含
-> `activity-survival` 动态生存槽。运行实例数来自实时心跳，写操作前必须实时核验。
+> 状态：生产基线为 API `0.38.0`、owl5 Agent `0.8.1` 与 owl9 Agent `0.7.2`。
+> 当前登记 12 个目标和 2 个在线代理，其中 owl5 包含三个独立动态槽。运行实例数来自
+> 实时心跳，写操作前必须实时核验。
 >
 > 适用范围：管理员 Web 后台、API 控制队列、Windows 游戏 VPS 本机代理。
 >
@@ -318,9 +318,9 @@ owl5 升级只重启代理计划任务，代理 PID 从 `7436` 变为 `8848`，�
 
 活动目标必须声明 `startScriptRelativePath=start.bat`，且脚本与计划任务同时满足
 `HECHAO_MANAGED_START` 契约。`forwarding.secret` 等主机固定文件只能从旧受控目录复制；
-Paper 活动还必须成对保留已经启用 modern forwarding 的
-`config\paper-global.yml`，上传包不能携带或替换其中任何密钥。世界仅在管理员明确选择时
-保留。目录切换失败会自动恢复旧版本，成功后保留一个受控
+通用动态槽模板不复制核心专用的 `config\paper-global.yml`，每个包必须自行通过审查并
+使用主机密钥实现对应核心的 Velocity 转发，没有兼容实现时保持关闭。世界仅在管理员
+明确选择时保留。目录切换失败会自动恢复旧版本，成功后保留一个受控
 回滚目录并保持停服。完整流程见
 [`PACKAGE_IMPORT_OPERATIONS.md`](PACKAGE_IMPORT_OPERATIONS.md)。`0.3.0` 已只部署到 owl5，
 owl9 保持 `0.2.1`；升级服控代理时五个既有 Minecraft Java PID 未变化，活动服没有
@@ -462,6 +462,20 @@ API `0.32.1` 先上线并验证旧代理心跳后，owl5 七个固定目标、�
 目录的兼容缺陷，部署脚本立即恢复 `0.4.0`；`0.7.2` 修复后双机均稳定运行。最终
 10 个目标心跳新鲜、Agent 错误为零、控制操作为零，游戏 Java PID、启动时间和监听端口
 保持不变。见 [`SERVER_CONTROL_AGENT_RELEASE_0.7.2.md`](SERVER_CONTROL_AGENT_RELEASE_0.7.2.md)。
+
+### 6.15 多 Java 与旧 Forge 设置心跳（owl5 Agent 0.8.1）
+
+API `0.38.0` 将整合包确认后的 `javaMajorVersion` 传给部署命令；owl5 Agent 对显式版本只
+使用受管 `HECHAO_JAVA_<版本>_HOME`，缺失或无效时在服务端脚本执行前失败关闭。无版本的
+旧部署继续使用默认 Java。旧 Forge 根级 JAR 的受管启动合同、数字难度和缺失
+`simulation-distance` 均有回归测试，写回保持旧版文件格式。
+
+`0.8.0` 曾作为短暂生产过渡版本验证 Java 8，商业街部署后发现完整设置被旧版字段缺失
+连带置空；`0.8.1` 前滚修复并成为正式版本，`0.8.0` 不建标签。owl5 的通用模板同步收敛为
+`hostManagedRelativePaths=["forwarding.secret"]` 和标准三维度世界路径。最终 owl5
+`10/10`、owl9 `2/2` 目标心跳新鲜，既有 Java PID `4500/5040/5160` 不变；商业街任务
+保持 `Ready`，`25602` 无监听。见
+[`SERVER_CONTROL_AGENT_RELEASE_0.8.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.8.1.md)。
 
 ## 7. 验收与回滚
 

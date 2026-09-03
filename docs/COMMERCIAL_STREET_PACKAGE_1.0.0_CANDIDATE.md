@@ -1,5 +1,9 @@
 # 赫朝商业街建筑对决 1.0.0 标准整合包候选
 
+> 晋级状态：本候选已于 `2026-09-03` 完成 Test-only 客户端发布和停止槽部署，正式记录见
+> [`COMMERCIAL_STREET_PACKAGE_1.0.0.md`](COMMERCIAL_STREET_PACKAGE_1.0.0.md)。Gray、
+> Production 和玩家开放仍未授权。
+
 ## 身份
 
 - 档案 ID：`minigame-commercial-street-forge-1.12.2`

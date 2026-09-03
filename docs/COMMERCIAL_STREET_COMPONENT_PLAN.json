@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "documentKind": "hechao-new-server-component-plan",
   "exampleOnly": false,
-  "consumedByProduction": false,
-  "planStatus": "reviewed",
+  "consumedByProduction": true,
+  "planStatus": "deployed-test-only",
   "activity": {
     "activityId": "commercial-street",
     "serverId": "minigame-commercial-street",
@@ -18,14 +18,14 @@
     "javaMajorVersion": 8,
     "serverDirectory": "E:\\HechaoActivitySlots\\minigame-commercial-street",
     "startTaskName": "Hechao-Server-minigame-commercial-street",
-    "initialMemoryMiB": 2048,
+    "initialMemoryMiB": 1024,
     "maximumMemoryMiB": 6144
   },
   "network": {
     "velocityTarget": "minigame-commercial-street",
     "backendHost": "127.0.0.1",
-    "backendPort": null,
-    "backendPortOwner": "dynamic-slot-provisioner-25600-25611",
+    "backendPort": 25602,
+    "backendPortOwner": "deployment-slot:minigame-commercial-street",
     "conflictGroup": null,
     "publicDirectAccessAllowed": false,
     "forwarding": {
@@ -69,9 +69,9 @@
   "hostServices": [
     {
       "component": "Hechao.ServerControlAgent",
-      "requiredVersion": "0.8.0",
+      "requiredVersion": "0.8.1",
       "layer": "vps-host-singleton",
-      "action": "create-minigame-slot-and-select-java-8",
+      "action": "verified-create-minigame-slot-and-select-java-8",
       "installIntoBackend": false,
       "requiredBeforeDeployment": true
     },
@@ -216,6 +216,9 @@
     }
   ],
   "deployment": {
+    "importId": "26837294-6723-4394-a8b1-1a23fd392df7",
+    "deploymentOperationId": "8c1da871-cb70-4965-98bc-1deda8eb36a7",
+    "manifestSha256": "43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE",
     "fileMode": "replace-managed-directories",
     "preserveWorldOnInitialDeployment": false,
     "deployWhileStopped": true,
@@ -225,6 +228,19 @@
     "grayOrProductionAuthorized": false,
     "secretsIncluded": false
   },
+  "productionSnapshot": {
+    "capturedAtUtc": "2026-09-03T10:44:17Z",
+    "catalogStatus": "Closed",
+    "catalogVisible": false,
+    "testRolloutPercentage": 100,
+    "grayReleaseAssigned": false,
+    "productionReleaseAssigned": false,
+    "serverTaskState": "Ready",
+    "serverReportedOnline": false,
+    "serverProcessId": null,
+    "backendListenerCount": 0,
+    "agentVersion": "0.8.1"
+  },
   "validation": {
     "completed": [
       "canonical archive validation",
@@ -233,7 +249,11 @@
       "Forge cold start and Minecraft protocol 340",
       "commercial street SELFTEST PASS",
       "save-all and graceful stop",
-      "world identity-state sanitization"
+      "world identity-state sanitization",
+      "production canonical package analysis with zero issues",
+      "private OSS Test-only client publication",
+      "stopped minigame slot deployment with Java 8 marker",
+      "legacy Forge settings heartbeat reporting"
     ],
     "productionGates": [
       "forwarding implementation approved",
@@ -246,8 +266,8 @@
     ]
   },
   "rollback": {
-    "clientProfileVersion": null,
-    "serverRelease": null,
+    "clientProfileVersion": "1.0.0",
+    "serverRelease": "E21541D0E595C23FF636343A59B5F42CEB5C3C9E6601585F7DE80CD9C3FDE185",
     "sourceArchiveSha256": "7F0889734DB894AD711642D1D1CC986DA748D71F6DA5434A9F47CAD9F81F8A9A",
     "worldBackup": null,
     "restoreVerified": false,
