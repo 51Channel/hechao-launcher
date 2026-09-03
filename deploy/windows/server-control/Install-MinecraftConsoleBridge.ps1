@@ -38,7 +38,7 @@ $action = New-ScheduledTaskAction `
     -WorkingDirectory $InstallDirectory
 $principal = New-ScheduledTaskPrincipal `
     -UserId $RunAsUser `
-    -LogonType Interactive `
+    -LogonType S4U `
     -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
@@ -56,6 +56,9 @@ Register-ScheduledTask `
     Out-Null
 
 $installed = Get-ScheduledTask -TaskName $TaskName
+if ($installed.Principal.LogonType -ne 'S4U') {
+    throw "Minecraft console bridge must use unattended S4U logon: $TaskName"
+}
 [pscustomobject]@{
     task_name = $installed.TaskName
     task_state = [string]$installed.State

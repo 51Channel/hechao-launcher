@@ -26,12 +26,14 @@ C:\ProgramData\Hechao\ServerControl
 ```
 
 Then run `Install-MinecraftConsoleBridge.ps1`. It registers the fixed,
-on-demand `Hechao-MinecraftConsoleBridge` task in the logged-in Administrator
-desktop session. This session boundary matters: an SSH process cannot attach
-directly to a console window in the RDP session.
+on-demand `Hechao-MinecraftConsoleBridge` task with passwordless `S4U` logon.
+The bridge therefore remains available after a host restart without an
+Administrator desktop session. The task still provides the required local
+scheduled-task boundary; an SSH process must not attach directly to the game
+console.
 
-The submitter writes an atomic request file and starts that task. The desktop
-worker validates that the requested PID belongs to `java.exe`, rejects
+The submitter writes an atomic request file and starts that task. The worker
+validates that the requested PID belongs to `java.exe`, rejects
 multi-line input, attaches only to that process console, writes one command,
 detaches, and records a success or failure JSON response.
 

@@ -157,7 +157,8 @@ owl9 的历史 Velocity 目标 `pvp` 实际是
 
 1. 将 `deploy/windows/server-control` 下的固定脚本部署到
    `C:\ProgramData\Hechao\ServerControl`；
-2. 安装 Minecraft 控制台桥；
+2. 安装使用 `S4U` 的 Minecraft 控制台桥，确保主机重启后无需 Administrator
+   交互登录也能执行命令；
 3. 让现有启动批处理支持 `HECHAO_MANAGED_START`；
 4. 为每个真实目标重建使用 `S4U` 的受管启动任务，并明确传入 `-ServerId`；该任务不得依赖
    Administrator 交互登录会话；
