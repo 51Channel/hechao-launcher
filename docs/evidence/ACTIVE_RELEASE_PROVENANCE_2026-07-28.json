@@ -1,8 +1,133 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-23T06:22:00Z",
+  "generatedAtUtc": "2026-09-03T11:09:44Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
+    {
+      "component": "profile-minigame-commercial-street-forge-1.12.2",
+      "version": "1.0.0",
+      "releaseTag": "profile-minigame-commercial-street-forge-1.12.2-v1.0.0",
+      "releaseCommit": "5d7acf62c62cdaeaabd84611b723c4f70e303b51",
+      "taggedAt": "2026-09-03T19:09:44+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "signed-manifest",
+        "value": "43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE"
+      },
+      "deploymentState": "test-r2-100-percent-gray-production-unassigned-hidden-closed-server-deployed-stopped",
+      "historicalNote": "The Forge 1.12.2 client is Test-only and the Java 8 Minigame slot has never been started. Gray and Production remain unassigned until forwarding, voice UDP, deep metrics, license, world restore, fresh-grant and 2/3/5/20-player gates pass.",
+      "artifacts": [
+        {
+          "name": "minigame-commercial-street-forge-1.12.2 1.0.0 signed manifest",
+          "location": "production manifest store",
+          "sha256": "43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE",
+          "primary": true
+        },
+        {
+          "name": "minigame-commercial-street-forge-1.12.2-1.0.0.zip",
+          "location": "H:\\MCMOD\\artifacts\\package-import\\minigame-commercial-street-forge-1.12.2-1.0.0.zip",
+          "size": 465456939,
+          "sha256": "BA59F103599ADBEFFE9CB5EB706732936B2616579D1D7B04430CE3F8FC76BBD2",
+          "primary": false
+        },
+        {
+          "name": "commercial street server deployment archive",
+          "location": "server-control-operation:8c1da871-cb70-4965-98bc-1deda8eb36a7",
+          "size": 112672330,
+          "sha256": "E21541D0E595C23FF636343A59B5F42CEB5C3C9E6601585F7DE80CD9C3FDE185",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "test-channel-unassign-and-stopped-slot-replace",
+        "target": "unassign minigame-commercial-street-forge-1.12.2/1.0.0 from Test; keep minigame-commercial-street stopped, hidden and Closed"
+      },
+      "evidence": [
+        "docs/COMMERCIAL_STREET_PACKAGE_1.0.0.md",
+        "docs/evidence/COMMERCIAL_STREET_PACKAGE_1.0.0_TEST_DEPLOYMENT_2026-09-03.json",
+        "docs/COMMERCIAL_STREET_COMPONENT_PLAN.json",
+        "docs/PACKAGE_IMPORT_OPERATIONS.md"
+      ]
+    },
+    {
+      "component": "server-control-agent",
+      "version": "0.8.1",
+      "releaseTag": "server-control-agent-v0.8.1",
+      "releaseCommit": "5d7acf62c62cdaeaabd84611b723c4f70e303b51",
+      "taggedAt": "2026-09-03T19:09:44+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "14adba190158b1f84d1aa5946965059a3a93e015"
+      },
+      "deploymentState": "production-owl5-java8-selection-legacy-forge-settings-heartbeats-owl9-unchanged",
+      "historicalNote": "Only owl5 runs 0.8.1; owl9 remains on 0.7.2. The upgrade restarted only the control Agent, preserved all Java process identities, and left the commercial street task Ready with no listener.",
+      "artifacts": [
+        {
+          "name": "hechao-server-control-agent-0.8.1-20260903T101920Z-win-x64.zip",
+          "location": "artifacts/releases/hechao-server-control-agent-0.8.1-20260903T101920Z-win-x64.zip",
+          "size": 33255103,
+          "sha256": "2394345A9AB2B70C48A8328E062C57AF274DB5072CD10726751AEA5A27F0FC6C",
+          "primary": true
+        },
+        {
+          "name": "Hechao.ServerControlAgent.exe",
+          "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
+          "size": 74195551,
+          "sha256": "6A36645D82F3FF40BE020E6EE8E13ED43E657B84D54F4A3C252561E95331C402",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "per-host-rollback-executable",
+        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.8.1-20260903T102131Z"
+      },
+      "evidence": [
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.8.1.md",
+        "docs/evidence/SERVER_CONTROL_AGENT_0.8.1_PRODUCTION_DEPLOYMENT_2026-09-03.json",
+        "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.8.0_CANDIDATE.md"
+      ]
+    },
+    {
+      "component": "api",
+      "version": "0.38.0-20260903T084151Z",
+      "releaseTag": "api-v0.38.0",
+      "releaseCommit": "5d7acf62c62cdaeaabd84611b723c4f70e303b51",
+      "taggedAt": "2026-09-03T19:09:44+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "4838bc303fad960db9f9b8822c6061b9c297932c"
+      },
+      "deploymentState": "production-java-major-version-propagation-health-ready",
+      "historicalNote": "Database migrations remain 35/35. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
+      "artifacts": [
+        {
+          "name": "hechao-api-0.38.0-20260903T084151Z-linux-x64.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z",
+          "size": 46999748,
+          "sha256": "F70ACFDAC99DE18D8EED1ECA0D5BD3B53ADF7191FD468CFB6CECD28BBD50A5DA",
+          "primary": true
+        },
+        {
+          "name": "Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z/Hechao.Api",
+          "size": 105703492,
+          "sha256": "EB3897FD162B192916F40FA8E6C75CB1CA2620475A54E1FBE1066F8CB30533ED",
+          "primary": false
+        }
+      ],
+      "rollback": {
+        "kind": "release-directory",
+        "target": "/opt/hechao-launcher-api/releases/0.37.0-20260823T182444Z"
+      },
+      "evidence": [
+        "docs/API_RELEASE_0.38.0.md",
+        "docs/evidence/API_0.38.0_PRODUCTION_DEPLOYMENT_2026-09-03.json",
+        "docs/API_RELEASE_0.38.0_CANDIDATE.md"
+      ]
+    },
     {
       "component": "hechao-economy-screen",
       "version": "0.2.9",
