@@ -77,13 +77,9 @@
       "packageDeploymentEnabled": true,
       "serverDeletionEnabled": true,
       "hostManagedRelativePaths": [
-        "config\\paper-global.yml",
         "forwarding.secret"
       ],
       "worldDataRelativePaths": [
-        "airship_escape",
-        "airship_escape_nether",
-        "airship_escape_the_end",
         "world",
         "world_nether",
         "world_the_end"

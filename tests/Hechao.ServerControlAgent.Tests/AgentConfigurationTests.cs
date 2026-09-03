@@ -102,13 +102,10 @@ public sealed class AgentConfigurationTests
             Assert.Equal("activity", activity.ServerId);
             Assert.Equal("start.bat", activity.StartScriptRelativePath);
             Assert.Equal(
-                [@"config\paper-global.yml", "forwarding.secret"],
+                ["forwarding.secret"],
                 activity.HostManagedRelativePaths);
             Assert.Equal(
                 [
-                    "airship_escape",
-                    "airship_escape_nether",
-                    "airship_escape_the_end",
                     "world",
                     "world_nether",
                     "world_the_end"
