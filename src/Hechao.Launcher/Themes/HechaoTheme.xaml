@@ -2,47 +2,41 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:Hechao.Launcher.Controls"
                     xmlns:viewModels="clr-namespace:Hechao.Launcher.ViewModels;assembly=Hechao.Launcher">
-    <Color x:Key="CanvasColor">#FFF1F2F0</Color>
-    <Color x:Key="SurfaceColor">#FFFFFFFF</Color>
-    <Color x:Key="SurfaceMutedColor">#FFF7F7F5</Color>
-    <Color x:Key="SurfacePressedColor">#FFECEDE9</Color>
-    <Color x:Key="RailColor">#FFFDFDFC</Color>
-    <Color x:Key="DirectoryColor">#FFF8F8F6</Color>
-    <Color x:Key="StripColor">#FFFAFAF8</Color>
-    <Color x:Key="InkColor">#FF171716</Color>
-    <Color x:Key="InkMutedColor">#FF666762</Color>
-    <Color x:Key="InkFaintColor">#FF696B66</Color>
-    <Color x:Key="HechaoRedColor">#FFB3261E</Color>
-    <Color x:Key="HechaoRedDarkColor">#FF861A14</Color>
-    <Color x:Key="HechaoRedSoftColor">#FFF9E9E7</Color>
-    <Color x:Key="BorderColor">#FFE1E2DE</Color>
-    <Color x:Key="BorderStrongColor">#FFBFC2BC</Color>
-    <Color x:Key="SteelColor">#FF62737D</Color>
-    <Color x:Key="SteelSoftColor">#FFEDF1F2</Color>
-    <Color x:Key="OnlineColor">#FF34865A</Color>
-    <Color x:Key="WarningColor">#FFD39128</Color>
-    <Color x:Key="ClosedColor">#FF979A94</Color>
-
-    <SolidColorBrush x:Key="CanvasBrush" Color="{StaticResource CanvasColor}" />
-    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
-    <SolidColorBrush x:Key="SurfaceMutedBrush" Color="{StaticResource SurfaceMutedColor}" />
-    <SolidColorBrush x:Key="SurfacePressedBrush" Color="{StaticResource SurfacePressedColor}" />
-    <SolidColorBrush x:Key="RailBrush" Color="{StaticResource RailColor}" />
-    <SolidColorBrush x:Key="DirectoryBrush" Color="{StaticResource DirectoryColor}" />
-    <SolidColorBrush x:Key="StripBrush" Color="{StaticResource StripColor}" />
-    <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
-    <SolidColorBrush x:Key="InkMutedBrush" Color="{StaticResource InkMutedColor}" />
-    <SolidColorBrush x:Key="InkFaintBrush" Color="{StaticResource InkFaintColor}" />
-    <SolidColorBrush x:Key="HechaoRedBrush" Color="{StaticResource HechaoRedColor}" />
-    <SolidColorBrush x:Key="HechaoRedDarkBrush" Color="{StaticResource HechaoRedDarkColor}" />
-    <SolidColorBrush x:Key="HechaoRedSoftBrush" Color="{StaticResource HechaoRedSoftColor}" />
-    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
-    <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
-    <SolidColorBrush x:Key="SteelBrush" Color="{StaticResource SteelColor}" />
-    <SolidColorBrush x:Key="SteelSoftBrush" Color="{StaticResource SteelSoftColor}" />
-    <SolidColorBrush x:Key="OnlineBrush" Color="{StaticResource OnlineColor}" />
-    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
-    <SolidColorBrush x:Key="ClosedBrush" Color="{StaticResource ClosedColor}" />
+    <!-- Brushes stay stable while their colors are resolved dynamically from the active palette. -->
+    <SolidColorBrush x:Key="CanvasBrush" Color="{DynamicResource CanvasColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
+    <SolidColorBrush x:Key="SurfaceMutedBrush" Color="{DynamicResource SurfaceMutedColor}" />
+    <SolidColorBrush x:Key="SurfacePressedBrush" Color="{DynamicResource SurfacePressedColor}" />
+    <SolidColorBrush x:Key="RailBrush" Color="{DynamicResource RailColor}" />
+    <SolidColorBrush x:Key="DirectoryBrush" Color="{DynamicResource DirectoryColor}" />
+    <SolidColorBrush x:Key="StripBrush" Color="{DynamicResource StripColor}" />
+    <SolidColorBrush x:Key="InkBrush" Color="{DynamicResource InkColor}" />
+    <SolidColorBrush x:Key="InkMutedBrush" Color="{DynamicResource InkMutedColor}" />
+    <SolidColorBrush x:Key="InkFaintBrush" Color="{DynamicResource InkFaintColor}" />
+    <SolidColorBrush x:Key="HechaoRedBrush" Color="{DynamicResource HechaoRedColor}" />
+    <SolidColorBrush x:Key="HechaoRedDarkBrush" Color="{DynamicResource HechaoRedDarkColor}" />
+    <SolidColorBrush x:Key="HechaoRedSoftBrush" Color="{DynamicResource HechaoRedSoftColor}" />
+    <SolidColorBrush x:Key="HechaoRedBorderBrush" Color="{DynamicResource HechaoRedBorderColor}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource BorderColor}" />
+    <SolidColorBrush x:Key="BorderStrongBrush" Color="{DynamicResource BorderStrongColor}" />
+    <SolidColorBrush x:Key="SteelBrush" Color="{DynamicResource SteelColor}" />
+    <SolidColorBrush x:Key="SteelSoftBrush" Color="{DynamicResource SteelSoftColor}" />
+    <SolidColorBrush x:Key="OnlineBrush" Color="{DynamicResource OnlineColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource WarningColor}" />
+    <SolidColorBrush x:Key="ClosedBrush" Color="{DynamicResource ClosedColor}" />
+    <SolidColorBrush x:Key="ActionBrush" Color="{DynamicResource ActionColor}" />
+    <SolidColorBrush x:Key="ActionHoverBrush" Color="{DynamicResource ActionHoverColor}" />
+    <SolidColorBrush x:Key="ActionPressedBrush" Color="{DynamicResource ActionPressedColor}" />
+    <SolidColorBrush x:Key="DisabledBrush" Color="{DynamicResource DisabledColor}" />
+    <SolidColorBrush x:Key="DisabledBorderBrush" Color="{DynamicResource DisabledBorderColor}" />
+    <SolidColorBrush x:Key="SwitchOffBrush" Color="{DynamicResource SwitchOffColor}" />
+    <SolidColorBrush x:Key="SwitchOffBorderBrush" Color="{DynamicResource SwitchOffBorderColor}" />
+    <SolidColorBrush x:Key="OverlayBrush" Color="{DynamicResource OverlayColor}" />
+    <SolidColorBrush x:Key="ToastBrush" Color="{DynamicResource ToastColor}" />
+    <SolidColorBrush x:Key="ToastIconBrush" Color="{DynamicResource ToastIconColor}" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="{DynamicResource ScrollThumbColor}" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="{DynamicResource ScrollThumbHoverColor}" />
+    <SolidColorBrush x:Key="SelectionBrush" Color="{DynamicResource SelectionColor}" />
 
     <FontFamily x:Key="UiFont">.PingFang SC, PingFang SC, Microsoft YaHei UI, Segoe UI</FontFamily>
 
@@ -121,10 +115,10 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource HechaoRedSoftBrush}" />
-                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#FFD5A8A2" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource HechaoRedBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ButtonBorder" Property="Background" Value="#FFF2D8D5" />
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource SurfacePressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.42" />
@@ -141,8 +135,8 @@
         <Setter Property="FontSize" Value="17" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="White" />
-        <Setter Property="Background" Value="{StaticResource HechaoRedBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource HechaoRedDarkBrush}" />
+        <Setter Property="Background" Value="{StaticResource ActionBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ActionPressedBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="24,12" />
         <Setter Property="Cursor" Value="Hand" />
@@ -160,14 +154,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PrimaryBorder" Property="Background" Value="#FFBD3027" />
+                            <Setter TargetName="PrimaryBorder" Property="Background" Value="{StaticResource ActionHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="PrimaryBorder" Property="Background" Value="{StaticResource HechaoRedDarkBrush}" />
+                            <Setter TargetName="PrimaryBorder" Property="Background" Value="{StaticResource ActionPressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="PrimaryBorder" Property="Background" Value="#FFB6B4B0" />
-                            <Setter TargetName="PrimaryBorder" Property="BorderBrush" Value="#FFA3A19D" />
+                            <Setter TargetName="PrimaryBorder" Property="Background" Value="{StaticResource DisabledBrush}" />
+                            <Setter TargetName="PrimaryBorder" Property="BorderBrush" Value="{StaticResource DisabledBorderBrush}" />
                             <Setter TargetName="PrimaryBorder" Property="Opacity" Value="0.85" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -220,15 +214,15 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ToggleBorder" Property="Background" Value="{StaticResource HechaoRedSoftBrush}" />
-                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#FFD5A8A2" />
+                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource HechaoRedBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="ToggleBorder" Property="Background" Value="{StaticResource HechaoRedSoftBrush}" />
-                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#FFD5A8A2" />
+                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource HechaoRedBorderBrush}" />
                             <Setter Property="Foreground" Value="{StaticResource HechaoRedDarkBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ToggleBorder" Property="Background" Value="#FFF2D8D5" />
+                            <Setter TargetName="ToggleBorder" Property="Background" Value="{StaticResource SurfacePressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ToggleBorder" Property="Opacity" Value="0.42" />
@@ -278,7 +272,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="SelectedRailBackground" Property="Background" Value="#FFF5DCD9" />
+                            <Setter TargetName="SelectedRailBackground" Property="Background" Value="{StaticResource SurfacePressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="SelectedRailBackground" Property="Opacity" Value="0.72" />
@@ -355,7 +349,7 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource HechaoRedSoftBrush}" />
-                            <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#FFE3C8C4" />
+                            <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource HechaoRedBorderBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -404,14 +398,14 @@
                 <ControlTemplate TargetType="{x:Type Thumb}">
                     <Border x:Name="ThumbSurface"
                             Margin="2,1"
-                            Background="#667D817A"
+                            Background="{StaticResource ScrollThumbBrush}"
                             CornerRadius="3"
                             SnapsToDevicePixels="True" />
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ThumbSurface"
                                     Property="Background"
-                                    Value="#997D817A" />
+                                    Value="{StaticResource ScrollThumbHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
                             <Setter TargetName="ThumbSurface"
@@ -428,7 +422,7 @@
         <Setter Property="Width" Value="9" />
         <Setter Property="Height" Value="Auto" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="#667D817A" />
+        <Setter Property="Foreground" Value="{StaticResource ScrollThumbBrush}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
@@ -746,7 +740,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="FieldBorder" Property="BorderBrush" Value="#FFBEBDB8" />
+                            <Setter TargetName="FieldBorder" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="FieldBorder" Property="BorderBrush" Value="{StaticResource HechaoRedBrush}" />
@@ -769,8 +763,8 @@
     <Style x:Key="SwitchToggleStyle" TargetType="ToggleButton">
         <Setter Property="Width" Value="42" />
         <Setter Property="Height" Value="23" />
-        <Setter Property="Background" Value="#FFD6D5D1" />
-        <Setter Property="BorderBrush" Value="#FFC8C7C2" />
+        <Setter Property="Background" Value="{StaticResource SwitchOffBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource SwitchOffBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
@@ -790,7 +784,7 @@
                                  HorizontalAlignment="Left"
                                  Fill="White">
                             <Ellipse.Effect>
-                                <DropShadowEffect Color="#33000000" BlurRadius="3" ShadowDepth="1" Direction="270" />
+                                <DropShadowEffect Color="{DynamicResource SwitchShadowColor}" BlurRadius="3" ShadowDepth="1" Direction="270" />
                             </Ellipse.Effect>
                         </Ellipse>
                     </Grid>
@@ -898,7 +892,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CaretBrush" Value="{StaticResource HechaoRedBrush}" />
-        <Setter Property="SelectionBrush" Value="#55B3261E" />
+        <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -940,7 +934,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CaretBrush" Value="{StaticResource HechaoRedBrush}" />
-        <Setter Property="SelectionBrush" Value="#55B3261E" />
+        <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="PasswordBox">
@@ -1063,5 +1057,127 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
+    </Style>
+
+    <Style x:Key="WorkspaceNavigationToggleStyle" TargetType="ToggleButton">
+        <Setter Property="MinWidth" Value="104" />
+        <Setter Property="Height" Value="42" />
+        <Setter Property="Margin" Value="2,0" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Foreground" Value="{StaticResource InkMutedBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid>
+                        <Border x:Name="WorkspaceTabSurface"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <Border x:Name="WorkspaceTabIndicator"
+                                Width="28"
+                                Height="2"
+                                VerticalAlignment="Bottom"
+                                Background="{StaticResource HechaoRedBrush}"
+                                CornerRadius="1"
+                                Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="WorkspaceTabSurface"
+                                    Property="Background"
+                                    Value="{StaticResource SurfacePressedBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="WorkspaceTabSurface"
+                                    Property="Background"
+                                    Value="{StaticResource HechaoRedSoftBrush}" />
+                            <Setter TargetName="WorkspaceTabIndicator"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                            <Setter Property="Foreground" Value="{StaticResource HechaoRedDarkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="WorkspaceTabSurface" Property="Opacity" Value="0.72" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.42" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ServerCardListItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Width" Value="440" />
+        <Setter Property="Height" Value="204" />
+        <Setter Property="Margin" Value="0,0,14,14" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="ServerCardSurface"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="7"
+                            ClipToBounds="True">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ServerCardSurface"
+                                    Property="Background"
+                                    Value="{StaticResource SurfacePressedBrush}" />
+                            <Setter TargetName="ServerCardSurface"
+                                    Property="BorderBrush"
+                                    Value="{StaticResource BorderStrongBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ServerCardSurface"
+                                    Property="BorderBrush"
+                                    Value="{StaticResource HechaoRedBrush}" />
+                            <Setter TargetName="ServerCardSurface"
+                                    Property="BorderThickness"
+                                    Value="2" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.48" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="InspectorSettingButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Height" Value="46" />
+        <Setter Property="MinHeight" Value="46" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
 </ResourceDictionary>

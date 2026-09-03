@@ -1,4 +1,5 @@
 using System.Windows;
+using Hechao.Distribution;
 using Hechao.Launcher.Infrastructure;
 using Hechao.Launcher.Services;
 
@@ -31,6 +32,61 @@ public partial class App : Application
             return;
         }
 
+#if DEBUG
+        if (Development.LauncherUiPreview.TryGetRequestedTheme(
+                e.Args,
+                out var previewUsesDarkMode))
+        {
+            var previewThemeService = new LauncherThemeService(this);
+            previewThemeService.Apply(previewUsesDarkMode);
+            var previewViewModel = Development.LauncherUiPreview.CreateViewModel(
+                previewUsesDarkMode,
+                previewThemeService);
+            var previewWindow = new MainWindow(
+                previewViewModel);
+            previewWindow.Title = previewUsesDarkMode
+                ? "赫朝启动器 - UI 预览（黑夜）"
+                : "赫朝启动器 - UI 预览（日间）";
+            if (Development.LauncherUiPreview.TryGetScreenshotRequest(
+                    e.Args,
+                    out var screenshotRequest))
+            {
+                previewWindow.Width = screenshotRequest.Width;
+                previewWindow.Height = screenshotRequest.Height;
+                previewWindow.ShowActivated = false;
+                previewWindow.ShowInTaskbar = false;
+                var captureStarted = false;
+                previewWindow.ContentRendered += async (_, _) =>
+                {
+                    if (captureStarted)
+                    {
+                        return;
+                    }
+
+                    captureStarted = true;
+                    try
+                    {
+                        await Development.LauncherUiPreview.CaptureWhenReadyAsync(
+                            previewWindow,
+                            previewViewModel,
+                            screenshotRequest);
+                        Shutdown(0);
+                    }
+                    catch (Exception exception)
+                    {
+                        System.Diagnostics.Trace.TraceError(
+                            "Unable to capture launcher UI preview: {0}",
+                            exception);
+                        Shutdown(-1);
+                    }
+                };
+            }
+            MainWindow = previewWindow;
+            previewWindow.Show();
+            return;
+        }
+#endif
+
         if (!SingleInstanceGuard.TryAcquire(out _singleInstanceGuard))
         {
             MessageBox.Show(
@@ -48,7 +104,26 @@ public partial class App : Application
             _singleInstanceGuard = null;
         };
 
-        var window = new MainWindow();
+        var settingsStore = new JsonLauncherSettingsStore();
+        LauncherSettings settings;
+        try
+        {
+            settings = settingsStore.Load();
+        }
+        catch (ClientStorageMigrationException exception)
+        {
+            MessageBox.Show(
+                $"游戏数据迁移未完成，原目录中的文件仍被保留。\n\n{exception.Message}",
+                "赫朝启动器",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown(-1);
+            return;
+        }
+
+        var themeService = new LauncherThemeService(this);
+        themeService.Apply(settings.UseDarkMode);
+        var window = new MainWindow(settingsStore, themeService, settings);
         MainWindow = window;
         window.Show();
     }

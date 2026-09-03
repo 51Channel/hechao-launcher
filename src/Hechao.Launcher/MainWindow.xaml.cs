@@ -20,11 +20,17 @@ public partial class MainWindow : Window
     private bool _allowUpdaterClose;
     private bool _modalFocusCaptured;
 
-    public MainWindow()
+    public MainWindow(
+        ILauncherSettingsStore settingsStore,
+        ILauncherThemeService themeService,
+        LauncherSettings initialSettings)
     {
+        ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(themeService);
+        ArgumentNullException.ThrowIfNull(initialSettings);
+
         InitializeComponent();
-        var settingsStore = new JsonLauncherSettingsStore();
-        var useSystemProxy = settingsStore.Load().UseSystemProxy;
+        var useSystemProxy = initialSettings.UseSystemProxy;
         var apiClient = LauncherApiClient.CreateDefault(
             useSystemProxy: useSystemProxy);
         var catalogClient = HttpServerCatalogClient.CreateDefault(new DemoServerCatalogClient(), apiClient);
@@ -54,7 +60,9 @@ public partial class MainWindow : Window
                 new JsonLauncherTelemetryService(apiClient),
                 LauncherUpdateService.CreateDefault(apiClient, useSystemProxy),
                 MinecraftSkinService.CreateDefault(useSystemProxy),
-                new PlayerGameSettingsService());
+                new PlayerGameSettingsService(),
+                themeService: themeService,
+                initialSettings: initialSettings);
         }
         catch (ClientStorageMigrationException exception)
         {
@@ -67,6 +75,21 @@ public partial class MainWindow : Window
             return;
         }
 
+        AttachViewModel(viewModel);
+    }
+
+#if DEBUG
+    internal MainWindow(MainWindowViewModel viewModel)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        InitializeComponent();
+        AttachViewModel(viewModel);
+    }
+#endif
+
+    private void AttachViewModel(MainWindowViewModel viewModel)
+    {
         viewModel.CloseRequested += ViewModel_OnCloseRequested;
         DataContext = viewModel;
         viewModel.PropertyChanged += ViewModel_OnPropertyChanged;
@@ -360,6 +383,11 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!viewModel.CanChangeClientDirectory)
+        {
+            return;
+        }
+
         var dialog = new OpenFolderDialog
         {
             Title = "选择赫朝游戏数据目录",
@@ -398,6 +426,11 @@ public partial class MainWindow : Window
         RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (!viewModel.CanUseProfileJavaActions)
         {
             return;
         }

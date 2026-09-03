@@ -9,6 +9,67 @@ namespace Hechao.Launcher.Tests;
 public sealed class MainWindowViewModelMinecraftRefreshTests
 {
     [Fact]
+    public void TopBarAccountSubtitle_ForGuestOffersAccountLogin()
+    {
+        var viewModel = CreateViewModel(
+            new StubAuthenticationService { CurrentAccount = null },
+            new StubGameLauncherService());
+
+        Assert.Equal("登录赫朝账户", viewModel.TopBarAccountSubtitle);
+    }
+
+    [Fact]
+    public async Task TopBarAccountSubtitle_ForUnlinkedAccountShowsRequiredState()
+    {
+        var authentication = new StubAuthenticationService
+        {
+            CurrentAccount = new HechaoAccount(
+                Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+                "preview",
+                "赫朝成员",
+                null,
+                null,
+                null,
+                "participant",
+                AccessTier.Participant,
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow)
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            new StubGameLauncherService());
+        await WaitUntilAsync(() => viewModel.IsAuthenticated);
+
+        Assert.Equal("待绑定正版身份", viewModel.TopBarAccountSubtitle);
+    }
+
+    [Fact]
+    public async Task TopBarAccountSubtitle_UsesReadableTierWithoutTechnicalGroup()
+    {
+        var authentication = new StubAuthenticationService
+        {
+            CurrentAccount = new HechaoAccount(
+                Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+                "preview",
+                "赫朝成员",
+                null,
+                Guid.Parse("12345678-1234-1234-1234-123456789abc"),
+                "HechaoPlayer",
+                "participant",
+                AccessTier.Participant,
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow)
+        };
+        var viewModel = CreateViewModel(
+            authentication,
+            new StubGameLauncherService());
+        await WaitUntilAsync(() => viewModel.IsAuthenticated);
+
+        Assert.Equal("活动成员", viewModel.TopBarAccountSubtitle);
+        Assert.Equal("活动成员 · participant", viewModel.AccountAccessText);
+    }
+
+    [Fact]
     public async Task EnterServer_RefreshesExpiredMinecraftSessionAndContinuesLaunch()
     {
         var authentication = new StubAuthenticationService();

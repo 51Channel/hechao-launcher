@@ -35,6 +35,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly ILauncherUpdateService _launcherUpdateService;
     private readonly IMinecraftSkinService _minecraftSkinService;
     private readonly IPlayerGameSettingsService _playerGameSettingsService;
+    private readonly ILauncherThemeService _themeService;
+    private readonly bool _isUiPreview;
     private readonly TimeSpan _catalogFallbackRetryDelay;
     private readonly TimeSpan _activityCatalogRefreshInterval;
     private readonly SynchronizationContext? _uiContext;
@@ -70,6 +72,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _closeLauncherAfterGameStart;
     private bool _openDownloadsWhenInstalling;
     private bool _useSystemProxy;
+    private bool _useDarkMode;
     private string _selectedStartupPage;
     private bool _isCatalogLoading;
     private bool _catalogRefreshPending;
@@ -134,7 +137,10 @@ public sealed class MainWindowViewModel : ObservableObject
         IMinecraftSkinService? minecraftSkinService = null,
         IPlayerGameSettingsService? playerGameSettingsService = null,
         TimeSpan? catalogFallbackRetryDelay = null,
-        TimeSpan? activityCatalogRefreshInterval = null)
+        TimeSpan? activityCatalogRefreshInterval = null,
+        ILauncherThemeService? themeService = null,
+        LauncherSettings? initialSettings = null,
+        bool isUiPreview = false)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -152,6 +158,8 @@ public sealed class MainWindowViewModel : ObservableObject
             minecraftSkinService ?? NullMinecraftSkinService.Instance;
         _playerGameSettingsService =
             playerGameSettingsService ?? NullPlayerGameSettingsService.Instance;
+        _themeService = themeService ?? NullLauncherThemeService.Instance;
+        _isUiPreview = isUiPreview;
         _catalogFallbackRetryDelay =
             catalogFallbackRetryDelay ?? DefaultCatalogFallbackRetryDelay;
         if (_catalogFallbackRetryDelay <= TimeSpan.Zero ||
@@ -169,7 +177,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 nameof(activityCatalogRefreshInterval));
         }
         _uiContext = SynchronizationContext.Current;
-        _settings = settingsStore.Load();
+        _settings = initialSettings ?? settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
         {
             foreach (var (profileId, javaPath) in _settings.ProfileJavaPaths)
@@ -195,6 +203,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _closeLauncherAfterGameStart = _settings.CloseLauncherAfterGameStart;
         _openDownloadsWhenInstalling = _settings.OpenDownloadsWhenInstalling;
         _useSystemProxy = _settings.UseSystemProxy;
+        _useDarkMode = _settings.UseDarkMode;
+        _themeService.Apply(_useDarkMode);
         StartupPageOptions = ["服务器", "下载中心", "活动"];
         _selectedStartupPage = StartupPageOptions.Contains(_settings.StartupPage)
             ? _settings.StartupPage
@@ -216,10 +226,13 @@ public sealed class MainWindowViewModel : ObservableObject
         RefreshCommand = new RelayCommand(
             () => _ = LoadCatalogAsync(userInitiated: true),
             () => !_isCatalogLoading && !IsProgressActive);
-        OpenClientDirectoryCommand = new RelayCommand(OpenClientDirectory);
+        OpenClientDirectoryCommand = new RelayCommand(
+            OpenClientDirectory,
+            () => !_isUiPreview);
         OpenSelectedProfileGameDirectoryCommand = new RelayCommand(
             OpenSelectedProfileGameDirectory,
-            () => !string.IsNullOrWhiteSpace(SelectedServer?.ClientProfileId));
+            () => !_isUiPreview &&
+                  !string.IsNullOrWhiteSpace(SelectedServer?.ClientProfileId));
         ToggleNotificationsCommand = new RelayCommand(ToggleNotifications);
         ToggleSettingsCommand = new RelayCommand(ToggleSettings);
         CloseOverlaysCommand = new RelayCommand(CloseOverlays);
@@ -269,8 +282,12 @@ public sealed class MainWindowViewModel : ObservableObject
         CreateDiagnosticBundleCommand = new RelayCommand(
             StartCreateDiagnosticBundle,
             CanCreateDiagnosticBundle);
-        OpenDiagnosticsDirectoryCommand = new RelayCommand(OpenDiagnosticsDirectory);
-        UseManagedJavaCommand = new RelayCommand(UseManagedJava);
+        OpenDiagnosticsDirectoryCommand = new RelayCommand(
+            OpenDiagnosticsDirectory,
+            () => !_isUiPreview);
+        UseManagedJavaCommand = new RelayCommand(
+            UseManagedJava,
+            () => CanUseProfileJavaActions);
         CheckLauncherUpdateCommand = new AsyncRelayCommand(
             () => TryCheckLauncherUpdateAsync(userInitiated: true),
             HandleUnexpectedLauncherUpdateError,
@@ -556,6 +573,11 @@ public sealed class MainWindowViewModel : ObservableObject
         : IsMinecraftLinked
             ? $"{GetAccessTierText(_currentAccount.AccessTier)} · {_currentAccount.LuckPermsPrimaryGroup}"
             : "尚未绑定 Minecraft 正版身份";
+    public string TopBarAccountSubtitle => _currentAccount is null
+        ? "登录赫朝账户"
+        : IsMinecraftLinked
+            ? GetAccessTierText(_currentAccount.AccessTier)
+            : "待绑定正版身份";
     public string MinecraftIdentityText => IsMinecraftLinked
         ? $"{_currentAccount!.MinecraftName} · {_currentAccount.MinecraftUuid:D}"
         : "未绑定";
@@ -894,7 +916,11 @@ public sealed class MainWindowViewModel : ObservableObject
     public bool CanSelectServer => !IsProgressActive;
 
     public bool CanChangeClientDirectory =>
-        !IsProgressActive && _gameLauncherService.GetRunningGame() is null;
+        !_isUiPreview &&
+        !IsProgressActive &&
+        _gameLauncherService.GetRunningGame() is null;
+
+    public bool CanUseProfileJavaActions => !_isUiPreview;
 
     public string SelectedProfileGameDirectory
     {
@@ -1000,6 +1026,28 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    public bool UseDarkMode
+    {
+        get => _useDarkMode;
+        set
+        {
+            if (_useDarkMode == value)
+            {
+                return;
+            }
+
+            _themeService.Apply(value);
+            _useDarkMode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ThemeToggleToolTip));
+            SaveSettings();
+        }
+    }
+
+    public string ThemeToggleToolTip => UseDarkMode
+        ? "切换到日间模式"
+        : "切换到黑夜模式";
 
     public string SelectedStartupPage
     {
@@ -2302,6 +2350,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task StartPrimaryActionAsync()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会启动游戏");
+            return;
+        }
+
         if (IsLauncherUpdateRequired)
         {
             IsLauncherUpdateVisible = true;
@@ -3465,6 +3519,7 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     private bool CanCreateDiagnosticBundle() =>
+        !_isUiPreview &&
         SelectedServer is not null &&
         _selectedProfileState != LocalProfileState.Missing &&
         !IsDiagnosticBusy;
@@ -3601,6 +3656,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenDiagnosticsDirectory()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会打开或创建真实目录");
+            return;
+        }
+
         try
         {
             Directory.CreateDirectory(_gameDiagnosticsService.DiagnosticsDirectory);
@@ -3819,6 +3880,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenClientDirectory()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会打开或创建真实目录");
+            return;
+        }
+
         try
         {
             var expandedPath = Environment.ExpandEnvironmentVariables(ClientDirectory);
@@ -3833,6 +3900,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenSelectedProfileGameDirectory()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会打开或创建真实目录");
+            return;
+        }
+
         try
         {
             var gameDirectory = SelectedProfileGameDirectory;
@@ -3914,6 +3987,7 @@ public sealed class MainWindowViewModel : ObservableObject
         OpenDownloadsWhenInstalling = true;
         _useSystemProxy = false;
         OnPropertyChanged(nameof(UseSystemProxy));
+        UseDarkMode = true;
         SelectedStartupPage = "服务器";
         SaveSettings();
         ResetAndRefreshActivityClientStates();
@@ -4479,6 +4553,7 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(AccountUsername));
         OnPropertyChanged(nameof(AccountStatusText));
         OnPropertyChanged(nameof(AccountAccessText));
+        OnPropertyChanged(nameof(TopBarAccountSubtitle));
         OnPropertyChanged(nameof(MinecraftIdentityText));
         OnPropertyChanged(nameof(MinecraftLinkStatusText));
         OnPropertyChanged(nameof(AccountActionGlyph));
@@ -4912,7 +4987,8 @@ public sealed class MainWindowViewModel : ObservableObject
             new Dictionary<string, string>(
                 _profileJavaPaths,
                 StringComparer.Ordinal),
-            UseSystemProxy);
+            UseSystemProxy,
+            UseDarkMode);
         _settingsStore.Save(_settings);
     }
 
