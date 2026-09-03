@@ -530,9 +530,29 @@ if ($null -ne $descriptor) {
             }
         }
         "Forge" {
-            if ($null -eq (Get-FirstFile (Join-Path $serverRoot "libraries\net\minecraftforge\forge")) -or
-                $startText -notmatch '(?i)win_args\.txt') {
-                Add-ValidationError "Forge packages must include the Forge libraries tree and start it through win_args.txt."
+            $modernForgeLaunch =
+                $null -ne (Get-FirstFile (Join-Path $serverRoot "libraries\net\minecraftforge\forge")) -and
+                $startText -match '(?i)win_args\.txt'
+            $legacyForgeJars = @(Get-ChildItem `
+                -LiteralPath $serverRoot `
+                -Filter "forge-*.jar" `
+                -File `
+                -Force `
+                -ErrorAction SilentlyContinue)
+            $legacyForgeLaunch = $false
+            if ($legacyForgeJars.Count -eq 1) {
+                $legacyForgeJarName = [regex]::Escape($legacyForgeJars[0].Name)
+                $legacyForgeLaunch = $startText -match (
+                    '(?im)(?:^|\s)-jar\s+"?' +
+                    $legacyForgeJarName +
+                    '"?(?:\s|$)'
+                )
+            }
+            if (-not $modernForgeLaunch -and -not $legacyForgeLaunch) {
+                Add-ValidationError (
+                    "Forge packages must use a Forge libraries win_args.txt launch " +
+                    "or exactly one root forge-*.jar launched with -jar."
+                )
             }
         }
         "Paper" {

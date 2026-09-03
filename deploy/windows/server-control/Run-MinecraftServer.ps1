@@ -76,15 +76,60 @@ if ($scriptText -notmatch '(?im)^[ \t]*if not defined HECHAO_MANAGED_START pause
     throw 'StartScript is not configured for a managed start.'
 }
 
+$managedJavaVariable = 'HECHAO_JAVA_HOME'
+$deploymentMarkerPath = Join-Path `
+    $resolvedDirectory `
+    '.hechao-deployment.json'
+if (Test-Path -LiteralPath $deploymentMarkerPath -PathType Leaf) {
+    $deploymentMarkerFile = Get-Item -LiteralPath $deploymentMarkerPath -Force
+    if (($deploymentMarkerFile.Attributes -band
+            [System.IO.FileAttributes]::ReparsePoint) -ne 0 -or
+        $deploymentMarkerFile.Length -le 0 -or
+        $deploymentMarkerFile.Length -gt 64KB) {
+        throw 'The deployed package marker is not a safe regular file.'
+    }
+
+    try {
+        $deploymentMarker = Get-Content `
+            -Raw `
+            -LiteralPath $deploymentMarkerPath |
+            ConvertFrom-Json
+    }
+    catch {
+        throw 'The deployed package marker is not valid JSON.'
+    }
+
+    $javaMajorProperty =
+        $deploymentMarker.PSObject.Properties['javaMajorVersion']
+    if ($null -ne $javaMajorProperty -and
+        $null -ne $javaMajorProperty.Value) {
+        $javaMajorVersion = 0
+        if (-not [int]::TryParse(
+                [string]$javaMajorProperty.Value,
+                [ref]$javaMajorVersion
+            ) -or
+            $javaMajorVersion -lt 8 -or
+            $javaMajorVersion -gt 30) {
+            throw 'The deployed package marker has an invalid Java major version.'
+        }
+
+        $managedJavaVariable = "HECHAO_JAVA_${javaMajorVersion}_HOME"
+    }
+}
+
 $managedJavaHome = [System.Environment]::GetEnvironmentVariable(
-    'HECHAO_JAVA_HOME',
+    $managedJavaVariable,
     [System.EnvironmentVariableTarget]::Process
 )
 if ([string]::IsNullOrWhiteSpace($managedJavaHome)) {
     $managedJavaHome = [System.Environment]::GetEnvironmentVariable(
-        'HECHAO_JAVA_HOME',
+        $managedJavaVariable,
         [System.EnvironmentVariableTarget]::Machine
     )
+}
+if ([string]::IsNullOrWhiteSpace($managedJavaHome) -and
+    $managedJavaVariable -ne 'HECHAO_JAVA_HOME') {
+    throw "$managedJavaVariable is required by the deployed package."
 }
 if (-not [string]::IsNullOrWhiteSpace($managedJavaHome)) {
     $resolvedJavaHome = [System.IO.Path]::GetFullPath(
@@ -95,7 +140,7 @@ if (-not [string]::IsNullOrWhiteSpace($managedJavaHome)) {
     $javaBinDirectory = Join-Path $resolvedJavaHome 'bin'
     $javaExecutable = Join-Path $javaBinDirectory 'java.exe'
     if (-not (Test-Path -LiteralPath $javaExecutable -PathType Leaf)) {
-        throw "HECHAO_JAVA_HOME does not contain bin\\java.exe: $resolvedJavaHome"
+        throw "$managedJavaVariable does not contain bin\\java.exe: $resolvedJavaHome"
     }
 
     $env:JAVA_HOME = $resolvedJavaHome

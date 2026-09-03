@@ -226,7 +226,8 @@ public sealed record ServerPackageDeploymentRequest(
     int FileCount,
     bool PreserveWorldData,
     int InitialMemoryMiB,
-    int MaximumMemoryMiB);
+    int MaximumMemoryMiB,
+    int? JavaMajorVersion = null);
 
 public sealed record ServerDeploymentSlotProvisioningRequest(
     string ServerId,

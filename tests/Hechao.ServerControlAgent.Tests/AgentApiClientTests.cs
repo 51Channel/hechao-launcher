@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Hechao.Contracts;
 
 namespace Hechao.ServerControlAgent.Tests;
@@ -10,6 +11,61 @@ public sealed class AgentApiClientTests : IDisposable
     private readonly string root = Path.Combine(
         Path.GetTempPath(),
         "hechao-agent-api-" + Guid.NewGuid().ToString("N"));
+
+    [Fact]
+    public void PackageDeployment_DeserializesLegacyCommandWithoutJavaOverride()
+    {
+        var importId = Guid.NewGuid();
+        var payload = $$"""
+            {
+              "importId": "{{importId}}",
+              "profileId": "legacy-package",
+              "version": "1.0.0",
+              "archiveBytes": 128,
+              "archiveSha256": "{{new string('a', 64)}}",
+              "expandedBytes": 256,
+              "fileCount": 2,
+              "preserveWorldData": false,
+              "initialMemoryMiB": 2048,
+              "maximumMemoryMiB": 4096
+            }
+            """;
+
+        var deployment = JsonSerializer.Deserialize<ServerPackageDeploymentRequest>(
+            payload,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(deployment);
+        Assert.Equal(importId, deployment.ImportId);
+        Assert.Null(deployment.JavaMajorVersion);
+    }
+
+    [Fact]
+    public void PackageDeployment_RoundTripsExplicitJavaVersion()
+    {
+        var deployment = new ServerPackageDeploymentRequest(
+            Guid.NewGuid(),
+            "legacy-forge-1.12.2",
+            "1.0.0",
+            128,
+            new string('b', 64),
+            256,
+            2,
+            PreserveWorldData: false,
+            InitialMemoryMiB: 2048,
+            MaximumMemoryMiB: 4096,
+            JavaMajorVersion: 8);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        var payload = JsonSerializer.Serialize(deployment, options);
+        var restored = JsonSerializer.Deserialize<ServerPackageDeploymentRequest>(
+            payload,
+            options);
+
+        Assert.NotNull(restored);
+        Assert.Equal(8, restored.JavaMajorVersion);
+        Assert.Contains("\"javaMajorVersion\":8", payload, StringComparison.Ordinal);
+    }
 
     [Fact]
     public async Task DownloadPackageArchiveAsync_RestartsAfterBadFullCache()

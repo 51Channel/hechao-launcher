@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "documentKind": "hechao-new-server-component-plan",
+  "exampleOnly": false,
+  "consumedByProduction": false,
+  "planStatus": "reviewed",
+  "activity": {
+    "activityId": "commercial-street",
+    "serverId": "minigame-commercial-street",
+    "controlTargetId": "minigame-commercial-street",
+    "profileId": "minigame-commercial-street-forge-1.12.2",
+    "displayName": "赫朝商业街建筑对决"
+  },
+  "runtime": {
+    "minecraftVersion": "1.12.2",
+    "loader": "Forge",
+    "loaderVersion": "14.23.5.2859",
+    "javaMajorVersion": 8,
+    "serverDirectory": "E:\\HechaoActivitySlots\\minigame-commercial-street",
+    "startTaskName": "Hechao-Server-minigame-commercial-street",
+    "initialMemoryMiB": 2048,
+    "maximumMemoryMiB": 6144
+  },
+  "network": {
+    "velocityTarget": "minigame-commercial-street",
+    "backendHost": "127.0.0.1",
+    "backendPort": null,
+    "backendPortOwner": "dynamic-slot-provisioner-25600-25611",
+    "conflictGroup": null,
+    "publicDirectAccessAllowed": false,
+    "forwarding": {
+      "required": true,
+      "mode": "modern",
+      "implementation": null,
+      "reviewState": "blocked",
+      "requiredAction": "为 Forge 1.12.2 提供并验证与生产 Velocity modern forwarding 兼容的受维护实现",
+      "secretOwner": "platform-operator",
+      "secretIncluded": false
+    },
+    "voiceChat": {
+      "included": true,
+      "internalUdpPort": 24454,
+      "publicUdpEndpoint": null,
+      "reviewState": "blocked",
+      "requiredAction": "若活动启用语音，分配不与现有活动或生存服复用的独立 UDP NAT 映射"
+    }
+  },
+  "sharedPlatformComponents": [
+    {
+      "component": "HechaoVelocityAuthorizer",
+      "versionSnapshot": "0.5.0",
+      "layer": "velocity-singleton",
+      "action": "verify-existing",
+      "copyIntoBackend": false
+    },
+    {
+      "component": "HechaoLobbyGuard",
+      "layer": "internal-lobby-only",
+      "action": "exclude",
+      "copyIntoBackend": false
+    },
+    {
+      "component": "HechaoLuckPermsTierAgent",
+      "layer": "internal-lobby-only",
+      "action": "exclude",
+      "copyIntoBackend": false
+    }
+  ],
+  "hostServices": [
+    {
+      "component": "Hechao.ServerControlAgent",
+      "requiredVersion": "0.8.0",
+      "layer": "vps-host-singleton",
+      "action": "create-minigame-slot-and-select-java-8",
+      "installIntoBackend": false,
+      "requiredBeforeDeployment": true
+    },
+    {
+      "component": "Hechao.StatusCollector",
+      "versionSnapshot": "verify-at-deployment",
+      "layer": "vps-host-singleton",
+      "action": "register-status-target",
+      "installIntoBackend": false,
+      "requiredBeforeProduction": true
+    },
+    {
+      "component": "forge-1.12.2-deep-metrics",
+      "versionSnapshot": null,
+      "layer": "backend-observability",
+      "action": "implement-or-approve-compatible-metrics",
+      "installIntoBackend": false,
+      "reviewState": "blocked",
+      "requiredBeforeProduction": true
+    },
+    {
+      "component": "world-backup-and-alerting",
+      "layer": "vps-host-capability",
+      "action": "register-world-restore-and-alert-targets",
+      "installIntoBackend": false,
+      "requiredBeforeProduction": true
+    }
+  ],
+  "activityComponents": [
+    {
+      "component": "MixinBooter",
+      "file": "!mixinbooter-11.12.jar",
+      "sha256": "35D97D1CB83B612C827CBB0F3A700494BF07C8C84AAF2AE8FCE0256FDA4E3CCE",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "Cocricot",
+      "file": "cocricotMOD_1.12.2_v1.11.0.jar",
+      "sha256": "BAABB3A4686D175480FF14429D10848FB2F834B95A860FA942FB7D38960ABA58",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "CreativeCore",
+      "file": "CreativeCore_v1.10.71_mc1.12.2.jar",
+      "sha256": "B0EF34EC816FA91451F8D4B62C016C159AB3559D6F75870790D1215943F009D5",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "hechao-commercial-street",
+      "file": "hechao-commercial-street.jar",
+      "sha256": "5D3B5DE672B9BF14668B4A563C338654FAC471EA8A91BFCB52DA41F3D2734747",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff",
+      "sourceCommit": null,
+      "capabilityOwner": "commercial-street-gameplay"
+    },
+    {
+      "component": "LittleFrames",
+      "file": "LittleFrames_NO_WATERMEDIA_by_Blake_v1.1.4_mc1.12.2.jar",
+      "sha256": "B5613428A564784813FEE34A60E049C8B5DCAFC9A4C17E00DEF54AF2945D5059",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "LittleTiles",
+      "file": "LittleTiles_v1.5.87_mc1.12.2.jar",
+      "sha256": "CEFF70615C898883180C34992C4568BD288858227830B10A04D579969C8C8D36",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "MiniaTuria",
+      "file": "MiniaTuria-1.12.2-v8.4.jar",
+      "sha256": "D83C55CC15C227191C4ED4B4F45395C683783E1AA5FE8F79E63D71621F1BB66C",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "RoughlyEnoughIDs",
+      "file": "RoughlyEnoughIDs-2.3.1.jar",
+      "sha256": "34BA57268F9807F89D52C226869C60ACB8963F65B3E20DF1BC55D274C2B02862",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "Simple Voice Chat",
+      "file": "voicechat-forge-1.12.2-2.6.21.jar",
+      "sha256": "CCC9652DB01B7614CBCC44DD80A5B861BBF10612E8025A96231B84871500080F",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    },
+    {
+      "component": "WorldEdit",
+      "file": "worldedit-forge-mc1.12.2-6.1.10-dist.jar",
+      "sha256": "CD4768DED9E2B527E3FC093FDF4CE07F058187DE7961BDC0D7FA821C1B756F75",
+      "side": "client-and-server",
+      "source": "user-supplied-handoff"
+    }
+  ],
+  "provenance": {
+    "sourceArchive": "商业街建筑对决交接.zip",
+    "sourceArchiveSha256": "7F0889734DB894AD711642D1D1CC986DA748D71F6DA5434A9F47CAD9F81F8A9A",
+    "thirdPartyLicenseReviewState": "blocked-before-production",
+    "requiredAction": "归档每个第三方模组的官方下载来源、适用版本和许可证"
+  },
+  "excludedComponents": [
+    {
+      "component": "backend-luckperms-copy",
+      "reason": "等级权威与同步属于平台和内部大厅"
+    },
+    {
+      "component": "hub-or-lobby-transfer",
+      "reason": "启动器是唯一换服入口"
+    },
+    {
+      "component": "announcement-grave-tab-nametag-scoreboard-bundle",
+      "reason": "交接包未声明这些服务端能力"
+    },
+    {
+      "component": "bukkit-plugins-on-forge",
+      "reason": "原生 Forge 不加载 Bukkit 插件"
+    }
+  ],
+  "capabilityOwnership": [
+    {
+      "capability": "game-phase-plots-wallet-images-and-payments",
+      "owner": "hechao-commercial-street",
+      "conflictingComponentsAllowed": false
+    },
+    {
+      "capability": "server-start-stop",
+      "owner": "Hechao.ServerControlAgent",
+      "conflictingComponentsAllowed": false
+    },
+    {
+      "capability": "velocity-authorization",
+      "owner": "HechaoVelocityAuthorizer",
+      "conflictingComponentsAllowed": false
+    }
+  ],
+  "deployment": {
+    "fileMode": "replace-managed-directories",
+    "preserveWorldOnInitialDeployment": false,
+    "deployWhileStopped": true,
+    "startAuthorized": false,
+    "directoryOnlineAuthorized": false,
+    "testClientDistributionAuthorized": true,
+    "grayOrProductionAuthorized": false,
+    "secretsIncluded": false
+  },
+  "validation": {
+    "completed": [
+      "canonical archive validation",
+      "production analyzer split with zero issues",
+      "Temurin Java 8 signature and version verification",
+      "Forge cold start and Minecraft protocol 340",
+      "commercial street SELFTEST PASS",
+      "save-all and graceful stop",
+      "world identity-state sanitization"
+    ],
+    "productionGates": [
+      "forwarding implementation approved",
+      "Forge deep metrics available",
+      "voice UDP endpoint assigned or voice explicitly disabled",
+      "third-party provenance and license review complete",
+      "world backup and restore verified",
+      "fresh grant correct-client and wrong-client checks complete",
+      "2/3/5/20 player staged acceptance complete"
+    ]
+  },
+  "rollback": {
+    "clientProfileVersion": null,
+    "serverRelease": null,
+    "sourceArchiveSha256": "7F0889734DB894AD711642D1D1CC986DA748D71F6DA5434A9F47CAD9F81F8A9A",
+    "worldBackup": null,
+    "restoreVerified": false,
+    "restartAfterRollbackAuthorized": false
+  }
+}

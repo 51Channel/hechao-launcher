@@ -135,7 +135,8 @@ internal sealed class PackageImportOrchestrationRepository(
             server.FileCount,
             package.Plan.PreserveWorldData,
             initialMemoryMiB,
-            package.Plan.MaximumMemoryMiB);
+            package.Plan.MaximumMemoryMiB,
+            package.Analysis.Metadata.JavaMajorVersion);
         var operationId = Guid.NewGuid();
         await InsertDeploymentOperationAsync(
             connection,

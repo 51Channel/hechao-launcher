@@ -175,6 +175,7 @@ internal sealed partial class ServerPackageDeployer(
                     deployment.ProfileId,
                     deployment.Version,
                     deployment.ArchiveSha256,
+                    deployment.JavaMajorVersion,
                     DateTimeOffset.UtcNow),
                 cancellationToken);
 
@@ -374,7 +375,8 @@ internal sealed partial class ServerPackageDeployer(
         deployment.InitialMemoryMiB % 256 == 0 &&
         deployment.MaximumMemoryMiB % 256 == 0 &&
         deployment.InitialMemoryMiB <= deployment.MaximumMemoryMiB &&
-        deployment.MaximumMemoryMiB <= managedMaximumMemoryMiB;
+        deployment.MaximumMemoryMiB <= managedMaximumMemoryMiB &&
+        deployment.JavaMajorVersion is null or >= 8 and <= 30;
 
     private IReadOnlyList<string> GetPreservedPaths(bool preserveWorldData) =>
         [.. configuration.HostManagedRelativePaths
@@ -804,7 +806,8 @@ internal sealed partial class ServerPackageDeployer(
                    marker.ImportId != Guid.Empty &&
                    ConfigurationPatterns.ServerId().IsMatch(marker.ProfileId) &&
                    VersionPattern().IsMatch(marker.Version) &&
-                   Sha256Pattern().IsMatch(marker.ArchiveSha256);
+                   Sha256Pattern().IsMatch(marker.ArchiveSha256) &&
+                   marker.JavaMajorVersion is null or >= 8 and <= 30;
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
@@ -925,5 +928,6 @@ internal sealed partial class ServerPackageDeployer(
         string ProfileId,
         string Version,
         string ArchiveSha256,
+        int? JavaMajorVersion,
         DateTimeOffset DeployedAt);
 }

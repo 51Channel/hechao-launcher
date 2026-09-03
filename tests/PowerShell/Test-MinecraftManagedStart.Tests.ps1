@@ -17,6 +17,8 @@ $runtimeDirectory = Join-Path $temporaryRoot 'runtime'
 $logDirectory = Join-Path $temporaryRoot 'logs'
 $managedJavaHome = Join-Path $temporaryRoot 'managed java'
 $managedJavaBin = Join-Path $managedJavaHome 'bin'
+$fallbackJavaHome = Join-Path $temporaryRoot 'fallback java'
+$fallbackJavaBin = Join-Path $fallbackJavaHome 'bin'
 $startScript = Join-Path $serverDirectory 'start-probe.bat'
 $serverId = 'managed-start-probe'
 
@@ -25,9 +27,18 @@ try {
     [void][System.IO.Directory]::CreateDirectory($runtimeDirectory)
     [void][System.IO.Directory]::CreateDirectory($logDirectory)
     [void][System.IO.Directory]::CreateDirectory($managedJavaBin)
+    [void][System.IO.Directory]::CreateDirectory($fallbackJavaBin)
     Copy-Item `
         -LiteralPath (Join-Path $env:SystemRoot 'System32\cmd.exe') `
         -Destination (Join-Path $managedJavaBin 'java.exe')
+    Copy-Item `
+        -LiteralPath (Join-Path $env:SystemRoot 'System32\cmd.exe') `
+        -Destination (Join-Path $fallbackJavaBin 'java.exe')
+    [System.IO.File]::WriteAllText(
+        (Join-Path $serverDirectory '.hechao-deployment.json'),
+        '{"schemaVersion":1,"javaMajorVersion":8}',
+        [System.Text.UTF8Encoding]::new($false)
+    )
     [System.IO.File]::WriteAllText(
         $startScript,
         (@(
@@ -57,7 +68,8 @@ try {
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = (Get-Command pwsh).Source
     $startInfo.UseShellExecute = $false
-    $startInfo.Environment['HECHAO_JAVA_HOME'] = $managedJavaHome
+    $startInfo.Environment['HECHAO_JAVA_HOME'] = $fallbackJavaHome
+    $startInfo.Environment['HECHAO_JAVA_8_HOME'] = $managedJavaHome
     $startInfo.Environment['PATH'] = Join-Path $env:SystemRoot 'System32'
     foreach ($argument in @(
         '-NoLogo',
@@ -84,7 +96,7 @@ try {
         throw 'Managed stdout and stderr were not both written to the console log.'
     }
     if ($consoleLog -notmatch 'managed-java-home') {
-        throw 'Managed Java was not resolved through HECHAO_JAVA_HOME.'
+        throw 'Managed Java was not resolved through HECHAO_JAVA_8_HOME.'
     }
     if ($consoleLog -notmatch [regex]::Escape("JAVA_HOME=$managedJavaHome")) {
         throw 'JAVA_HOME was not propagated to the managed start script.'
@@ -100,8 +112,91 @@ try {
         throw 'The managed runtime marker was not removed after process exit.'
     }
 
+    [System.IO.File]::WriteAllText(
+        (Join-Path $serverDirectory '.hechao-deployment.json'),
+        '{"schemaVersion":1,"javaMajorVersion":30}',
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Remove-Item -LiteralPath $consoleLogPath -Force
+
+    $missingRuntimeStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $missingRuntimeStartInfo.FileName = (Get-Command pwsh).Source
+    $missingRuntimeStartInfo.UseShellExecute = $false
+    $missingRuntimeStartInfo.RedirectStandardError = $true
+    $missingRuntimeStartInfo.RedirectStandardOutput = $true
+    $missingRuntimeStartInfo.Environment['HECHAO_JAVA_HOME'] = $fallbackJavaHome
+    $missingRuntimeStartInfo.Environment['HECHAO_JAVA_30_HOME'] = Join-Path `
+        $temporaryRoot `
+        'missing java 30'
+    $missingRuntimeStartInfo.Environment['PATH'] = Join-Path $env:SystemRoot 'System32'
+    foreach ($argument in @(
+        '-NoLogo',
+        '-NoProfile',
+        '-File', $runnerScript,
+        '-ServerId', $serverId,
+        '-ServerDirectory', $serverDirectory,
+        '-StartScript', $startScript,
+        '-RuntimeMarkerDirectory', $runtimeDirectory,
+        '-ConsoleLogDirectory', $logDirectory
+    )) {
+        [void]$missingRuntimeStartInfo.ArgumentList.Add($argument)
+    }
+
+    $missingRuntimeProcess = [System.Diagnostics.Process]::Start(
+        $missingRuntimeStartInfo
+    )
+    $missingRuntimeStandardError = $missingRuntimeProcess.StandardError.ReadToEnd()
+    $null = $missingRuntimeProcess.StandardOutput.ReadToEnd()
+    $missingRuntimeProcess.WaitForExit()
+    if ($missingRuntimeProcess.ExitCode -eq 0 -or
+        $missingRuntimeProcess.ExitCode -eq 7) {
+        throw 'A package-specific missing Java runtime did not fail closed.'
+    }
+    if ($missingRuntimeStandardError -notmatch 'HECHAO_JAVA_30_HOME') {
+        throw 'The failed start did not identify the required package Java runtime.'
+    }
+    if (Test-Path -LiteralPath $consoleLogPath -PathType Leaf) {
+        throw 'The start script ran after package-specific Java validation failed.'
+    }
+    if (Test-Path -LiteralPath $markerPath -PathType Leaf) {
+        throw 'Runtime state was created before package-specific Java validation passed.'
+    }
+
+    Remove-Item `
+        -LiteralPath (Join-Path $serverDirectory '.hechao-deployment.json') `
+        -Force
+
+    $legacyStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $legacyStartInfo.FileName = (Get-Command pwsh).Source
+    $legacyStartInfo.UseShellExecute = $false
+    $legacyStartInfo.Environment['HECHAO_JAVA_HOME'] = $fallbackJavaHome
+    $legacyStartInfo.Environment['PATH'] = Join-Path $env:SystemRoot 'System32'
+    foreach ($argument in @(
+        '-NoLogo',
+        '-NoProfile',
+        '-File', $runnerScript,
+        '-ServerId', $serverId,
+        '-ServerDirectory', $serverDirectory,
+        '-StartScript', $startScript,
+        '-RuntimeMarkerDirectory', $runtimeDirectory,
+        '-ConsoleLogDirectory', $logDirectory
+    )) {
+        [void]$legacyStartInfo.ArgumentList.Add($argument)
+    }
+
+    $legacyProcess = [System.Diagnostics.Process]::Start($legacyStartInfo)
+    $legacyProcess.WaitForExit()
+    if ($legacyProcess.ExitCode -ne 7) {
+        throw "Legacy managed runner returned $($legacyProcess.ExitCode), expected 7."
+    }
+
+    $legacyConsoleLog = [System.IO.File]::ReadAllText($consoleLogPath)
+    if ($legacyConsoleLog -notmatch [regex]::Escape("JAVA_HOME=$fallbackJavaHome")) {
+        throw 'Legacy deployments did not fall back to HECHAO_JAVA_HOME.'
+    }
+
     [pscustomobject]@{
-        passed = 6
+        passed = 12
         status = 'passed'
     } | ConvertTo-Json
 }

@@ -74,11 +74,18 @@ if not defined HECHAO_MANAGED_START pause
 该标记使计划任务和手工双击使用同一个明确入口。缺少脚本、扩展名不为 `.bat`、标记
 不匹配或计划任务引用了另一个启动脚本时，安装和部署均失败关闭。
 
-整合包的 `start.bat` 可以调用 `java`，不得依赖制作者电脑上的绝对 Java 路径。owl5
-受管 runner 通过机器级 `HECHAO_JAVA_HOME` 提供统一 Java 21，并只为本次服务端进程
-设置 `JAVA_HOME/PATH`；配置路径不存在 `bin\java.exe` 时必须在执行批处理前失败。
-每次更换 Minecraft 或加载器大版本仍要先验证该受管 Java 版本兼容，不能把 PATH 注入
-当作跨版本兼容保证。
+整合包的 `start.bat` 可以调用 `java`，不得依赖制作者电脑上的绝对 Java 路径。
+`hechao-pack.json` 声明的 Java 主版本会进入受控部署标记。ServerControlAgent `0.8.0`
+及以上的 runner 对显式版本读取机器级 `HECHAO_JAVA_<主版本>_HOME`，例如 Java 8 使用
+`HECHAO_JAVA_8_HOME`、Java 21 使用 `HECHAO_JAVA_21_HOME`，并只为本次服务端进程设置
+`JAVA_HOME/PATH`。指定变量缺失或路径不存在 `bin\java.exe` 时，必须在执行批处理前
+失败关闭，不能退回 PATH 中的其他 Java。
+
+旧部署命令和不含 `javaMajorVersion` 的旧 `.hechao-deployment.json` 继续读取
+`HECHAO_JAVA_HOME`，保证代理滚动升级不会中断现有目标。每次新增 Minecraft 或加载器
+大版本仍要用对应运行时做隔离冷启动；变量选择只保证 Java 身份，不代表加载器兼容。
+Java 8 的 `java` 启动器不支持 Java 9 以后提供的 `@参数文件` 语法，旧 Forge 包应由
+受管 `start.bat` 读取 `user_jvm_args.txt` 后展开参数，内存仍只能保存在该参数文件中。
 
 ## 3. 发布与部署流程
 
@@ -266,7 +273,10 @@ EXE、配置或 DPAPI 文件；Linux 主实例故障且没有活动租约时，�
   "worldDataRelativePaths": [
     "airship_escape",
     "airship_escape_nether",
-    "airship_escape_the_end"
+    "airship_escape_the_end",
+    "world",
+    "world_nether",
+    "world_the_end"
   ]
 }
 ```
@@ -310,7 +320,8 @@ Paper 活动必须把 `config\paper-global.yml` 和 `forwarding.secret` 同时�
 标记，并确认 `Hechao-Server-Activity` 计划任务明确引用同一绝对路径。该检查只验证
 下一次启动契约，不会启动、停止或重启 Minecraft。
 
-owl5 当前正式代理为 `0.7.0`。目录心跳、快捷设置和目录切换使用同一目标级访问门闩；
+owl5 当前正式代理为 `0.7.2`；多 Java 运行时支持在 `0.8.0` 候选中。目录心跳、快捷设置
+和目录切换使用同一目标级访问门闩；
 外部进程持续持有目录句柄时仍会失败并恢复旧目录，不会绕过 Windows 文件锁或终止未知
 进程。管理员必须先确认占用者确实是无 Java 子进程的遗留包装进程，才能单独处理它。
 

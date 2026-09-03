@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Hechao.Contracts;
 
 namespace Hechao.ServerControlAgent.Tests;
@@ -102,7 +103,8 @@ public sealed class ServerPackageDeployerTests : IDisposable
             metadata.FileCount,
             PreserveWorldData: true,
             InitialMemoryMiB: 2048,
-            MaximumMemoryMiB: 4096);
+            MaximumMemoryMiB: 4096,
+            JavaMajorVersion: 8);
         var deployer = new ServerPackageDeployer(
             CreateConfiguration(server),
             backup);
@@ -137,6 +139,14 @@ public sealed class ServerPackageDeployerTests : IDisposable
         Assert.Contains("server-port=25568", properties);
         Assert.Contains("online-mode=false", properties);
         Assert.True(File.Exists(Path.Combine(server, ".hechao-deployment.json")));
+        using (var marker = JsonDocument.Parse(
+                   await File.ReadAllTextAsync(
+                       Path.Combine(server, ".hechao-deployment.json"))))
+        {
+            Assert.Equal(
+                8,
+                marker.RootElement.GetProperty("javaMajorVersion").GetInt32());
+        }
         Assert.Equal(
             new ServerPackageDeploymentIdentity(
                 deployment.ImportId,
@@ -152,6 +162,43 @@ public sealed class ServerPackageDeployerTests : IDisposable
             _ => Task.FromResult<int?>(null),
             CancellationToken.None);
         Assert.Equal("PACKAGE_ALREADY_DEPLOYED", repeated.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeployAsync_RejectsUnsupportedJavaVersionWithoutChangingServer()
+    {
+        var server = Path.Combine(root, "ActivityNeoForge");
+        Directory.CreateDirectory(server);
+        await File.WriteAllTextAsync(Path.Combine(server, "keep.txt"), "unchanged");
+        var archive = CreateServerArchive();
+        var metadata = await ReadArchiveMetadataAsync(archive);
+        var deployment = new ServerPackageDeploymentRequest(
+            Guid.NewGuid(),
+            "legacy-forge-1.12.2",
+            "1.0.0",
+            new FileInfo(archive).Length,
+            await ComputeSha256Async(archive),
+            metadata.ExpandedBytes,
+            metadata.FileCount,
+            PreserveWorldData: false,
+            InitialMemoryMiB: 2048,
+            MaximumMemoryMiB: 4096,
+            JavaMajorVersion: 7);
+        var deployer = new ServerPackageDeployer(
+            CreateConfiguration(server),
+            Path.Combine(root, "backups"));
+
+        var result = await deployer.DeployAsync(
+            deployment,
+            archive,
+            _ => Task.FromResult<int?>(null),
+            CancellationToken.None);
+
+        Assert.Equal(ServerControlCommandOutcome.Failed, result.Outcome);
+        Assert.Equal("INVALID_PACKAGE_DEPLOYMENT", result.ResultCode);
+        Assert.Equal(
+            "unchanged",
+            await File.ReadAllTextAsync(Path.Combine(server, "keep.txt")));
     }
 
     [Fact]

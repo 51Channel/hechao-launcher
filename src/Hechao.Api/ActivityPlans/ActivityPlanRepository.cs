@@ -491,7 +491,8 @@ public sealed class ActivityPlanRepository(
             server.FileCount,
             package.Record.PreserveWorldData,
             initialMemoryMiB,
-            package.Record.MaximumMemoryMiB);
+            package.Record.MaximumMemoryMiB,
+            package.Analysis.Metadata.JavaMajorVersion);
         var operationId = Guid.NewGuid();
         var operation = new AdminServerControlOperationRecord(
             operationId,

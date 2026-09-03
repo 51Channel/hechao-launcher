@@ -108,7 +108,10 @@ public sealed class AgentConfigurationTests
                 [
                     "airship_escape",
                     "airship_escape_nether",
-                    "airship_escape_the_end"
+                    "airship_escape_the_end",
+                    "world",
+                    "world_nether",
+                    "world_the_end"
                 ],
                 activity.WorldDataRelativePaths);
         }

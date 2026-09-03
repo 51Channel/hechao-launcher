@@ -1,0 +1,7 @@
+@echo off
+setlocal EnableExtensions EnableDelayedExpansion
+if not defined HECHAO_MANAGED_START pause
+set "HECHAO_JVM_ARGS="
+for /f "usebackq tokens=* delims=" %%A in ("user_jvm_args.txt") do set "HECHAO_JVM_ARGS=!HECHAO_JVM_ARGS! %%A"
+java !HECHAO_JVM_ARGS! -jar forge-1.12.2-14.23.5.2859.jar nogui
+endlocal

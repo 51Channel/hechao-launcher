@@ -237,6 +237,60 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
         $zip.Dispose()
     }
 
+    $legacyForgeFixture = Join-Path $temporaryRoot "legacy-forge-source"
+    Copy-Item -LiteralPath $fixture -Destination $legacyForgeFixture -Recurse
+    $legacyVersionId = "赫朝商业街建筑对决 1.12.2"
+    $legacyDescriptor = Get-Content `
+        -Raw `
+        -LiteralPath (Join-Path $legacyForgeFixture "hechao-pack.json") |
+        ConvertFrom-Json
+    $legacyDescriptor.id = "minigame-commercial-street-forge-1.12.2"
+    $legacyDescriptor.displayName = "赫朝商业街建筑对决"
+    $legacyDescriptor.minecraftVersion = "1.12.2"
+    $legacyDescriptor.javaMajorVersion = 8
+    $legacyDescriptor.loader = "Forge"
+    $legacyDescriptor.loaderVersion = "14.23.5.2859"
+    Write-Utf8Text `
+        (Join-Path $legacyForgeFixture "hechao-pack.json") `
+        ($legacyDescriptor | ConvertTo-Json -Depth 8)
+    Write-Utf8Text `
+        (Join-Path $legacyForgeFixture "client\hechao-profile.json") `
+        (@{
+            schemaVersion = 1
+            versionId = $legacyVersionId
+            javaMajorVersion = 8
+        } | ConvertTo-Json)
+    $legacyVersionDirectory = Join-Path `
+        $legacyForgeFixture `
+        "client\versions\$legacyVersionId"
+    Write-Utf8Text `
+        (Join-Path $legacyVersionDirectory "$legacyVersionId.json") `
+        (@{
+            id = $legacyVersionId
+            javaVersion = @{ majorVersion = 8 }
+            mainClass = "net.minecraft.launchwrapper.Launch"
+        } | ConvertTo-Json -Depth 4)
+    Write-FixtureBytes `
+        (Join-Path $legacyVersionDirectory "$legacyVersionId.jar") `
+        "fixture-legacy-version-jar"
+    Remove-Item `
+        -LiteralPath (Join-Path $legacyForgeFixture "server\fabric-server-launch.jar") `
+        -Force
+    Write-FixtureBytes `
+        (Join-Path $legacyForgeFixture "server\forge-1.12.2-14.23.5.2859.jar") `
+        "fixture-legacy-forge-server"
+    Write-Utf8Text (Join-Path $legacyForgeFixture "server\start.bat") @'
+@echo off
+if not defined HECHAO_MANAGED_START pause
+java @user_jvm_args.txt -jar forge-1.12.2-14.23.5.2859.jar nogui
+'@
+    $legacyForgeValidation = & $validator `
+        -SourceDirectory $legacyForgeFixture `
+        -PassThru
+    Assert-True `
+        ($legacyForgeValidation.package.loader -eq "Forge") `
+        "Validator did not accept the legacy Forge -jar launch contract."
+
     Remove-Item -LiteralPath (Join-Path $fixture "shared\mods\hechao-contract.jar") -Force
     $noSharedValidation = & $validator -SourceDirectory $fixture -PassThru
     Assert-True ($noSharedValidation.totals.sharedFileCount -eq 0) "Validator did not accept an optional empty shared root."
@@ -290,6 +344,7 @@ java @user_jvm_args.txt -jar fabric-server-launch.jar nogui
         sourceContract = "passed"
         businessArchive = "passed"
         optionalEmptyShared = "passed"
+        legacyForgeJarLaunch = "passed"
         secretRejection = "passed"
         commonJarMismatchRejection = "passed"
         handoffArchive = if ([string]::IsNullOrWhiteSpace($HandoffArchive)) { "not-requested" } else { "passed" }

@@ -87,6 +87,40 @@ public sealed class PackageImportDeploymentContractTests
             "server_files_present",
             source,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "package.Analysis.Metadata.JavaMajorVersion",
+            source,
+            StringComparison.Ordinal);
+
+        var activityPlans = ReadRepositoryFile(
+            "src",
+            "Hechao.Api",
+            "ActivityPlans",
+            "ActivityPlanRepository.cs");
+        Assert.Contains(
+            "package.Analysis.Metadata.JavaMajorVersion",
+            activityPlans,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ManagedRunner_SelectsPackageSpecificJavaAndFailsClosed()
+    {
+        var runner = ReadRepositoryFile(
+            "deploy",
+            "windows",
+            "server-control",
+            "Run-MinecraftServer.ps1");
+
+        Assert.Contains(".hechao-deployment.json", runner, StringComparison.Ordinal);
+        Assert.Contains(
+            "HECHAO_JAVA_${javaMajorVersion}_HOME",
+            runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "is required by the deployed package",
+            runner,
+            StringComparison.Ordinal);
     }
 
     [Fact]

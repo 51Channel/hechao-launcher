@@ -183,10 +183,12 @@ pwsh.exe -NoLogo -NoProfile -File `
   -ServerDirectory E:\Survival2
 ```
 
-`Run-MinecraftServer.ps1` 支持主机级 `HECHAO_JAVA_HOME`。计划任务环境没有全局
-`java` 时，runner 先读取当前进程值，再读取机器值，校验 `bin\java.exe` 后只在该次
-受管启动中设置 `JAVA_HOME` 并把 `bin` 放到 `PATH` 首位。变量未配置时保持旧行为；
-变量已配置但路径无效时在执行服务端批处理前失败关闭。
+`Run-MinecraftServer.ps1` 支持主机级多 Java 运行时。部署标记显式声明
+`javaMajorVersion` 时，runner 只读取当前进程或机器级
+`HECHAO_JAVA_<主版本>_HOME`，校验 `bin\java.exe` 后在该次受管启动中设置
+`JAVA_HOME` 并把 `bin` 放到 `PATH` 首位；指定变量缺失或路径无效时，在执行服务端
+批处理前失败关闭。不含该字段的旧部署标记继续读取 `HECHAO_JAVA_HOME`，保持滚动升级
+兼容。
 
 owl5 使用统一 Java 21 时，以管理员 PowerShell 7 设置机器值：
 
@@ -197,6 +199,11 @@ owl5 使用统一 Java 21 时，以管理员 PowerShell 7 设置机器值：
     [EnvironmentVariableTarget]::Machine
 )
 ```
+
+升级到多运行时代理前，应保留旧变量，并显式配置当前主版本与新增主版本。例如现有
+Java 21 根目录仍为 `E:\jdk` 时配置 `HECHAO_JAVA_21_HOME=E:\jdk`；Java 8 必须使用
+经过来源、Authenticode 签名、版本和 SHA-256 核验的独立 Temurin 目录，并配置
+`HECHAO_JAVA_8_HOME`。不得把整合包自带 runtime 直接复制为主机运行时。
 
 更新后先使用只运行 `java -version` 的临时受管批处理验证，禁止把生产玩家服作为首次
 探针。回滚时恢复上一版 `Run-MinecraftServer.ps1`，并把 `HECHAO_JAVA_HOME` 恢复为
