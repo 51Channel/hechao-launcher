@@ -5,6 +5,15 @@ namespace Hechao.ServerControlAgent;
 
 internal static class ServerPropertiesEditor
 {
+    private static readonly IReadOnlyDictionary<string, int> LegacyDifficultyIds =
+        new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["peaceful"] = 0,
+            ["easy"] = 1,
+            ["normal"] = 2,
+            ["hard"] = 3
+        };
+
     private static readonly IReadOnlyDictionary<string, Func<ServerQuickSettings, string>>
         Values = new Dictionary<string, Func<ServerQuickSettings, string>>(
             StringComparer.Ordinal)
@@ -29,20 +38,36 @@ internal static class ServerPropertiesEditor
         }
 
         var values = Parse(SharedFileReader.ReadAllLines(path));
-        return int.TryParse(values.GetValueOrDefault("max-players"), out var maxPlayers) &&
-               int.TryParse(values.GetValueOrDefault("view-distance"), out var viewDistance) &&
-               int.TryParse(
-                   values.GetValueOrDefault("simulation-distance"),
-                   out var simulationDistance) &&
-               values.TryGetValue("difficulty", out var difficulty) &&
-               bool.TryParse(values.GetValueOrDefault("white-list"), out var whiteList)
-            ? new ServerQuickSettings(
-                maxPlayers,
-                viewDistance,
-                simulationDistance,
-                difficulty,
-                whiteList)
-            : null;
+        if (!int.TryParse(values.GetValueOrDefault("max-players"), out var maxPlayers) ||
+            !int.TryParse(values.GetValueOrDefault("view-distance"), out var viewDistance) ||
+            !TryReadDifficulty(
+                values.GetValueOrDefault("difficulty"),
+                out var difficulty,
+                out var legacyDifficultyFormat) ||
+            !bool.TryParse(values.GetValueOrDefault("white-list"), out var whiteList))
+        {
+            return null;
+        }
+
+        var simulationDistance = viewDistance;
+        if (values.TryGetValue("simulation-distance", out var simulationDistanceValue))
+        {
+            if (!int.TryParse(simulationDistanceValue, out simulationDistance))
+            {
+                return null;
+            }
+        }
+        else if (!legacyDifficultyFormat)
+        {
+            return null;
+        }
+
+        return new ServerQuickSettings(
+            maxPlayers,
+            viewDistance,
+            simulationDistance,
+            difficulty,
+            whiteList);
     }
 
     internal static void Apply(
@@ -59,6 +84,14 @@ internal static class ServerPropertiesEditor
         }
 
         var lines = SharedFileReader.ReadAllLines(path).ToList();
+        var originalValues = Parse(lines);
+        _ = TryReadDifficulty(
+            originalValues.GetValueOrDefault("difficulty"),
+            out _,
+            out var legacyDifficultyFormat);
+        var supportsSimulationDistance =
+            originalValues.ContainsKey("simulation-distance") ||
+            !legacyDifficultyFormat;
         var updated = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 0; index < lines.Count; index++)
         {
@@ -68,11 +101,17 @@ internal static class ServerPropertiesEditor
                 continue;
             }
 
-            lines[index] = $"{parsed.Value.Key}={value(settings)}";
+            var formatted = parsed.Value.Key == "difficulty" && legacyDifficultyFormat
+                ? LegacyDifficultyIds[settings.Difficulty].ToString(
+                    System.Globalization.CultureInfo.InvariantCulture)
+                : value(settings);
+            lines[index] = $"{parsed.Value.Key}={formatted}";
             updated.Add(parsed.Value.Key);
         }
 
-        foreach (var pair in Values.Where(pair => !updated.Contains(pair.Key)))
+        foreach (var pair in Values.Where(pair =>
+                     !updated.Contains(pair.Key) &&
+                     (pair.Key != "simulation-distance" || supportsSimulationDistance)))
         {
             lines.Add($"{pair.Key}={pair.Value(settings)}");
         }
@@ -167,6 +206,37 @@ internal static class ServerPropertiesEditor
         }
 
         return result;
+    }
+
+    private static bool TryReadDifficulty(
+        string? value,
+        out string difficulty,
+        out bool legacyFormat)
+    {
+        difficulty = string.Empty;
+        legacyFormat = false;
+        if (value is null)
+        {
+            return false;
+        }
+
+        var normalized = value.Trim().ToLowerInvariant();
+        if (LegacyDifficultyIds.ContainsKey(normalized))
+        {
+            difficulty = normalized;
+            return true;
+        }
+
+        if (!int.TryParse(normalized, out var legacyId))
+        {
+            return false;
+        }
+
+        difficulty = LegacyDifficultyIds
+            .SingleOrDefault(pair => pair.Value == legacyId)
+            .Key ?? string.Empty;
+        legacyFormat = difficulty.Length > 0;
+        return legacyFormat;
     }
 
     private static KeyValuePair<string, string>? TryParseLine(string line)

@@ -542,6 +542,53 @@ public sealed class ServerTargetRuntimeTests
     }
 
     [Fact]
+    public async Task HeartbeatReportsMemoryForLegacyForgeProperties()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "hechao-agent-legacy-heartbeat-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        await File.WriteAllTextAsync(
+            Path.Combine(root, "server.properties"),
+            "max-players=24\nview-distance=10\ndifficulty=1\nwhite-list=false\n");
+        await File.WriteAllTextAsync(
+            Path.Combine(root, "user_jvm_args.txt"),
+            "-Xms1024M\n-Xmx6144M\n");
+        var runner = new RecordingProcessRunner((_, _) =>
+            new ProcessRunResult(0, string.Empty, string.Empty));
+        var runtime = CreateRuntime(
+            "minigame-commercial-street",
+            25602,
+            null,
+            runner,
+            serverDirectory: root,
+            memorySettingsRelativePath: "user_jvm_args.txt",
+            maximumAllowedMemoryMiB: 6144);
+
+        try
+        {
+            var heartbeat = await runtime.CaptureHeartbeatAsync(
+                CancellationToken.None);
+
+            Assert.Equal(
+                new ServerQuickSettings(
+                    24,
+                    10,
+                    10,
+                    "easy",
+                    false,
+                    1024,
+                    6144,
+                    6144),
+                heartbeat.Settings);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SharedPortHeartbeat_RequiresMatchingManagedRunMarker()
     {
         var runtimeDirectory = Path.Combine(
@@ -605,7 +652,9 @@ public sealed class ServerTargetRuntimeTests
         bool serverDeletionEnabled = false,
         bool packageDeploymentEnabled = false,
         IReadOnlyList<string>? hostManagedRelativePaths = null,
-        string? backupRoot = null)
+        string? backupRoot = null,
+        string memorySettingsRelativePath = "start.bat",
+        int maximumAllowedMemoryMiB = 65536)
     {
         var configuration = new ServerControlTargetConfiguration
         {
@@ -615,6 +664,8 @@ public sealed class ServerTargetRuntimeTests
             Port = port,
             ConflictGroup = conflictGroup,
             AllowedCommandPrefixes = prefixes ?? ["list", "say", "save-all"],
+            MemorySettingsRelativePath = memorySettingsRelativePath,
+            MaximumAllowedMemoryMiB = maximumAllowedMemoryMiB,
             ServerDeletionEnabled = serverDeletionEnabled,
             PackageDeploymentEnabled = packageDeploymentEnabled,
             HostManagedRelativePaths = hostManagedRelativePaths ?? []
@@ -628,7 +679,8 @@ public sealed class ServerTargetRuntimeTests
             requiresManagedMarker,
             runner,
             saveFlushDelay,
-            stopCommandGracePeriod);
+            stopCommandGracePeriod,
+            maximumAllowedMemoryMiB);
     }
 
     private static ServerControlCommandDelivery CreateStopCommand(

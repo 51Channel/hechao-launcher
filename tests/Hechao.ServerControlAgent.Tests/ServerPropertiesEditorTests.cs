@@ -67,6 +67,46 @@ public sealed class ServerPropertiesEditorTests : IDisposable
         Assert.Contains("motd=keep", result);
     }
 
+    [Fact]
+    public void Read_LegacyPropertiesUsesViewDistanceAndMapsNumericDifficulty()
+    {
+        Directory.CreateDirectory(_root);
+        var path = Path.Combine(_root, "server.properties");
+        File.WriteAllText(
+            path,
+            "max-players=24\nview-distance=10\ndifficulty=1\nwhite-list=false\n");
+
+        var result = ServerPropertiesEditor.Read(path);
+
+        Assert.Equal(
+            new ServerQuickSettings(24, 10, 10, "easy", false),
+            result);
+    }
+
+    [Fact]
+    public void Apply_LegacyPropertiesPreservesSupportedRepresentation()
+    {
+        Directory.CreateDirectory(_root);
+        var path = Path.Combine(_root, "server.properties");
+        File.WriteAllText(
+            path,
+            "max-players=24\nview-distance=10\ndifficulty=1\nwhite-list=false\n");
+        var backupRoot = Path.Combine(_root, "backups");
+        var settings = new ServerQuickSettings(30, 12, 12, "hard", true);
+
+        ServerPropertiesEditor.Apply(
+            path,
+            backupRoot,
+            "legacy-forge",
+            settings);
+
+        var text = File.ReadAllText(path);
+        Assert.Contains("difficulty=3", text, StringComparison.Ordinal);
+        Assert.Contains("view-distance=12", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("simulation-distance=", text, StringComparison.Ordinal);
+        Assert.Equal(settings, ServerPropertiesEditor.Read(path));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
