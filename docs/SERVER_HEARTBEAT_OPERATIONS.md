@@ -85,7 +85,8 @@ The production target ownership is:
 | `mc-vps-primary` | `lobby` | `127.0.0.1:25566` | `300` | Lobby |
 | `mc-vps-primary` | `survival2` | `127.0.0.1:25565` | `100` | Survival2 or its active replacement |
 | `mc-vps-primary` | `survival1` | `127.0.0.1:19228` | `20` | Survival1 |
-| `mc-vps-primary` | `activity` | `127.0.0.1:25568` | `30` | NeoForge activity server |
+| `mc-vps-primary` | `activity` | `127.0.0.1:25568` | `30` | Legacy fixed activity replacement slot |
+| `mc-vps-primary` | `activity-survival` | `127.0.0.1:25600` | `100` | Independent Skyrealm activity slot; `E:\HechaoActivitySlots\activity-survival` |
 | `owl9-pvp` | `pvp` | `127.0.0.1:25565` | `20` | HorrorPrank Fabric backend on `owl9`; `pvp` is a legacy target name |
 
 The row above does not describe the separate Purpur PVP backend at
@@ -96,7 +97,10 @@ HorrorPrank catalog/heartbeat route out of service. See
 [`OWL9_DUAL_BACKEND_OPERATIONS.md`](OWL9_DUAL_BACKEND_OPERATIONS.md).
 
 Only add a target after it exists in `launcher.servers`; the API rejects unknown targets
-atomically.
+atomically. The authoritative owl5 template is
+[`../deploy/windows/server-heartbeats/server-heartbeats.owl5.production.json`](../deploy/windows/server-heartbeats/server-heartbeats.owl5.production.json).
+Independent activity slots must be added to that collector configuration when their
+Velocity target and port are provisioned; do not reuse the legacy `activity:25568` row.
 
 The pre-change configuration is retained at:
 
