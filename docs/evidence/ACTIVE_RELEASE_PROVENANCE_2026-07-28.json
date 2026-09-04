@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-09-04T01:42:53Z",
+  "generatedAtUtc": "2026-09-04T04:37:37Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -90,41 +90,41 @@
     },
     {
       "component": "api",
-      "version": "0.38.2-20260904T013112Z",
-      "releaseTag": "api-v0.38.2",
-      "releaseCommit": "0f53bb08efe149c2ebedc2f61c9096456dfb6440",
-      "taggedAt": "2026-09-04T09:42:53+08:00",
+      "version": "0.38.3-20260904T035059Z",
+      "releaseTag": "api-v0.38.3",
+      "releaseCommit": "a4f4842556709667386430bc1991f3c92fe23d74",
+      "taggedAt": "2026-09-04T12:37:26+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "f26c4a4396953abb502972ba7657e467e6743d5a"
+        "value": "301ea5b850ccc563163e8c98d9c043c5bc666087"
       },
-      "deploymentState": "production-admin-directory-shows-hidden-servers-with-correct-visibility-semantics-health-ready",
-      "historicalNote": "Database migrations remain 35/35. The administrator server directory defaults to all catalog records, labels isVisible=false as player-hidden, and excludes already cataloged hidden servers from discovery. A real Chrome session confirmed the commercial street row appears exactly once. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
+      "deploymentState": "production-activity-plan-optional-client-binding-health-ready",
+      "historicalNote": "Database migrations are 36/36. Administrators can create, edit, archive and restore an unbound activity draft, then bind a completed client package later without changing the plan identity or creation time. Unbound plans cannot publish or deploy and never enter the player catalog. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
       "artifacts": [
         {
-          "name": "hechao-api-0.38.2-20260904T013112Z-linux-x64.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z",
-          "size": 46999847,
-          "sha256": "F67E349716CFDB3241D196BFD9D338E5C4510CE17205D38A68537633B2C96A71",
+          "name": "hechao-api-0.38.3-20260904T035059Z-linux-x64.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.38.3-20260904T035059Z",
+          "size": 47007007,
+          "sha256": "C23739F8E88002134FD32206CCDB2D8DA4FD09DD468A4A138BF060816AA5D904",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z/Hechao.Api",
-          "size": 105703492,
-          "sha256": "542F0AADB41C98518A85FAAA517EBFF292A8262A11C37BE1A87C2C54C1C0BC4F",
+          "location": "/opt/hechao-launcher-api/releases/0.38.3-20260904T035059Z/Hechao.Api",
+          "size": 105718852,
+          "sha256": "E6A94F921F90FD53A955D1919A52244D6E980FDDB9F962CF1F05C2CB76F374D6",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z"
+        "target": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.38.2.md",
-        "docs/evidence/API_0.38.2_PRODUCTION_DEPLOYMENT_2026-09-04.json",
-        "docs/API_RELEASE_0.38.2_CANDIDATE.md"
+        "docs/API_RELEASE_0.38.3.md",
+        "docs/evidence/API_0.38.3_PRODUCTION_DEPLOYMENT_2026-09-04.json",
+        "docs/API_RELEASE_0.38.3_CANDIDATE.md"
       ]
     },
     {
