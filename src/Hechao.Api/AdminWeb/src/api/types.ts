@@ -557,12 +557,12 @@ export interface ActivityPlan {
   closesAt: string;
   maximumPlayers: number;
   minimumTier: AccessTier;
-  packageImportId: string;
-  profileId: string;
-  profileDisplayName: string;
-  version: string;
-  minecraftVersion: string;
-  loader: ModLoaderKind;
+  packageImportId: string | null;
+  profileId: string | null;
+  profileDisplayName: string | null;
+  version: string | null;
+  minecraftVersion: string | null;
+  loader: ModLoaderKind | null;
   status: ActivityPlanStatus;
   effectiveStatus: ServerStatus;
   productionReady: boolean;

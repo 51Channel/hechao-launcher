@@ -523,6 +523,12 @@ public static class ActivityPlanEndpoints
                 {
                     ["packageImportId"] = ["所选整合包不存在、尚未完成或不含服务端制品。"]
                 }),
+            ActivityPlanMutationStatus.PackageBindingRequired =>
+                Results.Conflict(new
+                {
+                    code = "package_binding_required",
+                    message = "企划尚未绑定客户端整合包。"
+                }),
             ActivityPlanMutationStatus.ScheduleConflict => Results.Conflict(new
             {
                 code = "schedule_conflict",
@@ -576,6 +582,11 @@ public static class ActivityPlanEndpoints
             {
                 code = "package_not_found",
                 message = "企划绑定的整合包不可用。"
+            }),
+            ActivityPlanMutationStatus.PackageBindingRequired => Results.Conflict(new
+            {
+                code = "package_binding_required",
+                message = "企划尚未绑定客户端整合包。"
             }),
             ActivityPlanMutationStatus.PackageProfileArchived =>
                 Results.Conflict(new

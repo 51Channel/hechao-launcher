@@ -388,4 +388,25 @@ public sealed class DatabaseMigrationTests
         Assert.Contains(35, DatabaseMigrator.RegisteredMigrationVersions);
         Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
     }
+
+    [Fact]
+    public void ActivityPlanOptionalPackageMigration_StoresUnboundDraftsSeparately()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.036_activity_plan_optional_package.sql";
+        using var stream = typeof(DatabaseMigrator).Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream!);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("CREATE TABLE launcher.unbound_activity_plans", sql, StringComparison.Ordinal);
+        Assert.Contains("activity_plan_status IN ('Draft', 'Archived')", sql, StringComparison.Ordinal);
+        Assert.Contains("CHECK (opens_at < closes_at)", sql, StringComparison.Ordinal);
+        Assert.Contains(36, DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
+        Assert.DoesNotContain("ALTER TABLE launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE FROM launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -39,12 +39,12 @@ public sealed record AdminActivityPlanRecord(
     DateTimeOffset ClosesAt,
     int MaximumPlayers,
     AccessTier MinimumTier,
-    Guid PackageImportId,
-    string ProfileId,
-    string ProfileDisplayName,
-    string Version,
-    string MinecraftVersion,
-    ModLoaderKind Loader,
+    Guid? PackageImportId,
+    string? ProfileId,
+    string? ProfileDisplayName,
+    string? Version,
+    string? MinecraftVersion,
+    ModLoaderKind? Loader,
     ActivityPlanStatus Status,
     ServerStatus EffectiveStatus,
     bool ProductionReady,
@@ -90,7 +90,7 @@ public sealed record AdminActivityPlanCreateRequest(
     DateTimeOffset ClosesAt,
     int MaximumPlayers,
     AccessTier MinimumTier,
-    Guid PackageImportId);
+    Guid? PackageImportId);
 
 public sealed record AdminActivityPlanUpdateRequest(
     string Title,
@@ -99,7 +99,7 @@ public sealed record AdminActivityPlanUpdateRequest(
     DateTimeOffset ClosesAt,
     int MaximumPlayers,
     AccessTier MinimumTier,
-    Guid PackageImportId,
+    Guid? PackageImportId,
     long ExpectedRevision);
 
 public sealed record AdminActivityPlanRevisionRequest(long ExpectedRevision);

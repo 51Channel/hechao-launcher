@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Hechao.Api.Tests;
 
+[Collection(PostgresIntegrationCollection.Name)]
 public sealed class EconomyPostgresIntegrationTests
 {
     [PostgresFact]

@@ -24,6 +24,8 @@ public sealed class ActivityPlanEndpointContractTests
         Assert.Contains("IPAddress.IsLoopback", endpoints);
         Assert.Contains("X-Hechao-Website-Activity-Token", endpoints);
         Assert.Contains("/{planId}/deploy", endpoints);
+        Assert.Contains("package_binding_required", endpoints);
+        Assert.Contains("PackageBindingRequired", endpoints);
     }
 
     private static string FindRepositoryRoot()

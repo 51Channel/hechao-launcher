@@ -135,14 +135,18 @@ const overlappingPublishedPlan = computed(() => {
     new Date(plan.opensAt).getTime() < end
   ) ?? null;
 });
+const packageBindingRequired = computed(() =>
+  Boolean(selectedPlan.value?.packageImportId) ||
+  selectedPlan.value?.status === "Published"
+);
 const formValid = computed(() =>
   draft.title.trim().length >= 2 &&
-  Boolean(draft.packageImportId) &&
   Boolean(draftStart.value) &&
   Boolean(draftEnd.value) &&
   new Date(draftStart.value!).getTime() < new Date(draftEnd.value!).getTime() &&
   draft.maximumPlayers >= 1 &&
-  draft.maximumPlayers <= 1000
+  draft.maximumPlayers <= 1000 &&
+  (!packageBindingRequired.value || Boolean(draft.packageImportId))
 );
 const saveDisabled = computed(() =>
   editorBusy.value ||
@@ -154,6 +158,7 @@ const selectedPackageArchived = computed(() => selectedPackage.value?.profileArc
 const canPublish = computed(() =>
   selectedPlan.value?.status === "Draft" &&
   !editorDirty.value &&
+  Boolean(selectedPlan.value.packageImportId) &&
   Boolean(selectedPlan.value.productionReady) &&
   !selectedPackageArchived.value &&
   !overlappingPublishedPlan.value &&
@@ -163,6 +168,7 @@ const canDeploy = computed(() =>
   Boolean(selectedPlan.value) &&
   selectedPlan.value?.status !== "Archived" &&
   !editorDirty.value &&
+  Boolean(selectedPlan.value?.packageImportId) &&
   !selectedPlan.value?.deploymentMatches &&
   !selectedPackageArchived.value &&
   Boolean(slot.value?.configured) &&
@@ -356,7 +362,7 @@ function syncPlanToEditor(plan: ActivityPlan): void {
     closesAt: toLocalDateTimeInput(plan.closesAt),
     maximumPlayers: plan.maximumPlayers,
     minimumTier: plan.minimumTier,
-    packageImportId: plan.packageImportId
+    packageImportId: plan.packageImportId ?? ""
   });
 }
 
@@ -364,29 +370,21 @@ function localDateTime(date: Date): string {
   return toLocalDateTimeInput(date.toISOString());
 }
 
-function preferredPackage(): ActivityPackage | null {
-  return packages.value.find(item => !item.profileArchived && item.productionReady) ??
-    packages.value.find(item => !item.profileArchived) ??
-    packages.value[0] ??
-    null;
-}
-
 function beginCreate(opensAt: Date, closesAt: Date): void {
   if (editorDirty.value && !window.confirm("当前编辑内容尚未保存，确定放弃并创建新企划吗？")) {
     return;
   }
-  const packageItem = preferredPackage();
   editorMode.value = "create";
   selectedPlanId.value = "";
   selectedUnmanagedScheduleId.value = "";
   resetDraft({
-    title: packageItem?.profileDisplayName || "新活动企划",
+    title: "新活动企划",
     announcement: "",
     opensAt: localDateTime(opensAt),
     closesAt: localDateTime(closesAt),
-    maximumPlayers: packageItem?.maximumPlayers ?? 30,
+    maximumPlayers: 30,
     minimumTier: "Participant",
-    packageImportId: packageItem?.importId ?? ""
+    packageImportId: ""
   });
 }
 
@@ -510,7 +508,7 @@ function requestBody(expectedRevision?: number): Record<string, unknown> {
     closesAt: draftEnd.value,
     maximumPlayers: Number(draft.maximumPlayers),
     minimumTier: draft.minimumTier,
-    packageImportId: draft.packageImportId,
+    packageImportId: draft.packageImportId || null,
     ...(expectedRevision ? { expectedRevision } : {})
   };
 }
@@ -632,9 +630,11 @@ function openAction(action: PlanAction): void {
     return;
   }
   if (action === "publish" && !canPublish.value) {
-    showToast(overlappingPublishedPlan.value
-      ? `排期与《${overlappingPublishedPlan.value.title}》重叠，不能发布。`
-      : "整合包尚未进入 Production 通道，不能发布。", true);
+    showToast(!selectedPlan.value.packageImportId
+      ? "请先为企划绑定客户端整合包。"
+      : overlappingPublishedPlan.value
+        ? `排期与《${overlappingPublishedPlan.value.title}》重叠，不能发布。`
+        : "整合包尚未进入 Production 通道，不能发布。", true);
     return;
   }
   if (action === "deploy" && !canDeploy.value) {
@@ -893,7 +893,9 @@ watch(selectedPlan, plan => {
                 {{ planStatusText(selectedPlan.status) }}
               </span>
               <span :class="{ ready: selectedPlan.productionReady }">
-                {{ selectedPlan.productionReady ? "Production 已就绪" : "仅 Test / Gray" }}
+                {{ !selectedPlan.packageImportId
+                  ? "未绑定客户端"
+                  : selectedPlan.productionReady ? "Production 已就绪" : "仅 Test / Gray" }}
               </span>
               <span :class="{ ready: selectedPlan.deploymentMatches }">
                 {{ selectedPlan.deploymentMatches ? "活动槽已匹配" : "活动槽未匹配" }}
@@ -920,9 +922,9 @@ watch(selectedPlan, plan => {
                 </label>
               </div>
               <label>
-                绑定整合包
-                <select v-model="draft.packageImportId" required @change="updatePackageDefaults">
-                  <option value="" disabled>请选择已完成的整合包</option>
+                绑定客户端
+                <select v-model="draft.packageImportId" @change="updatePackageDefaults">
+                  <option value="" :disabled="Boolean(selectedPlan?.packageImportId)">稍后绑定客户端</option>
                   <option v-for="item in packages" :key="item.importId" :value="item.importId" :disabled="item.profileArchived">
                     {{ packageOptionText(item) }}
                   </option>
@@ -931,6 +933,10 @@ watch(selectedPlan, plan => {
               <div v-if="selectedPackage" class="activity-package-facts">
                 <span>{{ selectedPackage.minecraftVersion }} · {{ selectedPackage.loader }} {{ selectedPackage.loaderVersion }}</span>
                 <strong>{{ selectedPackage.profileId }}</strong>
+              </div>
+              <div v-else class="activity-package-facts activity-package-unbound">
+                <span>未绑定客户端</span>
+                <strong>仅保存为草稿</strong>
               </div>
               <div class="activity-time-grid">
                 <label>
@@ -990,7 +996,10 @@ watch(selectedPlan, plan => {
                   <AppIcon name="rotate-ccw" />恢复为草稿
                 </button>
               </div>
-              <p v-if="selectedPlan.status === 'Draft' && !selectedPlan.productionReady" class="activity-action-note">
+              <p v-if="selectedPlan.status === 'Draft' && !selectedPlan.packageImportId" class="activity-action-note">
+                企划已保存。绑定客户端并完成 Production 发布后，才可以发布企划。
+              </p>
+              <p v-else-if="selectedPlan.status === 'Draft' && !selectedPlan.productionReady" class="activity-action-note">
                 发布前需要先在“客户端档案”中把该整合包版本推进到 Production 通道。
               </p>
               <p v-if="slot?.online" class="activity-action-note warning">
@@ -1012,7 +1021,7 @@ watch(selectedPlan, plan => {
           <span class="status-badge" :class="plan.status === 'Published' ? 'status-online' : plan.status === 'Draft' ? 'status-maintenance' : 'status-archived'">{{ planStatusText(plan.status) }}</span>
           <strong>{{ plan.title }}</strong>
           <span>{{ formatDateTime(plan.opensAt) }} 至 {{ formatDateTime(plan.closesAt) }}</span>
-          <small>{{ plan.profileDisplayName }} · {{ plan.version }}</small>
+          <small>{{ plan.profileDisplayName ? `${plan.profileDisplayName} · ${plan.version}` : "尚未绑定客户端" }}</small>
         </button>
       </section>
     </ResourceState>

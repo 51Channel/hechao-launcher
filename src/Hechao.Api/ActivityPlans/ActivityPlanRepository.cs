@@ -20,6 +20,7 @@ public enum ActivityPlanMutationStatus
     RevisionConflict,
     InvalidState,
     PackageNotFound,
+    PackageBindingRequired,
     PackageProfileArchived,
     PackageNotProductionReady,
     ScheduleConflict,
@@ -59,7 +60,12 @@ public sealed class ActivityPlanRepository(
         CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var plans = await ReadPlansAsync(connection, now, cancellationToken);
+        var plans = (await ReadPlansAsync(connection, now, cancellationToken))
+            .Concat(await ReadUnboundPlansAsync(connection, cancellationToken))
+            .OrderBy(plan => plan.OpensAt)
+            .ThenBy(plan => plan.ClosesAt)
+            .ThenBy(plan => plan.Id, StringComparer.Ordinal)
+            .ToArray();
         var packages = await ReadPackagesAsync(connection, cancellationToken);
         var slot = await ReadSlotAsync(connection, now, cancellationToken);
         var unmanagedSchedules = await ReadUnmanagedSchedulesAsync(
@@ -82,42 +88,75 @@ public sealed class ActivityPlanRepository(
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        var package = await ReadPackageAsync(
-            connection,
-            transaction,
-            request.PackageImportId,
-            lockRows: true,
-            cancellationToken);
-        if (package is null)
+        PackageSnapshot? package = null;
+        if (request.PackageImportId is Guid packageImportId)
         {
-            return new ActivityPlanMutationResult(
-                ActivityPlanMutationStatus.PackageNotFound);
-        }
+            package = await ReadPackageAsync(
+                connection,
+                transaction,
+                packageImportId,
+                lockRows: true,
+                cancellationToken);
+            if (package is null)
+            {
+                return new ActivityPlanMutationResult(
+                    ActivityPlanMutationStatus.PackageNotFound);
+            }
 
-        if (package.Record.ProfileArchived)
-        {
-            return new ActivityPlanMutationResult(
-                ActivityPlanMutationStatus.PackageProfileArchived);
+            if (package.Record.ProfileArchived)
+            {
+                return new ActivityPlanMutationResult(
+                    ActivityPlanMutationStatus.PackageProfileArchived);
+            }
         }
 
         var planId = CreatePlanId(request.OpensAt);
         var shortName = TakeTextElements(request.Title, 12);
-        const string sql = """
-            INSERT INTO launcher.servers
-                (id, display_name, short_name, icon_glyph, status,
-                 online_players, max_players, minecraft_version, loader,
-                 minimum_tier, client_profile_id, velocity_target,
-                 allow_protocol_translation, server_role, monitoring_enabled,
-                 sort_order, is_visible, announcement, opens_at, closes_at,
-                 activity_package_import_id, activity_plan_status,
-                 created_at, updated_at)
-            VALUES
-                ($1, $2, $3, 'activity', 'Online', 0, $4, $5, $6, $7,
-                 $8, 'activity', false, 'Player', true, 30000, false, $9,
-                 $10, $11, $12, 'Draft', $13, $13);
-            """;
-        await using (var command = new NpgsqlCommand(sql, connection, transaction))
+        if (package is null)
         {
+            const string insertUnbound = """
+                INSERT INTO launcher.unbound_activity_plans
+                    (id, display_name, short_name, announcement, opens_at,
+                     closes_at, max_players, minimum_tier, activity_plan_status,
+                     created_at, updated_at)
+                VALUES
+                    ($1, $2, $3, $4, $5, $6, $7, $8, 'Draft', $9, $9);
+                """;
+            await using var command = new NpgsqlCommand(
+                insertUnbound,
+                connection,
+                transaction);
+            command.Parameters.AddWithValue(planId);
+            command.Parameters.AddWithValue(request.Title.Trim());
+            command.Parameters.AddWithValue(shortName);
+            command.Parameters.AddWithValue(request.Announcement.Trim());
+            command.Parameters.AddWithValue(request.OpensAt.ToUniversalTime());
+            command.Parameters.AddWithValue(request.ClosesAt.ToUniversalTime());
+            command.Parameters.AddWithValue(request.MaximumPlayers);
+            command.Parameters.AddWithValue(request.MinimumTier.ToString());
+            command.Parameters.AddWithValue(now);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        else
+        {
+            const string insertBound = """
+                INSERT INTO launcher.servers
+                    (id, display_name, short_name, icon_glyph, status,
+                     online_players, max_players, minecraft_version, loader,
+                     minimum_tier, client_profile_id, velocity_target,
+                     allow_protocol_translation, server_role, monitoring_enabled,
+                     sort_order, is_visible, announcement, opens_at, closes_at,
+                     activity_package_import_id, activity_plan_status,
+                     created_at, updated_at)
+                VALUES
+                    ($1, $2, $3, 'activity', 'Online', 0, $4, $5, $6, $7,
+                     $8, 'activity', false, 'Player', true, 30000, false, $9,
+                     $10, $11, $12, 'Draft', $13, $13);
+                """;
+            await using var command = new NpgsqlCommand(
+                insertBound,
+                connection,
+                transaction);
             command.Parameters.AddWithValue(planId);
             command.Parameters.AddWithValue(request.Title.Trim());
             command.Parameters.AddWithValue(shortName);
@@ -129,7 +168,7 @@ public sealed class ActivityPlanRepository(
             command.Parameters.AddWithValue(request.Announcement.Trim());
             command.Parameters.AddWithValue(request.OpensAt.ToUniversalTime());
             command.Parameters.AddWithValue(request.ClosesAt.ToUniversalTime());
-            command.Parameters.AddWithValue(request.PackageImportId);
+            command.Parameters.AddWithValue(package.Record.ImportId);
             command.Parameters.AddWithValue(now);
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -191,26 +230,42 @@ public sealed class ActivityPlanRepository(
                 ActivityPlanMutationStatus.InvalidState);
         }
 
-        var package = await ReadPackageAsync(
-            connection,
-            transaction,
-            request.PackageImportId,
-            lockRows: true,
-            cancellationToken);
-        if (package is null)
+        PackageSnapshot? package = null;
+        if (request.PackageImportId is Guid packageImportId)
         {
-            return new ActivityPlanMutationResult(
-                ActivityPlanMutationStatus.PackageNotFound);
+            package = await ReadPackageAsync(
+                connection,
+                transaction,
+                packageImportId,
+                lockRows: true,
+                cancellationToken);
+            if (package is null)
+            {
+                return new ActivityPlanMutationResult(
+                    ActivityPlanMutationStatus.PackageNotFound);
+            }
+
+            if (package.Record.ProfileArchived)
+            {
+                return new ActivityPlanMutationResult(
+                    ActivityPlanMutationStatus.PackageProfileArchived);
+            }
         }
 
-        if (package.Record.ProfileArchived)
+        if (!state.IsUnbound && package is null)
         {
             return new ActivityPlanMutationResult(
-                ActivityPlanMutationStatus.PackageProfileArchived);
+                ActivityPlanMutationStatus.PackageBindingRequired);
         }
 
         if (state.Status == ActivityPlanStatus.Published)
         {
+            if (package is null)
+            {
+                return new ActivityPlanMutationResult(
+                    ActivityPlanMutationStatus.PackageBindingRequired);
+            }
+
             if (!package.Record.ProductionReady)
             {
                 return new ActivityPlanMutationResult(
@@ -234,6 +289,123 @@ public sealed class ActivityPlanRepository(
         }
 
         var shortName = TakeTextElements(request.Title, 12);
+        if (state.IsUnbound)
+        {
+            if (package is null)
+            {
+                const string updateUnbound = """
+                    UPDATE launcher.unbound_activity_plans
+                    SET display_name = $1,
+                        short_name = $2,
+                        max_players = $3,
+                        minimum_tier = $4,
+                        announcement = $5,
+                        opens_at = $6,
+                        closes_at = $7,
+                        revision = revision + 1,
+                        updated_at = $8
+                    WHERE id = $9 AND revision = $10;
+                    """;
+                await using var command = new NpgsqlCommand(
+                    updateUnbound,
+                    connection,
+                    transaction);
+                command.Parameters.AddWithValue(request.Title.Trim());
+                command.Parameters.AddWithValue(shortName);
+                command.Parameters.AddWithValue(request.MaximumPlayers);
+                command.Parameters.AddWithValue(request.MinimumTier.ToString());
+                command.Parameters.AddWithValue(request.Announcement.Trim());
+                command.Parameters.AddWithValue(request.OpensAt.ToUniversalTime());
+                command.Parameters.AddWithValue(request.ClosesAt.ToUniversalTime());
+                command.Parameters.AddWithValue(now);
+                command.Parameters.AddWithValue(planId);
+                command.Parameters.AddWithValue(request.ExpectedRevision);
+                if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+                {
+                    return new ActivityPlanMutationResult(
+                        ActivityPlanMutationStatus.RevisionConflict);
+                }
+            }
+            else
+            {
+                const string deleteUnbound = """
+                    DELETE FROM launcher.unbound_activity_plans
+                    WHERE id = $1 AND revision = $2;
+                    """;
+                await using (var delete = new NpgsqlCommand(
+                                 deleteUnbound,
+                                 connection,
+                                 transaction))
+                {
+                    delete.Parameters.AddWithValue(planId);
+                    delete.Parameters.AddWithValue(request.ExpectedRevision);
+                    if (await delete.ExecuteNonQueryAsync(cancellationToken) != 1)
+                    {
+                        return new ActivityPlanMutationResult(
+                            ActivityPlanMutationStatus.RevisionConflict);
+                    }
+                }
+
+                const string bindPlan = """
+                    INSERT INTO launcher.servers
+                        (id, display_name, short_name, icon_glyph, status,
+                         online_players, max_players, minecraft_version, loader,
+                         minimum_tier, client_profile_id, velocity_target,
+                         allow_protocol_translation, server_role, monitoring_enabled,
+                         sort_order, is_visible, announcement, opens_at, closes_at,
+                         activity_package_import_id, activity_plan_status, revision,
+                         created_at, updated_at)
+                    VALUES
+                        ($1, $2, $3, 'activity', 'Online', 0, $4, $5, $6, $7,
+                         $8, 'activity', false, 'Player', true, 30000, false, $9,
+                         $10, $11, $12, 'Draft', $13, $14, $15);
+                    """;
+                await using var insert = new NpgsqlCommand(
+                    bindPlan,
+                    connection,
+                    transaction);
+                insert.Parameters.AddWithValue(planId);
+                insert.Parameters.AddWithValue(request.Title.Trim());
+                insert.Parameters.AddWithValue(shortName);
+                insert.Parameters.AddWithValue(request.MaximumPlayers);
+                insert.Parameters.AddWithValue(package.Record.MinecraftVersion);
+                insert.Parameters.AddWithValue(package.Record.Loader.ToString());
+                insert.Parameters.AddWithValue(request.MinimumTier.ToString());
+                insert.Parameters.AddWithValue(package.Record.ProfileId);
+                insert.Parameters.AddWithValue(request.Announcement.Trim());
+                insert.Parameters.AddWithValue(request.OpensAt.ToUniversalTime());
+                insert.Parameters.AddWithValue(request.ClosesAt.ToUniversalTime());
+                insert.Parameters.AddWithValue(package.Record.ImportId);
+                insert.Parameters.AddWithValue(request.ExpectedRevision + 1);
+                insert.Parameters.AddWithValue(state.CreatedAt);
+                insert.Parameters.AddWithValue(now);
+                await insert.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await WriteAuditAsync(
+                connection,
+                transaction,
+                actorUserId,
+                sourceIp,
+                "activity_plan.updated",
+                planId,
+                state,
+                new
+                {
+                    request.Title,
+                    request.OpensAt,
+                    request.ClosesAt,
+                    request.PackageImportId,
+                    request.MaximumPlayers,
+                    request.MinimumTier
+                },
+                cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return new ActivityPlanMutationResult(
+                ActivityPlanMutationStatus.Success,
+                await GetPlanAsync(planId, now, cancellationToken));
+        }
+
         const string sql = """
             UPDATE launcher.servers
             SET display_name = $1,
@@ -259,14 +431,14 @@ public sealed class ActivityPlanRepository(
             command.Parameters.AddWithValue(request.Title.Trim());
             command.Parameters.AddWithValue(shortName);
             command.Parameters.AddWithValue(request.MaximumPlayers);
-            command.Parameters.AddWithValue(package.Record.MinecraftVersion);
+            command.Parameters.AddWithValue(package!.Record.MinecraftVersion);
             command.Parameters.AddWithValue(package.Record.Loader.ToString());
             command.Parameters.AddWithValue(request.MinimumTier.ToString());
             command.Parameters.AddWithValue(package.Record.ProfileId);
             command.Parameters.AddWithValue(request.Announcement.Trim());
             command.Parameters.AddWithValue(request.OpensAt.ToUniversalTime());
             command.Parameters.AddWithValue(request.ClosesAt.ToUniversalTime());
-            command.Parameters.AddWithValue(request.PackageImportId);
+            command.Parameters.AddWithValue(package.Record.ImportId);
             command.Parameters.AddWithValue(now);
             command.Parameters.AddWithValue(planId);
             command.Parameters.AddWithValue(request.ExpectedRevision);
@@ -412,10 +584,16 @@ public sealed class ActivityPlanRepository(
                 ActivityPlanMutationStatus.InvalidState);
         }
 
+        if (state.PackageImportId is not Guid packageImportId)
+        {
+            return new ActivityPlanDeploymentResult(
+                ActivityPlanMutationStatus.PackageBindingRequired);
+        }
+
         var package = await ReadPackageAsync(
             connection,
             transaction,
-            state.PackageImportId,
+            packageImportId,
             lockRows: true,
             cancellationToken);
         if (package is null || package.Analysis.Server is null)
@@ -563,10 +741,16 @@ public sealed class ActivityPlanRepository(
 
         if (nextStatus == ActivityPlanStatus.Published)
         {
+            if (state.PackageImportId is not Guid packageImportId)
+            {
+                return new ActivityPlanMutationResult(
+                    ActivityPlanMutationStatus.PackageBindingRequired);
+            }
+
             var package = await ReadPackageAsync(
                 connection,
                 transaction,
-                state.PackageImportId,
+                packageImportId,
                 lockRows: true,
                 cancellationToken);
             if (package is null)
@@ -603,24 +787,42 @@ public sealed class ActivityPlanRepository(
             }
         }
 
-        const string sql = """
-            UPDATE launcher.servers
-            SET activity_plan_status = $1,
-                is_visible = $2,
-                revision = revision + 1,
-                updated_at = $3
-            WHERE id = $4
-              AND activity_plan_status IS NOT NULL
-              AND revision = $5;
-            """;
+        var sql = state.IsUnbound
+            ? """
+              UPDATE launcher.unbound_activity_plans
+              SET activity_plan_status = $1,
+                  revision = revision + 1,
+                  updated_at = $2
+              WHERE id = $3 AND revision = $4;
+              """
+            : """
+              UPDATE launcher.servers
+              SET activity_plan_status = $1,
+                  is_visible = $2,
+                  revision = revision + 1,
+                  updated_at = $3
+              WHERE id = $4
+                AND activity_plan_status IS NOT NULL
+                AND revision = $5;
+              """;
         try
         {
             await using var command = new NpgsqlCommand(sql, connection, transaction);
             command.Parameters.AddWithValue(nextStatus.ToString());
-            command.Parameters.AddWithValue(nextStatus == ActivityPlanStatus.Published);
-            command.Parameters.AddWithValue(now);
-            command.Parameters.AddWithValue(planId);
-            command.Parameters.AddWithValue(expectedRevision);
+            if (state.IsUnbound)
+            {
+                command.Parameters.AddWithValue(now);
+                command.Parameters.AddWithValue(planId);
+                command.Parameters.AddWithValue(expectedRevision);
+            }
+            else
+            {
+                command.Parameters.AddWithValue(nextStatus == ActivityPlanStatus.Published);
+                command.Parameters.AddWithValue(now);
+                command.Parameters.AddWithValue(planId);
+                command.Parameters.AddWithValue(expectedRevision);
+            }
+
             if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
             {
                 return new ActivityPlanMutationResult(
@@ -663,7 +865,15 @@ public sealed class ActivityPlanRepository(
             cancellationToken,
             where,
             planId);
-        return plans.SingleOrDefault();
+        if (plans.Count != 0)
+        {
+            return plans.Single();
+        }
+
+        return (await ReadUnboundPlansAsync(
+            connection,
+            cancellationToken,
+            planId)).SingleOrDefault();
     }
 
     private async Task<IReadOnlyList<AdminActivityPlanRecord>> ReadPlansAsync(
@@ -774,6 +984,64 @@ public sealed class ActivityPlanRepository(
                 reader.GetInt64(12),
                 new DateTimeOffset(reader.GetDateTime(13)),
                 new DateTimeOffset(reader.GetDateTime(14))));
+        }
+
+        return result;
+    }
+
+    private static async Task<IReadOnlyList<AdminActivityPlanRecord>>
+        ReadUnboundPlansAsync(
+            NpgsqlConnection connection,
+            CancellationToken cancellationToken,
+            string? planId = null)
+    {
+        var sql = planId is null
+            ? """
+              SELECT id, display_name, announcement, opens_at, closes_at,
+                     max_players, minimum_tier, activity_plan_status, revision,
+                     created_at, updated_at
+              FROM launcher.unbound_activity_plans
+              ORDER BY opens_at, closes_at, id;
+              """
+            : """
+              SELECT id, display_name, announcement, opens_at, closes_at,
+                     max_players, minimum_tier, activity_plan_status, revision,
+                     created_at, updated_at
+              FROM launcher.unbound_activity_plans
+              WHERE id = $1
+              ORDER BY opens_at, closes_at, id;
+              """;
+        var result = new List<AdminActivityPlanRecord>();
+        await using var command = new NpgsqlCommand(sql, connection);
+        if (planId is not null)
+        {
+            command.Parameters.AddWithValue(planId);
+        }
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(new AdminActivityPlanRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                new DateTimeOffset(reader.GetDateTime(3)),
+                new DateTimeOffset(reader.GetDateTime(4)),
+                reader.GetInt32(5),
+                Enum.Parse<AccessTier>(reader.GetString(6), ignoreCase: true),
+                PackageImportId: null,
+                ProfileId: null,
+                ProfileDisplayName: null,
+                Version: null,
+                MinecraftVersion: null,
+                Loader: null,
+                Enum.Parse<ActivityPlanStatus>(reader.GetString(7), ignoreCase: true),
+                ServerStatus.Closed,
+                ProductionReady: false,
+                DeploymentMatches: false,
+                reader.GetInt64(8),
+                new DateTimeOffset(reader.GetDateTime(9)),
+                new DateTimeOffset(reader.GetDateTime(10))));
         }
 
         return result;
@@ -1007,24 +1275,58 @@ public sealed class ActivityPlanRepository(
         string planId,
         CancellationToken cancellationToken)
     {
-        const string sql = """
+        const string boundSql = """
             SELECT display_name, opens_at, closes_at,
-                   activity_package_import_id, activity_plan_status, revision
+                   activity_package_import_id, activity_plan_status, revision,
+                   created_at
             FROM launcher.servers
             WHERE id = $1 AND activity_plan_status IS NOT NULL
             FOR UPDATE;
             """;
-        await using var command = new NpgsqlCommand(sql, connection, transaction);
-        command.Parameters.AddWithValue(planId);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken)
+        await using (var command = new NpgsqlCommand(boundSql, connection, transaction))
+        {
+            command.Parameters.AddWithValue(planId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return new PlanState(
+                    reader.GetString(0),
+                    new DateTimeOffset(reader.GetDateTime(1)),
+                    new DateTimeOffset(reader.GetDateTime(2)),
+                    reader.GetGuid(3),
+                    Enum.Parse<ActivityPlanStatus>(reader.GetString(4), ignoreCase: true),
+                    reader.GetInt64(5),
+                    IsUnbound: false,
+                    new DateTimeOffset(reader.GetDateTime(6)));
+            }
+        }
+
+        const string unboundSql = """
+            SELECT display_name, opens_at, closes_at,
+                   activity_plan_status, revision, created_at
+            FROM launcher.unbound_activity_plans
+            WHERE id = $1
+            FOR UPDATE;
+            """;
+        await using var unboundCommand = new NpgsqlCommand(
+            unboundSql,
+            connection,
+            transaction);
+        unboundCommand.Parameters.AddWithValue(planId);
+        await using var unboundReader = await unboundCommand.ExecuteReaderAsync(
+            cancellationToken);
+        return await unboundReader.ReadAsync(cancellationToken)
             ? new PlanState(
-                reader.GetString(0),
-                new DateTimeOffset(reader.GetDateTime(1)),
-                new DateTimeOffset(reader.GetDateTime(2)),
-                reader.GetGuid(3),
-                Enum.Parse<ActivityPlanStatus>(reader.GetString(4), ignoreCase: true),
-                reader.GetInt64(5))
+                unboundReader.GetString(0),
+                new DateTimeOffset(unboundReader.GetDateTime(1)),
+                new DateTimeOffset(unboundReader.GetDateTime(2)),
+                PackageImportId: null,
+                Enum.Parse<ActivityPlanStatus>(
+                    unboundReader.GetString(3),
+                    ignoreCase: true),
+                unboundReader.GetInt64(4),
+                IsUnbound: true,
+                new DateTimeOffset(unboundReader.GetDateTime(5)))
             : null;
     }
 
@@ -1387,9 +1689,11 @@ public sealed class ActivityPlanRepository(
         string Title,
         DateTimeOffset OpensAt,
         DateTimeOffset ClosesAt,
-        Guid PackageImportId,
+        Guid? PackageImportId,
         ActivityPlanStatus Status,
-        long Revision);
+        long Revision,
+        bool IsUnbound,
+        DateTimeOffset CreatedAt);
 
     private sealed record DeploymentTarget(
         string ServerId,

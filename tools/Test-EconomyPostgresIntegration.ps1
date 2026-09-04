@@ -9,7 +9,8 @@ param(
     [string]$PostgresAdmin = 'hechao_db_admin',
     [ValidateRange(1, 65535)]
     [int]$RemotePort = 5433,
-    [string]$RepositoryRoot = (Split-Path $PSScriptRoot -Parent)
+    [string]$RepositoryRoot = (Split-Path $PSScriptRoot -Parent),
+    [string]$TestFilter = 'FullyQualifiedName~EconomyPostgresIntegrationTests'
 )
 
 Set-StrictMode -Version Latest
@@ -100,9 +101,9 @@ try {
         "Username=$databaseName;Password=$password;SSL Mode=Disable;" +
         'Pooling=false;Timeout=5;Command Timeout=20'
     $env:DOTNET_ROOT = Split-Path $dotnet -Parent
-    & $dotnet test (Join-Path $RepositoryRoot 'tests\Hechao.Api.Tests\Hechao.Api.Tests.csproj') -c Release --no-restore -p:BuildAdminWeb=false --filter 'FullyQualifiedName~EconomyPostgresIntegrationTests'
+    & $dotnet test (Join-Path $RepositoryRoot 'tests\Hechao.Api.Tests\Hechao.Api.Tests.csproj') -c Release --no-restore -p:BuildAdminWeb=false --filter $TestFilter
     if ($LASTEXITCODE -ne 0) {
-        throw 'The economy PostgreSQL integration test failed.'
+        throw 'The PostgreSQL integration test failed.'
     }
 }
 finally {

@@ -1674,8 +1674,9 @@ test("production CSP keeps the activity calendar route loadable", async ({ page 
   expect(pageErrors.some(error => error.message.includes("cssRules"))).toBe(false);
 });
 
-test("activity calendar creates a draft from a selected date with a bound package", async ({ page }) => {
+test("activity calendar creates an unbound draft and binds a client later", async ({ page }) => {
   let createBody: Record<string, unknown> | null = null;
+  let updateBody: Record<string, unknown> | null = null;
   await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
   await mockAdminApi(page, {
     intercept: async (route, request, path) => {
@@ -1687,16 +1688,37 @@ test("activity calendar creates a draft from a selected date with a bound packag
           id: "activity-plan-20260818-c1d2e3f4",
           status: "Draft",
           effectiveStatus: "Closed",
-          productionReady: true,
-          deploymentMatches: true,
+          productionReady: false,
+          deploymentMatches: false,
           revision: 1,
           createdAt: now,
           updatedAt: now,
-          profileId: "summer-neoforge-1.21.11",
-          profileDisplayName: "夏日活动",
-          version: "1.0.0",
-          minecraftVersion: "1.21.11",
-          loader: "NeoForge"
+          packageImportId: null,
+          profileId: null,
+          profileDisplayName: null,
+          version: null,
+          minecraftVersion: null,
+          loader: null
+        } });
+        return true;
+      }
+      if (
+        path === "/v1/admin/activity-plans/activity-plan-20260818-c1d2e3f4" &&
+        request.method() === "PUT"
+      ) {
+        updateBody = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({ json: {
+          ...activityPlanOverview.plans[1],
+          ...updateBody,
+          id: "activity-plan-20260818-c1d2e3f4",
+          title: "夏日红石接力",
+          status: "Draft",
+          effectiveStatus: "Closed",
+          productionReady: true,
+          deploymentMatches: false,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now
         } });
         return true;
       }
@@ -1717,12 +1739,21 @@ test("activity calendar creates a draft from a selected date with a bound packag
   await expect.poll(() => createBody).not.toBeNull();
   expect(createBody).toMatchObject({
     title: "夏日红石接力",
-    packageImportId,
+    packageImportId: null,
     maximumPlayers: 30,
     minimumTier: "Participant"
   });
   expect(new Date(String(createBody!.opensAt)).toISOString()).toBe("2026-08-18T11:00:00.000Z");
   expect(new Date(String(createBody!.closesAt)).toISOString()).toBe("2026-08-18T14:00:00.000Z");
+  await expect(page.getByText("未绑定客户端", { exact: true }).first()).toBeVisible();
+
+  await page.getByLabel("绑定客户端").selectOption(packageImportId);
+  await page.getByRole("button", { name: "保存更改" }).click();
+  await expect.poll(() => updateBody).not.toBeNull();
+  expect(updateBody).toMatchObject({ packageImportId });
+  await expect(page.getByText("Production 已就绪", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("绑定客户端").locator('option[value=""]'))
+    .toHaveAttribute("disabled", "");
   await page.screenshot({ path: "../../../artifacts/admin-web-activity-plans-desktop.png", fullPage: true });
 });
 

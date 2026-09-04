@@ -93,7 +93,7 @@ public static class ActivityPlanRules
         DateTimeOffset closesAt,
         int maximumPlayers,
         AccessTier minimumTier,
-        Guid packageImportId,
+        Guid? packageImportId,
         long? expectedRevision)
     {
         var errors = new Dictionary<string, string[]>();
@@ -133,7 +133,7 @@ public static class ActivityPlanRules
 
         if (packageImportId == Guid.Empty)
         {
-            errors["packageImportId"] = ["请选择已完成的整合包。"];
+            errors["packageImportId"] = ["整合包标识无效。"];
         }
 
         if (expectedRevision is <= 0)

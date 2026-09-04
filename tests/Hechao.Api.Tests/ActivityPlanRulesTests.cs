@@ -24,7 +24,7 @@ public sealed class ActivityPlanRulesTests
     }
 
     [Fact]
-    public void Validate_RequiresBoundedScheduleAndCompletedPackageReference()
+    public void Validate_AllowsUnboundDraftButRejectsInvalidPackageIdentifier()
     {
         var opensAt = DateTimeOffset.Parse("2026-08-10T12:00:00Z");
         var request = new AdminActivityPlanCreateRequest(
@@ -37,6 +37,10 @@ public sealed class ActivityPlanRulesTests
             Guid.NewGuid());
 
         Assert.Empty(ActivityPlanRules.Validate(request));
+        Assert.Empty(ActivityPlanRules.Validate(request with
+        {
+            PackageImportId = null
+        }));
         Assert.Contains(
             "schedule",
             ActivityPlanRules.Validate(request with
