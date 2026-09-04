@@ -46,15 +46,11 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Grid Margin="1" SnapsToDevicePixels="True">
-                        <Border BorderBrush="{DynamicResource HechaoRedBrush}"
-                                BorderThickness="2"
-                                CornerRadius="4" />
-                        <Border Margin="3"
-                                BorderBrush="{DynamicResource InkBrush}"
-                                BorderThickness="1"
-                                CornerRadius="2" />
-                    </Grid>
+                    <Border Margin="2"
+                            BorderBrush="{DynamicResource HechaoRedBrush}"
+                            BorderThickness="2"
+                            CornerRadius="4"
+                            SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -193,6 +189,28 @@
     <Style x:Key="QuietIconButtonStyle" TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+
+    <Style x:Key="TopBarPageIconButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource QuietIconButtonStyle}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSettingsPage}" Value="True">
+                <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TopBarAccountButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource BaseButtonStyle}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsAccountPage}" Value="True">
+                <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="QuietIconToggleButtonStyle" TargetType="ToggleButton">
@@ -595,9 +613,11 @@
     </Style>
 
     <Style x:Key="MemorySegmentListStyle" TargetType="ListBox">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="0" />
+        <Setter Property="Height" Value="42" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="3" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ItemsPanel">
@@ -607,43 +627,71 @@
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="5"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ScrollViewer Focusable="False"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="MemorySegmentItemStyle" TargetType="ListBoxItem">
-        <Setter Property="Height" Value="38" />
-        <Setter Property="Margin" Value="0,0,5,0" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Margin" Value="1,0" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
-        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource HechaoFocusVisualStyle}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="MemorySegment"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="4">
-                        <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
-                    </Border>
+                    <Grid>
+                        <Border x:Name="MemorySegment"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <Border x:Name="MemorySegmentMarker"
+                                Height="2"
+                                Margin="12,0"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Bottom"
+                                Background="{DynamicResource HechaoRedBrush}"
+                                CornerRadius="1"
+                                Visibility="Collapsed" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="MemorySegment" Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
-                            <Setter TargetName="MemorySegment" Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
+                            <Setter TargetName="MemorySegment" Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="MemorySegment" Property="BorderBrush" Value="{DynamicResource HechaoRedBrush}" />
-                            <Setter TargetName="MemorySegment" Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+                            <Setter TargetName="MemorySegment" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                            <Setter TargetName="MemorySegmentMarker" Property="Visibility" Value="Visible" />
                             <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -654,7 +702,7 @@
     <Style x:Key="MemoryComboBoxStyle" TargetType="ComboBox">
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
@@ -778,8 +826,8 @@
     </Style>
 
     <Style x:Key="SwitchToggleStyle" TargetType="ToggleButton">
-        <Setter Property="Width" Value="42" />
-        <Setter Property="Height" Value="23" />
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="24" />
         <Setter Property="Background" Value="{DynamicResource SwitchOffBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SwitchOffBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -795,15 +843,13 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="12" />
                         <Ellipse x:Name="SwitchThumb"
-                                 Width="17"
-                                 Height="17"
-                                 Margin="3"
+                                 Width="16"
+                                 Height="16"
+                                 Margin="4"
                                  HorizontalAlignment="Left"
-                                 Fill="White">
-                            <Ellipse.Effect>
-                                <DropShadowEffect Color="{DynamicResource SwitchShadowColor}" BlurRadius="3" ShadowDepth="1" Direction="270" />
-                            </Ellipse.Effect>
-                        </Ellipse>
+                                 Fill="White"
+                                 Stroke="{DynamicResource BorderStrongBrush}"
+                                 StrokeThickness="1" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -813,6 +859,10 @@
                             <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource HechaoRedBrush}" />
                             <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource HechaoRedDarkBrush}" />
                             <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right" />
+                            <Setter TargetName="SwitchThumb" Property="Stroke" Value="Transparent" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="SwitchTrack" Property="Opacity" Value="0.78" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45" />
@@ -1243,6 +1293,54 @@
         <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
 
+    <Style x:Key="SettingsRowStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource WorkspaceFlatRowStyle}">
+        <Setter Property="Padding" Value="0,15" />
+        <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    </Style>
+
+    <Style x:Key="SettingsActionButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinWidth" Value="112" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="SettingsDangerActionButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource DangerButtonStyle}">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinWidth" Value="112" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="SettingsPrimaryActionButtonStyle"
+           TargetType="Button"
+           BasedOn="{StaticResource PrimaryButtonStyle}">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinWidth" Value="112" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="13" />
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource InkFaintBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SettingsContentStackStyle" TargetType="StackPanel">
+        <Setter Property="Margin" Value="28,22,28,30" />
+        <Setter Property="MaxWidth" Value="760" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
     <Style x:Key="SettingsWorkspaceTabControlStyle" TargetType="TabControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -1261,14 +1359,14 @@
                 <ControlTemplate TargetType="TabControl">
                     <Grid SnapsToDevicePixels="True">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="292" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="520" />
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{DynamicResource DirectoryBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="0,0,1,0">
-                            <ItemsPresenter Margin="28,90,30,18"
+                            <ItemsPresenter Margin="20,90,18,18"
                                             KeyboardNavigation.TabNavigation="Local" />
                         </Border>
                         <Border Grid.Column="1"
@@ -1285,9 +1383,9 @@
     </Style>
 
     <Style x:Key="SettingsCategoryTabItemStyle" TargetType="TabItem">
-        <Setter Property="Height" Value="62" />
-        <Setter Property="Margin" Value="0,0,0,6" />
-        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Height" Value="54" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="Padding" Value="12,0" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
@@ -1311,7 +1409,7 @@
                         </Border>
                         <Border x:Name="CategoryMarker"
                                 Width="2"
-                                Height="28"
+                                Height="24"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Background="{DynamicResource HechaoRedBrush}"

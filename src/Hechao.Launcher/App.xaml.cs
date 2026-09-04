@@ -48,6 +48,10 @@ public partial class App : Application
                 previewPage);
             var previewWindow = new MainWindow(
                 previewViewModel);
+            Development.LauncherUiPreview.TryGetRequestedSettingsTab(
+                e.Args,
+                out var previewSettingsTabIndex);
+            previewWindow.SelectPreviewSettingsTab(previewSettingsTabIndex);
             previewWindow.Title = previewUsesDarkMode
                 ? "赫朝启动器 - UI 预览（黑夜）"
                 : "赫朝启动器 - UI 预览（日间）";

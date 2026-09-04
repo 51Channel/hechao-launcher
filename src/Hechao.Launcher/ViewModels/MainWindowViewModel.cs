@@ -205,7 +205,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _useSystemProxy = _settings.UseSystemProxy;
         _useDarkMode = _settings.UseDarkMode;
         _themeService.Apply(_useDarkMode);
-        StartupPageOptions = ["服务器", "下载中心", "活动"];
+        StartupPageOptions = ["服务器", "活动", "下载中心"];
         _selectedStartupPage = StartupPageOptions.Contains(_settings.StartupPage)
             ? _settings.StartupPage
             : "服务器";

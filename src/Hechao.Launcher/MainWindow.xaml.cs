@@ -86,6 +86,16 @@ public partial class MainWindow : Window
         InitializeComponent();
         AttachViewModel(viewModel);
     }
+
+    internal void SelectPreviewSettingsTab(int selectedIndex)
+    {
+        if (selectedIndex < 0 || selectedIndex >= SettingsWorkspaceTabs.Items.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(selectedIndex));
+        }
+
+        SettingsWorkspaceTabs.SelectedIndex = selectedIndex;
+    }
 #endif
 
     private void AttachViewModel(MainWindowViewModel viewModel)
@@ -286,6 +296,21 @@ public partial class MainWindow : Window
         {
             DragMove();
         }
+    }
+
+    private void TitleBar_OnPreviewMouseLeftButtonUp(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left ||
+            FindAncestor<ButtonBase>(e.OriginalSource as DependencyObject) is null)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Input,
+            Keyboard.ClearFocus);
     }
 
     private void MinimizeButton_OnClick(object sender, RoutedEventArgs e)

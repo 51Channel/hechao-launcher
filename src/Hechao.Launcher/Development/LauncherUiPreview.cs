@@ -14,6 +14,8 @@ namespace Hechao.Launcher.Development;
 internal static class LauncherUiPreview
 {
     private const string PreviewPageArgumentPrefix = "--ui-preview-page=";
+    private const string PreviewSettingsTabArgumentPrefix =
+        "--ui-preview-settings-tab=";
     private const string ScreenshotArgumentPrefix = "--ui-preview-screenshot=";
     private const string ScreenshotSizeArgumentPrefix = "--ui-preview-size=";
     private const string ScreenshotThemeSwitchArgumentPrefix =
@@ -67,8 +69,8 @@ internal static class LauncherUiPreview
         ArgumentNullException.ThrowIfNull(arguments);
 
         string? outputPath = null;
-        var width = 1500;
-        var height = 860;
+        var width = 1200;
+        var height = 720;
         bool? useDarkModeAfterRender = null;
         foreach (var argument in arguments)
         {
@@ -181,6 +183,40 @@ internal static class LauncherUiPreview
         }
 
         page = LauncherPage.Servers;
+        return false;
+    }
+
+    public static bool TryGetRequestedSettingsTab(
+        IEnumerable<string> arguments,
+        out int selectedIndex)
+    {
+        ArgumentNullException.ThrowIfNull(arguments);
+
+        foreach (var argument in arguments)
+        {
+            if (!argument.StartsWith(
+                    PreviewSettingsTabArgumentPrefix,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            selectedIndex = argument[PreviewSettingsTabArgumentPrefix.Length..]
+                .Trim()
+                .ToLowerInvariant() switch
+            {
+                "game" => 0,
+                "client" => 1,
+                "behavior" => 2,
+                "diagnostics" => 3,
+                _ => throw new ArgumentException(
+                    "UI preview settings tab must be game, client, behavior, or diagnostics.",
+                    nameof(arguments))
+            };
+            return true;
+        }
+
+        selectedIndex = 0;
         return false;
     }
 
@@ -409,6 +445,22 @@ internal static class LauncherUiPreview
                     activityStartsAt.AddHours(3),
                     ServerCatalogSection.Activity),
                 new(
+                    "block-break-valorant",
+                    "赫朝挖方块瓦罗兰特爆破挑战",
+                    "挖方块爆破",
+                    "爆",
+                    ServerStatus.Online,
+                    8,
+                    10,
+                    "1.20.1",
+                    ModLoaderKind.Forge,
+                    AccessTier.Participant,
+                    "block-break-valorant-1.20.1",
+                    "挖掘资源换取装备，在方块战场完成限时爆破挑战。",
+                    activityStartsAt.AddHours(1),
+                    activityStartsAt.AddDays(6),
+                    ServerCatalogSection.Activity),
+                new(
                     "doll-night",
                     "玩偶惊魂夜",
                     "惊魂夜",
@@ -440,6 +492,13 @@ internal static class LauncherUiPreview
                     132_120_576,
                     string.Empty,
                     now.AddDays(-2)),
+                new(
+                    "block-break-valorant-1.20.1",
+                    "挖方块爆破客户端",
+                    "1.0.0",
+                    164_626_432,
+                    string.Empty,
+                    now.AddHours(-18)),
                 new(
                     "doll-night-1.21.11",
                     "玩偶惊魂夜客户端",
