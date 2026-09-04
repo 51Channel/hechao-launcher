@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-09-04T04:37:37Z",
+  "generatedAtUtc": "2026-09-04T06:54:46Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -90,41 +90,41 @@
     },
     {
       "component": "api",
-      "version": "0.38.3-20260904T035059Z",
-      "releaseTag": "api-v0.38.3",
-      "releaseCommit": "a4f4842556709667386430bc1991f3c92fe23d74",
-      "taggedAt": "2026-09-04T12:37:26+08:00",
+      "version": "0.38.4-20260904T060203Z",
+      "releaseTag": "api-v0.38.4",
+      "releaseCommit": "4f617139db5bdb12716a11fba61c967ec1ef7890",
+      "taggedAt": "2026-09-04T14:54:16+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "301ea5b850ccc563163e8c98d9c043c5bc666087"
+        "value": "fff9bacf284ea93bad7223a04fa1132258da2bb6"
       },
-      "deploymentState": "production-activity-plan-optional-client-binding-health-ready",
-      "historicalNote": "Database migrations are 36/36. Administrators can create, edit, archive and restore an unbound activity draft, then bind a completed client package later without changing the plan identity or creation time. Unbound plans cannot publish or deploy and never enter the player catalog. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
+      "deploymentState": "production-activity-plan-physical-target-binding-health-ready",
+      "historicalNote": "Database migrations are 37/37 with btree_gist 1.7. Logical activity plans are shown only in activity planning and player activity catalogs, while physical carrier slots remain in the regular directory and control panel. Status, downloads, deployment and Velocity resolve through the bound physical target. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
       "artifacts": [
         {
-          "name": "hechao-api-0.38.3-20260904T035059Z-linux-x64.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.38.3-20260904T035059Z",
-          "size": 47007007,
-          "sha256": "C23739F8E88002134FD32206CCDB2D8DA4FD09DD468A4A138BF060816AA5D904",
+          "name": "hechao-api-0.38.4-20260904T060203Z-linux-x64.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.38.4-20260904T060203Z",
+          "size": 47017068,
+          "sha256": "EC24F6101BA95B8C2FAC5B5D0F631F00F6C89BAEB56792223A0CBE7E9A4A9D55",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.38.3-20260904T035059Z/Hechao.Api",
-          "size": 105718852,
-          "sha256": "E6A94F921F90FD53A955D1919A52244D6E980FDDB9F962CF1F05C2CB76F374D6",
+          "location": "/opt/hechao-launcher-api/releases/0.38.4-20260904T060203Z/Hechao.Api",
+          "size": 105745476,
+          "sha256": "AD3F54B7987249941BDEAA553C9980D38E6FD110A0658C9B1A887480ED2C3707",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z"
+        "target": "/opt/hechao-launcher-api/releases/0.38.3-20260904T035059Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.38.3.md",
-        "docs/evidence/API_0.38.3_PRODUCTION_DEPLOYMENT_2026-09-04.json",
-        "docs/API_RELEASE_0.38.3_CANDIDATE.md"
+        "docs/API_RELEASE_0.38.4.md",
+        "docs/evidence/API_0.38.4_PRODUCTION_DEPLOYMENT_2026-09-04.json",
+        "docs/API_RELEASE_0.38.4_CANDIDATE.md"
       ]
     },
     {
