@@ -1139,8 +1139,8 @@
         "kind": "git-commit",
         "value": "8a47513a9e54fb349fbdf90d25ad683f055dde1a"
       },
-      "deploymentState": "production-update-channel-private-oss-official-brand-lockup-crisp-icon-authenticated-acceptance",
-      "historicalNote": "Launcher 0.15.14 uses the approved icon-and-wordmark lockup in the sidebar and header, generates each Windows icon size directly from the final eight-rectangle geometry, and preserves the durable session behavior. The executable remains unsigned by project decision.",
+      "deploymentState": "historical-production-private-oss-official-brand-lockup-crisp-icon-superseded-by-0.15.15",
+      "historicalNote": "Launcher 0.15.14 uses the approved icon-and-wordmark lockup in the sidebar and header, generates each Windows icon size directly from the final eight-rectangle geometry, and preserves the durable session behavior. It is the immediate update-channel rollback for 0.15.15; the executable remains unsigned by project decision.",
       "artifacts": [
         {
           "name": "Hechao-Launcher-Setup-0.15.14-win-x64.exe",
@@ -1157,6 +1157,37 @@
       "evidence": [
         "docs/LAUNCHER_RELEASE_0.15.14.md",
         "docs/evidence/LAUNCHER_0.15.14_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.15",
+      "releaseTag": "launcher-v0.15.15",
+      "releaseCommit": "401dbe941d0a41a99d9365c08e28115828eea477",
+      "taggedAt": "2026-09-04T14:00:53+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "ea19684cb9786b46057a01e8dcdab82db526a5f2"
+      },
+      "deploymentState": "production-update-channel-private-oss-pr1-compact-themes-official-lockup-player-avatar-authenticated-acceptance",
+      "historicalNote": "Launcher 0.15.15 integrates pull request #1's compact five-workspace layout, light and dark themes, settings compatibility and debug preview. Review restored the approved theme-aware Hechao lockup and signed-in player skin avatar before release. The executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.15-win-x64.exe",
+          "location": "releases/launcher/0.15.15/Hechao-Launcher-Setup-0.15.15-win-x64.exe",
+          "size": 62829606,
+          "sha256": "D5A65E7A20A1F005E4CBFE13A1C65306445D6C9E87E6FD63455305D28AA6A3A0",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260904T055121Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.15.md",
+        "docs/evidence/LAUNCHER_0.15.15_RELEASE_ACCEPTANCE_2026-09-04.json"
       ]
     }
   ]
