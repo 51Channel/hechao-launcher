@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-09-04T00:46:40Z",
+  "generatedAtUtc": "2026-09-04T01:42:53Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -14,8 +14,8 @@
         "kind": "signed-manifest",
         "value": "43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE"
       },
-      "deploymentState": "test-r2-100-percent-gray-production-unassigned-hidden-closed-server-deployed-stopped",
-      "historicalNote": "The Forge 1.12.2 client is Test-only and the Java 8 Minigame slot has never been started. Gray and Production remain unassigned until forwarding, voice UDP, deep metrics, license, world restore, fresh-grant and 2/3/5/20-player gates pass.",
+      "deploymentState": "test-r2-100-percent-gray-production-unassigned-player-visible-online-server-running",
+      "historicalNote": "The Forge 1.12.2 client remains Test-only. The Java 8 Minigame slot has passed unattended S4U startup and console self-test. On 2026-09-04 an authenticated administrator separately changed the catalog to player-visible and Online; Gray and Production remain unassigned and the remaining forwarding, voice UDP, deep metrics, license, world restore, fresh-grant and 2/3/5/20-player gates still apply.",
       "artifacts": [
         {
           "name": "minigame-commercial-street-forge-1.12.2 1.0.0 signed manifest",
@@ -40,7 +40,7 @@
       ],
       "rollback": {
         "kind": "test-channel-unassign-and-stopped-slot-replace",
-        "target": "unassign minigame-commercial-street-forge-1.12.2/1.0.0 from Test; keep minigame-commercial-street stopped, hidden and Closed"
+        "target": "unassign minigame-commercial-street-forge-1.12.2/1.0.0 from Test; restore the server deployment from its backup; manage catalog visibility and process state as separate administrator actions"
       },
       "evidence": [
         "docs/COMMERCIAL_STREET_PACKAGE_1.0.0.md",
@@ -90,41 +90,41 @@
     },
     {
       "component": "api",
-      "version": "0.38.1-20260904T002600Z",
-      "releaseTag": "api-v0.38.1",
-      "releaseCommit": "444f17b9f66c548038102c342bc3d695cdf9d5ba",
-      "taggedAt": "2026-09-04T08:46:40+08:00",
+      "version": "0.38.2-20260904T013112Z",
+      "releaseTag": "api-v0.38.2",
+      "releaseCommit": "0f53bb08efe149c2ebedc2f61c9096456dfb6440",
+      "taggedAt": "2026-09-04T09:42:53+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "d7191c777bf572741e4650c4b32a1800347a7a25"
+        "value": "f26c4a4396953abb502972ba7657e467e6743d5a"
       },
-      "deploymentState": "production-admin-stale-sign-in-tab-session-recovery-health-ready",
-      "historicalNote": "Database migrations remain 35/35. Existing sign-in tabs now recover after another tab establishes the administrator session without relaxing ticket, tier or MFA boundaries. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
+      "deploymentState": "production-admin-directory-shows-hidden-servers-with-correct-visibility-semantics-health-ready",
+      "historicalNote": "Database migrations remain 35/35. The administrator server directory defaults to all catalog records, labels isVisible=false as player-hidden, and excludes already cataloged hidden servers from discovery. A real Chrome session confirmed the commercial street row appears exactly once. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
       "artifacts": [
         {
-          "name": "hechao-api-0.38.1-20260904T002600Z-linux-x64.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z",
-          "size": 46999944,
-          "sha256": "04E78E5EB7803EF0404C1966F67F0B11983DD85D65C81D8A28193EA1E0560CFA",
+          "name": "hechao-api-0.38.2-20260904T013112Z-linux-x64.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z",
+          "size": 46999847,
+          "sha256": "F67E349716CFDB3241D196BFD9D338E5C4510CE17205D38A68537633B2C96A71",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z/Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z/Hechao.Api",
           "size": 105703492,
-          "sha256": "42080526D4B4FA4FA34663A89F3CDB6F6F42DEEED955DCB38E58C82B86E07B2C",
+          "sha256": "542F0AADB41C98518A85FAAA517EBFF292A8262A11C37BE1A87C2C54C1C0BC4F",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z"
+        "target": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.38.1.md",
-        "docs/evidence/API_0.38.1_PRODUCTION_DEPLOYMENT_2026-09-04.json",
-        "docs/API_RELEASE_0.38.1_CANDIDATE.md"
+        "docs/API_RELEASE_0.38.2.md",
+        "docs/evidence/API_0.38.2_PRODUCTION_DEPLOYMENT_2026-09-04.json",
+        "docs/API_RELEASE_0.38.2_CANDIDATE.md"
       ]
     },
     {
