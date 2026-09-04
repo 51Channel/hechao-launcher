@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-09-04T01:39:24Z",
+  "component": "api",
+  "version": "0.38.2-20260904T013112Z",
+  "releaseTag": "api-v0.38.2",
+  "releaseCommit": "f26c4a4396953abb502972ba7657e467e6743d5a",
+  "releaseDirectory": "/opt/hechao-launcher-api/releases/0.38.2-20260904T013112Z",
+  "artifact": {
+    "archiveName": "hechao-api-0.38.2-20260904T013112Z-linux-x64.tar.gz",
+    "archiveSizeBytes": 46999847,
+    "archiveSha256": "F67E349716CFDB3241D196BFD9D338E5C4510CE17205D38A68537633B2C96A71",
+    "executableSizeBytes": 105703492,
+    "executableSha256": "542F0AADB41C98518A85FAAA517EBFF292A8262A11C37BE1A87C2C54C1C0BC4F",
+    "productionHashMatched": true,
+    "pdbCount": 0,
+    "environmentFileCount": 0
+  },
+  "database": {
+    "migrationCount": 35,
+    "migrationMaximum": 35,
+    "migrationAddedByRelease": false,
+    "ready": true,
+    "backup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.38.2-20260904T013112Z.dump",
+      "sizeBytes": 7964461,
+      "sha256": "B96A794030E772F0D6FBF632457D3E1B853F40245A437E04A622A74720788040",
+      "pgRestoreListPassed": true
+    }
+  },
+  "tests": {
+    "adminWebVitestPassed": 19,
+    "adminWebPlaywrightPassed": 36,
+    "solutionPassed": 838,
+    "externalPostgresSkipped": 1,
+    "powerShell7CompliancePassed": 49,
+    "releaseProvenancePassed": 29,
+    "failed": 0,
+    "gitDiffCheckPassed": true
+  },
+  "acceptance": {
+    "mainPid": 1538900,
+    "nRestarts": 0,
+    "serviceState": "active/running",
+    "healthz": 200,
+    "readyz": 200,
+    "warningOrHigherLogs": 0,
+    "activePackageImportPipeline": 0,
+    "awaitingReviewPackageImports": 1,
+    "serverControlOperationQueue": 0,
+    "serverControlCommandQueue": 0,
+    "adminServerRouteStatus": 200,
+    "anonymousAdminSessionStatus": 401,
+    "wrongHostAdminStatus": 404,
+    "publicPort8090Reachable": false,
+    "realBrowserDefaultFilter": "全部",
+    "realBrowserCommercialStreetRows": 1,
+    "realBrowserCommercialStreetDuplicateOptions": 0,
+    "realBrowserAddableTargetCount": 0,
+    "browserWarningOrErrorCount": 0,
+    "rollbackNeeded": false
+  },
+  "catalogState": {
+    "serverId": "minigame-commercial-street",
+    "diagnosisRevision": 1,
+    "diagnosisStatus": "Closed",
+    "diagnosisVisible": false,
+    "postAdminRevision": 3,
+    "postAdminStatus": "Online",
+    "postAdminVisible": true,
+    "changeSource": "authenticated administrator actions before deployment",
+    "changedByRelease": false
+  },
+  "rollback": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z",
+  "operations": {
+    "apiServiceRestarted": true,
+    "nginxChanged": false,
+    "publisherChanged": false,
+    "velocityChanged": false,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "credentialsRecorded": false,
+    "cookiesRecorded": false,
+    "signedUrlsRecorded": false,
+    "personalAccountDetailsRecorded": false
+  }
+}

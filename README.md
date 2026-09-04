@@ -1,5 +1,11 @@
 # 赫朝启动器
 
+> `2026-09-04` 管理后台服务器目录可见性修复已随 API `0.38.2` 上线。后台默认显示
+> 全部已建档服务器，并明确区分“玩家可见 / 玩家隐藏”；隐藏服务器仍可管理，但不会
+> 被“新增服务器”重复发现。真实 Chrome 已确认商业街只出现一行、默认筛选为“全部”、
+> 新增抽屉无重复候选且控制台零 warning/error。发布记录见
+> [`docs/API_RELEASE_0.38.2.md`](docs/API_RELEASE_0.38.2.md)。
+
 > `2026-09-04` 管理后台旧登录页自动恢复已随 API `0.38.1` 上线。管理员在另一个标签页
 > 通过启动器票据和 MFA/可信设备建立会话后，原先停在“需要管理员身份”的页面会在重新
 > 获得焦点、恢复可见或最多约 `5` 秒内自动进入原深层路由，并保留 `server` 参数。
@@ -10,7 +16,8 @@
 > 仅发布到 `Test=100% / r2`，服务端以 Java `8`、`Xms=1024 MiB`、`Xmx=6144 MiB`
 > 部署到独立小游戏槽 `minigame-commercial-street / 25602`。配套 API `0.38.0` 与 owl5
 > ServerControlAgent `0.8.2` 已上线并修复主机重启后无人登录时的启动失败；商业街当前通过
-> `S4U` 后台任务稳定运行，目录继续隐藏并保持 `Closed`，Gray/Production 未分配。详情见
+> `S4U` 后台任务稳定运行。`2026-09-04 09:18-09:19` 已认证管理员将其改为玩家可见并设为
+> `Online`；客户端仍仅在 Test 通道，Gray/Production 未分配。详情见
 > [`docs/COMMERCIAL_STREET_PACKAGE_1.0.0.md`](docs/COMMERCIAL_STREET_PACKAGE_1.0.0.md)、
 > [`docs/API_RELEASE_0.38.0.md`](docs/API_RELEASE_0.38.0.md) 和
 > [`docs/SERVER_CONTROL_AGENT_RELEASE_0.8.2.md`](docs/SERVER_CONTROL_AGENT_RELEASE_0.8.2.md)。
@@ -336,7 +343,7 @@
 > 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.14`、API `0.38.1`、
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.14`、API `0.38.2`、
 LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.8.2`、
 owl9 ServerControlAgent `0.7.2`、Velocity Authorizer `0.5.0`（`monitor`）和 Lobby Guard
 `0.1.0`；可回滚部署、独立生存/活动/PVP/小游戏槽、全权限游戏控制台、标准整合包、
