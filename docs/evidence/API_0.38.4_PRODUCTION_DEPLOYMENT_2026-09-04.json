@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-09-04T06:45:08Z",
+  "component": "api",
+  "version": "0.38.4-20260904T060203Z",
+  "releaseTag": "api-v0.38.4",
+  "releaseCommit": "fff9bacf284ea93bad7223a04fa1132258da2bb6",
+  "releaseDirectory": "/opt/hechao-launcher-api/releases/0.38.4-20260904T060203Z",
+  "artifact": {
+    "archiveName": "hechao-api-0.38.4-20260904T060203Z-linux-x64.tar.gz",
+    "archiveSizeBytes": 47017068,
+    "archiveSha256": "EC24F6101BA95B8C2FAC5B5D0F631F00F6C89BAEB56792223A0CBE7E9A4A9D55",
+    "archiveEntryCount": 164,
+    "releaseFileCount": 159,
+    "executableSizeBytes": 105745476,
+    "executableSha256": "AD3F54B7987249941BDEAA553C9980D38E6FD110A0658C9B1A887480ED2C3707",
+    "productionHashMatched": true,
+    "pdbCount": 0,
+    "sourceMapCount": 0,
+    "environmentFileCount": 0,
+    "secretLikeFileCount": 0
+  },
+  "database": {
+    "migrationCount": 37,
+    "migrationMaximum": 37,
+    "migrationAddedByRelease": true,
+    "migrationName": "activity_plan_target_server",
+    "btreeGistVersion": "1.7",
+    "ready": true,
+    "backup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.38.4-20260904T061806Z.dump",
+      "sizeBytes": 7932140,
+      "sha256": "0D500EA4C5038AC385B1EA9935F98C7816B2914988903AEA1D6BFECAC89C47B6",
+      "pgRestoreListPassed": true
+    },
+    "configurationBackup": {
+      "path": "/var/backups/hechao-launcher/api-predeploy/pre-api-0.38.4-20260904T061806Z",
+      "fileCount": 6,
+      "manifestSha256": "8D05DA38C8DA7F619A25A95A81D99A17B289E1A6CC8FCA735E1AB6A9CE2AD2F5",
+      "allFilesVerified": true
+    }
+  },
+  "tests": {
+    "adminWebVitestPassed": 19,
+    "adminWebPlaywrightPassed": 38,
+    "apiPassed": 394,
+    "solutionPassed": 849,
+    "externalPostgresSkipped": 3,
+    "isolatedPostgresPassed": 3,
+    "powerShell7CompliancePassed": 49,
+    "releaseProvenancePassed": 29,
+    "failed": 0,
+    "formatCheckPassed": true,
+    "gitDiffCheckPassed": true,
+    "secretScanPassed": true,
+    "buildArtifactScanPassed": true
+  },
+  "workflowAcceptance": {
+    "logicalPlanId": "activity-20260905-69e6741d9",
+    "physicalServerId": "minigame-commercial-street",
+    "backendHost": "127.0.0.1",
+    "backendPort": 25602,
+    "adminDirectoryPhysicalRows": 1,
+    "adminDirectoryLogicalPlanRows": 0,
+    "activityPlanLogicalRows": 1,
+    "activityPlanPhysicalRows": 0,
+    "playerCatalogShowsLogicalPlan": true,
+    "playerCatalogHidesPhysicalServer": true,
+    "publicActivityCatalogServerIds": [
+      "activity-20260905-69e6741d9"
+    ],
+    "downloadAuthorizationUsesLogicalPlanOnly": true,
+    "permissionPreview": {
+      "requestedServerId": "activity-20260905-69e6741d9",
+      "resolvedServerId": "minigame-commercial-street",
+      "resolvedBackendPort": 25602
+    },
+    "velocityAuthorization": {
+      "allowed": true,
+      "reason": "Allowed",
+      "serverId": "activity-20260905-69e6741d9",
+      "velocityTarget": "minigame-commercial-street",
+      "backendHost": "127.0.0.1",
+      "backendPort": 25602
+    },
+    "formalBindings": [
+      {
+        "activityPlanId": "activity-20260825-a857dc283",
+        "targetServerId": "activity-modular-boss"
+      },
+      {
+        "activityPlanId": "activity-20260905-69e6741d9",
+        "targetServerId": "minigame-commercial-street"
+      },
+      {
+        "activityPlanId": "activity-20260905-d083ca4dd",
+        "targetServerId": "minigame-commercial-street"
+      }
+    ]
+  },
+  "rollbackCompatibility": {
+    "version": "0.38.3",
+    "databaseMigrationRetained": true,
+    "databaseDowngradeRequired": false,
+    "writeFreezeRequired": true,
+    "knownSemanticLimitation": "The old API does not understand physical activity targets and can show duplicate catalog rows during a short rollback."
+  },
+  "acceptance": {
+    "mainPid": 1626629,
+    "nRestarts": 0,
+    "serviceState": "active/running",
+    "healthz": 200,
+    "readyz": 200,
+    "warningOrHigherLogs": 0,
+    "activePackageImportPipeline": 0,
+    "awaitingReviewPackageImports": 1,
+    "serverControlOperationQueue": 0,
+    "serverControlCommandQueue": 0,
+    "activityDeploymentQueue": 0,
+    "publicActivityCatalogStatus": 200,
+    "adminActivityPlanRouteStatus": 200,
+    "anonymousAdminSessionStatus": 401,
+    "launcherApiAdminRouteStatus": 404,
+    "publicPort8090Reachable": false,
+    "websiteStatusAfterRedirect": 200,
+    "relayApiHealthStatus": 200,
+    "rollbackNeeded": false
+  },
+  "cleanup": {
+    "isolatedDatabasesRemaining": 0,
+    "temporarySystemdUnitsRemaining": 0,
+    "temporaryPort18094To18096Listeners": 0,
+    "temporaryUploadFilesRemaining": 0
+  },
+  "rollback": "/opt/hechao-launcher-api/releases/0.38.3-20260904T035059Z",
+  "operations": {
+    "apiServiceRestarted": true,
+    "nginxChanged": false,
+    "nginxPidBefore": 412310,
+    "nginxPidAfter": 412310,
+    "publisherChanged": false,
+    "publisherPidBefore": 2812528,
+    "publisherPidAfter": 2812528,
+    "velocityChanged": false,
+    "velocityPidBefore": 5040,
+    "velocityPidAfter": 5040,
+    "serverControlAgentChanged": false,
+    "owl5ServerControlAgentPidBefore": 4764,
+    "owl5ServerControlAgentPidAfter": 4764,
+    "owl5JavaPidsBefore": [2948, 4500, 5040, 5160],
+    "owl5JavaPidsAfter": [2948, 4500, 5040, 5160],
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "credentialsRecorded": false,
+    "cookiesRecorded": false,
+    "signedUrlsRecorded": false,
+    "personalAccountDetailsRecorded": false
+  }
+}
