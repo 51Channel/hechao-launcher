@@ -1,5 +1,11 @@
 # 赫朝启动器
 
+> `2026-09-04` 管理后台旧登录页自动恢复已随 API `0.38.1` 上线。管理员在另一个标签页
+> 通过启动器票据和 MFA/可信设备建立会话后，原先停在“需要管理员身份”的页面会在重新
+> 获得焦点、恢复可见或最多约 `5` 秒内自动进入原深层路由，并保留 `server` 参数。
+> 认证边界没有放宽。发布记录见
+> [`docs/API_RELEASE_0.38.1.md`](docs/API_RELEASE_0.38.1.md)。
+
 > `2026-09-04` 赫朝商业街建筑对决 Forge `1.12.2` 标准整合包已完成生产导入：客户端
 > 仅发布到 `Test=100% / r2`，服务端以 Java `8`、`Xms=1024 MiB`、`Xmx=6144 MiB`
 > 部署到独立小游戏槽 `minigame-commercial-street / 25602`。配套 API `0.38.0` 与 owl5
@@ -330,7 +336,7 @@
 > 归属，真正 PVP 的进程、玩家、CPU、内存和磁盘已正常上报。发布证据见
 > [`docs/STATUS_COLLECTOR_RELEASE_0.2.2.md`](docs/STATUS_COLLECTOR_RELEASE_0.2.2.md)。
 
-赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.14`、API `0.38.0`、
+赫朝 Minecraft 社区的 Windows 桌面启动器。当前生产为启动器 `0.15.14`、API `0.38.1`、
 LuckPerms Tier Agent `0.1.3`、Publisher Agent `1.2.1`、owl5 ServerControlAgent `0.8.2`、
 owl9 ServerControlAgent `0.7.2`、Velocity Authorizer `0.5.0`（`monitor`）和 Lobby Guard
 `0.1.0`；可回滚部署、独立生存/活动/PVP/小游戏槽、全权限游戏控制台、标准整合包、

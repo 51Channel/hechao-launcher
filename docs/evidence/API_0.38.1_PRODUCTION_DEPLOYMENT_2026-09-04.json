@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-09-04T00:41:47Z",
+  "component": "api",
+  "version": "0.38.1-20260904T002600Z",
+  "releaseTag": "api-v0.38.1",
+  "releaseCommit": "d7191c777bf572741e4650c4b32a1800347a7a25",
+  "releaseDirectory": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z",
+  "artifact": {
+    "archiveName": "hechao-api-0.38.1-20260904T002600Z-linux-x64.tar.gz",
+    "archiveSizeBytes": 46999944,
+    "archiveSha256": "04E78E5EB7803EF0404C1966F67F0B11983DD85D65C81D8A28193EA1E0560CFA",
+    "executableSizeBytes": 105703492,
+    "executableSha256": "42080526D4B4FA4FA34663A89F3CDB6F6F42DEEED955DCB38E58C82B86E07B2C",
+    "productionHashMatched": true
+  },
+  "database": {
+    "migrationCount": 35,
+    "migrationMaximum": 35,
+    "migrationAddedByRelease": false,
+    "ready": true,
+    "backup": {
+      "path": "/var/backups/hechao-launcher/database/hechao-launcher-pre-api-0.38.1-20260904T002600Z.dump",
+      "sizeBytes": 8001642,
+      "sha256": "780A6ADDA7CF710BE5CEA30EDC3E7CC9BE19DBA8B8A3C7AF44DB61CABF6CCBBF",
+      "pgRestoreListPassed": true
+    }
+  },
+  "tests": {
+    "adminWebVitestPassed": 19,
+    "adminWebPlaywrightPassed": 35,
+    "solutionPassed": 838,
+    "externalPostgresSkipped": 1,
+    "powerShell7CompliancePassed": 49,
+    "releaseProvenancePassed": 29,
+    "failed": 0,
+    "gitDiffCheckPassed": true
+  },
+  "acceptance": {
+    "mainPid": 1521103,
+    "nRestarts": 0,
+    "serviceState": "active/running",
+    "healthz": 200,
+    "readyz": 200,
+    "warningOrHigherLogs": 0,
+    "packageImportQueue": 0,
+    "serverControlOperationQueue": 0,
+    "serverControlCommandQueue": 0,
+    "deepLinkStatus": 200,
+    "anonymousAdminSessionStatus": 401,
+    "wrongHostAdminStatus": 404,
+    "realBrowserSessionRecovered": true,
+    "deepRouteAndServerQueryPreserved": true,
+    "browserWarningOrErrorCount": 0,
+    "rollbackNeeded": false
+  },
+  "security": {
+    "launcherTicketStillRequired": true,
+    "administratorTierStillRequired": true,
+    "mfaOrTrustedDeviceStillRequired": true,
+    "authenticationBoundaryRelaxed": false
+  },
+  "rollback": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z",
+  "operations": {
+    "apiServiceRestarted": true,
+    "nginxChanged": false,
+    "publisherChanged": false,
+    "velocityChanged": false,
+    "minecraftServersStarted": 0,
+    "minecraftServersStopped": 0,
+    "minecraftServersRestarted": 0,
+    "minecraftConsoleCommandsIssued": 0
+  },
+  "privacy": {
+    "credentialsRecorded": false,
+    "cookiesRecorded": false,
+    "signedUrlsRecorded": false,
+    "personalAccountDetailsRecorded": false
+  }
+}
