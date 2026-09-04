@@ -58,6 +58,13 @@ Vue Router。源码候选的十二个页面分别对应 `/admin/servers`、`user
 ASP.NET Core 使用 `/admin/{*path:nonfile}` 回退到 Vue 入口，因此刷新深层路由仍由
 同一应用接管。
 
+进入“需要管理员身份”的旧标签页会在页面重新可见、窗口重新获得焦点时立即复核
+同源浏览器会话，并在页面可见期间每 5 秒低频复核一次。若管理员已从启动器在另一个
+标签页完成票据兑换，旧标签页会自动恢复到原来的深层路由和目标服务器，不需要手动
+点击“重新检查”。后台复核保持身份卡片稳定显示，不得周期性切换成加载页。该恢复只
+复用已经由启动器票据建立的 `__Host-HechaoAdmin` 会话，不改变可信设备边界，也不允许
+可信 Cookie 或匿名直达链接单独创建管理员身份。
+
 生产构建输出到 `src/Hechao.Api/wwwroot/admin`。源码映射已关闭，生成的 JavaScript、
 分块脚本和 CSS 不得手工修改；应修改 `AdminWeb/src` 后重新构建。`.csproj` 会在
 `dotnet build` 和 `dotnet publish` 前执行 `npm ci` 与 `npm run build`，发布目录仍只

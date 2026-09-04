@@ -2285,6 +2285,30 @@ test("redeemed admin ticket is removed before router initialization", async ({ p
   expect(redeemCount).toBe(1);
 });
 
+test("a stale sign-in tab recovers when another tab establishes the admin session", async ({ page }) => {
+  let authenticated = false;
+  let sessionChecks = 0;
+  await mockAdminApi(page, {
+    intercept: async (route, _request, path) => {
+      if (path !== "/v1/admin-auth/session") return false;
+      sessionChecks += 1;
+      if (authenticated) await route.fulfill({ json: session });
+      else await route.fulfill({ status: 401, json: { title: "需要管理员身份" } });
+      return true;
+    }
+  });
+
+  await page.goto("/admin/control?server=activity");
+  await expect(page.getByRole("heading", { name: "需要管理员身份" })).toBeVisible();
+
+  authenticated = true;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+
+  await expect(page.locator(".page-heading h1")).toHaveText("服控面板");
+  expect(new URL(page.url()).searchParams.get("server")).toBe("activity");
+  expect(sessionChecks).toBeGreaterThanOrEqual(2);
+});
+
 test("all migrated routes have no automated WCAG A or AA violations", async ({ page }) => {
   await mockAdminApi(page);
   for (const [route, heading] of migratedRoutes) {

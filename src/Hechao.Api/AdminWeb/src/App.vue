@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { api, resetCsrfToken } from "@/api/client";
 import type { AdminSession } from "@/api/types";
 import { takeInitialAdminTicket } from "@/auth/initialTicket";
@@ -13,11 +13,18 @@ const phase = ref<Phase>("loading");
 const session = ref<AdminSession | null>(null);
 const signInMessage = ref("");
 let initializationGeneration = 0;
+let signInPollTimer: number | null = null;
+let recoveryPromise: Promise<void> | null = null;
 
-async function initialize(): Promise<void> {
+const signInPollIntervalMs = 5_000;
+
+async function initialize(quiet = false): Promise<void> {
   const generation = ++initializationGeneration;
-  phase.value = "loading";
-  signInMessage.value = "";
+  const keepSignInVisible = quiet && phase.value === "signin";
+  if (!keepSignInVisible) {
+    phase.value = "loading";
+    signInMessage.value = "";
+  }
   const ticket = takeInitialAdminTicket();
   if (ticket) {
     try {
@@ -38,8 +45,35 @@ async function initialize(): Promise<void> {
     if (generation !== initializationGeneration) return;
     session.value = null;
     phase.value = "signin";
-    signInMessage.value = reason instanceof Error ? reason.message : "需要管理员身份。";
+    if (!keepSignInVisible) {
+      signInMessage.value = reason instanceof Error ? reason.message : "需要管理员身份。";
+    }
   }
+}
+
+function recoverSession(): void {
+  if (phase.value !== "signin" || document.visibilityState === "hidden" || recoveryPromise) {
+    return;
+  }
+
+  recoveryPromise = initialize(true).finally(() => {
+    recoveryPromise = null;
+  });
+}
+
+function updateSignInPolling(nextPhase: Phase): void {
+  if (signInPollTimer !== null) {
+    window.clearInterval(signInPollTimer);
+    signInPollTimer = null;
+  }
+
+  if (nextPhase === "signin") {
+    signInPollTimer = window.setInterval(recoverSession, signInPollIntervalMs);
+  }
+}
+
+function onVisibilityChange(): void {
+  if (document.visibilityState === "visible") recoverSession();
 }
 
 async function authenticated(): Promise<void> {
@@ -59,9 +93,19 @@ const onSessionExpired = () => {
 };
 onMounted(() => {
   window.addEventListener("hechao:admin-session-expired", onSessionExpired);
+  window.addEventListener("focus", recoverSession);
+  window.addEventListener("pageshow", recoverSession);
+  document.addEventListener("visibilitychange", onVisibilityChange);
   void initialize();
 });
-onBeforeUnmount(() => window.removeEventListener("hechao:admin-session-expired", onSessionExpired));
+watch(phase, updateSignInPolling);
+onBeforeUnmount(() => {
+  window.removeEventListener("hechao:admin-session-expired", onSessionExpired);
+  window.removeEventListener("focus", recoverSession);
+  window.removeEventListener("pageshow", recoverSession);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+  if (signInPollTimer !== null) window.clearInterval(signInPollTimer);
+});
 </script>
 
 <template>
