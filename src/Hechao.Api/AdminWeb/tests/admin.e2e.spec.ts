@@ -1919,7 +1919,7 @@ test("server editor recovers from a revision conflict without losing the draft",
     }
   });
   await page.goto("/admin/servers");
-  await page.getByRole("button", { name: "编辑服务器" }).click();
+  await page.getByRole("row", { name: /活动服/ }).getByRole("button", { name: "编辑服务器" }).click();
   await page.getByLabel("显示名称").fill("活动服（我的草稿）");
 
   await page.getByRole("button", { name: "保存服务器" }).click();
@@ -2076,12 +2076,71 @@ test("access-rule conflict reports when the latest preview cannot be loaded", as
 test("infrastructure servers cannot be restored or converted back to player servers", async ({ page }) => {
   await mockAdminApi(page);
   await page.goto("/admin/servers");
-  await page.getByRole("button", { name: "已归档" }).click();
+  await page.getByRole("button", { name: "玩家隐藏", exact: true }).click();
 
-  await expect(page.getByRole("button", { name: "基础设施节点不能恢复" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "基础设施节点不能向玩家展示" })).toBeDisabled();
   await page.getByRole("button", { name: "编辑服务器" }).click();
   await expect(page.getByLabel("服务器角色")).toBeDisabled();
   await expect(page.getByLabel("允许协议转换")).toBeDisabled();
+});
+
+test("hidden player servers stay visible to administrators without becoming discoverable duplicates", async ({ page }) => {
+  const commercialStreet = {
+    ...serverRecords[0],
+    id: "minigame-commercial-street",
+    displayName: "赫朝商业街建筑对决",
+    shortName: "商业街",
+    iconGlyph: "商",
+    status: "Closed",
+    minecraftVersion: "1.12.2",
+    loader: "Forge",
+    clientProfileId: "minigame-commercial-street-forge-1.12.2",
+    velocityTarget: "minigame-commercial-street",
+    sortOrder: 30010,
+    isVisible: false,
+    effectiveStatus: "Closed",
+    revision: 1
+  };
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/catalog/servers" && request.method() === "GET") {
+        await route.fulfill({ json: [...serverRecords, commercialStreet] });
+        return true;
+      }
+      if (path === "/v1/admin/server-control/overview" && request.method() === "GET") {
+        const overview = controlOverview(1);
+        await route.fulfill({
+          json: {
+            ...overview,
+            targets: [...overview.targets, {
+              ...overview.targets[0],
+              serverId: commercialStreet.id,
+              displayName: commercialStreet.displayName,
+              port: 25602
+            }]
+          }
+        });
+        return true;
+      }
+      return false;
+    }
+  });
+  await page.goto("/admin/servers");
+
+  const commercialStreetRow = page.getByRole("row", { name: /赫朝商业街建筑对决/ });
+  await expect(commercialStreetRow).toBeVisible();
+  await expect(page.getByRole("button", { name: "全部" })).toHaveAttribute("aria-pressed", "true");
+  await expect(commercialStreetRow.getByText("玩家隐藏", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "玩家可见", exact: true }).click();
+  await expect(page.getByText("赫朝商业街建筑对决")).toHaveCount(0);
+  await page.getByRole("button", { name: "玩家隐藏", exact: true }).click();
+  await expect(page.getByText("赫朝商业街建筑对决")).toBeVisible();
+
+  await page.getByRole("button", { name: "新增服务器" }).click();
+  const drawer = page.locator(".vue-drawer");
+  await expect(drawer.getByText("0 个可添加")).toBeVisible();
+  await expect(drawer.getByRole("option", { name: /赫朝商业街建筑对决/ })).toHaveCount(0);
 });
 
 test("economy dashboard renders a responsive market chart and filters server flow", async ({ page }) => {

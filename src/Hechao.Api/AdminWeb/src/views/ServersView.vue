@@ -12,7 +12,7 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import PageHeading from "@/components/PageHeading.vue";
 import ResourceState from "@/components/ResourceState.vue";
 
-type Filter = "visible" | "archived" | "all";
+type Filter = "all" | "visible" | "hidden";
 interface ServerForm {
   id: string; displayName: string; shortName: string; iconGlyph: string;
   status: "Online" | "Maintenance" | "Closed"; maxPlayers: number;
@@ -26,7 +26,7 @@ const servers = useResource(signal => api<AdminServer[]>("/v1/admin/catalog/serv
 const profiles = ref<ClientProfile[]>([]);
 const control = ref<ControlOverview | null>(null);
 const runtime = ref<RuntimeSummary | null>(null);
-const filter = ref<Filter>("visible");
+const filter = ref<Filter>("all");
 const search = ref("");
 const drawer = ref<HTMLDialogElement | null>(null);
 const editing = ref<AdminServer | null>(null);
@@ -54,7 +54,7 @@ const summary = computed(() => ({
   total: servers.data.value?.length ?? 0,
   online: servers.data.value?.filter(item => item.role === "Player" && item.isVisible && item.effectiveStatus === "Online").length ?? 0,
   maintenance: servers.data.value?.filter(item => item.role === "Player" && item.isVisible && item.status === "Maintenance").length ?? 0,
-  archived: servers.data.value?.filter(item => item.role === "Player" && !item.isVisible).length ?? 0
+  hidden: servers.data.value?.filter(item => item.role === "Player" && !item.isVisible).length ?? 0
 }));
 const infrastructureRoleLocked = computed(() => editing.value?.role === "Infrastructure");
 
@@ -65,7 +65,7 @@ const discovered = computed(() => {
 
 function effectiveStatus(item: AdminServer): string {
   if (item.role === "Infrastructure") return "内部节点";
-  if (!item.isVisible) return "已归档";
+  if (!item.isVisible) return "玩家隐藏";
   if (item.status === "Online" && item.hasControlTarget) {
     if (!item.controlTargetFresh) return "服控失联";
     if (item.controlReportedOnline === false) return "服务已停止";
@@ -197,7 +197,7 @@ async function save(): Promise<void> {
 
 function requestVisibility(item: AdminServer): void {
   if (item.role === "Infrastructure" && !item.isVisible) {
-    showToast("内部基础设施服务器不能恢复到玩家目录。", true);
+    showToast("内部基础设施服务器不能向玩家展示。", true);
     return;
   }
   pendingVisibility.value = item;
@@ -211,7 +211,7 @@ async function changeVisibility(): Promise<void> {
     await api(`/v1/admin/catalog/servers/${encodeURIComponent(item.id)}/visibility`, {
       method: "PUT", body: { isVisible: !item.isVisible, expectedRevision: item.revision }
     });
-    showToast(item.isVisible ? "服务器已归档" : "服务器已恢复"); pendingVisibility.value = null; await servers.refresh();
+    showToast(item.isVisible ? "服务器已对玩家隐藏" : "服务器已向玩家展示"); pendingVisibility.value = null; await servers.refresh();
   } catch (reason) {
     if (reason instanceof ApiError && reason.status === 409) {
       pendingVisibility.value = null;
@@ -242,13 +242,13 @@ onScopeDispose(unregister);
     </PageHeading>
     <div class="summary-strip" aria-label="服务器目录汇总">
       <div><span>目录总数</span><strong>{{ summary.total }}</strong></div><div><span>当前开放</span><strong>{{ summary.online }}</strong></div>
-      <div><span>维护中</span><strong>{{ summary.maintenance }}</strong></div><div><span>已归档</span><strong>{{ summary.archived }}</strong></div>
+      <div><span>维护中</span><strong>{{ summary.maintenance }}</strong></div><div><span>玩家隐藏</span><strong>{{ summary.hidden }}</strong></div>
     </div>
     <div v-if="servers.error.value && servers.data.value" class="stale-banner" role="status"><AppIcon name="circle-alert" />自动刷新失败，当前展示上次成功数据。<button type="button" @click="servers.refresh">重试</button></div>
     <div class="toolbar">
       <label class="search-control"><AppIcon name="search" /><input v-model="search" type="search" placeholder="搜索名称、ID、入口或客户端档案"></label>
       <div class="segmented-control" role="group" aria-label="目录显示范围">
-        <button v-for="item in ([['visible','已展示'],['archived','已归档'],['all','全部']] as const)" :key="item[0]" type="button" :class="{ active: filter === item[0] }" :aria-pressed="filter === item[0]" @click="filter = item[0]">{{ item[1] }}</button>
+        <button v-for="item in ([['all','全部'],['visible','玩家可见'],['hidden','玩家隐藏']] as const)" :key="item[0]" type="button" :class="{ active: filter === item[0] }" :aria-pressed="filter === item[0]" @click="filter = item[0]">{{ item[1] }}</button>
       </div>
     </div>
     <ResourceState :loading="servers.loading.value && !servers.data.value" :error="servers.data.value ? '' : servers.error.value" :empty="list.length === 0" empty-title="没有符合条件的服务器" @retry="servers.refresh">
@@ -258,7 +258,7 @@ onScopeDispose(unregister);
           <td><span class="status-badge" :class="statusClass(item)">{{ effectiveStatus(item) }}</span><small v-if="item.hasControlTarget">{{ formatRelativeTime(item.controlLastSeenAt) }}</small></td>
           <td><div class="meta-stack"><strong>{{ item.minecraftVersion }} · {{ item.loader }}</strong><span>{{ item.velocityTarget }}</span></div></td>
           <td>{{ item.clientProfileId || "—" }}</td><td>{{ tierText(item.minimumTier) }}</td><td>{{ item.sortOrder }}</td>
-          <td class="actions-column"><div class="row-actions"><RouterLink v-if="item.hasControlTarget" class="icon-button" :to="{ name: 'control', query: { server: item.id } }" :title="`在服控面板管理 ${item.displayName}`" :aria-label="`管理 ${item.displayName} 的运行状态`"><AppIcon name="server" /></RouterLink><button class="icon-button" type="button" title="编辑服务器" aria-label="编辑服务器" @click="openEdit(item)"><AppIcon name="pencil" /></button><button class="icon-button" type="button" :title="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能恢复' : item.isVisible ? '归档服务器' : '恢复服务器'" :aria-label="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能恢复' : item.isVisible ? '归档服务器' : '恢复服务器'" :disabled="item.role === 'Infrastructure' && !item.isVisible" @click="requestVisibility(item)"><AppIcon :name="item.isVisible ? 'archive' : 'rotate-ccw'" /></button></div></td>
+          <td class="actions-column"><div class="row-actions"><RouterLink v-if="item.hasControlTarget" class="icon-button" :to="{ name: 'control', query: { server: item.id } }" :title="`在服控面板管理 ${item.displayName}`" :aria-label="`管理 ${item.displayName} 的运行状态`"><AppIcon name="server" /></RouterLink><button class="icon-button" type="button" title="编辑服务器" aria-label="编辑服务器" @click="openEdit(item)"><AppIcon name="pencil" /></button><button class="icon-button" type="button" :title="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能向玩家展示' : item.isVisible ? '对玩家隐藏' : '向玩家展示'" :aria-label="item.role === 'Infrastructure' && !item.isVisible ? '基础设施节点不能向玩家展示' : item.isVisible ? '对玩家隐藏' : '向玩家展示'" :disabled="item.role === 'Infrastructure' && !item.isVisible" @click="requestVisibility(item)"><AppIcon :name="item.isVisible ? 'eye-off' : 'eye'" /></button></div></td>
         </tr></tbody></table></div>
     </ResourceState>
 
@@ -297,6 +297,6 @@ onScopeDispose(unregister);
       </form>
     </dialog>
 
-    <ConfirmDialog :open="Boolean(pendingVisibility)" :title="pendingVisibility?.isVisible ? '归档服务器' : '恢复服务器'" :message="pendingVisibility ? `${pendingVisibility.displayName} 将${pendingVisibility.isVisible ? '从玩家目录隐藏' : '重新进入玩家目录'}，不会启停 Java 进程。` : ''" :confirm-label="pendingVisibility?.isVisible ? '确认归档' : '确认恢复'" :danger="Boolean(pendingVisibility?.isVisible)" :busy="visibilityBusy" @close="pendingVisibility = null" @confirm="changeVisibility" />
+    <ConfirmDialog :open="Boolean(pendingVisibility)" :title="pendingVisibility?.isVisible ? '对玩家隐藏' : '向玩家展示'" :message="pendingVisibility ? `${pendingVisibility.displayName} 将${pendingVisibility.isVisible ? '从玩家目录隐藏' : '进入玩家目录'}，不会启停 Java 进程。` : ''" :confirm-label="pendingVisibility?.isVisible ? '确认隐藏' : '确认展示'" :danger="Boolean(pendingVisibility?.isVisible)" :busy="visibilityBusy" @close="pendingVisibility = null" @confirm="changeVisibility" />
   </section>
 </template>

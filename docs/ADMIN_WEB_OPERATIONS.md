@@ -70,6 +70,11 @@ ASP.NET Core 使用 `/admin/{*path:nonfile}` 回退到 Vue 入口，因此刷新
 `dotnet build` 和 `dotnet publish` 前执行 `npm ci` 与 `npm run build`，发布目录仍只
 包含构建后的静态资源，不包含 `node_modules`、测试结果或前端源码。
 
+服务器目录默认显示全部已建档服务器，包括暂时不向玩家展示的独立槽和内部基础设施。
+`isVisible=false` 的含义是“玩家隐藏”，不是归档或删除；它仍应留在管理员目录和服控
+入口中，也不得重新出现在“新增服务器”的自动发现列表。只有管理员明确执行“向玩家
+展示”后，它才进入启动器玩家目录；这个操作不会启动或停止 Java 进程。
+
 独立验证命令必须在 PowerShell 7 中执行：
 
 ```powershell
