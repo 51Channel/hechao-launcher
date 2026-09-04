@@ -704,6 +704,14 @@ public sealed class LauncherXamlContractTests
             focusVisualStyle.Descendants(presentation + "Setter"),
             setter =>
                 setter.Attribute("Property")?.Value == "Control.Template");
+        var focusBorders = focusVisualStyle
+            .Descendants(presentation + "Border")
+            .ToArray();
+        Assert.Single(focusBorders);
+        Assert.Equal(
+            "{DynamicResource HechaoRedBrush}",
+            focusBorders[0].Attribute("BorderBrush")?.Value);
+        Assert.Equal("2", focusBorders[0].Attribute("BorderThickness")?.Value);
         Assert.DoesNotContain(
             document.Descendants(presentation + "Setter"),
             setter =>
@@ -731,6 +739,69 @@ public sealed class LauncherXamlContractTests
             setter =>
                 setter.Attribute("Property")?.Value == "Width" &&
                 setter.Attribute("Value")?.Value == "9");
+    }
+
+    [Fact]
+    public void TopBarPointerActions_ClearTransientFocusAndKeepCalmPageSelection()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var titleBar = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value == "TitleBar");
+        Assert.Equal(
+            "TitleBar_OnPreviewMouseLeftButtonUp",
+            titleBar.Attribute("PreviewMouseLeftButtonUp")?.Value);
+
+        var settingsButton = titleBar
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("AutomationProperties.Name")?.Value ==
+                "启动器设置");
+        Assert.Equal(
+            "{StaticResource TopBarPageIconButtonStyle}",
+            settingsButton.Attribute("Style")?.Value);
+        Assert.Null(settingsButton.Attribute("Tag"));
+
+        var accountButton = titleBar
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("AutomationProperties.Name")?.Value ==
+                "赫朝账户");
+        Assert.Equal(
+            "{StaticResource TopBarAccountButtonStyle}",
+            accountButton.Attribute("Style")?.Value);
+        Assert.Null(accountButton.Attribute("Tag"));
+
+        var themeDocument = LoadThemeXaml();
+        var selectedPageBindings = new[]
+        {
+            (Style: "TopBarPageIconButtonStyle", Binding: "{Binding IsSettingsPage}"),
+            (Style: "TopBarAccountButtonStyle", Binding: "{Binding IsAccountPage}")
+        };
+
+        foreach (var expected in selectedPageBindings)
+        {
+            var style = themeDocument
+                .Descendants(presentation + "Style")
+                .Single(element => element.Attribute(x + "Key")?.Value == expected.Style);
+            var selectedPageTrigger = style
+                .Descendants(presentation + "DataTrigger")
+                .Single(trigger => trigger.Attribute("Binding")?.Value == expected.Binding);
+
+            Assert.Equal("True", selectedPageTrigger.Attribute("Value")?.Value);
+            Assert.Contains(
+                selectedPageTrigger.Elements(presentation + "Setter"),
+                setter =>
+                    setter.Attribute("Property")?.Value == "Background" &&
+                    setter.Attribute("Value")?.Value == "{DynamicResource SurfaceMutedBrush}");
+            Assert.Contains(
+                selectedPageTrigger.Elements(presentation + "Setter"),
+                setter =>
+                    setter.Attribute("Property")?.Value == "BorderBrush" &&
+                    setter.Attribute("Value")?.Value == "{DynamicResource BorderStrongBrush}");
+        }
     }
 
     [Fact]
@@ -904,11 +975,21 @@ public sealed class LauncherXamlContractTests
                 element.Ancestors(presentation + "ListBox").Any(list =>
                     list.Attribute("ItemsSource")?.Value ==
                     "{Binding Servers}"));
-        var serverCardCover = serverCardTemplate
-            .Descendants(presentation + "Image")
+        var serverCardArtworkSurface = serverCardTemplate
+            .Descendants(presentation + "Border")
             .Single(element =>
                 element.Attribute(x + "Name")?.Value ==
-                "ServerCardCoverImage");
+                "ServerCardArtworkSurface");
+        var serverCardStyle = LoadThemeXaml()
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ServerCardListItemStyle");
+        var serverCardSurface = serverCardStyle
+            .Descendants(presentation + "Border")
+            .Single(element =>
+                element.Attribute(x + "Name")?.Value ==
+                "ServerCardSurface");
         var activityArtwork = serverCardTemplate
             .Descendants(presentation + "Grid")
             .Single(element =>
@@ -938,17 +1019,45 @@ public sealed class LauncherXamlContractTests
         Assert.Equal("7", heroImage.Attribute("CornerRadius")?.Value);
         Assert.Equal("True", heroImage.Attribute("ClipToBounds")?.Value);
         Assert.Empty(heroImage.Descendants(presentation + "TextBlock"));
+        Assert.Equal("0", serverCardArtworkSurface.Attribute("Grid.Row")?.Value);
+        Assert.Equal("6,6,0,0", serverCardArtworkSurface.Attribute("CornerRadius")?.Value);
+        Assert.Equal("True", serverCardArtworkSurface.Attribute("SnapsToDevicePixels")?.Value);
+        Assert.Equal("7", serverCardSurface.Attribute("CornerRadius")?.Value);
+        Assert.Equal("True", serverCardSurface.Attribute("ClipToBounds")?.Value);
         Assert.Contains(
-            heroImage.Descendants(presentation + "ImageBrush"),
+            serverCardArtworkSurface.Descendants(presentation + "ImageBrush"),
             brush => brush.Attribute("ImageSource")?.Value ==
                 "/Hechao.Launcher;component/Assets/hechao-fortress-banner.png");
+        var activitySurfaceTrigger = Assert.Single(
+            serverCardArtworkSurface
+                .Element(presentation + "Border.Style")!
+                .Descendants(presentation + "DataTrigger"),
+            trigger =>
+                trigger.Attribute("Binding")?.Value ==
+                "{Binding Converter={StaticResource ServerIsActivityConverter}}" &&
+                trigger.Attribute("Value")?.Value == "True");
+        Assert.Contains(
+            activitySurfaceTrigger.Elements(presentation + "Setter"),
+            setter =>
+                setter.Attribute("Property")?.Value == "Background" &&
+                setter.Attribute("Value")?.Value ==
+                "{DynamicResource SteelSoftBrush}");
+        Assert.DoesNotContain(
+            serverCardStyle.Descendants(presentation + "Setter"),
+            setter =>
+                setter.Attribute("TargetName")?.Value == "ServerCardSurface" &&
+                setter.Attribute("Property")?.Value == "CornerRadius");
+        Assert.All(
+            serverCardStyle.Descendants(presentation + "Setter")
+                .Where(setter =>
+                    setter.Attribute("Property")?.Value == "BorderThickness"),
+            setter => Assert.Equal("1", setter.Attribute("Value")?.Value));
         Assert.Contains(
             heroDetails.Descendants(presentation + "TextBlock"),
             text => text.Attribute("Text")?.Value ==
                 "{Binding SelectedServerCategoryText}");
         foreach (var activityVisualElement in new[]
                  {
-                     (Element: serverCardCover, Visibility: "Collapsed"),
                      (Element: activityArtwork, Visibility: "Visible"),
                      (Element: serverCardShortNameBadge, Visibility: "Collapsed"),
                  })
@@ -1213,9 +1322,24 @@ public sealed class LauncherXamlContractTests
                 .Descendants(presentation + "Button")
                 .Single(element => element.Attribute("Command")?.Value == command);
             Assert.Equal(
-                "{StaticResource DangerButtonStyle}",
+                "{StaticResource SettingsDangerActionButtonStyle}",
                 button.Attribute("Style")?.Value);
         }
+
+        var settingsActionStyles = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "{StaticResource SettingsActionButtonStyle}",
+            "{StaticResource SettingsDangerActionButtonStyle}",
+            "{StaticResource SettingsPrimaryActionButtonStyle}",
+        };
+        Assert.All(
+            tabs.SelectMany(tab => tab.Descendants(presentation + "Button")),
+            button =>
+            {
+                var style = button.Attribute("Style")?.Value;
+                Assert.False(string.IsNullOrWhiteSpace(style));
+                Assert.Contains(style!, settingsActionStyles);
+            });
 
         var diagnosticsTab = tabs.Single(element => element.Attribute(x + "Name")?.Value ==
             "SettingsDiagnosticsTab");
@@ -1258,7 +1382,7 @@ public sealed class LauncherXamlContractTests
             .Descendants(presentation + "Grid")
             .Single();
         Assert.Equal(
-            ["*", "520"],
+            ["292", "*"],
             templateGrid
                 .Element(presentation + "Grid.ColumnDefinitions")!
                 .Elements(presentation + "ColumnDefinition")
@@ -1286,7 +1410,7 @@ public sealed class LauncherXamlContractTests
         Assert.Contains(
             categoryStyle.Elements(presentation + "Setter"),
             setter => setter.Attribute("Property")?.Value == "Height" &&
-                setter.Attribute("Value")?.Value == "62");
+                setter.Attribute("Value")?.Value == "54");
         Assert.Contains(
             categoryStyle.Elements(presentation + "Setter"),
             setter => setter.Attribute("Property")?.Value == "FocusVisualStyle" &&
@@ -1312,6 +1436,83 @@ public sealed class LauncherXamlContractTests
                 setter => setter.Attribute("Property")?.Value == "Foreground" &&
                     setter.Attribute("Value")?.Value == "{DynamicResource InkBrush}");
         }
+    }
+
+    [Fact]
+    public void SettingsTheme_UsesUnifiedContentRowsMemorySegmentsAndSwitches()
+    {
+        var document = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        XElement FindStyle(string key) => document
+            .Descendants(presentation + "Style")
+            .Single(element => element.Attribute(x + "Key")?.Value == key);
+
+        var contentStyle = FindStyle("SettingsContentStackStyle");
+        Assert.Contains(
+            contentStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "MaxWidth" &&
+                setter.Attribute("Value")?.Value == "760");
+
+        var rowStyle = FindStyle("SettingsRowStyle");
+        Assert.Equal(
+            "{StaticResource WorkspaceFlatRowStyle}",
+            rowStyle.Attribute("BasedOn")?.Value);
+        Assert.Contains(
+            rowStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "BorderBrush" &&
+                setter.Attribute("Value")?.Value == "{DynamicResource HairlineBrush}");
+
+        foreach (var key in new[]
+                 {
+                     "SettingsActionButtonStyle",
+                     "SettingsDangerActionButtonStyle",
+                     "SettingsPrimaryActionButtonStyle",
+                 })
+        {
+            var actionStyle = FindStyle(key);
+            Assert.Contains(
+                actionStyle.Elements(presentation + "Setter"),
+                setter => setter.Attribute("Property")?.Value == "Height" &&
+                    setter.Attribute("Value")?.Value == "40");
+            Assert.Contains(
+                actionStyle.Elements(presentation + "Setter"),
+                setter => setter.Attribute("Property")?.Value == "MinWidth" &&
+                    setter.Attribute("Value")?.Value == "112");
+        }
+
+        var memoryListStyle = FindStyle("MemorySegmentListStyle");
+        Assert.Contains(
+            memoryListStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "Template");
+        Assert.Contains(
+            memoryListStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "Background" &&
+                setter.Attribute("Value")?.Value == "{DynamicResource SurfaceMutedBrush}");
+
+        var memoryItemStyle = FindStyle("MemorySegmentItemStyle");
+        Assert.Contains(
+            memoryItemStyle.Descendants(presentation + "Border"),
+            border => border.Attribute(x + "Name")?.Value == "MemorySegmentMarker");
+        Assert.Contains(
+            memoryItemStyle.Descendants(presentation + "Setter"),
+            setter => setter.Attribute("TargetName")?.Value == "MemorySegmentMarker" &&
+                setter.Attribute("Property")?.Value == "Visibility" &&
+                setter.Attribute("Value")?.Value == "Visible");
+
+        var switchStyle = FindStyle("SwitchToggleStyle");
+        Assert.DoesNotContain(
+            switchStyle.Descendants(presentation + "DropShadowEffect"),
+            _ => true);
+        Assert.Contains(
+            switchStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "Width" &&
+                setter.Attribute("Value")?.Value == "44");
+        Assert.Contains(
+            switchStyle.Descendants(presentation + "Trigger"),
+            trigger => trigger.Attribute("Property")?.Value == "IsPressed");
     }
 
     [Fact]
@@ -1516,6 +1717,10 @@ public sealed class LauncherXamlContractTests
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
+        var workspace = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "AccountWorkspace");
         var directory = document
             .Descendants(presentation + "Border")
             .Single(element => element.Attribute(x + "Name")?.Value ==
@@ -1524,7 +1729,8 @@ public sealed class LauncherXamlContractTests
             .Descendants(presentation + "Grid")
             .Single(element => element.Attribute(x + "Name")?.Value ==
                 "AccountInspector");
-        var rootGrid = Assert.IsType<XElement>(directory.Parent);
+        Assert.Same(workspace, directory.Parent);
+        Assert.Same(workspace, inspector.Parent);
         var directoryBranches = directory
             .Descendants(presentation + "Grid")
             .Where(element => element
@@ -1542,13 +1748,17 @@ public sealed class LauncherXamlContractTests
                     "{Binding IsAuthenticated}") == true)
             .ToArray();
 
-        Assert.Equal("1", directory.Attribute("Grid.Column")?.Value);
-        Assert.Equal("1", directory.Attribute("Grid.Row")?.Value);
-        Assert.Equal("2", inspector.Attribute("Grid.Column")?.Value);
-        Assert.Equal("1", inspector.Attribute("Grid.Row")?.Value);
+        Assert.Equal("1", workspace.Attribute("Grid.Column")?.Value);
+        Assert.Equal("2", workspace.Attribute("Grid.ColumnSpan")?.Value);
+        Assert.Equal("1", workspace.Attribute("Grid.Row")?.Value);
         Assert.Equal(
-            ["0", "*", "420"],
-            rootGrid
+            "{Binding IsAccountPage, Converter={StaticResource BooleanToVisibilityConverter}}",
+            workspace.Attribute("Visibility")?.Value);
+        Assert.Equal("0", directory.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", inspector.Attribute("Grid.Column")?.Value);
+        Assert.Equal(
+            ["292", "*"],
+            workspace
                 .Element(presentation + "Grid.ColumnDefinitions")!
                 .Elements(presentation + "ColumnDefinition")
                 .Select(element => element.Attribute("Width")?.Value ?? string.Empty));
@@ -1610,17 +1820,130 @@ public sealed class LauncherXamlContractTests
         Assert.DoesNotContain(
             unauthenticatedDirectory.Ancestors(),
             ancestor => ancestor.Name == presentation + "ScrollViewer");
+        Assert.DoesNotContain(
+            unauthenticatedDirectory.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value is "01" or "02");
+        Assert.Contains(
+            unauthenticatedDirectory.Descendants(),
+            element => element.Name.LocalName == "IconParkIcon" &&
+                element.Attribute("Kind")?.Value == "User");
+        Assert.Contains(
+            unauthenticatedDirectory.Descendants(),
+            element => element.Name.LocalName == "IconParkIcon" &&
+                element.Attribute("Kind")?.Value == "Shield");
 
-        var logoutButton = authenticatedDirectory
+        var authenticatedContent = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "AccountAuthenticatedContent");
+        var contentStack = authenticatedContent
+            .Descendants(presentation + "StackPanel")
+            .Single(element => element.Attribute("Style")?.Value ==
+                "{StaticResource SettingsContentStackStyle}");
+        var logoutButton = authenticatedContent
             .Descendants(presentation + "Button")
             .Single(element => element.Attribute("Command")?.Value ==
                 "{Binding LogoutAccountCommand}");
-        var logoutAllButton = authenticatedDirectory
+        var logoutAllButton = authenticatedContent
             .Descendants(presentation + "Button")
             .Single(element => element.Attribute("Command")?.Value ==
                 "{Binding LogoutAllDevicesCommand}");
-        Assert.Equal("{StaticResource BaseButtonStyle}", logoutButton.Attribute("Style")?.Value);
-        Assert.Equal("{StaticResource DangerButtonStyle}", logoutAllButton.Attribute("Style")?.Value);
+        Assert.Contains(
+            contentStack.Descendants(presentation + "Border"),
+            row => row.Attribute("Style")?.Value ==
+                "{StaticResource SettingsRowStyle}");
+        Assert.Equal(
+            "{StaticResource SettingsActionButtonStyle}",
+            logoutButton.Attribute("Style")?.Value);
+        Assert.Equal(
+            "{StaticResource SettingsDangerActionButtonStyle}",
+            logoutAllButton.Attribute("Style")?.Value);
+    }
+
+    [Fact]
+    public void AccountWorkspace_PreservesAccountAndIdentityActionBindings()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        XElement Named(string name) => document
+            .Descendants()
+            .Single(element => element.Attribute(x + "Name")?.Value == name);
+
+        var loginButton = document
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("AutomationProperties.Name")?.Value ==
+                "登录赫朝账号");
+        Assert.Equal("LoginAccountButton_OnClick", loginButton.Attribute("Click")?.Value);
+        Assert.Equal(
+            "{Binding CanSubmitAccountForms}",
+            loginButton.Attribute("IsEnabled")?.Value);
+
+        var sendCodeButton = Named("SendRegistrationCodeButton");
+        Assert.Equal(
+            "SendRegistrationCodeButton_OnClick",
+            sendCodeButton.Attribute("Click")?.Value);
+        Assert.Equal(
+            "{Binding CanSendRegistrationCode}",
+            sendCodeButton.Attribute("IsEnabled")?.Value);
+
+        var registerButton = document
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("AutomationProperties.Name")?.Value ==
+                "创建赫朝账号");
+        Assert.Equal(
+            "RegisterAccountButton_OnClick",
+            registerButton.Attribute("Click")?.Value);
+        Assert.Equal(
+            "{Binding CanSubmitRegistrationForm}",
+            registerButton.Attribute("IsEnabled")?.Value);
+
+        var linkButton = document
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Command")?.Value ==
+                "{Binding LinkMinecraftCommand}");
+        var unlinkButton = document
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Command")?.Value ==
+                "{Binding UnlinkMinecraftCommand}");
+        Assert.Contains("IsMinecraftLinked", linkButton.ToString(), StringComparison.Ordinal);
+        Assert.Contains("IsMinecraftLinked", unlinkButton.ToString(), StringComparison.Ordinal);
+
+        var unlinkPassword = Named("UnlinkMinecraftPasswordBox");
+        var unlinkPanel = unlinkPassword
+            .Ancestors(presentation + "Border")
+            .Single(element => element.Attribute("Visibility")?.Value?.Contains(
+                "IsMinecraftUnlinkFormVisible",
+                StringComparison.Ordinal) == true);
+        Assert.Contains(
+            unlinkPanel.Descendants(presentation + "Button"),
+            button => button.Attribute("Click")?.Value ==
+                "CancelMinecraftUnlinkButton_OnClick");
+        Assert.Contains(
+            unlinkPanel.Descendants(presentation + "Button"),
+            button => button.Attribute("Click")?.Value ==
+                "ConfirmMinecraftUnlinkButton_OnClick");
+
+        var authenticatedContent = Named("AccountAuthenticatedContent");
+        var adminButton = authenticatedContent
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Command")?.Value ==
+                "{Binding OpenAdminConsoleCommand}");
+        Assert.Contains("IsAdministrator", adminButton.ToString(), StringComparison.Ordinal);
+
+        foreach (var liveRegionName in new[]
+                 {
+                     "AccountFormLiveRegion",
+                     "AuthenticatedAccountFormLiveRegion",
+                 })
+        {
+            var liveRegion = Named(liveRegionName);
+            Assert.Equal(
+                "{Binding AccountFormMessage}",
+                liveRegion.Attribute("AutomationProperties.ItemStatus")?.Value);
+        }
     }
 
     [Fact]
@@ -1759,9 +2082,26 @@ public sealed class LauncherXamlContractTests
         Assert.Equal(2, activityLists.Length);
         Assert.All(
             activityLists,
-            activityList => Assert.Equal(
-                "{Binding CanSelectServer}",
-                activityList.Attribute("IsEnabled")?.Value));
+            activityList =>
+            {
+                Assert.Equal(
+                    "{Binding CanSelectServer}",
+                    activityList.Attribute("IsEnabled")?.Value);
+                Assert.Equal(
+                    "{StaticResource ActivityCalendarListStyle}",
+                    activityList.Attribute("Style")?.Value);
+            });
+
+        var activityListStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element => element.Attribute(x + "Key")?.Value ==
+                "ActivityCalendarListStyle");
+        Assert.Contains(
+            activityListStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "Template");
+        Assert.DoesNotContain(
+            activityListStyle.DescendantsAndSelf().Attributes(),
+            attribute => attribute.Value.Contains("SystemColors", StringComparison.Ordinal));
 
         var detailTemplate = document
             .Descendants(presentation + "DataTemplate")

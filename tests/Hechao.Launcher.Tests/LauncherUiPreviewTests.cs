@@ -49,6 +49,59 @@ public sealed class LauncherUiPreviewTests
             exception.Message);
     }
 
+    [Fact]
+    public void TryGetRequestedSettingsTab_DefaultsToGameWhenArgumentIsMissing()
+    {
+        var requested = LauncherUiPreview.TryGetRequestedSettingsTab(
+            ["--ui-preview=dark"],
+            out var selectedIndex);
+
+        Assert.False(requested);
+        Assert.Equal(0, selectedIndex);
+    }
+
+    [Theory]
+    [InlineData("game", 0)]
+    [InlineData("CLIENT", 1)]
+    [InlineData(" behavior ", 2)]
+    [InlineData("diagnostics", 3)]
+    public void TryGetRequestedSettingsTab_ParsesSupportedTabs(
+        string value,
+        int expectedIndex)
+    {
+        var requested = LauncherUiPreview.TryGetRequestedSettingsTab(
+            [$"--ui-preview-settings-tab={value}"],
+            out var selectedIndex);
+
+        Assert.True(requested);
+        Assert.Equal(expectedIndex, selectedIndex);
+    }
+
+    [Fact]
+    public void TryGetRequestedSettingsTab_RejectsUnsupportedTabs()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            LauncherUiPreview.TryGetRequestedSettingsTab(
+                ["--ui-preview-settings-tab=network"],
+                out _));
+
+        Assert.Contains(
+            "game, client, behavior, or diagnostics",
+            exception.Message);
+    }
+
+    [Fact]
+    public void TryGetScreenshotRequest_DefaultsToLauncherWindowSize()
+    {
+        var requested = LauncherUiPreview.TryGetScreenshotRequest(
+            [$"--ui-preview-screenshot={Path.Combine(Path.GetTempPath(), "preview.png")}"],
+            out var request);
+
+        Assert.True(requested);
+        Assert.Equal(1200, request.Width);
+        Assert.Equal(720, request.Height);
+    }
+
     [Theory]
     [InlineData("dark", true)]
     [InlineData("LIGHT", false)]
@@ -97,7 +150,7 @@ public sealed class LauncherUiPreviewTests
 
         Assert.Equal(requestedPage, viewModel.ActivePage);
         Assert.Equal(expectedStartupPage, viewModel.SelectedStartupPage);
-        Assert.Equal(["服务器", "下载中心", "活动"], viewModel.StartupPageOptions);
+        Assert.Equal(["服务器", "活动", "下载中心"], viewModel.StartupPageOptions);
 
         viewModel.ShowDownloadsCommand.Execute(null);
     }
@@ -118,6 +171,20 @@ public sealed class LauncherUiPreviewTests
         Assert.Contains(
             viewModel.DownloadHistory,
             item => item.Status == DownloadJobStatus.Failed);
+    }
+
+    [Fact]
+    public void CreateViewModel_SeedsMultipleActivitiesOnTheSameDay()
+    {
+        var viewModel = LauncherUiPreview.CreateViewModel(
+            useDarkMode: true,
+            NullLauncherThemeService.Instance,
+            LauncherPage.Activities);
+
+        Assert.Contains(
+            viewModel.ActivityCalendar.Days,
+            day => day.ActivityCount >= 2);
+        Assert.Single(viewModel.ActivityCalendar.UnscheduledActivities);
     }
 }
 #endif

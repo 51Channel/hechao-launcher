@@ -211,6 +211,29 @@
                         </Style.Triggers>
                     </Style>
 
+                    <Style x:Key="ActivityCalendarListStyle" TargetType="ListBox">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBox">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True">
+                                        <ScrollViewer Focusable="False"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      VerticalScrollBarVisibility="Disabled">
+                                            <ItemsPresenter />
+                                        </ScrollViewer>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
                     <Style x:Key="ActivityCalendarDetailItemStyle" TargetType="ListBoxItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                         <Setter Property="Padding" Value="0" />
@@ -473,126 +496,131 @@
                                         <RowDefinition Height="112" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <Grid Grid.Row="0"
-                                          Background="{DynamicResource SteelSoftBrush}"
-                                          ClipToBounds="True">
-                                        <Image x:Name="ServerCardCoverImage"
-                                               Source="/Hechao.Launcher;component/Assets/hechao-fortress-banner.png"
-                                               Stretch="UniformToFill"
-                                               RenderOptions.BitmapScalingMode="HighQuality">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Converter={StaticResource ServerIsActivityConverter}}"
-                                                                     Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                        <Grid x:Name="ActivityServerCardArtwork">
-                                            <Grid.Style>
-                                                <Style TargetType="Grid">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Converter={StaticResource ServerIsActivityConverter}}"
-                                                                     Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Grid.Style>
-                                            <TextBlock Text="{Binding IconGlyph}"
-                                                       FontSize="88"
-                                                       FontWeight="Black"
-                                                       Foreground="{DynamicResource SteelBrush}"
-                                                       Opacity="0.14"
-                                                       Margin="0,-14,24,0"
-                                                       HorizontalAlignment="Right"
-                                                       VerticalAlignment="Center" />
-                                            <StackPanel Margin="22,0,0,0"
-                                                        Orientation="Horizontal"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center">
-                                                <Border Width="46"
-                                                        Height="46"
-                                                        Background="{DynamicResource HechaoRedSoftBrush}"
-                                                        BorderBrush="{DynamicResource HechaoRedBorderBrush}"
-                                                        BorderThickness="1"
-                                                        CornerRadius="6">
-                                                    <TextBlock Text="{Binding IconGlyph}"
-                                                               FontSize="22"
-                                                               FontWeight="Black"
-                                                               Foreground="{DynamicResource HechaoRedDarkBrush}"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center" />
-                                                </Border>
-                                                <StackPanel Margin="13,0,0,0"
-                                                            VerticalAlignment="Center">
-                                                    <TextBlock Text="赫朝活动"
-                                                               FontSize="13"
-                                                               FontWeight="Bold"
-                                                               Foreground="{DynamicResource InkBrush}" />
-                                                    <TextBlock Text="限时企划"
-                                                               FontSize="10"
-                                                               Foreground="{DynamicResource InkFaintBrush}"
-                                                               Margin="0,4,0,0" />
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Grid>
-                                        <Border x:Name="ServerCardShortNameBadge"
-                                                Margin="10"
-                                                Padding="8,4"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Bottom"
-                                                Background="{DynamicResource SurfaceBrush}"
-                                                CornerRadius="4">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Converter={StaticResource ServerIsActivityConverter}}"
-                                                                     Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock Text="{Binding ShortName}"
-                                                       FontSize="11"
-                                                       FontWeight="Bold"
-                                                       Foreground="{DynamicResource InkBrush}" />
-                                        </Border>
-                                        <Border Margin="10"
-                                                Padding="8,4"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                Background="{DynamicResource SurfaceBrush}"
-                                                CornerRadius="4">
-                                            <TextBlock FontSize="11" FontWeight="SemiBold">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="未开放" />
-                                                        <Setter Property="Foreground" Value="{DynamicResource ClosedBrush}" />
+                                    <Border x:Name="ServerCardArtworkSurface"
+                                            Grid.Row="0"
+                                            CornerRadius="6,6,0,0"
+                                            SnapsToDevicePixels="True"
+                                            RenderOptions.BitmapScalingMode="HighQuality">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <ImageBrush ImageSource="/Hechao.Launcher;component/Assets/hechao-fortress-banner.png"
+                                                                    Stretch="UniformToFill" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Converter={StaticResource ServerIsActivityConverter}}"
+                                                                 Value="True">
+                                                        <Setter Property="Background"
+                                                                Value="{DynamicResource SteelSoftBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Grid x:Name="ActivityServerCardArtwork">
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Status}"
-                                                                         Value="{x:Static contracts:ServerStatus.Online}">
-                                                                <Setter Property="Text" Value="在线" />
-                                                                <Setter Property="Foreground" Value="{DynamicResource OnlineBrush}" />
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Status}"
-                                                                         Value="{x:Static contracts:ServerStatus.Maintenance}">
-                                                                <Setter Property="Text" Value="维护中" />
-                                                                <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                            <DataTrigger Binding="{Binding Converter={StaticResource ServerIsActivityConverter}}"
+                                                                         Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Border>
-                                    </Grid>
+                                                </Grid.Style>
+                                                <TextBlock Text="{Binding IconGlyph}"
+                                                           FontSize="88"
+                                                           FontWeight="Black"
+                                                           Foreground="{DynamicResource SteelBrush}"
+                                                           Opacity="0.14"
+                                                           Margin="0,-14,24,0"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center" />
+                                                <StackPanel Margin="22,0,0,0"
+                                                            Orientation="Horizontal"
+                                                            HorizontalAlignment="Left"
+                                                            VerticalAlignment="Center">
+                                                    <Border Width="46"
+                                                            Height="46"
+                                                            Background="{DynamicResource HechaoRedSoftBrush}"
+                                                            BorderBrush="{DynamicResource HechaoRedBorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6">
+                                                        <TextBlock Text="{Binding IconGlyph}"
+                                                                   FontSize="22"
+                                                                   FontWeight="Black"
+                                                                   Foreground="{DynamicResource HechaoRedDarkBrush}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <StackPanel Margin="13,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="赫朝活动"
+                                                                   FontSize="13"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{DynamicResource InkBrush}" />
+                                                        <TextBlock Text="限时企划"
+                                                                   FontSize="10"
+                                                                   Foreground="{DynamicResource InkFaintBrush}"
+                                                                   Margin="0,4,0,0" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                            <Border x:Name="ServerCardShortNameBadge"
+                                                    Margin="10"
+                                                    Padding="8,4"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Bottom"
+                                                    Background="{DynamicResource SurfaceBrush}"
+                                                    CornerRadius="4">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Converter={StaticResource ServerIsActivityConverter}}"
+                                                                         Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding ShortName}"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource InkBrush}" />
+                                            </Border>
+                                            <Border Margin="10"
+                                                    Padding="8,4"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Top"
+                                                    Background="{DynamicResource SurfaceBrush}"
+                                                    CornerRadius="4">
+                                                <TextBlock FontSize="11" FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="未开放" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource ClosedBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Status}"
+                                                                             Value="{x:Static contracts:ServerStatus.Online}">
+                                                                    <Setter Property="Text" Value="在线" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource OnlineBrush}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Status}"
+                                                                             Value="{x:Static contracts:ServerStatus.Maintenance}">
+                                                                    <Setter Property="Text" Value="维护中" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
                                     <Grid Grid.Row="1" Margin="14,11,14,10">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -667,6 +695,7 @@
                   Grid.Row="0"
                   Background="{DynamicResource RailBrush}"
                   MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown"
+                  PreviewMouseLeftButtonUp="TitleBar_OnPreviewMouseLeftButtonUp"
                   Panel.ZIndex="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="230" />
@@ -817,15 +846,15 @@
                         </ToggleButton>
                     </Grid>
                     <Grid Width="42" Height="66">
-                        <Button Style="{StaticResource QuietIconButtonStyle}"
+                        <Button Style="{StaticResource TopBarPageIconButtonStyle}"
                                 Width="38"
                                 Height="38"
                                 VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                ContentTemplate="{x:Null}"
-                                Command="{Binding ShowSettingsPageCommand}"
-                                ToolTip="启动器设置"
-                                AutomationProperties.Name="启动器设置">
+                                 HorizontalAlignment="Center"
+                                 ContentTemplate="{x:Null}"
+                                 Command="{Binding ShowSettingsPageCommand}"
+                                 ToolTip="启动器设置"
+                                 AutomationProperties.Name="启动器设置">
                             <controls:IconParkIcon Kind="SettingTwo" Width="18" Height="18" />
                         </Button>
                     </Grid>
@@ -833,11 +862,11 @@
                             Height="52"
                             Margin="3,7,8,7"
                             Padding="7,4"
-                            Style="{StaticResource BaseButtonStyle}"
-                            ContentTemplate="{x:Null}"
-                            Command="{Binding ShowAccountCommand}"
-                            ToolTip="{Binding AccountStatusText}"
-                            AutomationProperties.Name="赫朝账户">
+                             Style="{StaticResource TopBarAccountButtonStyle}"
+                             ContentTemplate="{x:Null}"
+                             Command="{Binding ShowAccountCommand}"
+                             ToolTip="{Binding AccountStatusText}"
+                             AutomationProperties.Name="赫朝账户">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="34" />
@@ -2207,8 +2236,7 @@
                                      ItemsSource="{Binding ActivityCalendar.SelectedActivities}"
                                      ItemTemplate="{StaticResource ActivityCalendarDetailTemplate}"
                                      ItemContainerStyle="{StaticResource ActivityCalendarDetailItemStyle}"
-                                     BorderThickness="0"
-                                     Background="Transparent"
+                                     Style="{StaticResource ActivityCalendarListStyle}"
                                      IsEnabled="{Binding CanSelectServer}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -2255,8 +2283,7 @@
                                          ItemsSource="{Binding ActivityCalendar.UnscheduledActivities}"
                                          ItemTemplate="{StaticResource ActivityCalendarDetailTemplate}"
                                          ItemContainerStyle="{StaticResource ActivityCalendarDetailItemStyle}"
-                                         BorderThickness="0"
-                                         Background="Transparent"
+                                         Style="{StaticResource ActivityCalendarListStyle}"
                                          IsEnabled="{Binding CanSelectServer}"
                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -2269,13 +2296,22 @@
 
 
             <!-- Hechao account page -->
-            <Border x:Name="AccountDirectoryPanel"
-                    Grid.Column="1"
-                    Grid.Row="1"
-                    Background="{DynamicResource DirectoryBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}"
-                    BorderThickness="0,0,1,0"
-                    Visibility="{Binding IsAccountPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid x:Name="AccountWorkspace"
+                  Grid.Column="1"
+                  Grid.ColumnSpan="2"
+                  Grid.Row="1"
+                  Background="{DynamicResource CanvasBrush}"
+                  Visibility="{Binding IsAccountPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="292" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border x:Name="AccountDirectoryPanel"
+                        Grid.Column="0"
+                        Background="{DynamicResource DirectoryBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="90" />
@@ -2295,7 +2331,7 @@
                     </Border>
 
                     <Grid Grid.Row="1">
-                        <Grid>
+                        <Grid x:Name="AccountGuestDirectory">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Visible" />
@@ -2306,8 +2342,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
-                            <StackPanel Margin="28,18,30,28"
-                                        MaxWidth="560"
+                            <StackPanel Margin="20,18,18,24"
                                         VerticalAlignment="Top">
                                 <Border Width="52"
                                         Height="52"
@@ -2340,12 +2375,11 @@
                                             <ColumnDefinition Width="36" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="01"
-                                                   FontFamily="Segoe UI"
-                                                   FontSize="11"
-                                                   FontWeight="Bold"
-                                                   Foreground="{DynamicResource HechaoRedDarkBrush}"
-                                                   VerticalAlignment="Center" />
+                                        <controls:IconParkIcon Kind="User"
+                                                               Width="16"
+                                                               Height="16"
+                                                               Foreground="{DynamicResource HechaoRedDarkBrush}"
+                                                               VerticalAlignment="Center" />
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="赫朝身份"
                                                        FontSize="14"
@@ -2363,12 +2397,11 @@
                                             <ColumnDefinition Width="36" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="02"
-                                                   FontFamily="Segoe UI"
-                                                   FontSize="11"
-                                                   FontWeight="Bold"
-                                                   Foreground="{DynamicResource SteelBrush}"
-                                                   VerticalAlignment="Center" />
+                                        <controls:IconParkIcon Kind="Shield"
+                                                               Width="16"
+                                                               Height="16"
+                                                               Foreground="{DynamicResource SteelBrush}"
+                                                               VerticalAlignment="Center" />
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="Minecraft Java"
                                                        FontSize="14"
@@ -2401,7 +2434,7 @@
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
-                            <Grid>
+                            <Grid x:Name="AccountProfileDirectory">
                                 <Grid.Style>
                                     <Style TargetType="Grid">
                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -2412,10 +2445,10 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Grid.Style>
-                                <StackPanel Margin="28,18,30,28">
+                                <StackPanel Margin="20,16,18,22">
                                     <Border x:Name="AccountProfileAvatar"
-                                            Width="72"
-                                            Height="72"
+                                            Width="56"
+                                            Height="56"
                                             HorizontalAlignment="Left"
                                             Background="{DynamicResource HechaoRedSoftBrush}"
                                             BorderBrush="{DynamicResource HechaoRedBorderBrush}"
@@ -2464,17 +2497,18 @@
                                         </Grid>
                                     </Border>
                                     <TextBlock Text="{Binding AccountDisplayName}"
-                                               FontSize="25"
+                                               FontSize="20"
                                                FontWeight="Black"
-                                               Margin="0,18,0,0" />
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,12,0,0" />
                                     <TextBlock Text="{Binding AccountUsername}"
                                                FontFamily="Segoe UI"
                                                FontSize="12"
                                                Foreground="{DynamicResource InkMutedBrush}"
                                                Margin="0,4,0,0" />
 
-                                    <Border Margin="0,22,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Margin="0,16,0,0"
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
@@ -2496,7 +2530,7 @@
                                             </StackPanel>
                                         </Grid>
                                     </Border>
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <StackPanel>
                                             <TextBlock Text="当前权限"
                                                        FontSize="11"
@@ -2510,20 +2544,6 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <TextBlock Text="会话安全"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource InkFaintBrush}"
-                                               Margin="0,24,0,10" />
-                                    <Button Style="{StaticResource BaseButtonStyle}"
-                                            Command="{Binding LogoutAccountCommand}"
-                                            HorizontalAlignment="Stretch"
-                                            Content="退出当前设备" />
-                                    <Button Margin="0,10,0,0"
-                                            Style="{StaticResource DangerButtonStyle}"
-                                            Command="{Binding LogoutAllDevicesCommand}"
-                                            HorizontalAlignment="Stretch"
-                                            Content="退出所有设备" />
                                 </StackPanel>
                             </Grid>
                         </ScrollViewer>
@@ -2531,12 +2551,10 @@
                 </Grid>
             </Border>
 
-            <Grid x:Name="AccountInspector"
-                  Grid.Column="2"
-                  Grid.Row="1"
-                  Background="{DynamicResource SurfaceBrush}"
-                  Visibility="{Binding IsAccountPage, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <Grid>
+                <Grid x:Name="AccountInspector"
+                      Grid.Column="1"
+                      Background="{DynamicResource SurfaceBrush}">
+                <Grid x:Name="AccountGuestContent">
                     <Grid.Style>
                         <Style TargetType="Grid">
                             <Setter Property="Visibility" Value="Visible" />
@@ -2555,23 +2573,14 @@
                     <Border Grid.Row="0"
                             Style="{StaticResource WorkspaceInspectorHeaderStyle}">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="34" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="34" />
-                            </Grid.ColumnDefinitions>
-                            <controls:IconParkIcon Kind="User"
-                                                   Width="16"
-                                                   Height="16"
-                                                   Foreground="{DynamicResource InkFaintBrush}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
-                                       Text="登录与注册"
-                                       FontSize="13"
+                            <TextBlock Text="登录与注册"
+                                       FontSize="15"
                                        FontWeight="SemiBold"
-                                       Foreground="{DynamicResource InkMutedBrush}"
-                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="赫朝身份"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource InkFaintBrush}"
+                                       HorizontalAlignment="Right"
                                        VerticalAlignment="Center" />
                         </Grid>
                     </Border>
@@ -2579,7 +2588,7 @@
                     <ScrollViewer Grid.Row="1"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Margin="24,22,20,28">
+                        <StackPanel Style="{StaticResource SettingsContentStackStyle}">
                             <TabControl Style="{StaticResource AccountTabControlStyle}">
                                 <TabControl.Resources>
                                     <Style TargetType="TabItem"
@@ -2761,7 +2770,7 @@
                     </ScrollViewer>
                 </Grid>
 
-                <Grid>
+                <Grid x:Name="AccountAuthenticatedContent">
                     <Grid.Style>
                         <Style TargetType="Grid">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -2780,23 +2789,14 @@
                     <Border Grid.Row="0"
                             Style="{StaticResource WorkspaceInspectorHeaderStyle}">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="34" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="34" />
-                            </Grid.ColumnDefinitions>
-                            <controls:IconParkIcon Kind="Shield"
-                                                   Width="16"
-                                                   Height="16"
-                                                   Foreground="{DynamicResource InkFaintBrush}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
-                                       Text="身份详情"
-                                       FontSize="13"
+                            <TextBlock Text="身份与安全"
+                                       FontSize="15"
                                        FontWeight="SemiBold"
-                                       Foreground="{DynamicResource InkMutedBrush}"
-                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="正版验证与设备会话"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource InkFaintBrush}"
+                                       HorizontalAlignment="Right"
                                        VerticalAlignment="Center" />
                         </Grid>
                     </Border>
@@ -2804,12 +2804,22 @@
                     <ScrollViewer Grid.Row="1"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Margin="22,6,18,28">
-                            <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                        <StackPanel Style="{StaticResource SettingsContentStackStyle}">
+                            <TextBlock Text="身份与权限"
+                                       Style="{StaticResource SettingsSectionLabelStyle}" />
+                            <TextBlock Text="管理 Minecraft 正版身份与服务器权限。"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource InkMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0" />
+
+                            <Border Margin="0,18,0,0"
+                                    Style="{StaticResource SettingsRowStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="42" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Border Width="34"
                                             Height="34"
@@ -2823,7 +2833,8 @@
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center" />
                                     </Border>
-                                    <StackPanel Grid.Column="1">
+                                    <StackPanel Grid.Column="1"
+                                                Margin="0,0,16,0">
                                         <TextBlock Text="Minecraft Java 正版身份"
                                                    FontSize="15"
                                                    FontWeight="SemiBold" />
@@ -2838,13 +2849,15 @@
                                                    FontWeight="SemiBold"
                                                    TextWrapping="Wrap"
                                                    Margin="0,8,0,0" />
-                                        <Grid Margin="0,15,0,0">
-                                            <Button Height="40"
-                                                    Command="{Binding LinkMinecraftCommand}"
+                                    </StackPanel>
+                                    <Grid Grid.Column="2"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center">
+                                            <Button Command="{Binding LinkMinecraftCommand}"
                                                     AutomationProperties.Name="绑定 Microsoft 正版身份">
                                                 <Button.Style>
                                                     <Style TargetType="Button"
-                                                           BasedOn="{StaticResource PrimaryButtonStyle}">
+                                                           BasedOn="{StaticResource SettingsPrimaryActionButtonStyle}">
                                                         <Setter Property="Visibility" Value="Visible" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsMinecraftLinked}" Value="True">
@@ -2858,12 +2871,11 @@
                                                            FontSize="13"
                                                            FontWeight="Bold" />
                                             </Button>
-                                            <Button Height="40"
-                                                    Command="{Binding UnlinkMinecraftCommand}"
+                                            <Button Command="{Binding UnlinkMinecraftCommand}"
                                                     Content="解除 Minecraft 绑定">
                                                 <Button.Style>
                                                     <Style TargetType="Button"
-                                                           BasedOn="{StaticResource BaseButtonStyle}">
+                                                           BasedOn="{StaticResource SettingsActionButtonStyle}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsMinecraftLinked}" Value="True">
@@ -2874,7 +2886,6 @@
                                                 </Button.Style>
                                             </Button>
                                         </Grid>
-                                    </StackPanel>
                                 </Grid>
                             </Border>
 
@@ -2913,18 +2924,14 @@
                                                      ToolTip="当前赫朝账号密码"
                                                      AutomationProperties.Name="当前赫朝账号密码" />
                                         <Button Grid.Column="1"
-                                                MinWidth="74"
-                                                Height="40"
                                                 Margin="8,0,0,0"
-                                                Style="{StaticResource BaseButtonStyle}"
+                                                Style="{StaticResource SettingsActionButtonStyle}"
                                                 AutomationProperties.Name="取消解除 Minecraft 绑定"
                                                 Click="CancelMinecraftUnlinkButton_OnClick"
                                                 Content="取消" />
                                         <Button Grid.Column="2"
-                                                MinWidth="90"
-                                                Height="40"
                                                 Margin="8,0,0,0"
-                                                Style="{StaticResource DangerButtonStyle}"
+                                                Style="{StaticResource SettingsDangerActionButtonStyle}"
                                                 AutomationProperties.Name="确认解除 Minecraft 绑定"
                                                 Click="ConfirmMinecraftUnlinkButton_OnClick"
                                                 Content="确认解除" />
@@ -2932,11 +2939,12 @@
                                 </Grid>
                             </Border>
 
-                            <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                            <Border Style="{StaticResource SettingsRowStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="42" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Border Width="34"
                                             Height="34"
@@ -2950,7 +2958,8 @@
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center" />
                                     </Border>
-                                    <StackPanel Grid.Column="1">
+                                    <StackPanel Grid.Column="1"
+                                                Margin="0,0,16,0">
                                         <TextBlock Text="LuckPerms 权限"
                                                    FontSize="15"
                                                    FontWeight="SemiBold" />
@@ -2959,14 +2968,15 @@
                                                    Foreground="{DynamicResource InkMutedBrush}"
                                                    TextWrapping="Wrap"
                                                    Margin="0,5,0,0" />
-                                        <Button Command="{Binding OpenAdminConsoleCommand}"
-                                                Content="{Binding AdminConsoleButtonText}"
-                                                HorizontalAlignment="Left"
-                                                Margin="0,14,0,0"
-                                                MinWidth="132">
+                                    </StackPanel>
+                                        <Button Grid.Column="2"
+                                                Command="{Binding OpenAdminConsoleCommand}"
+                                                 Content="{Binding AdminConsoleButtonText}"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center">
                                             <Button.Style>
                                                 <Style TargetType="Button"
-                                                       BasedOn="{StaticResource BaseButtonStyle}">
+                                                       BasedOn="{StaticResource SettingsActionButtonStyle}">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsAdministrator}" Value="True">
@@ -2976,7 +2986,59 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Text="会话安全"
+                                       Style="{StaticResource SettingsSectionLabelStyle}"
+                                       Margin="0,22,0,0" />
+                            <TextBlock Text="管理当前设备和其他已登录设备的会话。"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource InkMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0" />
+
+                            <Border Margin="0,10,0,0"
+                                    Style="{StaticResource SettingsRowStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,16,0">
+                                        <TextBlock Text="当前设备"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="仅退出这台电脑上的赫朝账户。"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource InkMutedBrush}"
+                                                   Margin="0,4,0,0" />
                                     </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Style="{StaticResource SettingsActionButtonStyle}"
+                                            Command="{Binding LogoutAccountCommand}"
+                                            Content="退出当前设备" />
+                                </Grid>
+                            </Border>
+                            <Border Style="{StaticResource SettingsRowStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,16,0">
+                                        <TextBlock Text="所有设备"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="撤销这个账户在全部设备上的登录会话。"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource InkMutedBrush}"
+                                                   Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Style="{StaticResource SettingsDangerActionButtonStyle}"
+                                            Command="{Binding LogoutAllDevicesCommand}"
+                                            Content="退出所有设备" />
                                 </Grid>
                             </Border>
 
@@ -3000,6 +3062,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+                </Grid>
             </Grid>
 
 
@@ -3011,8 +3074,8 @@
                   Background="{DynamicResource CanvasBrush}"
                   Visibility="{Binding IsSettingsPage, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="292" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="520" />
                 </Grid.ColumnDefinitions>
 
                 <TabControl x:Name="SettingsWorkspaceTabs"
@@ -3055,9 +3118,8 @@
                                                FontSize="15"
                                                FontWeight="SemiBold"
                                                VerticalAlignment="Center" />
-                                    <TextBlock Text="01 / 04"
-                                               FontFamily="Segoe UI"
-                                               FontSize="10"
+                                    <TextBlock Text="内存与启动行为"
+                                               FontSize="11"
                                                Foreground="{DynamicResource InkFaintBrush}"
                                                HorizontalAlignment="Right"
                                                VerticalAlignment="Center" />
@@ -3067,7 +3129,7 @@
                                           Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel Margin="20,20,20,28">
+                                <StackPanel Style="{StaticResource SettingsContentStackStyle}">
                                     <TextBlock Text="运行参数"
                                                Style="{StaticResource SettingsSectionLabelStyle}" />
                                     <TextBlock Text="这些偏好适用于启动器管理的全部客户端档案。"
@@ -3077,7 +3139,7 @@
                                                Margin="0,6,0,0" />
 
                                     <Border Margin="0,18,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <StackPanel>
                                             <TextBlock Text="默认游戏内存"
                                                        FontSize="14"
@@ -3094,7 +3156,7 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3157,9 +3219,8 @@
                                                FontSize="15"
                                                FontWeight="SemiBold"
                                                VerticalAlignment="Center" />
-                                    <TextBlock Text="02 / 04"
-                                               FontFamily="Segoe UI"
-                                               FontSize="10"
+                                    <TextBlock Text="目录、更新与缓存"
+                                               FontSize="11"
                                                Foreground="{DynamicResource InkFaintBrush}"
                                                HorizontalAlignment="Right"
                                                VerticalAlignment="Center" />
@@ -3169,7 +3230,7 @@
                                           Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel Margin="20,20,20,28">
+                                <StackPanel Style="{StaticResource SettingsContentStackStyle}">
                                     <TextBlock Text="存储位置"
                                                Style="{StaticResource SettingsSectionLabelStyle}" />
                                     <TextBlock Text="目录变更不会移动已有文件；新的安装会写入新位置。"
@@ -3179,7 +3240,7 @@
                                                Margin="0,6,0,0" />
 
                                     <Border Margin="0,18,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <StackPanel>
                                             <TextBlock Text="游戏数据目录"
                                                        FontSize="14"
@@ -3205,9 +3266,8 @@
                                                                AutomationProperties.HelpText="{Binding ClientDirectory}" />
                                                 </Border>
                                                 <Button Grid.Column="1"
-                                                        Style="{StaticResource BaseButtonStyle}"
+                                                        Style="{StaticResource SettingsActionButtonStyle}"
                                                         Margin="10,0,0,0"
-                                                        Padding="13,0"
                                                         Click="ChooseClientDirectoryButton_OnClick"
                                                         IsEnabled="{Binding CanChangeClientDirectory}"
                                                         Content="更改目录"
@@ -3221,7 +3281,7 @@
                                                Margin="0,22,0,0" />
 
                                     <Border Margin="0,6,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3245,7 +3305,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3262,9 +3322,8 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource BaseButtonStyle}"
+                                                    Style="{StaticResource SettingsActionButtonStyle}"
                                                     Command="{Binding CheckLauncherUpdateCommand}"
-                                                    Padding="13,0"
                                                     AutomationProperties.Name="检查启动器更新">
                                                 <StackPanel Orientation="Horizontal">
                                                     <controls:IconParkIcon Kind="CheckOne"
@@ -3277,7 +3336,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3301,7 +3360,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3325,7 +3384,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3388,9 +3447,8 @@
                                                FontSize="15"
                                                FontWeight="SemiBold"
                                                VerticalAlignment="Center" />
-                                    <TextBlock Text="03 / 04"
-                                               FontFamily="Segoe UI"
-                                               FontSize="10"
+                                    <TextBlock Text="首页与本机数据"
+                                               FontSize="11"
                                                Foreground="{DynamicResource InkFaintBrush}"
                                                HorizontalAlignment="Right"
                                                VerticalAlignment="Center" />
@@ -3400,12 +3458,12 @@
                                           Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel Margin="20,20,20,28">
+                                <StackPanel Style="{StaticResource SettingsContentStackStyle}">
                                     <TextBlock Text="打开方式"
                                                Style="{StaticResource SettingsSectionLabelStyle}" />
 
                                     <Border Margin="0,6,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3435,7 +3493,7 @@
                                                Margin="0,22,0,0" />
 
                                     <Border Margin="0,6,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3452,15 +3510,14 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource BaseButtonStyle}"
+                                                    Style="{StaticResource SettingsActionButtonStyle}"
                                                     Command="{Binding OpenClientDirectoryCommand}"
-                                                    Padding="13,0"
                                                     Content="打开目录"
                                                     AutomationProperties.Name="打开游戏数据目录" />
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3477,15 +3534,14 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Style="{StaticResource SettingsDangerActionButtonStyle}"
                                                     Command="{Binding ClearDownloadHistoryCommand}"
-                                                    Padding="13,0"
                                                     Content="清空"
                                                     AutomationProperties.Name="清空下载历史" />
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3502,9 +3558,8 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Style="{StaticResource SettingsDangerActionButtonStyle}"
                                                     Command="{Binding ResetLauncherSettingsCommand}"
-                                                    Padding="13,0"
                                                     Content="恢复默认"
                                                     AutomationProperties.Name="恢复默认设置" />
                                         </Grid>
@@ -3549,9 +3604,8 @@
                                                FontSize="15"
                                                FontWeight="SemiBold"
                                                VerticalAlignment="Center" />
-                                    <TextBlock Text="04 / 04"
-                                               FontFamily="Segoe UI"
-                                               FontSize="10"
+                                    <TextBlock Text="退出记录与诊断包"
+                                               FontSize="11"
                                                Foreground="{DynamicResource InkFaintBrush}"
                                                HorizontalAlignment="Right"
                                                VerticalAlignment="Center" />
@@ -3561,7 +3615,7 @@
                                           Grid.Row="1"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel Margin="20,20,20,28">
+                                <StackPanel Style="{StaticResource SettingsContentStackStyle}">
                                     <TextBlock Text="运行记录"
                                                Style="{StaticResource SettingsSectionLabelStyle}" />
 
@@ -3612,7 +3666,7 @@
                                                AutomationProperties.LiveSetting="Polite" />
 
                                     <Border Margin="0,16,0,0"
-                                            Style="{StaticResource WorkspaceFlatRowStyle}">
+                                            Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3629,26 +3683,25 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Style="{StaticResource SettingsPrimaryActionButtonStyle}"
                                                     Command="{Binding CreateDiagnosticBundleCommand}"
-                                                    Padding="14,0"
                                                     AutomationProperties.Name="生成脱敏诊断包">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <controls:IconParkIcon Kind="Tool"
-                                                                           Width="14"
-                                                                           Height="14"
-                                                                           Foreground="White"
-                                                                           Margin="0,0,8,0" />
-                                                    <TextBlock Text="{Binding DiagnosticActionText}"
-                                                               Foreground="White"
-                                                               FontSize="13"
-                                                               FontWeight="SemiBold" />
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <controls:IconParkIcon Kind="Tool"
+                                                                               Width="14"
+                                                                               Height="14"
+                                                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                                               Margin="0,0,8,0" />
+                                                        <TextBlock Text="{Binding DiagnosticActionText}"
+                                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                                   FontSize="13"
+                                                                   FontWeight="SemiBold" />
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3665,11 +3718,10 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource BaseButtonStyle}"
+                                                    Style="{StaticResource SettingsActionButtonStyle}"
                                                     IsEnabled="{Binding CanUploadDiagnosticBundle}"
                                                     Click="UploadDiagnosticButton_OnClick"
                                                     ToolTip="只上传刚刚由启动器生成的脱敏诊断包"
-                                                    Padding="13,0"
                                                     AutomationProperties.Name="上传脱敏诊断包">
                                                 <StackPanel Orientation="Horizontal">
                                                     <controls:IconParkIcon Kind="ExternalTransmission"
@@ -3684,7 +3736,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource WorkspaceFlatRowStyle}">
+                                    <Border Style="{StaticResource SettingsRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -3701,9 +3753,8 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <Button Grid.Column="1"
-                                                    Style="{StaticResource BaseButtonStyle}"
+                                                    Style="{StaticResource SettingsActionButtonStyle}"
                                                     Command="{Binding OpenDiagnosticsDirectoryCommand}"
-                                                    Padding="13,0"
                                                     AutomationProperties.Name="打开诊断目录">
                                                 <StackPanel Orientation="Horizontal">
                                                     <controls:IconParkIcon Kind="FolderOpen"
