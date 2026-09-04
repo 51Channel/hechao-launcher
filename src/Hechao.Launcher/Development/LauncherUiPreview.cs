@@ -13,10 +13,21 @@ namespace Hechao.Launcher.Development;
 
 internal static class LauncherUiPreview
 {
+    private const string PreviewPageArgumentPrefix = "--ui-preview-page=";
     private const string ScreenshotArgumentPrefix = "--ui-preview-screenshot=";
     private const string ScreenshotSizeArgumentPrefix = "--ui-preview-size=";
-    private const string PreviewDataRoot = @"D:\Hechao\Launcher-UI-Preview\GameData";
-    private const string PreviewDiagnosticsRoot = @"D:\Hechao\Launcher-UI-Preview\Diagnostics";
+    private const string ScreenshotThemeSwitchArgumentPrefix =
+        "--ui-preview-switch-theme=";
+    private static readonly string PreviewRoot = Path.Combine(
+        Path.GetTempPath(),
+        "Hechao",
+        "Launcher-UI-Preview");
+    private static readonly string PreviewDataRoot = Path.Combine(
+        PreviewRoot,
+        "GameData");
+    private static readonly string PreviewDiagnosticsRoot = Path.Combine(
+        PreviewRoot,
+        "Diagnostics");
 
     public static bool TryGetRequestedTheme(
         IEnumerable<string> arguments,
@@ -58,6 +69,7 @@ internal static class LauncherUiPreview
         string? outputPath = null;
         var width = 1500;
         var height = 860;
+        bool? useDarkModeAfterRender = null;
         foreach (var argument in arguments)
         {
             if (argument.StartsWith(
@@ -65,6 +77,24 @@ internal static class LauncherUiPreview
                     StringComparison.OrdinalIgnoreCase))
             {
                 outputPath = argument[ScreenshotArgumentPrefix.Length..].Trim();
+                continue;
+            }
+
+            if (argument.StartsWith(
+                    ScreenshotThemeSwitchArgumentPrefix,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                useDarkModeAfterRender =
+                    argument[ScreenshotThemeSwitchArgumentPrefix.Length..]
+                        .Trim()
+                        .ToLowerInvariant() switch
+                    {
+                        "dark" => true,
+                        "light" => false,
+                        _ => throw new ArgumentException(
+                            "UI preview runtime theme must be dark or light.",
+                            nameof(arguments))
+                    };
                 continue;
             }
 
@@ -111,8 +141,47 @@ internal static class LauncherUiPreview
                 nameof(arguments));
         }
 
-        request = new ScreenshotRequest(normalizedPath, width, height);
+        request = new ScreenshotRequest(
+            normalizedPath,
+            width,
+            height,
+            useDarkModeAfterRender);
         return true;
+    }
+
+    public static bool TryGetRequestedPage(
+        IEnumerable<string> arguments,
+        out LauncherPage page)
+    {
+        ArgumentNullException.ThrowIfNull(arguments);
+
+        foreach (var argument in arguments)
+        {
+            if (!argument.StartsWith(
+                    PreviewPageArgumentPrefix,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            page = argument[PreviewPageArgumentPrefix.Length..]
+                .Trim()
+                .ToLowerInvariant() switch
+            {
+                "servers" => LauncherPage.Servers,
+                "downloads" => LauncherPage.Downloads,
+                "activities" => LauncherPage.Activities,
+                "account" => LauncherPage.Account,
+                "settings" => LauncherPage.Settings,
+                _ => throw new ArgumentException(
+                    "UI preview page must be servers, downloads, activities, account, or settings.",
+                    nameof(arguments))
+            };
+            return true;
+        }
+
+        page = LauncherPage.Servers;
+        return false;
     }
 
     public static async Task CaptureWhenReadyAsync(
@@ -139,6 +208,26 @@ internal static class LauncherUiPreview
         if (viewModel.IsCatalogLoading || viewModel.SelectedServer is null)
         {
             throw new TimeoutException("The preview catalog did not finish loading.");
+        }
+
+        if (viewModel.ActivePage == LauncherPage.Activities &&
+            viewModel.ActivityCalendar.HasNoSelectedActivities)
+        {
+            var activityDay = viewModel.ActivityCalendar.Days
+                .FirstOrDefault(day => day.HasActivities);
+            if (activityDay is not null)
+            {
+                viewModel.ActivityCalendar.SelectDayCommand.Execute(activityDay);
+            }
+        }
+
+        if (request.UseDarkModeAfterRender is { } useDarkModeAfterRender &&
+            viewModel.UseDarkMode != useDarkModeAfterRender)
+        {
+            viewModel.UseDarkMode = useDarkModeAfterRender;
+            await window.Dispatcher.InvokeAsync(
+                window.UpdateLayout,
+                DispatcherPriority.ContextIdle);
         }
 
         await window.Dispatcher.InvokeAsync(
@@ -178,9 +267,21 @@ internal static class LauncherUiPreview
 
     public static MainWindowViewModel CreateViewModel(
         bool useDarkMode,
-        ILauncherThemeService themeService)
+        ILauncherThemeService themeService,
+        LauncherPage previewPage = LauncherPage.Servers)
     {
         ArgumentNullException.ThrowIfNull(themeService);
+        if (!Enum.IsDefined(previewPage))
+        {
+            throw new ArgumentOutOfRangeException(nameof(previewPage));
+        }
+
+        var startupPage = previewPage switch
+        {
+            LauncherPage.Downloads => "下载中心",
+            LauncherPage.Activities => "活动",
+            _ => "服务器"
+        };
 
         var settings = new LauncherSettings(
             SelectedServerId: "skyrealm",
@@ -190,17 +291,20 @@ internal static class LauncherUiPreview
             KeepDownloadsAfterClose: true,
             CloseLauncherAfterGameStart: false,
             OpenDownloadsWhenInstalling: true,
-            StartupPage: "服务器",
+            StartupPage: startupPage,
             UseSystemProxy: false,
             UseDarkMode: useDarkMode);
 
-        return new MainWindowViewModel(
+        var viewModel = new MainWindowViewModel(
             new PreviewCatalogClient(),
             new PreviewAuthenticationService(),
             new MemorySettingsStore(settings),
             new PreviewInstallationService(),
             new PreviewGameLauncherService(),
-            new MemoryDownloadHistoryStore(),
+            new MemoryDownloadHistoryStore(
+                previewPage == LauncherPage.Downloads
+                    ? CreateDownloadHistory()
+                    : []),
             new PreviewGameDiagnosticsService(),
             new PreviewDiagnosticUploadService(),
             telemetryService: NullLauncherTelemetryService.Instance,
@@ -212,6 +316,50 @@ internal static class LauncherUiPreview
             themeService: themeService,
             initialSettings: settings,
             isUiPreview: true);
+
+        switch (previewPage)
+        {
+            case LauncherPage.Account:
+                viewModel.ShowAccountCommand.Execute(null);
+                break;
+            case LauncherPage.Settings:
+                viewModel.ShowSettingsPageCommand.Execute(null);
+                break;
+        }
+
+        return viewModel;
+    }
+
+    private static IReadOnlyList<DownloadHistoryRecord> CreateDownloadHistory()
+    {
+        var now = DateTimeOffset.Now;
+        return
+        [
+            new DownloadHistoryRecord(
+                Guid.Parse("384f78f8-1f29-4f85-a926-eb1905559976"),
+                "shopping-street-1.20.1",
+                "商业街活动客户端",
+                "0.9.5",
+                now.AddHours(-3),
+                now.AddHours(-2).AddMinutes(-46),
+                DownloadJobStatus.Failed,
+                86_245_376,
+                132_120_576,
+                "mods/architectury-9.2.14-forge.jar",
+                "连接中断，已保留校验通过的文件"),
+            new DownloadHistoryRecord(
+                Guid.Parse("3e84e57c-9ebd-43c6-85ba-3bbf6e812e70"),
+                "skyrealm-1.21.11",
+                "天域基础客户端",
+                "1.0.4",
+                now.AddDays(-1).AddMinutes(-6),
+                now.AddDays(-1),
+                DownloadJobStatus.Completed,
+                48_234_102,
+                48_234_102,
+                string.Empty,
+                null)
+        ];
     }
 
     private static InvalidOperationException PreviewOnlyException() =>
@@ -472,7 +620,13 @@ internal static class LauncherUiPreview
 
     private sealed class MemoryDownloadHistoryStore : IDownloadHistoryStore
     {
-        private IReadOnlyList<DownloadHistoryRecord> _records = [];
+        private IReadOnlyList<DownloadHistoryRecord> _records;
+
+        public MemoryDownloadHistoryStore(
+            IEnumerable<DownloadHistoryRecord> records)
+        {
+            _records = records.ToArray();
+        }
 
         public IReadOnlyList<DownloadHistoryRecord> Load() => _records;
 
@@ -510,6 +664,7 @@ internal static class LauncherUiPreview
     internal sealed record ScreenshotRequest(
         string OutputPath,
         int Width,
-        int Height);
+        int Height,
+        bool? UseDarkModeAfterRender = null);
 }
 #endif

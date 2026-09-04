@@ -37,11 +37,15 @@ public partial class App : Application
                 e.Args,
                 out var previewUsesDarkMode))
         {
+            Development.LauncherUiPreview.TryGetRequestedPage(
+                e.Args,
+                out var previewPage);
             var previewThemeService = new LauncherThemeService(this);
             previewThemeService.Apply(previewUsesDarkMode);
             var previewViewModel = Development.LauncherUiPreview.CreateViewModel(
                 previewUsesDarkMode,
-                previewThemeService);
+                previewThemeService,
+                previewPage);
             var previewWindow = new MainWindow(
                 previewViewModel);
             previewWindow.Title = previewUsesDarkMode
@@ -53,6 +57,9 @@ public partial class App : Application
             {
                 previewWindow.Width = screenshotRequest.Width;
                 previewWindow.Height = screenshotRequest.Height;
+                previewWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+                previewWindow.Left = -10_000;
+                previewWindow.Top = -10_000;
                 previewWindow.ShowActivated = false;
                 previewWindow.ShowInTaskbar = false;
                 var captureStarted = false;

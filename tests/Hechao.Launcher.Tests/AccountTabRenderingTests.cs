@@ -211,7 +211,7 @@ public sealed class AccountTabRenderingTests
         Assert.InRange(Math.Abs(borderLeftInset), 0d, 0.01d);
         Assert.InRange(Math.Abs(borderRightInset), 0d, 0.01d);
         Assert.True(selectedState);
-        Assert.Equal(Color.FromRgb(215, 71, 53), renderedBorderColor);
+        Assert.Equal(Color.FromRgb(203, 75, 61), renderedBorderColor);
         Assert.NotEqual(int.MaxValue, verticalBorderMinimumX);
         Assert.NotEqual(int.MinValue, verticalBorderMaximumX);
         var renderedBorderWidth =

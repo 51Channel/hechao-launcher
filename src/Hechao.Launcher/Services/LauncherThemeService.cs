@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media;
 
 namespace Hechao.Launcher.Services;
 
@@ -69,19 +70,113 @@ public sealed class LauncherThemeService : ILauncherThemeService
             return;
         }
 
-        var insertionIndex = paletteIndexes.Length > 0 ? paletteIndexes[0] : 0;
         var replacement = _paletteFactory(
             new Uri(requestedSource, UriKind.Relative));
-        replacement[PaletteSourceMarker] = requestedSource;
+        var brushUpdates = CreateThemeBrushUpdates(replacement);
 
-        for (var index = paletteIndexes.Length - 1; index >= 0; index--)
+        if (paletteIndexes.Length == 0)
+        {
+            replacement[PaletteSourceMarker] = requestedSource;
+            mergedDictionaries.Insert(0, replacement);
+            ApplyThemeBrushUpdates(brushUpdates);
+            return;
+        }
+
+        // Keep the active dictionary instance alive. Replacing it can leave
+        // already materialized Freezables bound to colors from the old palette.
+        var activePalette = mergedDictionaries[paletteIndexes[0]];
+        var replacementKeys = replacement.Keys
+            .Cast<object>()
+            .Where(key => !Equals(key, PaletteSourceMarker))
+            .ToHashSet();
+
+        foreach (var key in activePalette.Keys
+                     .Cast<object>()
+                     .Where(key => !Equals(key, PaletteSourceMarker))
+                     .ToArray())
+        {
+            if (!replacementKeys.Contains(key))
+            {
+                activePalette.Remove(key);
+            }
+        }
+
+        foreach (var key in replacementKeys)
+        {
+            activePalette[key] = replacement[key];
+        }
+
+        ApplyThemeBrushUpdates(brushUpdates);
+        activePalette[PaletteSourceMarker] = requestedSource;
+
+        for (var index = paletteIndexes.Length - 1; index >= 1; index--)
         {
             mergedDictionaries.RemoveAt(paletteIndexes[index]);
         }
+    }
 
-        mergedDictionaries.Insert(
-            Math.Min(insertionIndex, mergedDictionaries.Count),
-            replacement);
+    private (SolidColorBrush Brush, Color Color)[] CreateThemeBrushUpdates(
+        ResourceDictionary palette)
+    {
+        var updates = new List<(SolidColorBrush Brush, Color Color)>();
+        foreach (var key in palette.Keys.Cast<object>())
+        {
+            if (key is not string colorKey ||
+                palette[key] is not Color color ||
+                !colorKey.EndsWith("Color", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var brushKey = $"{colorKey[..^"Color".Length]}Brush";
+            if (FindBrush(_applicationResources, brushKey) is not { } brush)
+            {
+                continue;
+            }
+
+            if (brush.IsFrozen)
+            {
+                throw new InvalidOperationException(
+                    $"主题画刷 {brushKey} 已被冻结，无法在运行时切换主题。");
+            }
+
+            updates.Add((brush, color));
+        }
+
+        return updates.ToArray();
+    }
+
+    private static void ApplyThemeBrushUpdates(
+        IEnumerable<(SolidColorBrush Brush, Color Color)> updates)
+    {
+        foreach (var (brush, color) in updates)
+        {
+            // Preserve the DynamicResource expression so a light-theme cold
+            // start cannot make WPF freeze this brush before the next switch.
+            brush.SetCurrentValue(SolidColorBrush.ColorProperty, color);
+        }
+    }
+
+    private static SolidColorBrush? FindBrush(
+        ResourceDictionary dictionary,
+        string key)
+    {
+        if (dictionary.Contains(key) && dictionary[key] is SolidColorBrush brush)
+        {
+            return brush;
+        }
+
+        for (var index = dictionary.MergedDictionaries.Count - 1;
+             index >= 0;
+             index--)
+        {
+            if (FindBrush(dictionary.MergedDictionaries[index], key) is { } mergedBrush)
+            {
+                return mergedBrush;
+            }
+        }
+
+        return null;
     }
 
     internal static string? GetPaletteSource(ResourceDictionary dictionary)

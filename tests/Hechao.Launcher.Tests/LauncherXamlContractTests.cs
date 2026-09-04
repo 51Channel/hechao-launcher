@@ -52,8 +52,8 @@ public sealed class LauncherXamlContractTests
         var primaryWorkspaces = new[]
         {
             (State: "IsServersPage", Command: "ShowServersCommand", Name: "服务器"),
-            (State: "IsDownloadsPage", Command: "ShowDownloadsCommand", Name: "下载中心"),
             (State: "IsActivitiesPage", Command: "ShowActivitiesCommand", Name: "活动"),
+            (State: "IsDownloadsPage", Command: "ShowDownloadsCommand", Name: "下载中心"),
         };
 
         foreach (var workspace in primaryWorkspaces)
@@ -74,6 +74,17 @@ public sealed class LauncherXamlContractTests
                 toggle.Attribute("AutomationProperties.Name")?.Value);
         }
 
+        var primaryNavigationNames = titleBar
+            .Descendants(presentation + "ToggleButton")
+            .Where(element => primaryWorkspaces.Any(workspace =>
+                element.Attribute("IsChecked")?.Value.Contains(
+                    workspace.State,
+                    StringComparison.Ordinal) == true))
+            .Select(element => element.Attribute("AutomationProperties.Name")?.Value);
+        Assert.Equal(
+            primaryWorkspaces.Select(workspace => workspace.Name),
+            primaryNavigationNames);
+
         foreach (var workspace in new[]
                  {
                      (Command: "ShowSettingsPageCommand", Name: "启动器设置"),
@@ -89,6 +100,84 @@ public sealed class LauncherXamlContractTests
                 workspace.Name,
                 button.Attribute("AutomationProperties.Name")?.Value);
         }
+    }
+
+    [Fact]
+    public void MainWindow_OpensAtTheComfortableDefaultAndRemainsResizable()
+    {
+        var window = LoadLauncherXaml().Root!;
+
+        Assert.Equal("1200", window.Attribute("Width")?.Value);
+        Assert.Equal("720", window.Attribute("Height")?.Value);
+        Assert.Equal("1060", window.Attribute("MinWidth")?.Value);
+        Assert.Equal("640", window.Attribute("MinHeight")?.Value);
+        Assert.Equal("CenterScreen", window.Attribute("WindowStartupLocation")?.Value);
+        Assert.Equal("CanResize", window.Attribute("ResizeMode")?.Value);
+    }
+
+    [Fact]
+    public void ServerDirectory_DefaultWindowFitsTwoCardsBeforeWrapping()
+    {
+        var launcher = LoadLauncherXaml();
+        var theme = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var windowWidth = double.Parse(launcher.Root!.Attribute("Width")!.Value);
+        var inspectorWidth = double.Parse(
+            launcher
+                .Descendants(presentation + "ColumnDefinition")
+                .Single(element =>
+                    element.Attribute(x + "Name")?.Value == "InspectorColumn")
+                .Attribute("Width")!
+                .Value);
+        var serverList = launcher
+            .Descendants(presentation + "ListBox")
+            .Single(element =>
+                element.Attribute("ItemsSource")?.Value == "{Binding Servers}");
+        var wrapPanel = serverList
+            .Descendants(presentation + "WrapPanel")
+            .Single();
+        var listMargin = serverList
+            .Attribute("Margin")!
+            .Value
+            .Split(',')
+            .Select(double.Parse)
+            .ToArray();
+        var serverItemStyle = theme
+            .Descendants(presentation + "Style")
+            .Single(element =>
+                element.Attribute(x + "Key")?.Value ==
+                "ServerCardListItemStyle");
+        var cardWidth = double.Parse(
+            serverItemStyle
+                .Elements(presentation + "Setter")
+                .Single(setter => setter.Attribute("Property")?.Value == "Width")
+                .Attribute("Value")!
+                .Value);
+        var cardMargin = serverItemStyle
+            .Elements(presentation + "Setter")
+            .Single(setter => setter.Attribute("Property")?.Value == "Margin")
+            .Attribute("Value")!
+            .Value
+            .Split(',')
+            .Select(double.Parse)
+            .ToArray();
+
+        const double rootBorderWidth = 2;
+        const double verticalScrollBarAllowance = 18;
+        var availableCatalogWidth =
+            windowWidth - inspectorWidth - rootBorderWidth -
+            listMargin[0] - listMargin[2] - verticalScrollBarAllowance;
+        var requiredTwoCardWidth =
+            2 * (cardWidth + cardMargin[0] + cardMargin[2]);
+
+        Assert.Equal("Horizontal", wrapPanel.Attribute("Orientation")?.Value);
+        Assert.True(
+            availableCatalogWidth >= requiredTwoCardWidth,
+            $"Default catalog width {availableCatalogWidth} must fit two " +
+            $"server cards requiring {requiredTwoCardWidth}.");
     }
 
     [Fact]
@@ -147,6 +236,44 @@ public sealed class LauncherXamlContractTests
         Assert.True(
             windowIndex > applyIndex,
             "The theme must be applied before MainWindow is constructed.");
+    }
+
+    [Fact]
+    public void ThemeBrushes_UseDynamicReferencesThroughoutTheLoadedInterface()
+    {
+        var launcher = LoadLauncherXaml();
+        var theme = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x =
+            "http://schemas.microsoft.com/winfx/2006/xaml";
+        var themeBrushKeys = theme
+            .Root!
+            .Elements(presentation + "SolidColorBrush")
+            .Select(element => element.Attribute(x + "Key")?.Value)
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
+        var attributes = launcher
+            .Descendants()
+            .Concat(theme.Descendants())
+            .Attributes()
+            .ToArray();
+
+        Assert.NotEmpty(themeBrushKeys);
+        Assert.DoesNotContain(
+            attributes,
+            attribute =>
+            {
+                var resourceKey = GetStaticResourceKey(attribute.Value);
+                return resourceKey is not null && themeBrushKeys.Contains(resourceKey);
+            });
+        Assert.Contains(
+            attributes,
+            attribute => themeBrushKeys.Any(key =>
+                string.Equals(
+                    attribute.Value,
+                    $"{{DynamicResource {key}}}",
+                    StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -332,10 +459,8 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void Branding_UsesOfficialInterfaceLockupAndCrispMultiSizeAppIcon()
+    public void Branding_UsesCrispInterfaceIconsAndKeepsOfficialLockupPackaged()
     {
-        const string lockupSource =
-            "/Hechao.Launcher;component/Assets/hechao-launcher-lockup-37h.png";
         const string appIconSource =
             "/Hechao.Launcher;component/Assets/hechao-launcher.ico";
         var repositoryRoot = FindRepositoryRoot();
@@ -345,21 +470,24 @@ public sealed class LauncherXamlContractTests
 
         Assert.Equal(appIconSource, document.Root?.Attribute("Icon")?.Value);
 
-        var lockups = document
+        var interfaceIcons = document
             .Descendants(presentation + "Image")
-            .Where(image => image.Attribute("Source")?.Value == lockupSource)
-            .ToArray();
-        var lockup = Assert.Single(lockups);
-        Assert.Equal("Uniform", lockup.Attribute("Stretch")?.Value);
-        Assert.Equal("True", lockup.Attribute("SnapsToDevicePixels")?.Value);
-        Assert.Equal("84", lockup.Parent?.Attribute("Width")?.Value);
-        Assert.Equal("42", lockup.Parent?.Attribute("Height")?.Value);
-
-        var accountIcon = document
-            .Descendants(presentation + "Image")
-            .Single(image => image.Attribute("Source")?.Value?.EndsWith(
+            .Where(image => image.Attribute("Source")?.Value?.EndsWith(
                 "/hechao-launcher-icon.png",
-                StringComparison.Ordinal) == true);
+                StringComparison.Ordinal) == true)
+            .ToArray();
+        Assert.Equal(2, interfaceIcons.Length);
+        var brandIcon = interfaceIcons.Single(image =>
+            image.Parent?.Attribute("Width")?.Value == "38");
+        Assert.Equal("38", brandIcon.Parent?.Attribute("Height")?.Value);
+        Assert.Equal("UniformToFill", brandIcon.Attribute("Stretch")?.Value);
+        Assert.Equal("True", brandIcon.Attribute("SnapsToDevicePixels")?.Value);
+        Assert.Contains(
+            document.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value == "赫朝启动器");
+
+        var accountIcon = interfaceIcons.Single(image =>
+            image.Parent?.Attribute("Width")?.Value == "30");
         Assert.Equal("30", accountIcon.Parent?.Attribute("Width")?.Value);
         Assert.Equal("30", accountIcon.Parent?.Attribute("Height")?.Value);
 
@@ -518,7 +646,7 @@ public sealed class LauncherXamlContractTests
             .ToArray();
 
         Assert.Equal(["38", "*", "38"], columnWidths);
-        Assert.Equal(["0", "*", "520"], rootColumns);
+        Assert.Equal(["0", "*", "420"], rootColumns);
         Assert.Equal(["56", "*", "76"], workspaceRows);
         Assert.Equal("2", workspace.Attribute("Grid.Column")?.Value);
         Assert.Equal("1", workspace.Attribute("Grid.Row")?.Value);
@@ -896,66 +1024,584 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void Settings_DeclaresDiagnosticsRowAndGuardsDirectoryChanges()
+    public void SettingsWorkspace_UsesFourCategoriesAndPageLocalScrollers()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var diagnosticsHeading = document
-            .Descendants(presentation + "TextBlock")
-            .Single(element => element.Attribute("Text")?.Value == "故障诊断");
-        var diagnosticsPanel = diagnosticsHeading
-            .Ancestors(presentation + "Border")
-            .First();
-        var settingsGrid = Assert.IsType<XElement>(diagnosticsPanel.Parent);
-        var rowDefinitions = settingsGrid
-            .Element(presentation + "Grid.RowDefinitions")!
-            .Elements(presentation + "RowDefinition")
+        var settingsWorkspace = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "SettingsWorkspace");
+        var settingsTabs = settingsWorkspace
+            .Descendants(presentation + "TabControl")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "SettingsWorkspaceTabs");
+        var tabs = settingsTabs
+            .Elements(presentation + "TabItem")
             .ToArray();
-        var changeDirectoryButton = document
-            .Descendants(presentation + "Button")
-            .Single(element =>
-                element.Attribute("Content")?.Value == "更改目录");
+        var headers = tabs
+            .Select(tab => tab
+                .Elements()
+                .Single(element => element.Name.LocalName == "TabItem.Header")
+                .Descendants(presentation + "TextBlock")
+                .Select(element => element.Attribute("Text")?.Value ?? string.Empty)
+                .First())
+            .ToArray();
+        var scrollViewers = settingsTabs
+            .Descendants(presentation + "ScrollViewer")
+            .ToArray();
 
-        Assert.Equal("4", diagnosticsPanel.Attribute("Grid.Row")?.Value);
-        Assert.Equal(5, rowDefinitions.Length);
+        Assert.Equal("2", settingsTabs.Attribute("Grid.ColumnSpan")?.Value);
+        Assert.Equal("0", settingsTabs.Attribute("SelectedIndex")?.Value);
         Assert.Equal(
-            "{Binding CanChangeClientDirectory}",
-            changeDirectoryButton.Attribute("IsEnabled")?.Value);
+            ["SettingsGameTab", "SettingsClientTab", "SettingsBehaviorTab", "SettingsDiagnosticsTab"],
+            tabs.Select(tab => tab.Attribute(x + "Name")?.Value ?? string.Empty));
+        Assert.Equal(
+            ["游戏与运行", "客户端与下载", "启动器行为", "故障诊断"],
+            headers);
+        Assert.All(
+            tabs,
+            tab => Assert.Equal(
+                "{StaticResource SettingsCategoryTabItemStyle}",
+                tab.Attribute("Style")?.Value));
+        Assert.Empty(settingsWorkspace.Elements(presentation + "ScrollViewer"));
+        Assert.Equal(
+            [
+                "SettingsGameScrollViewer",
+                "SettingsClientScrollViewer",
+                "SettingsBehaviorScrollViewer",
+                "SettingsDiagnosticsScrollViewer",
+            ],
+            scrollViewers.Select(element => element.Attribute(x + "Name")?.Value ?? string.Empty));
+        Assert.All(
+            scrollViewers,
+            scrollViewer =>
+            {
+                Assert.Equal("Auto", scrollViewer.Attribute("VerticalScrollBarVisibility")?.Value);
+                Assert.Equal("Disabled", scrollViewer.Attribute("HorizontalScrollBarVisibility")?.Value);
+            });
     }
 
     [Fact]
-    public void SettingsSwitches_HaveAccessibleNamesAndAccurateCacheCopy()
+    public void SettingsWorkspace_PreservesBindingsAndRiskGuards()
     {
         var document = LoadLauncherXaml();
         XNamespace presentation =
             "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        var switches = document
-            .Descendants(presentation + "ToggleButton")
+        var settingsTabs = document
+            .Descendants(presentation + "TabControl")
             .Where(element =>
-                element.Attribute("Style")?.Value ==
+                element.Attribute(x + "Name")?.Value == "SettingsWorkspaceTabs")
+            .Single();
+        var tabs = settingsTabs
+            .Elements(presentation + "TabItem")
+            .ToArray();
+        var expectedBindings = new Dictionary<string, string[]>
+        {
+            ["SettingsGameTab"] =
+            [
+                "{Binding MemoryOptions}",
+                "{Binding SelectedMemory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}",
+                "{Binding CloseLauncherAfterGameStart, Mode=TwoWay}",
+            ],
+            ["SettingsClientTab"] =
+            [
+                "{Binding ClientDirectory}",
+                "{Binding CheckForUpdates, Mode=TwoWay}",
+                "{Binding KeepDownloadsAfterClose, Mode=TwoWay}",
+                "{Binding OpenDownloadsWhenInstalling, Mode=TwoWay}",
+                "{Binding UseSystemProxy, Mode=TwoWay}",
+                "{Binding CheckLauncherUpdateCommand}",
+            ],
+            ["SettingsBehaviorTab"] =
+            [
+                "{Binding StartupPageOptions}",
+                "{Binding SelectedStartupPage, Mode=TwoWay}",
+                "{Binding OpenClientDirectoryCommand}",
+                "{Binding ClearDownloadHistoryCommand}",
+                "{Binding ResetLauncherSettingsCommand}",
+            ],
+            ["SettingsDiagnosticsTab"] =
+            [
+                "{Binding LatestGameExitText}",
+                "{Binding DiagnosticUploadStatus}",
+                "{Binding CreateDiagnosticBundleCommand}",
+                "{Binding CanUploadDiagnosticBundle}",
+                "{Binding OpenDiagnosticsDirectoryCommand}",
+            ],
+        };
+
+        foreach (var (tabName, bindings) in expectedBindings)
+        {
+            var tab = tabs.Single(element => element.Attribute(x + "Name")?.Value == tabName);
+            var attributes = tab
+                .DescendantsAndSelf()
+                .Attributes()
+                .Select(attribute => attribute.Value)
+                .ToArray();
+            Assert.All(
+                bindings,
+                binding => Assert.Contains(binding, attributes));
+        }
+
+        var switches = tabs
+            .SelectMany(tab => tab.Descendants(presentation + "ToggleButton"))
+            .Where(element => element.Attribute("Style")?.Value ==
                 "{StaticResource SwitchToggleStyle}")
             .ToArray();
-        var cacheLabels = document
-            .Descendants(presentation + "TextBlock")
-            .Where(element =>
-                element.Attribute("Text")?.Value ==
-                "保留已下载文件缓存")
-            .ToArray();
-
-        Assert.Equal(8, switches.Length);
+        Assert.Equal(
+            [
+                "{Binding CloseLauncherAfterGameStart, Mode=TwoWay}",
+                "{Binding CheckForUpdates, Mode=TwoWay}",
+                "{Binding KeepDownloadsAfterClose, Mode=TwoWay}",
+                "{Binding OpenDownloadsWhenInstalling, Mode=TwoWay}",
+                "{Binding UseSystemProxy, Mode=TwoWay}",
+            ],
+            switches.Select(element => element.Attribute("IsChecked")?.Value ?? string.Empty));
         Assert.All(
             switches,
             element => Assert.False(string.IsNullOrWhiteSpace(
                 element.Attribute("AutomationProperties.Name")?.Value)));
-        Assert.Equal(2, cacheLabels.Length);
+
+        var clientTab = tabs.Single(element => element.Attribute(x + "Name")?.Value ==
+            "SettingsClientTab");
+        var changeDirectoryButton = clientTab
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Content")?.Value == "更改目录");
+        Assert.Equal(
+            "{Binding CanChangeClientDirectory}",
+            changeDirectoryButton.Attribute("IsEnabled")?.Value);
+        Assert.Equal(
+            "ChooseClientDirectoryButton_OnClick",
+            changeDirectoryButton.Attribute("Click")?.Value);
+        Assert.Equal("更改游戏数据目录", changeDirectoryButton.Attribute(
+            "AutomationProperties.Name")?.Value);
+
+        var behaviorTab = tabs.Single(element => element.Attribute(x + "Name")?.Value ==
+            "SettingsBehaviorTab");
+        foreach (var command in new[]
+                 {
+                     "{Binding ClearDownloadHistoryCommand}",
+                     "{Binding ResetLauncherSettingsCommand}",
+                 })
+        {
+            var button = behaviorTab
+                .Descendants(presentation + "Button")
+                .Single(element => element.Attribute("Command")?.Value == command);
+            Assert.Equal(
+                "{StaticResource DangerButtonStyle}",
+                button.Attribute("Style")?.Value);
+        }
+
+        var diagnosticsTab = tabs.Single(element => element.Attribute(x + "Name")?.Value ==
+            "SettingsDiagnosticsTab");
+        var uploadButton = diagnosticsTab
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Click")?.Value ==
+                "UploadDiagnosticButton_OnClick");
+        var createButton = diagnosticsTab
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Command")?.Value ==
+                "{Binding CreateDiagnosticBundleCommand}");
+        Assert.Equal(
+            "{Binding CanUploadDiagnosticBundle}",
+            uploadButton.Attribute("IsEnabled")?.Value);
+        Assert.Null(uploadButton.Attribute("Command"));
+        Assert.Null(createButton.Attribute("Click"));
+        Assert.Single(
+            clientTab.Descendants(presentation + "TextBlock"),
+            element => element.Attribute("Text")?.Value == "保留已下载文件缓存");
         Assert.Contains(
-            document.Descendants(presentation + "TextBlock"),
+            clientTab.Descendants(presentation + "TextBlock"),
             element =>
                 element.Attribute("Text")?.Value ==
                 "保留校验通过的下载文件，供后续安装、更新或修复复用。");
+    }
+
+    [Fact]
+    public void SettingsTheme_UsesSplitWorkspaceSelectionAndVisibleTitleForeground()
+    {
+        var document = LoadThemeXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var workspaceStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element => element.Attribute(x + "Key")?.Value ==
+                "SettingsWorkspaceTabControlStyle");
+        var templateGrid = workspaceStyle
+            .Descendants(presentation + "Grid")
+            .Single();
+        Assert.Equal(
+            ["*", "520"],
+            templateGrid
+                .Element(presentation + "Grid.ColumnDefinitions")!
+                .Elements(presentation + "ColumnDefinition")
+                .Select(element => element.Attribute("Width")?.Value));
+        var leftSurface = templateGrid
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute("Grid.Column")?.Value == "0");
+        var rightSurface = templateGrid
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute("Grid.Column")?.Value == "1");
+        Assert.Equal("{DynamicResource DirectoryBrush}", leftSurface.Attribute("Background")?.Value);
+        Assert.Equal("0,0,1,0", leftSurface.Attribute("BorderThickness")?.Value);
+        Assert.Equal("{DynamicResource SurfaceBrush}", rightSurface.Attribute("Background")?.Value);
+        Assert.Equal(
+            "PART_SelectedContentHost",
+            rightSurface
+                .Descendants(presentation + "ContentPresenter")
+                .Single()
+                .Attribute(x + "Name")?.Value);
+
+        var categoryStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element => element.Attribute(x + "Key")?.Value ==
+                "SettingsCategoryTabItemStyle");
+        Assert.Contains(
+            categoryStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "Height" &&
+                setter.Attribute("Value")?.Value == "62");
+        Assert.Contains(
+            categoryStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "FocusVisualStyle" &&
+                setter.Attribute("Value")?.Value == "{StaticResource HechaoFocusVisualStyle}");
+        Assert.Contains(
+            categoryStyle.Elements(presentation + "Setter"),
+            setter => setter.Attribute("Property")?.Value == "VerticalContentAlignment" &&
+                setter.Attribute("Value")?.Value == "Stretch");
+        Assert.Contains(
+            categoryStyle.Descendants(presentation + "Border"),
+            border => border.Attribute(x + "Name")?.Value == "CategoryMarker");
+        Assert.Contains(
+            categoryStyle.Descendants(presentation + "Trigger"),
+            trigger => trigger.Attribute("Property")?.Value == "IsSelected");
+
+        foreach (var key in new[] { "PageHeaderTitleStyle", "SectionTitleStyle" })
+        {
+            var titleStyle = document
+                .Descendants(presentation + "Style")
+                .Single(element => element.Attribute(x + "Key")?.Value == key);
+            Assert.Contains(
+                titleStyle.Elements(presentation + "Setter"),
+                setter => setter.Attribute("Property")?.Value == "Foreground" &&
+                    setter.Attribute("Value")?.Value == "{DynamicResource InkBrush}");
+        }
+    }
+
+    [Fact]
+    public void DownloadsWorkspace_UsesDirectoryAndFixedInspectorWithoutOuterScroll()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var directory = document
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "DownloadDirectoryPanel");
+        var inspector = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "DownloadInspector");
+        var rootGrid = Assert.IsType<XElement>(directory.Parent);
+        var history = directory
+            .Descendants(presentation + "ListBox")
+            .Single(element => element.Attribute("ItemsSource")?.Value ==
+                "{Binding DownloadHistory}");
+        var inspectorScrollViewer = inspector
+            .Descendants(presentation + "ScrollViewer")
+            .Single();
+
+        Assert.Equal("1", directory.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", directory.Attribute("Grid.Row")?.Value);
+        Assert.Equal("2", inspector.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", inspector.Attribute("Grid.Row")?.Value);
+        Assert.Equal(
+            ["0", "*", "420"],
+            rootGrid
+                .Element(presentation + "Grid.ColumnDefinitions")!
+                .Elements(presentation + "ColumnDefinition")
+                .Select(element => element.Attribute("Width")?.Value ?? string.Empty));
+        Assert.Equal(
+            ["90", "*"],
+            directory
+                .Element(presentation + "Grid")!
+                .Element(presentation + "Grid.RowDefinitions")!
+                .Elements(presentation + "RowDefinition")
+                .Select(element => element.Attribute("Height")?.Value ?? string.Empty));
+        Assert.Empty(directory.Descendants(presentation + "ScrollViewer"));
+        Assert.Equal("Auto", history.Attribute("ScrollViewer.VerticalScrollBarVisibility")?.Value);
+        Assert.Equal("Disabled", history.Attribute("ScrollViewer.HorizontalScrollBarVisibility")?.Value);
+        Assert.Equal(
+            ["56", "*", "76"],
+            inspector
+                .Element(presentation + "Grid.RowDefinitions")!
+                .Elements(presentation + "RowDefinition")
+                .Select(element => element.Attribute("Height")?.Value ?? string.Empty));
+        Assert.Equal("Auto", inspectorScrollViewer.Attribute("VerticalScrollBarVisibility")?.Value);
+        Assert.Equal("Disabled", inspectorScrollViewer.Attribute("HorizontalScrollBarVisibility")?.Value);
+    }
+
+    [Fact]
+    public void ActivityWorkspace_UsesSevenColumnCalendarAndFixedInspectorWithoutOuterScroll()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var calendarPanel = document
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "ActivityCalendarPanel");
+        var inspector = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "ActivityInspector");
+        var rootGrid = Assert.IsType<XElement>(calendarPanel.Parent);
+        var calendar = calendarPanel
+            .Descendants(presentation + "ItemsControl")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "ActivityCalendarDays");
+        var calendarGrid = calendar
+            .Element(presentation + "ItemsControl.ItemsPanel")!
+            .Descendants(presentation + "UniformGrid")
+            .Single();
+        var detailScrollViewer = inspector
+            .Descendants(presentation + "ScrollViewer")
+            .Single();
+        var detailLists = inspector
+            .Descendants(presentation + "ListBox")
+            .Where(element => element.Attribute(x + "Name")?.Value is
+                "SelectedActivityList" or "UnscheduledActivityList")
+            .ToArray();
+
+        Assert.Equal("1", calendarPanel.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", calendarPanel.Attribute("Grid.Row")?.Value);
+        Assert.Equal("2", inspector.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", inspector.Attribute("Grid.Row")?.Value);
+        Assert.Equal(
+            ["0", "*", "420"],
+            rootGrid
+                .Element(presentation + "Grid.ColumnDefinitions")!
+                .Elements(presentation + "ColumnDefinition")
+                .Select(element => element.Attribute("Width")?.Value ?? string.Empty));
+        Assert.Equal("{Binding ActivityCalendar.Days}", calendar.Attribute("ItemsSource")?.Value);
+        Assert.Equal("7", calendarGrid.Attribute("Columns")?.Value);
+        Assert.Empty(calendarPanel.Descendants(presentation + "ScrollViewer"));
+        Assert.Equal("Auto", detailScrollViewer.Attribute("VerticalScrollBarVisibility")?.Value);
+        Assert.Equal("Disabled", detailScrollViewer.Attribute("HorizontalScrollBarVisibility")?.Value);
+        Assert.Equal(2, detailLists.Length);
+        Assert.All(
+            detailLists,
+            list =>
+            {
+                Assert.Equal("Disabled", list.Attribute("ScrollViewer.VerticalScrollBarVisibility")?.Value);
+                Assert.Equal("Disabled", list.Attribute("ScrollViewer.HorizontalScrollBarVisibility")?.Value);
+            });
+    }
+
+    [Fact]
+    public void ActivityWorkspace_UsesQuietDividersWithoutBoxingEveryCalendarDay()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var dayStyle = document
+            .Descendants(presentation + "Style")
+            .Single(element => element.Attribute(x + "Key")?.Value ==
+                "ActivityCalendarDayButtonStyle");
+        var daySurface = dayStyle
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value == "DaySurface");
+        Assert.Equal(
+            "{DynamicResource HairlineBrush}",
+            daySurface.Attribute("BorderBrush")?.Value);
+        Assert.Equal("0,0,0,1", daySurface.Attribute("BorderThickness")?.Value);
+
+        foreach (var borderName in new[]
+                 {
+                     "ActivityCalendarPanel",
+                     "ActivityCalendarSurface",
+                     "ActivityCalendarMonthHeader",
+                     "ActivityCalendarWeekHeader",
+                     "ActivityInspectorHeader",
+                     "ActivitySelectedDateHeader",
+                     "ActivityUnscheduledSection",
+                 })
+        {
+            var border = document
+                .Descendants(presentation + "Border")
+                .Single(element => element.Attribute(x + "Name")?.Value == borderName);
+            Assert.Equal(
+                "{DynamicResource DividerBrush}",
+                border.Attribute("BorderBrush")?.Value);
+        }
+
+        var detailItemSurface = document
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "ActivityDetailItemSurface");
+        Assert.Equal(
+            "{DynamicResource HairlineBrush}",
+            detailItemSurface.Attribute("BorderBrush")?.Value);
+        Assert.Equal("22,0,18,0", detailItemSurface.Attribute("Margin")?.Value);
+        Assert.Equal("0,18", detailItemSurface.Attribute("Padding")?.Value);
+
+        var dividerBrush = LoadThemeXaml()
+            .Descendants(presentation + "SolidColorBrush")
+            .Single(element => element.Attribute(x + "Key")?.Value == "DividerBrush");
+        Assert.Equal(
+            "{DynamicResource DividerColor}",
+            dividerBrush.Attribute("Color")?.Value);
+
+        var hairlineBrush = LoadThemeXaml()
+            .Descendants(presentation + "SolidColorBrush")
+            .Single(element => element.Attribute(x + "Key")?.Value == "HairlineBrush");
+        Assert.Equal(
+            "{DynamicResource HairlineColor}",
+            hairlineBrush.Attribute("Color")?.Value);
+
+        var expectedLineColors = new Dictionary<string, (string Divider, string Hairline)>
+        {
+            ["DarkPalette.xaml"] = ("#FF32383E", "#FF252A2E"),
+            ["LightPalette.xaml"] = ("#FFCBD6DD", "#FFE3E9ED"),
+        };
+        foreach (var (paletteName, expectedColors) in expectedLineColors)
+        {
+            var colors = LoadPaletteXaml(paletteName)
+                .Descendants(presentation + "Color")
+                .ToDictionary(
+                    element => element.Attribute(x + "Key")!.Value,
+                    element => element.Value);
+            Assert.Equal(expectedColors.Divider, colors["DividerColor"]);
+            Assert.Equal(expectedColors.Hairline, colors["HairlineColor"]);
+        }
+    }
+
+    [Fact]
+    public void AccountWorkspace_UsesAuthBranchesAndExplicitDangerHierarchy()
+    {
+        var document = LoadLauncherXaml();
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var directory = document
+            .Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "AccountDirectoryPanel");
+        var inspector = document
+            .Descendants(presentation + "Grid")
+            .Single(element => element.Attribute(x + "Name")?.Value ==
+                "AccountInspector");
+        var rootGrid = Assert.IsType<XElement>(directory.Parent);
+        var directoryBranches = directory
+            .Descendants(presentation + "Grid")
+            .Where(element => element
+                .Element(presentation + "Grid.Style")?
+                .Descendants(presentation + "DataTrigger")
+                .Any(trigger => trigger.Attribute("Binding")?.Value ==
+                    "{Binding IsAuthenticated}") == true)
+            .ToArray();
+        var inspectorBranches = inspector
+            .Descendants(presentation + "Grid")
+            .Where(element => element
+                .Element(presentation + "Grid.Style")?
+                .Descendants(presentation + "DataTrigger")
+                .Any(trigger => trigger.Attribute("Binding")?.Value ==
+                    "{Binding IsAuthenticated}") == true)
+            .ToArray();
+
+        Assert.Equal("1", directory.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", directory.Attribute("Grid.Row")?.Value);
+        Assert.Equal("2", inspector.Attribute("Grid.Column")?.Value);
+        Assert.Equal("1", inspector.Attribute("Grid.Row")?.Value);
+        Assert.Equal(
+            ["0", "*", "420"],
+            rootGrid
+                .Element(presentation + "Grid.ColumnDefinitions")!
+                .Elements(presentation + "ColumnDefinition")
+                .Select(element => element.Attribute("Width")?.Value ?? string.Empty));
+        Assert.Equal(2, directoryBranches.Length);
+        Assert.Equal(2, inspectorBranches.Length);
+        Assert.Contains(
+            directoryBranches,
+            branch =>
+                branch.Element(presentation + "Grid.Style")!
+                    .Element(presentation + "Style")!
+                    .Elements(presentation + "Setter")
+                    .Any(setter => setter.Attribute("Property")?.Value == "Visibility" &&
+                        setter.Attribute("Value")?.Value == "Visible") &&
+                branch.Element(presentation + "Grid.Style")!
+                    .Descendants(presentation + "DataTrigger")
+                    .Any(trigger => trigger.Descendants(presentation + "Setter")
+                        .Any(setter => setter.Attribute("Property")?.Value == "Visibility" &&
+                            setter.Attribute("Value")?.Value == "Collapsed")));
+        Assert.Contains(
+            directoryBranches,
+            branch =>
+                branch.Element(presentation + "Grid.Style")!
+                    .Element(presentation + "Style")!
+                    .Elements(presentation + "Setter")
+                    .Any(setter => setter.Attribute("Property")?.Value == "Visibility" &&
+                        setter.Attribute("Value")?.Value == "Collapsed") &&
+                branch.Element(presentation + "Grid.Style")!
+                    .Descendants(presentation + "DataTrigger")
+                    .Any(trigger => trigger.Descendants(presentation + "Setter")
+                        .Any(setter => setter.Attribute("Property")?.Value == "Visibility" &&
+                            setter.Attribute("Value")?.Value == "Visible")));
+        Assert.All(
+            inspectorBranches,
+            branch => Assert.Contains(
+                branch.Descendants(presentation + "DataTrigger"),
+                trigger => trigger.Attribute("Binding")?.Value ==
+                    "{Binding IsAuthenticated}"));
+
+        var authenticatedDirectory = directoryBranches.Single(branch =>
+            branch.Element(presentation + "Grid.Style")!
+                .Element(presentation + "Style")!
+                .Elements(presentation + "Setter")
+                .Any(setter => setter.Attribute("Property")?.Value == "Visibility" &&
+                    setter.Attribute("Value")?.Value == "Collapsed"));
+        var authenticatedDirectoryScroller = Assert.IsType<XElement>(authenticatedDirectory.Parent);
+        Assert.Equal(presentation + "ScrollViewer", authenticatedDirectoryScroller.Name);
+        Assert.Equal(
+            "Auto",
+            authenticatedDirectoryScroller.Attribute("VerticalScrollBarVisibility")?.Value);
+        Assert.Equal(
+            "Disabled",
+            authenticatedDirectoryScroller.Attribute("HorizontalScrollBarVisibility")?.Value);
+        var unauthenticatedDirectory = directoryBranches.Single(branch =>
+            branch.Element(presentation + "Grid.Style")!
+                .Element(presentation + "Style")!
+                .Elements(presentation + "Setter")
+                .Any(setter => setter.Attribute("Property")?.Value == "Visibility" &&
+                    setter.Attribute("Value")?.Value == "Visible"));
+        Assert.DoesNotContain(
+            unauthenticatedDirectory.Ancestors(),
+            ancestor => ancestor.Name == presentation + "ScrollViewer");
+
+        var logoutButton = authenticatedDirectory
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Command")?.Value ==
+                "{Binding LogoutAccountCommand}");
+        var logoutAllButton = authenticatedDirectory
+            .Descendants(presentation + "Button")
+            .Single(element => element.Attribute("Command")?.Value ==
+                "{Binding LogoutAllDevicesCommand}");
+        Assert.Equal("{StaticResource BaseButtonStyle}", logoutButton.Attribute("Style")?.Value);
+        Assert.Equal("{StaticResource DangerButtonStyle}", logoutAllButton.Attribute("Style")?.Value);
     }
 
     [Fact]
@@ -1019,7 +1665,7 @@ public sealed class LauncherXamlContractTests
             element =>
                 element.Attribute("Property")?.Value == "Foreground" &&
                 element.Attribute("Value")?.Value ==
-                "{StaticResource ClosedBrush}");
+                "{DynamicResource ClosedBrush}");
 
         var toast = document
             .Descendants()
@@ -1045,10 +1691,10 @@ public sealed class LauncherXamlContractTests
             "{Binding ToastIconKind}",
             toastIcon.Attribute("Kind")?.Value);
         Assert.Equal(
-            "{StaticResource ToastBrush}",
+            "{DynamicResource ToastBrush}",
             toast.Attribute("Background")?.Value);
         Assert.Equal(
-            "{StaticResource ToastIconBrush}",
+            "{DynamicResource ToastIconBrush}",
             toastIcon.Attribute("Foreground")?.Value);
 
         var progressSteps = document
@@ -1303,7 +1949,7 @@ public sealed class LauncherXamlContractTests
         Assert.Equal("1", directoryPanel.Attribute("Grid.Column")?.Value);
         Assert.Equal("1", directoryPanel.Attribute("Grid.Row")?.Value);
         Assert.Equal(
-            "{StaticResource DirectoryBrush}",
+            "{DynamicResource DirectoryBrush}",
             directoryPanel.Attribute("Background")?.Value);
         Assert.Equal("0,0,1,0", directoryPanel.Attribute("BorderThickness")?.Value);
         Assert.Null(serverList.Attribute("MaxHeight"));
@@ -1374,7 +2020,7 @@ public sealed class LauncherXamlContractTests
                     element.Attribute(x + "Name")?.Value == fieldName);
             Assert.Equal("1", field.Attribute("BorderThickness")?.Value);
             Assert.Equal(
-                "{StaticResource SurfaceMutedBrush}",
+                "{DynamicResource SurfaceMutedBrush}",
                 field.Attribute("Background")?.Value);
         }
         Assert.DoesNotContain(
@@ -1407,7 +2053,7 @@ public sealed class LauncherXamlContractTests
             serverItemStyle.Elements(presentation + "Setter"),
             setter =>
                 setter.Attribute("Property")?.Value == "Width" &&
-                setter.Attribute("Value")?.Value == "440");
+                setter.Attribute("Value")?.Value == "342");
         Assert.Contains(
             serverItemStyle.Elements(presentation + "Setter"),
             setter =>
@@ -1446,7 +2092,7 @@ public sealed class LauncherXamlContractTests
                 setter.Attribute("Value")?.Value ==
                 "{StaticResource HechaoFocusVisualStyle}");
         Assert.Equal(
-            "{StaticResource BorderStrongBrush}",
+            "{DynamicResource BorderStrongBrush}",
             popupSurface.Attribute("BorderBrush")?.Value);
         Assert.Equal("0,4,0,0", popupSurface.Attribute("Margin")?.Value);
         Assert.Empty(
@@ -1484,7 +2130,11 @@ public sealed class LauncherXamlContractTests
 
         var notificationToggle = document
             .Descendants(presentation + "ToggleButton")
-            .Single(element => element.Attribute("Content")?.Value == "\uE7F4");
+            .Single(element => element
+                .Descendants()
+                .Any(descendant =>
+                    descendant.Name.LocalName == "IconParkIcon" &&
+                    descendant.Attribute("Kind")?.Value == "Remind"));
         Assert.Equal("38", notificationToggle.Attribute("Width")?.Value);
         Assert.Equal("38", notificationToggle.Attribute("Height")?.Value);
         Assert.Equal("42", notificationToggle.Parent?.Attribute("Width")?.Value);

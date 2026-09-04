@@ -15,6 +15,8 @@
     <Color x:Key="HechaoRedSoftColor">#FFFBEAE7</Color>
     <Color x:Key="HechaoRedBorderColor">#FFE1B4AD</Color>
     <Color x:Key="BorderColor">#FFD6E0E6</Color>
+    <Color x:Key="DividerColor">#FFCBD6DD</Color>
+    <Color x:Key="HairlineColor">#FFE3E9ED</Color>
     <Color x:Key="BorderStrongColor">#FFB8C8D1</Color>
     <Color x:Key="SteelColor">#FF4E7180</Color>
     <Color x:Key="SteelSoftColor">#FFEAF1F5</Color>
