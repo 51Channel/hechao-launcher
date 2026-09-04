@@ -459,8 +459,12 @@ public sealed class LauncherXamlContractTests
     }
 
     [Fact]
-    public void Branding_UsesCrispInterfaceIconsAndKeepsOfficialLockupPackaged()
+    public void Branding_UsesThemeAwareOfficialLockupAndCrispMultiSizeAppIcon()
     {
+        const string darkLockupSource =
+            "/Hechao.Launcher;component/Assets/hechao-launcher-lockup-hd-dark.png";
+        const string lightLockupSource =
+            "/Hechao.Launcher;component/Assets/hechao-launcher-lockup-hd-light.png";
         const string appIconSource =
             "/Hechao.Launcher;component/Assets/hechao-launcher.ico";
         var repositoryRoot = FindRepositoryRoot();
@@ -470,26 +474,26 @@ public sealed class LauncherXamlContractTests
 
         Assert.Equal(appIconSource, document.Root?.Attribute("Icon")?.Value);
 
-        var interfaceIcons = document
+        var brandLockup = document
             .Descendants(presentation + "Image")
-            .Where(image => image.Attribute("Source")?.Value?.EndsWith(
-                "/hechao-launcher-icon.png",
-                StringComparison.Ordinal) == true)
+            .Single(image => image.Attribute("AutomationProperties.Name")?.Value ==
+                "赫朝品牌标识");
+        Assert.Equal("75", brandLockup.Attribute("Width")?.Value);
+        Assert.Equal("37", brandLockup.Attribute("Height")?.Value);
+        Assert.Equal("Uniform", brandLockup.Attribute("Stretch")?.Value);
+        Assert.Equal("True", brandLockup.Attribute("SnapsToDevicePixels")?.Value);
+        var lockupSources = brandLockup
+            .Descendants(presentation + "Setter")
+            .Where(setter => setter.Attribute("Property")?.Value == "Source")
+            .Select(setter => setter.Attribute("Value")?.Value)
             .ToArray();
-        Assert.Equal(2, interfaceIcons.Length);
-        var brandIcon = interfaceIcons.Single(image =>
-            image.Parent?.Attribute("Width")?.Value == "38");
-        Assert.Equal("38", brandIcon.Parent?.Attribute("Height")?.Value);
-        Assert.Equal("UniformToFill", brandIcon.Attribute("Stretch")?.Value);
-        Assert.Equal("True", brandIcon.Attribute("SnapsToDevicePixels")?.Value);
-        Assert.Contains(
-            document.Descendants(presentation + "TextBlock"),
-            element => element.Attribute("Text")?.Value == "赫朝启动器");
-
-        var accountIcon = interfaceIcons.Single(image =>
-            image.Parent?.Attribute("Width")?.Value == "30");
-        Assert.Equal("30", accountIcon.Parent?.Attribute("Width")?.Value);
-        Assert.Equal("30", accountIcon.Parent?.Attribute("Height")?.Value);
+        Assert.Contains(darkLockupSource, lockupSources);
+        Assert.Contains(lightLockupSource, lockupSources);
+        Assert.DoesNotContain(
+            document.Descendants(presentation + "Image"),
+            image => image.Attribute("Source")?.Value?.EndsWith(
+                "/hechao-launcher-icon.png",
+                StringComparison.Ordinal) == true);
 
         var project = XDocument.Load(Path.Combine(
             repositoryRoot,
@@ -501,6 +505,8 @@ public sealed class LauncherXamlContractTests
             .Select(resource => resource.Attribute("Include")?.Value)
             .ToArray();
         Assert.Contains(@"Assets\hechao-launcher-lockup-37h.png", resources);
+        Assert.Contains(@"Assets\hechao-launcher-lockup-hd-dark.png", resources);
+        Assert.Contains(@"Assets\hechao-launcher-lockup-hd-light.png", resources);
 
         var generator = File.ReadAllText(Path.Combine(
             repositoryRoot,
@@ -837,6 +843,19 @@ public sealed class LauncherXamlContractTests
             accountButton.Descendants(presentation + "TextBlock"),
             element => element.Attribute("Text")?.Value ==
                 "{Binding TopBarAccountSubtitle}");
+        var skinBrushes = accountButton
+            .Descendants(presentation + "ImageBrush")
+            .ToArray();
+        Assert.Equal(2, skinBrushes.Length);
+        Assert.All(skinBrushes, brush =>
+            Assert.Equal(
+                "{Binding AccountSkinSource}",
+                brush.Attribute("ImageSource")?.Value));
+        Assert.Contains(
+            accountButton.Descendants(),
+            element => element.Name.LocalName == "IconParkIcon" &&
+                element.Attribute("Kind")?.Value == "User");
+        Assert.Contains("HasAccountSkin", accountButton.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain(
             document.Descendants(),
             element => element.Attribute(x + "Name")?.Value ==

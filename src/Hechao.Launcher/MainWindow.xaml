@@ -677,20 +677,27 @@
                 <StackPanel Margin="18,0,0,0"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-                    <Border Width="38"
-                            Height="38"
-                            Padding="5"
-                            Background="{DynamicResource SurfaceMutedBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="7">
-                        <Image Source="/Hechao.Launcher;component/Assets/hechao-launcher-icon.png"
-                               Stretch="UniformToFill"
-                               SnapsToDevicePixels="True"
-                               RenderOptions.BitmapScalingMode="HighQuality" />
-                    </Border>
+                    <Image Width="75"
+                           Height="37"
+                           Stretch="Uniform"
+                           SnapsToDevicePixels="True"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           AutomationProperties.Name="赫朝品牌标识">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Source"
+                                        Value="/Hechao.Launcher;component/Assets/hechao-launcher-lockup-hd-dark.png" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding UseDarkMode}" Value="False">
+                                        <Setter Property="Source"
+                                                Value="/Hechao.Launcher;component/Assets/hechao-launcher-lockup-hd-light.png" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="赫朝启动器"
+                        <TextBlock Text="启动器"
                                    FontSize="13"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="{Binding LauncherVersionText}"
@@ -836,16 +843,54 @@
                                 <ColumnDefinition Width="34" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="30"
-                                    Height="30"
-                                    Background="{DynamicResource SurfaceMutedBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4">
-                                <Image Source="/Hechao.Launcher;component/Assets/hechao-launcher-icon.png"
-                                       Stretch="UniformToFill"
-                                       RenderOptions.BitmapScalingMode="HighQuality" />
-                            </Border>
+                             <Border Width="30"
+                                     Height="30"
+                                     Background="{DynamicResource HechaoRedSoftBrush}"
+                                     BorderBrush="{DynamicResource HechaoRedBorderBrush}"
+                                     BorderThickness="1"
+                                     CornerRadius="4"
+                                     ClipToBounds="True"
+                                     SnapsToDevicePixels="True"
+                                     RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                     AutomationProperties.Name="Minecraft 皮肤头像">
+                                <Grid>
+                                    <controls:IconParkIcon Kind="User"
+                                                           Width="15"
+                                                           Height="15"
+                                                           Foreground="{DynamicResource HechaoRedDarkBrush}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center">
+                                        <controls:IconParkIcon.Style>
+                                            <Style TargetType="controls:IconParkIcon">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasAccountSkin}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </controls:IconParkIcon.Style>
+                                    </controls:IconParkIcon>
+                                    <Rectangle Visibility="{Binding HasAccountSkin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <Rectangle.Fill>
+                                            <ImageBrush ImageSource="{Binding AccountSkinSource}"
+                                                        Viewbox="8,8,8,8"
+                                                        ViewboxUnits="Absolute"
+                                                        Stretch="Fill"
+                                                        TileMode="None" />
+                                        </Rectangle.Fill>
+                                    </Rectangle>
+                                    <Rectangle Visibility="{Binding HasAccountSkin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <Rectangle.Fill>
+                                            <ImageBrush ImageSource="{Binding AccountSkinSource}"
+                                                        Viewbox="40,8,8,8"
+                                                        ViewboxUnits="Absolute"
+                                                        Stretch="Fill"
+                                                        TileMode="None" />
+                                        </Rectangle.Fill>
+                                    </Rectangle>
+                                </Grid>
+                             </Border>
                             <StackPanel Grid.Column="1"
                                         Margin="7,0,0,0"
                                         VerticalAlignment="Center">
