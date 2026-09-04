@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-09-03T11:09:44Z",
+  "generatedAtUtc": "2026-09-04T00:46:40Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -51,81 +51,80 @@
     },
     {
       "component": "server-control-agent",
-      "version": "0.8.1",
-      "releaseTag": "server-control-agent-v0.8.1",
-      "releaseCommit": "5d7acf62c62cdaeaabd84611b723c4f70e303b51",
-      "taggedAt": "2026-09-03T19:09:44+08:00",
+      "version": "0.8.2",
+      "releaseTag": "server-control-agent-v0.8.2",
+      "releaseCommit": "92d739d7af2f5f97106c2211cb4c4b90ed5ad8e4",
+      "taggedAt": "2026-09-04T07:27:20+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "14adba190158b1f84d1aa5946965059a3a93e015"
+        "value": "049344d7d2b68d8f21ef1bd1f26b3a9272e94dd1"
       },
-      "deploymentState": "production-owl5-java8-selection-legacy-forge-settings-heartbeats-owl9-unchanged",
-      "historicalNote": "Only owl5 runs 0.8.1; owl9 remains on 0.7.2. The upgrade restarted only the control Agent, preserved all Java process identities, and left the commercial street task Ready with no listener.",
+      "deploymentState": "production-owl5-unattended-s4u-dynamic-start-and-console-bridge-owl9-unchanged",
+      "historicalNote": "Only owl5 runs 0.8.2; owl9 remains on 0.7.2. Dynamic slot start tasks and the console bridge use passwordless S4U so they remain available without an interactive desktop login.",
       "artifacts": [
         {
-          "name": "hechao-server-control-agent-0.8.1-20260903T101920Z-win-x64.zip",
-          "location": "artifacts/releases/hechao-server-control-agent-0.8.1-20260903T101920Z-win-x64.zip",
-          "size": 33255103,
-          "sha256": "2394345A9AB2B70C48A8328E062C57AF274DB5072CD10726751AEA5A27F0FC6C",
+          "name": "hechao-server-control-agent-0.8.2-20260903T225950Z-win-x64.zip",
+          "location": "artifacts/releases/hechao-server-control-agent-0.8.2-20260903T225950Z-win-x64.zip",
+          "size": 33255805,
+          "sha256": "66C15994C7FFB02EBD10C6918CD7E95829E699FE84548B5E88E842B984D830C1",
           "primary": true
         },
         {
           "name": "Hechao.ServerControlAgent.exe",
           "location": "owl5:C:\\ProgramData\\Hechao\\ServerControlAgent\\Hechao.ServerControlAgent.exe",
-          "size": 74195551,
-          "sha256": "6A36645D82F3FF40BE020E6EE8E13ED43E657B84D54F4A3C252561E95331C402",
+          "size": 74196063,
+          "sha256": "7E8DFB43089FD7F930AB709F2DC06EE61475FD51072D820A49111B978492DC24",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "per-host-rollback-executable",
-        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-pre-0.8.1-20260903T102131Z"
+        "target": "owl5:C:\\ProgramData\\Hechao\\backups\\server-control-agent-20260903T230221Z"
       },
       "evidence": [
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.8.1.md",
-        "docs/evidence/SERVER_CONTROL_AGENT_0.8.1_PRODUCTION_DEPLOYMENT_2026-09-03.json",
-        "docs/SERVER_CONTROL_AGENT_OPERATIONS.md",
-        "docs/SERVER_CONTROL_AGENT_RELEASE_0.8.0_CANDIDATE.md"
+        "docs/SERVER_CONTROL_AGENT_RELEASE_0.8.2.md",
+        "docs/evidence/SERVER_CONTROL_AGENT_0.8.2_PRODUCTION_DEPLOYMENT_2026-09-04.json",
+        "docs/SERVER_CONTROL_AGENT_OPERATIONS.md"
       ]
     },
     {
       "component": "api",
-      "version": "0.38.0-20260903T084151Z",
-      "releaseTag": "api-v0.38.0",
-      "releaseCommit": "5d7acf62c62cdaeaabd84611b723c4f70e303b51",
-      "taggedAt": "2026-09-03T19:09:44+08:00",
+      "version": "0.38.1-20260904T002600Z",
+      "releaseTag": "api-v0.38.1",
+      "releaseCommit": "444f17b9f66c548038102c342bc3d695cdf9d5ba",
+      "taggedAt": "2026-09-04T08:46:40+08:00",
       "publisher": "51Channel",
       "buildSource": {
         "kind": "git-commit",
-        "value": "4838bc303fad960db9f9b8822c6061b9c297932c"
+        "value": "d7191c777bf572741e4650c4b32a1800347a7a25"
       },
-      "deploymentState": "production-java-major-version-propagation-health-ready",
-      "historicalNote": "Database migrations remain 35/35. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
+      "deploymentState": "production-admin-stale-sign-in-tab-session-recovery-health-ready",
+      "historicalNote": "Database migrations remain 35/35. Existing sign-in tabs now recover after another tab establishes the administrator session without relaxing ticket, tier or MFA boundaries. The release restarted only the API service; no Minecraft, Velocity, Publisher or game-VPS server process was operated.",
       "artifacts": [
         {
-          "name": "hechao-api-0.38.0-20260903T084151Z-linux-x64.tar.gz",
-          "location": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z",
-          "size": 46999748,
-          "sha256": "F70ACFDAC99DE18D8EED1ECA0D5BD3B53ADF7191FD468CFB6CECD28BBD50A5DA",
+          "name": "hechao-api-0.38.1-20260904T002600Z-linux-x64.tar.gz",
+          "location": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z",
+          "size": 46999944,
+          "sha256": "04E78E5EB7803EF0404C1966F67F0B11983DD85D65C81D8A28193EA1E0560CFA",
           "primary": true
         },
         {
           "name": "Hechao.Api",
-          "location": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z/Hechao.Api",
+          "location": "/opt/hechao-launcher-api/releases/0.38.1-20260904T002600Z/Hechao.Api",
           "size": 105703492,
-          "sha256": "EB3897FD162B192916F40FA8E6C75CB1CA2620475A54E1FBE1066F8CB30533ED",
+          "sha256": "42080526D4B4FA4FA34663A89F3CDB6F6F42DEEED955DCB38E58C82B86E07B2C",
           "primary": false
         }
       ],
       "rollback": {
         "kind": "release-directory",
-        "target": "/opt/hechao-launcher-api/releases/0.37.0-20260823T182444Z"
+        "target": "/opt/hechao-launcher-api/releases/0.38.0-20260903T084151Z"
       },
       "evidence": [
-        "docs/API_RELEASE_0.38.0.md",
-        "docs/evidence/API_0.38.0_PRODUCTION_DEPLOYMENT_2026-09-03.json",
-        "docs/API_RELEASE_0.38.0_CANDIDATE.md"
+        "docs/API_RELEASE_0.38.1.md",
+        "docs/evidence/API_0.38.1_PRODUCTION_DEPLOYMENT_2026-09-04.json",
+        "docs/API_RELEASE_0.38.1_CANDIDATE.md"
       ]
     },
     {
