@@ -13,7 +13,10 @@ param(
     [long]$ExpectedBytes,
 
     [ValidateSet('first', 'verify')]
-    [string]$Run = 'verify'
+    [string]$Run = 'verify',
+
+    [ValidatePattern('^[A-Za-z0-9.-]+$')]
+    [string]$ExpectedDownloadHost = 'download.hechao.world'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -25,7 +28,7 @@ $secretRoot = [IO.Path]::GetFullPath(
 $resultPath = Join-Path $secretRoot "launcher-release-$Version-$Run.txt"
 $fileName = "Hechao-Launcher-Setup-$Version-win-x64.exe"
 $objectPath = "/releases/launcher/$Version/$fileName"
-$expectedHost = 'hechaoworld.oss-cn-shanghai.aliyuncs.com'
+$expectedHost = $ExpectedDownloadHost.Trim().ToLowerInvariant()
 $anonymousUri = [Uri]::new("https://$expectedHost$objectPath")
 $temporaryPath = Join-Path $validationRoot (
     "launcher-$Version-private-download-" + [Guid]::NewGuid().ToString('N') + '.tmp')

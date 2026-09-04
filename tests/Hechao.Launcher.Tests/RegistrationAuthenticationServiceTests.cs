@@ -49,7 +49,8 @@ public sealed class RegistrationAuthenticationServiceTests
                 "测试玩家",
                 "password",
                 "tester@example.com",
-                "123456"));
+                "123456",
+                true));
 
         Assert.Equal(1, forumRequestCount);
         Assert.IsType<JsonException>(exception.InnerException);

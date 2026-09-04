@@ -27,7 +27,7 @@
 | Docker 内网 `6379` | Redis 7 | Sub2API 缓存，不对公网开放 |
 | `0.0.0.0:22` | OpenSSH | 运维入口 |
 | `127.0.0.1:5433` | Docker `hechao-launcher-postgres` | 启动器独立 PostgreSQL 16，512 MiB 上限 |
-| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.38.0`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级与代理协议门禁、生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警、精确服控交接、活动企划、动态部署槽、多 Java 整合包部署、经济商品目录与后台 K 线 |
+| `127.0.0.1:8090` | `hechao-launcher-api.service` | 启动器 API `0.34.0`、赫朝账号、账号安全、基础设施角色、论坛会话联动、受控全局等级与代理协议门禁、生产档案、诊断上传、客户端兼容保护、运行遥测、服务器深度指标、统一告警、精确服控交接、活动企划、动态部署槽、经济商品目录与后台 K 线 |
 
 Nginx 当前将 `hechao.world` 根路径转发到 `127.0.0.1:3000`，并保留若干中转 API 路径到 `127.0.0.1:8080`；`api.hechao.world` 全站转发到 `127.0.0.1:8080`。新启动器 API 不得占用这两个现有上游端口或覆盖现有 server block。
 
@@ -153,12 +153,6 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 - Vanilla 正式档案为 `vanilla-1.21.11` / `1.0.0`，清单 SHA-256 为 `C22DEDC09576273B6D4C52B07CF7975D09BA758533B7395974BE34F73344C865`；包含 `4,671` 个文件与对象、`549,101,696` 字节，运行时为 Java `21`，已绑定 Survival1。
 - Forge 正式档案为 `forge-1.20.1` / `1.0.0`，清单 SHA-256 为 `D33FF592B115667713BCC87477710AA7D8A86F77490C23B70B7DEE620A56919C`；包含 `3,667` 个文件与对象、`725,771,107` 字节，加载器为 Forge `47.4.0`，运行时为 Java `17`。当前未绑定服务器，因此不会出现在玩家目录。
 - DollNight 正式档案为 `dollnight-1.21.11` / `1.0.0`，清单 SHA-256 为 `6D0C73C2B8CD34621C5D44212047DC562AD05E8277B1F195BDAC0FDA5DA16575`；包含 `4,902` 个逻辑文件、`4,900` 个去重对象和 `874,147,856` 字节，加载器为 Fabric `0.19.2`，运行时为 Java `21`，已绑定 DollNight。三份新增档案的生产信任验签、闭合校验、全量安装、逐文件复验、进程构建、权限和对象下载回归均通过；当前解决方案测试为 `251/251`。
-- 商业街建筑对决 Test-only 档案为 `minigame-commercial-street-forge-1.12.2` / `1.0.0`，
-  清单 SHA-256 为 `43C1550E21D95AA89E61F6518BA435DF342EB34ABF46D57D62FEE34367AE04EE`；
-  客户端包含 `1,405` 个文件、`352,494,958` 字节，加载器为 Forge `14.23.5.2859`，
-  运行时为 Java `8`。Test 为 `100% / r2`，Gray/Production 未分配；目录隐藏并保持
-  `Closed`。2026-09-04 已用 Agent `0.8.2` 完成无人登录真实启动、协议和控制台自检。完整记录见
-  [`COMMERCIAL_STREET_PACKAGE_1.0.0.md`](COMMERCIAL_STREET_PACKAGE_1.0.0.md)。
 - 独立发布 RAM 用户 `hechao-launcher-publisher` 当前绑定
   `HechaoLauncherOssObjectPublish` v5，只可对 `hechaoworld/objects/*`、
   `hechaoworld/releases/launcher/*`、`hechaoworld/backups/database/*` 与
@@ -172,22 +166,31 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
   启动器 `0.10.0` 私有安装包为 `61,796,065` 字节。
 - Bucket 版本控制已开启，OSS 会忽略 `x-oss-forbid-overwrite`。活动首次上传因此为 `4,551` 个共享摘要创建同内容新版本，真正新增 `203` 个摘要、`152,843,997` 字节。发布器 `0.7.0` 已改为先校验当前对象长度与 SHA-256 元数据，匹配则跳过，不匹配则硬失败；生产全量复验结果为 `0` 个上传、`4,754` 个跳过、`0` 上传字节。完整记录见 [`ACTIVITY_PROFILE_RELEASE_1.0.10.md`](ACTIVITY_PROFILE_RELEASE_1.0.10.md)。
 
-- 启动器当前正式版本为 `0.15.14`，制品源码提交为
-  `8a47513a9e54fb349fbdf90d25ad683f055dde1a`，正式标签为
-  `launcher-v0.15.14`。单文件 EXE 为 `69,076,778` 字节，SHA-256 为
-  `FAE70C35005DC061E3D46C4E0ABEDCB087E57AA0EB31C2AE7F4A38CAE72A5C9D`；
-  NSIS 为 `61,997,617` 字节，SHA-256 为
-  `E5329650A3961A39A69D41ADDBC6768AB3349227D931D0CC7D94EA4514E5274C`。
-  两者均为 `NotSigned`。正式发布时完整解决方案 `838` 项通过、`1` 项环境测试跳过，
-  启动器 `246/246`。
-- `0.15.14` 私有 OSS 对象匿名读取 `403`、两轮签名回读 `200`，长度与 SHA-256 一致；
-  `0.15.13 -> 0.15.14` 覆盖安装、全新安装、双轮卸载、设置和会话文件保留已验收。
-  `0.15.13` 保留为上一正式版本，其不可变对象与标签不得覆盖。
-- 生产更新通道当前为 `LatestVersion=0.15.14`、
-  `MinimumSupportedVersion=0.12.3`；API `0.38.0` 为 `active/running`、`NRestarts=0`，
-  内外网健康与就绪端点均为 `200`。认证会话确认 `0.15.13` 生成更新计划、`0.15.14`
-  不重复更新，完整下载长度和 SHA-256 一致。启动器发布记录归档在正式标签提交；本分支
-  只同步生产事实，不合并对应功能分支。
+- 启动器当前正式版本为 `0.15.15`，制品源码提交为
+  `ea19684cb9786b46057a01e8dcdab82db526a5f2`，正式标签为
+  `launcher-v0.15.15`。单文件 EXE 为 `69,963,043` 字节，SHA-256 为
+  `41D2ACCE70117BE3BF51F5EE801495C9C190FD8A1E97708D179E287B99A92AE4`；
+  NSIS 为 `62,829,606` 字节，SHA-256 为
+  `D5A65E7A20A1F005E4CBFE13A1C65306445D6C9E87E6FD63455305D28AA6A3A0`。
+  两者均为 `NotSigned`。完整解决方案 `863` 项通过、`1` 项环境测试跳过，Release
+  启动器 `271/271`，Debug 启动器 `286/286`。
+- `0.15.12` 完成 DPAPI 持久登录和临时网络故障保留会话；`0.15.13` 统一最终赫朝品牌
+  图标；`0.15.14` 进一步把侧栏与页头替换为官方 `75 x 37` 图标加“赫朝”组合标，并按
+  最终 SVG 八矩形几何逐尺寸生成七档无抗锯齿缩放 ICO。组合标 SHA-256 为
+  `8500734CF0BDEFA1B2995D4A21C7E647A8F8C7FAECA23D465825AF0AD5DD7B3C`，ICO SHA-256 为
+  `D37AEED7984D02CE40ED9635EA28E0BA780152C1123ECE12291DB8BBF4C7BDBB`。
+- `0.15.15` 接收 PR `#1` 的五工作区紧凑布局、日间/黑夜主题、设置迁移和 Debug 预览，
+  并在审查阶段恢复官方深浅主题组合标与玩家皮肤头像。浅色组合标 SHA-256 为
+  `5EE9F33AE78BD2B5FBE807EADD0485E9DC469DCFCDD7FC46AE3177A9DDE34B60`，深色组合标为
+  `9F4FE97B3B954C953896C01F181D93052C1E01A309F2323BCDC9B4FEC4EC2727`。
+- `0.15.15` 私有 OSS 对象匿名读取 `403`、两轮签名回读 `200`，长度与 SHA-256 一致；
+  `0.15.14 -> 0.15.15` 覆盖安装、全新安装、双轮卸载、设置和会话文件保留已验收。
+  `0.15.14` 保留为立即更新元数据回滚，其不可变对象与标签不得覆盖。
+- 生产更新通道当前为 `LatestVersion=0.15.15`、
+  `MinimumSupportedVersion=0.12.3`；API `0.38.4` 为 `active`、`NRestarts=0`，内外网健康、
+  就绪和数据库均正常。认证会话确认 `0.15.14` 生成更新计划、`0.15.15` 不重复更新，
+  完整下载长度和 SHA-256 一致。详细记录见
+  [`LAUNCHER_RELEASE_0.15.15.md`](LAUNCHER_RELEASE_0.15.15.md)。
 - API `0.30.3-20260814T072942Z` 单文件 SHA-256 为
   `E155542923AF167BC85351306B16B655EC7D8598583173017C7288BAA45BC2DC`，只监听
   `127.0.0.1:8090`；数据库和 API 快照分别保留在
@@ -247,12 +250,12 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 - owl5 运行代理 `0.2.3`，owl9 保持 `0.2.1`；owl5 的空服关停阻塞已修复，升级前后
   其余 5 个 Java PID 和启动时间不变。回滚备份、根因和验证见
   [`SERVER_CONTROL_AGENT_RELEASE_0.2.3.md`](SERVER_CONTROL_AGENT_RELEASE_0.2.3.md)。
-- 当前 owl5 运行 Agent `0.8.1`，owl9 保持 `0.7.2`。owl5 ZIP 为 `33,255,103`
-  字节，SHA-256 `2394345A9AB2B70C48A8328E062C57AF274DB5072CD10726751AEA5A27F0FC6C`；
-  EXE 为 `74,195,551` 字节，SHA-256
-  `6A36645D82F3FF40BE020E6EE8E13ED43E657B84D54F4A3C252561E95331C402`。
-  owl5 `10/10`、owl9 `2/2` 目标心跳新鲜；详细记录见
-  [`SERVER_CONTROL_AGENT_RELEASE_0.8.1.md`](SERVER_CONTROL_AGENT_RELEASE_0.8.1.md)。
+- 当前 owl5/owl9 均运行代理 `0.7.2`。ZIP 为 `33,253,487` 字节，SHA-256
+  `85517C013888E28593AB1BFA97E6D14ADFB0C36E0ABF3D728E6BEF570520C149`；
+  EXE 为 `74,191,455` 字节，SHA-256
+  `908F9B115D8717B7919930570BDAAF4360567C1809972A0236D028B07B43607C`。
+  owl5 另有停止的 `activity-survival` 动态生存槽；详细记录见
+  [`SERVER_CONTROL_AGENT_RELEASE_0.7.2.md`](SERVER_CONTROL_AGENT_RELEASE_0.7.2.md)。
 
 ## 2. 主 Minecraft VPS：owl5
 
@@ -273,17 +276,9 @@ Nginx 隐私日志启用后的 2026-07-27 23:09:42 至 23:41:46（Asia/Shanghai�
 | Velocity | `E:\Velocity` | `25577` | 运行中，`-Xmx1G` |
 | 大厅 | `E:\LobbyServer` | `25566` | 运行中，`-Xmx2G` |
 | Survival1 | `E:\Survival1` | `19228` | 已停止；目录状态 `Closed` |
-| Survival2 | `E:\Survival2` | `25565` | 已停止；任务 `Ready`，无监听 |
-| Activity NeoForge | `E:\ActivityNeoForge` | `25568` | 已停止；任务 `Ready`，无监听 |
-| DollNight | `E:\DollNight` | 与 Survival2 共用 `25565` | 已停止；任务 `Ready`，无监听 |
-| 逆转未来独立服 | `E:\StandaloneServers\ReverseFuture233\standalone-runtime` | `25569` | 运行中，PID `4500` |
-| 天域远征独立槽 | `E:\HechaoActivitySlots\activity-survival` | `25600` | 已停止；任务 `Ready`，无监听 |
-| 模块首领独立槽 | `E:\HechaoActivitySlots\activity-modular-boss` | 动态槽 | 已停止；任务 `Ready`，无监听 |
-| 商业街小游戏槽 | `E:\HechaoActivitySlots\minigame-commercial-street` | `25602` | 运行中，PID `2948`；任务 `S4U`，隐藏且 `Closed` |
-
-上述状态于 `2026-09-04` 使用 Agent `0.8.2` 重新核验：owl5 的 Java 进程为逆转未来
-`4500`、Velocity `5040`、内部大厅 `5160` 和商业街 `2948`。商业街 `25602` 单监听，
-其余表中停止目标仍无监听。运行状态容易变化，后续运维动作前仍须实时核验。
+| Survival2 | `E:\Survival2` | `25565` | 运行中，`-Xmx2G` |
+| Activity NeoForge | `E:\ActivityNeoForge` | `25568` | 运行中；零玩家时 Tick 指标暂停 |
+| DollNight | `E:\DollNight` | 与 Survival2 共用 `25565` | 替换服，不可与 Survival2 同时运行 |
 
 Velocity 路由基线：`lobby -> 127.0.0.1:25566`、`survival1 -> 127.0.0.1:19228`、`survival2 -> 127.0.0.1:25565`、`activity -> 127.0.0.1:25568`、`pvp -> owl9.vipi9.top:19243`。公网入口保持 `mc.hehe11.fun`，Minecraft SRV 记录指向外部端口 `15156`；2026-07-26 重启后从外网验证该端口 TCP 可达，默认 `25565` 不直接开放。
 
@@ -493,12 +488,12 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 
 ## 5. 当前 API 部署状态
 
-> 启动器更新通道当前为 `launcher-v0.15.14`；下方 API
+> 启动器更新通道当前为 `launcher-v0.15.9`；下方 API
 > 发布 ID 与其他组件标签保持各自独立版本。
 
-- 发布 ID：`0.38.0-20260903T084151Z`
-- API `0.38.0` 已部署并增加多 Java 整合包部署合同；既有基础设施角色、客户端兼容保护、日志脱敏、Publisher 工作空间保护、成员问卷正版资格桥接、活动企划、LuckPerms 代理协议门禁、活动预下载与进服权限分离、后台精确服控交接、动态部署槽、经济商品目录和后台单品 K 线继续保留。启动器 `0.15.14` 为私有 OSS 当前版本；管理员 Web 已启用，真实 MFA 已登记。
-- 启动器正式标签为 `launcher-v0.15.14`，制品源码提交为 `8a47513a9e54fb349fbdf90d25ad683f055dde1a`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
+- 发布 ID：`0.34.0-20260818T080552Z`
+- API `0.34.0`、基础设施角色、客户端兼容保护、日志脱敏、Publisher 工作空间保护、成员问卷正版资格桥接、活动企划、LuckPerms 代理协议门禁、活动预下载与进服权限分离、后台精确服控交接、旧活动排期只读显示、动态部署槽、经济商品目录和后台单品 K 线已部署；启动器 `0.15.9` 为私有 OSS 当前版本。管理员 Web 已启用，真实 MFA 已登记。
+- 启动器正式标签为 `launcher-v0.15.9`，制品源码提交为 `906fdb848eb3805e05b95d01b569f32379fd3cd4`；API、Velocity 与各档案标签按 [`RELEASE_AND_GIT_WORKFLOW.md`](RELEASE_AND_GIT_WORKFLOW.md) 管理。
 - 运行账户：`hechao-api`，无交互登录权限
 - systemd：已启用并通过重启恢复测试
 - 监听：仅 `127.0.0.1:8090`
@@ -506,7 +501,7 @@ owl9 配置和 owl5 `forwarding.secret` 的 ACL 都已收紧为 `SYSTEM` 与本�
 - 公网入口：`https://launcher-api.hechao.world`
 - `healthz`、数据库感知的 `readyz`：本机 HTTP 与公网 HTTPS 均为 200
 - `GET /v1/catalog`：过渡阶段匿名请求返回玩家目录，无效 Bearer 返回 401；Lobby 为隐藏基础设施目标且公开命中为 `0`，正式强制开关待四级灰度和 Velocity `enforce` 稳定后启用
-- 数据库迁移：`35/35` 校验全部通过；`0.31.0` 新增动态部署槽迁移，`0.32.0` 新增独立槽迁移，`0.33.0` 新增经济账本与商品目录迁移，`0.34.0` 新增总体和单品行情查询索引；`0.38.0` 不新增迁移
+- 数据库迁移：启动时迁移 `1` 至 `33` 校验全部通过；`0.31.0` 新增动态部署槽迁移，`0.32.0` 新增独立槽迁移，`0.33.0` 新增经济账本与商品目录迁移，`0.34.0` 新增总体和单品行情查询索引
 - 赫朝账号：注册、登录、刷新轮换、重放拒绝、退出撤销、全部设备退出、错误密码解除拒绝、正确密码解除身份和无效 Minecraft 凭据拒绝已完成生产隔离验证；测试数据已清理
 - LuckPerms 快照：117 人、4 个等级映射；快照/身份和用户等级差异均为 `0`，内部同步无凭据返回 401
 - Velocity 内部授权：无凭据和错误凭据均返回 401；有效凭据与未绑定测试 UUID 返回 `PlayerNotLinked`

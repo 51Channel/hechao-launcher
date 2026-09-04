@@ -49,7 +49,10 @@
 - 进服端点：`POST /v1/velocity/launch-grants` 和内部 `POST /v1/internal/velocity/authorize`。
 - 访问令牌默认有效 15 分钟；刷新令牌默认有效 30 天并在每次刷新时轮换。
 - PostgreSQL 只保存访问令牌与刷新令牌的 SHA-256，不保存令牌明文。
-- Windows 客户端使用 DPAPI 保护赫朝刷新会话，MSAL 缓存也使用 Windows 安全存储。
+- Windows 客户端使用 DPAPI 保护赫朝完整短期会话，包含当前访问令牌、刷新令牌及过期时间；
+  `session.dat` 使用唯一临时文件原子替换并保留加密备份，旧版只含刷新令牌的文件仍可迁移。
+  启动时若访问令牌仍有效则不触发刷新；网络超时、断网、取消或 API `5xx` 不会清除本地会话，
+  目录后台重试恢复连接，只有刷新接口明确返回 `401` 才视为会话被撤销或过期。
 - LuckPerms 同步任务：`Hechao Launcher LuckPerms Sync`，以 `SYSTEM` 身份每 5 分钟只读同步。
 - 同步目录：`C:\ProgramData\Hechao\LauncherBridge`。
 - 同步凭据使用 DPAPI LocalMachine 加密，ACL 只允许 `SYSTEM` 与本机管理员。

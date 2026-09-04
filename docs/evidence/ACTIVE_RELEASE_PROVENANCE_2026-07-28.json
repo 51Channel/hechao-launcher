@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-09-04T06:54:46Z",
+  "generatedAtUtc": "2026-09-04T12:19:18Z",
   "scope": "Active launcher platform releases and deployed operational components",
   "records": [
     {
@@ -446,6 +446,161 @@
         "docs/LAUNCHER_SELF_UPDATE_OPERATIONS.md",
         "docs/LAUNCHER_HOME_REDESIGN_2026-08-08.md",
         "docs/evidence/LAUNCHER_0.15.1_RELEASE_ACCEPTANCE_2026-08-08.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.10",
+      "releaseTag": "launcher-v0.15.10",
+      "releaseCommit": "6801d8d490d90e8e4be3aef473342f0ea9b20f93",
+      "taggedAt": "2026-08-24T14:14:37+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "eece13dec1c46ff4d70125fb71277c673de522b3"
+      },
+      "deploymentState": "production-update-channel-private-oss-authenticated-acceptance",
+      "historicalNote": "Launcher 0.15.10 is published as a private immutable installer and authenticated self-update; the executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.10-win-x64.exe",
+          "location": "releases/launcher/0.15.10/Hechao-Launcher-Setup-0.15.10-win-x64.exe",
+          "size": 61997588,
+          "sha256": "6E3E449BA1FF59EF3B3AEA1EFD627F30A03E769BC57484033EA8D326AFCD4CC5",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "higher-version-fix-or-disable-update-channel",
+        "target": "restore API 0.36.1 and its launcher-update environment backup"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.10.md",
+        "docs/evidence/LAUNCHER_0.15.10_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.12",
+      "releaseTag": "launcher-v0.15.12",
+      "releaseCommit": "b0de8a87045d1f723202a07a8ec5c1376c1ef4c5",
+      "taggedAt": "2026-08-24T15:40:51+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "c37717f0465c3e94675fe6a7148be59f1c5a5c98"
+      },
+      "deploymentState": "historical-production-private-oss-durable-session-fix-superseded-by-0.15.13",
+      "historicalNote": "Launcher 0.15.12 made DPAPI sessions durable across valid startups and transient network failures. It was the immediate metadata rollback for 0.15.13 and remains immutable; the executable is unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.12-win-x64.exe",
+          "location": "releases/launcher/0.15.12/Hechao-Launcher-Setup-0.15.12-win-x64.exe",
+          "size": 61998219,
+          "sha256": "ED3E6100652D81450ACF5392E584ECC04EEBA14E5EA2B65C60A6CCE98C5F0DB3",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T073202Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.12.md",
+        "docs/evidence/LAUNCHER_0.15.12_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.13",
+      "releaseTag": "launcher-v0.15.13",
+      "releaseCommit": "ad2c9eec3779da8900bdd1d135b5205541b53b30",
+      "taggedAt": "2026-08-24T16:10:34+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "8d019f9b409ab7f4b774900796ef8e877327af37"
+      },
+      "deploymentState": "historical-production-private-oss-final-brand-icon-superseded-by-0.15.14",
+      "historicalNote": "Launcher 0.15.13 adopted the final Hechao brand icon for WPF, EXE, installer, uninstaller and shortcuts while preserving the durable session behavior from 0.15.12. It is the immediate metadata rollback for 0.15.14; the executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.13-win-x64.exe",
+          "location": "releases/launcher/0.15.13/Hechao-Launcher-Setup-0.15.13-win-x64.exe",
+          "size": 61999226,
+          "sha256": "48F7D8FFE06F4D6A7E5CB763FA63144A4A48E1DEE29857EC86931E19BA1CA257",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T080213Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.13.md",
+        "docs/evidence/LAUNCHER_0.15.13_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.14",
+      "releaseTag": "launcher-v0.15.14",
+      "releaseCommit": "24e4cdaeac65eaf6c90782d5d4968b9d516c1cae",
+      "taggedAt": "2026-08-24T17:38:14+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "8a47513a9e54fb349fbdf90d25ad683f055dde1a"
+      },
+      "deploymentState": "historical-production-private-oss-official-brand-lockup-crisp-icon-superseded-by-0.15.15",
+      "historicalNote": "Launcher 0.15.14 uses the approved icon-and-wordmark lockup in the sidebar and header, generates each Windows icon size directly from the final eight-rectangle geometry, and preserves the durable session behavior. It is the immediate update-channel rollback for 0.15.15; the executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.14-win-x64.exe",
+          "location": "releases/launcher/0.15.14/Hechao-Launcher-Setup-0.15.14-win-x64.exe",
+          "size": 61997617,
+          "sha256": "E5329650A3961A39A69D41ADDBC6768AB3349227D931D0CC7D94EA4514E5274C",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260824T092853Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.14.md",
+        "docs/evidence/LAUNCHER_0.15.14_RELEASE_ACCEPTANCE_2026-08-24.json"
+      ]
+    },
+    {
+      "component": "launcher",
+      "version": "0.15.15",
+      "releaseTag": "launcher-v0.15.15",
+      "releaseCommit": "401dbe941d0a41a99d9365c08e28115828eea477",
+      "taggedAt": "2026-09-04T14:00:53+08:00",
+      "publisher": "51Channel",
+      "buildSource": {
+        "kind": "git-commit",
+        "value": "ea19684cb9786b46057a01e8dcdab82db526a5f2"
+      },
+      "deploymentState": "production-update-channel-private-oss-pr1-compact-themes-official-lockup-player-avatar-authenticated-acceptance",
+      "historicalNote": "Launcher 0.15.15 integrates pull request #1's compact five-workspace layout, light and dark themes, settings compatibility and debug preview. Review restored the approved theme-aware Hechao lockup and signed-in player skin avatar before release. The executable remains unsigned by project decision.",
+      "artifacts": [
+        {
+          "name": "Hechao-Launcher-Setup-0.15.15-win-x64.exe",
+          "location": "releases/launcher/0.15.15/Hechao-Launcher-Setup-0.15.15-win-x64.exe",
+          "size": 62829606,
+          "sha256": "D5A65E7A20A1F005E4CBFE13A1C65306445D6C9E87E6FD63455305D28AA6A3A0",
+          "primary": true
+        }
+      ],
+      "rollback": {
+        "kind": "update-channel-environment-backup-or-higher-version-fix",
+        "target": "/etc/hechao-launcher-api/environment.launcher-updates.20260904T055121Z.bak"
+      },
+      "evidence": [
+        "docs/LAUNCHER_RELEASE_0.15.15.md",
+        "docs/evidence/LAUNCHER_0.15.15_RELEASE_ACCEPTANCE_2026-09-04.json"
       ]
     },
     {

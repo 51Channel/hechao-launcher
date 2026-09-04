@@ -19,6 +19,7 @@ public interface ILauncherAuthenticationService
         string password,
         string email,
         string code,
+        bool legalAccepted,
         CancellationToken cancellationToken = default);
     Task<HechaoAccount> LoginAsync(
         string usernameOrEmail,
@@ -90,6 +91,7 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
         string password,
         string email,
         string code,
+        bool legalAccepted,
         CancellationToken cancellationToken = default)
     {
         await _forumRegistrationClient.RegisterAsync(
@@ -98,6 +100,7 @@ public sealed class MicrosoftMinecraftAuthenticationService : ILauncherAuthentic
             email,
             password,
             code,
+            legalAccepted,
             cancellationToken);
 
         try

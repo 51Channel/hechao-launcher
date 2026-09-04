@@ -15,7 +15,8 @@ public sealed record LauncherSettings(
     string StartupPage = "服务器",
     int StorageSchemaVersion = ClientStorageLayout.CurrentStorageSchemaVersion,
     Dictionary<string, string>? ProfileJavaPaths = null,
-    bool UseSystemProxy = false);
+    bool UseSystemProxy = false,
+    bool UseDarkMode = true);
 
 public interface ILauncherSettingsStore
 {

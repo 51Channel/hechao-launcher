@@ -13,6 +13,7 @@ namespace Hechao.Launcher.Services;
 public sealed class LauncherApiClient : ILauncherTelemetryApiClient
 {
     private const string DefaultApiBaseUrl = "https://launcher-api.hechao.world/";
+    private static readonly TimeSpan AccessTokenSafetyWindow = TimeSpan.FromMinutes(1);
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
 
     private readonly HttpClient _httpClient;
@@ -100,7 +101,14 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         var storedSession = await _sessionStore.LoadAsync(cancellationToken);
         if (storedSession is null)
         {
+            _session = null;
             return null;
+        }
+
+        _session = CreateSessionFromStored(storedSession);
+        if (HasUsableAccessToken(_session))
+        {
+            return _session.Account;
         }
 
         try
@@ -111,11 +119,14 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            return null;
+            // Keep the account and the durable refresh token. The API may be
+            // temporarily unavailable; the next authenticated request can
+            // retry the refresh without asking the player to log in again.
+            return _session?.Account;
         }
         catch (LauncherApiException exception) when ((int)exception.StatusCode >= 500)
         {
-            return null;
+            return _session?.Account;
         }
     }
 
@@ -187,6 +198,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             minecraftAccessToken,
             accessToken,
             cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         var linkedAccount = await ReadRequiredAsync<HechaoAccount>(
             retryResponse,
             cancellationToken);
@@ -220,6 +235,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             currentPassword,
             accessToken,
             cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         await ReadRequiredNoContentAsync(retryResponse, cancellationToken);
         await ClearSessionAsync(cancellationToken);
     }
@@ -241,7 +260,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
     public async Task<LauncherCatalogSnapshot> GetCatalogAsync(CancellationToken cancellationToken = default)
     {
         await EnsureFreshAccessTokenAsync(cancellationToken);
-        using var firstResponse = await SendCatalogRequestAsync(cancellationToken);
+        var accessToken = _session?.AccessToken;
+        using var firstResponse = await SendCatalogRequestAsync(
+            accessToken,
+            cancellationToken);
         if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
         {
             return await ReadRequiredAsync<LauncherCatalogSnapshot>(firstResponse, cancellationToken);
@@ -252,7 +274,14 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             throw new LauncherAuthenticationRequiredException();
         }
 
-        using var retryResponse = await SendCatalogRequestAsync(cancellationToken);
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendCatalogRequestAsync(
+            accessToken,
+            cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         return await ReadRequiredAsync<LauncherCatalogSnapshot>(retryResponse, cancellationToken);
     }
 
@@ -284,6 +313,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         using var retryResponse = await SendLauncherUpdateRequestAsync(
             accessToken,
             cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         return retryResponse.StatusCode == HttpStatusCode.NoContent
             ? null
             : await ReadRequiredAsync<LauncherUpdateRelease>(
@@ -296,7 +329,11 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         CancellationToken cancellationToken = default)
     {
         await EnsureFreshAccessTokenAsync(cancellationToken);
-        using var firstResponse = await SendProfileManifestRequestAsync(profileId, cancellationToken);
+        var accessToken = _session?.AccessToken;
+        using var firstResponse = await SendProfileManifestRequestAsync(
+            profileId,
+            accessToken,
+            cancellationToken);
         if (firstResponse.StatusCode != HttpStatusCode.Unauthorized || _session is null)
         {
             return await ReadRequiredBytesAsync(firstResponse, cancellationToken);
@@ -307,7 +344,15 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             throw new LauncherAuthenticationRequiredException();
         }
 
-        using var retryResponse = await SendProfileManifestRequestAsync(profileId, cancellationToken);
+        accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
+        using var retryResponse = await SendProfileManifestRequestAsync(
+            profileId,
+            accessToken,
+            cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         return await ReadRequiredBytesAsync(retryResponse, cancellationToken);
     }
 
@@ -333,6 +378,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
         using var retryResponse = await SendVelocityLaunchGrantRequestAsync(
             serverId,
+            accessToken,
+            cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
             accessToken,
             cancellationToken);
         return await ReadRequiredAsync<VelocityLaunchGrantResponse>(retryResponse, cancellationToken);
@@ -365,6 +414,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             request,
             accessToken,
             cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         return await ReadRequiredAsync<LauncherTelemetryBatchResponse>(
             retryResponse,
             cancellationToken);
@@ -394,6 +447,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         accessToken = await GetRequiredAccessTokenAsync(cancellationToken);
         using var retryResponse = await SendDiagnosticUploadCreateRequestAsync(
             request,
+            accessToken,
+            cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
             accessToken,
             cancellationToken);
         return await ReadRequiredAsync<DiagnosticUploadAuthorizationResponse>(
@@ -460,6 +517,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         using var retryResponse = await SendAdminBrowserTicketRequestAsync(
             accessToken,
             cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         return await ReadRequiredAsync<AdminBrowserTicketResponse>(
             retryResponse,
             cancellationToken);
@@ -511,6 +572,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         using var retryResponse = await SendLogoutAllSessionsRequestAsync(
             accessToken,
             cancellationToken);
+        await InvalidateSessionAfterRetryIfUnauthorizedAsync(
+            retryResponse,
+            accessToken,
+            cancellationToken);
         var retryResult = await ReadRequiredAsync<SessionRevocationResponse>(
             retryResponse,
             cancellationToken);
@@ -520,7 +585,7 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
 
     private async Task EnsureFreshAccessTokenAsync(CancellationToken cancellationToken)
     {
-        if (_session is null || _session.AccessTokenExpiresAt > DateTimeOffset.UtcNow.AddMinutes(1))
+        if (_session is null || HasUsableAccessToken(_session))
         {
             return;
         }
@@ -544,7 +609,7 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         {
             if (_session is not null &&
                 _session.RefreshToken != refreshToken &&
-                _session.AccessTokenExpiresAt > DateTimeOffset.UtcNow.AddMinutes(1))
+                HasUsableAccessToken(_session))
             {
                 return true;
             }
@@ -556,9 +621,18 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
                 cancellationToken);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                _session = null;
-                await _sessionStore.ClearAsync(cancellationToken);
-                return false;
+                if (_session is null ||
+                    string.Equals(
+                        _session.RefreshToken,
+                        refreshToken,
+                        StringComparison.Ordinal))
+                {
+                    _session = null;
+                    await _sessionStore.ClearAsync(cancellationToken);
+                    return false;
+                }
+
+                return HasUsableAccessToken(_session);
             }
 
             var session = await ReadRequiredAsync<AuthSessionResponse>(response, cancellationToken);
@@ -571,12 +645,14 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
         }
     }
 
-    private async Task<HttpResponseMessage> SendCatalogRequestAsync(CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> SendCatalogRequestAsync(
+        string? accessToken,
+        CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "v1/catalog");
-        if (_session is not null)
+        if (!string.IsNullOrWhiteSpace(accessToken))
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _session.AccessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         }
 
         try
@@ -591,14 +667,15 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
 
     private async Task<HttpResponseMessage> SendProfileManifestRequestAsync(
         string profileId,
+        string? accessToken,
         CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Get,
             $"v1/profiles/{Uri.EscapeDataString(profileId)}/manifest");
-        if (_session is not null)
+        if (!string.IsNullOrWhiteSpace(accessToken))
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _session.AccessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         }
 
         try
@@ -759,10 +836,10 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
 
     private async Task SetSessionAsync(AuthSessionResponse session, CancellationToken cancellationToken)
     {
-        _session = session;
         await _sessionStore.SaveAsync(
-            new StoredLauncherSession(session.RefreshToken, session.Account),
+            ToStoredSession(session),
             cancellationToken);
+        _session = session;
     }
 
     private async Task UpdateSessionAccountAsync(
@@ -774,16 +851,78 @@ public sealed class LauncherApiClient : ILauncherTelemetryApiClient
             throw new LauncherAuthenticationRequiredException();
         }
 
-        _session = _session with { Account = account };
+        var updatedSession = _session with { Account = account };
         await _sessionStore.SaveAsync(
-            new StoredLauncherSession(_session.RefreshToken, account),
+            ToStoredSession(updatedSession),
             cancellationToken);
+        _session = updatedSession;
+    }
+
+    private static AuthSessionResponse CreateSessionFromStored(
+        StoredLauncherSession storedSession)
+    {
+        return new AuthSessionResponse(
+            storedSession.AccessToken ?? string.Empty,
+            storedSession.AccessTokenExpiresAt ?? DateTimeOffset.MinValue,
+            storedSession.RefreshToken,
+            storedSession.RefreshTokenExpiresAt ?? DateTimeOffset.MaxValue,
+            storedSession.Account);
+    }
+
+    private static StoredLauncherSession ToStoredSession(AuthSessionResponse session)
+    {
+        return new StoredLauncherSession(
+            session.RefreshToken,
+            session.Account,
+            session.AccessToken,
+            session.AccessTokenExpiresAt,
+            session.RefreshTokenExpiresAt);
+    }
+
+    private static bool HasUsableAccessToken(AuthSessionResponse session)
+    {
+        return !string.IsNullOrWhiteSpace(session.AccessToken) &&
+               session.AccessTokenExpiresAt >
+               DateTimeOffset.UtcNow.Add(AccessTokenSafetyWindow);
     }
 
     private async Task ClearSessionAsync(CancellationToken cancellationToken)
     {
         _session = null;
         await _sessionStore.ClearAsync(cancellationToken);
+    }
+
+    private async Task InvalidateSessionAfterRetryIfUnauthorizedAsync(
+        HttpResponseMessage response,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (response.StatusCode != HttpStatusCode.Unauthorized)
+        {
+            return;
+        }
+
+        // Wait for any competing refresh to finish. If it replaced the token
+        // used for this retry, keep the newer session intact.
+        await _refreshGate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_session is null ||
+                !string.Equals(
+                    _session.AccessToken,
+                    accessToken,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _session = null;
+            await _sessionStore.ClearAsync(cancellationToken);
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
     }
 
     private static async Task<T> ReadRequiredAsync<T>(

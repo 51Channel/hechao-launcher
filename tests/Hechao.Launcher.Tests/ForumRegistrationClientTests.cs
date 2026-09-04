@@ -37,6 +37,7 @@ public sealed class ForumRegistrationClientTests
             Assert.Equal("player@example.com", body.Email);
             Assert.Equal("securepass123", body.Password);
             Assert.Equal("123456", body.Code);
+            Assert.True(body.LegalAccepted);
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
         var client = CreateClient(handler);
@@ -46,7 +47,8 @@ public sealed class ForumRegistrationClientTests
             "玩家一号",
             "player@example.com",
             "securepass123",
-            "123456");
+            "123456",
+            true);
 
         Assert.Equal(1, handler.RequestCount);
     }
@@ -70,7 +72,8 @@ public sealed class ForumRegistrationClientTests
                 "玩家一号",
                 "player@example.com",
                 "securepass123",
-                "123456"));
+                "123456",
+                true));
 
         Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
         Assert.Equal("该邮箱已注册，请直接登录", exception.Detail);
@@ -92,7 +95,8 @@ public sealed class ForumRegistrationClientTests
         string DisplayName,
         string Email,
         string Password,
-        string Code);
+        string Code,
+        bool LegalAccepted);
 
     private sealed class RecordingHandler(
         Func<HttpRequestMessage, Task<HttpResponseMessage>> response)

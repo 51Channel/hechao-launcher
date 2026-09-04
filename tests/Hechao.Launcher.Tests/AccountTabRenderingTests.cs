@@ -5,6 +5,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Xml.Linq;
 
 namespace Hechao.Launcher.Tests;
 
@@ -39,8 +40,22 @@ public sealed class AccountTabRenderingTests
             try
             {
                 var dispatcher = Dispatcher.CurrentDispatcher;
-                var resources = LoadThemeResources();
-                var tabStyle = (Style)resources["AccountTabStyle"];
+                var (palette, theme) = LoadThemeResources();
+                var window = new Window
+                {
+                    Width = 340,
+                    Height = 180,
+                    Left = -10_000,
+                    Top = -10_000,
+                    ShowActivated = false,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                    Background = Brushes.White
+                };
+                window.Resources.MergedDictionaries.Add(palette);
+                window.Resources.MergedDictionaries.Add(theme);
+
+                var tabStyle = (Style)window.FindResource("AccountTabStyle");
                 var tabs = new[]
                 {
                     new TabItem
@@ -68,7 +83,7 @@ public sealed class AccountTabRenderingTests
                 {
                     Width = 320,
                     Height = 160,
-                    Style = (Style)resources["AccountTabControlStyle"],
+                    Style = (Style)window.FindResource("AccountTabControlStyle"),
                     Items =
                     {
                         tabs[0],
@@ -76,19 +91,7 @@ public sealed class AccountTabRenderingTests
                     }
                 };
                 tabControl.SelectedIndex = selectedIndex;
-                var window = new Window
-                {
-                    Width = 340,
-                    Height = 180,
-                    Left = -10_000,
-                    Top = -10_000,
-                    ShowActivated = false,
-                    ShowInTaskbar = false,
-                    WindowStyle = WindowStyle.None,
-                    Background = Brushes.White,
-                    Content = tabControl
-                };
-                window.Resources.MergedDictionaries.Add(resources);
+                window.Content = tabControl;
 
                 window.ContentRendered += (_, _) =>
                 {
@@ -208,7 +211,7 @@ public sealed class AccountTabRenderingTests
         Assert.InRange(Math.Abs(borderLeftInset), 0d, 0.01d);
         Assert.InRange(Math.Abs(borderRightInset), 0d, 0.01d);
         Assert.True(selectedState);
-        Assert.Equal(Color.FromRgb(179, 38, 30), renderedBorderColor);
+        Assert.Equal(Color.FromRgb(203, 75, 61), renderedBorderColor);
         Assert.NotEqual(int.MaxValue, verticalBorderMinimumX);
         Assert.NotEqual(int.MinValue, verticalBorderMaximumX);
         var renderedBorderWidth =
@@ -230,7 +233,8 @@ public sealed class AccountTabRenderingTests
                red >= blue + 60;
     }
 
-    private static ResourceDictionary LoadThemeResources()
+    private static (ResourceDictionary Palette, ResourceDictionary Theme)
+        LoadThemeResources()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null &&
@@ -240,16 +244,55 @@ public sealed class AccountTabRenderingTests
         }
 
         Assert.NotNull(current);
+        var palettePath = Path.Combine(
+            current.FullName,
+            "src",
+            "Hechao.Launcher",
+            "Themes",
+            "DarkPalette.xaml");
         var themePath = Path.Combine(
             current.FullName,
             "src",
             "Hechao.Launcher",
             "Themes",
             "HechaoTheme.xaml");
-        var xaml = File.ReadAllText(themePath).Replace(
+        var themeXaml = File.ReadAllText(themePath).Replace(
             "clr-namespace:Hechao.Launcher.Controls",
             "clr-namespace:Hechao.Launcher.Controls;assembly=Hechao.Launcher",
             StringComparison.Ordinal);
-        return Assert.IsType<ResourceDictionary>(XamlReader.Parse(xaml));
+        var paletteDocument = XDocument.Load(palettePath);
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var paletteColors = paletteDocument
+            .Descendants(presentation + "Color")
+            .ToDictionary(
+                element => element.Attribute(x + "Key")!.Value,
+                element => element.Value,
+                StringComparer.Ordinal);
+        var themeDocument = XDocument.Parse(themeXaml);
+        const string dynamicResourcePrefix = "{DynamicResource ";
+        foreach (var attribute in themeDocument.Descendants().Attributes())
+        {
+            if (!attribute.Value.StartsWith(
+                    dynamicResourcePrefix,
+                    StringComparison.Ordinal) ||
+                !attribute.Value.EndsWith('}'))
+            {
+                continue;
+            }
+
+            var resourceKey = attribute.Value[dynamicResourcePrefix.Length..^1];
+            if (paletteColors.TryGetValue(resourceKey, out var color))
+            {
+                attribute.Value = color;
+            }
+        }
+
+        return (
+            Assert.IsType<ResourceDictionary>(
+                XamlReader.Parse(File.ReadAllText(palettePath))),
+            Assert.IsType<ResourceDictionary>(XamlReader.Parse(
+                themeDocument.ToString(SaveOptions.DisableFormatting))));
     }
 }

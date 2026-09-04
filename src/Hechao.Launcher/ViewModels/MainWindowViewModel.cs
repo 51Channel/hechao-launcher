@@ -35,6 +35,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly ILauncherUpdateService _launcherUpdateService;
     private readonly IMinecraftSkinService _minecraftSkinService;
     private readonly IPlayerGameSettingsService _playerGameSettingsService;
+    private readonly ILauncherThemeService _themeService;
+    private readonly bool _isUiPreview;
     private readonly TimeSpan _catalogFallbackRetryDelay;
     private readonly TimeSpan _activityCatalogRefreshInterval;
     private readonly SynchronizationContext? _uiContext;
@@ -70,6 +72,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _closeLauncherAfterGameStart;
     private bool _openDownloadsWhenInstalling;
     private bool _useSystemProxy;
+    private bool _useDarkMode;
     private string _selectedStartupPage;
     private bool _isCatalogLoading;
     private bool _catalogRefreshPending;
@@ -95,6 +98,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isAccountFormError;
     private int _accountFormAnnouncementRevision;
     private bool _isRegistrationCodeCooldownActive;
+    private bool _isRegistrationLegalAccepted;
     private CancellationTokenSource? _registrationCodeCooldownCancellation;
     private bool _isMicrosoftSignInVisible;
     private CancellationTokenSource? _microsoftSignInCancellation;
@@ -133,7 +137,10 @@ public sealed class MainWindowViewModel : ObservableObject
         IMinecraftSkinService? minecraftSkinService = null,
         IPlayerGameSettingsService? playerGameSettingsService = null,
         TimeSpan? catalogFallbackRetryDelay = null,
-        TimeSpan? activityCatalogRefreshInterval = null)
+        TimeSpan? activityCatalogRefreshInterval = null,
+        ILauncherThemeService? themeService = null,
+        LauncherSettings? initialSettings = null,
+        bool isUiPreview = false)
     {
         _catalogClient = catalogClient;
         _authenticationService = authenticationService;
@@ -151,6 +158,8 @@ public sealed class MainWindowViewModel : ObservableObject
             minecraftSkinService ?? NullMinecraftSkinService.Instance;
         _playerGameSettingsService =
             playerGameSettingsService ?? NullPlayerGameSettingsService.Instance;
+        _themeService = themeService ?? NullLauncherThemeService.Instance;
+        _isUiPreview = isUiPreview;
         _catalogFallbackRetryDelay =
             catalogFallbackRetryDelay ?? DefaultCatalogFallbackRetryDelay;
         if (_catalogFallbackRetryDelay <= TimeSpan.Zero ||
@@ -168,7 +177,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 nameof(activityCatalogRefreshInterval));
         }
         _uiContext = SynchronizationContext.Current;
-        _settings = settingsStore.Load();
+        _settings = initialSettings ?? settingsStore.Load();
         if (_settings.ProfileJavaPaths is not null)
         {
             foreach (var (profileId, javaPath) in _settings.ProfileJavaPaths)
@@ -194,6 +203,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _closeLauncherAfterGameStart = _settings.CloseLauncherAfterGameStart;
         _openDownloadsWhenInstalling = _settings.OpenDownloadsWhenInstalling;
         _useSystemProxy = _settings.UseSystemProxy;
+        _useDarkMode = _settings.UseDarkMode;
+        _themeService.Apply(_useDarkMode);
         StartupPageOptions = ["服务器", "下载中心", "活动"];
         _selectedStartupPage = StartupPageOptions.Contains(_settings.StartupPage)
             ? _settings.StartupPage
@@ -215,10 +226,13 @@ public sealed class MainWindowViewModel : ObservableObject
         RefreshCommand = new RelayCommand(
             () => _ = LoadCatalogAsync(userInitiated: true),
             () => !_isCatalogLoading && !IsProgressActive);
-        OpenClientDirectoryCommand = new RelayCommand(OpenClientDirectory);
+        OpenClientDirectoryCommand = new RelayCommand(
+            OpenClientDirectory,
+            () => !_isUiPreview);
         OpenSelectedProfileGameDirectoryCommand = new RelayCommand(
             OpenSelectedProfileGameDirectory,
-            () => !string.IsNullOrWhiteSpace(SelectedServer?.ClientProfileId));
+            () => !_isUiPreview &&
+                  !string.IsNullOrWhiteSpace(SelectedServer?.ClientProfileId));
         ToggleNotificationsCommand = new RelayCommand(ToggleNotifications);
         ToggleSettingsCommand = new RelayCommand(ToggleSettings);
         CloseOverlaysCommand = new RelayCommand(CloseOverlays);
@@ -268,8 +282,12 @@ public sealed class MainWindowViewModel : ObservableObject
         CreateDiagnosticBundleCommand = new RelayCommand(
             StartCreateDiagnosticBundle,
             CanCreateDiagnosticBundle);
-        OpenDiagnosticsDirectoryCommand = new RelayCommand(OpenDiagnosticsDirectory);
-        UseManagedJavaCommand = new RelayCommand(UseManagedJava);
+        OpenDiagnosticsDirectoryCommand = new RelayCommand(
+            OpenDiagnosticsDirectory,
+            () => !_isUiPreview);
+        UseManagedJavaCommand = new RelayCommand(
+            UseManagedJava,
+            () => CanUseProfileJavaActions);
         CheckLauncherUpdateCommand = new AsyncRelayCommand(
             () => TryCheckLauncherUpdateAsync(userInitiated: true),
             HandleUnexpectedLauncherUpdateError,
@@ -356,7 +374,7 @@ public sealed class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(IsSettingsPage));
             OnPropertyChanged(nameof(CurrentPageTitle));
 
-            if (value == LauncherPage.Activities)
+            if (IsCatalogPageVisible)
             {
                 StartActivityCatalogRefresh(refreshImmediately: true);
             }
@@ -555,6 +573,11 @@ public sealed class MainWindowViewModel : ObservableObject
         : IsMinecraftLinked
             ? $"{GetAccessTierText(_currentAccount.AccessTier)} · {_currentAccount.LuckPermsPrimaryGroup}"
             : "尚未绑定 Minecraft 正版身份";
+    public string TopBarAccountSubtitle => _currentAccount is null
+        ? "登录赫朝账户"
+        : IsMinecraftLinked
+            ? GetAccessTierText(_currentAccount.AccessTier)
+            : "待绑定正版身份";
     public string MinecraftIdentityText => IsMinecraftLinked
         ? $"{_currentAccount!.MinecraftName} · {_currentAccount.MinecraftUuid:D}"
         : "未绑定";
@@ -580,6 +603,19 @@ public sealed class MainWindowViewModel : ObservableObject
         !string.IsNullOrWhiteSpace(AccountFormMessage);
     public int AccountFormAnnouncementRevision => _accountFormAnnouncementRevision;
     public bool CanSubmitAccountForms => !IsAccountBusy;
+    public bool IsRegistrationLegalAccepted
+    {
+        get => _isRegistrationLegalAccepted;
+        set
+        {
+            if (SetProperty(ref _isRegistrationLegalAccepted, value))
+            {
+                OnPropertyChanged(nameof(CanSubmitRegistrationForm));
+            }
+        }
+    }
+    public bool CanSubmitRegistrationForm =>
+        CanSubmitAccountForms && IsRegistrationLegalAccepted;
     public bool CanSendRegistrationCode =>
         CanSubmitAccountForms && !_isRegistrationCodeCooldownActive;
     public string RegistrationCodeActionText => _isRegistrationCodeCooldownActive
@@ -638,6 +674,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
             OnPropertyChanged(nameof(AccountStatusText));
             OnPropertyChanged(nameof(CanSubmitAccountForms));
+            OnPropertyChanged(nameof(CanSubmitRegistrationForm));
             OnPropertyChanged(nameof(CanSendRegistrationCode));
             OnPropertyChanged(nameof(RegistrationCodeActionText));
             AccountActionCommand.RaiseCanExecuteChanged();
@@ -879,7 +916,11 @@ public sealed class MainWindowViewModel : ObservableObject
     public bool CanSelectServer => !IsProgressActive;
 
     public bool CanChangeClientDirectory =>
-        !IsProgressActive && _gameLauncherService.GetRunningGame() is null;
+        !_isUiPreview &&
+        !IsProgressActive &&
+        _gameLauncherService.GetRunningGame() is null;
+
+    public bool CanUseProfileJavaActions => !_isUiPreview;
 
     public string SelectedProfileGameDirectory
     {
@@ -985,6 +1026,28 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    public bool UseDarkMode
+    {
+        get => _useDarkMode;
+        set
+        {
+            if (_useDarkMode == value)
+            {
+                return;
+            }
+
+            _themeService.Apply(value);
+            _useDarkMode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ThemeToggleToolTip));
+            SaveSettings();
+        }
+    }
+
+    public string ThemeToggleToolTip => UseDarkMode
+        ? "切换到日间模式"
+        : "切换到黑夜模式";
 
     public string SelectedStartupPage
     {
@@ -1195,9 +1258,21 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             SetCurrentAccount(await _authenticationService.TryRestoreAsync());
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or LauncherApiException)
+        catch (Exception exception) when (
+            exception is HttpRequestException or
+            TaskCanceledException or
+            LauncherApiException or
+            IOException)
         {
-            SetCurrentAccount(null);
+            // A failed restore is not the same as a revoked session. Keep
+            // the account already loaded by the API client and let the
+            // catalog retry refresh the session when connectivity returns.
+            var account = _authenticationService.CurrentAccount;
+            SetCurrentAccount(account);
+            _accountStatusHint = account is null
+                ? "暂时无法验证登录状态，请稍后重试"
+                : "网络暂时不可用，已保留登录状态";
+            OnPropertyChanged(nameof(AccountStatusText));
         }
         finally
         {
@@ -1206,7 +1281,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
         await TryImportPlayerGameSettingsAsync();
         await LoadCatalogAsync();
-        if (IsActivitiesPage)
+        if (IsCatalogPageVisible)
         {
             StartActivityCatalogRefresh(refreshImmediately: false);
         }
@@ -1614,6 +1689,10 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (LauncherAuthenticationRequiredException)
         {
+            // This branch is reserved for an authoritative 401/invalid
+            // session. Transient transport failures are handled above and do
+            // not clear the account.
+            SetCurrentAccount(_authenticationService.CurrentAccount);
             CancelActivityClientStateRefresh();
             _catalogPlayerServers.Clear();
             Servers.Clear();
@@ -1771,7 +1850,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 await Task.Delay(
                     _activityCatalogRefreshInterval,
                     cancellation.Token);
-                if (!IsActivitiesPage ||
+                if (!IsCatalogPageVisible ||
                     !ReferenceEquals(
                         Volatile.Read(ref _activityCatalogRefreshCancellation),
                         cancellation))
@@ -1805,6 +1884,9 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    private bool IsCatalogPageVisible =>
+        ActivePage is LauncherPage.Servers or LauncherPage.Activities;
 
     private async Task RetryCatalogAfterFallbackAsync(
         CancellationTokenSource cancellation)
@@ -2268,6 +2350,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task StartPrimaryActionAsync()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会启动游戏");
+            return;
+        }
+
         if (IsLauncherUpdateRequired)
         {
             IsLauncherUpdateVisible = true;
@@ -3431,6 +3519,7 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     private bool CanCreateDiagnosticBundle() =>
+        !_isUiPreview &&
         SelectedServer is not null &&
         _selectedProfileState != LocalProfileState.Missing &&
         !IsDiagnosticBusy;
@@ -3567,6 +3656,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenDiagnosticsDirectory()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会打开或创建真实目录");
+            return;
+        }
+
         try
         {
             Directory.CreateDirectory(_gameDiagnosticsService.DiagnosticsDirectory);
@@ -3785,6 +3880,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenClientDirectory()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会打开或创建真实目录");
+            return;
+        }
+
         try
         {
             var expandedPath = Environment.ExpandEnvironmentVariables(ClientDirectory);
@@ -3799,6 +3900,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenSelectedProfileGameDirectory()
     {
+        if (_isUiPreview)
+        {
+            ShowToast("UI 预览不会打开或创建真实目录");
+            return;
+        }
+
         try
         {
             var gameDirectory = SelectedProfileGameDirectory;
@@ -3880,6 +3987,7 @@ public sealed class MainWindowViewModel : ObservableObject
         OpenDownloadsWhenInstalling = true;
         _useSystemProxy = false;
         OnPropertyChanged(nameof(UseSystemProxy));
+        UseDarkMode = true;
         SelectedStartupPage = "服务器";
         SaveSettings();
         ResetAndRefreshActivityClientStates();
@@ -3964,7 +4072,8 @@ public sealed class MainWindowViewModel : ObservableObject
         string displayName,
         string password,
         string email,
-        string code)
+        string code,
+        bool legalAccepted)
     {
         if (IsAccountBusy)
         {
@@ -3983,6 +4092,14 @@ public sealed class MainWindowViewModel : ObservableObject
             return false;
         }
 
+        if (!legalAccepted)
+        {
+            SetAccountFormStatus(
+                "请先勾选并同意用户协议、隐私政策与社区规则。",
+                isError: true);
+            return false;
+        }
+
         IsAccountBusy = true;
         SetAccountFormStatus("正在创建赫朝账号…", isError: false);
         try
@@ -3992,7 +4109,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 displayName.Trim(),
                 password,
                 email.Trim(),
-                code.Trim());
+                code.Trim(),
+                legalAccepted);
             SetCurrentAccount(account);
             SetAccountFormStatus(string.Empty, isError: false);
             await LoadCatalogAsync(userInitiated: true);
@@ -4435,6 +4553,7 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(AccountUsername));
         OnPropertyChanged(nameof(AccountStatusText));
         OnPropertyChanged(nameof(AccountAccessText));
+        OnPropertyChanged(nameof(TopBarAccountSubtitle));
         OnPropertyChanged(nameof(MinecraftIdentityText));
         OnPropertyChanged(nameof(MinecraftLinkStatusText));
         OnPropertyChanged(nameof(AccountActionGlyph));
@@ -4868,7 +4987,8 @@ public sealed class MainWindowViewModel : ObservableObject
             new Dictionary<string, string>(
                 _profileJavaPaths,
                 StringComparer.Ordinal),
-            UseSystemProxy);
+            UseSystemProxy,
+            UseDarkMode);
         _settingsStore.Save(_settings);
     }
 

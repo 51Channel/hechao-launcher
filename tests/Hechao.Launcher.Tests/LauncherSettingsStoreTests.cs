@@ -134,6 +134,46 @@ public sealed class LauncherSettingsStoreTests
     }
 
     [Fact]
+    public async Task Load_DefaultsLegacySettingsToDarkMode()
+    {
+        using var temporary = new TemporaryDirectory();
+        var settingsPath = Path.Combine(temporary.Path, "settings.json");
+        var dataRoot = Path.Combine(temporary.Path, "game-data");
+        await File.WriteAllTextAsync(
+            settingsPath,
+            JsonSerializer.Serialize(new
+            {
+                ClientDirectory = dataRoot,
+                StorageSchemaVersion = ClientStorageLayout.CurrentStorageSchemaVersion
+            }));
+
+        var actual = new JsonLauncherSettingsStore(
+            settingsPath,
+            new ClientStorageMigrator()).Load();
+
+        Assert.True(actual.UseDarkMode);
+    }
+
+    [Fact]
+    public void Load_RoundTripsLightModeSetting()
+    {
+        using var temporary = new TemporaryDirectory();
+        var settingsPath = Path.Combine(temporary.Path, "settings.json");
+        var dataRoot = Path.Combine(temporary.Path, "game-data");
+        var store = new JsonLauncherSettingsStore(
+            settingsPath,
+            new ClientStorageMigrator());
+
+        store.Save(new LauncherSettings(
+            ClientDirectory: dataRoot,
+            UseDarkMode: false));
+
+        var actual = store.Load();
+
+        Assert.False(actual.UseDarkMode);
+    }
+
+    [Fact]
     public async Task Load_RejectsSettingsFromANewerStorageSchema()
     {
         using var temporary = new TemporaryDirectory();
