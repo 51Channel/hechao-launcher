@@ -342,9 +342,9 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.13.md`](LAUNCHER_RELEASE_0.15.13.md)。
 
-## 0.15.14 生产快照
+## 0.15.14 历史快照
 
-- `2026-08-24` 生产当前为 `LatestVersion=0.15.14`，最低支持版本保持 `0.12.3`；
+- `2026-08-24` 生产曾切换为 `LatestVersion=0.15.14`，最低支持版本保持 `0.12.3`；
 - 安装包为 `61,997,617` 字节，SHA-256
   `E5329650A3961A39A69D41ADDBC6768AB3349227D931D0CC7D94EA4514E5274C`；
 - 侧栏和页头改用官方图标加“赫朝”组合标；Windows 图标按最终 SVG 几何分别生成七个
@@ -359,3 +359,20 @@ LauncherUpdates__ReleaseNotes=<single-line notes>
   Minecraft 和 Velocity 未操作。
 
 完整记录见 [`LAUNCHER_RELEASE_0.15.14.md`](LAUNCHER_RELEASE_0.15.14.md)。
+
+## 0.15.15 生产快照
+
+- `2026-09-04` 生产当前为 `LatestVersion=0.15.15`，最低支持版本保持 `0.12.3`；
+- 安装包为 `62,829,606` 字节，SHA-256
+  `D5A65E7A20A1F005E4CBFE13A1C65306445D6C9E87E6FD63455305D28AA6A3A0`；
+- 接收 PR `#1` 的五工作区紧凑布局、白天/黑夜主题、设置兼容和 Debug UI 预览，并在
+  审查阶段恢复官方深浅主题组合标与玩家皮肤头像；
+- 私有对象首次上传成功，重复发布校验后跳过；两轮签名读取 `200`、匿名读取 `403`；
+- `0.15.14 -> 0.15.15` 覆盖安装、全新安装、双轮卸载、设置与会话保留通过；
+- 认证会话确认 `0.15.14` 生成更新计划、`0.15.15` 不重复更新，完整下载长度和 SHA-256
+  一致；API `0.38.3` 健康/就绪、数据库、公开元数据和官网下载页均通过；
+- 本次只重启 `hechao-launcher-api.service`，未操作 Nginx、Publisher、Minecraft、Velocity
+  或服控代理。环境回滚点为
+  `/etc/hechao-launcher-api/environment.launcher-updates.20260904T055121Z.bak`。
+
+完整记录见 [`LAUNCHER_RELEASE_0.15.15.md`](LAUNCHER_RELEASE_0.15.15.md)。
