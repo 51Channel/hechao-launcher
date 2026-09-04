@@ -78,6 +78,16 @@ if not defined HECHAO_MANAGED_START pause
 Publisher 下载客户端归档时最多执行三次可续传重试；API 重启或网络中断后，只有真正
 执行中的任务通过心跳长期续租。未执行任务的租约会过期并重新领取，不会永久卡死。
 
+Publisher 在领取任务前按“归档下载、展开工作副本、发布产物和完成后保留空间”计算
+工作空间。后台显示“等待 Publisher 工作空间”不是卡死，也不得通过降低安全余量或展开
+倍率绕过保护。API 主机必须部署
+[`90-hechao-storage.conf`](../deploy/linux/journald/90-hechao-storage.conf)，将持久 journal
+限制为 `1 GiB`，并至少保留 `8 GiB` 文件系统空间；API 同时把
+`Microsoft.AspNetCore` 框架逐请求日志限制为 `Warning`，避免内部心跳与任务轮询重复写入
+journald 和 syslog。排障时检查 `journalctl --disk-usage`、
+`du -x -h --max-depth=1 /var/log` 和 Publisher 服务日志，优先回收日志与软件包缓存，
+不得删除当前导入目录、数据库备份或不可变 OSS 对象。
+
 ## 4. API 配置
 
 先使用 Publisher 令牌脚本生成 DPAPI `CurrentUser` 密文。脚本必须在将要运行计划任务

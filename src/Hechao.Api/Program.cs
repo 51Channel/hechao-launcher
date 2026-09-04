@@ -32,6 +32,8 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+
 builder.WebHost
     .UseUrls(builder.Configuration["urls"] ?? "http://127.0.0.1:8090")
     .ConfigureKestrel(options => options.AddServerHeader = false);

@@ -245,7 +245,7 @@ textarea:focus-visible {
     filter: brightness(0) invert(1);
 }
 
-.button-primary:hover {
+.button-primary:not(:disabled):hover {
     background: var(--brand-hover);
 }
 
@@ -255,7 +255,7 @@ textarea:focus-visible {
     color: var(--ink);
 }
 
-.button-secondary:hover {
+.button-secondary:not(:disabled):hover {
     background: var(--surface-muted);
 }
 
@@ -264,7 +264,7 @@ textarea:focus-visible {
     color: #fff;
 }
 
-.button-danger:hover {
+.button-danger:not(:disabled):hover {
     background: var(--brand-hover);
 }
 
@@ -289,7 +289,7 @@ textarea:focus-visible {
     background: var(--surface);
 }
 
-.icon-button:hover {
+.icon-button:not(:disabled):hover {
     background: var(--surface-muted);
 }
 
@@ -2381,7 +2381,7 @@ dialog::backdrop {
     font-size: 10px;
 }
 
-.control-quick-commands button:hover {
+.control-quick-commands button:not(:disabled):hover {
     border-color: var(--line-strong);
     background: var(--surface-pressed);
 }
@@ -3096,15 +3096,9 @@ label > span {
     color: var(--ink-secondary);
 }
 
-.button-quiet:hover {
+.button-quiet:not(:disabled):hover {
     background: var(--surface-muted);
     color: var(--ink);
-}
-
-.button:disabled:hover,
-.icon-button:disabled:hover,
-.control-quick-commands button:disabled:hover {
-    background: revert-layer;
 }
 
 .vue-drawer[open] {

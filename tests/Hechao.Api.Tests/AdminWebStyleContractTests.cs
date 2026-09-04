@@ -5,6 +5,26 @@ namespace Hechao.Api.Tests;
 public sealed class AdminWebStyleContractTests
 {
     [Fact]
+    public void DisabledButtons_KeepTheirVariantBackgroundOnHover()
+    {
+        var css = ReadAdminWebSource("src", "styles", "admin.css");
+
+        Assert.DoesNotContain("revert-layer", css, StringComparison.Ordinal);
+        foreach (var selector in new[]
+        {
+            ".button-primary:not(:disabled):hover",
+            ".button-secondary:not(:disabled):hover",
+            ".button-danger:not(:disabled):hover",
+            ".icon-button:not(:disabled):hover",
+            ".button-quiet:not(:disabled):hover",
+            ".control-quick-commands button:not(:disabled):hover",
+        })
+        {
+            Assert.NotEmpty(ReadRule(css, selector));
+        }
+    }
+
+    [Fact]
     public void ServerControlWhitelist_OverridesGlobalInputDimensions()
     {
         var css = ReadAdminWebSource("src", "styles", "admin.css");
