@@ -54,7 +54,8 @@ public sealed class DatabaseMigrator(NpgsqlDataSource dataSource, ILogger<Databa
         new(33, "economy_item_history_index", "Hechao.Api.Database.Migrations.033_economy_item_history_index.sql"),
         new(34, "economy_player_market", "Hechao.Api.Database.Migrations.034_economy_player_market.sql"),
         new(35, "economy_server_shop", "Hechao.Api.Database.Migrations.035_economy_server_shop.sql"),
-        new(36, "activity_plan_optional_package", "Hechao.Api.Database.Migrations.036_activity_plan_optional_package.sql")
+        new(36, "activity_plan_optional_package", "Hechao.Api.Database.Migrations.036_activity_plan_optional_package.sql"),
+        new(37, "activity_plan_target_server", "Hechao.Api.Database.Migrations.037_activity_plan_target_server.sql")
     ];
 
     internal static IReadOnlyList<int> RegisteredMigrationVersions { get; } =

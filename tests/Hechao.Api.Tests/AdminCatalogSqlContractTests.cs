@@ -24,6 +24,23 @@ public sealed class AdminCatalogSqlContractTests
         Assert.Equal(joinedServerQueryCount, qualifiedProjectionCount);
     }
 
+    [Fact]
+    public void OrdinaryServerCatalogExcludesLogicalActivityPlans()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "Admin",
+            "AdminCatalogRepository.cs"));
+
+        var exclusionCount = source.Split(
+            "activity_plan_status IS NULL",
+            StringSplitOptions.None).Length - 1;
+        Assert.True(exclusionCount >= 5);
+    }
+
     private static string FindRepositoryRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);

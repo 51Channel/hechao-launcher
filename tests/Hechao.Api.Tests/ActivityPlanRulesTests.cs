@@ -53,6 +53,16 @@ public sealed class ActivityPlanRulesTests
             {
                 PackageImportId = Guid.Empty
             }).Keys);
+        Assert.Empty(ActivityPlanRules.Validate(request with
+        {
+            TargetServerId = "minigame-commercial-street"
+        }));
+        Assert.Contains(
+            "targetServerId",
+            ActivityPlanRules.Validate(request with
+            {
+                TargetServerId = "Commercial Street"
+            }).Keys);
     }
 
     [Fact]

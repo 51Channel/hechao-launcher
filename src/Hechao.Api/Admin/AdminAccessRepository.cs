@@ -116,7 +116,15 @@ public sealed class AdminAccessRepository(
             SELECT server.id,
                    server.display_name,
                    server.status,
-                   server.is_visible,
+                   server.is_visible AND (
+                       server.activity_plan_status IS NOT NULL
+                       OR NOT EXISTS (
+                           SELECT 1
+                           FROM launcher.servers published_plan
+                           WHERE published_plan.activity_plan_status = 'Published'
+                             AND published_plan.activity_target_server_id = server.id
+                       )
+                   ) AS projected_is_visible,
                    server.minimum_tier,
                    server.opens_at,
                    server.closes_at,
@@ -127,13 +135,18 @@ public sealed class AdminAccessRepository(
                    access_rule.created_at,
                    access_rule.updated_at,
                    control_target.reported_online,
-                   control_target.last_seen_at
+                   control_target.last_seen_at,
+                   server.activity_plan_status,
+                   server.activity_package_import_id,
+                   control_target.deployed_package_import_id
             FROM launcher.servers server
             LEFT JOIN launcher.server_access_overrides access_rule
                 ON access_rule.user_id = $1
                AND access_rule.server_id = server.id
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = server.id
+                ON control_target.server_id = COALESCE(
+                    server.activity_target_server_id,
+                    server.id)
             WHERE server.server_role = 'Player'
             ORDER BY server.sort_order, server.id;
             """;
@@ -171,6 +184,11 @@ public sealed class AdminAccessRepository(
                 controlObservation,
                 now,
                 _controlFreshness).Status;
+            effectiveStatus = CatalogRepository.ResolveActivityDeploymentStatus(
+                effectiveStatus,
+                !reader.IsDBNull(15),
+                reader.IsDBNull(16) ? null : reader.GetGuid(16),
+                reader.IsDBNull(17) ? null : reader.GetGuid(17));
             AdminServerAccessRuleRecord? rule = null;
             if (!reader.IsDBNull(7))
             {

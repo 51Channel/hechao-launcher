@@ -6,14 +6,18 @@ namespace Hechao.Api.Tests;
 public sealed class CatalogRepositoryTests
 {
     [Theory]
-    [InlineData("activity", ServerCatalogSection.Activity)]
-    [InlineData("survival2", ServerCatalogSection.Permanent)]
-    [InlineData("Activity", ServerCatalogSection.Permanent)]
-    public void ResolveCatalogSectionMapsOnlyActivityTargetToActivity(
+    [InlineData("activity", false, ServerCatalogSection.Activity)]
+    [InlineData("minigame-commercial-street", true, ServerCatalogSection.Activity)]
+    [InlineData("survival2", false, ServerCatalogSection.Permanent)]
+    [InlineData("Activity", false, ServerCatalogSection.Permanent)]
+    public void ResolveCatalogSectionRecognizesLogicalActivityPlans(
         string velocityTarget,
+        bool isActivityPlan,
         ServerCatalogSection expected)
     {
-        Assert.Equal(expected, CatalogRepository.ResolveCatalogSection(velocityTarget));
+        Assert.Equal(
+            expected,
+            CatalogRepository.ResolveCatalogSection(velocityTarget, isActivityPlan));
     }
 
     [Fact]
@@ -106,6 +110,10 @@ public sealed class CatalogRepositoryTests
             StringComparison.Ordinal);
         Assert.Contains(
             "server.server_role = 'Player'",
+            CatalogRepository.AccessibleProfileSql,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "published_plan.activity_target_server_id = server.id",
             CatalogRepository.AccessibleProfileSql,
             StringComparison.Ordinal);
     }

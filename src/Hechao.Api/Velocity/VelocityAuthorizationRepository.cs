@@ -354,18 +354,27 @@ public sealed class VelocityAuthorizationRepository(
                AND access_override.server_id = server.id
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             LEFT JOIN launcher.deployment_slots deployment_slot
-                ON deployment_slot.server_id = server.id
+                ON deployment_slot.server_id = COALESCE(
+                    server.activity_target_server_id,
+                    server.id)
                AND deployment_slot.velocity_target = server.velocity_target
                AND deployment_slot.status = 'Ready'
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = CASE
-                    WHEN deployment_slot.server_id IS NOT NULL THEN server.id
-                    WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
-                    ELSE server.id
-                END
+                ON control_target.server_id = COALESCE(
+                    server.activity_target_server_id,
+                    server.id)
             WHERE {{predicate}}
               AND server.is_visible
               AND server.server_role = 'Player'
+              AND (
+                  server.activity_plan_status IS NOT NULL
+                  OR NOT EXISTS (
+                      SELECT 1
+                      FROM launcher.servers published_plan
+                      WHERE published_plan.activity_plan_status = 'Published'
+                        AND published_plan.activity_target_server_id = server.id
+                  )
+              )
             ORDER BY CASE
                          WHEN server.status = 'Online'
                               AND (server.opens_at IS NULL OR server.opens_at <= now())

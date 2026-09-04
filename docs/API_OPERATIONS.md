@@ -40,7 +40,7 @@
 - 管理员诊断端点：`GET /v1/admin/diagnostics` 与 `GET /v1/admin/diagnostics/{id}/download`，要求 MFA
 - 管理员玩家端点：`GET /v1/admin/users`、访问预览、单服规则、受控全局等级、账号停用/恢复、设备会话撤销及 Minecraft UUID 封禁
 - 管理员发布端点：`/v1/admin/catalog/client-profiles/*`，包括签名清单导入、三通道、稳定灰度、暂停和回滚
-- 管理员活动企划端点：`/v1/admin/activity-plans/*`，包括草稿、排期、发布、撤回、归档、恢复和固定活动槽部署
+- 管理员活动企划端点：`/v1/admin/activity-plans/*`，包括草稿、排期、真实承载服务器绑定、发布、撤回、归档、恢复和受控部署
 - 官网活动企划内部端点：`/v1/internal/website/activity-plans/*`，只接受回环请求和独立令牌；令牌身份映射到固定 Launcher 管理员审计用户
 - 启动器运行遥测：`POST /v1/telemetry/events`，仅接受认证会话、固定枚举和最多 50 条的幂等批次
 - 管理员遥测汇总：`GET /v1/admin/telemetry/summary?hours=24|168|720`，只返回聚合值并要求 MFA

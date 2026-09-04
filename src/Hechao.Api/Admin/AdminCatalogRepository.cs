@@ -47,6 +47,7 @@ public sealed class AdminCatalogRepository(
             FROM launcher.servers server
             LEFT JOIN launcher.server_control_targets control_target
                 ON control_target.server_id = server.id
+            WHERE server.activity_plan_status IS NULL
             ORDER BY server.sort_order, server.id;
             """;
 
@@ -78,7 +79,8 @@ public sealed class AdminCatalogRepository(
             FROM launcher.servers server
             LEFT JOIN launcher.server_control_targets control_target
                 ON control_target.server_id = server.id
-            WHERE server.id = $1;
+            WHERE server.id = $1
+              AND server.activity_plan_status IS NULL;
             """;
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -211,6 +213,7 @@ public sealed class AdminCatalogRepository(
                 revision = revision + 1,
                 updated_at = now()
             WHERE id = $18
+              AND activity_plan_status IS NULL
             RETURNING id, display_name, short_name, icon_glyph, status, max_players,
                       minecraft_version, loader, minimum_tier, client_profile_id,
                       velocity_target, allow_protocol_translation, server_role,
@@ -313,6 +316,7 @@ public sealed class AdminCatalogRepository(
                 revision = revision + 1,
                 updated_at = now()
             WHERE id = $2
+              AND activity_plan_status IS NULL
             RETURNING id, display_name, short_name, icon_glyph, status, max_players,
                       minecraft_version, loader, minimum_tier, client_profile_id,
                       velocity_target, allow_protocol_translation, server_role,
@@ -448,6 +452,7 @@ public sealed class AdminCatalogRepository(
                    announcement, opens_at, closes_at, revision, created_at, updated_at
             FROM launcher.servers
             WHERE id = $1
+              AND activity_plan_status IS NULL
             FOR UPDATE;
             """;
 

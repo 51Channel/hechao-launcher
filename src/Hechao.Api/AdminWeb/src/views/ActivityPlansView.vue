@@ -21,6 +21,7 @@ import type {
   ActivityPlan,
   ActivityPlanOverview,
   ActivityPlanStatus,
+  ActivityTarget,
   ControlQueueResult,
   UnmanagedActivitySchedule,
   UnmanagedActivityScheduleIssue
@@ -59,6 +60,7 @@ interface PlanDraft {
   maximumPlayers: number;
   minimumTier: AccessTier;
   packageImportId: string;
+  targetServerId: string;
 }
 
 const overview = useResource(signal =>
@@ -84,18 +86,22 @@ const draft = reactive<PlanDraft>({
   closesAt: "",
   maximumPlayers: 30,
   minimumTier: "Participant",
-  packageImportId: ""
+  packageImportId: "",
+  targetServerId: ""
 });
 
 const plans = computed(() => overview.data.value?.plans ?? []);
 const packages = computed(() => overview.data.value?.packages ?? []);
+const targets = computed(() => overview.data.value?.targets ?? []);
 const unmanagedSchedules = computed(() => overview.data.value?.unmanagedSchedules ?? []);
-const slot = computed(() => overview.data.value?.slot ?? null);
 const selectedPlan = computed(() =>
   plans.value.find(plan => plan.id === selectedPlanId.value) ?? null
 );
 const selectedPackage = computed(() =>
   packages.value.find(item => item.importId === draft.packageImportId) ?? null
+);
+const selectedTarget = computed(() =>
+  targets.value.find(target => target.serverId === draft.targetServerId) ?? null
 );
 const selectedUnmanagedSchedule = computed(() =>
   unmanagedSchedules.value.find(item => item.id === selectedUnmanagedScheduleId.value) ?? null
@@ -124,17 +130,24 @@ const editorDirty = computed(() =>
 const draftStart = computed(() => fromLocalDateTimeInput(draft.opensAt));
 const draftEnd = computed(() => fromLocalDateTimeInput(draft.closesAt));
 const overlappingPublishedPlan = computed(() => {
-  if (!draftStart.value || !draftEnd.value) return null;
+  if (!draftStart.value || !draftEnd.value || !draft.targetServerId) return null;
   const start = new Date(draftStart.value).getTime();
   const end = new Date(draftEnd.value).getTime();
   if (!Number.isFinite(start) || !Number.isFinite(end) || start >= end) return null;
   return plans.value.find(plan =>
     plan.status === "Published" &&
     plan.id !== selectedPlanId.value &&
+    plan.targetServerId === draft.targetServerId &&
     start < new Date(plan.closesAt).getTime() &&
     new Date(plan.opensAt).getTime() < end
   ) ?? null;
 });
+const configuredTargetCount = computed(() =>
+  targets.value.filter(target => target.configured).length
+);
+const onlineTargetCount = computed(() =>
+  targets.value.filter(target => target.online).length
+);
 const packageBindingRequired = computed(() =>
   Boolean(selectedPlan.value?.packageImportId) ||
   selectedPlan.value?.status === "Published"
@@ -146,7 +159,8 @@ const formValid = computed(() =>
   new Date(draftStart.value!).getTime() < new Date(draftEnd.value!).getTime() &&
   draft.maximumPlayers >= 1 &&
   draft.maximumPlayers <= 1000 &&
-  (!packageBindingRequired.value || Boolean(draft.packageImportId))
+  (!packageBindingRequired.value || Boolean(draft.packageImportId)) &&
+  (!draft.packageImportId || Boolean(draft.targetServerId))
 );
 const saveDisabled = computed(() =>
   editorBusy.value ||
@@ -159,6 +173,8 @@ const canPublish = computed(() =>
   selectedPlan.value?.status === "Draft" &&
   !editorDirty.value &&
   Boolean(selectedPlan.value.packageImportId) &&
+  Boolean(selectedPlan.value.targetServerId) &&
+  Boolean(selectedTarget.value?.configured) &&
   Boolean(selectedPlan.value.productionReady) &&
   !selectedPackageArchived.value &&
   !overlappingPublishedPlan.value &&
@@ -171,10 +187,10 @@ const canDeploy = computed(() =>
   Boolean(selectedPlan.value?.packageImportId) &&
   !selectedPlan.value?.deploymentMatches &&
   !selectedPackageArchived.value &&
-  Boolean(slot.value?.configured) &&
-  Boolean(slot.value?.agentConnected) &&
-  !slot.value?.online &&
-  !slot.value?.activeOperation &&
+  Boolean(selectedTarget.value?.configured) &&
+  Boolean(selectedTarget.value?.agentConnected) &&
+  !selectedTarget.value?.online &&
+  !selectedTarget.value?.activeOperation &&
   !editorBusy.value
 );
 
@@ -265,7 +281,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     }
     const plan = plans.value.find(candidate => candidate.id === info.event.id);
     if (plan) {
-      info.el.title = `${plan.title}，${formatDateTime(plan.opensAt)} 至 ${formatDateTime(plan.closesAt)}`;
+      const target = plan.targetDisplayName ?? plan.targetServerId ?? "未绑定承载服务器";
+      info.el.title = `${plan.title}，${target}，${formatDateTime(plan.opensAt)} 至 ${formatDateTime(plan.closesAt)}`;
     }
   }
 }));
@@ -284,9 +301,10 @@ const actionDialog = computed(() => {
     };
   }
   if (action === "publish") {
+    const target = plan.targetDisplayName ?? plan.targetServerId ?? "未绑定承载服务器";
     return {
       title: "发布活动企划",
-      message: `发布后《${plan.title}》会进入官网和启动器活动日历。系统会再次确认它不与任何已发布活动重叠。`,
+      message: `发布后《${plan.title}》会进入官网和启动器活动日历，并由“${target}”承载。系统会再次确认同一承载服务器没有重叠排期。`,
       confirmLabel: "确认发布",
       danger: false,
       requireReason: false,
@@ -323,9 +341,10 @@ const actionDialog = computed(() => {
       confirmationText: ""
     };
   }
+  const target = plan.targetDisplayName ?? plan.targetServerId ?? "未绑定承载服务器";
   return {
     title: "部署企划整合包",
-    message: `把《${plan.title}》绑定的 ${plan.profileDisplayName} ${plan.version} 部署到 owl5 活动槽。完成后仍保持停服。`,
+    message: `把《${plan.title}》绑定的 ${plan.profileDisplayName} ${plan.version} 部署到“${target}”。完成后仍保持停服。`,
     confirmLabel: "确认部署",
     danger: true,
     requireReason: true,
@@ -341,7 +360,8 @@ function serializeDraft(): string {
     closesAt: draft.closesAt,
     maximumPlayers: draft.maximumPlayers,
     minimumTier: draft.minimumTier,
-    packageImportId: draft.packageImportId
+    packageImportId: draft.packageImportId,
+    targetServerId: draft.targetServerId
   });
 }
 
@@ -362,7 +382,8 @@ function syncPlanToEditor(plan: ActivityPlan): void {
     closesAt: toLocalDateTimeInput(plan.closesAt),
     maximumPlayers: plan.maximumPlayers,
     minimumTier: plan.minimumTier,
-    packageImportId: plan.packageImportId ?? ""
+    packageImportId: plan.packageImportId ?? "",
+    targetServerId: plan.targetServerId ?? ""
   });
 }
 
@@ -384,7 +405,8 @@ function beginCreate(opensAt: Date, closesAt: Date): void {
     closesAt: localDateTime(closesAt),
     maximumPlayers: 30,
     minimumTier: "Participant",
-    packageImportId: ""
+    packageImportId: "",
+    targetServerId: ""
   });
 }
 
@@ -480,22 +502,31 @@ function scheduleRangeText(schedule: UnmanagedActivitySchedule): string {
   return `${opensAt} 至 ${closesAt}`;
 }
 
-function slotStateText(): string {
-  if (!slot.value?.configured) return "未配置";
-  if (!slot.value.agentConnected) return "代理离线";
-  if (slot.value.activeOperation) return "操作执行中";
-  return slot.value.online ? "运行中" : slot.value.serverFilesPresent ? "已停止" : "待部署";
+function targetStateText(target: ActivityTarget | null | undefined): string {
+  if (!target) return "未选择";
+  if (!target.configured) return "配置不可用";
+  if (!target.agentConnected) return "代理离线";
+  if (target.activeOperation) return "操作执行中";
+  return target.online ? "运行中" : target.serverFilesPresent ? "已停止" : "待部署";
+}
+
+function targetOptionText(target: ActivityTarget): string {
+  return `${target.displayName} · ${target.serverId} · ${targetStateText(target)}`;
 }
 
 function packageOptionText(item: ActivityPackage): string {
   const state = item.profileArchived ? "档案已归档" : item.productionReady ? "可发布" : "仅测试通道";
-  return `${item.profileDisplayName} ${item.version} · ${state}`;
+  const target = targets.value.find(candidate => candidate.serverId === item.targetServerId);
+  return `${item.profileDisplayName} ${item.version} · ${target?.displayName ?? item.targetServerId} · ${state}`;
 }
 
 function updatePackageDefaults(): void {
   const packageItem = selectedPackage.value;
   if (editorMode.value === "create" && packageItem) {
     draft.maximumPlayers = packageItem.maximumPlayers;
+  }
+  if (packageItem) {
+    draft.targetServerId = packageItem.targetServerId;
   }
   editorError.value = "";
 }
@@ -509,6 +540,7 @@ function requestBody(expectedRevision?: number): Record<string, unknown> {
     maximumPlayers: Number(draft.maximumPlayers),
     minimumTier: draft.minimumTier,
     packageImportId: draft.packageImportId || null,
+    targetServerId: draft.targetServerId || null,
     ...(expectedRevision ? { expectedRevision } : {})
   };
 }
@@ -579,6 +611,7 @@ async function reschedulePlan(
           maximumPlayers: plan.maximumPlayers,
           minimumTier: plan.minimumTier,
           packageImportId: plan.packageImportId,
+          targetServerId: plan.targetServerId,
           expectedRevision: plan.revision
         }
       }
@@ -632,15 +665,17 @@ function openAction(action: PlanAction): void {
   if (action === "publish" && !canPublish.value) {
     showToast(!selectedPlan.value.packageImportId
       ? "请先为企划绑定客户端整合包。"
-      : overlappingPublishedPlan.value
-        ? `排期与《${overlappingPublishedPlan.value.title}》重叠，不能发布。`
-        : "整合包尚未进入 Production 通道，不能发布。", true);
+      : !selectedPlan.value.targetServerId || !selectedTarget.value?.configured
+        ? "请先选择可用的承载服务器。"
+        : overlappingPublishedPlan.value
+          ? `排期与《${overlappingPublishedPlan.value.title}》重叠，不能发布。`
+          : "整合包尚未进入 Production 通道，不能发布。", true);
     return;
   }
   if (action === "deploy" && !canDeploy.value) {
-    showToast(slot.value?.online
-      ? "活动服仍在运行，请先到服控面板正常停止。"
-      : "活动槽当前不满足部署条件。", true);
+    showToast(selectedTarget.value?.online
+      ? `“${selectedTarget.value.displayName}”仍在运行，请先到服控面板正常停止。`
+      : "承载服务器当前不满足部署条件。", true);
     return;
   }
   pendingAction.value = action;
@@ -666,7 +701,7 @@ async function submitAction(payload: { reason: string; confirmation: string }): 
           }
         }
       );
-      showToast("活动槽部署已排队，完成后仍保持停服");
+      showToast(`${plan.targetDisplayName ?? plan.targetServerId ?? "承载服务器"}部署已排队，完成后仍保持停服`);
     } else {
       const body = action === "archive"
         ? { expectedRevision: plan.revision, reason: payload.reason }
@@ -727,7 +762,7 @@ watch(selectedPlan, plan => {
   <section class="view-section activity-plans-view">
     <PageHeading
       title="活动企划"
-      description="统一安排玩家可见日期、客户端整合包和 owl5 活动槽部署。"
+      description="统一安排玩家可见日期、客户端整合包和真实承载服务器。"
       :updated-at="overview.lastUpdatedAt.value"
       :stale="Boolean(overview.error.value)"
     >
@@ -752,14 +787,14 @@ watch(selectedPlan, plan => {
         <div><span>已发布</span><strong>{{ publishedCount }}</strong></div>
         <div><span>草稿</span><strong>{{ draftCount }}</strong></div>
         <div><span>待开放</span><strong>{{ upcomingCount }}</strong></div>
-        <div><span>活动槽</span><strong class="activity-slot-summary">{{ slotStateText() }}</strong></div>
+        <div><span>可用承载服</span><strong class="activity-slot-summary">{{ configuredTargetCount }}/{{ targets.length }}</strong></div>
       </div>
 
-      <div class="activity-single-slot-rule" role="note">
+      <div class="activity-target-rule" role="note">
         <AppIcon name="shield-check" />
         <div>
-          <strong>同一时间只开放一个活动</strong>
-          <span>已发布企划使用半开区间 [开始, 结束)，前一场结束时可由下一场无缝接档；草稿可以重叠，但冲突排期不能发布。</span>
+          <strong>排期按承载服务器隔离</strong>
+          <span>同一承载服务器上的已发布企划使用半开区间 [开始, 结束)，不能重叠；不同独立槽可以同时承载不同活动。</span>
         </div>
       </div>
 
@@ -822,13 +857,10 @@ watch(selectedPlan, plan => {
             <AppIcon name="activity" :size="24" />
             <strong>选择一个企划</strong>
             <span>也可以在月历中选择日期范围，建立新的企划草稿。</span>
-            <div v-if="slot" class="activity-slot-identity">
-              <span>当前活动槽</span>
-              <strong>{{ slotStateText() }}</strong>
-              <small v-if="slot.deployedPackage">
-                {{ slot.deployedPackage.profileId }} · {{ slot.deployedPackage.version }}
-              </small>
-              <small v-else>尚未部署企划整合包</small>
+            <div v-if="targets.length" class="activity-target-identity">
+              <span>企划承载服务器</span>
+              <strong>{{ configuredTargetCount }} / {{ targets.length }} 可用</strong>
+              <small>{{ onlineTargetCount }} 台运行中；部署前须停止所选服务器</small>
             </div>
           </div>
 
@@ -897,8 +929,11 @@ watch(selectedPlan, plan => {
                   ? "未绑定客户端"
                   : selectedPlan.productionReady ? "Production 已就绪" : "仅 Test / Gray" }}
               </span>
+              <span :class="{ ready: Boolean(selectedPlan.targetServerId) }">
+                {{ selectedPlan.targetDisplayName ?? selectedPlan.targetServerId ?? "未绑定承载服" }}
+              </span>
               <span :class="{ ready: selectedPlan.deploymentMatches }">
-                {{ selectedPlan.deploymentMatches ? "活动槽已匹配" : "活动槽未匹配" }}
+                {{ selectedPlan.deploymentMatches ? "部署已匹配" : "部署未匹配" }}
               </span>
             </div>
 
@@ -920,6 +955,35 @@ watch(selectedPlan, plan => {
                   结束时间
                   <input v-model="draft.closesAt" type="datetime-local" required @input="editorError = ''">
                 </label>
+              </div>
+              <label>
+                承载服务器
+                <select v-model="draft.targetServerId" :required="Boolean(draft.packageImportId)" @change="editorError = ''">
+                  <option value="">稍后选择承载服务器</option>
+                  <option
+                    v-if="draft.targetServerId && !selectedTarget"
+                    :value="draft.targetServerId"
+                    disabled
+                  >
+                    {{ draft.targetServerId }} · 当前不可用
+                  </option>
+                  <option
+                    v-for="target in targets"
+                    :key="target.serverId"
+                    :value="target.serverId"
+                    :disabled="!target.configured"
+                  >
+                    {{ targetOptionText(target) }}
+                  </option>
+                </select>
+              </label>
+              <div v-if="selectedTarget" class="activity-target-facts">
+                <span>{{ selectedTarget.displayName }} · 127.0.0.1:{{ selectedTarget.backendPort }}</span>
+                <strong>{{ selectedTarget.serverId }} · {{ selectedTarget.velocityTarget }} · {{ targetStateText(selectedTarget) }}</strong>
+              </div>
+              <div v-else class="activity-target-facts activity-package-unbound">
+                <span>未绑定承载服务器</span>
+                <strong>绑定客户端后必须选择才能发布</strong>
               </div>
               <label>
                 绑定客户端
@@ -956,7 +1020,7 @@ watch(selectedPlan, plan => {
               <div v-if="overlappingPublishedPlan" class="inline-alert activity-conflict-alert" role="alert">
                 <AppIcon name="circle-alert" />
                 <span>
-                  与已发布企划《{{ overlappingPublishedPlan.title }}》重叠。
+                  与同一承载服务器上的已发布企划《{{ overlappingPublishedPlan.title }}》重叠。
                   {{ selectedPlan?.status === "Published" ? "当前调整无法保存。" : "草稿可以保存，但不能发布。" }}
                 </span>
               </div>
@@ -987,7 +1051,7 @@ watch(selectedPlan, plan => {
                   <AppIcon name="rotate-ccw" />撤回为草稿
                 </button>
                 <button v-if="selectedPlan.status !== 'Archived'" class="button button-secondary" type="button" :disabled="!canDeploy" @click="openAction('deploy')">
-                  <AppIcon name="package" />{{ selectedPlan.deploymentMatches ? "已部署" : "部署到活动槽" }}
+                  <AppIcon name="package" />{{ selectedPlan.deploymentMatches ? "已部署" : "部署到承载服" }}
                 </button>
                 <button v-if="selectedPlan.status !== 'Archived'" class="button button-danger" type="button" :disabled="editorDirty" @click="openAction('archive')">
                   <AppIcon name="archive" />归档
@@ -999,14 +1063,17 @@ watch(selectedPlan, plan => {
               <p v-if="selectedPlan.status === 'Draft' && !selectedPlan.packageImportId" class="activity-action-note">
                 企划已保存。绑定客户端并完成 Production 发布后，才可以发布企划。
               </p>
+              <p v-else-if="selectedPlan.status === 'Draft' && !selectedPlan.targetServerId" class="activity-action-note">
+                发布前需要选择负责运行该企划的真实承载服务器。
+              </p>
               <p v-else-if="selectedPlan.status === 'Draft' && !selectedPlan.productionReady" class="activity-action-note">
                 发布前需要先在“客户端档案”中把该整合包版本推进到 Production 通道。
               </p>
-              <p v-if="slot?.online" class="activity-action-note warning">
-                活动槽正在运行。部署前必须先到服控面板正常停止服务器。
+              <p v-if="selectedTarget?.online" class="activity-action-note warning">
+                “{{ selectedTarget.displayName }}”正在运行。部署前必须先到服控面板正常停止服务器。
               </p>
-              <p v-if="slot?.activeOperation" class="activity-action-note warning">
-                当前有 {{ slot.activeOperation.action }} 操作正在执行，请等待完成。
+              <p v-if="selectedTarget?.activeOperation" class="activity-action-note warning">
+                当前有 {{ selectedTarget.activeOperation.action }} 操作正在执行，请等待完成。
               </p>
             </section>
           </template>
@@ -1021,7 +1088,7 @@ watch(selectedPlan, plan => {
           <span class="status-badge" :class="plan.status === 'Published' ? 'status-online' : plan.status === 'Draft' ? 'status-maintenance' : 'status-archived'">{{ planStatusText(plan.status) }}</span>
           <strong>{{ plan.title }}</strong>
           <span>{{ formatDateTime(plan.opensAt) }} 至 {{ formatDateTime(plan.closesAt) }}</span>
-          <small>{{ plan.profileDisplayName ? `${plan.profileDisplayName} · ${plan.version}` : "尚未绑定客户端" }}</small>
+          <small>{{ plan.profileDisplayName ? `${plan.profileDisplayName} · ${plan.version} · ${plan.targetDisplayName ?? plan.targetServerId ?? "未绑定承载服"}` : "尚未绑定客户端" }}</small>
         </button>
       </section>
     </ResourceState>

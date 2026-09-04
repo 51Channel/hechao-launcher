@@ -24,5 +24,10 @@ gradlew text eol=lf
 *.json text eol=lf
 *.sql text eol=lf
 
+/src/Hechao.Api/AdminWeb/index.html text eol=lf
+/src/Hechao.Api/wwwroot/admin/index.html text eol=lf
+/src/Hechao.Api/wwwroot/admin/assets/*.css text eol=lf
+/src/Hechao.Api/wwwroot/admin/assets/*.js text eol=lf
+
 *.png binary
 *.ico binary

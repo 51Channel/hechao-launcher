@@ -409,4 +409,41 @@ public sealed class DatabaseMigrationTests
         Assert.DoesNotContain("ALTER TABLE launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("DELETE FROM launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ActivityPlanTargetServerMigration_BindsPlansToRealTargets()
+    {
+        const string resourceName =
+            "Hechao.Api.Database.Migrations.037_activity_plan_target_server.sql";
+        using var stream = typeof(DatabaseMigrator)
+            .Assembly
+            .GetManifestResourceStream(resourceName);
+
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream!);
+        var sql = reader.ReadToEnd();
+
+        Assert.Contains("ADD COLUMN target_server_id text", sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE EXTENSION IF NOT EXISTS btree_gist", sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN activity_target_server_id text", sql, StringComparison.Ordinal);
+        Assert.Contains("control_target.package_deployment_enabled", sql, StringComparison.Ordinal);
+        Assert.Contains("control_target.agent_id = 'owl5'", sql, StringComparison.Ordinal);
+        Assert.Contains("control_target.port = 25568", sql, StringComparison.Ordinal);
+        Assert.Contains("control_target.port BETWEEN 25600 AND 25611", sql, StringComparison.Ordinal);
+        Assert.Contains("deployment_slot.status = 'Ready'", sql, StringComparison.Ordinal);
+        Assert.Contains("target.velocity_target = target.id", sql, StringComparison.Ordinal);
+        Assert.Contains("JOIN valid_activity_targets AS valid_target", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "FROM launcher.package_imports AS package\n            JOIN launcher.servers AS target",
+            sql,
+            StringComparison.Ordinal);
+        Assert.Contains("servers_activity_target_server_fk", sql, StringComparison.Ordinal);
+        Assert.Contains("unbound_activity_plans_target_server_fk", sql, StringComparison.Ordinal);
+        Assert.Contains("activity_target_server_id WITH =", sql, StringComparison.Ordinal);
+        Assert.Contains("tstzrange(opens_at, closes_at, '[)') WITH &&", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE (activity_plan_status = 'Published')", sql, StringComparison.Ordinal);
+        Assert.Contains(37, DatabaseMigrator.RegisteredMigrationVersions);
+        Assert.Contains(resourceName, DatabaseMigrator.RegisteredMigrationResources);
+        Assert.DoesNotContain("DELETE FROM launcher.servers", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

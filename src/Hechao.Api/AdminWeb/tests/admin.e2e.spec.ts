@@ -286,6 +286,9 @@ const activityPlanOverview = {
     version: "1.0.0",
     minecraftVersion: "1.21.11",
     loader: "NeoForge",
+    targetServerId: "minigame-commercial-street",
+    targetDisplayName: "赫朝商业街建筑对决",
+    targetVelocityTarget: "minigame-commercial-street",
     status: "Published",
     effectiveStatus: "Closed",
     productionReady: true,
@@ -307,6 +310,9 @@ const activityPlanOverview = {
     version: "1.0.0",
     minecraftVersion: "1.21.11",
     loader: "NeoForge",
+    targetServerId: "minigame-commercial-street",
+    targetDisplayName: "赫朝商业街建筑对决",
+    targetVelocityTarget: "minigame-commercial-street",
     status: "Draft",
     effectiveStatus: "Closed",
     productionReady: true,
@@ -320,6 +326,7 @@ const activityPlanOverview = {
     profileId: "summer-neoforge-1.21.11",
     profileDisplayName: "夏日活动",
     version: "1.0.0",
+    targetServerId: "minigame-commercial-street",
     manifestSha256: hashTwo,
     minecraftVersion: "1.21.11",
     loader: "NeoForge",
@@ -348,6 +355,39 @@ const activityPlanOverview = {
       recommendedMaximumMemoryMiB: 16384
     }
   },
+  targets: [{
+    serverId: "activity",
+    displayName: "活动替换服",
+    velocityTarget: "activity",
+    backendPort: 25568,
+    configured: true,
+    agentConnected: true,
+    online: false,
+    serverFilesPresent: true,
+    deployedPackage: null,
+    activeOperation: null,
+    memoryGuidance: null
+  }, {
+    serverId: "minigame-commercial-street",
+    displayName: "赫朝商业街建筑对决",
+    velocityTarget: "minigame-commercial-street",
+    backendPort: 25602,
+    configured: true,
+    agentConnected: true,
+    online: false,
+    serverFilesPresent: true,
+    deployedPackage: {
+      importId: packageImportId,
+      profileId: "summer-neoforge-1.21.11",
+      version: "1.0.0"
+    },
+    activeOperation: null,
+    memoryGuidance: {
+      hostTotalMemoryMiB: 32768,
+      recommendedMinimumMemoryMiB: 4096,
+      recommendedMaximumMemoryMiB: 16384
+    }
+  }],
   unmanagedSchedules: [{
     id: "activity",
     title: "赫朝商务追杀",
@@ -1698,7 +1738,10 @@ test("activity calendar creates an unbound draft and binds a client later", asyn
           profileDisplayName: null,
           version: null,
           minecraftVersion: null,
-          loader: null
+          loader: null,
+          targetServerId: null,
+          targetDisplayName: null,
+          targetVelocityTarget: null
         } });
         return true;
       }
@@ -1728,7 +1771,7 @@ test("activity calendar creates an unbound draft and binds a client later", asyn
 
   await page.goto("/admin/activity-plans");
   await expect(page.locator(".page-heading h1")).toHaveText("活动企划");
-  await expect(page.getByText("同一时间只开放一个活动")).toBeVisible();
+  await expect(page.getByText("排期按承载服务器隔离")).toBeVisible();
   await page.locator('.fc-daygrid-day[data-date="2026-08-18"]').click();
   await expect(page.getByRole("heading", { name: "创建活动企划" })).toBeVisible();
   await expect(page.getByLabel("开放时间")).toHaveValue("2026-08-18T19:00");
@@ -1748,13 +1791,75 @@ test("activity calendar creates an unbound draft and binds a client later", asyn
   await expect(page.getByText("未绑定客户端", { exact: true }).first()).toBeVisible();
 
   await page.getByLabel("绑定客户端").selectOption(packageImportId);
+  await expect(page.getByLabel("承载服务器"))
+    .toHaveValue("minigame-commercial-street");
   await page.getByRole("button", { name: "保存更改" }).click();
   await expect.poll(() => updateBody).not.toBeNull();
-  expect(updateBody).toMatchObject({ packageImportId });
+  expect(updateBody).toMatchObject({
+    packageImportId,
+    targetServerId: "minigame-commercial-street"
+  });
   await expect(page.getByText("Production 已就绪", { exact: true })).toBeVisible();
   await expect(page.getByLabel("绑定客户端").locator('option[value=""]'))
     .toHaveAttribute("disabled", "");
   await page.screenshot({ path: "../../../artifacts/admin-web-activity-plans-desktop.png", fullPage: true });
+});
+
+test("activity deployment waits for target changes to be saved", async ({ page }) => {
+  let updateBody: Record<string, unknown> | null = null;
+  let currentPlan = {
+    ...activityPlanOverview.plans[1],
+    deploymentMatches: false
+  };
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/activity-plans" && request.method() === "GET") {
+        await route.fulfill({
+          json: {
+            ...activityPlanOverview,
+            plans: [currentPlan]
+          }
+        });
+        return true;
+      }
+      if (
+        path === `/v1/admin/activity-plans/${currentPlan.id}` &&
+        request.method() === "PUT"
+      ) {
+        updateBody = request.postDataJSON() as Record<string, unknown>;
+        currentPlan = {
+          ...currentPlan,
+          ...updateBody,
+          targetDisplayName: "活动替换服",
+          targetVelocityTarget: "activity",
+          deploymentMatches: false,
+          revision: currentPlan.revision + 1,
+          updatedAt: now
+        };
+        await route.fulfill({ json: currentPlan });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/activity-plans");
+  await page.locator(".fc-event").filter({ hasText: "周末生存挑战" }).click();
+  const inspector = page.locator(".activity-plan-inspector");
+  const deployButton = inspector.getByRole("button", { name: "部署到承载服" });
+  await expect(deployButton).toBeEnabled();
+
+  await inspector.getByLabel("承载服务器").selectOption("activity");
+  await expect(inspector.getByText("有未保存更改")).toBeVisible();
+  await expect(deployButton).toBeDisabled();
+  expect(updateBody).toBeNull();
+
+  await inspector.getByRole("button", { name: "保存更改" }).click();
+  await expect.poll(() => updateBody).not.toBeNull();
+  expect(updateBody).toMatchObject({ targetServerId: "activity" });
+  await expect(inspector.getByText("有未保存更改")).toHaveCount(0);
+  await expect(deployButton).toBeEnabled();
 });
 
 test("activity calendar moves and resizes both boundaries while preserving wall-clock time", async ({ page }) => {
@@ -1810,6 +1915,7 @@ test("activity calendar moves and resizes both boundaries while preserving wall-
     -1
   );
   await expect.poll(() => updates.length).toBe(1);
+  expect(updates[0].targetServerId).toBe("minigame-commercial-street");
   expect(new Date(String(updates[0].opensAt)).toISOString()).toBe("2026-08-11T11:00:00.000Z");
   expect(new Date(String(updates[0].closesAt)).toISOString()).toBe("2026-08-12T14:00:00.000Z");
 
@@ -1822,6 +1928,7 @@ test("activity calendar moves and resizes both boundaries while preserving wall-
     1
   );
   await expect.poll(() => updates.length).toBe(2);
+  expect(updates[1].targetServerId).toBe("minigame-commercial-street");
   expect(new Date(String(updates[1].opensAt)).toISOString()).toBe("2026-08-11T11:00:00.000Z");
   expect(new Date(String(updates[1].closesAt)).toISOString()).toBe("2026-08-13T14:00:00.000Z");
 
@@ -1833,6 +1940,7 @@ test("activity calendar moves and resizes both boundaries while preserving wall-
     1
   );
   await expect.poll(() => updates.length).toBe(3);
+  expect(updates[2].targetServerId).toBe("minigame-commercial-street");
   expect(new Date(String(updates[2].opensAt)).toISOString()).toBe("2026-08-12T11:00:00.000Z");
   expect(new Date(String(updates[2].closesAt)).toISOString()).toBe("2026-08-14T14:00:00.000Z");
 });
@@ -1893,6 +2001,58 @@ test("activity plans can publish back-to-back without overlapping", async ({ pag
   await expect.poll(() => publishCalls).toBe(1);
 });
 
+test("overlapping activity plans can publish when they use different targets", async ({ page }) => {
+  let publishCalls = 0;
+  const parallelDraft = {
+    ...activityPlanOverview.plans[1],
+    opensAt: "2026-08-12T12:00:00Z",
+    closesAt: "2026-08-12T13:00:00Z",
+    targetServerId: "activity",
+    targetDisplayName: "活动替换服",
+    targetVelocityTarget: "activity"
+  };
+  await page.clock.setFixedTime(new Date("2026-08-10T08:00:00+08:00"));
+  await mockAdminApi(page, {
+    intercept: async (route, request, path) => {
+      if (path === "/v1/admin/activity-plans" && request.method() === "GET") {
+        await route.fulfill({
+          json: {
+            ...activityPlanOverview,
+            plans: [activityPlanOverview.plans[0], parallelDraft]
+          }
+        });
+        return true;
+      }
+      if (
+        path === `/v1/admin/activity-plans/${parallelDraft.id}/publish` &&
+        request.method() === "POST"
+      ) {
+        publishCalls += 1;
+        await route.fulfill({
+          json: {
+            ...parallelDraft,
+            status: "Published",
+            revision: parallelDraft.revision + 1,
+            updatedAt: now
+          }
+        });
+        return true;
+      }
+      return false;
+    }
+  });
+
+  await page.goto("/admin/activity-plans");
+  await page.locator(".fc-event").filter({ hasText: "周末生存挑战" }).click();
+  const inspector = page.locator(".activity-plan-inspector");
+  await expect(inspector.getByText(/与同一承载服务器上的已发布企划/)).toHaveCount(0);
+  const publishButton = inspector.getByRole("button", { name: "发布企划" });
+  await expect(publishButton).toBeEnabled();
+  await publishButton.click();
+  await page.getByRole("button", { name: "确认发布" }).click();
+  await expect.poll(() => publishCalls).toBe(1);
+});
+
 test("draft activity can overlap for planning but cannot be published", async ({ page }) => {
   const conflictingOverview = {
     ...activityPlanOverview,
@@ -1916,7 +2076,7 @@ test("draft activity can overlap for planning but cannot be published", async ({
   await page.goto("/admin/activity-plans");
   await page.locator(".fc-event").filter({ hasText: "周末生存挑战" }).click();
   const inspector = page.locator(".activity-plan-inspector");
-  await expect(inspector.getByText(/与已发布企划《夏日建筑接力》重叠/)).toBeVisible();
+  await expect(inspector.getByText(/与同一承载服务器上的已发布企划《夏日建筑接力》重叠/)).toBeVisible();
   await expect(inspector.getByRole("button", { name: "发布企划" })).toBeDisabled();
 
   await page.setViewportSize({ width: 390, height: 844 });

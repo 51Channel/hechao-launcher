@@ -537,6 +537,7 @@ export interface ActivityPackage {
   profileId: string;
   profileDisplayName: string;
   version: string;
+  targetServerId: string;
   manifestSha256: string;
   minecraftVersion: string;
   loader: ModLoaderKind;
@@ -563,6 +564,9 @@ export interface ActivityPlan {
   version: string | null;
   minecraftVersion: string | null;
   loader: ModLoaderKind | null;
+  targetServerId: string | null;
+  targetDisplayName: string | null;
+  targetVelocityTarget: string | null;
   status: ActivityPlanStatus;
   effectiveStatus: ServerStatus;
   productionReady: boolean;
@@ -573,6 +577,20 @@ export interface ActivityPlan {
 }
 
 export interface ActivitySlot {
+  configured: boolean;
+  agentConnected: boolean;
+  online: boolean;
+  serverFilesPresent: boolean;
+  deployedPackage: ServerPackageDeploymentIdentity | null;
+  activeOperation: ControlOperation | null;
+  memoryGuidance: ServerMemoryGuidance | null;
+}
+
+export interface ActivityTarget {
+  serverId: string;
+  displayName: string;
+  velocityTarget: string;
+  backendPort: number;
   configured: boolean;
   agentConnected: boolean;
   online: boolean;
@@ -608,6 +626,7 @@ export interface ActivityPlanOverview {
   plans: ActivityPlan[];
   packages: ActivityPackage[];
   slot: ActivitySlot;
+  targets: ActivityTarget[];
   unmanagedSchedules: UnmanagedActivitySchedule[];
 }
 

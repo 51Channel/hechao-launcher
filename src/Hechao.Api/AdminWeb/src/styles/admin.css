@@ -4030,7 +4030,7 @@ textarea::placeholder {
     font-size: 16px;
 }
 
-.activity-single-slot-rule {
+.activity-target-rule {
     min-width: 0;
     display: grid;
     grid-template-columns: 20px minmax(0, 1fr);
@@ -4043,22 +4043,22 @@ textarea::placeholder {
     color: var(--brand);
 }
 
-.activity-single-slot-rule > img {
+.activity-target-rule > img {
     width: 18px;
     height: 18px;
     margin-top: 1px;
 }
 
-.activity-single-slot-rule strong,
-.activity-single-slot-rule span {
+.activity-target-rule strong,
+.activity-target-rule span {
     display: block;
 }
 
-.activity-single-slot-rule strong {
+.activity-target-rule strong {
     font-size: 12px;
 }
 
-.activity-single-slot-rule span {
+.activity-target-rule span {
     margin-top: 3px;
     color: var(--ink-secondary);
     font-size: 11px;
@@ -4508,7 +4508,7 @@ textarea::placeholder {
     line-height: 1.6;
 }
 
-.activity-slot-identity {
+.activity-target-identity {
     width: 100%;
     display: grid;
     gap: 4px;
@@ -4517,18 +4517,18 @@ textarea::placeholder {
     border-top: 1px solid var(--line);
 }
 
-.activity-slot-identity span,
-.activity-slot-identity small {
+.activity-target-identity span,
+.activity-target-identity small {
     color: var(--ink-muted);
     font-size: 10px;
 }
 
-.activity-slot-identity strong {
+.activity-target-identity strong {
     color: var(--ink);
     font-size: 13px;
 }
 
-.activity-slot-identity small {
+.activity-target-identity small {
     overflow-wrap: anywhere;
     font-family: "Cascadia Mono", Consolas, monospace;
 }
@@ -4606,7 +4606,8 @@ textarea::placeholder {
     gap: 10px;
 }
 
-.activity-package-facts {
+.activity-package-facts,
+.activity-target-facts {
     min-width: 0;
     display: grid;
     gap: 4px;
@@ -4615,12 +4616,14 @@ textarea::placeholder {
     border-top: 1px solid var(--line);
 }
 
-.activity-package-facts span {
+.activity-package-facts span,
+.activity-target-facts span {
     color: var(--ink-secondary);
     font-size: 10px;
 }
 
-.activity-package-facts strong {
+.activity-package-facts strong,
+.activity-target-facts strong {
     overflow-wrap: anywhere;
     color: var(--ink-muted);
     font-family: "Cascadia Mono", Consolas, monospace;
@@ -4927,7 +4930,7 @@ textarea::placeholder {
 @media (forced-colors: active) {
     .activity-calendar-panel .activity-calendar-event,
     .activity-index-row.active,
-    .activity-single-slot-rule,
+    .activity-target-rule,
     .unmanaged-schedule-panel {
         outline: 2px solid Highlight;
         outline-offset: -2px;

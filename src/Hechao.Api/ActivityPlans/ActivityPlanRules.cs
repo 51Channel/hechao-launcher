@@ -1,8 +1,9 @@
+using System.Text.RegularExpressions;
 using Hechao.Contracts;
 
 namespace Hechao.Api.ActivityPlans;
 
-public static class ActivityPlanRules
+public static partial class ActivityPlanRules
 {
     public const int MaximumDurationDays = 90;
 
@@ -16,6 +17,7 @@ public static class ActivityPlanRules
             request.MaximumPlayers,
             request.MinimumTier,
             request.PackageImportId,
+            request.TargetServerId,
             expectedRevision: null);
 
     public static IReadOnlyDictionary<string, string[]> Validate(
@@ -28,6 +30,7 @@ public static class ActivityPlanRules
             request.MaximumPlayers,
             request.MinimumTier,
             request.PackageImportId,
+            request.TargetServerId,
             request.ExpectedRevision);
 
     public static IReadOnlyDictionary<string, string[]> Validate(
@@ -94,6 +97,7 @@ public static class ActivityPlanRules
         int maximumPlayers,
         AccessTier minimumTier,
         Guid? packageImportId,
+        string? targetServerId,
         long? expectedRevision)
     {
         var errors = new Dictionary<string, string[]>();
@@ -136,6 +140,12 @@ public static class ActivityPlanRules
             errors["packageImportId"] = ["整合包标识无效。"];
         }
 
+        if (targetServerId is not null &&
+            !ServerIdPattern().IsMatch(targetServerId.Trim()))
+        {
+            errors["targetServerId"] = ["承载服务器标识无效。"];
+        }
+
         if (expectedRevision is <= 0)
         {
             errors["expectedRevision"] = ["企划修订号无效，请刷新后重试。"];
@@ -154,4 +164,7 @@ public static class ActivityPlanRules
             errors["reason"] = ["操作原因必须为 4 到 500 个可显示字符。"];
         }
     }
+
+    [GeneratedRegex("^[a-z0-9][a-z0-9._-]{1,63}$", RegexOptions.CultureInvariant)]
+    private static partial Regex ServerIdPattern();
 }

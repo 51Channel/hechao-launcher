@@ -529,10 +529,21 @@ public static class ActivityPlanEndpoints
                     code = "package_binding_required",
                     message = "企划尚未绑定客户端整合包。"
                 }),
+            ActivityPlanMutationStatus.TargetBindingRequired =>
+                Results.Conflict(new
+                {
+                    code = "target_binding_required",
+                    message = "企划尚未绑定承载服务器。"
+                }),
+            ActivityPlanMutationStatus.TargetNotFound =>
+                Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["targetServerId"] = ["所选承载服务器不存在或不支持整合包部署。"]
+                }),
             ActivityPlanMutationStatus.ScheduleConflict => Results.Conflict(new
             {
                 code = "schedule_conflict",
-                message = "已发布企划的开放时间不能重叠；同一时间只允许一个活动。",
+                message = "同一承载服务器上的已发布企划开放时间不能重叠。",
                 conflict = result.Conflict
             }),
             ActivityPlanMutationStatus.RevisionConflict => Results.Conflict(new
@@ -588,6 +599,16 @@ public static class ActivityPlanEndpoints
                 code = "package_binding_required",
                 message = "企划尚未绑定客户端整合包。"
             }),
+            ActivityPlanMutationStatus.TargetBindingRequired => Results.Conflict(new
+            {
+                code = "target_binding_required",
+                message = "企划尚未绑定承载服务器。"
+            }),
+            ActivityPlanMutationStatus.TargetNotFound => Results.Conflict(new
+            {
+                code = "target_not_found",
+                message = "企划绑定的承载服务器不存在或不支持整合包部署。"
+            }),
             ActivityPlanMutationStatus.PackageProfileArchived =>
                 Results.Conflict(new
                 {
@@ -604,19 +625,19 @@ public static class ActivityPlanEndpoints
                 Results.Conflict(new
                 {
                     code = "deployment_target_unavailable",
-                    message = "owl5 活动槽或服控代理当前不可用。"
+                    message = "承载服务器或服控代理当前不可用。"
                 }),
             ActivityPlanMutationStatus.DeploymentTargetOnline =>
                 Results.Conflict(new
                 {
                     code = "deployment_target_online",
-                    message = "活动服仍在运行，请先停止后再部署。"
+                    message = "承载服务器仍在运行，请先停止后再部署。"
                 }),
             ActivityPlanMutationStatus.DeploymentOperationInProgress =>
                 Results.Conflict(new
                 {
                     code = "deployment_in_progress",
-                    message = "活动槽已有进行中的服控操作。"
+                    message = "承载服务器已有进行中的服控操作。"
                 }),
             _ => Results.Conflict(new
             {

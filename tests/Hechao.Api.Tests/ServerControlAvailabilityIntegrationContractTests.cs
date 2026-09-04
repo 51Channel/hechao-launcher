@@ -31,8 +31,9 @@ public sealed class ServerControlAvailabilityIntegrationContractTests
 
     [Theory]
     [InlineData("Catalog", "CatalogRepository.cs")]
+    [InlineData("Admin", "AdminAccessRepository.cs")]
     [InlineData("Velocity", "VelocityAuthorizationRepository.cs")]
-    public void DynamicDeploymentSlotsUseTheirOwnControlTargetBeforeActivityFallback(
+    public void ActivityPlansResolveRuntimeAgainstTheirBoundControlTarget(
         string area,
         string fileName)
     {
@@ -43,26 +44,61 @@ public sealed class ServerControlAvailabilityIntegrationContractTests
             "Hechao.Api",
             area,
             fileName));
+        var compact = string.Concat(source.Where(character => !char.IsWhiteSpace(character)));
 
-        var slotJoin = source.IndexOf(
-            "LEFT JOIN launcher.deployment_slots deployment_slot",
+        Assert.Contains(
+            "ONcontrol_target.server_id=COALESCE(server.activity_target_server_id,server.id)",
+            compact,
             StringComparison.Ordinal);
-        var targetJoin = source.IndexOf(
-            "LEFT JOIN launcher.server_control_targets control_target",
-            slotJoin,
+        Assert.DoesNotContain(
+            "WHENserver.activity_plan_statusISNOTNULLTHEN'activity'",
+            compact,
             StringComparison.Ordinal);
-        var independentTarget = source.IndexOf(
-            "WHEN deployment_slot.server_id IS NOT NULL THEN server.id",
-            targetJoin,
-            StringComparison.Ordinal);
-        var sharedActivityFallback = source.IndexOf(
-            "WHEN server.activity_plan_status IS NOT NULL THEN 'activity'",
-            independentTarget,
-            StringComparison.Ordinal);
+    }
 
-        Assert.InRange(slotJoin, 0, targetJoin - 1);
-        Assert.InRange(targetJoin, slotJoin + 1, independentTarget - 1);
-        Assert.InRange(independentTarget, targetJoin + 1, sharedActivityFallback - 1);
+    [Fact]
+    public void VelocityDeploymentSlotUsesTheBoundPhysicalTarget()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            "Velocity",
+            "VelocityAuthorizationRepository.cs"));
+        var compact = string.Concat(source.Where(character => !char.IsWhiteSpace(character)));
+
+        Assert.Contains(
+            "ONdeployment_slot.server_id=COALESCE(server.activity_target_server_id,server.id)",
+            compact,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ANDdeployment_slot.velocity_target=server.velocity_target",
+            compact,
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Catalog", "CatalogRepository.cs", 3)]
+    [InlineData("Admin", "AdminAccessRepository.cs", 1)]
+    [InlineData("Velocity", "VelocityAuthorizationRepository.cs", 1)]
+    public void PublishedPlanProjectionSuppressesItsPhysicalTarget(
+        string area,
+        string fileName,
+        int expectedGuardCount)
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "src",
+            "Hechao.Api",
+            area,
+            fileName));
+
+        var guardCount = source.Split(
+            "published_plan.activity_target_server_id = server.id",
+            StringSplitOptions.None).Length - 1;
+        Assert.Equal(expectedGuardCount, guardCount);
     }
 
     private static string FindRepositoryRoot()

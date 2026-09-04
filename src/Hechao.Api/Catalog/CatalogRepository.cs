@@ -36,7 +36,17 @@ public sealed class CatalogRepository(
                 AND server.is_visible
                 AND server.server_role = 'Player'
                 AND (
-                    server.velocity_target = 'activity'
+                    server.activity_plan_status IS NOT NULL
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM launcher.servers published_plan
+                        WHERE published_plan.activity_plan_status = 'Published'
+                          AND published_plan.activity_target_server_id = server.id
+                    )
+                )
+                AND (
+                    server.activity_plan_status IS NOT NULL
+                    OR server.velocity_target = 'activity'
                     OR access_override.decision = 'Allow'
                     OR (
                         access_override.decision IS DISTINCT FROM 'Deny'
@@ -270,20 +280,28 @@ public sealed class CatalogRepository(
                    control_target.deployed_package_import_id,
                    NULL::text AS access_override_decision
             FROM launcher.servers server
+            LEFT JOIN launcher.servers activity_target
+                ON activity_target.id = server.activity_target_server_id
+               AND activity_target.activity_plan_status IS NULL
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
-                ON heartbeat.velocity_target = server.velocity_target
-            LEFT JOIN launcher.deployment_slots deployment_slot
-                ON deployment_slot.server_id = server.id
-               AND deployment_slot.velocity_target = server.velocity_target
-               AND deployment_slot.status = 'Ready'
+                ON heartbeat.velocity_target = COALESCE(
+                    activity_target.velocity_target,
+                    server.velocity_target)
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = CASE
-                    WHEN deployment_slot.server_id IS NOT NULL THEN server.id
-                    WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
-                    ELSE server.id
-                END
+                ON control_target.server_id = COALESCE(
+                    server.activity_target_server_id,
+                    server.id)
             WHERE server.is_visible
               AND server.server_role = 'Player'
+              AND (
+                  server.activity_plan_status IS NOT NULL
+                  OR NOT EXISTS (
+                      SELECT 1
+                      FROM launcher.servers published_plan
+                      WHERE published_plan.activity_plan_status = 'Published'
+                        AND published_plan.activity_target_server_id = server.id
+                  )
+              )
             ORDER BY server.sort_order, server.id;
             """;
 
@@ -300,24 +318,32 @@ public sealed class CatalogRepository(
                    control_target.deployed_package_import_id,
                    access_override.decision AS access_override_decision
             FROM launcher.servers server
+            LEFT JOIN launcher.servers activity_target
+                ON activity_target.id = server.activity_target_server_id
+               AND activity_target.activity_plan_status IS NULL
             LEFT JOIN launcher.velocity_target_heartbeats heartbeat
-                ON heartbeat.velocity_target = server.velocity_target
-            LEFT JOIN launcher.deployment_slots deployment_slot
-                ON deployment_slot.server_id = server.id
-               AND deployment_slot.velocity_target = server.velocity_target
-               AND deployment_slot.status = 'Ready'
+                ON heartbeat.velocity_target = COALESCE(
+                    activity_target.velocity_target,
+                    server.velocity_target)
             LEFT JOIN launcher.server_control_targets control_target
-                ON control_target.server_id = CASE
-                    WHEN deployment_slot.server_id IS NOT NULL THEN server.id
-                    WHEN server.activity_plan_status IS NOT NULL THEN 'activity'
-                    ELSE server.id
-                END
+                ON control_target.server_id = COALESCE(
+                    server.activity_target_server_id,
+                    server.id)
             LEFT JOIN launcher.server_access_overrides access_override
                 ON access_override.user_id = $1
                AND access_override.server_id = server.id
                AND (access_override.expires_at IS NULL OR access_override.expires_at > now())
             WHERE server.is_visible
               AND server.server_role = 'Player'
+              AND (
+                  server.activity_plan_status IS NOT NULL
+                  OR NOT EXISTS (
+                      SELECT 1
+                      FROM launcher.servers published_plan
+                      WHERE published_plan.activity_plan_status = 'Published'
+                        AND published_plan.activity_target_server_id = server.id
+                  )
+              )
             ORDER BY server.sort_order, server.id;
             """;
 
@@ -384,7 +410,9 @@ public sealed class CatalogRepository(
             var minimumTier = Enum.Parse<AccessTier>(
                 reader.GetString(9),
                 ignoreCase: true);
-            var catalogSection = ResolveCatalogSection(reader.GetString(20));
+            var catalogSection = ResolveCatalogSection(
+                reader.GetString(20),
+                isActivityPlan: !reader.IsDBNull(21));
             var overrideDecision = reader.IsDBNull(24)
                 ? (AdminServerAccessDecision?)null
                 : Enum.Parse<AdminServerAccessDecision>(
@@ -418,8 +446,10 @@ public sealed class CatalogRepository(
         return servers;
     }
 
-    internal static ServerCatalogSection ResolveCatalogSection(string velocityTarget) =>
-        velocityTarget == "activity"
+    internal static ServerCatalogSection ResolveCatalogSection(
+        string velocityTarget,
+        bool isActivityPlan = false) =>
+        isActivityPlan || velocityTarget == "activity"
             ? ServerCatalogSection.Activity
             : ServerCatalogSection.Permanent;
 

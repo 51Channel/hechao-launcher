@@ -20,6 +20,7 @@ public sealed record AdminActivityPackageRecord(
     string ProfileId,
     string ProfileDisplayName,
     string Version,
+    string TargetServerId,
     string ManifestSha256,
     string MinecraftVersion,
     ModLoaderKind Loader,
@@ -45,6 +46,9 @@ public sealed record AdminActivityPlanRecord(
     string? Version,
     string? MinecraftVersion,
     ModLoaderKind? Loader,
+    string? TargetServerId,
+    string? TargetDisplayName,
+    string? TargetVelocityTarget,
     ActivityPlanStatus Status,
     ServerStatus EffectiveStatus,
     bool ProductionReady,
@@ -54,6 +58,19 @@ public sealed record AdminActivityPlanRecord(
     DateTimeOffset UpdatedAt);
 
 public sealed record AdminActivitySlotRecord(
+    bool Configured,
+    bool AgentConnected,
+    bool Online,
+    bool ServerFilesPresent,
+    ServerPackageDeploymentIdentity? DeployedPackage,
+    AdminServerControlOperationRecord? ActiveOperation,
+    ServerMemoryGuidance? MemoryGuidance);
+
+public sealed record AdminActivityTargetRecord(
+    string ServerId,
+    string DisplayName,
+    string VelocityTarget,
+    int BackendPort,
     bool Configured,
     bool AgentConnected,
     bool Online,
@@ -81,6 +98,7 @@ public sealed record AdminActivityPlanListResponse(
     IReadOnlyList<AdminActivityPlanRecord> Plans,
     IReadOnlyList<AdminActivityPackageRecord> Packages,
     AdminActivitySlotRecord Slot,
+    IReadOnlyList<AdminActivityTargetRecord> Targets,
     IReadOnlyList<AdminUnmanagedActivityScheduleRecord> UnmanagedSchedules);
 
 public sealed record AdminActivityPlanCreateRequest(
@@ -90,7 +108,8 @@ public sealed record AdminActivityPlanCreateRequest(
     DateTimeOffset ClosesAt,
     int MaximumPlayers,
     AccessTier MinimumTier,
-    Guid? PackageImportId);
+    Guid? PackageImportId,
+    string? TargetServerId = null);
 
 public sealed record AdminActivityPlanUpdateRequest(
     string Title,
@@ -100,7 +119,8 @@ public sealed record AdminActivityPlanUpdateRequest(
     int MaximumPlayers,
     AccessTier MinimumTier,
     Guid? PackageImportId,
-    long ExpectedRevision);
+    long ExpectedRevision,
+    string? TargetServerId = null);
 
 public sealed record AdminActivityPlanRevisionRequest(long ExpectedRevision);
 
